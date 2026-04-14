@@ -3,259 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Title is dynamically injected by React/Next.js SEO later -->
-    <title>David Chen | Broker | MN Lake Homes</title>
+    <title id="page-title">Agent Profile | MN Lake Homes</title>
+    <meta name="description" content="MN Lake Homes agent profile page.">
     <link rel="stylesheet" href="../../styles/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="../../components/components.js" defer></script>
-    <style>
-        .profile-hero {
-            background-color: #1a202c;
-            color: #fff;
-            padding: 8rem 2rem 5rem;
-            position: relative;
-            overflow: hidden;
-        }
-        .hero-layout {
-            max-width: 1200px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 2;
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 3rem;
-            align-items: center;
-        }
-        
-        .profile-avatar-large {
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            background: #fff;
-            color: #1a202c;
-            border: 6px solid rgba(255,255,255,0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 4rem;
-            font-weight: 800;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
-            flex-shrink: 0;
-        }
-
-        .profile-identity h1 { font-size: 3.5rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 0.5rem; line-height: 1; }
-        .profile-identity p.brokerage { font-size: 1.5rem; color: #a0aec0; font-weight: 500; margin-bottom: 1.5rem; }
-        
-        .badge-array { display: flex; gap: 1rem; flex-wrap: wrap; }
-        .hero-badge { background: rgba(255,255,255,0.1); backdrop-filter: blur(4px); padding: 0.5rem 1rem; border-radius: 99px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #e2e8f0; border: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; gap: 0.5rem; }
-        .badge-premium { background: #dd6b20; border-color: #dd6b20; color: #fff; }
-
-        .content-container {
-            max-width: 1200px;
-            margin: -4rem auto 5rem;
-            padding: 0 2rem;
-            position: relative;
-            z-index: 10;
-            display: grid;
-            grid-template-columns: 1fr 380px;
-            gap: 3rem;
-            align-items: start;
-        }
-
-        .content-main { background: #fff; padding: 4rem; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #edf2f7; }
-        .content-sidebar { background: #fff; padding: 3rem; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #edf2f7; position: sticky; top: 100px; }
-
-        .section-title { font-size: 1.25rem; font-weight: 800; color: #1a202c; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1.5rem; border-bottom: 2px solid #edf2f7; padding-bottom: 0.5rem; }
-        
-        .bio-text { font-size: 1.1rem; line-height: 1.8; color: #4a5568; margin-bottom: 3rem; }
-        
-        .matrix-list { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 3rem; }
-        .matrix-item { display: flex; align-items: center; gap: 0.75rem; color: #2d3748; font-weight: 600; font-size: 1rem; }
-        .matrix-item svg { color: var(--accent-blue); flex-shrink: 0; }
-
-        .form-title { font-size: 1.5rem; font-weight: 800; color: #1a202c; margin-bottom: 0.5rem; }
-        .contact-form { margin-top: 2rem; }
-    </style>
 </head>
-<body style="background-color: #f7f9fa;">
+<body style="background-color: #fff;">
 
     <global-header></global-header>
 
-    <div class="profile-hero">
-        <!-- Abstract Bg element -->
-        <div style="position: absolute; top: -50%; right: -10%; width: 1000px; height: 1000px; background: radial-gradient(circle, rgba(66,153,225,0.15) 0%, rgba(26,32,44,0) 70%); border-radius: 50%; z-index: 1;"></div>
-        
-        <div class="hero-layout" id="dynamic-hero">
-            <!-- JS Injection -->
-            <div style="color:#fff; text-align:center; padding: 4rem;">Loading...</div>
-        </div>
+    <!-- Dark centered hero — exact same as blog.html -->
+    <div style="padding: 12rem 2rem 5rem; text-align: center; background-color: var(--bg-dark); color: #fff;" id="profile-hero">
+        <div style="color: #a0aec0; font-size: 1.1rem;">Loading profile...</div>
     </div>
 
-    <div class="content-container">
-        <!-- Structural Core Info -->
-        <div class="content-main" id="dynamic-main">
-            <!-- JS Injection -->
+    <!-- Main content — white bg, matches rest of site -->
+    <section style="background-color: #f7f9fa; padding: 4rem 0 8rem;">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 380px; gap: 3rem; align-items: start;" id="profile-body">
+            <!-- JS injects main + sidebar -->
         </div>
-
-        <!-- Master Inquiry Form -->
-        <div class="content-sidebar">
-            <h2 class="form-title" id="form-header-name">Contact</h2>
-            <p style="color: #718096; font-size: 0.95rem; line-height: 1.5;">Discuss your upcoming property move directly with this specialist.</p>
-            
-            <form class="contact-form" id="agent-lead-form">
-                <!-- Data injection hook -->
-                <input type="hidden" id="form-agent-id" name="agent_id" value="">
-
-                <div class="form-group-sys">
-                    <label style="display: block; font-weight: 700; color: #4a5568; margin-bottom: 0.5rem; font-size: 0.85rem; text-transform: uppercase;">Full Name</label>
-                    <input type="text" id="lead-name" class="input-sys" placeholder="Jane Doe" required>
-                </div>
-                
-                <div class="form-group-sys">
-                    <label style="display: block; font-weight: 700; color: #4a5568; margin-bottom: 0.5rem; font-size: 0.85rem; text-transform: uppercase;">Contact Number</label>
-                    <input type="tel" id="lead-phone" class="input-sys" placeholder="(612) 555-0199" required>
-                </div>
-
-                <div class="form-group-sys">
-                    <label style="display: block; font-weight: 700; color: #4a5568; margin-bottom: 0.5rem; font-size: 0.85rem; text-transform: uppercase;">Email Address</label>
-                    <input type="email" id="lead-email" class="input-sys" placeholder="jane@example.com" required>
-                </div>
-
-                <div class="form-group-sys" style="margin-bottom: 2rem;">
-                    <label style="display: block; font-weight: 700; color: #4a5568; margin-bottom: 0.5rem; font-size: 0.85rem; text-transform: uppercase;">How can we help?</label>
-                    <textarea id="lead-notes" class="input-sys" rows="4" placeholder="I'm considering selling my home on Lake Minnetonka..." required></textarea>
-                </div>
-
-                <button type="submit" id="submit-lead-btn" class="btn btn-primary" style="width: 100%; border-radius: 8px; padding: 1rem; font-size: 1rem; font-weight: 800;">Send Direct Inquiry</button>
-
-                <div id="form-success-banner" style="display: none; margin-top: 1.5rem; padding: 1rem; background: #f0fff4; color: #2f855a; border-radius: 8px; font-weight: 600; text-align: center; border: 1px solid #c6f6d5; font-size: 0.9rem;">
-                    Your inquiry has been routed privately securely.
-                </div>
-            </form>
-        </div>
-    </div>
+    </section>
 
     <global-footer></global-footer>
+    <lead-modal></lead-modal>
 
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const slug = urlParams.get('slug'); 
-            const id = urlParams.get('id');     
+            const slug = new URLSearchParams(window.location.search).get('slug');
+            const hero = document.getElementById('profile-hero');
+            const body = document.getElementById('profile-body');
 
             let agent = null;
-
             try {
                 if (slug) {
                     const res = await fetch(`/api/agents/public/${slug}`);
                     if (res.ok) agent = await res.json();
-                } else if (id) {
-                    // Fallback to fetch public agents list to map by ID if slug not provided directly from older UI buttons
-                    const res = await fetch('/api/agents/public');
-                    if(res.ok) {
-                        const allPublished = await res.json();
-                        agent = allPublished.find(a => String(a.id) === String(id));
-                    }
                 }
             } catch (err) {
                 console.error(err);
             }
 
             if (!agent) {
-                document.getElementById('dynamic-hero').innerHTML = `<h1 style="color:#fff;">Profile Error</h1><p style="color:#a0aec0;">Agent not found or currently inactive.</p>`;
+                hero.innerHTML = `
+                    <h1 style="font-size:3rem; font-weight:700; letter-spacing:-1px; margin-bottom:1rem;">Agent Not Found</h1>
+                    <p style="color:#a0aec0;">This profile is inactive or unavailable.</p>
+                `;
+                body.innerHTML = '';
                 return;
             }
 
-            // Render dynamic agent payload securely into the structural frames
-            const initials = agent.display_name.split(' ').map(n => n[0]).join('');
-            
-            // Form Hooking
-            document.getElementById('form-agent-id').value = agent.id;
-            document.getElementById('form-header-name').innerText = `Contact ${agent.display_name.split(' ')[0]}`;
+            // Update page title
+            document.getElementById('page-title').textContent = `${agent.display_name} | MN Lake Homes`;
 
-            // Badges
-            let tierBadgeStr = '';
-            if (agent.is_featured) tierBadgeStr = `<span>Featured Core</span>`;
-            else if (agent.membership_badge === "MN Lake Specialist" || agent.membership_badge === "Top Agent") tierBadgeStr = `<span>${agent.membership_badge}</span>`;
-            else tierBadgeStr = `<span style="display:none"></span>`; // Hide if basic
-
-            // Safe array parsers from postgres JSON
             const serviceAreas = Array.isArray(agent.service_areas) ? agent.service_areas : (JSON.parse(agent.service_areas || '[]'));
             const specialties = Array.isArray(agent.specialties) ? agent.specialties : (JSON.parse(agent.specialties || '[]'));
 
-            const areasList = serviceAreas.map(x => `<div class="matrix-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> ${x}</div>`).join('');
-            const specList = specialties.map(x => `<div class="matrix-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg> ${x}</div>`).join('');
+            // Hero — matches blog.html dark centered style
+            hero.innerHTML = `
+                <div style="display:inline-block; background: var(--accent-blue); color:#fff; width:100px; height:100px; border-radius:50%; line-height:100px; font-size:2.5rem; font-weight:800; margin-bottom:2rem;">
+                    ${agent.display_name.split(' ').map(n => n[0]).join('')}
+                </div>
+                <h1 style="font-size:3.5rem; font-weight:700; letter-spacing:-2px; margin-bottom:0.75rem;">${agent.display_name}</h1>
+                <p style="font-size:1.25rem; color:#a0aec0; margin-bottom:1.5rem;">${agent.brokerage_name || 'Independent Realtor'} &nbsp;·&nbsp; ${agent.city || 'Minnesota'}</p>
+                <span style="display:inline-block; background:var(--accent-blue); color:#fff; padding:0.4rem 1.2rem; border-radius:99px; font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;">${agent.membership_badge || 'Agent'}</span>
+            `;
 
-            // 1. Hero
-            document.getElementById('dynamic-hero').innerHTML = `
-                <div class="profile-avatar-large">${initials}</div>
-                <div class="profile-identity">
-                    <h1>${agent.display_name}</h1>
-                    <p class="brokerage">${agent.brokerage_name || 'Independent Realtor'}</p>
-                    <div class="badge-array">
-                        <span class="hero-badge badge-premium">${agent.membership_badge || 'Agent'}</span>
-                        <span class="hero-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> ${agent.city || 'Minnesota'}</span>
-                        <span class="hero-badge" style="${agent.license_number ? '' : 'display:none;'}">Lic: ${agent.license_number}</span>
-                    </div>
+            // Specialties & areas pills
+            const specPills = specialties.map(s =>
+                `<span style="display:inline-block; background:#edf2f7; color:#4a5568; padding:0.4rem 0.9rem; border-radius:99px; font-size:0.85rem; font-weight:600; margin:0.25rem;">${s}</span>`
+            ).join('');
+
+            const areaPills = serviceAreas.map(a =>
+                `<span style="display:inline-block; background:#ebf8ff; color:#2b6cb0; padding:0.4rem 0.9rem; border-radius:99px; font-size:0.85rem; font-weight:600; margin:0.25rem;">${a}</span>`
+            ).join('');
+
+            // Main content block — white card, matches site card style
+            body.innerHTML = `
+                <div style="background:#fff; border-radius:12px; border:1px solid #edf2f7; box-shadow:0 4px 6px rgba(0,0,0,0.02); padding:3rem;">
+                    <h2 style="font-size:1.1rem; font-weight:800; color:#1a202c; text-transform:uppercase; letter-spacing:1px; margin-bottom:1.5rem; padding-bottom:0.75rem; border-bottom:2px solid #edf2f7;">About</h2>
+                    <p style="font-size:1.05rem; line-height:1.8; color:#4a5568; margin-bottom:3rem;">${agent.bio || 'Professional biography coming soon.'}</p>
+
+                    ${areaPills ? `
+                        <h2 style="font-size:1.1rem; font-weight:800; color:#1a202c; text-transform:uppercase; letter-spacing:1px; margin-bottom:1rem; padding-bottom:0.75rem; border-bottom:2px solid #edf2f7;">Service Areas</h2>
+                        <div style="margin-bottom:2.5rem;">${areaPills}</div>
+                    ` : ''}
+
+                    ${specPills ? `
+                        <h2 style="font-size:1.1rem; font-weight:800; color:#1a202c; text-transform:uppercase; letter-spacing:1px; margin-bottom:1rem; padding-bottom:0.75rem; border-bottom:2px solid #edf2f7;">Specialties</h2>
+                        <div>${specPills}</div>
+                    ` : ''}
+                </div>
+
+                <!-- Inquiry form sidebar -->
+                <div style="background:#fff; border-radius:12px; border:1px solid #edf2f7; box-shadow:0 4px 6px rgba(0,0,0,0.02); padding:2.5rem; position:sticky; top:100px;">
+                    <h2 style="font-size:1.5rem; font-weight:800; color:#1a202c; margin-bottom:0.5rem;">Contact ${agent.display_name.split(' ')[0]}</h2>
+                    <p style="color:#718096; font-size:0.95rem; line-height:1.5; margin-bottom:2rem;">Reach out directly about your property goals.</p>
+
+                    <form id="agent-lead-form">
+                        <input type="hidden" id="form-agent-id" value="${agent.id}">
+
+                        <div class="form-group-sys" style="margin-bottom:1.25rem;">
+                            <label style="display:block; font-weight:700; color:#4a5568; margin-bottom:0.4rem; font-size:0.8rem; text-transform:uppercase;">Full Name</label>
+                            <input type="text" id="lead-name" class="input-sys" placeholder="Jane Doe" required>
+                        </div>
+                        <div class="form-group-sys" style="margin-bottom:1.25rem;">
+                            <label style="display:block; font-weight:700; color:#4a5568; margin-bottom:0.4rem; font-size:0.8rem; text-transform:uppercase;">Phone</label>
+                            <input type="tel" id="lead-phone" class="input-sys" placeholder="(612) 555-0199" required>
+                        </div>
+                        <div class="form-group-sys" style="margin-bottom:1.25rem;">
+                            <label style="display:block; font-weight:700; color:#4a5568; margin-bottom:0.4rem; font-size:0.8rem; text-transform:uppercase;">Email</label>
+                            <input type="email" id="lead-email" class="input-sys" placeholder="jane@example.com" required>
+                        </div>
+                        <div class="form-group-sys" style="margin-bottom:2rem;">
+                            <label style="display:block; font-weight:700; color:#4a5568; margin-bottom:0.4rem; font-size:0.8rem; text-transform:uppercase;">Message</label>
+                            <textarea id="lead-notes" class="input-sys" rows="4" placeholder="I'm looking for a lakefront property..." required></textarea>
+                        </div>
+
+                        <button type="submit" id="submit-lead-btn" class="btn btn-primary" style="width:100%; border-radius:8px; padding:1rem; font-size:1rem; font-weight:700;">Send Inquiry</button>
+                        <div id="form-success-banner" style="display:none; margin-top:1.5rem; padding:1rem; background:#f0fff4; color:#2f855a; border-radius:8px; font-weight:600; text-align:center; border:1px solid #c6f6d5;">
+                            ✓ Your inquiry was sent successfully.
+                        </div>
+                    </form>
                 </div>
             `;
 
-            // 2. Main content block
-            document.getElementById('dynamic-main').innerHTML = `
-                <h2 class="section-title">Professional Biography</h2>
-                <div class="bio-text">
-                    ${agent.bio ? agent.bio.replace(/\\n/g, '<br>') : 'Information coming soon.'}
-                </div>
+            // Lead form submit
+            document.getElementById('agent-lead-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const btn = document.getElementById('submit-lead-btn');
+                btn.textContent = 'Sending...';
+                btn.style.opacity = '0.7';
 
-                ${areasList ? `
-                    <h2 class="section-title">Primary Service Areas</h2>
-                    <div class="matrix-list">
-                        ${areasList}
-                    </div>
-                ` : ''}
+                try {
+                    const res = await fetch('/api/leads', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: document.getElementById('lead-name').value,
+                            email: document.getElementById('lead-email').value,
+                            phone: document.getElementById('lead-phone').value,
+                            notes: document.getElementById('lead-notes').value,
+                            source: 'agent_inquiry',
+                            agent_id: document.getElementById('form-agent-id').value
+                        })
+                    });
 
-                ${specList ? `
-                    <h2 class="section-title" style="margin-top: 4rem;">Practice Focus Specialties</h2>
-                    <div class="matrix-list">
-                        ${specList}
-                    </div>
-                ` : ''}
-            `;
-
-        // Handle Lead Submission API Pipeline
-        document.getElementById('agent-lead-form')?.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const btn = document.getElementById('submit-lead-btn');
-            btn.innerHTML = 'Sending Securely...';
-            btn.style.opacity = '0.7';
-
-            const payload = {
-                name: document.getElementById('lead-name').value,
-                email: document.getElementById('lead-email').value,
-                phone: document.getElementById('lead-phone').value,
-                notes: document.getElementById('lead-notes').value,
-                source: 'agent_inquiry',
-                agent_id: document.getElementById('form-agent-id').value
-            };
-
-            try {
-                const res = await fetch('/api/leads', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                if(!res.ok) throw new Error('Failed to route inquiry.');
-
-                btn.style.display = 'none';
-                document.getElementById('form-success-banner').style.display = 'block';
-            } catch (err) {
-                alert(err.message);
-                btn.innerHTML = 'Send Direct Inquiry';
-                btn.style.opacity = '1';
-            }
+                    if (!res.ok) throw new Error('Failed');
+                    btn.style.display = 'none';
+                    document.getElementById('form-success-banner').style.display = 'block';
+                } catch (err) {
+                    btn.textContent = 'Send Inquiry';
+                    btn.style.opacity = '1';
+                    alert('Something went wrong. Please try again.');
+                }
+            });
         });
-    });
+
+        function openModal() {
+            document.getElementById('lead-modal').classList.add('active');
+            nextModalStep(1);
+        }
+        function closeModal() {
+            document.getElementById('lead-modal').classList.remove('active');
+        }
+        function nextModalStep(step) {
+            document.querySelectorAll('.modal-step').forEach(el => el.classList.remove('active'));
+            document.getElementById('modal-step-' + step).classList.add('active');
+        }
     </script>
 </body>
 </html>

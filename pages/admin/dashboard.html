@@ -21,8 +21,8 @@
                 <a href="dashboard.html" class="admin-nav-link active">Dashboard</a>
                 <a href="agents.html" class="admin-nav-link">Agents Directory</a>
                 <a href="leads.html" class="admin-nav-link">Central Leads</a>
-                <a href="#" class="admin-nav-link">Users Management</a>
-                <a href="#" class="admin-nav-link">Membership Tiers</a>
+                <a href="#" class="admin-nav-link" style="opacity:0.4; cursor:default;">Users Management</a>
+                <a href="#" class="admin-nav-link" style="opacity:0.4; cursor:default;">Membership Tiers</a>
             </nav>
 
             <div style="margin-top: auto; padding-top: 10rem;">
@@ -30,62 +30,79 @@
             </div>
         </aside>
 
-        <!-- Main Content Area -->
         <main class="admin-content">
             <header style="margin-bottom: 3rem; display: flex; justify-content: space-between; align-items: flex-end;">
                 <div>
                     <h1 style="font-size: 2.5rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; margin-bottom: 0.5rem;">System Overview</h1>
-                    <p style="color: #718096; font-size: 1.1rem;">Operational intelligence mapped dynamically against the Database.</p>
+                    <p style="color: #718096; font-size: 1.1rem;">Live data from the PostgreSQL database.</p>
                 </div>
             </header>
 
-            <div class="metric-grid">
-                <div class="metric-card">
-                    <div class="metric-title">Total Active Agents</div>
-                    <div class="metric-value">14</div>
-                </div>
-                <div class="metric-card" style="border: 2px solid var(--accent-blue); box-shadow: 0 10px 20px rgba(66, 153, 225, 0.1);">
-                    <div class="metric-title" style="color: var(--accent-blue);">Pending Approval</div>
-                    <div class="metric-value" style="color: var(--accent-blue);">5</div>
-                    <div class="metric-alert">Requires Admin Action!</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-title">Published (Live)</div>
-                    <div class="metric-value">6</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-title">Draft Status</div>
-                    <div class="metric-value">2</div>
-                </div>
-                <div class="metric-card" style="border-left: 4px solid #e53e3e;">
-                    <div class="metric-title">Suspended Accounts</div>
-                    <div class="metric-value">1</div>
-                </div>
+            <div class="metric-grid" id="metric-grid">
+                <div class="metric-card"><div class="metric-title">Loading...</div><div class="metric-value">—</div></div>
             </div>
             
-            <!-- Stubbed Data Log -->
-            <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid #edf2f7; color: #1a202c;">Recent System Activity</h2>
+            <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid #edf2f7; color: #1a202c;">Recent Agent Submissions</h2>
             <div style="background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); overflow: hidden;">
-                <!-- Dummy Activity Log Strings from the endpoint -->
-                <div style="padding: 1.5rem; border-bottom: 1px solid #edf2f7; display: flex; gap: 1rem;">
-                    <span style="font-weight: 600; color: #2b6cb0;">AGENT ACTION</span>
-                    <span style="color: #4a5568;">David Chen submitted their profile for <strong>pending_review</strong>.</span>
-                    <span style="color: #a0aec0; margin-left: auto;">Just now</span>
-                </div>
-                <div style="padding: 1.5rem; border-bottom: 1px solid #edf2f7; display: flex; gap: 1rem;">
-                    <span style="font-weight: 600; color: #e53e3e;">ADMIN ACTION</span>
-                    <span style="color: #4a5568;">System Admin Suspended agent <em>M. Jacobson</em> from public access.</span>
-                    <span style="color: #a0aec0; margin-left: auto;">2 hours ago</span>
-                </div>
-                <div style="padding: 1.5rem; display: flex; gap: 1rem;">
-                    <span style="font-weight: 600; color: #38a169;">SYSTEM HOOK</span>
-                    <span style="color: #4a5568;">New agent account formally registered under <strong>Standard Basic Tier</strong> mapping.</span>
-                    <span style="color: #a0aec0; margin-left: auto;">Yesterday</span>
-                </div>
+                <div id="recent-agents"><div style="padding:2rem; color:#718096;">Loading...</div></div>
             </div>
 
         </main>
     </div>
-
 </body>
 </html>
+
+<script>
+    async function loadDashboard() {
+        try {
+            const res = await fetch('/api/admin');
+            if (!res.ok) throw new Error('API error');
+            const agents = await res.json();
+
+            const total = agents.length;
+            const pending = agents.filter(a => a.profile_status === 'pending_review').length;
+            const published = agents.filter(a => a.is_published).length;
+            const draft = agents.filter(a => a.profile_status === 'draft').length;
+            const suspended = agents.filter(a => a.profile_status === 'suspended').length;
+
+            document.getElementById('metric-grid').innerHTML = `
+                <div class="metric-card">
+                    <div class="metric-title">Total Agents</div>
+                    <div class="metric-value">${total}</div>
+                </div>
+                <div class="metric-card" style="border: 2px solid var(--accent-blue); box-shadow: 0 10px 20px rgba(66,153,225,0.1);">
+                    <div class="metric-title" style="color: var(--accent-blue);">Pending Approval</div>
+                    <div class="metric-value" style="color: var(--accent-blue);">${pending}</div>
+                    ${pending > 0 ? '<div class="metric-alert">Requires Admin Action!</div>' : ''}
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Published (Live)</div>
+                    <div class="metric-value">${published}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Draft</div>
+                    <div class="metric-value">${draft}</div>
+                </div>
+                <div class="metric-card" style="border-left: 4px solid #e53e3e;">
+                    <div class="metric-title">Suspended</div>
+                    <div class="metric-value">${suspended}</div>
+                </div>
+            `;
+
+            // Recent 5 submissions
+            const recent = [...agents].sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0)).slice(0,5);
+            document.getElementById('recent-agents').innerHTML = recent.length ? recent.map(a => `
+                <div style="padding:1.25rem 1.5rem; border-bottom:1px solid #edf2f7; display:flex; gap:1rem; align-items:center; cursor:pointer;" onclick="window.location.href='agents.html'">
+                    <span style="font-weight:700; color:#1a202c; min-width:160px;">${a.display_name}</span>
+                    <span style="font-size:0.8rem; color:#718096;">${a.brokerage_name || 'Independent'}</span>
+                    <span style="margin-left:auto;">${a.profile_status === 'pending_review' ? '<span style="background:#bee3f8;color:#2b6cb0;padding:0.2rem 0.6rem;border-radius:99px;font-size:0.75rem;font-weight:700;">Pending</span>' : a.profile_status === 'published' ? '<span style="background:#c6f6d5;color:#276749;padding:0.2rem 0.6rem;border-radius:99px;font-size:0.75rem;font-weight:700;">Published</span>' : '<span style="background:#e2e8f0;color:#4a5568;padding:0.2rem 0.6rem;border-radius:99px;font-size:0.75rem;font-weight:700;">Draft</span>'}</span>
+                </div>
+            `).join('') : '<div style="padding:2rem;color:#718096;">No agents registered yet.</div>';
+
+        } catch (err) {
+            document.getElementById('metric-grid').innerHTML = '<div class="metric-card"><div class="metric-title" style="color:#e53e3e;">Could not load data</div><div style="font-size:0.85rem;color:#718096;margin-top:0.5rem;">Check API connection</div></div>';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadDashboard);
+</script>
