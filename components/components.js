@@ -56,7 +56,10 @@ class GlobalFooter extends HTMLElement {
                     <a href="${bp}faq.html">FAQs</a>
                     <a href="${bp}agents.html">Our Agents</a>
                     <a href="${bp}contact.html">Contact Us</a>
-                    <a href="../../pages/admin/dashboard.html" style="color: #718096; font-size: 0.85rem; margin-top: 0.5rem;">Admin Portal</a>
+                    <div style="margin-top: 1rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 0.25rem;">
+                        <a href="${rp}pages/admin/dashboard.html" style="color: #718096; font-size: 0.85rem;">Admin Portal</a>
+                        <a href="${rp}pages/agent/dashboard.html" style="color: #718096; font-size: 0.85rem;">Agent Dashboard</a>
+                    </div>
                 </div>
             </div>
             <div class="footer-cta">
