@@ -6,43 +6,48 @@
     <title>Agent Directory | MN Lake Homes</title>
     <meta name="description" content="Browse Minnesota's top lake home specialists. Find a verified agent who knows your lake, your market, and your goals.">
     <link rel="stylesheet" href="../../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .blog-index-header {
+            padding: 12rem 2rem 5rem;
+            text-align: center;
+            background-color: var(--bg-dark);
+            color: #fff;
+        }
+        .blog-index-title {
+            font-size: 4.5rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 1.5rem;
+        }
+        .blog-index-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            max-width: 650px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+    </style>
     <script src="../../components/components.js" defer></script>
 </head>
 <body style="background-color: #fff;">
 
     <global-header></global-header>
 
-    <!-- Hero: matches buy.html / sell.html sp-section pattern -->
-    <section class="sp-section" style="padding: 10rem 2rem 8rem 2rem;">
-        <div class="sp-grid">
-            <div class="sp-media-wrapper" style="height: 600px; position: relative;">
-                <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=1200&auto=format&fit=crop" style="height: 100%; object-fit: cover; border-radius: 20px;" alt="MN Lake Home Specialist">
-                <div style="position: absolute; bottom: 4rem; right: -2.5rem; background: #dbeafe; padding: 1rem 2rem; transform: rotate(-90deg); transform-origin: left bottom; border-radius: 8px 8px 0 0; font-weight: 600; font-size: 0.85rem; letter-spacing: 1px; color: #1e40af;">Minnesota's Finest</div>
-            </div>
-            <div class="sp-grey-box" style="padding: 5rem 4rem; background: #f7f9fa;">
-                <div style="font-weight: 600; color: #2b6cb0; margin-bottom: 1rem; letter-spacing: 1px; text-transform: uppercase;">Verified Local Experts</div>
-                <h1 class="sp-title" style="font-size: 3rem; margin-bottom: 2rem; line-height: 1.1;">Meet the agents<br>who know<br><span>Minnesota's lakes.</span></h1>
-                <p style="color: #4a5568; line-height: 1.6; margin-bottom: 2rem;">Every specialist in our network is rigorously vetted, locally experienced, and deeply passionate about helping you find the perfect waterfront property.</p>
-                <a href="#agent-directory" class="sp-link-blue" style="margin-top: 0;">Browse the full directory &rarr;</a>
-            </div>
-        </div>
-    </section>
+    <!-- Hero: exact copy of blog.html header -->
+    <div class="blog-index-header">
+        <h1 class="blog-index-title">Find an Agent</h1>
+        <p class="blog-index-subtitle">Meet the local experts who know Minnesota's lakes better than anyone else.</p>
+    </div>
 
-    <!-- Agent Grid Section -->
-    <section id="agent-directory" style="background-color: #f7f9fa; padding: 6rem 0;">
-        <div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem; display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
-            <div>
-                <h2 style="font-size: 2.5rem; font-weight: 700; color: #1a202c; margin-bottom: 0.5rem; letter-spacing: -1px;">Our Agents</h2>
-                <p style="color: #718096; font-size: 1.1rem;">Meet the local experts who know Minnesota's lakes better than anyone else.</p>
-            </div>
-        </div>
-
-        <!-- Dynamic grid — same .agents-grid / .agent-card classes as homepage -->
-        <div class="agents-grid" id="agent-directory-grid" style="padding-top: 0;">
-            <!-- Loading state -->
-            <div id="agents-loading" style="grid-column: 1 / -1; text-align: center; padding: 4rem; color: #718096;">
-                Loading agents...
+    <!-- Agent Grid: exact same classes as homepage Featured Agents section -->
+    <section style="background-color: #f7f9fa; padding: 6rem 0;">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem;">
+            <div id="agent-directory-grid" class="agents-grid" style="padding-top: 0;">
+                <!-- JS injects .agent-card elements here -->
             </div>
         </div>
     </section>
@@ -53,45 +58,43 @@
     <script>
         async function renderDirectory() {
             const grid = document.getElementById('agent-directory-grid');
-            const loading = document.getElementById('agents-loading');
 
             try {
                 const res = await fetch('/api/agents/public');
 
                 if (!res.ok) {
-                    loading.innerHTML = '<p style="color:#c53030;">Could not load agents. Please try again later.</p>';
+                    grid.innerHTML = '<p style="color:#c53030; padding: 2rem;">Could not load agents. Please try again later.</p>';
                     return;
                 }
 
                 const agents = await res.json();
 
                 if (agents.length === 0) {
-                    loading.innerHTML = '<p style="color:#718096;">No agents are currently listed. Check back soon.</p>';
+                    grid.innerHTML = '<p style="color:#718096; padding: 2rem;">No agents are currently listed. Check back soon.</p>';
                     return;
                 }
 
-                loading.remove();
-
                 agents.forEach(agent => {
-                    // Use profile photo if available, otherwise fall back to Unsplash headshots by initials
                     const photoUrl = agent.profile_photo_url ||
                         'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=800&auto=format&fit=crop';
 
-                    const title = agent.membership_badge
-                        ? agent.membership_badge.toUpperCase()
-                        : 'LAKE SPECIALIST';
+                    const title = agent.membership_badge || 'Lake Specialist';
 
-                    const card = document.createElement('div');
-                    card.className = 'agent-card';
-                    card.style.cursor = 'pointer';
-                    card.onclick = () => { window.location.href = `agent-profile.html?slug=${agent.slug}`; };
+                    const card = document.createElement('a');
+                    card.href = `agent-profile.html?slug=${agent.slug}`;
+                    card.style.textDecoration = 'none';
+                    card.style.color = 'inherit';
+                    card.style.display = 'block';
+                    card.className = 'agent-link-wrapper';
 
                     card.innerHTML = `
-                        <img src="${photoUrl}" alt="${agent.display_name}" class="agent-image">
-                        <div class="agent-info">
-                            <h3 class="agent-name">${agent.display_name}</h3>
-                            <div class="agent-title">${title}</div>
-                            <p class="agent-bio">${agent.bio || 'A dedicated Minnesota lake home specialist ready to help you find your perfect waterfront property.'}</p>
+                        <div class="agent-card">
+                            <img src="${photoUrl}" alt="${agent.display_name}" class="agent-image">
+                            <div class="agent-info">
+                                <h3 class="agent-name">${agent.display_name}</h3>
+                                <div class="agent-title">${title.toUpperCase()}</div>
+                                <p class="agent-bio">${agent.bio || 'A dedicated Minnesota lake home specialist ready to help you find your perfect waterfront property.'}</p>
+                            </div>
                         </div>
                     `;
 
@@ -100,8 +103,20 @@
 
             } catch (err) {
                 console.error('Directory render error:', err);
-                loading.innerHTML = '<p style="color:#c53030;">Failed to load agent directory.</p>';
+                grid.innerHTML = '<p style="color:#c53030; padding: 2rem;">Failed to load agent directory.</p>';
             }
+        }
+
+        function openModal() {
+            document.getElementById('lead-modal').classList.add('active');
+            nextModalStep(1);
+        }
+        function closeModal() {
+            document.getElementById('lead-modal').classList.remove('active');
+        }
+        function nextModalStep(step) {
+            document.querySelectorAll('.modal-step').forEach(el => el.classList.remove('active'));
+            document.getElementById('modal-step-' + step).classList.add('active');
         }
 
         document.addEventListener('DOMContentLoaded', renderDirectory);
