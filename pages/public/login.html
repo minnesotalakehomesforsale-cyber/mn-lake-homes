@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Access | MN Lake Homes</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f7f9fa;
+            color: #1a202c;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .login-wrap {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem 1.5rem;
+            margin-top: 80px; /* Offset for header */
+        }
+
+        .login-card {
+            background: #fff;
+            max-width: 440px;
+            width: 100%;
+            padding: 3rem 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.06);
+            border: 1px solid #edf2f7;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .login-header h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-header p {
+            color: #718096;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+        }
+
+        .form-submit {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 1rem;
+        }
+
+        .alert-box {
+            display: none;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .alert-error {
+            background-color: #fff5f5;
+            color: #c53030;
+            border: 1px solid #feb2b2;
+        }
+
+        .alert-success {
+            background-color: #f0fff4;
+            color: #2f855a;
+            border: 1px solid #9ae6b4;
+        }
+    </style>
+</head>
+<body>
+
+    <global-header></global-header>
+
+    <div class="login-wrap">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>Welcome Back</h1>
+                <p>Sign in to your MN Lake Homes portal.</p>
+            </div>
+
+            <div id="login-alert" class="alert-box"></div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label class="form-label" for="email">Email Address</label>
+                    <input type="email" id="email" class="form-input" placeholder="agent@mnlakehomes.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="form-submit btn btn-primary">Sign In</button>
+            </form>
+
+            <div style="text-align: center; margin-top: 2rem; font-size: 0.9rem; color: #718096;">
+                Not registered yet? <a href="join.html" style="color: var(--accent-blue); font-weight: 600; text-decoration: none;">Apply to join</a>
+            </div>
+        </div>
+    </div>
+
+    <global-footer></global-footer>
+    <lead-modal></lead-modal>
+
+    <script src="../../components/components.js"></script>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const alertBox = document.getElementById('login-alert');
+            const submitBtn = document.querySelector('.form-submit');
+            
+            submitBtn.innerHTML = 'Authenticating...';
+            submitBtn.style.opacity = '0.7';
+            submitBtn.disabled = true;
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                // In a production backend environment, you would call:
+                // const response = await fetch('/api/auth/login', {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify({ email, password })
+                // });
+                // const data = await response.json();
+                
+                // MOCKING the fetch response for frontend verification:
+                setTimeout(() => {
+                    alertBox.className = 'alert-box alert-success';
+                    alertBox.textContent = 'Authentication successful! Validating session...';
+                    alertBox.style.display = 'block';
+
+                    // Mock logic distinguishing admin vs agent routing based on email format
+                    setTimeout(() => {
+                        if(email.includes('admin')) {
+                            window.location.href = '../admin/dashboard.html';
+                        } else {
+                            window.location.href = '../agent/dashboard.html';
+                        }
+                    }, 1500);
+                }, 1000);
+
+            } catch (err) {
+                alertBox.className = 'alert-box alert-error';
+                alertBox.textContent = 'Invalid credentials or server error.';
+                alertBox.style.display = 'block';
+                submitBtn.innerHTML = 'Sign In';
+                submitBtn.style.opacity = '1';
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

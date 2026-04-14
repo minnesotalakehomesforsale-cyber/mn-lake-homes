@@ -18,7 +18,7 @@ class GlobalHeader extends HTMLElement {
                 <a href="${bp}about.html">About</a>
             </nav>
             <div class="nav-actions">
-                <a href="#" style="color: #fff; font-weight: 600; text-decoration: none; padding: 0.5rem 1rem; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">Login</a>
+                <a href="${bp}login.html" style="color: #fff; font-weight: 600; text-decoration: none; padding: 0.5rem 1rem; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">Login</a>
             </div>
         </header>
         `;
