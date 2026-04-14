@@ -26,34 +26,20 @@
             margin-top: 80px; /* Offset for header */
         }
 
-        .split-card {
+        .login-card {
             background: #fff;
-            max-width: 900px;
+            max-width: 440px;
             width: 100%;
+            padding: 3rem 2.5rem;
             border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.06);
             border: 1px solid #edf2f7;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            position: relative;
             overflow: hidden;
         }
 
-        .login-side {
-            padding: 4rem 3rem;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .client-side {
-            background: #fff;
-        }
-
-        .agent-side {
-            background: #1a202c;
-            color: #fff;
-        }
-
         .login-header {
+            text-align: center;
             margin-bottom: 2.5rem;
         }
 
@@ -64,11 +50,10 @@
             margin-bottom: 0.5rem;
         }
 
-        .client-side .login-header h1 { color: #1a202c; }
-        .agent-side .login-header h1 { color: #fff; }
-
-        .client-side .login-header p { color: #718096; }
-        .agent-side .login-header p { color: #a0aec0; }
+        .login-header p {
+            color: #718096;
+            font-size: 0.95rem;
+        }
 
         .form-group {
             margin-bottom: 1.5rem;
@@ -78,32 +63,19 @@
             display: block;
             font-size: 0.85rem;
             font-weight: 600;
+            color: #4a5568;
             margin-bottom: 0.5rem;
         }
-
-        .client-side .form-label { color: #4a5568; }
-        .agent-side .form-label { color: #e2e8f0; }
 
         .form-input {
             width: 100%;
             padding: 0.85rem 1rem;
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
             font-family: inherit;
             font-size: 1rem;
             transition: all 0.2s;
             box-sizing: border-box;
-        }
-
-        .client-side .form-input {
-            border: 1px solid #e2e8f0;
-            background: #fff;
-            color: #1a202c;
-        }
-
-        .agent-side .form-input {
-            border: 1px solid rgba(255,255,255,0.2);
-            background: rgba(255,255,255,0.05);
-            color: #fff;
         }
 
         .form-input:focus {
@@ -122,19 +94,17 @@
             cursor: pointer;
             transition: all 0.2s;
             margin-top: 1rem;
-        }
-
-        .client-btn {
             background-color: #1a202c;
             color: #fff;
         }
-        .client-btn:hover { background-color: #2d3748; }
 
-        .agent-btn {
+        .form-submit.agent {
             background-color: var(--accent-blue);
-            color: #fff;
         }
-        .agent-btn:hover { background-color: #2b6cb0; }
+
+        .form-submit:hover {
+            opacity: 0.9;
+        }
 
         .alert-box {
             display: none;
@@ -149,10 +119,48 @@
         .alert-error { background-color: #fff5f5; color: #c53030; border: 1px solid #feb2b2; }
         .alert-success { background-color: #f0fff4; color: #2f855a; border: 1px solid #9ae6b4; }
 
-        @media (max-width: 768px) {
-            .split-card { grid-template-columns: 1fr; }
-            .login-side { padding: 3rem 2rem; }
+        /* Toggles */
+        .portal-section { display: none; }
+        .portal-section.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
+
+        .bottom-links {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .create-act {
+            font-size: 0.9rem;
+            color: #718096;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .create-act a {
+            color: #1a202c;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
+        .switch-portal {
+            font-size: 0.85rem;
+            color: #a0aec0;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .switch-portal:hover {
+            color: var(--accent-blue);
+        }
+
     </style>
 </head>
 <body>
@@ -160,61 +168,57 @@
     <global-header></global-header>
 
     <div class="login-wrap">
-        <div class="split-card">
+        <div class="login-card">
             
-            <!-- Client Side -->
-            <div class="login-side client-side">
+            <!-- CLIENT PORTAL (Default) -->
+            <div id="client-portal" class="portal-section active">
                 <div class="login-header">
                     <h1>Client Portal</h1>
                     <p>Track your saved homes & property valuations.</p>
                 </div>
-
                 <div id="client-alert" class="alert-box"></div>
-
-                <form id="client-form" onsubmit="handleLogin(event, 'client')">
+                <form onsubmit="handleLogin(event, 'client')">
                     <div class="form-group">
                         <label class="form-label" for="client-email">Email Address</label>
                         <input type="email" id="client-email" class="form-input" placeholder="you@email.com" required>
                     </div>
-
                     <div class="form-group">
                         <label class="form-label" for="client-password">Password</label>
                         <input type="password" id="client-password" class="form-input" placeholder="••••••••" required>
                     </div>
-
-                    <button type="submit" class="form-submit client-btn">Client Sign In</button>
+                    <button type="submit" class="form-submit">Sign In</button>
                 </form>
-
-                <div style="text-align: center; margin-top: 2rem; font-size: 0.9rem; color: #718096;">
-                    Don't have an account? <a href="#" style="color: #1a202c; font-weight: 600; text-decoration: underline;">Register here</a>
+                <div class="bottom-links">
+                    <div class="create-act">
+                        Don't have an account? <a href="#">Register here</a>
+                    </div>
+                    <button class="switch-portal" onclick="togglePortal('agent')">Agent & Partner Login</button>
                 </div>
             </div>
 
-            <!-- Agent Side -->
-            <div class="login-side agent-side">
+            <!-- AGENT PORTAL -->
+            <div id="agent-portal" class="portal-section">
                 <div class="login-header">
-                    <h1>Agent & Partner</h1>
+                    <h1>Agent Portal</h1>
                     <p>Access your listings, leads, and analytics.</p>
                 </div>
-
                 <div id="agent-alert" class="alert-box"></div>
-
-                <form id="agent-form" onsubmit="handleLogin(event, 'agent')">
+                <form onsubmit="handleLogin(event, 'agent')">
                     <div class="form-group">
                         <label class="form-label" for="agent-email">Work Email</label>
                         <input type="email" id="agent-email" class="form-input" placeholder="agent@mnlakehomes.com" required>
                     </div>
-
                     <div class="form-group">
                         <label class="form-label" for="agent-password">Password</label>
                         <input type="password" id="agent-password" class="form-input" placeholder="••••••••" required>
                     </div>
-
-                    <button type="submit" class="form-submit agent-btn">Agent Sign In</button>
+                    <button type="submit" class="form-submit agent">Agent Sign In</button>
                 </form>
-
-                <div style="text-align: center; margin-top: 2rem; font-size: 0.9rem; color: #a0aec0;">
-                    Not in the network? <a href="join.html" style="color: #fff; font-weight: 600; text-decoration: underline;">Apply to join</a>
+                <div class="bottom-links">
+                    <div class="create-act">
+                        Not in the network? <a href="join.html">Apply to join</a>
+                    </div>
+                    <button class="switch-portal" onclick="togglePortal('client')">&larr; Back to Client Login</button>
                 </div>
             </div>
 
@@ -226,6 +230,11 @@
 
     <script src="../../components/components.js"></script>
     <script>
+        function togglePortal(target) {
+            document.querySelectorAll('.portal-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(`${target}-portal`).classList.add('active');
+        }
+
         function handleLogin(e, type) {
             e.preventDefault();
             
@@ -233,6 +242,7 @@
             const submitBtn = e.target.querySelector('.form-submit');
             const email = document.getElementById(`${type}-email`).value;
             
+            const originalText = submitBtn.innerHTML;
             submitBtn.innerHTML = 'Authenticating...';
             submitBtn.style.opacity = '0.7';
             submitBtn.disabled = true;
@@ -251,7 +261,6 @@
                             window.location.href = '../agent/dashboard.html';
                         }
                     } else {
-                        // Client routing bypass mock
                         window.location.href = '../../index.html'; 
                     }
                 }, 1500);
