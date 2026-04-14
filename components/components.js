@@ -4,7 +4,42 @@ const getRoot = () => window.location.pathname.includes("/pages/") ? "../../" : 
 class GlobalHeader extends HTMLElement {
     connectedCallback() {
         const bp = getDepth();
-        const rp = getRoot();        this.innerHTML = `
+        const rp = getRoot();
+        
+        const isLoggedIn = localStorage.getItem('auth_session') === 'active';
+        const userType = localStorage.getItem('auth_type');
+        
+        let authHtml = `<a href="${bp}login.html" style="color: #fff; font-weight: 600; text-decoration: none; padding: 0.5rem 1rem; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">Login</a>`;
+
+        if (isLoggedIn) {
+            let dashLink = userType === 'agent' ? `${rp}pages/agent/dashboard.html` : `${rp}index.html`;
+            
+            authHtml = `
+            <div class="profile-dropdown" style="position: relative; display: inline-block;">
+                <button onclick="const menu = this.nextElementSibling; menu.style.display = menu.style.display === 'none' ? 'block' : 'none';" style="background: center/cover url('https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200&auto=format&fit=crop'); width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 0; transition: border-color 0.2s;" onmouseover="this.style.borderColor='var(--accent-blue)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'">
+                </button>
+                <div class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 60px; background: #fff; border: 1px solid #edf2f7; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); width: 240px; z-index: 1001; overflow: hidden; font-family: 'Inter', sans-serif;">
+                    <div style="padding: 1.25rem 1rem; border-bottom: 1px solid #edf2f7; display: flex; align-items: center; gap: 0.75rem; background: #f7f9fa;">
+                        <div style="background: center/cover url('https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200&auto=format&fit=crop'); width: 36px; height: 36px; border-radius: 50%;"></div>
+                        <div style="flex-grow: 1;">
+                            <div style="font-weight: 700; font-size: 0.95rem; color: #1a202c;">Your Profile</div>
+                            <div style="font-size: 0.75rem; color: #718096; text-transform: capitalize; font-weight: 500;">${userType} Account</div>
+                        </div>
+                    </div>
+                    <div style="padding: 0.5rem 0;">
+                        <a href="${dashLink}" style="display: block; padding: 0.75rem 1.25rem; color: #4a5568; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#f7f9fa'" onmouseout="this.style.backgroundColor='transparent'">Dashboard</a>
+                        <a href="${rp}pages/public/agent-profile.html?slug=david-chen" style="display: block; padding: 0.75rem 1.25rem; color: #4a5568; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#f7f9fa'" onmouseout="this.style.backgroundColor='transparent'">Public Site Profile</a>
+                        <a href="#" style="display: block; padding: 0.75rem 1.25rem; color: #4a5568; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#f7f9fa'" onmouseout="this.style.backgroundColor='transparent'">Settings</a>
+                    </div>
+                    <div style="padding: 0.5rem 0; border-top: 1px solid #edf2f7;">
+                        <a href="#" onclick="localStorage.clear(); window.location.href='${rp}index.html';" style="display: block; padding: 0.75rem 1.25rem; color: #e53e3e; text-decoration: none; font-size: 0.9rem; font-weight: 600; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#fff5f5'" onmouseout="this.style.backgroundColor='transparent'">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+            `;
+        }
+
+        this.innerHTML = `
         <header class="navbar" style="background-color: var(--bg-dark); border-bottom: 1px solid rgba(255,255,255,0.1); position: fixed; width: 100%; z-index: 1000; top: 0;">
             <div class="logo">
                 <div class="logo-icon"></div>
@@ -18,7 +53,7 @@ class GlobalHeader extends HTMLElement {
                 <a href="${bp}about.html">About</a>
             </nav>
             <div class="nav-actions">
-                <a href="${bp}login.html" style="color: #fff; font-weight: 600; text-decoration: none; padding: 0.5rem 1rem; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">Login</a>
+                ${authHtml}
             </div>
         </header>
         `;

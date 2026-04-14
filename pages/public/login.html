@@ -253,6 +253,10 @@
                 alertBox.textContent = 'Authentication successful! Routing...';
                 alertBox.style.display = 'block';
 
+                localStorage.setItem('auth_session', 'active');
+                localStorage.setItem('auth_type', type);
+                localStorage.setItem('auth_email', email);
+
                 setTimeout(() => {
                     if (type === 'agent') {
                         if (email.includes('admin')) {
