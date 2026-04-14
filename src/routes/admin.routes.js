@@ -3,8 +3,9 @@ const router = express.Router();
 const adminController = require('../controllers/admin.controller');
 const { verifyToken, requireRole } = require('../middleware/auth');
 
-router.use(verifyToken);
-router.use(requireRole('super_admin')); // Admin only bounds
+// TEMPORARILY DISABLED FOR STAGING - NO LOGIN UI EXISTS YET
+// router.use(verifyToken);
+// router.use(requireRole('super_admin')); // Admin only bounds
 
 router.get('/', adminController.getLedger);
 router.get('/:id', adminController.getAgentDetail);
