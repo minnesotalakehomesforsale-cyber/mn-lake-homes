@@ -7,12 +7,22 @@
     <link rel="stylesheet" href="../../styles/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        .admin-layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; background-color: #f7f9fa; }
-        .admin-sidebar { background-color: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-        .admin-content { padding: 4rem; overflow-y: auto; }
-        
-        .nav-link { display: flex; align-items: center; gap: 0.75rem; color: #a0aec0; text-decoration: none; padding: 0.85rem 1rem; border-radius: 8px; margin-bottom: 0.5rem; font-weight: 500; transition: all 0.2s; }
-        .nav-link:hover, .nav-link.active { background-color: rgba(255,255,255,0.1); color: #fff; }
+    <style>
+        /* Admin layout base */
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
+        .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        .admin-side { background: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+        .admin-side h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 2.5rem; padding-left: 0.5rem; color: #fff; margin-top: 0; }
+        .admin-side h1 span { color: #1d6df2; }
+        .side-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; margin-bottom: 0.75rem; padding-left: 0.5rem; font-weight: 700; margin-top: 0; }
+        .side-nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+        .side-link { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #a0aec0; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.15s; }
+        .side-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .side-link.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+        .side-link.dim { opacity: 0.35; cursor: default; pointer-events: none; }
+        .side-signout { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #fc8181; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-top: 1rem; transition: all 0.15s; }
+        .side-signout:hover { background: rgba(252,129,129,0.1); }
+        .admin-main { padding: 3rem 3.5rem; background: #f7f9fa; overflow-y: auto; }
 
         .review-grid { display: grid; grid-template-columns: 1fr 350px; gap: 2.5rem; align-items: start; }
         .review-panel { background: #fff; padding: 2.5rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 2rem; }
@@ -38,20 +48,23 @@
 </head>
 <body style="background-color: #f7f9fa; color: #1a202c; margin: 0; padding: 0;">
 
-    <div class="admin-layout">
+    <div class="admin-wrap">
         <!-- Sidebar -->
-        <aside class="admin-sidebar">
-            <div style="font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 3rem; padding-left: 1rem;">MNLH <span style="color: var(--accent-blue);">ADMIN</span></div>
-            <nav style="display: flex; flex-direction: column;">
-                <a href="dashboard.html" class="nav-link">Dashboard</a>
-                <a href="agents.html" class="nav-link active">Agents Directory</a>
-                <a href="leads.html" class="nav-link">Central Leads</a>
-                <a href="#" class="nav-link">Users Management</a>
+        <aside class="admin-side">
+            <h1>MNLH <span>ADMIN</span></h1>
+            <p class="side-label">Platform Operations</p>
+            <nav class="side-nav">
+                <a href="dashboard.html" class="side-link">Dashboard</a>
+                <a href="agents.html"   class="side-link active">Agents Directory</a>
+                <a href="leads.html"    class="side-link">Central Leads</a>
+                <a href="#" class="side-link dim">Users Management</a>
+                <a href="#" class="side-link dim">Membership Tiers</a>
             </nav>
+            <a href="../../index.html" class="side-signout">Sign Out</a>
         </aside>
 
         <!-- Main Content -->
-        <main class="admin-content">
+        <main class="admin-main">
             
             <a href="agents.html" style="color: #718096; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 2rem;">&larr; Back to Ledger</a>
 
