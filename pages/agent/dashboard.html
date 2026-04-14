@@ -112,18 +112,45 @@
         // Hydrate the Form with Real Session Data (PostgreSQL)
         document.addEventListener("DOMContentLoaded", async () => {
             try {
-                const res = await fetch('/api/agents/me');
-                if (!res.ok) {
-                    window.location.href = '../../index.html';
-                    return;
+                let agent;
+                
+                // STAGING MOCK: Check if user logged in via UI
+                if (localStorage.getItem('auth_session') === 'active') {
+                    agent = {
+                        display_name: "Mock Agent User",
+                        membership_badge: "BASIC TIER",
+                        service_areas: [],
+                        specialties: [],
+                        bio: ""
+                    };
+                } else {
+                    const res = await fetch('/api/agents/me');
+                    if (!res.ok) {
+                        window.location.href = '../../index.html';
+                        return;
+                    }
+                    agent = await res.json();
                 }
-                const agent = await res.json();
 
                 // Fill Identity Sidebar
-                document.getElementById('sidebar-name').innerText = agent.display_name;
+                const nameEl = document.getElementById('sidebar-name');
+                const tierEl = document.getElementById('sidebar-tier');
+                if (nameEl) nameEl.innerText = agent.display_name;
+                if (tierEl) tierEl.innerText = agent.membership_badge ? agent.membership_badge.toUpperCase() : 'AGENT';
+
+                // Safely parse JSON blocks
+                let serviceAreas = [];
+                let specialties = [];
+                try { serviceAreas = Array.isArray(agent.service_areas) ? agent.service_areas : JSON.parse(agent.service_areas || '[]'); } catch(e){}
+                try { specialties = Array.isArray(agent.specialties) ? agent.specialties : JSON.parse(agent.specialties || '[]'); } catch(e){}
+
+                const areaEl = document.getElementById('f-areas');
+                const specEl = document.getElementById('f-specs');
+                const bioEl = document.getElementById('f-bio');
                 
-                // Usually we'd map membership ID, but here we can rely on our UI for mock tier name or a JOINed field in the payload
-                document.getElementById('sidebar-tier').innerText = agent.membership_badge ? agent.membership_badge.toUpperCase() : 'AGENT';
+                if (areaEl) areaEl.value = serviceAreas.join(', ');
+                if (specEl) specEl.value = specialties.join(', ');
+                if (bioEl) bioEl.value = agent.bio || '';
 
                 // Status Banners
                 if (agent.profile_status === 'pending_review' || agent.profile_status === 'published') {
