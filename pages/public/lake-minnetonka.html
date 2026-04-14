@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lake Homes for Sale on Lake Minnetonka</title>
+    <meta name="description" content="Discover luxury Lake Homes for Sale on Lake Minnetonka. Browse exclusive listings, connect with top local brokers, and explore elite waterfront living.">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .hero-seo {
+            height: 80vh;
+            min-height: 600px;
+            background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=2000&auto=format&fit=crop') center/cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #fff;
+            padding: 0 2rem;
+            margin-top: 80px; 
+        }
+
+        .seo-stats-bar {
+            background-color: var(--bg-dark);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            padding: 2rem 0;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            text-align: center;
+        }
+
+        .seo-stat h3 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            color: var(--accent-blue);
+        }
+
+        .seo-stat p {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #a0aec0;
+        }
+        
+        .listing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem 4rem 2rem;
+        }
+
+        .listing-card {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid #edf2f7;
+            transition: transform 0.2s;
+        }
+
+        .listing-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .listing-img-wrapper {
+            position: relative;
+            height: 250px;
+        }
+        
+        .listing-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .listing-info {
+            padding: 1.5rem;
+        }
+
+        .listing-price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+    <script src="../../components/components.js" defer></script>
+</head>
+<body style="background-color: #fff;">
+
+    <global-header></global-header>
+
+    <main>
+        <!-- SEO Hero -->
+        <section class="hero-seo">
+            <div style="max-width: 900px;">
+                <h1 style="font-size: 4rem; font-weight: 700; line-height: 1.1; margin-bottom: 1.5rem; letter-spacing: -2px;">Lake Homes For Sale <br><span style="color: var(--accent-blue);">On Lake Minnetonka</span></h1>
+                <p style="font-size: 1.25rem; color: #cbd5e0; margin-bottom: 2.5rem; font-weight: 400; max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.6;">Discover the pinnacle of Minnesota luxury. Experience unmatched waterfront estates, private yacht clubs, and elite dining just minutes from the Twin Cities.</p>
+                <div style="display: flex; gap: 1rem; justify-content: center;">
+                    <a href="#listings" class="btn btn-primary" style="padding: 1.2rem 2.5rem; font-size: 1.1rem; text-decoration: none;">View Listings</a>
+                    <button onclick="openModal()" class="btn btn-outline" style="padding: 1.2rem 2.5rem; font-size: 1.1rem; background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.3);">Contact an Expert</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEO Content Block 1 -->
+        <section class="sp-section" style="padding: 6rem 0;">
+            <div class="sp-grid">
+                <div class="sp-media-wrapper" style="height: 500px;">
+                    <img src="https://images.unsplash.com/photo-1579299496660-316ab80ad152?q=80&w=1200&auto=format&fit=crop" style="height: 100%; object-fit: cover; border-radius: 20px;" alt="Lake Minnetonka Boating">
+                </div>
+                <div>
+                    <h2 class="sp-title">The Ultimate <br>Boating Lifestyle</h2>
+                    <p style="color: #4a5568; line-height: 1.7; font-size: 1.1rem; margin-bottom: 1.5rem;">Lake Minnetonka isn't just a body of water; it's Minnesota's premier social and recreational playground. From highly coveted transient slips at Lord Fletcher's to the elite private docks of Wayzata bay, the lake offers a sprawling interconnected network of deep-water access.</p>
+                    <p style="color: #4a5568; line-height: 1.7; font-size: 1.1rem;">Owning a lake home here guarantees you front-row VIP access to the spectacular 4th of July fireworks, quiet morning paddle-boarding coves, and world-class walleye fishing exactly 30 feet from your back patio.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEO Content Block 2 -->
+        <section class="sp-section" style="padding: 6rem 0;">
+            <div class="sp-grid" style="direction: rtl;">
+                <div class="sp-media-wrapper" style="height: 500px; direction: ltr;">
+                    <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=1200&auto=format&fit=crop" style="height: 100%; object-fit: cover; border-radius: 20px;" alt="Lake Minnetonka Real Estate Estate">
+                </div>
+                <div style="direction: ltr;">
+                    <h2 class="sp-title">Trophy Real Estate<br>and Architecture</h2>
+                    <p style="color: #4a5568; line-height: 1.7; font-size: 1.1rem; margin-bottom: 1.5rem;">The housing inventory on Lake Minnetonka represents the pinnacle of architectural excellence in the Midwest. From historic, generational estates gracefully overlooking Gray's Bay, to ultra-modern glass architectural marvels nestled secretly along the shoreline of Orono, the options are spectacular.</p>
+                    <ul style="list-style: none; padding: 0; color: #4a5568; line-height: 1.7; font-size: 1.1rem;">
+                        <li style="margin-bottom: 0.5rem;"><strong style="color: #1a202c;">Wayzata & Orono:</strong> Unmatched luxury and top-tier school districts.</li>
+                        <li style="margin-bottom: 0.5rem;"><strong style="color: #1a202c;">Excelsior:</strong> Historic downtown charm and highly walkable boutique shopping.</li>
+                        <li style="margin-bottom: 0.5rem;"><strong style="color: #1a202c;">Minnetonka Beach:</strong> Extreme exclusivity and flat, sandy shorelines.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Active Listings Hub -->
+        <section id="listings" style="padding: 6rem 0 2rem 0;">
+            <div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem; margin-bottom: 3rem; text-align: center;">
+                <h2 style="font-size: 2.5rem; font-weight: 700; color: #1a202c; margin-bottom: 1rem;">Exclusive Minnetonka Listings</h2>
+                <p style="color: #718096; font-size: 1.1rem; max-width: 600px; margin: 0 auto;">Browse a curated feed of available properties currently dominating the local market.</p>
+            </div>
+
+            <div class="listing-grid">
+                <!-- Mock Listing 1 -->
+                <div class="listing-card">
+                    <div class="listing-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=800&auto=format&fit=crop" class="listing-img" alt="Lakefront Listing">
+                        <div style="position: absolute; top: 1rem; left: 1rem; background: #fff; color: var(--accent-blue); padding: 0.4rem 0.8rem; border-radius: 4px; font-weight: 700; font-size: 0.8rem; text-transform: uppercase;">Active</div>
+                    </div>
+                    <div class="listing-info">
+                        <div class="listing-price">$4,250,000</div>
+                        <div style="color: #4a5568; font-size: 1rem; margin-bottom: 1rem;">1204 Shoreline Dr, Wayzata, MN</div>
+                        <div style="display: flex; gap: 1.5rem; font-size: 0.9rem; color: #718096; border-top: 1px solid #edf2f7; padding-top: 1rem;">
+                            <span>4 Beds</span>
+                            <span>5 Baths</span>
+                            <span>6,200 sqft</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Mock Listing 2 -->
+                <div class="listing-card">
+                    <div class="listing-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1499696010180-025ef6e1a8f9?q=80&w=800&auto=format&fit=crop" class="listing-img" alt="Lakefront Listing">
+                        <div style="position: absolute; top: 1rem; left: 1rem; background: #fff; color: var(--accent-blue); padding: 0.4rem 0.8rem; border-radius: 4px; font-weight: 700; font-size: 0.8rem; text-transform: uppercase;">Active</div>
+                    </div>
+                    <div class="listing-info">
+                        <div class="listing-price">$2,100,000</div>
+                        <div style="color: #4a5568; font-size: 1rem; margin-bottom: 1rem;">90 Minnetonka Blvd, Excelsior, MN</div>
+                        <div style="display: flex; gap: 1.5rem; font-size: 0.9rem; color: #718096; border-top: 1px solid #edf2f7; padding-top: 1rem;">
+                            <span>3 Beds</span>
+                            <span>3 Baths</span>
+                            <span>3,100 sqft</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Mock Listing 3 -->
+                <div class="listing-card">
+                    <div class="listing-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1613545325278-f24b0cae1224?q=80&w=800&auto=format&fit=crop" class="listing-img" alt="Lakefront Listing">
+                        <div style="position: absolute; top: 1rem; left: 1rem; background: #fff; color: var(--accent-blue); padding: 0.4rem 0.8rem; border-radius: 4px; font-weight: 700; font-size: 0.8rem; text-transform: uppercase;">Just Listed</div>
+                    </div>
+                    <div class="listing-info">
+                        <div class="listing-price">$5,800,000</div>
+                        <div style="color: #4a5568; font-size: 1rem; margin-bottom: 1rem;">4400 Orono Orchard Rd, Orono, MN</div>
+                        <div style="display: flex; gap: 1.5rem; font-size: 0.9rem; color: #718096; border-top: 1px solid #edf2f7; padding-top: 1rem;">
+                            <span>6 Beds</span>
+                            <span>7 Baths</span>
+                            <span>8,400 sqft</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 4rem;">
+                <button onclick="openModal()" class="btn btn-outline" style="padding: 1rem 3rem;">Load More Properties</button>
+            </div>
+        </section>
+
+        <!-- Local Expert Section -->
+        <section style="background-color: #f7f9fa; padding: 6rem 0;">
+            <div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem; text-align: center;">
+                <h2 style="font-size: 2.5rem; font-weight: 700; color: #1a202c; margin-bottom: 1rem;">Your Lake Minnetonka Expert</h2>
+                <p style="color: #718096; font-size: 1.1rem; max-width: 700px; margin: 0 auto 3rem auto;">To navigate Minnesota's most competitive luxury market, you need representation that brings proven experience and off-market networks directly to your corner.</p>
+                
+                <div style="max-width: 450px; margin: 0 auto; text-align: left;">
+                    <a href="agent-david.html" style="text-decoration: none; color: inherit; display: block;" class="agent-link-wrapper">
+                    <div class="agent-card">
+                        <div style="position: absolute; top: 1rem; right: 1rem; background: var(--accent-blue); color: #fff; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.65rem; font-weight: 700; display: flex; align-items: center; gap: 0.3rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="#fff" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Top Agent
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=800&auto=format&fit=crop" alt="David Chen" class="agent-image">
+                        <div class="agent-info">
+                            <h3 class="agent-name">David Chen</h3>
+                            <div class="agent-title">Senior Lake Specialist</div>
+                            <p class="agent-bio">With over 15 years on Lake Minnetonka, David is an expert in luxury shoreline estates, high-value negotiations, and navigating complex zoning laws for ambitious buyers.</p>
+                        </div>
+                    </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final Lead Capture -->
+        <section class="sp-dark-section" style="padding: 6rem 0; text-align: center;">
+            <div style="max-width: 800px; margin: 0 auto; padding: 0 2rem;">
+                <h2 style="font-size: 3rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -1px;">Ready to Explore Minnetonka?</h2>
+                <p style="font-size: 1.15rem; color: #a0aec0; margin-bottom: 2.5rem; line-height: 1.6;">Let's get you on the water. Connect with us to view private inventory or get a sophisticated pricing analysis for your current waterfront estate.</p>
+                <div style="display: flex; gap: 1rem; justify-content: center;">
+                    <button class="btn btn-primary" style="padding: 1.25rem 2.5rem; font-size: 1.1rem; border: none;" onclick="openModal()">Start Your Journey</button>
+                    <a href="tel:18005550199" class="btn btn-outline" style="padding: 1.25rem 2.5rem; font-size: 1.1rem; color: #fff; border-color: rgba(255,255,255,0.3); text-decoration: none;">Call (800) 555-0199</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Global Footer -->
+    <global-footer></global-footer>
+
+    <!-- Lead Modal -->
+    <lead-modal></lead-modal>
+
+    <script>
+        function openModal() {
+            document.getElementById('lead-modal').classList.add('active');
+            nextModalStep(1);
+        }
+
+        function closeModal() {
+            document.getElementById('lead-modal').classList.remove('active');
+        }
+
+        function nextModalStep(step) {
+            document.querySelectorAll('.modal-step').forEach(el => el.classList.remove('active'));
+            document.getElementById('modal-step-' + step).classList.add('active');
+        }
+    </script>
+</body>
+</html>

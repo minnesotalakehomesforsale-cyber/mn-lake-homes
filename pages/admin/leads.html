@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Leads Inbox | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .admin-layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; background-color: #f7f9fa; }
+        .admin-sidebar { background-color: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+        .admin-content { padding: 4rem; overflow-y: auto; }
+        
+        .nav-link { display: flex; align-items: center; gap: 0.75rem; color: #a0aec0; text-decoration: none; padding: 0.85rem 1rem; border-radius: 8px; margin-bottom: 0.5rem; font-weight: 500; transition: all 0.2s; }
+        .nav-link:hover, .nav-link.active { background-color: rgba(255,255,255,0.1); color: #fff; }
+
+        .filter-tab { padding: 0.75rem 1.25rem; border: none; background: transparent; font-weight: 600; color: #718096; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.2s; }
+        .filter-tab:hover { color: #1a202c; }
+        .filter-tab.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
+        .filter-container { border-bottom: 1px solid #edf2f7; display: flex; gap: 0.5rem; margin-bottom: 2rem; overflow-x: auto; }
+
+        .ledger-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid #edf2f7; }
+        .ledger-table th { background: #f7f9fa; padding: 1.25rem 1.5rem; text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; border-bottom: 1px solid #edf2f7; font-weight: 700; }
+        .ledger-table td { padding: 1.25rem 1.5rem; border-bottom: 1px solid #edf2f7; vertical-align: middle; color: #2d3748; font-weight: 500; font-size: 0.9rem; }
+        .ledger-table tr:hover { background-color: #fcfcfc; cursor: pointer; }
+
+        .s-badge { padding: 0.35rem 0.6rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; display: inline-block; }
+        
+        /* Status Badges */
+        .status-new { background: #e6fffa; color: #319795; border: 1px solid #b2f5ea; }
+        .status-unassigned { background: #fffaf0; color: #dd6b20; border: 1px solid #feebc8; }
+        .status-assigned { background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; }
+        .status-in_progress { background: #ebf4ff; color: #4c51bf; border: 1px solid #c3dafe; }
+        
+        /* Source Badges */
+        .type-buyer { background: #f0fff4; color: #2f855a; }
+        .type-seller { background: #faf5ff; color: #6b46c1; }
+        .type-agent_inquiry { background: #fff5f5; color: #c53030; }
+        .type-general { background: #edf2f7; color: #4a5568; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div style="font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 3rem; padding-left: 1rem;">MNLH <span style="color: var(--accent-blue);">ADMIN</span></div>
+            <nav style="display: flex; flex-direction: column;">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="agents.html" class="nav-link">Agents Directory</a>
+                <a href="leads.html" class="nav-link active">Central Leads</a>
+                <a href="#" class="nav-link">Users Management</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-content">
+            <header style="margin-bottom: 2rem;">
+                <h1 style="font-size: 2rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; margin-bottom: 0.5rem;">Master Inbox</h1>
+                <p style="color: #718096; font-size: 1rem;">Centralized operational triage for all public endpoints.</p>
+            </header>
+
+            <div class="filter-container">
+                <button class="filter-tab active" onclick="filterTable('all', this)">All Leads</button>
+                <button class="filter-tab" onclick="filterTable('unassigned', this)">Requires Assignment</button>
+                <button class="filter-tab" onclick="filterTable('assigned', this)">Triage Processing</button>
+                <div style="border-left: 1px solid #e2e8f0; margin: 0.5rem; height: 20px;"></div>
+                <button class="filter-tab" onclick="filterType('buyer', this)">Map Buyers</button>
+                <button class="filter-tab" onclick="filterType('seller', this)">Map Sellers</button>
+                <button class="filter-tab" onclick="filterType('agent_inquiry', this)">Direct Agent Inquiries</button>
+            </div>
+
+            <table class="ledger-table">
+                <thead>
+                    <tr>
+                        <th>Identity Info</th>
+                        <th>Lead Type</th>
+                        <th>Routing Point</th>
+                        <th>Assignment</th>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- JS Populates this -->
+                </tbody>
+            </table>
+        </main>
+    </div>
+
+    <script src="../../components/components.js" defer></script>
+    <script>
+        async function getLeadsData() {
+            try {
+                const res = await fetch('/api/leads/admin/inbox');
+                if(!res.ok) return [];
+                return await res.json();
+            } catch (err) {
+                console.error(err);
+                return [];
+            }
+        }
+
+        function getStatusBadge(status) {
+            switch(status) {
+                case 'new': return `<span class="s-badge status-new">Fresh Lead</span>`;
+                case 'unassigned': return `<span class="s-badge status-unassigned">Unassigned</span>`;
+                case 'assigned': return `<span class="s-badge status-assigned">Assigned</span>`;
+                case 'in_progress': return `<span class="s-badge status-in_progress">Outreach Working</span>`;
+                default: return `<span class="s-badge" style="background:#edf2f7;">${status}</span>`;
+            }
+        }
+
+        function getTypeBadge(source) {
+            switch(source) {
+                case 'buyer': return `<span class="s-badge type-buyer">Buyer</span>`;
+                case 'seller': return `<span class="s-badge type-seller">Seller</span>`;
+                case 'agent_inquiry': return `<span class="s-badge type-agent_inquiry">Agent Explicit</span>`;
+                default: return `<span class="s-badge type-general">General Routing</span>`;
+            }
+        }
+
+        async function renderTable(filterFunc) {
+            const body = document.getElementById('tableBody');
+            body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">Loading Leads Engine...</td></tr>'; 
+
+            const leadsData = await getLeadsData();
+            body.innerHTML = '';
+            
+            const filtered = leadsData.filter(filterFunc);
+
+            filtered.forEach(l => {
+                const tr = document.createElement('tr');
+                tr.onclick = () => { window.location.href = `lead-review.html?id=${l.id}`; };
+                
+                let assignedNameStr = `<span style="font-size:0.8rem; font-style:italic; color:#a0aec0;">Unclaimed</span>`;
+                if(l.agent_id) {
+                    assignedNameStr = `<span style="font-weight:700; color:#2b6cb0;">${l.assigned_agent_name || 'Agent ID: '+l.agent_id}</span>`;
+                } else if(l.assigned_user_name) {
+                    assignedNameStr = `<span style="font-weight:700; color:#2f855a;">${l.assigned_user_name}</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td>
+                        <div style="font-weight: 700; color: #1a202c; font-size: 1rem;">${l.name}</div>
+                        <div style="font-size: 0.8rem; color: #718096;">${l.email ? l.email : 'No Email'} • ${l.phone ? l.phone : 'No Phone'}</div>
+                    </td>
+                    <td>${getTypeBadge(l.type)}</td>
+                    <td style="font-family: inherit; font-size: 0.8rem; font-weight: 600; color: #4a5568;">[${l.source}]</td>
+                    <td>${assignedNameStr}</td>
+                    <td>${getStatusBadge(l.status)}</td>
+                    <td style="color:#a0aec0; font-weight:600; font-size:0.8rem;">${new Date(l.created_at).toLocaleDateString()}</td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        function filterTable(status, el) {
+            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            if(status === 'all') renderTable(a => true);
+            else if(status === 'unassigned') renderTable(a => ['new', 'unassigned'].includes(a.status));
+            else renderTable(a => a.status === status);
+        }
+
+        function filterType(source, el) {
+            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            renderTable(a => a.source === source);
+        }
+
+        // Init
+        document.addEventListener("DOMContentLoaded", () => {
+            setTimeout(() => { renderTable(a => true); }, 100);
+        });
+    </script>
+</body>
+</html>

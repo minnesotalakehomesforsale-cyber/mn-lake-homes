@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Directory | MN Lake Homes</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="../../components/components.js" defer></script>
+    <style>
+        /* Modern Typography Variables */
+        :root {
+            --font-display: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+        
+        body { margin: 0; font-family: var(--font-body); background-color: #0b0f19; color: #fff; }
+
+        /* The 50/50 Split Hero Architecture */
+        .split-hero {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Left Side: Typography & Filters */
+        .hero-left {
+            padding: 8rem 4rem 4rem;
+            background: linear-gradient(135deg, #0b0f19 0%, #1a202c 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            z-index: 2;
+        }
+
+        .hero-left h1 {
+            font-family: var(--font-display);
+            font-size: 4.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -2px;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(180deg, #FFFFFF 0%, #A0AEC0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-left p {
+            font-size: 1.25rem;
+            color: #a0aec0;
+            line-height: 1.6;
+            max-width: 80%;
+            margin-bottom: 3rem;
+            font-weight: 300;
+        }
+
+        .premium-filter-bar {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Right Side: Visual Anchor & Dynamic Cinematic Grid */
+        .hero-right {
+            position: relative;
+            background-image: url('https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* Gradient Overlay fading grid smoothly into the image */
+        .hero-right::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to right, #0b0f19 0%, rgba(11,15,25,0.7) 40%, rgba(11,15,25,0.2) 100%);
+            z-index: 1;
+        }
+
+        /* The Translucent Floating Glass Grid */
+        .glass-grid-container {
+            position: absolute;
+            inset: 0;
+            z-index: 5;
+            padding: 8rem 4rem 4rem 2rem;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+        
+        /* Hide scrollbar for clean aesthetics */
+        .glass-grid-container::-webkit-scrollbar { display: none; }
+        .glass-grid-container { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 2rem;
+        }
+
+        /* Translucent Cinematic Cards */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 2rem;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            background: rgba(30, 41, 59, 0.7);
+            border-color: rgba(66, 153, 225, 0.4);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 20px rgba(66, 153, 225, 0.2);
+        }
+
+        .card-content { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100%; }
+
+        .agent-header {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .agent-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2b6cb0 0%, #1a365d 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #fff;
+            border: 2px solid rgba(255,255,255,0.2);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .agent-identity h3 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem; color: #fff; }
+        .agent-identity p { font-size: 0.85rem; color: #a0aec0; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 600; }
+
+        .glass-pill-container { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .glass-pill {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #e2e8f0;
+            padding: 0.4rem 0.8rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .tier-badge {
+            position: absolute; top: 1rem; right: 1rem;
+            background: rgba(221, 107, 32, 0.2);
+            border: 1px solid rgba(221, 107, 32, 0.5);
+            color: #fbd38d;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 0.35rem 0.75rem;
+            border-radius: 99px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 2;
+        }
+        .tier-specialist { background: rgba(56, 161, 105, 0.2); border-color: rgba(56, 161, 105, 0.5); color: #9ae6b4; }
+
+        .glass-btn {
+            margin-top: auto;
+            width: 100%;
+            padding: 1rem;
+            background: rgba(66, 153, 225, 0.15);
+            border: 1px solid rgba(66, 153, 225, 0.3);
+            color: #90cdf4;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .glass-btn:hover { background: rgba(66, 153, 225, 0.3); color: #fff; }
+
+        /* Media Query for responsiveness */
+        @media (max-width: 1024px) {
+            .split-hero { grid-template-columns: 1fr; }
+            .hero-right { display: none; /* In production, alter layout. Hiding for mobile MVP */ }
+        }
+    </style>
+</head>
+<body>
+
+    <global-header></global-header>
+
+    <div class="split-hero">
+        
+        <!-- Left Pane: Identity & Operations -->
+        <div class="hero-left">
+            <h1>The Elite<br>Network.</h1>
+            <p>Access Minnesota's most exclusive portfolio of legacy estates, guided by rigorously vetted local specialists.</p>
+            
+            <div class="premium-filter-bar">
+                <h4 style="font-family: var(--font-display); font-size: 1.1rem; color: #fff; margin-bottom: 1rem; letter-spacing: 1px; text-transform: uppercase;">Curate Directory</h4>
+                <div style="display: flex; gap: 1rem;">
+                    <select style="flex: 1; padding: 0.85rem; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 8px; outline: none;">
+                        <option>All Regions</option>
+                        <option>Lake Minnetonka</option>
+                        <option>Brainerd Lakes</option>
+                    </select>
+                    <button style="padding: 0.85rem 2rem; background: #fff; color: #1a202c; font-weight: 800; border: none; border-radius: 8px; cursor: pointer;">Search</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Pane: Cinematic Visuals & Translucent Glass Grid -->
+        <div class="hero-right">
+            <div class="glass-grid-container">
+                <div id="dynamic-agent-grid" class="agent-grid">
+                    <!-- Javascript injects the Glass Cards here -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        async function renderDirectory() {
+            try {
+                const res = await fetch('/api/agents/public');
+                const grid = document.getElementById('dynamic-agent-grid');
+                grid.innerHTML = '';
+                
+                if(!res.ok) {
+                    grid.innerHTML = `<div style="grid-column: 1 / -1; color: #fc8181; padding: 2rem;">Directory Database connection failed.</div>`;
+                    return;
+                }
+
+                const publicAgents = await res.json();
+
+                if(publicAgents.length === 0) {
+                    grid.innerHTML = `<div style="grid-column: 1 / -1; color: #a0aec0; padding: 2rem;">No approved agents found.</div>`;
+                    return;
+                }
+
+                publicAgents.forEach(agent => {
+                    const initials = agent.display_name.split(' ').map(n => n[0]).join('');
+                    
+                    let tierBadgeStr = '';
+                    if (agent.is_featured) tierBadgeStr = `<span class="tier-badge">Featured Core</span>`;
+                    else if (agent.membership_badge === "MN Lake Specialist" || agent.membership_badge === "Top Agent") tierBadgeStr = `<span class="tier-badge tier-specialist">${agent.membership_badge}</span>`;
+
+                    const specialtiesHTML = (agent.specialties || []).map(s => `<span class="glass-pill">${s}</span>`).join('');
+
+                    grid.innerHTML += `
+                        <div class="glass-card">
+                            ${tierBadgeStr}
+                            <div class="card-content">
+                                <div class="agent-header">
+                                    <div class="agent-avatar">${initials}</div>
+                                    <div class="agent-identity">
+                                        <h3>${agent.display_name}</h3>
+                                        <p>${agent.brokerage_name || 'Independent'}</p>
+                                    </div>
+                                </div>
+                                
+                                <div style="font-size: 0.75rem; color: #a0aec0; text-transform: uppercase; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: 1px;">Service Regions</div>
+                                <div style="font-weight: 500; color: #fff; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                    ${agent.city || 'Minnesota'}
+                                </div>
+                                
+                                <div class="glass-pill-container">
+                                    ${specialtiesHTML}
+                                </div>
+
+                                <a href="agent-profile.html?slug=${agent.slug}" class="glass-btn">View Intelligence Profile &rarr;</a>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            renderDirectory();
+        });
+    </script>
+</body>
+</html>

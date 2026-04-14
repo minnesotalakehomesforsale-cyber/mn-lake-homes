@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join The Network | MN Lake Homes</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Hero Section */
+        .join-hero {
+            padding: 12rem 2rem 8rem 2rem;
+            text-align: center;
+            background-color: var(--bg-dark);
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .join-hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=2000&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.15;
+            z-index: 0;
+        }
+
+        .join-hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .join-title {
+            font-size: 4.5rem;
+            font-weight: 800;
+            letter-spacing: -2px;
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+        }
+
+        .join-subtitle {
+            font-size: 1.35rem;
+            color: #cbd5e0;
+            font-weight: 400;
+            max-width: 700px;
+            margin: 0 auto 3rem auto;
+            line-height: 1.6;
+        }
+
+        /* Value Props */
+        .value-section {
+            padding: 8rem 2rem;
+            background-color: #fff;
+        }
+        
+        .value-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 4rem;
+        }
+
+        .value-card {
+            text-align: left;
+        }
+
+        .value-icon {
+            width: 64px;
+            height: 64px;
+            background-color: rgba(66, 153, 225, 0.1);
+            color: var(--accent-blue);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .value-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #1a202c;
+        }
+
+        .value-desc {
+            color: #718096;
+            line-height: 1.7;
+            font-size: 1.05rem;
+        }
+
+        /* Analytics Section */
+        .analytics-section {
+            padding: 6rem 2rem;
+            background-color: #1a202c;
+            color: #fff;
+        }
+
+        .stats-grid {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 4rem;
+            font-weight: 800;
+            color: var(--accent-blue);
+            margin-bottom: 0.5rem;
+            letter-spacing: -1px;
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Pricing Section */
+        .pricing-section {
+            padding: 5rem 2rem;
+            background-color: #f7f9fa;
+        }
+
+        .pricing-header {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 3rem;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            max-width: 1000px;
+            margin: 0 auto;
+            align-items: center;
+        }
+
+        .pricing-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid #edf2f7;
+            position: relative;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+        }
+
+        .pricing-card.popular {
+            border: 2px solid var(--accent-blue);
+            padding: 3rem 2rem;
+            z-index: 2;
+            box-shadow: 0 15px 40px rgba(66, 153, 225, 0.12);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-blue);
+            color: #fff;
+            padding: 0.5rem 1.5rem;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 10px rgba(66, 153, 225, 0.3);
+        }
+
+        .plan-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #1a202c;
+        }
+
+        .plan-price {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #1a202c;
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 1rem;
+            letter-spacing: -1px;
+        }
+
+        .plan-period {
+            font-size: 1rem;
+            color: #718096;
+            font-weight: 500;
+            margin-left: 0.25rem;
+        }
+
+        .plan-desc {
+            color: #718096;
+            line-height: 1.5;
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #edf2f7;
+            padding-bottom: 1.5rem;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 2rem 0;
+            flex-grow: 1;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            color: #4a5568;
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        .feature-icon {
+            color: var(--accent-blue);
+            flex-shrink: 0;
+            margin-top: 3px;
+        }
+
+        .pricing-btn {
+            width: 100%;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 1.25rem;
+            border-radius: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .stats-grid { grid-template-columns: 1fr; gap: 3rem; }
+            .pricing-card.popular { padding: 3.5rem 2.5rem; }
+        }
+    </style>
+    <script src="../../components/components.js" defer>
+        document.getElementById("agent-register-form")?.addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const alertBox = document.getElementById("register-alert");
+            alertBox.style.display = "block";
+            
+            const pwd = document.getElementById("reg-password").value;
+            const confirm = document.getElementById("reg-confirm").value;
+
+            if (pwd !== confirm) {
+                alertBox.style.backgroundColor = "#fff5f5";
+                alertBox.style.color = "#c53030";
+                alertBox.innerText = "Passwords do not match.";
+                return;
+            }
+
+            const payload = {
+                firstName: document.getElementById("reg-firstName").value,
+                lastName: document.getElementById("reg-lastName").value,
+                email: document.getElementById("reg-email").value,
+                phone: document.getElementById("reg-phone").value,
+                brokerage: document.getElementById("reg-brokerage").value,
+                password: pwd
+            };
+
+            // Simulated Backend Fetch Logic
+            try {
+                // In production: const res = await fetch("../../api/auth/register", { method:"POST"... })
+                // We mock the successful network cycle locally:
+                
+                alertBox.style.backgroundColor = "#ebf8ff";
+                alertBox.style.color = "#2b6cb0";
+                alertBox.innerText = "Provisioning secure account...";
+
+                setTimeout(() => {
+                    alertBox.style.backgroundColor = "#f0fff4";
+                    alertBox.style.color = "#2f855a";
+                    alertBox.innerText = "Account created! Redirecting to setup portal...";
+                    
+                    setTimeout(() => {
+                        window.location.href = "../../pages/agent/dashboard.html";
+                    }, 1500);
+                }, 1000);
+
+            } catch (err) {
+                alertBox.style.backgroundColor = "#fff5f5";
+                alertBox.style.color = "#c53030";
+                alertBox.innerText = "An error occurred during registration. Please try again.";
+            }
+        });
+
+    </script>
+</head>
+<body style="background-color: #fff;">
+
+    <global-header></global-header>
+
+    <!-- Hero Section -->
+    <section class="join-hero-new" style="height: 80vh; min-height: 600px; background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=2000&auto=format&fit=crop') center/cover; display: flex; align-items: center; justify-content: center; text-align: center; color: #fff; padding: 0 2rem; margin-top: 80px;">
+        <div style="max-width: 900px; position: relative;">
+            <h1 style="font-size: 4rem; font-weight: 700; line-height: 1.1; margin-bottom: 1.5rem; letter-spacing: -2px;">Elevate Your Career On <br><span style="color: var(--accent-blue);">Minnesota's Premier Platform</span></h1>
+            <p style="font-size: 1.25rem; color: #cbd5e0; margin-bottom: 2.5rem; font-weight: 400; max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.6;">Partner with MN Lake Homes to access high-intent luxury buyers, exclusive marketing technologies, and guaranteed territory exclusivity.</p>
+            <button class="btn btn-primary" style="padding: 1.25rem 3rem; font-size: 1.2rem; border: none; margin-top: 1rem;" onclick="document.getElementById('pricing').scrollIntoView({behavior: 'smooth'})">View Partnership Tiers</button>
+        </div>
+    </section>
+
+    <!-- Value Propositions -->
+    <section class="value-section">
+        <div style="text-align: center; margin-bottom: 5rem;">
+            <h2 style="font-size: 2.5rem; font-weight: 700; color: #1a202c; margin-bottom: 1rem;">Why Partner With Us?</h2>
+            <p style="font-size: 1.2rem; color: #718096;">We built exactly what top producers have been asking for.</p>
+        </div>
+
+        <div class="value-grid">
+            <div class="value-card">
+                <div class="value-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                </div>
+                <h3 class="value-title">Unrivaled Brand Prestige</h3>
+                <p class="value-desc">Associate your business with the most trusted luxury waterfront brand in Minnesota. Elevate your portfolio instantly through our premium online staging and presentation standards.</p>
+            </div>
+            
+            <div class="value-card">
+                <div class="value-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                </div>
+                <h3 class="value-title">High-Intent Lead Routing</h3>
+                <p class="value-desc">Stop paying for cold internet leads. Our SEO-dominated platform directly captures serious buyers and sellers searching specifically for Minnesota lakefront properties, routed to you in real-time.</p>
+            </div>
+
+            <div class="value-card">
+                <div class="value-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                </div>
+                <h3 class="value-title">Keep Your Brokerage</h3>
+                <p class="value-desc">MN Lake Homes is a lead generation and marketing network, meaning you don't have to leave your current broker to join us. You keep your commission splits—we just help you close more deals.</p>
+            </div>
+
+            <div class="value-card">
+                <div class="value-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                </div>
+                <h3 class="value-title">Exclusive Market Data</h3>
+                <p class="value-desc">Gain a massive advantage with our real-time analytics. We provide our partners with granular data on shoreline valuations, upcoming inventory, and specific buyer movements across every major lake chain.</p>
+            </div>
+
+            <div class="value-card">
+                <div class="value-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 19 2 12 11 5 11 19"></polygon><path d="M22 12A10 10 0 0 0 12 2v20a10 10 0 0 0 10-10z"></path></svg>
+                </div>
+                <h3 class="value-title">Done-for-You Marketing</h3>
+                <p class="value-desc">Stop wasting hours trying to build email campaigns and flyers. We handle the heavy lifting with automated premium print materials, PR distribution, and gorgeous social media kits directly tied to your name.</p>
+            </div>
+
+            <div class="value-card">
+                <div class="value-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                </div>
+                <h3 class="value-title">Elite Agent Community</h3>
+                <p class="value-desc">Join an exclusive roster of Minnesota's top-producing shoreline specialists. Collaborate seamlessly on complex shoreline regulations, swap high-intent buyers, and confidently exchange off-market listings.</p>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- Testimonial Section -->
+    <section class="testimonial-section">
+        <div class="testimonial-top">
+            <h2 class="testimonial-main-title">
+                Growth, exclusively<br>designed for the<br>waterfront agent.
+            </h2>
+            <div class="testimonial-controls">
+                <span class="slide-count">01 / 04</span>
+                <button class="slide-nav-btn" onclick="prevTestimonial()">&larr;</button>
+                <button class="slide-nav-btn" onclick="nextTestimonial()">&rarr;</button>
+            </div>
+        </div>
+
+        <div class="testimonial-bottom">
+            <div class="testimonial-info">
+                <p class="testimonial-category">Premier Partner</p>
+                <h3 class="testimonial-brand">Jessica & Co.</h3>
+                <p class="testimonial-quote">"Since joining MN Lake Homes, my luxury listing appointments have tripled. The centralized marketing is an absolute game-changer."</p>
+            </div>
+            
+            <div class="testimonial-media">
+                <div class="media-vertical-tab">Jessica & Co.</div>
+                <div class="media-image-wrapper">
+                    <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1200" alt="Successful Real Estate Agent">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing-section" id="pricing">
+        <div class="pricing-container">
+            <div class="pricing-header">
+                <h2 style="font-size: 3rem; font-weight: 800; color: #1a202c; margin-bottom: 1.5rem; letter-spacing: -1px;">Partnership Plans</h2>
+                <p style="font-size: 1.25rem; color: #718096; line-height: 1.6;">Whether you're an independent agent breaking into the luxury market or a seasoned team needing massive volume, we have a network tier for you.</p>
+            </div>
+
+            <div class="pricing-grid">
+                
+                <!-- Tier 1 -->
+                <div class="pricing-card">
+                    <h3 class="plan-name">Associate Agent</h3>
+                    <div class="plan-price">$99<span class="plan-period">/mo</span></div>
+                    <p class="plan-desc">Perfect for independent agents seeking to increase their exposure in the waterfront market.</p>
+                    <ul class="feature-list">
+                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Professional profile on our Agent Directory</li>
+                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Standard incoming lead rotation</li>
+                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Access to our private agent community</li>
+                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Use of MN Lake Homes branding</li>
+                    </ul>
+                    <button class="btn pricing-btn" style="background-color: #edf2f7; color: #1a202c; border: none;" onclick="document.getElementById('register-form-section').scrollIntoView({behavior: 'smooth'})">Apply Now</button>
+                </div>
+
+                <!-- Tier 2 -->
+                <div class="pricing-card popular">
+                    <div class="popular-badge">Most Popular</div>
+                    <h3 class="plan-name">Premier Partner</h3>
+                    <div class="plan-price">$299<span class="plan-period">/mo</span></div>
+                    <p class="plan-desc">Accelerate your luxury business with priority routing and market exclusivity.</p>
+                    <ul class="feature-list">
+                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <b>Everything in Associate, plus:</b></li>
+                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Featured placement in Agent Directory</li>
+                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Priority lead routing for your primary lake</li>
+                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> 1 Target Zip Code Lockout</li>
+                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Dedicated marketing support & PR assets</li>
+                    </ul>
+                    <button class="btn btn-primary pricing-btn" style="border: none; box-shadow: 0 10px 20px rgba(66, 153, 225, 0.3);" onclick="document.getElementById('register-form-section').scrollIntoView({behavior: 'smooth'})">Apply Now</button>
+                </div>
+
+                <!-- Tier 3 -->
+                <div class="pricing-card">
+                    <h3 class="plan-name">Elite Team</h3>
+                    <div class="plan-price">$599<span class="plan-period">/mo</span></div>
+                    <p class="plan-desc">Designed for high-performing teams requiring massive, steady inbound volume.</p>
+                    <ul class="feature-list">
+                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <b>Everything in Premier, plus:</b></li>
+                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Profiles for up to 5 team members</li>
+                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> 5 Target Zip Code Lockouts</li>
+                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> First access to off-market network listings</li>
+                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> 24/7 dedicated account manager</li>
+                    </ul>
+                    <button class="btn pricing-btn" style="background-color: #1a202c; color: #fff; border: none;" onclick="document.getElementById('register-form-section').scrollIntoView({behavior: 'smooth'})">Apply Now</button>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Sell section variant for Agents -->
+    <section class="sp-section" style="background-color: #fff;">
+        <div style="text-align: center; margin-bottom: 4rem;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            <h2 class="sp-title" style="font-size: 2.5rem; margin-top: 1rem;">A growth process<br>that manages itself</h2>
+        </div>
+        <div class="sp-grid">
+            <div class="sp-grey-box" style="background-color: #f7f9fa;">
+                <h3 class="sp-title" style="font-size: 2.2rem; margin-bottom: 1.5rem;">Keep <span>leads coming</span><br>every single day</h3>
+                <p style="margin-bottom: 3rem; color: #4a5568;">Your business deserves to be seen by the right demographics. We ensure your agent profile is highly visible to qualified buyers searching for lake homes.</p>
+                
+                <div class="sp-feat-list">
+                    <div class="sp-feat-item">
+                        <svg class="sp-feat-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16h16V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line></svg>
+                        <div class="sp-feat-content">
+                            <h4>Targeted Advertising</h4>
+                            <p>We utilize geofencing, demographic targeting, and premium social media campaigns to hunt down buyers specifically looking for properties in your territory.</p>
+                        </div>
+                    </div>
+                    <div class="sp-feat-item">
+                        <svg class="sp-feat-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline><polyline points="7.5 19.79 7.5 14.6 3 12"></polyline><polyline points="21 12 16.5 14.6 16.5 19.79"></polyline><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        <div class="sp-feat-content">
+                            <h4>National Network Syndication</h4>
+                            <p>Watch your listings hit the top luxury portals while also feeding directly into our proprietary internal network of out-of-state luxury investors.</p>
+                        </div>
+                    </div>
+                    <div class="sp-feat-item">
+                        <svg class="sp-feat-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <div class="sp-feat-content">
+                            <h4>Secure Lead Handoffs</h4>
+                            <p>We carefully vet and manage all incoming buyer inquiries to ensure absolute security and verify their financial qualifications before handing them to you.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sp-media-wrapper" style="height: 100%;">
+                <img src="https://images.unsplash.com/photo-1560520653-9e0e4c89eb11?q=80&w=1600&auto=format&fit=crop" style="height: 100%; object-fit: cover;" alt="Agents Closing Deal">
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section style="padding: 8rem 2rem; background-color: var(--bg-dark); color: #fff; text-align: center; border-top: 1px solid rgba(255,255,255,0.05);">
+        <div style="max-width: 700px; margin: 0 auto;">
+            <h2 style="font-size: 3.5rem; font-weight: 800; margin-bottom: 1.5rem; letter-spacing: -1px; line-height: 1.1;">Ready to dominate your lakeshore market?</h2>
+            <p style="font-size: 1.25rem; color: #a0aec0; margin-bottom: 3rem; line-height: 1.6;">Join Minnesota's fastest-growing luxury network. Submit your inquiry today and our growth team will be in touch within 24 hours.</p>
+            <button class="btn btn-primary" style="padding: 1.25rem 3rem; font-size: 1.2rem; border: none; box-shadow: 0 10px 25px rgba(66, 153, 225, 0.3);" onclick="document.getElementById('register-form-section').scrollIntoView({behavior: 'smooth'})">Apply For Partnership</button>
+        </div>
+    </section>
+
+    
+    <!-- Agent Registration Section -->
+    <section id="register-form-section" style="padding: 6rem 2rem; background-color: #f7f9fa; border-top: 1px solid #edf2f7;">
+        <div style="max-width: 600px; margin: 0 auto; background: #fff; padding: 3rem; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #edf2f7;">
+            <h2 style="font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; text-align: center;">Partner Registration</h2>
+            <p style="text-align: center; color: #718096; margin-bottom: 2rem;">Create your secure account shell. Your public profile will remain private until explicitly approved by our review team.</p>
+            
+            <div id="register-alert" style="display: none; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-weight: 500;"></div>
+
+            <form id="agent-register-form">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="form-group-sys">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #4a5568;">First Name *</label>
+                        <input type="text" id="reg-firstName" class="input-sys" placeholder="John" required>
+                    </div>
+                    <div class="form-group-sys">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #4a5568;">Last Name *</label>
+                        <input type="text" id="reg-lastName" class="input-sys" placeholder="Smith" required>
+                    </div>
+                </div>
+
+                <div class="form-group-sys" style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #4a5568;">Email Address *</label>
+                    <input type="email" id="reg-email" class="input-sys" placeholder="john.smith@example.com" required>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="form-group-sys">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #4a5568;">Phone Number *</label>
+                        <input type="tel" id="reg-phone" class="input-sys" placeholder="(555) 000-0000" required>
+                    </div>
+                    <div class="form-group-sys">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #4a5568;">Brokerage Name</label>
+                        <input type="text" id="reg-brokerage" class="input-sys" placeholder="e.g. Sotheby's">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                    <div class="form-group-sys">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #4a5568;">Password *</label>
+                        <input type="password" id="reg-password" class="input-sys" placeholder="••••••••" required minlength="8">
+                    </div>
+                    <div class="form-group-sys">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #4a5568;">Confirm Password *</label>
+                        <input type="password" id="reg-confirm" class="input-sys" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1.25rem; font-size: 1.1rem; border: none; font-weight: 700; box-shadow: 0 4px 6px rgba(66, 153, 225, 0.2);">Create Secure Account</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Global Footer -->
+
+    <global-footer></global-footer>
+
+    <!-- Full Screen Lead Modal -->
+    <lead-modal></lead-modal>
+
+    <script>
+        function openModal() {
+            document.getElementById('lead-modal').classList.add('active');
+            nextModalStep(1);
+        }
+
+        function closeModal() {
+            document.getElementById('lead-modal').classList.remove('active');
+        }
+
+        function nextModalStep(step) {
+            document.querySelectorAll('.modal-step').forEach(el => el.classList.remove('active'));
+            document.getElementById('modal-step-' + step).classList.add('active');
+        }
+
+        const testimonials = [
+            {
+                category: "Premier Partner",
+                brand: "Jessica & Co.",
+                quote: '"Since joining MN Lake Homes, my luxury listing appointments have tripled. The centralized marketing is an absolute game-changer."',
+                image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1200"
+            },
+            {
+                category: "Elite Team Leader",
+                brand: "The Carter Group",
+                quote: '"We needed a reliable influx of high-net-worth buyer leads. MN Lake Homes delivered in month one. The best ROI we’ve seen."',
+                image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=1200"
+            },
+            {
+                category: "Associate Agent",
+                brand: "Robert T.",
+                quote: '"The credibility of the brand alone has helped me win listings I previously would never have been considered for."',
+                image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=1200"
+            },
+            {
+                category: "Investment Sales",
+                brand: "Marcus W.",
+                quote: '"The zip-code lockout feature ensures I dominate my specific lake chain without competing against internal agents."',
+                image: "https://images.unsplash.com/photo-1552058544-f2b08422138a?q=80&w=1200"
+            }
+        ];
+
+        let currentTestimonial = 0;
+
+        function updateTestimonialUI() {
+            const t = testimonials[currentTestimonial];
+            document.querySelector('.testimonial-category').textContent = t.category;
+            document.querySelector('.testimonial-brand').textContent = t.brand;
+            document.querySelector('.testimonial-quote').textContent = t.quote;
+            document.querySelector('.media-image-wrapper img').src = t.image;
+            document.querySelector('.media-vertical-tab').textContent = t.brand;
+            document.querySelector('.slide-count').textContent = `0${currentTestimonial + 1} / 04`;
+        }
+
+        function nextTestimonial() {
+            currentTestimonial = (currentTestimonial + 1) % testimonials.length;
+            updateTestimonialUI();
+        }
+
+        function prevTestimonial() {
+            currentTestimonial = (currentTestimonial - 1 + testimonials.length) % testimonials.length;
+            updateTestimonialUI();
+        }
+    
+        document.getElementById("agent-register-form")?.addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const alertBox = document.getElementById("register-alert");
+            alertBox.style.display = "block";
+            
+            const pwd = document.getElementById("reg-password").value;
+            const confirm = document.getElementById("reg-confirm").value;
+
+            if (pwd !== confirm) {
+                alertBox.style.backgroundColor = "#fff5f5";
+                alertBox.style.color = "#c53030";
+                alertBox.innerText = "Passwords do not match.";
+                return;
+            }
+
+            const payload = {
+                firstName: document.getElementById("reg-firstName").value,
+                lastName: document.getElementById("reg-lastName").value,
+                email: document.getElementById("reg-email").value,
+                phone: document.getElementById("reg-phone").value,
+                brokerage: document.getElementById("reg-brokerage").value,
+                password: pwd
+            };
+
+            const fullName = payload.firstName + ' ' + payload.lastName;
+
+            // Physical Database Transaction (PostgreSQL Network Pipeline)
+            try {
+                alertBox.style.backgroundColor = "#ebf8ff";
+                alertBox.style.color = "#2b6cb0";
+                alertBox.innerText = "Provisioning secure account...";
+
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: payload.email,
+                        password: payload.password,
+                        display_name: fullName,
+                        license_number: 'Lic-Pending',
+                        brokerage_name: payload.brokerage
+                    })
+                });
+
+                const result = await res.json();
+                
+                if (!res.ok || result.error) {
+                    alertBox.style.backgroundColor = "#fff5f5";
+                    alertBox.style.color = "#c53030";
+                    alertBox.innerText = result.error || 'Server error';
+                    return;
+                }
+
+                alertBox.style.backgroundColor = "#f0fff4";
+                alertBox.style.color = "#2f855a";
+                alertBox.innerText = "Account created! Redirecting to setup portal...";
+                
+                setTimeout(() => {
+                    window.location.href = "../../pages/agent/dashboard.html";
+                    }, 1000);
+                }, 500);
+
+            } catch (err) {
+                alertBox.style.backgroundColor = "#fff5f5";
+                alertBox.style.color = "#c53030";
+                alertBox.innerText = "Database connection error.";
+            }
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us | MN Lake Homes</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .page-header {
+            padding: 12rem 2rem 5rem;
+            text-align: center;
+            background-color: var(--bg-dark);
+            color: #fff;
+        }
+        .page-title {
+            font-size: 4.5rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 1.5rem;
+        }
+        .page-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            max-width: 650px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .contact-section {
+            padding: 6rem 2rem 8rem 2rem;
+            background-color: #fff;
+            color: #000;
+        }
+        
+        .contact-wrapper {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            gap: 5rem;
+            justify-content: space-between;
+        }
+
+        .contact-info {
+            flex: 1;
+        }
+
+        .contact-form-container {
+            flex: 1.2;
+            background: #ffffff;
+            padding: 3.5rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+            border: 1px solid #edf2f7;
+        }
+
+        .cf-textarea {
+            width: 100%;
+            padding: 1.25rem 1.5rem;
+            font-size: 1rem;
+            border: 1px solid #dcdfe3;
+            border-radius: 12px;
+            background-color: #fafafa;
+            color: #000;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.2s, background-color 0.2s;
+            display: block;
+        }
+        
+        .cf-textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            background-color: #fff;
+        }
+
+        @media (max-width: 900px) {
+            .contact-wrapper {
+                flex-direction: column;
+                gap: 4rem;
+            }
+            .contact-form-container {
+                padding: 2rem;
+            }
+        }
+    </style>
+    <script src="../../components/components.js" defer></script>
+</head>
+<body style="background-color: #fff;">
+
+    <global-header></global-header>
+
+    <div class="page-header">
+        <h1 class="page-title">Contact Us</h1>
+        <p class="page-subtitle">Connect with our local Minnesota lake property specialists. We're ready to help you navigate your real estate journey.</p>
+    </div>
+
+    <section class="contact-section">
+        <div class="contact-wrapper">
+            
+            <div class="contact-info">
+                <h2 style="font-size: 3rem; font-weight: 700; margin-bottom: 3rem; letter-spacing: -1px; line-height: 1.1;">We'd love to<br>hear from you</h2>
+                
+                <div style="margin-bottom: 2.5rem;">
+                    <h4 style="font-size: 0.95rem; color: #718096; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Office Location</h4>
+                    <p style="font-size: 1.3rem; font-weight: 500; color: #1a202c; line-height: 1.5;">1200 Lakeview Blvd<br>Wayzata, MN 55391</p>
+                </div>
+                <div style="margin-bottom: 2.5rem;">
+                    <h4 style="font-size: 0.95rem; color: #718096; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Call Us</h4>
+                    <p style="font-size: 1.3rem; font-weight: 500; color: #1a202c;">(612) 555-LAKE</p>
+                </div>
+                <div style="margin-bottom: 2.5rem;">
+                    <h4 style="font-size: 0.95rem; color: #718096; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Email Us</h4>
+                    <p style="font-size: 1.3rem; font-weight: 500; color: var(--accent-blue);">hello@mnlakehomes.com</p>
+                </div>
+                
+                <div style="margin-top: 4rem;">
+                    <img src="https://images.unsplash.com/photo-1558227691-41ea78d1f631?q=80&w=1200&auto=format&fit=crop" style="width: 100%; border-radius: 20px; object-fit: cover; height: 300px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);" alt="Minnesota Lake Area">
+                </div>
+            </div>
+
+            <div class="contact-form-container">
+                <h3 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Send a message</h3>
+                <p style="color: #718096; margin-bottom: 2.5rem; font-size: 1.05rem;">Fill out the form below and a local specialist will be in touch within 24 hours.</p>
+                
+                <form onsubmit="event.preventDefault(); alert('Message sent successfully! Our team will reach out to you shortly.');">
+                    <div class="form-group">
+                        <input type="text" placeholder="Full Name" required>
+                    </div>
+                    <div class="form-group" style="display: flex; gap: 1rem;">
+                        <input type="email" placeholder="Email Address" required style="flex: 1;">
+                        <input type="tel" placeholder="Phone Number" style="flex: 1;">
+                    </div>
+                    <div class="form-group">
+                        <div class="select-wrapper">
+                            <select required>
+                                <option value="" disabled selected>I'm interested in...</option>
+                                <option value="buying">Buying a property</option>
+                                <option value="selling">Selling a property</option>
+                                <option value="renting">Finding a rental</option>
+                                <option value="general">General inquiry</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <textarea class="cf-textarea" rows="6" placeholder="How can we help you?" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1.25rem; font-size: 1.1rem; border: none; margin-top: 1rem;">Send Message</button>
+                </form>
+            </div>
+            
+        </div>
+    </section>
+
+    <!-- Global Footer -->
+    <global-footer></global-footer>
+
+    <!-- Full Screen Lead Modal -->
+    <lead-modal></lead-modal>
+
+    <script>
+        function openModal() {
+            document.getElementById('lead-modal').classList.add('active');
+            nextModalStep(1);
+        }
+
+        function closeModal() {
+            document.getElementById('lead-modal').classList.remove('active');
+        }
+
+        function nextModalStep(step) {
+            document.querySelectorAll('.modal-step').forEach(el => el.classList.remove('active'));
+            document.getElementById('modal-step-' + step).classList.add('active');
+        }
+    </script>
+</body>
+</html>

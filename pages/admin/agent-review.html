@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Review | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .admin-layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; background-color: #f7f9fa; }
+        .admin-sidebar { background-color: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+        .admin-content { padding: 4rem; overflow-y: auto; }
+        
+        .nav-link { display: flex; align-items: center; gap: 0.75rem; color: #a0aec0; text-decoration: none; padding: 0.85rem 1rem; border-radius: 8px; margin-bottom: 0.5rem; font-weight: 500; transition: all 0.2s; }
+        .nav-link:hover, .nav-link.active { background-color: rgba(255,255,255,0.1); color: #fff; }
+
+        .review-grid { display: grid; grid-template-columns: 1fr 350px; gap: 2.5rem; align-items: start; }
+        .review-panel { background: #fff; padding: 2.5rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 2rem; }
+        .data-section { margin-bottom: 2.5rem; padding-bottom: 2.5rem; border-bottom: 1px solid #edf2f7; }
+        .data-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .data-title { font-size: 1.1rem; font-weight: 700; color: #1a202c; margin-bottom: 1.25rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .data-point label { display: block; font-size: 0.75rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.25rem; }
+        .data-point div { font-weight: 500; color: #2d3748; font-size: 1.05rem; }
+
+        .action-btn { width: 100%; padding: 1rem; border: none; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.2s; margin-bottom: 1rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
+        .btn-approve { background: #38a169; color: #fff; box-shadow: 0 4px 10px rgba(56, 161, 105, 0.2); }
+        .btn-approve:hover { background: #2f855a; }
+        .btn-suspend { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+        .btn-suspend:hover { background: #fed7d7; }
+        .btn-draft { background: #fff; color: #4a5568; border: 1px solid #cbd5e0; }
+
+        .s-badge { padding: 0.5rem 1rem; border-radius: 99px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; border: 1px solid transparent; display: inline-block; }
+        .s-pending { background: #ebf8ff; color: #2b6cb0; border-color: #bee3f8; }
+        .s-published { background: #f0fff4; color: #2f855a; border-color: #c6f6d5; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div style="font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 3rem; padding-left: 1rem;">MNLH <span style="color: var(--accent-blue);">ADMIN</span></div>
+            <nav style="display: flex; flex-direction: column;">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="agents.html" class="nav-link active">Agents Directory</a>
+                <a href="#" class="nav-link">Central Leads</a>
+                <a href="#" class="nav-link">Users Management</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-content">
+            
+            <a href="agents.html" style="color: #718096; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 2rem;">&larr; Back to Ledger</a>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
+                <div>
+                    <h1 style="font-size: 2.5rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; margin-bottom: 0.5rem;">David Chen</h1>
+                    <p style="color: #718096; font-size: 1.1rem;">Formal submission review for public directory access.</p>
+                </div>
+                <div id="statusHook">
+                    <span class="s-badge s-pending">Pending Review</span>
+                    <span class="s-badge s-published" id="publishedBadge">Published Live</span>
+                </div>
+            </div>
+
+            <div class="review-grid">
+                
+                <!-- Explicit Data Payload (Left) -->
+                <div class="review-panel" id="dynamic-agent-payload">
+                    <div style="padding: 3rem; text-align: center; color: #a0aec0;">Loading Secure Agent Payload...</div>
+                </div>
+
+                <!-- Admin Action Gate (Right) -->
+                <div>
+                    <!-- Membership Control -->
+                    <div class="review-panel" style="padding: 2rem;">
+                        <h3 class="data-title" style="font-size: 0.9rem; margin-bottom: 1rem;">System Tier Array</h3>
+                        <div style="margin-bottom: 0.5rem;">
+                            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin-bottom: 0.5rem;">Assign Membership</label>
+                            <select id="membershipSelect" style="width: 100%; padding: 0.85rem; border-radius: 8px; border: 1px solid #cbd5e0; font-weight: 600; color: #1a202c; background: #f7f9fa; appearance: none;">
+                                <option value="Basic Tier">Basic Tier</option>
+                                <option value="MN Lake Specialist">MN Lake Specialist</option>
+                                <option value="Top Agent">Top Agent</option>
+                            </select>
+                        </div>
+                        <p style="font-size: 0.75rem; color: #a0aec0; line-height: 1.5;">Upgrades will trigger activity logs mapping to this admin's session UUID.</p>
+                    </div>
+
+                    <!-- Action Control -->
+                    <div class="review-panel" style="padding: 2rem;" id="actionPanel">
+                        <h3 class="data-title" style="font-size: 0.9rem; margin-bottom: 1rem; border-bottom: 1px solid #edf2f7; padding-bottom: 1rem;">Gatekeeper Actions</h3>
+                        
+                        <button class="action-btn btn-approve" onclick="executeAdminAction('published')">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> 
+                            Approve & Publish Live
+                        </button>
+                        
+                        <button class="action-btn btn-draft" onclick="executeAdminAction('draft')">Return to Draft Mode</button>
+                        <button class="action-btn btn-suspend" onclick="executeAdminAction('suspended')">Suspend Profile</button>
+                        
+                        <div id="actionResponse" style="display: none; padding: 1rem; background: #f0fff4; color: #2f855a; border-radius: 8px; font-weight: 600; font-size: 0.9rem; text-align: center; margin-top: 1rem;"></div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Ensure components are loaded for DB -->
+    <script src="../../components/components.js" defer></script>
+    
+    <script>
+        let currentAgentId = new URLSearchParams(window.location.search).get('id');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Need slight delay to ensure components.js injected db.js
+            setTimeout(async () => {
+                if(!currentAgentId) {
+                    document.getElementById('dynamic-agent-payload').innerHTML = "No Agent ID Provided.";
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`/api/admin/${currentAgentId}`);
+                    if(!res.ok) {
+                        document.getElementById('dynamic-agent-payload').innerHTML = "Agent ID Not Found in Database.";
+                        return;
+                    }
+                    const agent = await res.json();
+                    renderAgentData(agent);
+                } catch(err) {
+                    document.getElementById('dynamic-agent-payload').innerHTML = "Database Connection Failed.";
+                }
+            }, 100);
+        });
+
+        function renderAgentData(a) {
+            document.getElementById('headerName').innerText = a.display_name;
+            document.getElementById('membershipSelect').value = a.membership_name || a.membership_badge || 'Select Tier';
+
+            // Update Badge Logic
+            const statusContainer = document.getElementById('statusHook');
+            if (a.profile_status === 'published') {
+                statusContainer.innerHTML = `<span class="s-badge s-published" style="display:inline-block">Published Live</span>`;
+            } else if (a.profile_status === 'pending_review') {
+                statusContainer.innerHTML = `<span class="s-badge s-pending">Pending Review</span>`;
+            } else {
+                statusContainer.innerHTML = `<span class="s-badge" style="background:#edf2f7; color:#4a5568">${(a.profile_status || '').toUpperCase()}</span>`;
+            }
+
+            const getPills = (arr) => arr ? arr.map(i => `<span style="background: #edf2f7; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.85rem;">${i}</span>`).join('') : 'None Set';
+
+            const serviceAreas = Array.isArray(a.service_areas) ? a.service_areas : (JSON.parse(a.service_areas || '[]'));
+            const specialties = Array.isArray(a.specialties) ? a.specialties : (JSON.parse(a.specialties || '[]'));
+
+            document.getElementById('dynamic-agent-payload').innerHTML = `
+                <div class="data-section">
+                    <h3 class="data-title">Identity & Brokerage</h3>
+                    <div class="data-grid">
+                        <div class="data-point"><label>Display Name</label><div>${a.display_name}</div></div>
+                        <div class="data-point"><label>Brokerage Name</label><div>${a.brokerage_name || 'Not Provided'}</div></div>
+                        <div class="data-point"><label>License Number</label><div>${a.license_number || 'Pending'}</div></div>
+                        <div class="data-point"><label>Database ID</label><div style="font-size:0.8rem">${a.id}</div></div>
+                    </div>
+                </div>
+                <div class="data-section">
+                    <h3 class="data-title">Market Coverage</h3>
+                    <div class="data-grid" style="grid-template-columns: 1fr;">
+                        <div class="data-point"><label>Base City</label><div>${a.city || 'Not Set'}</div></div>
+                        <div class="data-point"><label>Service Arrays</label><div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">${getPills(serviceAreas)}</div></div>
+                        <div class="data-point"><label>Specialties</label><div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">${getPills(specialties)}</div></div>
+                    </div>
+                </div>
+                <div class="data-section">
+                    <h3 class="data-title">Professional Narrative</h3>
+                    <div class="data-point"><label>Agent Biography</label>
+                        <div style="line-height: 1.6; color: #4a5568;">${(a.bio || 'No Biography Provided.').replace(/\\n/g, '<br>')}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function executeAdminAction(newStatus) {
+            const panel = document.getElementById('actionResponse');
+            const newBadgeVal = document.getElementById('membershipSelect').value;
+
+            try {
+                const res = await fetch(`/api/admin/${currentAgentId}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus, membership_name: newBadgeVal })
+                });
+
+                if(res.ok) {
+                    panel.style.display = 'block';
+                    panel.style.background = '#f0fff4';
+                    panel.style.color = '#2f855a';
+                    panel.innerHTML = `Transaction Successful: Set status to '${newStatus}'`;
+                    
+                    // Force UI Reload to show accurate status
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    throw new Error('Database Update Failed');
+                }
+            } catch (err) {
+                panel.style.display = 'block';
+                panel.style.background = '#fff5f5';
+                panel.style.color = '#c53030';
+                panel.innerHTML = 'Database Update explicitly Failed.';
+            }
+        }
+</body>
+</html>

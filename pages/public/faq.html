@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQs | MN Lake Homes</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .page-header {
+            padding: 12rem 2rem 5rem;
+            text-align: center;
+            background-color: var(--bg-dark);
+            color: #fff;
+        }
+        .page-title {
+            font-size: 4.5rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 1.5rem;
+        }
+        .page-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            max-width: 650px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .faq-section {
+            padding: 6rem 2rem 8rem 2rem;
+            background-color: #fff;
+        }
+        .faq-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        details.faq-item {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1.5rem 0;
+            transition: all 0.3s ease;
+        }
+        
+        details.faq-item summary {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1a202c;
+            cursor: pointer;
+            list-style: none; /* Standard */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        details.faq-item summary::-webkit-details-marker {
+            display: none; /* WebKit */
+        }
+        
+        details.faq-item summary::after {
+            content: '+';
+            font-size: 1.8rem;
+            font-weight: 400;
+            color: var(--accent-blue);
+            transition: transform 0.2s ease;
+            line-height: 1;
+        }
+        
+        details.faq-item[open] summary::after {
+            transform: rotate(45deg);
+            color: #718096;
+        }
+        
+        details.faq-item p {
+            padding-top: 1.5rem;
+            color: #4a5568;
+            line-height: 1.7;
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .faq-contact-box {
+            background-color: #f7f9fa;
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            margin-top: 4rem;
+        }
+    </style>
+    <script src="../../components/components.js" defer></script>
+</head>
+<body style="background-color: #fff;">
+
+    <global-header></global-header>
+
+    <div class="page-header">
+        <h1 class="page-title">Frequently Asked Questions</h1>
+        <p class="page-subtitle">Everything you need to know about buying, selling, and living on Minnesota's beautiful lakes.</p>
+    </div>
+
+    <section class="faq-section">
+        <div class="faq-container">
+            
+            <details class="faq-item">
+                <summary>Do you only sell lakefront properties, or do you list homes near lakes as well?</summary>
+                <p>While we specialize in direct lakefront and waterfront estates, we also strongly represent properties that have deeded lake access or are situated within premium lake communities. Our focus is the lakeside lifestyle, and we assist buyers and sellers in all aspects of that market.</p>
+            </details>
+
+            <details class="faq-item">
+                <summary>What is the best time of year to buy or sell a Minnesota lake home?</summary>
+                <p>Historically, the market peaks in early spring (March through May) as buyers look to secure a property and close right before summer begins. However, selling in the late summer or fall can be highly advantageous as serious buyers look to close before winter descends. Our agents can help you time the market perfectly based on your specific lake and goals.</p>
+            </details>
+
+            <details class="faq-item">
+                <summary>Are there specific shoreline regulations I need to be aware of before buying?</summary>
+                <p>Absolutely. The Minnesota Department of Natural Resources (DNR) and local county watersheds have very specific zoning laws regarding shoreline alterations, dock placements, tree removal, and structural setbacks. Our local agents are experts in these regulations and will guide you through the compliance and permit process during your purchase.</p>
+            </details>
+
+            <details class="faq-item">
+                <summary>How do you determine the true value of a lakefront home?</summary>
+                <p>Pricing a lake property is significantly more complex than a standard residential home. We evaluate variables such as water clarity, shoreline quality (sand, weed, rock), elevation to the water, dock type, lake size/depth, and comparable sales on that specific body of water to ensure an accurate and competitive listing price.</p>
+            </details>
+
+            <details class="faq-item">
+                <summary>Can you help me find an off-market or private listing?</summary>
+                <p>Yes. Due to our extensive network and specialization in the luxury waterfront market across the state, we frequently have access to 'pocket listings' that never reach public platforms like Zillow or the MLS. We highly recommend connecting with an agent directly to get on our private buyer notification list.</p>
+            </details>
+
+            <details class="faq-item">
+                <summary>Do you offer property management or rental services?</summary>
+                <p>Yes, through our parent company network at the MN Lake Group, we offer comprehensive property management and seasonal rental services for investors looking to maximize the ROI on their waterfront assets while ensuring the home stays in pristine condition while they are away.</p>
+            </details>
+
+            <div class="faq-contact-box">
+                <h3 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 1rem; color: #1a202c;">Still have questions?</h3>
+                <p style="color: #4a5568; line-height: 1.6; margin-bottom: 2rem; font-size: 1.05rem;">Our local specialists are ready to answer any questions you have about specific lakes, communities, or the buying process.</p>
+                <button class="btn btn-primary" onclick="openModal()">Speak to an Agent</button>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Global Footer -->
+    <global-footer></global-footer>
+
+    <!-- Full Screen Lead Modal -->
+    <lead-modal></lead-modal>
+
+    <script>
+        function openModal() {
+            document.getElementById('lead-modal').classList.add('active');
+            nextModalStep(1);
+        }
+
+        function closeModal() {
+            document.getElementById('lead-modal').classList.remove('active');
+        }
+
+        function nextModalStep(step) {
+            document.querySelectorAll('.modal-step').forEach(el => el.classList.remove('active'));
+            document.getElementById('modal-step-' + step).classList.add('active');
+        }
+    </script>
+</body>
+</html>

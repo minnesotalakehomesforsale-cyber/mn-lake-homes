@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Triage | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .admin-layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; background-color: #f7f9fa; }
+        .admin-sidebar { background-color: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+        .admin-content { padding: 4rem; overflow-y: auto; }
+        
+        .nav-link { display: flex; align-items: center; gap: 0.75rem; color: #a0aec0; text-decoration: none; padding: 0.85rem 1rem; border-radius: 8px; margin-bottom: 0.5rem; font-weight: 500; transition: all 0.2s; }
+        .nav-link:hover, .nav-link.active { background-color: rgba(255,255,255,0.1); color: #fff; }
+
+        .review-grid { display: grid; grid-template-columns: 1fr 380px; gap: 2.5rem; align-items: start; }
+        .review-panel { background: #fff; padding: 2.5rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 2rem; }
+        
+        .data-title { font-size: 1rem; font-weight: 700; color: #1a202c; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #edf2f7; padding-bottom: 0.5rem; }
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .data-point { margin-bottom: 1.5rem; }
+        .data-point label { display: block; font-size: 0.75rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.25rem; }
+        .data-point div { font-weight: 600; color: #2d3748; font-size: 1rem; }
+
+        /* JSON Payload Formatter */
+        .json-map-list { list-style: none; padding: 0; margin: 0; }
+        .json-map-list li { padding: 1rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; }
+        .json-map-list li:last-child { border-bottom: none; }
+        .json-key { font-weight: 700; color: #4a5568; font-size: 0.9rem; text-transform: capitalize; }
+        .json-value { font-weight: 500; color: #2b6cb0; text-align: right; }
+
+        .s-badge { padding: 0.35rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: inline-block; }
+        .status-unassigned { background: #fffaf0; color: #dd6b20; border: 1px solid #feebc8; }
+        .type-buyer { background: #f0fff4; color: #2f855a; }
+
+        .control-select { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid #cbd5e0; font-weight: 600; color: #1a202c; appearance: none; background: #fff; margin-bottom: 1.5rem; }
+        .btn-full { width: 100%; padding: 1rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; }
+        .note-box { width: 100%; padding: 1rem; border-radius: 8px; border: 1px solid #cbd5e0; font-family: inherit; font-size: 0.9rem; margin-bottom: 1rem; resize: vertical; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div style="font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 3rem; padding-left: 1rem;">MNLH <span style="color: var(--accent-blue);">ADMIN</span></div>
+            <nav style="display: flex; flex-direction: column;">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="agents.html" class="nav-link">Agents Directory</a>
+                <a href="leads.html" class="nav-link active">Central Leads</a>
+                <a href="#" class="nav-link">Users Management</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-content">
+            
+            <a href="leads.html" style="color: #718096; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 2rem;">&larr; Back to Master Inbox</a>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
+                <div>
+                    <h1 id="lead-name" style="font-size: 2.5rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; margin-bottom: 0.25rem;">Loading...</h1>
+                    <p id="lead-sub" style="color: #718096; font-size: 1.1rem;">Retrieving Lead Thread</p>
+                </div>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <span id="badge-type" class="s-badge type-general" style="font-size: 0.9rem; padding: 0.5rem 1rem;">...</span>
+                    <span id="badge-status" class="s-badge status-unassigned" style="font-size: 0.9rem; padding: 0.5rem 1rem;">...</span>
+                </div>
+            </div>
+
+            <div class="review-grid">
+                <!-- Explicit Data Payload (Left) -->
+                <div>
+                    <div class="review-panel">
+                        <h3 class="data-title">Identity & Metadata</h3>
+                        <div class="data-grid" id="meta-grid">
+                            <!-- Injected -->
+                        </div>
+                        <div class="data-point" style="margin-top: 1rem;"><label>Direct Message</label>
+                            <div id="lead-message" style="line-height: 1.6; color: #4a5568; background: #f7f9fa; padding: 1.5rem; border-radius: 8px; border: 1px solid #edf2f7; font-weight: 400;">
+                                ...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assignment & Ops Sandbox (Right) -->
+                <div>
+                    <!-- Route Logic -->
+                    <div class="review-panel" style="padding: 2rem;">
+                        <h3 class="data-title">Operational Assignment</h3>
+                        
+                        <div class="data-point"><label>Current Owner</label>
+                            <div id="current-owner" style="color: #dd6b20; font-style: italic;">Loading...</div>
+                        </div>
+
+                        <div style="margin-top: 2rem;">
+                            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin-bottom: 0.5rem;">Assign To Agent</label>
+                            <select id="agent-dropdown" class="control-select">
+                                <option value="" disabled selected>Select Agent...</option>
+                                <!-- Map dynamically later in full release, using static values to test the ping for MVP -->
+                                <option value="8c8de6eb-b83b-4654-b5f7-679901bdc753">Route to Agent UUID (Example)</option>
+                            </select>
+                            
+                            <button class="btn-full" style="background:#38a169; color:#fff;" onclick="executeAssignment()">Execute Manual Assignment</button>
+                        </div>
+                    </div>
+
+                    <!-- internal notes -->
+                    <div class="review-panel" style="padding: 2rem;">
+                        <h3 class="data-title">Internal Lead Notebook</h3>
+                        
+                        <div id="notes-timeline" style="margin-bottom: 2rem;">
+                            <!-- Notes Inject Here -->
+                        </div>
+
+                        <textarea id="note-input" class="note-box" rows="4" placeholder="Type an internal note regarding this lead..."></textarea>
+                        <button class="btn-full" style="background:#edf2f7; color:#4a5568;" onclick="addNote()">Log Internal Note</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const leadId = urlParams.get('id');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if(!leadId) return alert("No Lead ID Target Provided");
+
+            try {
+                const res = await fetch(`/api/admin/leads/${leadId}`);
+                if(!res.ok) throw new Error("Lead Not Found");
+
+                const lead = await res.json();
+                
+                document.getElementById('lead-name').innerText = lead.full_name;
+                document.getElementById('lead-sub').innerText = `L-${lead.id.split('-')[0]} • Submitted ${new Date(lead.created_at).toLocaleDateString()}`;
+                
+                document.getElementById('badge-type').innerText = lead.lead_type.toUpperCase();
+                document.getElementById('badge-status').innerText = lead.lead_status.toUpperCase();
+                
+                if (lead.lead_status === 'assigned') {
+                    document.getElementById('badge-status').className = 's-badge type-buyer';
+                }
+
+                document.getElementById('meta-grid').innerHTML = `
+                    <div class="data-point"><label>Full Name</label><div>${lead.full_name}</div></div>
+                    <div class="data-point"><label>Email Address</label><div><a href="mailto:${lead.email}" style="color:var(--accent-blue);">${lead.email || 'N/A'}</a></div></div>
+                    <div class="data-point"><label>Phone Number</label><div>${lead.phone || 'N/A'}</div></div>
+                    <div class="data-point"><label>Origin Source URL</label><div style="font-family:monospace; color:#4a5568;">${lead.lead_source || 'Direct'}</div></div>
+                `;
+
+                document.getElementById('lead-message').innerText = lead.message || 'No direct message provided.';
+                
+                if(lead.assigned_agent_name) {
+                    const owner = document.getElementById('current-owner');
+                    owner.innerText = lead.assigned_agent_name;
+                    owner.style.color = '#2b6cb0';
+                    owner.style.fontStyle = 'normal';
+                } else if(lead.assigned_user_name) {
+                    const owner = document.getElementById('current-owner');
+                    owner.innerText = lead.assigned_user_name + " (Admin)";
+                    owner.style.color = '#2f855a';
+                    owner.style.fontStyle = 'normal';
+                } else {
+                    document.getElementById('current-owner').innerText = 'None (Unassigned)';
+                }
+
+                // Render Notes
+                const tl = document.getElementById('notes-timeline');
+                tl.innerHTML = '';
+                if(lead.notes.length === 0) {
+                    tl.innerHTML = '<p style="color:#a0aec0; font-size:0.85rem;">No internal routing logs yet.</p>';
+                } else {
+                    lead.notes.forEach(n => pushNoteToTimeline(n.content, n.author_name, n.created_at));
+                }
+
+            } catch (err) {
+                console.error(err);
+                alert("Database Engine Failed to load Lead");
+            }
+        });
+
+        async function executeAssignment() {
+            const select = document.getElementById('agent-dropdown');
+            if(select.value === "") return;
+            
+            try {
+                const res = await fetch(`/api/admin/leads/${leadId}/assign`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ agentId: select.value })
+                });
+
+                if(!res.ok) throw new Error("Update Failed");
+                
+                window.location.reload();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function addNote() {
+            const input = document.getElementById('note-input');
+            if(input.value.trim() === '') return;
+            
+            try {
+                const res = await fetch(`/api/admin/leads/${leadId}/notes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content: input.value })
+                });
+
+                if(!res.ok) throw new Error("Note Dispatch Failed");
+
+                window.location.reload();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        function pushNoteToTimeline(text, author, stamp) {
+            const tl = document.getElementById('notes-timeline');
+            tl.innerHTML += `
+                <div style="border-left: 2px solid #bee3f8; padding-left: 1rem; margin-bottom: 1.5rem; position: relative;">
+                    <div style="position: absolute; left: -5px; top: 0; width: 8px; height: 8px; background: #3182ce; border-radius: 50%;"></div>
+                    <div style="font-size: 0.75rem; font-weight: 700; color: #3182ce; text-transform: uppercase;">${author} • ${new Date(stamp).toLocaleDateString()}</div>
+                    <div style="font-size: 0.9rem; color: #1a202c; font-weight: 500; margin-top: 0.25rem;">${text}</div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MN Lake Homes Blog</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .blog-index-header {
+            padding: 12rem 2rem 5rem;
+            text-align: center;
+            background-color: var(--bg-dark);
+            color: #fff;
+        }
+        .blog-index-title {
+            font-size: 4.5rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 1.5rem;
+        }
+        .blog-index-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            max-width: 650px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+    </style>
+    <script src="../../components/components.js" defer></script>
+</head>
+<body style="background-color: #fff;">
+    <global-header></global-header>
+
+    <div class="blog-index-header">
+        <h1 class="blog-index-title">Advice and inspiration</h1>
+        <p class="blog-index-subtitle">Stories, strategies, and buyer guides built to help you find and enjoy your perfect Minnesota lakefront property.</p>
+    </div>
+
+    <!-- Reusing the css natively applied to .blog-section from style.css -->
+    <section class="blog-section" style="padding-top: 5rem;">
+        <div class="blog-container">
+            <div class="blog-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 3rem;">
+                
+                <a href="#" class="blog-card">
+                    <div class="blog-image">
+                        <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=1200" alt="Lake House Interior">
+                    </div>
+                    <div class="blog-meta">
+                        <span class="blog-tag">Buyer Guide</span>
+                        <span class="blog-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Read: 4 minutes</span>
+                    </div>
+                    <h3 class="blog-title">5 Things to Look For in a Lake Property</h3>
+                </a>
+
+                <a href="#" class="blog-card">
+                    <div class="blog-image">
+                        <img src="https://images.unsplash.com/photo-1533038590840-0229ce375960?q=80&w=1200" alt="Boat on Lake">
+                    </div>
+                    <div class="blog-meta">
+                        <span class="blog-tag">Local Life</span>
+                        <span class="blog-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Read: 3 minutes</span>
+                    </div>
+                    <h3 class="blog-title">Top 10 Lakes in Minnesota for Boating Enthusiasts</h3>
+                </a>
+
+                <a href="#" class="blog-card">
+                    <div class="blog-image">
+                        <img src="https://images.unsplash.com/photo-1582268612140-1bc6b4bbed2c?q=80&w=1200" alt="Selling a Home">
+                    </div>
+                    <div class="blog-meta">
+                        <span class="blog-tag">Seller Resources</span>
+                        <span class="blog-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Read: 5 minutes</span>
+                    </div>
+                    <h3 class="blog-title">How to Stage Your Cabin for Maximum Value</h3>
+                </a>
+
+                <a href="#" class="blog-card">
+                    <div class="blog-image">
+                        <img src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1400" alt="Pine Trees">
+                    </div>
+                    <div class="blog-meta">
+                        <span class="blog-tag">Community</span>
+                        <span class="blog-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Read: 4 minutes</span>
+                    </div>
+                    <h3 class="blog-title">Discovering the Magic of Northern Minnesota</h3>
+                </a>
+
+            </div>
+        </div>
+    </section>
+
+    <global-footer></global-footer>
+
+    <lead-modal></lead-modal>
+
+    <script>
+        function openModal() {
+            document.getElementById('lead-modal').classList.add('active');
+            nextModalStep(1);
+        }
+
+        function closeModal() {
+            document.getElementById('lead-modal').classList.remove('active');
+        }
+
+        function nextModalStep(step) {
+            document.querySelectorAll('.modal-step').forEach(el => el.classList.remove('active'));
+            document.getElementById('modal-step-' + step).classList.add('active');
+        }
+    </script>
+</body>
+</html>
