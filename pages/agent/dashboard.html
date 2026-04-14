@@ -72,8 +72,15 @@
 
                 <form id="profile-edit-form" onsubmit="event.preventDefault();">
                     <h3 class="form-section-title">Media Assets</h3>
-                    <div style="display: flex; gap: 2rem; margin-bottom: 3rem;">
-                        <label class="photo-upload-placeholder"><span style="font-size: 0.85rem; font-weight: 600;">+ Upload</span><input type="file" style="display: none;" accept="image/*"></label>
+                    <div style="display: flex; gap: 2rem; margin-bottom: 3rem; align-items: center;">
+                        <div id="profile-preview" style="width: 100px; height: 100px; border-radius: 50%; background-color: #edf2f7; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #e2e8f0;">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        </div>
+                        <label class="photo-upload-placeholder" style="cursor: pointer;">
+                            <span style="font-size: 0.85rem; font-weight: 600;">+ Select Image</span>
+                            <input type="file" id="profile-upload" style="display: none;" accept="image/*" onchange="previewImage(event)">
+                        </label>
+                        <p style="font-size: 0.8rem; color: #718096; margin-left: 1rem;">Recommended: Square, minimum 400x400px.</p>
                     </div>
 
                     <h3 class="form-section-title">Core Information</h3>
@@ -234,6 +241,19 @@
             const payload = extractFormPayload();
             
             try {
+                // STAGING MOCK
+                if (localStorage.getItem('auth_session') === 'active') {
+                    setTimeout(() => {
+                        document.getElementById('banner-draft').style.display = 'none';
+                        document.getElementById('banner-pending').style.display = 'flex';
+                        btn.textContent = "Updates Pending Review";
+                        btn.disabled = true;
+                        btn.style.opacity = "0.7";
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }, 800);
+                    return;
+                }
+
                 const res = await fetch('/api/agents/me', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
@@ -252,6 +272,24 @@
                 }
             } catch (err) {
                 alert('Network Error.');
+            }
+        }
+
+        // Handle local image preview
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profile-preview').innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                    
+                    // Mocking session avatar update for the global navbar if they upload here
+                    const avatarBtns = document.querySelectorAll('.profile-dropdown button');
+                    avatarBtns.forEach(btn => {
+                        btn.style.backgroundImage = `url('${e.target.result}')`;
+                    });
+                };
+                reader.readAsDataURL(file);
             }
         }
     </script>

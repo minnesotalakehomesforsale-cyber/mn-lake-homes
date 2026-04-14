@@ -16,11 +16,11 @@ class GlobalHeader extends HTMLElement {
             
             authHtml = `
             <div class="profile-dropdown" style="position: relative; display: inline-block;">
-                <button onclick="const menu = this.nextElementSibling; menu.style.display = menu.style.display === 'none' ? 'block' : 'none';" style="background: center/cover url('https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200&auto=format&fit=crop'); width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 0; transition: border-color 0.2s;" onmouseover="this.style.borderColor='var(--accent-blue)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'">
+                <button onclick="const menu = this.nextElementSibling; menu.style.display = menu.style.display === 'none' ? 'block' : 'none';" style="background: center/cover url('https://ui-avatars.com/api/?name=${encodeURIComponent(userType || 'User')}&background=e2e8f0&color=4a5568'); width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 0; transition: border-color 0.2s;" onmouseover="this.style.borderColor='var(--accent-blue)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'">
                 </button>
                 <div class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 60px; background: #fff; border: 1px solid #edf2f7; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); width: 240px; z-index: 1001; overflow: hidden; font-family: 'Inter', sans-serif;">
                     <div style="padding: 1.25rem 1rem; border-bottom: 1px solid #edf2f7; display: flex; align-items: center; gap: 0.75rem; background: #f7f9fa;">
-                        <div style="background: center/cover url('https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200&auto=format&fit=crop'); width: 36px; height: 36px; border-radius: 50%;"></div>
+                        <div style="background: center/cover url('https://ui-avatars.com/api/?name=${encodeURIComponent(userType || 'User')}&background=e2e8f0&color=4a5568'); width: 36px; height: 36px; border-radius: 50%;"></div>
                         <div style="flex-grow: 1;">
                             <div style="font-weight: 700; font-size: 0.95rem; color: #1a202c;">Your Profile</div>
                             <div style="font-size: 0.75rem; color: #718096; text-transform: capitalize; font-weight: 500;">${userType} Account</div>
