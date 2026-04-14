@@ -64,6 +64,7 @@ customElements.define("global-header", GlobalHeader);
 class GlobalFooter extends HTMLElement {
     connectedCallback() {
         const bp = getDepth();
+        const rp = getRoot();
         this.innerHTML = `<footer class="site-footer">
         <div class="footer-container">
             <div class="footer-brand">
