@@ -6,51 +6,98 @@
     <title>Admin Dashboard | MN Lake Homes</title>
     <link rel="stylesheet" href="../../styles/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="../../components/components.js" defer></script>
+    <style>
+        /* Admin layout — self-contained, does not depend on style.css body defaults */
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; }
+        .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        .admin-side {
+            background: #1a202c;
+            color: #fff;
+            padding: 2rem 1.5rem;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .admin-side h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 2.5rem; padding-left: 0.5rem; color: #fff; }
+        .admin-side h1 span { color: #1d6df2; }
+        .side-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; margin-bottom: 0.75rem; padding-left: 0.5rem; font-weight: 700; }
+        .side-nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+        .side-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            color: #a0aec0;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.15s;
+        }
+        .side-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .side-link.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+        .side-link.dim { opacity: 0.35; cursor: default; pointer-events: none; }
+        .side-signout { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #fc8181; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-top: 1rem; transition: all 0.15s; }
+        .side-signout:hover { background: rgba(252,129,129,0.1); }
 
+        .admin-main { padding: 3rem 3.5rem; background: #f7f9fa; overflow-y: auto; }
+        .admin-main h1 { font-size: 2rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; margin-bottom: 0.4rem; }
+        .admin-main .subtitle { color: #718096; font-size: 1rem; margin-bottom: 2.5rem; }
+
+        .metric-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.25rem; margin-bottom: 2.5rem; }
+        .m-card { background: #fff; border: 1px solid #edf2f7; border-radius: 10px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
+        .m-card.highlight { border: 2px solid #1d6df2; box-shadow: 0 8px 16px rgba(29,109,242,0.1); }
+        .m-card.danger { border-left: 4px solid #e53e3e; }
+        .m-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #718096; font-weight: 700; margin-bottom: 0.5rem; }
+        .m-value { font-size: 2.25rem; font-weight: 800; color: #1a202c; line-height: 1; }
+        .m-value.blue { color: #1d6df2; }
+        .m-alert { color: #dd6b20; border-left: 3px solid #dd6b20; padding-left: 0.75rem; margin-top: 0.75rem; font-size: 0.8rem; font-weight: 700; }
+
+        .section-head { font-size: 1.1rem; font-weight: 700; color: #1a202c; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #edf2f7; }
+        .list-panel { background: #fff; border-radius: 10px; border: 1px solid #edf2f7; box-shadow: 0 2px 4px rgba(0,0,0,0.03); overflow: hidden; }
+        .list-row { padding: 1.1rem 1.5rem; border-bottom: 1px solid #edf2f7; display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: background 0.1s; font-size: 0.9rem; }
+        .list-row:last-child { border-bottom: none; }
+        .list-row:hover { background: #f7f9fa; }
+        .badge-sm { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+        .badge-pending  { background: #bee3f8; color: #2b6cb0; }
+        .badge-pub      { background: #c6f6d5; color: #276749; }
+        .badge-draft    { background: #e2e8f0; color: #4a5568; }
+        .badge-suspended{ background: #fed7d7; color: #c53030; }
+    </style>
 </head>
 <body>
 
-    <div class="admin-layout">
-        <!-- Persistent Sidebar Navigation -->
-        <aside class="admin-sidebar">
-            <div style="font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 3rem; padding-left: 1rem;">MNLH <span style="color: var(--accent-blue);">ADMIN</span></div>
-            
-            <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; margin-bottom: 1rem; padding-left: 1rem;">Platform Operations</h4>
-            <nav style="display: flex; flex-direction: column;">
-                <a href="dashboard.html" class="admin-nav-link active">Dashboard</a>
-                <a href="agents.html" class="admin-nav-link">Agents Directory</a>
-                <a href="leads.html" class="admin-nav-link">Central Leads</a>
-                <a href="#" class="admin-nav-link" style="opacity:0.4; cursor:default;">Users Management</a>
-                <a href="#" class="admin-nav-link" style="opacity:0.4; cursor:default;">Membership Tiers</a>
-            </nav>
+<div class="admin-wrap">
+    <!-- Sidebar -->
+    <aside class="admin-side">
+        <h1>MNLH <span>ADMIN</span></h1>
+        <p class="side-label">Platform Operations</p>
+        <nav class="side-nav">
+            <a href="dashboard.html" class="side-link active">Dashboard</a>
+            <a href="agents.html"   class="side-link">Agents Directory</a>
+            <a href="leads.html"    class="side-link">Central Leads</a>
+            <a href="#" class="side-link dim">Users Management</a>
+            <a href="#" class="side-link dim">Membership Tiers</a>
+        </nav>
+        <a href="../../index.html" class="side-signout">Sign Out</a>
+    </aside>
 
-            <div style="margin-top: auto; padding-top: 10rem;">
-                <a href="../../index.html" class="admin-nav-link" style="color: #fc8181;">Sign Out</a>
-            </div>
-        </aside>
+    <!-- Main -->
+    <main class="admin-main">
+        <h1>System Overview</h1>
+        <p class="subtitle">Live data from the PostgreSQL database.</p>
 
-        <main class="admin-content">
-            <header style="margin-bottom: 3rem; display: flex; justify-content: space-between; align-items: flex-end;">
-                <div>
-                    <h1 style="font-size: 2.5rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; margin-bottom: 0.5rem;">System Overview</h1>
-                    <p style="color: #718096; font-size: 1.1rem;">Live data from the PostgreSQL database.</p>
-                </div>
-            </header>
+        <div class="metric-row" id="metric-row">
+            <div class="m-card"><div class="m-label">Loading</div><div class="m-value">—</div></div>
+        </div>
 
-            <div class="metric-grid" id="metric-grid">
-                <div class="metric-card"><div class="metric-title">Loading...</div><div class="metric-value">—</div></div>
-            </div>
-            
-            <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid #edf2f7; color: #1a202c;">Recent Agent Submissions</h2>
-            <div style="background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); overflow: hidden;">
-                <div id="recent-agents"><div style="padding:2rem; color:#718096;">Loading...</div></div>
-            </div>
-
-        </main>
-    </div>
-</body>
-</html>
+        <h2 class="section-head">Recent Agent Submissions</h2>
+        <div class="list-panel" id="recent-list">
+            <div class="list-row" style="color:#718096;">Loading...</div>
+        </div>
+    </main>
+</div>
 
 <script>
     async function loadDashboard() {
@@ -59,50 +106,67 @@
             if (!res.ok) throw new Error('API error');
             const agents = await res.json();
 
-            const total = agents.length;
-            const pending = agents.filter(a => a.profile_status === 'pending_review').length;
+            const total     = agents.length;
+            const pending   = agents.filter(a => a.profile_status === 'pending_review').length;
             const published = agents.filter(a => a.is_published).length;
-            const draft = agents.filter(a => a.profile_status === 'draft').length;
+            const draft     = agents.filter(a => a.profile_status === 'draft').length;
             const suspended = agents.filter(a => a.profile_status === 'suspended').length;
 
-            document.getElementById('metric-grid').innerHTML = `
-                <div class="metric-card">
-                    <div class="metric-title">Total Agents</div>
-                    <div class="metric-value">${total}</div>
+            document.getElementById('metric-row').innerHTML = `
+                <div class="m-card">
+                    <div class="m-label">Total Agents</div>
+                    <div class="m-value">${total}</div>
                 </div>
-                <div class="metric-card" style="border: 2px solid var(--accent-blue); box-shadow: 0 10px 20px rgba(66,153,225,0.1);">
-                    <div class="metric-title" style="color: var(--accent-blue);">Pending Approval</div>
-                    <div class="metric-value" style="color: var(--accent-blue);">${pending}</div>
-                    ${pending > 0 ? '<div class="metric-alert">Requires Admin Action!</div>' : ''}
+                <div class="m-card highlight">
+                    <div class="m-label">Pending Approval</div>
+                    <div class="m-value blue">${pending}</div>
+                    ${pending > 0 ? '<div class="m-alert">Requires Action</div>' : ''}
                 </div>
-                <div class="metric-card">
-                    <div class="metric-title">Published (Live)</div>
-                    <div class="metric-value">${published}</div>
+                <div class="m-card">
+                    <div class="m-label">Published (Live)</div>
+                    <div class="m-value">${published}</div>
                 </div>
-                <div class="metric-card">
-                    <div class="metric-title">Draft</div>
-                    <div class="metric-value">${draft}</div>
+                <div class="m-card">
+                    <div class="m-label">Draft</div>
+                    <div class="m-value">${draft}</div>
                 </div>
-                <div class="metric-card" style="border-left: 4px solid #e53e3e;">
-                    <div class="metric-title">Suspended</div>
-                    <div class="metric-value">${suspended}</div>
+                <div class="m-card danger">
+                    <div class="m-label">Suspended</div>
+                    <div class="m-value">${suspended}</div>
                 </div>
             `;
 
-            // Recent 5 submissions
-            const recent = [...agents].sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0)).slice(0,5);
-            document.getElementById('recent-agents').innerHTML = recent.length ? recent.map(a => `
-                <div style="padding:1.25rem 1.5rem; border-bottom:1px solid #edf2f7; display:flex; gap:1rem; align-items:center; cursor:pointer;" onclick="window.location.href='agents.html'">
-                    <span style="font-weight:700; color:#1a202c; min-width:160px;">${a.display_name}</span>
-                    <span style="font-size:0.8rem; color:#718096;">${a.brokerage_name || 'Independent'}</span>
-                    <span style="margin-left:auto;">${a.profile_status === 'pending_review' ? '<span style="background:#bee3f8;color:#2b6cb0;padding:0.2rem 0.6rem;border-radius:99px;font-size:0.75rem;font-weight:700;">Pending</span>' : a.profile_status === 'published' ? '<span style="background:#c6f6d5;color:#276749;padding:0.2rem 0.6rem;border-radius:99px;font-size:0.75rem;font-weight:700;">Published</span>' : '<span style="background:#e2e8f0;color:#4a5568;padding:0.2rem 0.6rem;border-radius:99px;font-size:0.75rem;font-weight:700;">Draft</span>'}</span>
-                </div>
-            `).join('') : '<div style="padding:2rem;color:#718096;">No agents registered yet.</div>';
+            const recent = [...agents]
+                .sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0))
+                .slice(0, 8);
+
+            document.getElementById('recent-list').innerHTML = recent.length
+                ? recent.map(a => {
+                    const badge = a.profile_status === 'pending_review'
+                        ? `<span class="badge-sm badge-pending">Pending</span>`
+                        : a.is_published
+                        ? `<span class="badge-sm badge-pub">Published</span>`
+                        : a.profile_status === 'suspended'
+                        ? `<span class="badge-sm badge-suspended">Suspended</span>`
+                        : `<span class="badge-sm badge-draft">Draft</span>`;
+                    return `
+                        <div class="list-row" onclick="window.location.href='agents.html'">
+                            <span style="font-weight:700;color:#1a202c;min-width:180px;">${a.display_name}</span>
+                            <span style="color:#718096;font-size:0.85rem;">${a.brokerage_name || 'Independent'}</span>
+                            <span style="margin-left:auto;">${badge}</span>
+                        </div>
+                    `;
+                }).join('')
+                : '<div class="list-row" style="color:#718096;">No agents registered yet.</div>';
 
         } catch (err) {
-            document.getElementById('metric-grid').innerHTML = '<div class="metric-card"><div class="metric-title" style="color:#e53e3e;">Could not load data</div><div style="font-size:0.85rem;color:#718096;margin-top:0.5rem;">Check API connection</div></div>';
+            document.getElementById('metric-row').innerHTML =
+                '<div class="m-card"><div class="m-label" style="color:#e53e3e;">API Error</div><div style="font-size:0.85rem;color:#718096;margin-top:0.5rem;">Could not reach /api/admin</div></div>';
         }
     }
 
     document.addEventListener('DOMContentLoaded', loadDashboard);
 </script>
+
+</body>
+</html>
