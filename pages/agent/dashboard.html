@@ -76,17 +76,17 @@
                         <div id="profile-preview" style="width: 100px; height: 100px; border-radius: 50%; background-color: #edf2f7; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #e2e8f0;">
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                         </div>
-                        <label class="photo-upload-placeholder" style="cursor: pointer;">
+                        <label class="photo-upload-placeholder" style="cursor: pointer;" for="profile-upload">
                             <span style="font-size: 0.85rem; font-weight: 600;">+ Select Image</span>
-                            <input type="file" id="profile-upload" style="display: none;" accept="image/*" onchange="previewImage(event)">
+                            <input type="file" id="profile-upload" style="opacity: 0; position: absolute; z-index: -1; width: 0.1px; height: 0.1px;" accept="image/*" onchange="previewImage(event)">
                         </label>
                         <p style="font-size: 0.8rem; color: #718096; margin-left: 1rem;">Recommended: Square, minimum 400x400px.</p>
                     </div>
 
                     <h3 class="form-section-title">Core Information</h3>
                     <div class="grid-2">
-                        <div class="form-group-sys"><label>Display Name *</label><input type="text" id="f-name" class="input-sys" placeholder="E.g., David Chen" required onkeyup="calcProgress()"></div>
-                        <div class="form-group-sys"><label>Brokerage Name *</label><input type="text" id="f-brokerage" class="input-sys" placeholder="E.g., Lakeshore Realty Group" required onkeyup="calcProgress()"></div>
+                        <div class="form-group-sys"><label>Display Name *</label><input type="text" id="f-name" class="input-sys" placeholder="E.g., David Chen" required oninput="calcProgress()"></div>
+                        <div class="form-group-sys"><label>Brokerage Name *</label><input type="text" id="f-brokerage" class="input-sys" placeholder="E.g., Lakeshore Realty Group" required oninput="calcProgress()"></div>
                     </div>
                     <div class="grid-2">
                         <div class="form-group-sys"><label>License Number</label><input type="text" id="f-license" class="input-sys"></div>
@@ -95,7 +95,7 @@
 
                     <h3 class="form-section-title">Public Contact Details</h3>
                     <div class="grid-2">
-                        <div class="form-group-sys"><label>Public Phone *</label><input type="tel" id="f-phone" class="input-sys" placeholder="(612) 555-0101" required onkeyup="calcProgress()"></div>
+                        <div class="form-group-sys"><label>Public Phone *</label><input type="tel" id="f-phone" class="input-sys" placeholder="(612) 555-0101" required oninput="calcProgress()"></div>
                         <div class="form-group-sys"><label>Public Email</label><input type="email" id="f-email" class="input-sys" placeholder="hello@davidchen.com"></div>
                     </div>
                     <div class="form-group-sys" style="margin-bottom: 3rem;"><label>Personal Website URL</label><input type="url" id="f-web" class="input-sys"></div>
@@ -103,13 +103,13 @@
                     <h3 class="form-section-title">Market Expertise</h3>
                     <p style="font-size: 0.9rem; color: #718096; margin-bottom: 1.5rem;">Separate items with commas.</p>
                     <div class="grid-2">
-                        <div class="form-group-sys"><label>Primary City *</label><input type="text" id="f-city" class="input-sys" placeholder="E.g., Wayzata" required onkeyup="calcProgress()"></div>
-                        <div class="form-group-sys"><label>Service Areas *</label><input type="text" id="f-areas" class="input-sys" placeholder="Lake Minnetonka, Brainerd" required onkeyup="calcProgress()"></div>
+                        <div class="form-group-sys"><label>Primary City *</label><input type="text" id="f-city" class="input-sys" placeholder="E.g., Wayzata" required oninput="calcProgress()"></div>
+                        <div class="form-group-sys"><label>Service Areas *</label><input type="text" id="f-areas" class="input-sys" placeholder="Lake Minnetonka, Brainerd" required oninput="calcProgress()"></div>
                     </div>
-                    <div class="form-group-sys" style="margin-bottom: 3rem;"><label>Specialties *</label><input type="text" id="f-specs" class="input-sys" placeholder="Luxury Waterfront, Relocation" required onkeyup="calcProgress()"></div>
+                    <div class="form-group-sys" style="margin-bottom: 3rem;"><label>Specialties *</label><input type="text" id="f-specs" class="input-sys" placeholder="Luxury Waterfront, Relocation" required oninput="calcProgress()"></div>
 
                     <h3 class="form-section-title">Professional Narrative</h3>
-                    <div class="form-group-sys" style="margin-bottom: 3rem;"><label>Agent Bio *</label><textarea id="f-bio" class="input-sys" rows="6" placeholder="Professional overview..." required onkeyup="calcProgress()"></textarea></div>
+                    <div class="form-group-sys" style="margin-bottom: 3rem;"><label>Agent Bio *</label><textarea id="f-bio" class="input-sys" rows="6" placeholder="Professional overview..." required oninput="calcProgress()"></textarea></div>
                 </form>
             </div>
         </div>
