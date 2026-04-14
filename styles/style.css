@@ -1679,3 +1679,236 @@ body {
     margin: 0 auto;
     padding: 4rem 2rem 8rem 2rem;
 }
+
+/* =========================================================================
+   PORTAL & ADMIN PANEL UTILITIES
+   Shared classes for admin dashboard, agent dashboard, and review pages.
+   These extend style.css — no inline <style> blocks needed in those pages.
+   ========================================================================= */
+
+/* Shared Portal Layout */
+.admin-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100vh;
+    background-color: #f7f9fa;
+}
+
+.admin-sidebar {
+    background-color: #1a202c;
+    color: #fff;
+    padding: 2rem 1.5rem;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.admin-content {
+    padding: 4rem;
+    overflow-y: auto;
+}
+
+.admin-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #a0aec0;
+    text-decoration: none;
+    padding: 0.85rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.admin-nav-link:hover,
+.admin-nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* Metric Cards */
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.metric-card {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid #edf2f7;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+}
+
+.metric-title {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #718096;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.metric-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #1a202c;
+    line-height: 1;
+}
+
+.metric-alert {
+    color: #dd6b20;
+    border-left: 3px solid #dd6b20;
+    padding-left: 1rem;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* Portal Panel (white card containers) */
+.portal-panel {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #edf2f7;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+    padding: 3rem;
+}
+
+.portal-section-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #edf2f7;
+    color: #1a202c;
+}
+
+/* Agent Dashboard Specific */
+.dashboard-container {
+    padding: 8rem 2rem 5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.status-banner {
+    padding: 1.25rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.status-draft {
+    background-color: #fffaf0;
+    border-left: 4px solid #dd6b20;
+    color: #9c4221;
+}
+
+.status-pending {
+    background-color: #ebf8ff;
+    border-left: 4px solid var(--accent-blue);
+    color: #2b6cb0;
+    display: none;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.photo-upload-placeholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background-color: #edf2f7;
+    border: 2px dashed #cbd5e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #718096;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.photo-upload-placeholder:hover {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+    background-color: #ebf8ff;
+}
+
+.progress-bar-container {
+    background: #edf2f7;
+    border-radius: 99px;
+    height: 10px;
+    width: 100%;
+    margin-top: 1rem;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: var(--accent-blue);
+    height: 100%;
+    width: 0%;
+    transition: width 0.4s ease;
+}
+
+/* Admin Data Tables */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.data-table th {
+    text-align: left;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #718096;
+    font-weight: 700;
+    background: #f7f9fa;
+    border-bottom: 2px solid #edf2f7;
+}
+
+.data-table td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #edf2f7;
+    color: #2d3748;
+    vertical-align: middle;
+}
+
+.data-table tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table tr:hover td {
+    background-color: #f7f9fa;
+}
+
+.s-badge {
+    display: inline-block;
+    padding: 0.3rem 0.75rem;
+    border-radius: 99px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-published  { background: #c6f6d5; color: #276749; }
+.status-pending    { background: #bee3f8; color: #2b6cb0; display: inline-block; }
+.status-draft      { background: #e2e8f0; color: #4a5568; display: inline-block; }
+.status-suspended  { background: #fed7d7; color: #c53030; }
+.status-new        { background: #fef3c7; color: #92400e; }
+.status-unassigned { background: #e2e8f0; color: #4a5568; }
+.type-buyer        { background: #ebf8ff; color: #2b6cb0; }
+.type-general      { background: #f0fff4; color: #276749; }
+

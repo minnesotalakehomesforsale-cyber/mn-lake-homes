@@ -7,20 +7,7 @@
     <link rel="stylesheet" href="../../styles/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="../../components/components.js" defer></script>
-    <style>
-        .admin-layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; background-color: #f7f9fa; }
-        .admin-sidebar { background-color: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-        .admin-content { padding: 4rem; overflow-y: auto; }
-        
-        .nav-link { display: flex; align-items: center; gap: 0.75rem; color: #a0aec0; text-decoration: none; padding: 0.85rem 1rem; border-radius: 8px; margin-bottom: 0.5rem; font-weight: 500; transition: all 0.2s; }
-        .nav-link:hover, .nav-link.active { background-color: rgba(255,255,255,0.1); color: #fff; }
-        
-        .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; }
-        .metric-card { background: #fff; padding: 2rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
-        .metric-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #718096; margin-bottom: 0.5rem; font-weight: 700; }
-        .metric-value { font-size: 2.5rem; font-weight: 800; color: #1a202c; line-height: 1; }
-        .metric-alert { color: #dd6b20; border-left: 3px solid #dd6b20; padding-left: 1rem; margin-top: 1rem; font-size: 0.9rem; font-weight: 600; }
-    </style>
+
 </head>
 <body>
 
@@ -31,15 +18,15 @@
             
             <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; margin-bottom: 1rem; padding-left: 1rem;">Platform Operations</h4>
             <nav style="display: flex; flex-direction: column;">
-                <a href="dashboard.html" class="nav-link active">Dashboard</a>
-                <a href="agents.html" class="nav-link">Agents Directory</a>
-                <a href="#" class="nav-link">Central Leads</a>
-                <a href="#" class="nav-link">Users Management</a>
-                <a href="#" class="nav-link">Membership Tiers</a>
+                <a href="dashboard.html" class="admin-nav-link active">Dashboard</a>
+                <a href="agents.html" class="admin-nav-link">Agents Directory</a>
+                <a href="leads.html" class="admin-nav-link">Central Leads</a>
+                <a href="#" class="admin-nav-link">Users Management</a>
+                <a href="#" class="admin-nav-link">Membership Tiers</a>
             </nav>
 
             <div style="margin-top: auto; padding-top: 10rem;">
-                <a href="../../index.html" class="nav-link" style="color: #fc8181;">Sign Out Framework</a>
+                <a href="../../index.html" class="admin-nav-link" style="color: #fc8181;">Sign Out</a>
             </div>
         </aside>
 
