@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
+        .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        .admin-side { background: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+        .admin-side h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 2.5rem; padding-left: 0.5rem; color: #fff; margin-top: 0; }
+        .admin-side h1 span { color: #1d6df2; }
+        .side-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; margin-bottom: 0.75rem; padding-left: 0.5rem; font-weight: 700; margin-top: 0; }
+        .side-nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+        .side-link { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #a0aec0; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.15s; }
+        .side-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .side-link.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+        .side-signout { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #fc8181; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-top: 1rem; transition: all 0.15s; cursor: pointer; }
+        .side-signout:hover { background: rgba(252,129,129,0.1); }
+        .admin-main { padding: 3rem 3.5rem; background: #f7f9fa; overflow-y: auto; }
+
+        /* Marketing sub-tabs */
+        .mkt-tabs { display: flex; gap: 0; border-bottom: 2px solid #edf2f7; margin-bottom: 2.5rem; }
+        .mkt-tab { padding: 0.85rem 1.75rem; border: none; background: none; font-family: inherit; font-size: 0.95rem; font-weight: 600; color: #718096; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
+        .mkt-tab:hover { color: #1a202c; }
+        .mkt-tab.active { color: #1d6df2; border-bottom-color: #1d6df2; }
+
+        /* Stat strip */
+        .stat-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; margin-bottom: 2rem; }
+        .stat-chip { background: #fff; border: 1px solid #edf2f7; border-radius: 10px; padding: 1.25rem 1.5rem; }
+        .stat-chip .label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 0.5rem; }
+        .stat-chip .val   { font-size: 2rem; font-weight: 800; letter-spacing: -1px; line-height: 1; color: #1a202c; }
+        .stat-chip .sub   { font-size: 0.78rem; color: #718096; margin-top: 0.3rem; font-weight: 500; }
+
+        /* Toolbar */
+        .toolbar { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+        .search-box { flex: 1; min-width: 220px; padding: 0.65rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.875rem; font-family: inherit; }
+        .search-box:focus { outline: none; border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.1); }
+        .filter-pill { padding: 0.5rem 1rem; border: 1px solid #e2e8f0; border-radius: 20px; background: #fff; font-size: 0.8rem; font-weight: 600; color: #718096; cursor: pointer; transition: all 0.15s; }
+        .filter-pill.active { background: #1d6df2; color: #fff; border-color: #1d6df2; }
+        .filter-pill:hover:not(.active) { border-color: #a0aec0; color: #1a202c; }
+        .export-btn { padding: 0.65rem 1.25rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #4a5568; transition: all 0.15s; white-space: nowrap; }
+        .export-btn:hover { background: #1a202c; color: #fff; border-color: #1a202c; }
+        .copy-btn { padding: 0.65rem 1.25rem; border: none; border-radius: 8px; background: #1d6df2; color: #fff; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: opacity 0.2s; white-space: nowrap; }
+        .copy-btn:hover { opacity: 0.85; }
+
+        /* Table */
+        .list-card { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: #f7f9fa; border-bottom: 1px solid #edf2f7; }
+        th { padding: 0.85rem 1.25rem; text-align: left; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #718096; }
+        td { padding: 1rem 1.25rem; font-size: 0.875rem; border-bottom: 1px solid #f7f9fa; vertical-align: middle; color: #2d3748; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #fcfcfc; }
+
+        .type-badge { display: inline-block; padding: 0.2rem 0.55rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+        .tb-buyer   { background: #f0fff4; color: #2f855a; }
+        .tb-seller  { background: #faf5ff; color: #6b46c1; }
+        .tb-agent   { background: #fff5f5; color: #c53030; }
+        .tb-general { background: #edf2f7; color: #4a5568; }
+        .tb-agent_list { background: #ebf4ff; color: #2b6cb0; }
+
+        .source-tag { font-size: 0.78rem; color: #a0aec0; font-weight: 600; }
+        .empty-state { padding: 4rem 2rem; text-align: center; color: #a0aec0; }
+    </style>
+</head>
+<body>
+<div class="admin-wrap">
+
+    <!-- Sidebar -->
+    <aside class="admin-side">
+        <h1>MNLH <span>ADMIN</span></h1>
+        <p class="side-label">Platform Operations</p>
+        <nav class="side-nav">
+            <a href="dashboard.html"  class="side-link">Dashboard</a>
+            <a href="agents.html"     class="side-link">Agents Directory</a>
+            <a href="leads.html"      class="side-link">Central Leads</a>
+            <a href="users.html"      class="side-link">Users Management</a>
+            <a href="marketing.html"  class="side-link active">Marketing</a>
+        </nav>
+        <a href="/index.html" target="_blank" style="display:block;padding:0.75rem 1rem;border-radius:8px;color:#a0aec0;text-decoration:none;font-size:0.85rem;font-weight:500;margin-top:0.5rem;border:1px solid rgba(255,255,255,0.08);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">↗ View Live Site</a>
+        <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>{window.location.href='/index.html';})" class="side-signout">Sign Out</a>
+    </aside>
+
+    <!-- Main -->
+    <main class="admin-main">
+        <header style="margin-bottom: 2rem;">
+            <h1 style="font-size: 2rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 0.25rem;">Marketing</h1>
+            <p style="color: #718096;">Newsletter audiences, email lists, and outreach tools.</p>
+        </header>
+
+        <!-- Marketing Sub-tabs -->
+        <div class="mkt-tabs">
+            <button class="mkt-tab active" onclick="switchTab('newsletter', this)">Newsletter</button>
+        </div>
+
+        <!-- ── NEWSLETTER TAB ── -->
+        <div id="tab-newsletter">
+
+            <!-- Inner tabs: Customer vs Agent -->
+            <div style="display:flex; gap:0.75rem; margin-bottom:2rem;">
+                <button id="nl-btn-customer" class="filter-pill active" onclick="switchList('customer', this)">Customer Newsletter</button>
+                <button id="nl-btn-agents"   class="filter-pill"        onclick="switchList('agents', this)">Agent Newsletter</button>
+            </div>
+
+            <!-- CUSTOMER NEWSLETTER -->
+            <div id="nl-customer">
+                <div class="stat-strip" id="customer-stats">
+                    <div class="stat-chip"><div class="label">Total Subscribers</div><div class="val" id="cs-total">—</div><div class="sub">leads with email</div></div>
+                    <div class="stat-chip"><div class="label">Buyers</div><div class="val" id="cs-buyers" style="color:#2f855a;">—</div><div class="sub">buyer leads</div></div>
+                    <div class="stat-chip"><div class="label">Sellers</div><div class="val" id="cs-sellers" style="color:#6b46c1;">—</div><div class="sub">seller leads</div></div>
+                    <div class="stat-chip"><div class="label">General / Other</div><div class="val" id="cs-general" style="color:#718096;">—</div><div class="sub">inquiries & other</div></div>
+                </div>
+
+                <div class="toolbar">
+                    <input type="text" class="search-box" placeholder="Search name or email..." oninput="filterCustomer(this.value)">
+                    <button class="filter-pill active" id="cpill-all"    onclick="filterCustomerType('all',this)">All</button>
+                    <button class="filter-pill"        id="cpill-buyer"  onclick="filterCustomerType('buyer',this)">Buyers</button>
+                    <button class="filter-pill"        id="cpill-seller" onclick="filterCustomerType('seller',this)">Sellers</button>
+                    <button class="filter-pill"        id="cpill-other"  onclick="filterCustomerType('other',this)">Other</button>
+                    <button class="export-btn" onclick="exportCSV(filteredCustomer, 'customer-newsletter')">↓ Export CSV</button>
+                    <button class="copy-btn" onclick="copyEmails(filteredCustomer)">Copy All Emails</button>
+                </div>
+
+                <div class="list-card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Type</th>
+                                <th>Source</th>
+                                <th>Date Added</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customer-tbody">
+                            <tr><td colspan="5" class="empty-state">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- AGENT NEWSLETTER -->
+            <div id="nl-agents" style="display:none;">
+                <div class="stat-strip" id="agent-stats">
+                    <div class="stat-chip"><div class="label">Total Agents</div><div class="val" id="as-total">—</div><div class="sub">on platform</div></div>
+                    <div class="stat-chip"><div class="label">Published</div><div class="val" id="as-published" style="color:#2f855a;">—</div><div class="sub">live profiles</div></div>
+                    <div class="stat-chip"><div class="label">Pending Review</div><div class="val" id="as-pending" style="color:#dd6b20;">—</div><div class="sub">awaiting approval</div></div>
+                    <div class="stat-chip"><div class="label">Draft</div><div class="val" id="as-draft" style="color:#718096;">—</div><div class="sub">incomplete profiles</div></div>
+                </div>
+
+                <div class="toolbar">
+                    <input type="text" class="search-box" placeholder="Search name, email, or brokerage..." oninput="filterAgent(this.value)">
+                    <button class="filter-pill active" id="apill-all"       onclick="filterAgentStatus('all',this)">All</button>
+                    <button class="filter-pill"        id="apill-published" onclick="filterAgentStatus('published',this)">Published</button>
+                    <button class="filter-pill"        id="apill-pending"   onclick="filterAgentStatus('pending_review',this)">Pending</button>
+                    <button class="filter-pill"        id="apill-draft"     onclick="filterAgentStatus('draft',this)">Draft</button>
+                    <button class="export-btn" onclick="exportCSV(filteredAgents, 'agent-newsletter')">↓ Export CSV</button>
+                    <button class="copy-btn" onclick="copyEmails(filteredAgents)">Copy All Emails</button>
+                </div>
+
+                <div class="list-card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Agent Name</th>
+                                <th>Email</th>
+                                <th>Brokerage</th>
+                                <th>Status</th>
+                                <th>Location</th>
+                                <th>Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody id="agent-tbody">
+                            <tr><td colspan="6" class="empty-state">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // ── State ────────────────────────────────────────────────────────────────
+    let allCustomer = [];
+    let filteredCustomer = [];
+    let customerTypeFilter = 'all';
+    let customerSearch = '';
+
+    let allAgents = [];
+    let filteredAgents = [];
+    let agentStatusFilter = 'all';
+    let agentSearch = '';
+
+    // ── Tab Switching ────────────────────────────────────────────────────────
+    function switchTab(tab, btn) {
+        document.querySelectorAll('.mkt-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-newsletter').style.display = tab === 'newsletter' ? 'block' : 'none';
+    }
+
+    function switchList(which, btn) {
+        document.getElementById('nl-btn-customer').classList.toggle('active', which === 'customer');
+        document.getElementById('nl-btn-agents').classList.toggle('active', which === 'agents');
+        document.getElementById('nl-customer').style.display = which === 'customer' ? 'block' : 'none';
+        document.getElementById('nl-agents').style.display   = which === 'agents'   ? 'block' : 'none';
+    }
+
+    // ── Load Data ────────────────────────────────────────────────────────────
+    async function loadAll() {
+        const [leadsRes, agentsRes] = await Promise.all([
+            fetch('/api/leads/admin/inbox').then(r => r.ok ? r.json() : []).catch(() => []),
+            fetch('/api/admin').then(r => r.ok ? r.json() : []).catch(() => [])
+        ]);
+
+        // Customer list = leads with email
+        allCustomer = leadsRes.filter(l => l.email && l.email.trim() !== '');
+        filteredCustomer = [...allCustomer];
+        renderCustomerStats();
+        renderCustomerTable(filteredCustomer);
+
+        // Agent list = agents with email (u.email from getLedger)
+        allAgents = agentsRes.filter(a => a.email && a.email.trim() !== '');
+        filteredAgents = [...allAgents];
+        renderAgentStats();
+        renderAgentTable(filteredAgents);
+    }
+
+    // ── Customer Newsletter ──────────────────────────────────────────────────
+    function renderCustomerStats() {
+        document.getElementById('cs-total').textContent   = allCustomer.length;
+        document.getElementById('cs-buyers').textContent  = allCustomer.filter(l => l.type === 'buyer').length;
+        document.getElementById('cs-sellers').textContent = allCustomer.filter(l => l.type === 'seller').length;
+        document.getElementById('cs-general').textContent = allCustomer.filter(l => !['buyer','seller'].includes(l.type)).length;
+    }
+
+    function applyCustomerFilters() {
+        filteredCustomer = allCustomer.filter(l => {
+            const matchType = customerTypeFilter === 'all'
+                || (customerTypeFilter === 'buyer'  && l.type === 'buyer')
+                || (customerTypeFilter === 'seller' && l.type === 'seller')
+                || (customerTypeFilter === 'other'  && !['buyer','seller'].includes(l.type));
+            const q = customerSearch.toLowerCase();
+            const matchSearch = !q || (l.name||'').toLowerCase().includes(q) || (l.email||'').toLowerCase().includes(q);
+            return matchType && matchSearch;
+        });
+        renderCustomerTable(filteredCustomer);
+    }
+
+    function filterCustomer(q) { customerSearch = q; applyCustomerFilters(); }
+
+    function filterCustomerType(type, btn) {
+        customerTypeFilter = type;
+        ['all','buyer','seller','other'].forEach(t => document.getElementById(`cpill-${t}`).classList.remove('active'));
+        btn.classList.add('active');
+        applyCustomerFilters();
+    }
+
+    function renderCustomerTable(rows) {
+        const tbody = document.getElementById('customer-tbody');
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No subscribers match this filter.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows.map(l => {
+            const typeMap = { buyer: 'tb-buyer', seller: 'tb-seller', agent_inquiry: 'tb-agent' };
+            const typeClass = typeMap[l.type] || 'tb-general';
+            const typeLabel = (l.type || 'general').replace(/_/g, ' ');
+            const date = new Date(l.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const src = l.source || '—';
+            return `<tr>
+                <td style="font-weight:700;color:#1a202c;">${l.name}</td>
+                <td><a href="mailto:${l.email}" style="color:#1d6df2;text-decoration:none;font-weight:500;">${l.email}</a></td>
+                <td><span class="type-badge ${typeClass}">${typeLabel}</span></td>
+                <td class="source-tag">${src}</td>
+                <td style="color:#a0aec0;font-weight:600;font-size:0.8rem;">${date}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    // ── Agent Newsletter ─────────────────────────────────────────────────────
+    function renderAgentStats() {
+        document.getElementById('as-total').textContent     = allAgents.length;
+        document.getElementById('as-published').textContent = allAgents.filter(a => a.profile_status === 'published').length;
+        document.getElementById('as-pending').textContent   = allAgents.filter(a => a.profile_status === 'pending_review').length;
+        document.getElementById('as-draft').textContent     = allAgents.filter(a => a.profile_status === 'draft').length;
+    }
+
+    function applyAgentFilters() {
+        filteredAgents = allAgents.filter(a => {
+            const matchStatus = agentStatusFilter === 'all' || a.profile_status === agentStatusFilter;
+            const q = agentSearch.toLowerCase();
+            const matchSearch = !q
+                || (a.display_name||'').toLowerCase().includes(q)
+                || (a.email||'').toLowerCase().includes(q)
+                || (a.brokerage_name||'').toLowerCase().includes(q);
+            return matchStatus && matchSearch;
+        });
+        renderAgentTable(filteredAgents);
+    }
+
+    function filterAgent(q) { agentSearch = q; applyAgentFilters(); }
+
+    function filterAgentStatus(status, btn) {
+        agentStatusFilter = status;
+        ['all','published','pending_review','draft'].forEach(s => {
+            const id = `apill-${s === 'pending_review' ? 'pending' : s}`;
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('active');
+        });
+        btn.classList.add('active');
+        applyAgentFilters();
+    }
+
+    function renderAgentTable(rows) {
+        const tbody = document.getElementById('agent-tbody');
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No agents match this filter.</td></tr>';
+            return;
+        }
+        const statusBadge = s => {
+            const map = { published: 'background:#f0fff4;color:#2f855a;', pending_review: 'background:#fffaf0;color:#c05621;', draft: 'background:#fefcbf;color:#975a16;', suspended: 'background:#fff5f5;color:#c53030;' };
+            const style = map[s] || 'background:#edf2f7;color:#4a5568;';
+            return `<span style="display:inline-block;padding:0.2rem 0.55rem;border-radius:6px;font-size:0.7rem;font-weight:700;text-transform:uppercase;${style}">${(s||'').replace('_',' ')}</span>`;
+        };
+        tbody.innerHTML = rows.map(a => {
+            const date = a.created_at ? new Date(a.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+            const location = [a.city, a.state].filter(Boolean).join(', ') || '—';
+            return `<tr>
+                <td>
+                    <div style="font-weight:700;color:#1a202c;">${a.display_name || a.full_name || '—'}</div>
+                    ${a.is_published ? '<div style="font-size:0.72rem;color:#2f855a;font-weight:600;margin-top:2px;">● Live Profile</div>' : ''}
+                </td>
+                <td><a href="mailto:${a.email}" style="color:#1d6df2;text-decoration:none;font-weight:500;">${a.email}</a></td>
+                <td style="color:#4a5568;font-weight:500;">${a.brokerage_name || '—'}</td>
+                <td>${statusBadge(a.profile_status)}</td>
+                <td style="color:#718096;font-size:0.85rem;">${location}</td>
+                <td style="color:#a0aec0;font-weight:600;font-size:0.8rem;">${date}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    // ── Utilities ────────────────────────────────────────────────────────────
+    function copyEmails(rows) {
+        const emails = rows.map(r => r.email).filter(Boolean).join(', ');
+        navigator.clipboard.writeText(emails).then(() => {
+            alert(`${rows.length} email${rows.length !== 1 ? 's' : ''} copied to clipboard.`);
+        }).catch(() => {
+            prompt('Copy these emails:', emails);
+        });
+    }
+
+    function exportCSV(rows, filename) {
+        if (!rows.length) return alert('No data to export.');
+        const isAgent = filename.includes('agent');
+        let header, lines;
+        if (isAgent) {
+            header = 'Name,Email,Brokerage,Status,City,State';
+            lines = rows.map(r => [
+                `"${r.display_name || r.full_name || ''}"`,
+                `"${r.email || ''}"`,
+                `"${r.brokerage_name || ''}"`,
+                `"${r.profile_status || ''}"`,
+                `"${r.city || ''}"`,
+                `"${r.state || ''}"`
+            ].join(','));
+        } else {
+            header = 'Name,Email,Type,Source,Date';
+            lines = rows.map(r => [
+                `"${r.name || ''}"`,
+                `"${r.email || ''}"`,
+                `"${r.type || ''}"`,
+                `"${r.source || ''}"`,
+                `"${r.created_at ? new Date(r.created_at).toLocaleDateString() : ''}"`
+            ].join(','));
+        }
+        const csv = [header, ...lines].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${filename}-${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // ── Init ─────────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', loadAll);
+</script>
+</body>
+</html>
