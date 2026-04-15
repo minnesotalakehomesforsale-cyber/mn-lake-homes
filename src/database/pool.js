@@ -10,13 +10,14 @@ if (!process.env.DATABASE_URL) {
     process.exit(1);
 }
 
-// SSL is required for all cloud-hosted PostgreSQL providers (Render, Railway, Supabase, etc.)
-// rejectUnauthorized: false allows self-signed certs used by managed DB services.
-const isLocal = !process.env.NODE_ENV || process.env.NODE_ENV === 'local';
+// Automatically use SSL for any cloud-hosted database URL (Neon, Render, Railway, Supabase, etc.)
+// This allows local development to connect to a cloud DB without extra config.
+const dbUrl = process.env.DATABASE_URL || '';
+const isCloudDb = ['neon.tech', 'render.com', 'railway.app', 'supabase.co', 'amazonaws.com'].some(h => dbUrl.includes(h));
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: isLocal ? false : { rejectUnauthorized: false }
+    connectionString: dbUrl,
+    ssl: isCloudDb ? { rejectUnauthorized: false } : false
 });
 
 pool.on('error', (err) => {
