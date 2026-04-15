@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users Management | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
+        .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        .admin-side { background: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+        .admin-side h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 2.5rem; padding-left: 0.5rem; color: #fff; margin-top: 0; }
+        .admin-side h1 span { color: #1d6df2; }
+        .side-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; margin-bottom: 0.75rem; padding-left: 0.5rem; font-weight: 700; margin-top: 0; }
+        .side-nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+        .side-link { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #a0aec0; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.15s; }
+        .side-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .side-link.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+        .side-signout { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #fc8181; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-top: 1rem; transition: all 0.15s; cursor: pointer; }
+        .side-signout:hover { background: rgba(252,129,129,0.1); }
+        .admin-main { padding: 3rem 3.5rem; background: #f7f9fa; overflow-y: auto; }
+
+        .controls-bar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .search-input { flex: 1; min-width: 220px; padding: 0.75rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; font-family: inherit; }
+        .search-input:focus { outline: none; border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.1); }
+        .filter-select { padding: 0.75rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; background: #fff; font-family: inherit; }
+
+        .table-card { background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: #f7f9fa; border-bottom: 1px solid #edf2f7; }
+        th { padding: 0.85rem 1.25rem; text-align: left; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #718096; }
+        td { padding: 1rem 1.25rem; font-size: 0.875rem; border-bottom: 1px solid #f7f9fa; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #f7f9fa; }
+
+        .badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge-admin     { background: #ebf8ff; color: #2b6cb0; }
+        .badge-agent     { background: #f0fff4; color: #276749; }
+        .badge-active    { background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+        .badge-pending   { background: #fffaf0; color: #c05621; border: 1px solid #feebc8; }
+        .badge-suspended { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+        .badge-archived  { background: #edf2f7; color: #718096; border: 1px solid #e2e8f0; }
+
+        .action-btn { padding: 0.35rem 0.8rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; border: none; cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
+        .action-btn:hover { opacity: 0.8; }
+        .btn-suspend  { background: #fff5f5; color: #c53030; }
+        .btn-activate { background: #f0fff4; color: #276749; }
+        .btn-archive  { background: #edf2f7; color: #4a5568; }
+
+        .empty-state { padding: 4rem 2rem; text-align: center; color: #a0aec0; font-size: 0.95rem; }
+        .count-badge { background: #edf2f7; color: #4a5568; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 99px; margin-left: 0.4rem; }
+
+        .filter-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .filter-tab { padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; color: #718096; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+        .filter-tab.active { background: #1a202c; color: #fff; border-color: #1a202c; }
+        .filter-tab:hover:not(.active) { border-color: #a0aec0; color: #1a202c; }
+    </style>
+</head>
+<body>
+<div class="admin-wrap">
+    <!-- Sidebar -->
+    <aside class="admin-side">
+        <h1>MNLH <span>ADMIN</span></h1>
+        <p class="side-label">Platform Operations</p>
+        <nav class="side-nav">
+            <a href="dashboard.html" class="side-link">Dashboard</a>
+            <a href="agents.html"    class="side-link">Agents Directory</a>
+            <a href="leads.html"     class="side-link">Central Leads</a>
+            <a href="users.html"     class="side-link active">Users Management</a>
+        </nav>
+        <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>{window.location.href='/index.html';})" class="side-signout">Sign Out</a>
+    </aside>
+
+    <!-- Main -->
+    <main class="admin-main">
+        <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+                <h1 style="font-size: 2rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 0.25rem;">Users Management</h1>
+                <p style="color: #718096;">All registered accounts on the platform.</p>
+            </div>
+        </header>
+
+        <!-- Filter tabs -->
+        <div class="filter-tabs">
+            <button class="filter-tab active" onclick="setFilter('all', this)">All <span class="count-badge" id="count-all">0</span></button>
+            <button class="filter-tab" onclick="setFilter('agent', this)">Agents <span class="count-badge" id="count-agent">0</span></button>
+            <button class="filter-tab" onclick="setFilter('admin', this)">Admins <span class="count-badge" id="count-admin">0</span></button>
+            <button class="filter-tab" onclick="setFilter('active', this)">Active <span class="count-badge" id="count-active">0</span></button>
+            <button class="filter-tab" onclick="setFilter('suspended', this)">Suspended <span class="count-badge" id="count-suspended">0</span></button>
+        </div>
+
+        <!-- Search -->
+        <div class="controls-bar">
+            <input type="text" class="search-input" placeholder="Search by name or email..." id="searchInput" oninput="renderTable()">
+        </div>
+
+        <!-- Table -->
+        <div class="table-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Agent Profile</th>
+                        <th>Last Login</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="8" class="empty-state">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<script>
+    let allUsers = [];
+    let currentFilter = 'all';
+
+    async function init() {
+        try {
+            const res = await fetch('/api/auth/session');
+            if (res.ok) {
+                const s = await res.json();
+                document.querySelector('.admin-side h1').innerHTML =
+                    `MNLH <span>ADMIN</span><div style="font-size:0.7rem;color:#718096;font-weight:400;margin-top:4px;">${s.display_name}</div>`;
+            }
+        } catch(_) {}
+
+        try {
+            const res = await fetch('/api/admin/users');
+            if (!res.ok) throw new Error();
+            allUsers = await res.json();
+            updateCounts();
+            renderTable();
+        } catch(_) {
+            document.getElementById('tableBody').innerHTML =
+                '<tr><td colspan="8" class="empty-state" style="color:#e53e3e;">Failed to load users.</td></tr>';
+        }
+    }
+
+    function updateCounts() {
+        document.getElementById('count-all').textContent       = allUsers.length;
+        document.getElementById('count-agent').textContent     = allUsers.filter(u => u.role === 'agent').length;
+        document.getElementById('count-admin').textContent     = allUsers.filter(u => u.role === 'admin' || u.role === 'super_admin').length;
+        document.getElementById('count-active').textContent    = allUsers.filter(u => u.account_status === 'active').length;
+        document.getElementById('count-suspended').textContent = allUsers.filter(u => u.account_status === 'suspended').length;
+    }
+
+    function setFilter(filter, el) {
+        currentFilter = filter;
+        document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        renderTable();
+    }
+
+    function renderTable() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+
+        let rows = allUsers.filter(u => {
+            const matchesFilter =
+                currentFilter === 'all' ? true :
+                currentFilter === 'agent' ? u.role === 'agent' :
+                currentFilter === 'admin' ? (u.role === 'admin' || u.role === 'super_admin') :
+                currentFilter === 'active' ? u.account_status === 'active' :
+                currentFilter === 'suspended' ? u.account_status === 'suspended' : true;
+
+            const matchesSearch = !search ||
+                (u.full_name || '').toLowerCase().includes(search) ||
+                (u.email || '').toLowerCase().includes(search);
+
+            return matchesFilter && matchesSearch;
+        });
+
+        if (rows.length === 0) {
+            document.getElementById('tableBody').innerHTML =
+                '<tr><td colspan="8" class="empty-state">No users found.</td></tr>';
+            return;
+        }
+
+        const roleClass = r => r === 'agent' ? 'badge-agent' : 'badge-admin';
+        const rolLabel  = r => r === 'super_admin' ? 'Super Admin' : r.charAt(0).toUpperCase() + r.slice(1);
+        const statusClass = s => `badge-${s}`;
+        const fmt = d => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+        const fmtTime = d => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Never';
+
+        document.getElementById('tableBody').innerHTML = rows.map(u => `
+            <tr>
+                <td>
+                    <div style="font-weight: 700; color: #1a202c;">${u.full_name || '—'}</div>
+                    <div style="font-size: 0.78rem; color: #a0aec0; margin-top: 2px;">${u.agent_display_name ? `Agent: ${u.agent_display_name}` : ''}</div>
+                </td>
+                <td style="color: #4a5568;">${u.email}</td>
+                <td><span class="badge ${roleClass(u.role)}">${rolLabel(u.role)}</span></td>
+                <td><span class="badge ${statusClass(u.account_status)}">${u.account_status}</span></td>
+                <td>
+                    ${u.agent_id
+                        ? `<a href="agent-review.html?id=${u.agent_id}" style="color:#1d6df2;font-weight:600;font-size:0.85rem;text-decoration:none;">
+                               ${u.profile_status === 'published' ? '✓ Published' : u.profile_status || 'View Profile'}
+                           </a>`
+                        : `<span style="color:#a0aec0;font-size:0.85rem;">No profile</span>`
+                    }
+                </td>
+                <td style="color: #718096; font-size: 0.85rem;">${fmtTime(u.last_login_at)}</td>
+                <td style="color: #718096; font-size: 0.85rem;">${fmt(u.created_at)}</td>
+                <td onclick="event.stopPropagation()">
+                    <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                        ${u.account_status === 'active'
+                            ? `<button class="action-btn btn-suspend" onclick="setAccountStatus('${u.id}', 'suspended', this)">Suspend</button>`
+                            : `<button class="action-btn btn-activate" onclick="setAccountStatus('${u.id}', 'active', this)">Activate</button>`
+                        }
+                        ${u.account_status !== 'archived'
+                            ? `<button class="action-btn btn-archive" onclick="setAccountStatus('${u.id}', 'archived', this)">Archive</button>`
+                            : ''
+                        }
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function setAccountStatus(userId, status, btn) {
+        // Find the agent_id for this user
+        const user = allUsers.find(u => u.id === userId);
+        if (!user?.agent_id) {
+            alert('No linked agent record found for this user.');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = '...';
+
+        try {
+            const res = await fetch(`/api/admin/${user.agent_id}/account-status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ account_status: status })
+            });
+            if (!res.ok) throw new Error();
+            user.account_status = status;
+            updateCounts();
+            renderTable();
+        } catch(_) {
+            alert('Failed to update account status.');
+            btn.disabled = false;
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>
