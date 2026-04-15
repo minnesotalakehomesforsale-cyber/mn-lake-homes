@@ -7,8 +7,9 @@ const pool = require('../database/pool');
 const getPublicAgents = async (req, res) => {
     try {
         const query = `
-            SELECT a.slug, a.display_name, a.brokerage_name, a.city, a.service_areas,
-                   a.specialties, a.is_featured, a.phone_public, a.email_public,
+            SELECT a.slug, a.display_name, a.brokerage_name, a.city, a.bio,
+                   a.service_areas, a.specialties, a.is_featured,
+                   a.phone_public, a.email_public, a.profile_photo_url,
                    m.display_badge_label as membership_badge
             FROM agents a
             JOIN memberships m ON a.membership_id = m.id
