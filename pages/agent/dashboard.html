@@ -9,15 +9,39 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="../../components/components.js" defer></script>
-
-
+    <style>
+        .lead-card { background: #fff; border: 1px solid #edf2f7; border-radius: 10px; padding: 1.5rem 1.75rem; margin-bottom: 1rem; transition: box-shadow 0.15s; }
+        .lead-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.07); }
+        .lead-badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+        .lb-buyer { background: #f0fff4; color: #2f855a; }
+        .lb-seller { background: #faf5ff; color: #6b46c1; }
+        .lb-agent_inquiry { background: #fff5f5; color: #c53030; }
+        .lb-general_contact,.lb-property_question,.lb-market_report { background: #edf2f7; color: #4a5568; }
+        .ls-new { background: #e6fffa; color: #319795; border: 1px solid #b2f5ea; }
+        .ls-unassigned { background: #fffaf0; color: #dd6b20; border: 1px solid #feebc8; }
+        .ls-assigned { background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; }
+        .ls-in_progress { background: #ebf4ff; color: #4c51bf; border: 1px solid #c3dafe; }
+        .ls-contacted { background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+        .ls-closed { background: #edf2f7; color: #4a5568; }
+        .ls-archived { background: #fff5f5; color: #9b2c2c; }
+        .nav-tab { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 500; color: #718096; text-decoration: none; border: none; background: none; font-size: 1rem; width: 100%; font-family: inherit; transition: all 0.15s; }
+        .nav-tab:hover { background: #f7f9fa; color: #1a202c; }
+        .nav-tab.active { background: #ebf4ff; color: #2b6cb0; font-weight: 700; }
+        .nav-tab .badge-count { background: #1d6df2; color: #fff; border-radius: 20px; padding: 0.1rem 0.5rem; font-size: 0.7rem; font-weight: 700; margin-left: auto; }
+        .inbox-filter { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .inbox-tab { padding: 0.4rem 0.9rem; border: 1px solid #e2e8f0; border-radius: 20px; background: #fff; font-size: 0.8rem; font-weight: 600; color: #718096; cursor: pointer; transition: all 0.15s; }
+        .inbox-tab:hover { border-color: #1d6df2; color: #1d6df2; }
+        .inbox-tab.active { background: #1d6df2; color: #fff; border-color: #1d6df2; }
+        .detail-row { display: flex; gap: 0.5rem; align-items: center; font-size: 0.82rem; color: #718096; }
+        .detail-row svg { flex-shrink: 0; }
+    </style>
 </head>
 <body style="background-color: #f7f9fa;">
 
     <global-header></global-header>
 
     <div class="dashboard-container">
-        
+
         <!-- Status Banners -->
         <div id="banner-draft" class="status-banner status-draft">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
@@ -40,77 +64,109 @@
         </div>
 
         <div style="display: grid; grid-template-columns: 280px 1fr; gap: 2.5rem; align-items: start;">
-            
+
             <!-- Sidebar Navigation -->
             <div style="background: #fff; padding: 2rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); position: sticky; top: 100px;">
-                
+
                 <div style="margin-bottom: 2rem; text-align: center; padding-bottom: 1.5rem; border-bottom: 1px solid #edf2f7;">
                     <div id="sidebar-name" style="font-weight: 800; font-size: 1.1rem; color: #1a202c; margin-bottom: 0.25rem;">Loading...</div>
                     <span id="sidebar-tier" style="background: #e2e8f0; color: #4a5568; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 4px; display: inline-block;">—</span>
                 </div>
 
-                <h4 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 1rem;">Platform Access</h4>
-                <ul style="list-style: none; padding: 0;">
-                    <li style="margin-bottom: 1rem;"><a href="#" style="text-decoration: none; color: var(--accent-blue); font-weight: 600; display: flex; align-items: center; gap: 0.75rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Profile Editor</a></li>
-                    <li style="margin-bottom: 1rem;"><a href="#" style="text-decoration: none; color: #718096; font-weight: 500; display: flex; align-items: center; gap: 0.75rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Lead Inbox</a></li>
-                </ul>
+                <h4 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 0.75rem;">Platform Access</h4>
+                <button class="nav-tab active" id="tab-btn-profile" onclick="switchView('profile')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    Profile Editor
+                </button>
+                <button class="nav-tab" id="tab-btn-leads" onclick="switchView('leads')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    Lead Inbox
+                    <span class="badge-count" id="lead-count" style="display:none;">0</span>
+                </button>
             </div>
 
             <!-- Content Area -->
-            <div style="background: #fff; padding: 3rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-                
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; border-bottom: 1px solid #edf2f7; padding-bottom: 1.5rem;">
-                    <div>
-                        <h2 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem;">Edit Public Profile</h2>
-                        <p style="color: #718096;">Ensure all information is accurate and perfectly formatted.</p>
+            <div>
+
+                <!-- ── PROFILE EDITOR VIEW ── -->
+                <div id="view-profile" style="background: #fff; padding: 3rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; border-bottom: 1px solid #edf2f7; padding-bottom: 1.5rem;">
+                        <div>
+                            <h2 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem;">Edit Public Profile</h2>
+                            <p style="color: #718096;">Ensure all information is accurate and perfectly formatted.</p>
+                        </div>
+                        <div style="display: flex; gap: 1rem;">
+                            <button class="btn" onclick="saveDraft()" style="background: #edf2f7; color: #4a5568; font-weight: 600; border: none; padding: 0.75rem 1.5rem;">Save Draft</button>
+                            <button id="submit-review-btn" onclick="submitForReview()" class="btn btn-primary" style="background: #38a169; border: none; padding: 0.75rem 1.5rem; font-weight: 700;" disabled>Submit for Approval</button>
+                        </div>
                     </div>
-                    <div style="display: flex; gap: 1rem;">
-                        <button class="btn" onclick="saveDraft()" style="background: #edf2f7; color: #4a5568; font-weight: 600; border: none; padding: 0.75rem 1.5rem;">Save Draft</button>
-                        <button id="submit-review-btn" onclick="submitForReview()" class="btn btn-primary" style="background: #38a169; border: none; padding: 0.75rem 1.5rem; font-weight: 700;" disabled>Submit for Approval</button>
+
+                    <form id="profile-edit-form" onsubmit="event.preventDefault();">
+                        <h3 class="form-section-title">Media Assets</h3>
+                        <div style="display: flex; gap: 2rem; margin-bottom: 3rem; align-items: center;">
+                            <div id="profile-preview" style="width: 100px; height: 100px; border-radius: 50%; background-color: #edf2f7; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #e2e8f0;">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            </div>
+                            <label class="photo-upload-placeholder" style="cursor: pointer;" for="profile-upload">
+                                <span style="font-size: 0.85rem; font-weight: 600;">+ Select Image</span>
+                                <input type="file" id="profile-upload" style="opacity: 0; position: absolute; z-index: -1; width: 0.1px; height: 0.1px;" accept="image/*" onchange="previewImage(event)">
+                            </label>
+                            <p style="font-size: 0.8rem; color: #718096; margin-left: 1rem;">Recommended: Square, minimum 400x400px.</p>
+                        </div>
+
+                        <h3 class="form-section-title">Core Information</h3>
+                        <div class="grid-2">
+                            <div class="form-group-sys"><label>Display Name *</label><input type="text" id="f-name" class="input-sys" placeholder="E.g., David Chen" required oninput="calcProgress()"></div>
+                            <div class="form-group-sys"><label>Brokerage Name *</label><input type="text" id="f-brokerage" class="input-sys" placeholder="E.g., Lakeshore Realty Group" required oninput="calcProgress()"></div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group-sys"><label>License Number</label><input type="text" id="f-license" class="input-sys"></div>
+                            <div class="form-group-sys"><label>Years of Experience</label><input type="number" id="f-exp" class="input-sys"></div>
+                        </div>
+
+                        <h3 class="form-section-title">Public Contact Details</h3>
+                        <div class="grid-2">
+                            <div class="form-group-sys"><label>Public Phone *</label><input type="tel" id="f-phone" class="input-sys" placeholder="(612) 555-0101" required oninput="calcProgress()"></div>
+                            <div class="form-group-sys"><label>Public Email</label><input type="email" id="f-email" class="input-sys" placeholder="hello@davidchen.com"></div>
+                        </div>
+                        <div class="form-group-sys" style="margin-bottom: 3rem;"><label>Personal Website URL</label><input type="url" id="f-web" class="input-sys"></div>
+
+                        <h3 class="form-section-title">Market Expertise</h3>
+                        <p style="font-size: 0.9rem; color: #718096; margin-bottom: 1.5rem;">Separate items with commas.</p>
+                        <div class="grid-2">
+                            <div class="form-group-sys"><label>Primary City *</label><input type="text" id="f-city" class="input-sys" placeholder="E.g., Wayzata" required oninput="calcProgress()"></div>
+                            <div class="form-group-sys"><label>Service Areas *</label><input type="text" id="f-areas" class="input-sys" placeholder="Lake Minnetonka, Brainerd" required oninput="calcProgress()"></div>
+                        </div>
+                        <div class="form-group-sys" style="margin-bottom: 3rem;"><label>Specialties *</label><input type="text" id="f-specs" class="input-sys" placeholder="Luxury Waterfront, Relocation" required oninput="calcProgress()"></div>
+
+                        <h3 class="form-section-title">Professional Narrative</h3>
+                        <div class="form-group-sys" style="margin-bottom: 3rem;"><label>Agent Bio *</label><textarea id="f-bio" class="input-sys" rows="6" placeholder="Professional overview..." required oninput="calcProgress()"></textarea></div>
+                    </form>
+                </div>
+
+                <!-- ── LEAD INBOX VIEW ── -->
+                <div id="view-leads" style="display: none;">
+                    <div style="background: #fff; padding: 2rem 2.5rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                            <h2 style="font-size: 1.75rem; font-weight: 700;">Lead Inbox</h2>
+                            <button onclick="loadLeads()" style="border: 1px solid #e2e8f0; background: #f7f9fa; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #4a5568;">↺ Refresh</button>
+                        </div>
+                        <p style="color: #718096; margin-bottom: 1.5rem;">Leads assigned to you from the platform.</p>
+                        <div class="inbox-filter">
+                            <button class="inbox-tab active" onclick="filterLeads('all', this)">All</button>
+                            <button class="inbox-tab" onclick="filterLeads('new', this)">New</button>
+                            <button class="inbox-tab" onclick="filterLeads('assigned', this)">Assigned</button>
+                            <button class="inbox-tab" onclick="filterLeads('in_progress', this)">In Progress</button>
+                            <button class="inbox-tab" onclick="filterLeads('contacted', this)">Contacted</button>
+                            <button class="inbox-tab" onclick="filterLeads('closed', this)">Closed</button>
+                        </div>
+                    </div>
+
+                    <div id="leads-list">
+                        <div style="text-align:center; padding: 3rem; color: #a0aec0;">Loading leads...</div>
                     </div>
                 </div>
 
-                <form id="profile-edit-form" onsubmit="event.preventDefault();">
-                    <h3 class="form-section-title">Media Assets</h3>
-                    <div style="display: flex; gap: 2rem; margin-bottom: 3rem; align-items: center;">
-                        <div id="profile-preview" style="width: 100px; height: 100px; border-radius: 50%; background-color: #edf2f7; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #e2e8f0;">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                        </div>
-                        <label class="photo-upload-placeholder" style="cursor: pointer;" for="profile-upload">
-                            <span style="font-size: 0.85rem; font-weight: 600;">+ Select Image</span>
-                            <input type="file" id="profile-upload" style="opacity: 0; position: absolute; z-index: -1; width: 0.1px; height: 0.1px;" accept="image/*" onchange="previewImage(event)">
-                        </label>
-                        <p style="font-size: 0.8rem; color: #718096; margin-left: 1rem;">Recommended: Square, minimum 400x400px.</p>
-                    </div>
-
-                    <h3 class="form-section-title">Core Information</h3>
-                    <div class="grid-2">
-                        <div class="form-group-sys"><label>Display Name *</label><input type="text" id="f-name" class="input-sys" placeholder="E.g., David Chen" required oninput="calcProgress()"></div>
-                        <div class="form-group-sys"><label>Brokerage Name *</label><input type="text" id="f-brokerage" class="input-sys" placeholder="E.g., Lakeshore Realty Group" required oninput="calcProgress()"></div>
-                    </div>
-                    <div class="grid-2">
-                        <div class="form-group-sys"><label>License Number</label><input type="text" id="f-license" class="input-sys"></div>
-                        <div class="form-group-sys"><label>Years of Experience</label><input type="number" id="f-exp" class="input-sys"></div>
-                    </div>
-
-                    <h3 class="form-section-title">Public Contact Details</h3>
-                    <div class="grid-2">
-                        <div class="form-group-sys"><label>Public Phone *</label><input type="tel" id="f-phone" class="input-sys" placeholder="(612) 555-0101" required oninput="calcProgress()"></div>
-                        <div class="form-group-sys"><label>Public Email</label><input type="email" id="f-email" class="input-sys" placeholder="hello@davidchen.com"></div>
-                    </div>
-                    <div class="form-group-sys" style="margin-bottom: 3rem;"><label>Personal Website URL</label><input type="url" id="f-web" class="input-sys"></div>
-
-                    <h3 class="form-section-title">Market Expertise</h3>
-                    <p style="font-size: 0.9rem; color: #718096; margin-bottom: 1.5rem;">Separate items with commas.</p>
-                    <div class="grid-2">
-                        <div class="form-group-sys"><label>Primary City *</label><input type="text" id="f-city" class="input-sys" placeholder="E.g., Wayzata" required oninput="calcProgress()"></div>
-                        <div class="form-group-sys"><label>Service Areas *</label><input type="text" id="f-areas" class="input-sys" placeholder="Lake Minnetonka, Brainerd" required oninput="calcProgress()"></div>
-                    </div>
-                    <div class="form-group-sys" style="margin-bottom: 3rem;"><label>Specialties *</label><input type="text" id="f-specs" class="input-sys" placeholder="Luxury Waterfront, Relocation" required oninput="calcProgress()"></div>
-
-                    <h3 class="form-section-title">Professional Narrative</h3>
-                    <div class="form-group-sys" style="margin-bottom: 3rem;"><label>Agent Bio *</label><textarea id="f-bio" class="input-sys" rows="6" placeholder="Professional overview..." required oninput="calcProgress()"></textarea></div>
-                </form>
             </div>
         </div>
     </div>
@@ -119,38 +175,54 @@
         const REDIRECT_LOGIN = '../../pages/public/login.html';
         const REDIRECT_FORBIDDEN = '../../pages/public/forbidden.html';
 
+        let allLeads = [];
+        let currentFilterStatus = 'all';
+
+        // ── View Switching ───────────────────────────────────────────────────────
+        function switchView(view) {
+            document.getElementById('view-profile').style.display = view === 'profile' ? 'block' : 'none';
+            document.getElementById('view-leads').style.display   = view === 'leads'   ? 'block' : 'none';
+            document.getElementById('tab-btn-profile').classList.toggle('active', view === 'profile');
+            document.getElementById('tab-btn-leads').classList.toggle('active',   view === 'leads');
+            if (view === 'leads' && allLeads.length === 0) loadLeads();
+        }
+
         // ── Auth Check + Profile Load ────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const res = await fetch('/api/agents/me');
-
-                if (res.status === 401) {
-                    window.location.href = REDIRECT_LOGIN;
-                    return;
-                }
-                if (res.status === 403) {
-                    window.location.href = REDIRECT_FORBIDDEN;
-                    return;
-                }
+                if (res.status === 401) { window.location.href = REDIRECT_LOGIN; return; }
+                if (res.status === 403) { window.location.href = REDIRECT_FORBIDDEN; return; }
                 if (!res.ok) throw new Error('Profile load failed');
-
                 const agent = await res.json();
                 hydrateForm(agent);
-
             } catch (err) {
                 console.error('[Dashboard Load]', err.message);
                 window.location.href = REDIRECT_LOGIN;
             }
+
+            // Also pre-fetch lead count for badge
+            try {
+                const lr = await fetch('/api/agents/me/leads');
+                if (lr.ok) {
+                    const leads = await lr.json();
+                    allLeads = leads;
+                    const active = leads.filter(l => !['closed','archived'].includes(l.status)).length;
+                    if (active > 0) {
+                        const badge = document.getElementById('lead-count');
+                        badge.textContent = active;
+                        badge.style.display = 'inline-block';
+                    }
+                }
+            } catch(_) {}
         });
 
         function hydrateForm(agent) {
-            // Sidebar
             const nameEl = document.getElementById('sidebar-name');
             const tierEl = document.getElementById('sidebar-tier');
             if (nameEl) nameEl.innerText = agent.display_name || '—';
             if (tierEl) tierEl.innerText = agent.membership_badge || agent.membership_name || 'Agent';
 
-            // Form fields
             document.getElementById('f-name').value      = agent.display_name   || '';
             document.getElementById('f-brokerage').value = agent.brokerage_name  || '';
             document.getElementById('f-phone').value     = agent.phone_public    || '';
@@ -165,7 +237,6 @@
 
             document.getElementById('f-bio').value = agent.bio || '';
 
-            // Status banners
             if (agent.profile_status === 'pending_review') {
                 document.getElementById('banner-draft').style.display    = 'none';
                 document.getElementById('banner-pending').style.display  = 'flex';
@@ -185,26 +256,97 @@
             calcProgress();
         }
 
+        // ── Leads ────────────────────────────────────────────────────────────────
+        async function loadLeads() {
+            document.getElementById('leads-list').innerHTML =
+                '<div style="text-align:center;padding:3rem;color:#a0aec0;">Loading...</div>';
+            try {
+                const res = await fetch('/api/agents/me/leads');
+                if (res.status === 401) { window.location.href = REDIRECT_LOGIN; return; }
+                if (!res.ok) throw new Error();
+                allLeads = await res.json();
+                renderLeads(allLeads.filter(l => currentFilterStatus === 'all' || l.status === currentFilterStatus));
+            } catch(err) {
+                document.getElementById('leads-list').innerHTML =
+                    '<div style="text-align:center;padding:3rem;color:#fc8181;">Failed to load leads.</div>';
+            }
+        }
+
+        function filterLeads(status, el) {
+            currentFilterStatus = status;
+            document.querySelectorAll('.inbox-tab').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            const filtered = status === 'all' ? allLeads : allLeads.filter(l => l.status === status);
+            renderLeads(filtered);
+        }
+
+        function renderLeads(leads) {
+            const container = document.getElementById('leads-list');
+            if (!leads || leads.length === 0) {
+                container.innerHTML = `
+                    <div style="background:#fff;border-radius:12px;border:1px solid #edf2f7;padding:4rem 2rem;text-align:center;">
+                        <div style="font-size:2rem;margin-bottom:0.75rem;">📭</div>
+                        <p style="color:#718096;font-weight:500;">No leads in this category yet.</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = leads.map(l => {
+                const statusClass = `ls-${l.status}`;
+                const typeClass   = `lb-${l.type}`;
+                const typeLabel   = (l.type || 'general').replace(/_/g,' ');
+                const statusLabel = (l.status || '').replace(/_/g,' ');
+                const date = new Date(l.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+                const budget = (l.budget_min || l.budget_max)
+                    ? `$${(l.budget_min||0).toLocaleString()} – $${(l.budget_max||0).toLocaleString()}`
+                    : null;
+
+                const details = [
+                    l.email     ? `<span>${l.email}</span>` : null,
+                    l.phone     ? `<span>${l.phone}</span>` : null,
+                    l.location_text  ? `<span>📍 ${l.location_text}</span>` : null,
+                    budget           ? `<span>💰 ${budget}</span>` : null,
+                    l.timeline_text  ? `<span>⏱ ${l.timeline_text}</span>` : null,
+                    l.contact_preference ? `<span>Prefers: ${l.contact_preference}</span>` : null,
+                ].filter(Boolean).join(' <span style="color:#e2e8f0;margin:0 0.2rem;">|</span> ');
+
+                return `
+                    <div class="lead-card">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem;">
+                            <div>
+                                <div style="font-size:1.1rem;font-weight:800;color:#1a202c;margin-bottom:0.35rem;">${l.name}</div>
+                                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                                    <span class="lead-badge ${typeClass}">${typeLabel}</span>
+                                    <span class="lead-badge ${statusClass}">${statusLabel}</span>
+                                    ${l.source_page_title ? `<span style="font-size:0.7rem;color:#a0aec0;font-weight:600;align-self:center;">via ${l.source_page_title}</span>` : ''}
+                                </div>
+                            </div>
+                            <span style="font-size:0.78rem;color:#a0aec0;font-weight:600;white-space:nowrap;margin-left:1rem;">${date}</span>
+                        </div>
+                        ${details ? `<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1rem;font-size:0.82rem;color:#718096;font-weight:500;">${details}</div>` : ''}
+                        ${l.message ? `
+                            <div style="background:#f7f9fa;border-left:3px solid #e2e8f0;border-radius:0 6px 6px 0;padding:0.85rem 1rem;margin-top:0.75rem;">
+                                <p style="font-size:0.875rem;color:#4a5568;line-height:1.6;margin:0;">"${l.message}"</p>
+                            </div>` : ''}
+                    </div>`;
+            }).join('');
+        }
+
         // ── Progress Bar ─────────────────────────────────────────────────────────
         function calcProgress() {
             const reqds = ['f-name', 'f-brokerage', 'f-phone', 'f-city', 'f-areas', 'f-specs', 'f-bio'];
             let filled = 0;
-            reqds.forEach(id => {
-                const el = document.getElementById(id);
-                if (el && el.value.trim() !== '') filled++;
-            });
+            reqds.forEach(id => { const el = document.getElementById(id); if (el && el.value.trim() !== '') filled++; });
             const pct = Math.round((filled / reqds.length) * 100);
-
             document.getElementById('completion-bar').style.width = pct + '%';
             document.getElementById('completion-text').innerText = pct + '% Complete' + (pct === 100 ? ' — Ready for Review!' : '');
-
             const submitBtn = document.getElementById('submit-review-btn');
             const locked = ['Updates Pending Review', 'Profile is Live'];
             if (locked.includes(submitBtn.textContent)) return;
-
-            submitBtn.disabled     = pct < 100;
-            submitBtn.style.opacity = pct === 100 ? '1' : '0.5';
-            submitBtn.style.cursor  = pct === 100 ? 'pointer' : 'not-allowed';
+            submitBtn.disabled      = pct < 100;
+            submitBtn.style.opacity  = pct === 100 ? '1' : '0.5';
+            submitBtn.style.cursor   = pct === 100 ? 'pointer' : 'not-allowed';
         }
 
         // ── Extract Form Payload ─────────────────────────────────────────────────
@@ -226,16 +368,13 @@
             const orig = btn.textContent;
             btn.textContent = 'Saving...';
             btn.disabled = true;
-
             try {
                 const res = await fetch('/api/agents/me', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(extractFormPayload())
                 });
-
                 if (res.status === 401) { window.location.href = REDIRECT_LOGIN; return; }
-
                 const data = await res.json();
                 btn.textContent = data.success ? 'Draft Saved ✓' : 'Save Failed';
             } catch(err) {
@@ -250,21 +389,15 @@
             const btn = document.getElementById('submit-review-btn');
             btn.textContent = 'Submitting...';
             btn.disabled = true;
-
             try {
-                // Save latest form data first
                 await fetch('/api/agents/me', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(extractFormPayload())
                 });
-
                 const res = await fetch('/api/agents/me/submit', { method: 'POST' });
-
                 if (res.status === 401) { window.location.href = REDIRECT_LOGIN; return; }
-
                 const data = await res.json();
-
                 if (res.ok) {
                     document.getElementById('banner-draft').style.display   = 'none';
                     document.getElementById('banner-pending').style.display = 'flex';
@@ -284,7 +417,7 @@
             }
         }
 
-        // ── Image Preview (local only until backend upload is built) ─────────────
+        // ── Image Preview ─────────────────────────────────────────────────────────
         function previewImage(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -299,4 +432,3 @@
     <global-footer></global-footer>
 </body>
 </html>
-

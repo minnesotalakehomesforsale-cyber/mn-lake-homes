@@ -183,6 +183,33 @@ const submitForReview = async (req, res) => {
     }
 };
 
+/**
+ * GET /api/agents/me/leads
+ * Returns all leads assigned to the currently logged-in agent.
+ */
+const getMyLeads = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { rows } = await pool.query(`
+            SELECT l.id, l.full_name as name, l.first_name, l.email, l.phone,
+                   l.message, l.lead_type as type, l.lead_source as source,
+                   l.lead_status as status, l.budget_min, l.budget_max,
+                   l.timeline_text, l.location_text, l.contact_preference,
+                   l.source_page_title, l.created_at
+            FROM leads l
+            JOIN agents a ON l.agent_id = a.id
+            JOIN users u ON a.user_id = u.id
+            WHERE u.id = $1
+              AND l.deleted_at IS NULL
+            ORDER BY l.created_at DESC
+        `, [userId]);
+        res.json(rows);
+    } catch (err) {
+        console.error('[getMyLeads]', err.message);
+        res.status(500).json({ error: 'Failed to fetch leads.' });
+    }
+};
+
 // Legacy alias for old PATCH /me route used by some admin call paths
 const updateMyProfile = saveDraft;
 
@@ -192,5 +219,6 @@ module.exports = {
     getMyProfile,
     saveDraft,
     submitForReview,
-    updateMyProfile
+    updateMyProfile,
+    getMyLeads
 };
