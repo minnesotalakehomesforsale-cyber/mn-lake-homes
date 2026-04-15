@@ -104,7 +104,7 @@
                         <p>Connect to our private seller network. Gain access to listings that haven't even hit the MLS yet.</p>
                     </div>
                 </div>
-                <button class="btn btn-primary" onclick="openModal()" style="margin-top: 1rem; width: max-content;">Talk to an agent</button>
+                <button class="btn btn-primary" onclick="openForm('buy')" style="margin-top: 1rem; width: max-content;">Talk to an agent</button>
             </div>
         </div>
     </section>
@@ -166,7 +166,7 @@
                 <div class="flex-card-content" id="first-time">
                     <div class="flex-card-header">
                         <p>We'll guide you through your first lake purchase, from dock regulations to winterization basics.</p>
-                        <a href="#" class="btn btn-primary" onclick="openModal()">Start your search</a>
+                        <a href="#" class="btn btn-primary" onclick="openForm('buy')">Start your search</a>
                     </div>
                     <div class="flex-images">
                         <img src="https://images.unsplash.com/photo-1544723048-fd4487b11306?q=80&w=1600&auto=format&fit=crop" alt="Happy family" class="flex-img">
@@ -177,7 +177,7 @@
                 <div class="flex-card-content" id="luxury" style="display: none;">
                     <div class="flex-card-header">
                         <p>Discreet representation and access to Minnesota's most prestigious waterfront properties.</p>
-                        <a href="#" class="btn btn-primary" onclick="openModal()">Explore premium listings</a>
+                        <a href="#" class="btn btn-primary" onclick="openForm('buy')">Explore premium listings</a>
                     </div>
                     <div class="flex-images">
                         <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop" alt="Luxury home interior" class="flex-img">
@@ -188,7 +188,7 @@
                 <div class="flex-card-content" id="vacation" style="display: none;">
                     <div class="flex-card-header">
                         <p>Seeking an investment or a seasonal retreat? We identify properties that deliver memories and ROI.</p>
-                        <a href="#" class="btn btn-primary" onclick="openModal()">Find a getaway</a>
+                        <a href="#" class="btn btn-primary" onclick="openForm('buy')">Find a getaway</a>
                     </div>
                     <div class="flex-images">
                         <img src="https://images.unsplash.com/photo-1560185127-6ed189bf02f4?q=80&w=1400&auto=format&fit=crop" alt="Lake activities" class="flex-img">
@@ -257,7 +257,7 @@
             <h2 class="sp-title" style="font-size: 3.2rem; margin: 0;">See how MN Lake Homes can<br>be a gamechanger for<br>your property search</h2>
             <div style="max-width: 400px; justify-self: end; text-align: right;">
                 <p style="color: #4a5568; line-height: 1.6; margin-bottom: 1.5rem;">Meet with one of our expert agents to discuss your goals in a low-pressure environment. No pushy sales tactics. Just a casual conversation to start finding your dream home.</p>
-                <button class="btn btn-primary" onclick="openModal()">Talk to an agent</button>
+                <button class="btn btn-primary" onclick="openForm('buy')">Talk to an agent</button>
             </div>
         </div>
         <img src="https://images.unsplash.com/photo-1544723048-fd4487b11306?q=80&w=800&auto=format&fit=crop" class="sp-fw-image" alt="Real Estate Consultation" style="height: 600px;">
@@ -317,20 +317,6 @@
             updateTestimonialUI();
         }
         
-        function openModal() {
-            document.getElementById('lead-modal').classList.add('active');
-            nextModalStep(1);
-        }
-
-        function closeModal() {
-            document.getElementById('lead-modal').classList.remove('active');
-        }
-
-        function nextModalStep(step) {
-            document.querySelectorAll('.modal-step').forEach(el => el.classList.remove('active'));
-            document.getElementById('modal-step-' + step).classList.add('active');
-        }
-
         function switchTab(tabId) {
             document.querySelectorAll(".flex-card-content").forEach(el => {
                 el.style.display = "none";

@@ -17,7 +17,21 @@ const app = express();
 app.use(helmet({
     contentSecurityPolicy: false, // Temporarily disabled to allow inline scripts from existing UI prototypes
 }));
-app.use(cors({ origin: true, credentials: true }));
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+    : [`http://localhost:${process.env.PORT || 3000}`];
+
+app.use(cors({
+    origin: (origin, callback) => {
+        // Allow server-to-server requests (no origin) and whitelisted origins
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error(`CORS: origin '${origin}' not allowed`));
+        }
+    },
+    credentials: true
+}));
 app.use(express.json());
 app.use(cookieParser());
 

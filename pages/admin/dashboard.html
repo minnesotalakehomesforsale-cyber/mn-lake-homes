@@ -1,4 +1,216 @@
-<!DOCTYP
-    <global-footer></global-footer>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | MN Lake Homes</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
+        .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        .admin-side { background: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+        .admin-side h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 2.5rem; padding-left: 0.5rem; color: #fff; margin-top: 0; }
+        .admin-side h1 span { color: #1d6df2; }
+        .side-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; margin-bottom: 0.75rem; padding-left: 0.5rem; font-weight: 700; margin-top: 0; }
+        .side-nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+        .side-link { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #a0aec0; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.15s; }
+        .side-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .side-link.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+        .side-link.dim { opacity: 0.35; cursor: default; pointer-events: none; }
+        .side-signout { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #fc8181; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-top: 1rem; transition: all 0.15s; }
+        .side-signout:hover { background: rgba(252,129,129,0.1); }
+        .admin-main { padding: 3rem 3.5rem; background: #f7f9fa; overflow-y: auto; }
+
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 3rem; }
+        .stat-card { background: #fff; border-radius: 12px; padding: 1.75rem; border: 1px solid #edf2f7; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .stat-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 0.75rem; }
+        .stat-value { font-size: 2.5rem; font-weight: 800; color: #1a202c; letter-spacing: -1.5px; line-height: 1; }
+        .stat-sub { font-size: 0.8rem; color: #718096; margin-top: 0.5rem; font-weight: 500; }
+        .stat-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 0.4rem; }
+
+        .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        .dash-panel { background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow: hidden; }
+        .panel-header { padding: 1.5rem 2rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; }
+        .panel-title { font-size: 1rem; font-weight: 700; color: #1a202c; }
+        .panel-link { font-size: 0.85rem; color: #1d6df2; text-decoration: none; font-weight: 600; }
+        .panel-link:hover { text-decoration: underline; }
+        .panel-body { padding: 0; }
+        .panel-row { display: grid; padding: 1rem 2rem; border-bottom: 1px solid #f7f9fa; align-items: center; font-size: 0.875rem; transition: background 0.1s; }
+        .panel-row:hover { background: #f7f9fa; }
+        .panel-row:last-child { border-bottom: none; }
+        .panel-empty { padding: 3rem 2rem; text-align: center; color: #a0aec0; font-size: 0.9rem; }
+
+        .s-badge { padding: 0.3rem 0.55rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; display: inline-block; }
+        .badge-pending { background: #fffaf0; color: #dd6b20; border: 1px solid #feebc8; }
+        .badge-new { background: #e6fffa; color: #319795; border: 1px solid #b2f5ea; }
+        .badge-published { background: #f0fff4; color: #2f855a; border: 1px solid #c6f6d5; }
+        .badge-buyer { background: #f0fff4; color: #2f855a; }
+        .badge-seller { background: #faf5ff; color: #6b46c1; }
+        .badge-agent { background: #fff5f5; color: #c53030; }
+        .badge-general { background: #edf2f7; color: #4a5568; }
+
+        .quick-actions { display: flex; gap: 1rem; margin-bottom: 3rem; flex-wrap: wrap; }
+        .qa-btn { padding: 0.75rem 1.5rem; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; color: #1a202c; font-weight: 600; font-size: 0.875rem; cursor: pointer; text-decoration: none; transition: all 0.15s; font-family: inherit; }
+        .qa-btn:hover { background: #1a202c; color: #fff; border-color: #1a202c; }
+        .qa-btn.primary { background: #1d6df2; color: #fff; border-color: #1d6df2; }
+        .qa-btn.primary:hover { background: #155bc8; border-color: #155bc8; }
+    </style>
+</head>
+<body>
+    <div class="admin-wrap">
+        <!-- Sidebar -->
+        <aside class="admin-side">
+            <h1>MNLH <span>ADMIN</span></h1>
+            <p class="side-label">Platform Operations</p>
+            <nav class="side-nav">
+                <a href="dashboard.html" class="side-link active">Dashboard</a>
+                <a href="agents.html"    class="side-link">Agents Directory</a>
+                <a href="leads.html"     class="side-link">Central Leads</a>
+                <a href="#" class="side-link dim">Users Management</a>
+                <a href="#" class="side-link dim">Membership Tiers</a>
+            </nav>
+            <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>{window.location.href='/index.html';})" class="side-signout">Sign Out</a>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <header style="margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: flex-end;">
+                <div>
+                    <h1 id="welcome-msg" style="font-size: 2rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; margin-bottom: 0.25rem;">Dashboard</h1>
+                    <p style="color: #718096; font-size: 1rem;" id="date-line">Platform overview</p>
+                </div>
+                <div class="quick-actions" style="margin-bottom: 0;">
+                    <a href="agents.html" class="qa-btn">Manage Agents</a>
+                    <a href="leads.html" class="qa-btn primary">View All Leads</a>
+                </div>
+            </header>
+
+            <!-- Stats Row -->
+            <div class="stat-grid" id="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Agents</div>
+                    <div class="stat-value" id="stat-total">—</div>
+                    <div class="stat-sub">on platform</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Published</div>
+                    <div class="stat-value" id="stat-published" style="color:#2f855a;">—</div>
+                    <div class="stat-sub"><span class="stat-dot" style="background:#48bb78;"></span>Live profiles</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Pending Review</div>
+                    <div class="stat-value" id="stat-pending" style="color:#dd6b20;">—</div>
+                    <div class="stat-sub"><span class="stat-dot" style="background:#ed8936;"></span>Needs approval</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">New Leads</div>
+                    <div class="stat-value" id="stat-leads" style="color:#1d6df2;">—</div>
+                    <div class="stat-sub"><span class="stat-dot" style="background:#1d6df2;"></span>Unclaimed inbox</div>
+                </div>
+            </div>
+
+            <!-- Two-Panel Row -->
+            <div class="dash-grid">
+                <!-- Pending Agents Panel -->
+                <div class="dash-panel">
+                    <div class="panel-header">
+                        <span class="panel-title">Agents Pending Review</span>
+                        <a href="agents.html?status=pending_review" class="panel-link">See all &rarr;</a>
+                    </div>
+                    <div class="panel-body" id="pending-agents-body">
+                        <div class="panel-empty">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- Recent Leads Panel -->
+                <div class="dash-panel">
+                    <div class="panel-header">
+                        <span class="panel-title">Recent Leads</span>
+                        <a href="leads.html" class="panel-link">See all &rarr;</a>
+                    </div>
+                    <div class="panel-body" id="recent-leads-body">
+                        <div class="panel-empty">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Auth guard
+            try {
+                const sessionRes = await fetch('/api/auth/session');
+                if (!sessionRes.ok) { window.location.href = '/pages/public/login.html'; return; }
+                const session = await sessionRes.json();
+                if (!['admin', 'super_admin'].includes(session.role)) { window.location.href = '/index.html'; return; }
+                document.getElementById('welcome-msg').textContent = `Welcome back, ${session.display_name.split(' ')[0]}`;
+            } catch (e) {
+                window.location.href = '/pages/public/login.html'; return;
+            }
+
+            document.getElementById('date-line').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+            // Fetch agents + leads in parallel
+            const [agents, leads] = await Promise.all([
+                fetch('/api/admin').then(r => r.ok ? r.json() : []).catch(() => []),
+                fetch('/api/leads/admin/inbox').then(r => r.ok ? r.json() : []).catch(() => [])
+            ]);
+
+            // Stats
+            const published   = agents.filter(a => a.is_published).length;
+            const pending     = agents.filter(a => a.profile_status === 'pending_review').length;
+            const newLeads    = leads.filter(l => l.status === 'new' || l.status === 'unassigned').length;
+
+            document.getElementById('stat-total').textContent     = agents.length;
+            document.getElementById('stat-published').textContent  = published;
+            document.getElementById('stat-pending').textContent    = pending;
+            document.getElementById('stat-leads').textContent      = newLeads;
+
+            // Pending agents table
+            const pendingAgents = agents.filter(a => a.profile_status === 'pending_review').slice(0, 8);
+            const paBody = document.getElementById('pending-agents-body');
+            if (pendingAgents.length === 0) {
+                paBody.innerHTML = '<div class="panel-empty">No agents awaiting review.</div>';
+            } else {
+                paBody.innerHTML = pendingAgents.map(a => `
+                    <div class="panel-row" style="grid-template-columns: 1fr auto; cursor: pointer;" onclick="window.location.href='agent-review.html?id=${a.id}'">
+                        <div>
+                            <div style="font-weight: 700; color: #1a202c; font-size: 0.9rem;">${a.display_name || a.full_name || 'Unnamed'}</div>
+                            <div style="font-size: 0.78rem; color: #718096; margin-top: 2px;">${a.email} &bull; ${a.brokerage_name || 'No Brokerage'}</div>
+                        </div>
+                        <span class="s-badge badge-pending">Review</span>
+                    </div>
+                `).join('');
+            }
+
+            // Recent leads table
+            const recentLeads = [...leads].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 8);
+            const rlBody = document.getElementById('recent-leads-body');
+            if (recentLeads.length === 0) {
+                rlBody.innerHTML = '<div class="panel-empty">No leads yet.</div>';
+            } else {
+                const typeBadge = t => {
+                    const map = { buyer: 'badge-buyer', seller: 'badge-seller', agent_inquiry: 'badge-agent' };
+                    return `<span class="s-badge ${map[t] || 'badge-general'}">${(t || 'general').replace('_', ' ')}</span>`;
+                };
+                const statusBadge = s => {
+                    if (s === 'new' || s === 'unassigned') return `<span class="s-badge badge-new">${s}</span>`;
+                    return `<span class="s-badge" style="background:#edf2f7;color:#4a5568;">${s}</span>`;
+                };
+                rlBody.innerHTML = recentLeads.map(l => `
+                    <div class="panel-row" style="grid-template-columns: 1fr auto auto; gap: 1rem; cursor: pointer;" onclick="window.location.href='lead-review.html?id=${l.id}'">
+                        <div>
+                            <div style="font-weight: 700; color: #1a202c; font-size: 0.9rem;">${l.name}</div>
+                            <div style="font-size: 0.78rem; color: #718096; margin-top: 2px;">${new Date(l.created_at).toLocaleDateString()}</div>
+                        </div>
+                        ${typeBadge(l.type)}
+                        ${statusBadge(l.status)}
+                    </div>
+                `).join('');
+            }
+        });
+    </script>
 </body>
 </html>

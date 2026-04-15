@@ -103,7 +103,7 @@
                         <p>We coordinate expert staging to present a perfectly curated lifestyle that drives competition and high offers.</p>
                     </div>
                 </div>
-                <button class="btn btn-primary" onclick="openModal()" style="margin-top: 1rem; width: max-content;">Get a valuation</button>
+                <button class="btn btn-primary" onclick="openForm('sell')" style="margin-top: 1rem; width: max-content;">Get a valuation</button>
             </div>
         </div>
     </section>
@@ -164,7 +164,7 @@
                 <div class="flex-card-content" id="full-service">
                     <div class="flex-card-header">
                         <p>We handle everything from staging to closing, focusing on getting you top dollar on the open market.</p>
-                        <a href="#" class="btn btn-primary" onclick="openModal()">List your home</a>
+                        <a href="#" class="btn btn-primary" onclick="openForm('sell')">List your home</a>
                     </div>
                     <div class="flex-images">
                         <img src="https://images.unsplash.com/photo-1560185127-6ed189bf02f4?q=80&w=1600&auto=format&fit=crop" alt="Staged Living Room" class="flex-img">
@@ -175,7 +175,7 @@
                 <div class="flex-card-content" id="cash-offer" style="display: none;">
                     <div class="flex-card-header">
                         <p>Skip the showings and repairs entirely. Get a competitive cash offer from our investor network in 48 hours.</p>
-                        <a href="#" class="btn btn-primary" onclick="openModal()">Get a cash offer</a>
+                        <a href="#" class="btn btn-primary" onclick="openForm('sell')">Get a cash offer</a>
                     </div>
                     <div class="flex-images">
                         <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1600&auto=format&fit=crop" alt="Signing contract" class="flex-img">
@@ -244,7 +244,7 @@
             <h2 class="sp-title" style="font-size: 3.2rem; margin: 0;">See how listing with us<br>could drive new offers<br>for your property</h2>
             <div style="max-width: 400px; justify-self: end; text-align: right;">
                 <p style="color: #4a5568; line-height: 1.6; margin-bottom: 1.5rem;">Talk to our local listing experts to see what your home is worth today. No high-pressure sales tactics. Just a casual conversation to outline a winning strategy.</p>
-                <button class="btn btn-primary" onclick="openModal()">Get a home valuation</button>
+                <button class="btn btn-primary" onclick="openForm('sell')">Get a home valuation</button>
             </div>
         </div>
         <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=800&auto=format&fit=crop" class="sp-fw-image" alt="Real Estate Handshake" style="height: 600px;">
@@ -304,20 +304,6 @@
             updateTestimonialUI();
         }
         
-        function openModal() {
-            document.getElementById('lead-modal').classList.add('active');
-            nextModalStep(1);
-        }
-
-        function closeModal() {
-            document.getElementById('lead-modal').classList.remove('active');
-        }
-
-        function nextModalStep(step) {
-            document.querySelectorAll('.modal-step').forEach(el => el.classList.remove('active'));
-            document.getElementById('modal-step-' + step).classList.add('active');
-        }
-
         function switchTab(tabId) {
             document.querySelectorAll(".flex-card-content").forEach(el => {
                 el.style.display = "none";

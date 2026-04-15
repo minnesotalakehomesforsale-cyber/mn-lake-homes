@@ -23,11 +23,16 @@ const createLead = async (req, res) => {
         // We extrapolate first name logically
         const firstName = name.split(' ')[0] || 'Unknown';
         
-        // Map abstract 'source' to 'lead_type' enum safely
-        let enumType = 'general_contact';
-        if (source === 'agent_inquiry') enumType = 'agent_inquiry';
-        else if (source.includes('buyer')) enumType = 'buyer';
-        else if (source.includes('seller')) enumType = 'seller';
+        // Map source to lead_type enum using exact matching
+        const enumMap = {
+            'agent_inquiry': 'agent_inquiry',
+            'buyer': 'buyer',
+            'seller': 'seller',
+            'join_request': 'join_request',
+            'market_report': 'market_report',
+            'property_question': 'property_question',
+        };
+        const enumType = enumMap[source] || 'general_contact';
 
         await pool.query(query, [name, firstName, email, phone, notes, enumType, source, finalAgentId]);
         res.status(201).json({ success: true, message: 'Lead logged' });

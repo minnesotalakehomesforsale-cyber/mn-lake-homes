@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="../../styles/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-    <style>
         /* Admin layout base */
         html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
         .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
@@ -182,9 +181,17 @@
             renderTable(a => a.source === source);
         }
 
-        // Init
-        document.addEventListener("DOMContentLoaded", () => {
-            setTimeout(() => { renderTable(a => true); }, 100);
+        // Auth guard — redirect non-admins before rendering any data
+        document.addEventListener("DOMContentLoaded", async () => {
+            try {
+                const sessionRes = await fetch('/api/auth/session');
+                if (!sessionRes.ok) { window.location.href = '/pages/public/login.html'; return; }
+                const session = await sessionRes.json();
+                if (!['admin', 'super_admin'].includes(session.role)) { window.location.href = '/index.html'; return; }
+            } catch (e) {
+                window.location.href = '/pages/public/login.html'; return;
+            }
+            renderTable(a => true);
         });
     </script>
     <global-footer></global-footer>

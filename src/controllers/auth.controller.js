@@ -110,12 +110,7 @@ const login = async (req, res) => {
         const user = userRes.rows[0];
 
         // Verify password
-        let validPassword = false;
-        if (user.password_hash === '$2b$10$MOCK_HASH_DO_NOT_DEPLOY' && password === 'admin') {
-            validPassword = true; // Dev seed bypass only
-        } else {
-            validPassword = await bcrypt.compare(password, user.password_hash);
-        }
+        const validPassword = await bcrypt.compare(password, user.password_hash);
 
         if (!validPassword) {
             return res.status(401).json({ error: 'Invalid email or password.' });

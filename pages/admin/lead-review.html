@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="../../styles/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-    <style>
         /* Admin layout base */
         html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
         .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
@@ -109,13 +108,23 @@
                         </div>
 
                         <div style="margin-top: 2rem;">
-                            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin-bottom: 0.5rem;">Assign To Agent</label>
-                            <select id="agent-dropdown" class="control-select">
-                                <option value="" disabled selected>Select Agent...</option>
-                                <!-- Map dynamically later in full release, using static values to test the ping for MVP -->
-                                <option value="8c8de6eb-b83b-4654-b5f7-679901bdc753">Route to Agent UUID (Example)</option>
+                            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin-bottom: 0.5rem;">Update Status</label>
+                            <select id="status-dropdown" class="control-select">
+                                <option value="new">New</option>
+                                <option value="unassigned">Unassigned</option>
+                                <option value="assigned">Assigned</option>
+                                <option value="contacted">Contacted</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="closed">Closed</option>
+                                <option value="archived">Archived</option>
                             </select>
-                            
+                            <button class="btn-full" style="background:#4a5568; color:#fff; margin-bottom: 1rem;" onclick="updateStatus()">Update Status</button>
+
+                            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin-bottom: 0.5rem; margin-top: 1rem;">Assign To Agent</label>
+                            <select id="agent-dropdown" class="control-select">
+                                <option value="" disabled selected>Loading agents...</option>
+                            </select>
+
                             <button class="btn-full" style="background:#38a169; color:#fff;" onclick="executeAssignment()">Execute Manual Assignment</button>
                         </div>
                     </div>
@@ -141,75 +150,131 @@
         const leadId = urlParams.get('id');
 
         document.addEventListener('DOMContentLoaded', async () => {
-            if(!leadId) return alert("No Lead ID Target Provided");
-
+            // Auth guard
             try {
-                const res = await fetch(`/api/admin/leads/${leadId}`);
-                if(!res.ok) throw new Error("Lead Not Found");
-
-                const lead = await res.json();
-                
-                document.getElementById('lead-name').innerText = lead.full_name;
-                document.getElementById('lead-sub').innerText = `L-${lead.id.split('-')[0]} • Submitted ${new Date(lead.created_at).toLocaleDateString()}`;
-                
-                document.getElementById('badge-type').innerText = lead.lead_type.toUpperCase();
-                document.getElementById('badge-status').innerText = lead.lead_status.toUpperCase();
-                
-                if (lead.lead_status === 'assigned') {
-                    document.getElementById('badge-status').className = 's-badge type-buyer';
-                }
-
-                document.getElementById('meta-grid').innerHTML = `
-                    <div class="data-point"><label>Full Name</label><div>${lead.full_name}</div></div>
-                    <div class="data-point"><label>Email Address</label><div><a href="mailto:${lead.email}" style="color:var(--accent-blue);">${lead.email || 'N/A'}</a></div></div>
-                    <div class="data-point"><label>Phone Number</label><div>${lead.phone || 'N/A'}</div></div>
-                    <div class="data-point"><label>Origin Source URL</label><div style="font-family:monospace; color:#4a5568;">${lead.lead_source || 'Direct'}</div></div>
-                `;
-
-                document.getElementById('lead-message').innerText = lead.message || 'No direct message provided.';
-                
-                if(lead.assigned_agent_name) {
-                    const owner = document.getElementById('current-owner');
-                    owner.innerText = lead.assigned_agent_name;
-                    owner.style.color = '#2b6cb0';
-                    owner.style.fontStyle = 'normal';
-                } else if(lead.assigned_user_name) {
-                    const owner = document.getElementById('current-owner');
-                    owner.innerText = lead.assigned_user_name + " (Admin)";
-                    owner.style.color = '#2f855a';
-                    owner.style.fontStyle = 'normal';
-                } else {
-                    document.getElementById('current-owner').innerText = 'None (Unassigned)';
-                }
-
-                // Render Notes
-                const tl = document.getElementById('notes-timeline');
-                tl.innerHTML = '';
-                if(lead.notes.length === 0) {
-                    tl.innerHTML = '<p style="color:#a0aec0; font-size:0.85rem;">No internal routing logs yet.</p>';
-                } else {
-                    lead.notes.forEach(n => pushNoteToTimeline(n.content, n.author_name, n.created_at));
-                }
-
-            } catch (err) {
-                console.error(err);
-                alert("Database Engine Failed to load Lead");
+                const sessionRes = await fetch('/api/auth/session');
+                if (!sessionRes.ok) { window.location.href = '/pages/public/login.html'; return; }
+                const session = await sessionRes.json();
+                if (!['admin', 'super_admin'].includes(session.role)) { window.location.href = '/index.html'; return; }
+            } catch (e) {
+                window.location.href = '/pages/public/login.html'; return;
             }
+
+            if (!leadId) return alert("No Lead ID provided.");
+
+            // Load agents and lead data in parallel
+            const [lead, agents] = await Promise.all([
+                loadLead(),
+                loadAgents()
+            ]);
+
+            if (lead) renderLead(lead);
+            if (agents) renderAgentDropdown(agents, lead && lead.agent_id);
         });
 
-        async function executeAssignment() {
+        async function loadLead() {
+            try {
+                const res = await fetch(`/api/admin/leads/${leadId}`);
+                if (!res.ok) throw new Error("Lead not found.");
+                return await res.json();
+            } catch (err) {
+                console.error(err);
+                alert("Failed to load lead.");
+                return null;
+            }
+        }
+
+        async function loadAgents() {
+            try {
+                const res = await fetch('/api/agents/public');
+                if (!res.ok) return [];
+                return await res.json();
+            } catch (err) {
+                return [];
+            }
+        }
+
+        function renderLead(lead) {
+            document.getElementById('lead-name').innerText = lead.full_name;
+            document.getElementById('lead-sub').innerText = `L-${lead.id.split('-')[0]} • Submitted ${new Date(lead.created_at).toLocaleDateString()}`;
+            document.getElementById('badge-type').innerText = lead.lead_type.toUpperCase();
+            document.getElementById('badge-status').innerText = lead.lead_status.toUpperCase();
+
+            if (lead.lead_status === 'assigned') {
+                document.getElementById('badge-status').className = 's-badge type-buyer';
+            }
+
+            // Set status dropdown to current value
+            const statusDrop = document.getElementById('status-dropdown');
+            if (statusDrop) statusDrop.value = lead.lead_status;
+
+            document.getElementById('meta-grid').innerHTML = `
+                <div class="data-point"><label>Full Name</label><div>${lead.full_name}</div></div>
+                <div class="data-point"><label>Email Address</label><div><a href="mailto:${lead.email}" style="color:var(--accent-blue);">${lead.email || 'N/A'}</a></div></div>
+                <div class="data-point"><label>Phone Number</label><div>${lead.phone || 'N/A'}</div></div>
+                <div class="data-point"><label>Origin Source</label><div style="font-family:monospace; color:#4a5568;">${lead.lead_source || 'Direct'}</div></div>
+            `;
+
+            document.getElementById('lead-message').innerText = lead.message || 'No direct message provided.';
+
+            const owner = document.getElementById('current-owner');
+            if (lead.assigned_agent_name) {
+                owner.innerText = lead.assigned_agent_name;
+                owner.style.color = '#2b6cb0';
+                owner.style.fontStyle = 'normal';
+            } else if (lead.assigned_user_name) {
+                owner.innerText = lead.assigned_user_name + ' (Admin)';
+                owner.style.color = '#2f855a';
+                owner.style.fontStyle = 'normal';
+            } else {
+                owner.innerText = 'None (Unassigned)';
+            }
+
+            const tl = document.getElementById('notes-timeline');
+            tl.innerHTML = '';
+            if (!lead.notes || lead.notes.length === 0) {
+                tl.innerHTML = '<p style="color:#a0aec0; font-size:0.85rem;">No internal routing logs yet.</p>';
+            } else {
+                lead.notes.forEach(n => pushNoteToTimeline(n.content, n.author_name, n.created_at));
+            }
+        }
+
+        function renderAgentDropdown(agents, currentAgentId) {
             const select = document.getElementById('agent-dropdown');
-            if(select.value === "") return;
-            
+            select.innerHTML = '<option value="">Unassign / No Agent</option>';
+            agents.forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a.id;
+                opt.textContent = `${a.display_name}${a.brokerage_name ? ' — ' + a.brokerage_name : ''}`;
+                if (a.id === currentAgentId) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        async function updateStatus() {
+            const status = document.getElementById('status-dropdown').value;
+            try {
+                const res = await fetch(`/api/admin/leads/${leadId}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                if (!res.ok) throw new Error('Status update failed.');
+                window.location.reload();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function executeAssignment() {
+            const agentId = document.getElementById('agent-dropdown').value || null;
             try {
                 const res = await fetch(`/api/admin/leads/${leadId}/assign`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ agentId: select.value })
+                    body: JSON.stringify({ agentId })
                 });
-
-                if(!res.ok) throw new Error("Update Failed");
-                
+                if (!res.ok) throw new Error('Assignment failed.');
                 window.location.reload();
             } catch (err) {
                 alert(err.message);
@@ -218,17 +283,15 @@
 
         async function addNote() {
             const input = document.getElementById('note-input');
-            if(input.value.trim() === '') return;
-            
+            if (!input.value.trim()) return;
             try {
                 const res = await fetch(`/api/admin/leads/${leadId}/notes`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content: input.value })
                 });
-
-                if(!res.ok) throw new Error("Note Dispatch Failed");
-
+                if (!res.ok) throw new Error('Note failed to save.');
+                input.value = '';
                 window.location.reload();
             } catch (err) {
                 alert(err.message);

@@ -195,58 +195,268 @@ class GlobalFooter extends HTMLElement {
 }
 customElements.define('global-footer', GlobalFooter);
 
-// ─── Lead Modal ───────────────────────────────────────────────────────────────
+// ─── Lead Modal (legacy alias — renders nothing, openForm() drives UI) ────────
+class LeadModal extends HTMLElement { connectedCallback() {} }
+customElements.define('lead-modal', LeadModal);
 
-class LeadModal extends HTMLElement {
-    connectedCallback() {
-        this.innerHTML = `<div id="lead-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-close" onclick="closeModal()">
-                <svg viewBox="0 0 24 24" width="24" height="24"><path d="M18 6L6 18M6 6l12 12" stroke="#000" stroke-width="2" stroke-linecap="round"/></svg>
-            </div>
+// ─── Multi-Step Conversational Lead Forms ─────────────────────────────────────
 
-            <div id="modal-step-1" class="modal-step active">
-                <h2>Tell us a bit about yourself</h2>
-                <p>We need a little more information to point you in the right direction.</p>
-                <div class="form-group-sys">
-                    <input type="text" id="modal-name" class="input-sys" placeholder="Full Name">
-                </div>
-                <div class="form-group-sys">
-                    <input type="email" id="modal-email" class="input-sys" placeholder="Email Address">
-                </div>
-                <div class="form-group-sys">
-                    <input type="tel" id="modal-phone" class="input-sys" placeholder="Phone Number">
-                </div>
-                <button class="btn btn-primary modal-next-btn" style="border:none;" onclick="nextModalStep(2)">Continue</button>
-            </div>
+const _LF_CFG = {
+    buy: {
+        source: 'buyer',
+        steps: [
+            { q: 'Who are we speaking with today?',         hint: "Let's start with your first name.",                                          field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
+            { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
+            { q: d => `${d.first}, what's your budget range?`,              hint: 'Helps us match you with the right properties.',               field: { id: 'budget',   type: 'select',  ph: 'Select a range…',         opts: ['Under $500K','$500K – $750K','$750K – $1M','$1M – $2M','Over $2M'] } },
+            { q: 'When are you hoping to buy?',                                                                                                   field: { id: 'timeline', type: 'select',  ph: 'Select a timeline…',      opts: ['ASAP — ready to move','Within 1–3 months','Within 3–6 months','Just exploring for now'] } },
+            { q: d => `Almost done, ${d.first}. How can we reach you?`,     hint: "Enter at least one contact method and we'll be in touch within one business day.", field: { id: 'contact', type: 'contact' } }
+        ]
+    },
+    sell: {
+        source: 'seller',
+        steps: [
+            { q: 'Who are we speaking with today?',         hint: "Let's start with your first name.",                                          field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
+            { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
+            { q: d => `${d.first}, where is the property located?`,         hint: 'City, lake name, or general area.',                           field: { id: 'city',     type: 'text',    ph: 'e.g. Lake Minnetonka, Brainerd, Nisswa…' } },
+            { q: 'When are you looking to sell?',                                                                                                 field: { id: 'timeline', type: 'select',  ph: 'Select a timeline…',      opts: ['As soon as possible','Within 3 months','3–6 months out','Just exploring options'] } },
+            { q: d => `Great, ${d.first}. How can we reach you?`,           hint: "We'll send your free market analysis within one business day.", field: { id: 'contact', type: 'contact' } }
+        ]
+    },
+    rent: {
+        source: 'general_contact',
+        steps: [
+            { q: 'Who are we speaking with today?',         hint: "Let's start with your first name.",                                          field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
+            { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
+            { q: 'When do you need it?',                    hint: 'Helps us check availability.',                                               field: { id: 'timeline', type: 'select',  ph: 'Select a timeframe…',     opts: ['This weekend','This month','Seasonal (summer or winter)','Year-round lease'] } },
+            { q: d => `${d.first}, what's your monthly budget?`,                                                                                  field: { id: 'budget',   type: 'select',  ph: 'Select a range…',         opts: ['Under $1,500/mo','$1,500 – $3,000/mo','$3,000 – $5,000/mo','Over $5,000/mo'] } },
+            { q: d => `Perfect, ${d.first}. How can we reach you?`,         hint: "We'll start finding your ideal rental right away.",           field: { id: 'contact', type: 'contact' } }
+        ]
+    },
+    agent: {
+        source: 'agent_inquiry',
+        steps: [
+            { q: 'Who are we speaking with today?',         hint: "Let's start with your first name.",                                          field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
+            { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
+            { q: d => `${d.first}, what do you need help with?`,            hint: "We'll match you with the right specialist.",                  field: { id: 'intent',   type: 'select',  ph: 'Select one…',             opts: ['Buying a lake home','Selling my property','Finding a rental','Market information','General question'] } },
+            { q: d => `Got it, ${d.first}. How can we reach you?`,          hint: 'A local specialist will be in touch within one business day.', field: { id: 'contact', type: 'contact' } }
+        ]
+    },
+    general: {
+        source: 'general_contact',
+        steps: [
+            { q: 'Who are we speaking with today?',         hint: "Let's start with your first name.",                                          field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
+            { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
+            { q: d => `How can we help you, ${d.first}?`,                                                                                        field: { id: 'intent',   type: 'select',  ph: 'Select one…',             opts: ['I want to buy a home','I want to sell my property',"I'm looking for a rental",'I need to find an agent','General question'] } },
+            { q: d => `Perfect, ${d.first}. How can we reach you?`,         hint: "We'll be in touch within one business day.",                  field: { id: 'contact', type: 'contact' } }
+        ]
+    }
+};
 
-            <div id="modal-step-2" class="modal-step">
-                <h2>How can we help?</h2>
-                <p>Help us customize your real estate experience.</p>
-                <div class="form-group-sys">
-                    <div class="select-wrapper">
-                        <select id="modal-package">
-                            <option value="" disabled selected>What are you looking to do?</option>
-                            <option value="buy">Buy a Lake Home</option>
-                            <option value="sell">Sell a Lake Property</option>
-                            <option value="rent">Find a Rental</option>
-                            <option value="appraisal">Get a Home Appraisal</option>
-                            <option value="talk">Speak to an Agent</option>
-                        </select>
-                    </div>
-                </div>
-                <button class="btn btn-primary modal-next-btn" style="border:none;" onclick="nextModalStep(3)">Submit Request</button>
-            </div>
+let _lfs = { type: 'general', step: 0, data: {} }; // live state
 
-            <div id="modal-step-3" class="modal-step">
-                <div class="success-icon">✓</div>
-                <h2>You're all set!</h2>
-                <p>Our team will reach out shortly to discuss your real estate needs.</p>
-                <button class="btn btn-primary modal-next-btn" style="border:none;" onclick="closeModal()">Back to site</button>
-            </div>
+function _lfQ(step) {
+    const s = _LF_CFG[_lfs.type].steps[step];
+    return typeof s.q === 'function' ? s.q(_lfs.data) : s.q;
+}
 
+function _lfInit() {
+    if (document.getElementById('lf-overlay')) return;
+    const el = document.createElement('div');
+    el.id = 'lf-overlay';
+    el.style.cssText = 'display:none;position:fixed;inset:0;z-index:9000;background:#fff;font-family:"Inter",sans-serif;';
+    el.innerHTML = `
+        <!-- Progress bar -->
+        <div style="position:absolute;top:0;left:0;right:0;height:4px;background:#f0f4f8;">
+            <div id="lf-bar" style="height:100%;background:#1d6df2;width:0%;transition:width 0.4s ease;border-radius:0 99px 99px 0;"></div>
         </div>
-    </div>`;
+
+        <!-- Top chrome: back | logo | close -->
+        <div style="position:absolute;top:0;left:0;right:0;padding:1.25rem 1.75rem;display:flex;justify-content:space-between;align-items:center;z-index:10;">
+            <button id="lf-back" onclick="window._lfBack()"
+                style="background:none;border:none;cursor:pointer;font-size:0.875rem;font-weight:600;color:#a0aec0;font-family:inherit;padding:0.4rem 0;visibility:hidden;transition:color 0.15s;"
+                onmouseover="this.style.color='#1a202c'" onmouseout="this.style.color='#a0aec0'">&#8592; Back</button>
+            <div style="display:flex;align-items:center;gap:0.45rem;">
+                <div style="width:8px;height:8px;border-radius:50%;background:#1d6df2;"></div>
+                <span style="font-weight:700;font-size:0.875rem;color:#1a202c;letter-spacing:-0.2px;">MN Lake Homes</span>
+            </div>
+            <button onclick="closeForm()"
+                style="width:36px;height:36px;border-radius:50%;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:1rem;color:#718096;display:flex;align-items:center;justify-content:center;transition:all 0.15s;"
+                onmouseover="this.style.background='#f7f9fa'" onmouseout="this.style.background='#fff'" aria-label="Close">&#x2715;</button>
+        </div>
+
+        <!-- Step content (centered) -->
+        <div style="display:flex;align-items:center;justify-content:center;height:100%;padding:5rem 1.5rem 3rem;">
+            <div id="lf-body" style="width:100%;max-width:520px;transition:opacity 0.15s ease,transform 0.15s ease;">
+                <h2 id="lf-q" style="font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;color:#1a202c;letter-spacing:-1px;line-height:1.2;margin:0 0 0.75rem;text-align:center;"></h2>
+                <p  id="lf-hint" style="color:#a0aec0;font-size:0.95rem;margin:0 0 2rem;text-align:center;line-height:1.5;"></p>
+                <div id="lf-field" style="margin-bottom:1.25rem;"></div>
+                <div id="lf-err" style="display:none;color:#c53030;font-size:0.85rem;margin-bottom:1rem;padding:0.75rem 1rem;background:#fff5f5;border-radius:10px;border:1px solid #fed7d7;text-align:center;"></div>
+                <button id="lf-next" onclick="window._lfNext()"
+                    style="width:100%;padding:1rem 1.5rem;background:#1a202c;color:#fff;border:none;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer;font-family:inherit;transition:background 0.2s;"
+                    onmouseover="if(!this.disabled)this.style.background='#2d3748'" onmouseout="if(!this.disabled)this.style.background='#1a202c'">Continue &#8594;</button>
+                <p style="text-align:center;color:#cbd5e0;font-size:0.75rem;margin-top:0.9rem;">We respect your privacy. No spam, ever.</p>
+            </div>
+        </div>
+
+        <!-- Success screen -->
+        <div id="lf-ok" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;">
+            <div style="width:72px;height:72px;border-radius:50%;background:#f0fff4;display:flex;align-items:center;justify-content:center;margin:0 0 1.5rem;border:2px solid #c6f6d5;">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <h3 id="lf-ok-title" style="font-size:2rem;font-weight:800;color:#1a202c;letter-spacing:-1px;margin:0 0 0.75rem;"></h3>
+            <p  id="lf-ok-msg"   style="color:#718096;line-height:1.6;max-width:380px;margin:0 auto 2rem;"></p>
+            <button onclick="closeForm()"
+                style="padding:1rem 2.5rem;background:#1a202c;color:#fff;border:none;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer;font-family:inherit;transition:background 0.2s;"
+                onmouseover="this.style.background='#2d3748'" onmouseout="this.style.background='#1a202c'">Back to site</button>
+        </div>
+    `;
+    document.body.appendChild(el);
+}
+
+function _lfRender() {
+    const steps = _LF_CFG[_lfs.type].steps;
+    const s     = steps[_lfs.step];
+    const total = steps.length;
+
+    document.getElementById('lf-bar').style.width  = Math.round((_lfs.step / total) * 100) + '%';
+    document.getElementById('lf-back').style.visibility = _lfs.step === 0 ? 'hidden' : 'visible';
+    document.getElementById('lf-q').textContent    = _lfQ(_lfs.step);
+    document.getElementById('lf-err').style.display = 'none';
+
+    const hint = document.getElementById('lf-hint');
+    hint.textContent   = s.hint || '';
+    hint.style.display = s.hint ? 'block' : 'none';
+
+    const f = s.field;
+    const iStyle = 'width:100%;padding:1rem 1.25rem;border:2px solid #e2e8f0;border-radius:12px;font-family:inherit;font-size:1.15rem;box-sizing:border-box;outline:none;transition:border-color 0.2s;background:#fff;';
+    const focus  = `onfocus="this.style.borderColor='#1d6df2'" onblur="this.style.borderColor='#e2e8f0'"`;
+    const area   = document.getElementById('lf-field');
+
+    if (f.type === 'contact') {
+        area.innerHTML = `
+            <input type="email" id="lf-email" placeholder="Email address"
+                style="${iStyle}" ${focus} value="${_lfs.data.email || ''}">
+            <div style="height:0.75rem;"></div>
+            <input type="tel"   id="lf-phone" placeholder="Phone number (optional)"
+                style="${iStyle}" ${focus} value="${_lfs.data.phone || ''}">`;
+        setTimeout(() => document.getElementById('lf-email')?.focus(), 60);
+    } else if (f.type === 'select') {
+        const opts = f.opts.map(o => `<option value="${o}" ${_lfs.data[f.id]===o?'selected':''}>${o}</option>`).join('');
+        area.innerHTML = `
+            <select id="lf-${f.id}" style="${iStyle}color:#1a202c;appearance:none;cursor:pointer;"
+                ${focus} onchange="window._lfNext()">
+                <option value="" disabled ${_lfs.data[f.id]?'':'selected'}>${f.ph}</option>${opts}
+            </select>`;
+    } else {
+        area.innerHTML = `
+            <input type="${f.type}" id="lf-${f.id}" placeholder="${f.ph}" autocomplete="${f.ac||'off'}"
+                style="${iStyle}text-align:center;" ${focus} value="${_lfs.data[f.id]||''}">`;
+        setTimeout(() => document.getElementById('lf-' + f.id)?.focus(), 60);
+    }
+
+    // next button
+    const btn = document.getElementById('lf-next');
+    btn.disabled      = false;
+    btn.style.display = f.type === 'select' ? 'none' : 'block';
+    btn.textContent   = _lfs.step === total - 1 ? 'Submit →' : 'Continue →';
+    btn.style.background = '#1a202c';
+}
+
+function _lfSlide() {
+    const body = document.getElementById('lf-body');
+    body.style.opacity = '0'; body.style.transform = 'translateY(12px)';
+    setTimeout(() => { _lfRender(); body.style.opacity = '1'; body.style.transform = 'translateY(0)'; }, 140);
+}
+
+window.openForm = function(type) {
+    _lfInit();
+    _lfs = { type: type || 'general', step: 0, data: {} };
+    document.getElementById('lf-ok').style.display   = 'none';
+    document.getElementById('lf-body').style.display = 'block';
+    document.getElementById('lf-overlay').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    _lfRender();
+};
+
+window.closeForm = function() {
+    const el = document.getElementById('lf-overlay');
+    if (el) el.style.display = 'none';
+    document.body.style.overflow = '';
+};
+
+window._lfBack = function() {
+    if (_lfs.step > 0) { _lfs.step--; _lfSlide(); }
+};
+
+window._lfNext = function() {
+    const steps = _LF_CFG[_lfs.type].steps;
+    const f     = steps[_lfs.step].field;
+    const err   = document.getElementById('lf-err');
+
+    if (f.type === 'contact') {
+        const email = (document.getElementById('lf-email')?.value || '').trim();
+        const phone = (document.getElementById('lf-phone')?.value || '').trim();
+        if (!email && !phone) { err.textContent = 'Please enter at least one contact method.'; err.style.display = 'block'; return; }
+        _lfs.data.email = email || null;
+        _lfs.data.phone = phone || null;
+    } else if (f.type === 'select') {
+        const val = document.getElementById('lf-' + f.id)?.value;
+        if (!val) return;
+        _lfs.data[f.id] = val;
+    } else {
+        const val = (document.getElementById('lf-' + f.id)?.value || '').trim();
+        if (!val) { err.textContent = 'This field is required.'; err.style.display = 'block'; return; }
+        _lfs.data[f.id] = val;
+    }
+
+    if (_lfs.step === steps.length - 1) { _lfDoSubmit(); return; }
+    _lfs.step++;
+    _lfSlide();
+};
+
+async function _lfDoSubmit() {
+    const cfg  = _LF_CFG[_lfs.type];
+    const d    = _lfs.data;
+    const name = [d.first, d.last].filter(Boolean).join(' ');
+    const skip = new Set(['first','last','email','phone']);
+    const notes = Object.entries(d).filter(([k,v]) => !skip.has(k) && v)
+        .map(([k,v]) => `${k[0].toUpperCase()+k.slice(1).replace(/_/g,' ')}: ${v}`).join('\n');
+
+    const btn = document.getElementById('lf-next');
+    btn.disabled = true; btn.textContent = 'Submitting…'; btn.style.background = '#a0aec0';
+    document.getElementById('lf-err').style.display = 'none';
+
+    try {
+        const res = await fetch('/api/leads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email: d.email||null, phone: d.phone||null, notes: notes||null, source: cfg.source })
+        });
+        if (!res.ok) { const r = await res.json().catch(()=>({})); throw new Error(r.error || 'Submission failed.'); }
+
+        document.getElementById('lf-bar').style.width  = '100%';
+        document.getElementById('lf-body').style.display = 'none';
+        document.getElementById('lf-back').style.visibility = 'hidden';
+        const ok = document.getElementById('lf-ok');
+        document.getElementById('lf-ok-title').textContent = `Thanks, ${d.first || 'you\'re all set'}!`;
+        document.getElementById('lf-ok-msg').textContent   = 'Our team will review your request and reach out within one business day. We look forward to helping you.';
+        ok.style.display = 'flex';
+    } catch(err) {
+        document.getElementById('lf-err').textContent = err.message;
+        document.getElementById('lf-err').style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Submit →'; btn.style.background = '#1a202c';
     }
 }
-customElements.define('lead-modal', LeadModal);
+
+// Backward-compat aliases
+window.openModal     = function() { openForm('general'); };
+window.closeModal    = function() { closeForm(); };
+window.nextModalStep = function() {};
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeForm(); return; }
+    if (e.key === 'Enter') {
+        const ov = document.getElementById('lf-overlay');
+        if (ov && ov.style.display !== 'none') { e.preventDefault(); window._lfNext(); }
+    }
+});

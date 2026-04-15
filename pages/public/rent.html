@@ -96,7 +96,7 @@
                         <p>Get notified instantly when a highly-coveted summer rental drops in your desired lake chain.</p>
                     </div>
                 </div>
-                <button class="btn btn-primary" onclick="openModal()" style="margin-top: 1rem; width: max-content;">Explore properties</button>
+                <button class="btn btn-primary" onclick="openForm('rent')" style="margin-top: 1rem; width: max-content;">Explore properties</button>
             </div>
         </div>
     </section>
@@ -117,7 +117,7 @@
                 <div class="flex-card-content" id="seasonal">
                     <div class="flex-card-header">
                         <p>Book a premium cabin for summer memories or a winter ice-fishing retreat on Minnesota's best lakes.</p>
-                        <a href="#" class="btn btn-primary" onclick="openModal()">Find a getaway</a>
+                        <a href="#" class="btn btn-primary" onclick="openForm('rent')">Find a getaway</a>
                     </div>
                     <div class="flex-images">
                         <img src="https://images.unsplash.com/photo-1544723048-fd4487b11306?q=80&w=1600&auto=format&fit=crop" alt="Happy family" class="flex-img">
@@ -128,7 +128,7 @@
                 <div class="flex-card-content" id="long-term" style="display: none;">
                     <div class="flex-card-header">
                         <p>Lock in a 12 to 24-month lease on a luxury estate. Perfect for transitioning between homes or testing a new area.</p>
-                        <a href="#" class="btn btn-primary" onclick="openModal()">Explore premium listings</a>
+                        <a href="#" class="btn btn-primary" onclick="openForm('rent')">Explore premium listings</a>
                     </div>
                     <div class="flex-images">
                         <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop" alt="Luxury home interior" class="flex-img">
@@ -139,7 +139,7 @@
                 <div class="flex-card-content" id="corporate" style="display: none;">
                     <div class="flex-card-header">
                         <p>Fully furnished, high-end properties suited for executive relocations or extended business stays.</p>
-                        <a href="#" class="btn btn-primary" onclick="openModal()">View corporate inventory</a>
+                        <a href="#" class="btn btn-primary" onclick="openForm('rent')">View corporate inventory</a>
                     </div>
                     <div class="flex-images">
                         <img src="https://images.unsplash.com/photo-1560185127-6ed189bf02f4?q=80&w=1400&auto=format&fit=crop" alt="Lake activities" class="flex-img">
@@ -182,7 +182,7 @@
             <h2 class="sp-title" style="font-size: 3.2rem; margin: 0;">See how MN Lake Homes can<br>upgrade your next<br>seasonal stay</h2>
             <div style="max-width: 400px; justify-self: end; text-align: right;">
                 <p style="color: #4a5568; line-height: 1.6; margin-bottom: 1.5rem;">Connect with our leasing advisors to discuss your requirements. We'll curate a list of exclusive properties perfectly tailored to your needs.</p>
-                <button class="btn btn-primary" onclick="openModal()">Inquire now</button>
+                <button class="btn btn-primary" onclick="openForm('rent')">Inquire now</button>
             </div>
         </div>
         <img src="https://images.unsplash.com/photo-1544723048-fd4487b11306?q=80&w=800&auto=format&fit=crop" class="sp-fw-image" alt="Real Estate Consultation" style="height: 600px;">
@@ -241,20 +241,6 @@
             updateTestimonialUI();
         }
         
-        function openModal() {
-            document.getElementById('lead-modal').classList.add('active');
-            nextModalStep(1);
-        }
-
-        function closeModal() {
-            document.getElementById('lead-modal').classList.remove('active');
-        }
-
-        function nextModalStep(step) {
-            document.querySelectorAll('.modal-step').forEach(el => el.classList.remove('active'));
-            document.getElementById('modal-step-' + step).classList.add('active');
-        }
-
         function switchTab(tabId) {
             document.querySelectorAll(".flex-card-content").forEach(el => {
                 el.style.display = "none";
