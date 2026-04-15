@@ -235,6 +235,12 @@
             document.getElementById(`${target}-portal`).classList.add('active');
         }
 
+        // Auto-switch to agent portal if ?portal=agent or ?admin=1 in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('portal') === 'agent' || urlParams.get('admin') === '1') {
+            togglePortal('agent');
+        }
+
         // If already logged in, redirect away from login page
         fetch('/api/auth/session')
             .then(r => { if (r.ok) return r.json(); throw new Error('not_logged_in'); })

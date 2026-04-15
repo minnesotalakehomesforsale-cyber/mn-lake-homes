@@ -176,7 +176,7 @@ class GlobalFooter extends HTMLElement {
                     <a href="${bp}contact.html">Contact Us</a>
                     <div style="margin-top: 1rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 0.25rem;">
                         <a href="${rp}pages/public/login.html" style="color: #718096; font-size: 0.85rem;">Agent Login</a>
-                        <a href="${rp}pages/admin/dashboard.html" style="color: #718096; font-size: 0.85rem;">Admin Portal</a>
+                        <a href="${rp}pages/public/login.html?admin=1" style="color: #718096; font-size: 0.85rem;">Admin Portal</a>
                     </div>
                 </div>
             </div>
