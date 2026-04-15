@@ -3,15 +3,23 @@ const router = express.Router();
 const adminController = require('../controllers/admin.controller');
 const { verifyToken, requireRole } = require('../middleware/auth');
 
-// TEMPORARILY DISABLED FOR STAGING - NO LOGIN UI EXISTS YET
-// router.use(verifyToken);
-// router.use(requireRole('super_admin')); // Admin only bounds
+// All admin routes require a valid session with admin or super_admin role
+router.use(verifyToken);
+router.use(requireRole(['admin', 'super_admin']));
 
-router.get('/', adminController.getLedger);
-router.get('/:id', adminController.getAgentDetail);
-router.patch('/:id/status', adminController.updateStatus);
+// ─── AGENT LEDGER ─────────────────────────────────────────────────────────────
+router.get('/', adminController.getLedger);                              // GET /api/admin?search=&status=&membership=&published=
+router.post('/', adminController.createAgent);                           // POST /api/admin
+router.get('/:id', adminController.getAgentDetail);                      // GET /api/admin/:id
+router.patch('/:id/profile', adminController.updateAgentProfile);        // PATCH /api/admin/:id/profile
+router.patch('/:id/status', adminController.updateStatus);               // PATCH /api/admin/:id/status
+router.patch('/:id/account-status', adminController.updateAccountStatus);// PATCH /api/admin/:id/account-status
 
-// LEAD OPERATIONS
+// ─── USER MANAGEMENT ─────────────────────────────────────────────────────────
+router.get('/users', adminController.getUsers);                          // GET /api/admin/users
+router.get('/users/:id', adminController.getUserDetail);                 // GET /api/admin/users/:id
+
+// ─── LEADS ────────────────────────────────────────────────────────────────────
 router.get('/leads/:id', adminController.getLeadDetail);
 router.patch('/leads/:id/status', adminController.updateLeadStatus);
 router.patch('/leads/:id/assign', adminController.assignLead);

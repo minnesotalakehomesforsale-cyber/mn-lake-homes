@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Denied | MN Lake Homes</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f7f9fa;
+            color: #1a202c;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .error-wrap {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem 1.5rem;
+            margin-top: 80px;
+        }
+        .error-card {
+            background: #fff;
+            max-width: 480px;
+            width: 100%;
+            padding: 3.5rem 3rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.07);
+            border: 1px solid #edf2f7;
+            text-align: center;
+        }
+        .error-icon {
+            width: 72px;
+            height: 72px;
+            background: #fff5f5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            border: 2px solid #fed7d7;
+        }
+        .error-code {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #e53e3e;
+            margin-bottom: 0.75rem;
+        }
+        .error-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1a202c;
+            letter-spacing: -0.5px;
+            margin-bottom: 1rem;
+        }
+        .error-body {
+            color: #718096;
+            line-height: 1.7;
+            margin-bottom: 2.5rem;
+            font-size: 0.95rem;
+        }
+        .error-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .btn-primary-err {
+            display: block;
+            padding: 1rem;
+            background: #1a202c;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        .btn-primary-err:hover { opacity: 0.85; }
+        .btn-secondary-err {
+            display: block;
+            padding: 1rem;
+            background: transparent;
+            color: #718096;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-secondary-err:hover { background: #f7f9fa; color: #1a202c; }
+    </style>
+</head>
+<body>
+    <global-header></global-header>
+
+    <div class="error-wrap">
+        <div class="error-card">
+            <div class="error-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#e53e3e" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+            </div>
+
+            <div class="error-code">403 — Access Denied</div>
+            <h1 class="error-title">You don't have permission to view this page.</h1>
+            <p class="error-body" id="error-msg">
+                This page requires an active, authorized session.
+                Please sign in with the correct account to continue.
+            </p>
+
+            <div class="error-actions">
+                <a href="login.html" class="btn-primary-err" id="login-link">Sign In</a>
+                <a href="../../index.html" class="btn-secondary-err">Back to Homepage</a>
+            </div>
+        </div>
+    </div>
+
+    <global-footer></global-footer>
+    <script src="../../components/components.js"></script>
+    <script>
+        // Check if user is actually logged in (just wrong role) vs not logged in at all
+        fetch('/api/auth/session')
+            .then(r => {
+                if (r.ok) return r.json();
+                throw new Error('not_logged_in');
+            })
+            .then(data => {
+                document.getElementById('error-msg').innerHTML =
+                    `You are signed in as <strong>${data.display_name}</strong> (${data.role}), but your account does not have permission to access this page. Contact support if you believe this is an error.`;
+                document.getElementById('login-link').style.display = 'none';
+            })
+            .catch(() => {
+                // Not logged in — show default message + login button
+            });
+    </script>
+</body>
+</html>

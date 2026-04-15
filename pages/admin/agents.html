@@ -7,8 +7,6 @@
     <link rel="stylesheet" href="../../styles/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-    <style>
-        /* Admin layout base */
         html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
         .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
         .admin-side { background: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
@@ -19,141 +17,364 @@
         .side-link { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #a0aec0; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.15s; }
         .side-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
         .side-link.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
-        .side-link.dim { opacity: 0.35; cursor: default; pointer-events: none; }
-        .side-signout { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #fc8181; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-top: 1rem; transition: all 0.15s; }
+        .side-signout { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #fc8181; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-top: 1rem; transition: all 0.15s; cursor: pointer; }
         .side-signout:hover { background: rgba(252,129,129,0.1); }
         .admin-main { padding: 3rem 3.5rem; background: #f7f9fa; overflow-y: auto; }
 
-        .filter-tab { padding: 0.75rem 1.5rem; border: none; background: transparent; font-weight: 600; color: #718096; border-bottom: 2px solid transparent; cursor: pointer; }
-        .filter-tab.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
-        .filter-container { border-bottom: 1px solid #edf2f7; display: flex; gap: 1rem; margin-bottom: 2rem; }
+        /* Controls bar */
+        .controls-bar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .search-input { flex: 1; min-width: 220px; padding: 0.75rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; font-family: inherit; }
+        .search-input:focus { outline: none; border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.1); }
+        .filter-select { padding: 0.75rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; background: #fff; font-family: inherit; }
+        .btn-add { padding: 0.75rem 1.5rem; background: #1d6df2; color: #fff; border: none; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
+        .btn-add:hover { opacity: 0.9; }
 
+        /* Filter tabs */
+        .filter-tab { padding: 0.75rem 1.5rem; border: none; background: transparent; font-weight: 600; color: #718096; border-bottom: 2px solid transparent; cursor: pointer; font-family: inherit; }
+        .filter-tab.active { color: var(--accent-blue, #1d6df2); border-bottom-color: var(--accent-blue, #1d6df2); }
+        .filter-container { border-bottom: 1px solid #edf2f7; display: flex; gap: 1rem; margin-bottom: 2rem; overflow-x: auto; }
+
+        /* Table */
         .ledger-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid #edf2f7; }
-        .ledger-table th { background: #f7f9fa; padding: 1.25rem 1.5rem; text-align: left; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; border-bottom: 1px solid #edf2f7; font-weight: 700; }
-        .ledger-table td { padding: 1.25rem 1.5rem; border-bottom: 1px solid #edf2f7; vertical-align: middle; color: #2d3748; font-weight: 500; }
-        .ledger-table tr:hover { background-color: #fcfcfc; cursor: pointer; }
+        .ledger-table th { background: #f7f9fa; padding: 1.25rem 1.5rem; text-align: left; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; border-bottom: 1px solid #edf2f7; font-weight: 700; }
+        .ledger-table td { padding: 1rem 1.5rem; border-bottom: 1px solid #edf2f7; vertical-align: middle; color: #2d3748; font-weight: 500; font-size: 0.9rem; }
+        .ledger-table tr:last-child td { border-bottom: none; }
+        .ledger-table tr.data-row:hover { background-color: #fcfcfc; cursor: pointer; }
 
-        .s-badge { padding: 0.35rem 0.75rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; border: 1px solid transparent; display: inline-block; }
-        .s-pending { background: #ebf8ff; color: #2b6cb0; border-color: #bee3f8; }
+        .s-badge { padding: 0.3rem 0.7rem; border-radius: 99px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; border: 1px solid transparent; display: inline-block; }
+        .s-pending   { background: #ebf8ff; color: #2b6cb0; border-color: #bee3f8; }
         .s-published { background: #f0fff4; color: #2f855a; border-color: #c6f6d5; }
-        .s-draft { background: #fefcbf; color: #975a16; border-color: #f6e05e; }
+        .s-draft     { background: #fefcbf; color: #975a16; border-color: #f6e05e; }
         .s-suspended { background: #fff5f5; color: #c53030; border-color: #fed7d7; }
+
+        /* Add Agent Modal */
+        .modal-overlay-admin { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9000; align-items: center; justify-content: center; }
+        .modal-overlay-admin.open { display: flex; }
+        .modal-box { background: #fff; border-radius: 16px; padding: 2.5rem; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.2); }
+        .modal-box h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem; color: #1a202c; }
+        .modal-box p { color: #718096; margin-bottom: 2rem; font-size: 0.9rem; }
+        .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .modal-field { display: flex; flex-direction: column; gap: 0.4rem; }
+        .modal-field.full { grid-column: 1 / -1; }
+        .modal-field label { font-size: 0.8rem; font-weight: 700; color: #4a5568; }
+        .modal-input { padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; font-family: inherit; width: 100%; box-sizing: border-box; }
+        .modal-input:focus { outline: none; border-color: #1d6df2; }
+        .modal-actions { display: flex; gap: 1rem; margin-top: 2rem; justify-content: flex-end; }
+        .btn-cancel { padding: 0.75rem 1.5rem; border: 1px solid #e2e8f0; background: #fff; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .btn-save { padding: 0.75rem 1.5rem; background: #1d6df2; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .modal-error { display: none; color: #c53030; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.875rem; margin-bottom: 1rem; }
     </style>
 </head>
-<body style="background-color: #f7f9fa; color: #1a202c; margin: 0; padding: 0;">
+<body>
 
-    <div class="admin-wrap">
-        <!-- Sidebar -->
-        <aside class="admin-side">
-            <h1>MNLH <span>ADMIN</span></h1>
-            <p class="side-label">Platform Operations</p>
-            <nav class="side-nav">
-                <a href="dashboard.html" class="side-link">Dashboard</a>
-                <a href="agents.html"   class="side-link active">Agents Directory</a>
-                <a href="leads.html"    class="side-link">Central Leads</a>
-                <a href="#" class="side-link dim">Users Management</a>
-                <a href="#" class="side-link dim">Membership Tiers</a>
-            </nav>
-            <a href="../../index.html" class="side-signout">Sign Out</a>
-        </aside>
+<div class="admin-wrap">
+    <!-- Sidebar -->
+    <aside class="admin-side">
+        <h1>MNLH <span>ADMIN</span></h1>
+        <p class="side-label">Platform Operations</p>
+        <nav class="side-nav">
+            <a href="dashboard.html" class="side-link">Dashboard</a>
+            <a href="agents.html"    class="side-link active">Agents Directory</a>
+            <a href="leads.html"     class="side-link">Central Leads</a>
+        </nav>
+        <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>{window.location.href='/index.html';})" class="side-signout">Sign Out</a>
+    </aside>
 
-        <!-- Main Content -->
-        <main class="admin-main">
-            <header style="margin-bottom: 2rem;">
+    <!-- Main Content -->
+    <main class="admin-main">
+        <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
                 <h1 style="font-size: 2rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; margin-bottom: 0.5rem;">Agent Ledger</h1>
-                <p style="color: #718096; font-size: 1rem;">Click any row to open the formal Profile Review and Approval workflow.</p>
-            </header>
-
-            <div class="filter-container">
-                <button class="filter-tab active" onclick="filterTable('all', this)">All Agents</button>
-                <button id="filter-pending-btn" class="filter-tab" onclick="filterTable('pending_review', this)" style="color: #2b6cb0;">Pending Review (0)</button>
-                <button class="filter-tab" onclick="filterTable('published', this)">Published</button>
-                <button class="filter-tab" onclick="filterTable('draft', this)">Drafts</button>
+                <p style="color: #718096; font-size: 1rem;">Click any row to open the full agent detail and approval workflow.</p>
             </div>
+            <button class="btn-add" onclick="openAddModal()">+ Add Agent</button>
+        </header>
 
-            <table class="ledger-table" id="agentsTable">
-                <thead>
-                    <tr>
-                        <th>Agent Name</th>
-                        <th>Brokerage</th>
-                        <th>Membership</th>
-                        <th>Profile Status</th>
-                        <th>Live Output?</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    <!-- Javascript Will Inject Mock Rows Here based on the filter -->
-                </tbody>
-            </table>
-        </main>
+        <!-- Search + Filter Bar -->
+        <div class="controls-bar">
+            <input type="text" id="search-input" class="search-input" placeholder="Search by name, email, or brokerage..."
+                   oninput="applyFilters()">
+            <select id="membership-filter" class="filter-select" onchange="applyFilters()">
+                <option value="all">All Memberships</option>
+                <option value="basic">Basic</option>
+                <option value="mn_lake_specialist">MN Lake Specialist</option>
+                <option value="top_agent">Top Agent</option>
+            </select>
+            <select id="published-filter" class="filter-select" onchange="applyFilters()">
+                <option value="all">Published & Unpublished</option>
+                <option value="true">Live Only</option>
+                <option value="false">Not Live</option>
+            </select>
+        </div>
+
+        <!-- Status filter tabs -->
+        <div class="filter-container">
+            <button class="filter-tab active" onclick="setStatusFilter('all', this)">All Agents <span id="count-all" style="color:#a0aec0;"></span></button>
+            <button class="filter-tab" onclick="setStatusFilter('pending_review', this)" style="color:#2b6cb0;">Pending Review <span id="count-pending" style="color:#a0aec0;"></span></button>
+            <button class="filter-tab" onclick="setStatusFilter('published', this)">Published <span id="count-published" style="color:#a0aec0;"></span></button>
+            <button class="filter-tab" onclick="setStatusFilter('draft', this)">Drafts <span id="count-draft" style="color:#a0aec0;"></span></button>
+            <button class="filter-tab" onclick="setStatusFilter('suspended', this)">Suspended <span id="count-suspended" style="color:#a0aec0;"></span></button>
+        </div>
+
+        <table class="ledger-table">
+            <thead>
+                <tr>
+                    <th>Agent Name</th>
+                    <th>Email</th>
+                    <th>Brokerage</th>
+                    <th>Membership</th>
+                    <th>Profile Status</th>
+                    <th>Live?</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="7" style="text-align:center;padding:2rem;color:#718096;">Loading...</td></tr>
+            </tbody>
+        </table>
+    </main>
+</div>
+
+<!-- Add Agent Modal -->
+<div class="modal-overlay-admin" id="add-agent-modal">
+    <div class="modal-box">
+        <h2>Add New Agent</h2>
+        <p>Create a new user account and agent profile. You can set their initial membership and publish status.</p>
+        <div id="modal-error" class="modal-error"></div>
+        <div class="modal-grid">
+            <div class="modal-field">
+                <label>First Name *</label>
+                <input type="text" id="a-first" class="modal-input" placeholder="Jane">
+            </div>
+            <div class="modal-field">
+                <label>Last Name *</label>
+                <input type="text" id="a-last" class="modal-input" placeholder="Smith">
+            </div>
+            <div class="modal-field full">
+                <label>Work Email *</label>
+                <input type="email" id="a-email" class="modal-input" placeholder="jane@brokerage.com">
+            </div>
+            <div class="modal-field full">
+                <label>Temporary Password *</label>
+                <input type="password" id="a-pass" class="modal-input" placeholder="Minimum 8 characters">
+            </div>
+            <div class="modal-field">
+                <label>Brokerage Name</label>
+                <input type="text" id="a-brokerage" class="modal-input" placeholder="Edina Realty">
+            </div>
+            <div class="modal-field">
+                <label>License Number</label>
+                <input type="text" id="a-license" class="modal-input" placeholder="MN-12345">
+            </div>
+            <div class="modal-field">
+                <label>Membership Tier</label>
+                <select id="a-membership" class="modal-input">
+                    <option value="basic">Basic</option>
+                    <option value="mn_lake_specialist">MN Lake Specialist</option>
+                    <option value="top_agent">Top Agent</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label>Initial Profile Status</label>
+                <select id="a-status" class="modal-input">
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeAddModal()">Cancel</button>
+            <button class="btn-save" id="save-agent-btn" onclick="createAgent()">Create Agent</button>
+        </div>
     </div>
+</div>
 
-    <script>
-        // Hook to PostgreSQL Native Backend
-        async function getAgentsMap() {
-            try {
-                const res = await fetch('/api/admin');
-                if (!res.ok) return [];
-                return await res.json();
-            } catch (err) {
-                return [];
+<script>
+    // ── Auth Guard ────────────────────────────────────────────────────────────
+    let allAgents = [];
+    let currentStatusFilter = 'all';
+
+    async function init() {
+        try {
+            const res = await fetch('/api/auth/session');
+            if (!res.ok) { window.location.href = '../../pages/public/login.html'; return; }
+            const data = await res.json();
+            if (data.role !== 'admin' && data.role !== 'super_admin') {
+                window.location.href = '../../pages/public/forbidden.html'; return;
             }
+            document.querySelector('.admin-side h1').innerHTML =
+                `MNLH <span>ADMIN</span><div style="font-size:0.7rem;color:#718096;font-weight:400;margin-top:4px;">${data.display_name}</div>`;
+        } catch(_) {
+            window.location.href = '../../pages/public/login.html'; return;
         }
 
-        function getStatusBadge(status) {
-            switch(status) {
-                case 'pending_review': return `<span class="s-badge s-pending">Pending Review</span>`;
-                case 'published': return `<span class="s-badge s-published">Published</span>`;
-                case 'draft': return `<span class="s-badge s-draft">Draft</span>`;
-                case 'suspended': return `<span class="s-badge s-suspended">Suspended</span>`;
-                default: return `<span class="s-badge s-draft">${status}</span>`;
-            }
+        await loadAgents();
+    }
+
+    // ── Data Loading ──────────────────────────────────────────────────────────
+    async function loadAgents() {
+        try {
+            const res = await fetch('/api/admin');
+            if (!res.ok) throw new Error('Failed');
+            allAgents = await res.json();
+            updateCounts();
+            renderTable();
+        } catch(_) {
+            document.getElementById('tableBody').innerHTML =
+                '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#e53e3e;">Failed to load agents. Check connection.</td></tr>';
+        }
+    }
+
+    function updateCounts() {
+        document.getElementById('count-all').textContent       = `(${allAgents.length})`;
+        document.getElementById('count-pending').textContent   = `(${allAgents.filter(a=>a.profile_status==='pending_review').length})`;
+        document.getElementById('count-published').textContent = `(${allAgents.filter(a=>a.profile_status==='published').length})`;
+        document.getElementById('count-draft').textContent     = `(${allAgents.filter(a=>a.profile_status==='draft').length})`;
+        document.getElementById('count-suspended').textContent = `(${allAgents.filter(a=>a.profile_status==='suspended').length})`;
+    }
+
+    function setStatusFilter(status, el) {
+        document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        currentStatusFilter = status;
+        renderTable();
+    }
+
+    function applyFilters() { renderTable(); }
+
+    function renderTable() {
+        const search     = document.getElementById('search-input').value.toLowerCase();
+        const membership = document.getElementById('membership-filter').value;
+        const published  = document.getElementById('published-filter').value;
+
+        let filtered = allAgents;
+
+        // Status tab filter
+        if (currentStatusFilter !== 'all') {
+            filtered = filtered.filter(a => a.profile_status === currentStatusFilter);
+        }
+        // Search
+        if (search) {
+            filtered = filtered.filter(a =>
+                (a.display_name||'').toLowerCase().includes(search) ||
+                (a.email||'').toLowerCase().includes(search) ||
+                (a.brokerage_name||'').toLowerCase().includes(search)
+            );
+        }
+        // Membership
+        if (membership !== 'all') {
+            filtered = filtered.filter(a => a.membership_code === membership);
+        }
+        // Published
+        if (published !== 'all') {
+            filtered = filtered.filter(a => String(a.is_published) === published);
         }
 
-        async function renderTable(filter) {
-            const body = document.getElementById('tableBody');
-            body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">Loading Core System Ledger...</td></tr>';
+        const body = document.getElementById('tableBody');
 
-            const agentsMap = await getAgentsMap();
-            body.innerHTML = ''; // Clear for render
+        if (filtered.length === 0) {
+            body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#718096;">No agents match your filters.</td></tr>';
+            return;
+        }
 
-            const filtered = filter === 'all' ? agentsMap : agentsMap.filter(a => a.profile_status === filter);
+        body.innerHTML = filtered.map(a => {
+            const badge = {
+                pending_review: `<span class="s-badge s-pending">Pending Review</span>`,
+                published:      `<span class="s-badge s-published">Published</span>`,
+                draft:          `<span class="s-badge s-draft">Draft</span>`,
+                suspended:      `<span class="s-badge s-suspended">Suspended</span>`
+            }[a.profile_status] || `<span class="s-badge s-draft">${a.profile_status}</span>`;
 
-            // Update UI Counters
-            const pendingCount = agentsMap.filter(a => a.profile_status === 'pending_review').length;
-            document.querySelector('#filter-pending-btn').textContent = `Pending Review (${pendingCount})`;
+            const live = a.is_published
+                ? `<span style="color:#38a169;font-weight:700;">✓ Live</span>`
+                : `<span style="color:#a0aec0;">—</span>`;
 
-            filtered.forEach(agent => {
-                const tr = document.createElement('tr');
-                tr.onclick = () => { window.location.href = `agent-review.html?id=${agent.id}`; };
-                
-                const liveBadge = agent.is_published ? `<span style="color: #38a169; font-weight: 700;">TRUE</span>` : `<span style="color: #a0aec0; font-weight: 600;">FALSE</span>`;
+            return `<tr class="data-row" onclick="window.location.href='agent-review.html?id=${a.id}'">
+                <td>
+                    <div style="font-weight:700;">${a.display_name}</div>
+                    <div style="font-size:0.75rem;color:#a0aec0;">ID: ${a.id.slice(0,8)}…</div>
+                </td>
+                <td style="color:#718096;">${a.email || '—'}</td>
+                <td>${a.brokerage_name || 'Independent'}</td>
+                <td><span style="background:#edf2f7;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:700;">${a.membership_name || 'Basic'}</span></td>
+                <td>${badge}</td>
+                <td>${live}</td>
+                <td onclick="event.stopPropagation()">
+                    <button onclick="window.location.href='agent-review.html?id=${a.id}'"
+                        style="border:none;background:#ebf8ff;color:#2b6cb0;font-weight:600;padding:0.4rem 0.9rem;border-radius:6px;cursor:pointer;font-size:0.85rem;">
+                        Review
+                    </button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
 
-                tr.innerHTML = `
-                    <td>
-                        <div style="font-weight: 700; color: #1a202c;">${agent.display_name}</div>
-                        <div style="font-size: 0.8rem; color: #a0aec0;">ID: ${agent.id}</div>
-                    </td>
-                    <td>${agent.brokerage_name || 'N/A'}</td>
-                    <td><span style="background: #edf2f7; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">${agent.membership_name || agent.membership_badge || 'Agent'}</span></td>
-                    <td>${getStatusBadge(agent.profile_status)}</td>
-                    <td>${liveBadge}</td>
-                    <td><button style="border: none; background: #ebf8ff; color: #2b6cb0; font-weight: 600; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;">Review</button></td>
-                `;
-                body.appendChild(tr);
+    // ── Add Agent Modal ────────────────────────────────────────────────────────
+    function openAddModal() {
+        document.getElementById('add-agent-modal').classList.add('open');
+    }
+    function closeAddModal() {
+        document.getElementById('add-agent-modal').classList.remove('open');
+        document.getElementById('modal-error').style.display = 'none';
+    }
+
+    async function createAgent() {
+        const btn = document.getElementById('save-agent-btn');
+        const errBox = document.getElementById('modal-error');
+        errBox.style.display = 'none';
+
+        const payload = {
+            first_name:      document.getElementById('a-first').value.trim(),
+            last_name:       document.getElementById('a-last').value.trim(),
+            email:           document.getElementById('a-email').value.trim(),
+            password:        document.getElementById('a-pass').value,
+            brokerage_name:  document.getElementById('a-brokerage').value.trim(),
+            license_number:  document.getElementById('a-license').value.trim(),
+            membership_code: document.getElementById('a-membership').value,
+            profile_status:  document.getElementById('a-status').value,
+            is_published:    document.getElementById('a-status').value === 'published'
+        };
+
+        if (!payload.first_name || !payload.email || !payload.password) {
+            errBox.textContent = 'First name, email, and password are required.';
+            errBox.style.display = 'block';
+            return;
+        }
+
+        btn.textContent = 'Creating...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             });
-        }
+            const data = await res.json();
 
-        function filterTable(status, element) {
-            document.querySelectorAll('.filter-tab').forEach(btn => btn.classList.remove('active'));
-            element.classList.add('active');
-            renderTable(status);
+            if (!res.ok) {
+                errBox.textContent = data.error || 'Failed to create agent.';
+                errBox.style.display = 'block';
+            } else {
+                closeAddModal();
+                await loadAgents();
+            }
+        } catch(_) {
+            errBox.textContent = 'Network error. Please try again.';
+            errBox.style.display = 'block';
+        } finally {
+            btn.textContent = 'Create Agent';
+            btn.disabled = false;
         }
+    }
 
-        // Init
-        document.addEventListener("DOMContentLoaded", () => renderTable('all'));
-    </script>
+    // Close modal on overlay click
+    document.getElementById('add-agent-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeAddModal();
+    });
+
+    document.addEventListener('DOMContentLoaded', init);
+</script>
     <global-footer></global-footer>
 </body>
 </html>

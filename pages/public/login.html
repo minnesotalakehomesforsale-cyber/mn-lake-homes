@@ -235,41 +235,77 @@
             document.getElementById(`${target}-portal`).classList.add('active');
         }
 
-        function handleLogin(e, type) {
+        // If already logged in, redirect away from login page
+        fetch('/api/auth/session')
+            .then(r => { if (r.ok) return r.json(); throw new Error('not_logged_in'); })
+            .then(data => {
+                if (data.role === 'super_admin' || data.role === 'admin') {
+                    window.location.href = '../admin/dashboard.html';
+                } else if (data.role === 'agent') {
+                    window.location.href = '../agent/dashboard.html';
+                } else {
+                    window.location.href = '../../index.html';
+                }
+            })
+            .catch(() => { /* Not logged in — stay on login page */ });
+
+        async function handleLogin(e, type) {
             e.preventDefault();
-            
+
             const alertBox = document.getElementById(`${type}-alert`);
             const submitBtn = e.target.querySelector('.form-submit');
-            const email = document.getElementById(`${type}-email`).value;
-            
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = 'Authenticating...';
+            const email = document.getElementById(`${type}-email`).value.trim();
+            const password = document.getElementById(`${type}-password`).value;
+
+            alertBox.style.display = 'none';
+            submitBtn.innerHTML = 'Signing in...';
             submitBtn.style.opacity = '0.7';
             submitBtn.disabled = true;
 
-            // MOCK LOGIC for frontend demonstration
-            setTimeout(() => {
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    alertBox.className = 'alert-box alert-error';
+                    alertBox.textContent = data.error || 'Authentication failed.';
+                    alertBox.style.display = 'block';
+                    submitBtn.innerHTML = type === 'agent' ? 'Agent Sign In' : 'Sign In';
+                    submitBtn.style.opacity = '1';
+                    submitBtn.disabled = false;
+                    return;
+                }
+
                 alertBox.className = 'alert-box alert-success';
-                alertBox.textContent = 'Authentication successful! Routing...';
+                alertBox.textContent = `Welcome back, ${data.display_name || data.email}! Redirecting...`;
                 alertBox.style.display = 'block';
 
-                localStorage.setItem('auth_session', 'active');
-                localStorage.setItem('auth_type', type);
-                localStorage.setItem('auth_email', email);
-
                 setTimeout(() => {
-                    if (type === 'agent') {
-                        if (email.includes('admin')) {
-                            window.location.href = '../admin/dashboard.html';
-                        } else {
-                            window.location.href = '../agent/dashboard.html';
-                        }
+                    if (data.role === 'super_admin' || data.role === 'admin') {
+                        window.location.href = '../admin/dashboard.html';
+                    } else if (data.role === 'agent') {
+                        window.location.href = '../agent/dashboard.html';
                     } else {
-                        window.location.href = '../../index.html'; 
+                        window.location.href = '../../index.html';
                     }
-                }, 1500);
-            }, 1000);
+                }, 1000);
+
+            } catch (err) {
+                alertBox.className = 'alert-box alert-error';
+                alertBox.textContent = 'Network error. Please try again.';
+                alertBox.style.display = 'block';
+                submitBtn.innerHTML = type === 'agent' ? 'Agent Sign In' : 'Sign In';
+                submitBtn.style.opacity = '1';
+                submitBtn.disabled = false;
+            }
         }
     </script>
 </body>
 </html>
+
+

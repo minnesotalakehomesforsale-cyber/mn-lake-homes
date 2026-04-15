@@ -3,228 +3,504 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agent Review | MN Lake Homes Admin</title>
+    <title>Agent Detail | MN Lake Homes Admin</title>
     <link rel="stylesheet" href="../../styles/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-    <style>
-        /* Admin layout base */
         html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
         .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
         .admin-side { background: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
-        .admin-side h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 2.5rem; padding-left: 0.5rem; color: #fff; margin-top: 0; }
+        .admin-side h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: 2.5rem; padding-left: 0.5rem; color: #fff; margin-top: 0; }
         .admin-side h1 span { color: #1d6df2; }
         .side-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; margin-bottom: 0.75rem; padding-left: 0.5rem; font-weight: 700; margin-top: 0; }
         .side-nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
         .side-link { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #a0aec0; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.15s; }
         .side-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
         .side-link.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
-        .side-link.dim { opacity: 0.35; cursor: default; pointer-events: none; }
-        .side-signout { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #fc8181; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-top: 1rem; transition: all 0.15s; }
+        .side-signout { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #fc8181; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-top: 1rem; transition: all 0.15s; cursor: pointer; }
         .side-signout:hover { background: rgba(252,129,129,0.1); }
-        .admin-main { padding: 3rem 3.5rem; background: #f7f9fa; overflow-y: auto; }
+        .admin-main { padding: 3rem 3.5rem; overflow-y: auto; }
 
-        .review-grid { display: grid; grid-template-columns: 1fr 350px; gap: 2.5rem; align-items: start; }
-        .review-panel { background: #fff; padding: 2.5rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 2rem; }
-        .data-section { margin-bottom: 2.5rem; padding-bottom: 2.5rem; border-bottom: 1px solid #edf2f7; }
-        .data-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-        .data-title { font-size: 1.1rem; font-weight: 700; color: #1a202c; margin-bottom: 1.25rem; text-transform: uppercase; letter-spacing: 1px; }
+        .page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2.5rem; flex-wrap: wrap; gap: 1rem; }
+        .page-header h1 { font-size: 2rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; margin: 0; }
+        .page-header .sub { color: #718096; font-size: 0.95rem; margin-top: 0.25rem; }
 
-        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-        .data-point label { display: block; font-size: 0.75rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.25rem; }
-        .data-point div { font-weight: 500; color: #2d3748; font-size: 1.05rem; }
+        .s-badge { padding: 0.4rem 1rem; border-radius: 99px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; border: 1px solid transparent; display: inline-block; }
+        .s-pending   { background: #ebf8ff; color: #2b6cb0; border-color: #bee3f8; }
+        .s-published { background: #f0fff4; color: #2f855a; border-color: #c6f6d5; }
+        .s-draft     { background: #fefcbf; color: #975a16; border-color: #f6e05e; }
+        .s-suspended { background: #fff5f5; color: #c53030; border-color: #fed7d7; }
 
-        .action-btn { width: 100%; padding: 1rem; border: none; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.2s; margin-bottom: 1rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
-        .btn-approve { background: #38a169; color: #fff; box-shadow: 0 4px 10px rgba(56, 161, 105, 0.2); }
-        .btn-approve:hover { background: #2f855a; }
-        .btn-suspend { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
-        .btn-suspend:hover { background: #fed7d7; }
-        .btn-draft { background: #fff; color: #4a5568; border: 1px solid #cbd5e0; }
+        .layout { display: grid; grid-template-columns: 1fr 320px; gap: 2rem; align-items: start; }
 
-        .s-badge { padding: 0.5rem 1rem; border-radius: 99px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; border: 1px solid transparent; display: inline-block; }
-        .s-pending { background: #ebf8ff; color: #2b6cb0; border-color: #bee3f8; }
-        .s-published { background: #f0fff4; color: #2f855a; border-color: #c6f6d5; display: none; }
+        .panel { background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 2px 6px rgba(0,0,0,0.03); margin-bottom: 2rem; overflow: hidden; }
+        .panel-header { padding: 1.5rem 2rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; }
+        .panel-title { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #4a5568; }
+        .panel-body { padding: 2rem; }
+
+        .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+        .field-group { display: flex; flex-direction: column; gap: 0.35rem; }
+        .field-group.full { grid-column: 1 / -1; }
+        .field-label { font-size: 0.72rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; }
+        .field-input { padding: 0.65rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; font-family: inherit; color: #1a202c; background: #fff; }
+        .field-input:focus { outline: none; border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.08); }
+        textarea.field-input { resize: vertical; min-height: 100px; }
+
+        .save-row { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; }
+        .btn-save { padding: 0.65rem 1.5rem; background: #1d6df2; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 0.9rem; transition: opacity 0.2s; }
+        .btn-save:hover { opacity: 0.9; }
+        .save-msg { font-size: 0.85rem; font-weight: 600; color: #38a169; display: none; align-items: center; gap: 0.5rem; }
+
+        /* Action sidebar */
+        .action-btn { width: 100%; padding: 0.85rem; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.15s; margin-bottom: 0.75rem; display: block; text-align: center; border: none; font-family: inherit; }
+        .btn-publish   { background: #38a169; color: #fff; }
+        .btn-publish:hover { background: #2f855a; }
+        .btn-unpublish { background: #edf2f7; color: #2d3748; }
+        .btn-draft     { background: #fff; color: #4a5568; border: 1px solid #cbd5e0; }
+        .btn-suspend   { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+        .btn-reactivate{ background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; }
+        .action-result { display: none; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; margin-top: 0.75rem; text-align: center; }
     </style>
 </head>
-<body style="background-color: #f7f9fa; color: #1a202c; margin: 0; padding: 0;">
+<body>
 
-    <div class="admin-wrap">
-        <!-- Sidebar -->
-        <aside class="admin-side">
-            <h1>MNLH <span>ADMIN</span></h1>
-            <p class="side-label">Platform Operations</p>
-            <nav class="side-nav">
-                <a href="dashboard.html" class="side-link">Dashboard</a>
-                <a href="agents.html"   class="side-link active">Agents Directory</a>
-                <a href="leads.html"    class="side-link">Central Leads</a>
-                <a href="#" class="side-link dim">Users Management</a>
-                <a href="#" class="side-link dim">Membership Tiers</a>
-            </nav>
-            <a href="../../index.html" class="side-signout">Sign Out</a>
-        </aside>
+<div class="admin-wrap">
+    <aside class="admin-side">
+        <h1>MNLH <span>ADMIN</span></h1>
+        <p class="side-label">Platform Operations</p>
+        <nav class="side-nav">
+            <a href="dashboard.html" class="side-link">Dashboard</a>
+            <a href="agents.html"    class="side-link active">Agents Directory</a>
+            <a href="leads.html"     class="side-link">Central Leads</a>
+        </nav>
+        <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>{window.location.href='/index.html';})" class="side-signout">Sign Out</a>
+    </aside>
 
-        <!-- Main Content -->
-        <main class="admin-main">
-            
-            <a href="agents.html" style="color: #718096; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 2rem;">&larr; Back to Ledger</a>
+    <main class="admin-main">
+        <a href="agents.html" style="color:#718096;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:0.5rem;margin-bottom:2rem;">
+            ← Back to Ledger
+        </a>
 
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
-                <div>
-                    <h1 style="font-size: 2.5rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; margin-bottom: 0.5rem;">David Chen</h1>
-                    <p style="color: #718096; font-size: 1.1rem;">Formal submission review for public directory access.</p>
-                </div>
-                <div id="statusHook">
-                    <span class="s-badge s-pending">Pending Review</span>
-                    <span class="s-badge s-published" id="publishedBadge">Published Live</span>
-                </div>
+        <div class="page-header">
+            <div>
+                <h1 id="agent-headline">Loading…</h1>
+                <div class="sub" id="agent-sub">Fetching agent record from database…</div>
             </div>
+            <div id="status-badge-container"></div>
+        </div>
 
-            <div class="review-grid">
-                
-                <!-- Explicit Data Payload (Left) -->
-                <div class="review-panel" id="dynamic-agent-payload">
-                    <div style="padding: 3rem; text-align: center; color: #a0aec0;">Loading Secure Agent Payload...</div>
-                </div>
-
-                <!-- Admin Action Gate (Right) -->
-                <div>
-                    <!-- Membership Control -->
-                    <div class="review-panel" style="padding: 2rem;">
-                        <h3 class="data-title" style="font-size: 0.9rem; margin-bottom: 1rem;">System Tier Array</h3>
-                        <div style="margin-bottom: 0.5rem;">
-                            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin-bottom: 0.5rem;">Assign Membership</label>
-                            <select id="membershipSelect" style="width: 100%; padding: 0.85rem; border-radius: 8px; border: 1px solid #cbd5e0; font-weight: 600; color: #1a202c; background: #f7f9fa; appearance: none;">
-                                <option value="Basic Tier">Basic Tier</option>
-                                <option value="MN Lake Specialist">MN Lake Specialist</option>
-                                <option value="Top Agent">Top Agent</option>
-                            </select>
+        <div class="layout">
+            <!-- Left: Account + Profile panels -->
+            <div>
+                <!-- ACCOUNT SECTION -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Account Record</div>
+                        <div id="account-status-badge"></div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="field-grid">
+                            <div class="field-group">
+                                <div class="field-label">First Name</div>
+                                <input class="field-input" id="acc-first" type="text">
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">Last Name</div>
+                                <input class="field-input" id="acc-last" type="text">
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">Email Address</div>
+                                <input class="field-input" id="acc-email" type="email">
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">Phone</div>
+                                <input class="field-input" id="acc-phone" type="text">
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">Role</div>
+                                <input class="field-input" id="acc-role" type="text" readonly style="background:#f7f9fa;color:#718096;">
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">Account Status</div>
+                                <input class="field-input" id="acc-status" type="text" readonly style="background:#f7f9fa;color:#718096;">
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">Account Created</div>
+                                <input class="field-input" id="acc-created" type="text" readonly style="background:#f7f9fa;color:#718096;">
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">Last Login</div>
+                                <input class="field-input" id="acc-lastlogin" type="text" readonly style="background:#f7f9fa;color:#718096;">
+                            </div>
                         </div>
-                        <p style="font-size: 0.75rem; color: #a0aec0; line-height: 1.5;">Upgrades will trigger activity logs mapping to this admin's session UUID.</p>
-                    </div>
-
-                    <!-- Action Control -->
-                    <div class="review-panel" style="padding: 2rem;" id="actionPanel">
-                        <h3 class="data-title" style="font-size: 0.9rem; margin-bottom: 1rem; border-bottom: 1px solid #edf2f7; padding-bottom: 1rem;">Gatekeeper Actions</h3>
-                        
-                        <button class="action-btn btn-approve" onclick="executeAdminAction('published')">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> 
-                            Approve & Publish Live
-                        </button>
-                        
-                        <button class="action-btn btn-draft" onclick="executeAdminAction('draft')">Return to Draft Mode</button>
-                        <button class="action-btn btn-suspend" onclick="executeAdminAction('suspended')">Suspend Profile</button>
-                        
-                        <div id="actionResponse" style="display: none; padding: 1rem; background: #f0fff4; color: #2f855a; border-radius: 8px; font-weight: 600; font-size: 0.9rem; text-align: center; margin-top: 1rem;"></div>
+                        <div class="save-row">
+                            <span id="account-save-msg" class="save-msg">✓ Saved</span>
+                            <button class="btn-save" onclick="saveAccountProfile()">Save Account Changes</button>
+                        </div>
                     </div>
                 </div>
 
+                <!-- PROFILE SECTION -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Agent Profile</div>
+                        <div id="profile-status-badge"></div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="field-grid">
+                            <div class="field-group">
+                                <div class="field-label">Display Name</div>
+                                <input class="field-input" id="p-name" type="text">
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">Brokerage</div>
+                                <input class="field-input" id="p-brokerage" type="text">
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">License Number</div>
+                                <input class="field-input" id="p-license" type="text">
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">Years Experience</div>
+                                <input class="field-input" id="p-years" type="number" min="0">
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">Public Phone</div>
+                                <input class="field-input" id="p-phone" type="text">
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">Public Email</div>
+                                <input class="field-input" id="p-email" type="email">
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">Primary City</div>
+                                <input class="field-input" id="p-city" type="text">
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">State</div>
+                                <input class="field-input" id="p-state" type="text">
+                            </div>
+                            <div class="field-group full">
+                                <div class="field-label">Service Areas (comma-separated)</div>
+                                <input class="field-input" id="p-areas" type="text">
+                            </div>
+                            <div class="field-group full">
+                                <div class="field-label">Specialties (comma-separated)</div>
+                                <input class="field-input" id="p-specs" type="text">
+                            </div>
+                            <div class="field-group full">
+                                <div class="field-label">Agent Bio</div>
+                                <textarea class="field-input" id="p-bio"></textarea>
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">Public Slug</div>
+                                <input class="field-input" id="p-slug" type="text" readonly style="background:#f7f9fa;color:#718096;">
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">Profile ID</div>
+                                <input class="field-input" id="p-id" type="text" readonly style="background:#f7f9fa;color:#718096;font-size:0.75rem;">
+                            </div>
+                        </div>
+                        <div class="save-row">
+                            <span id="profile-save-msg" class="save-msg">✓ Saved</span>
+                            <button class="btn-save" onclick="saveAgentProfile()">Save Profile Changes</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </main>
-    </div>
 
-    <!-- Ensure components are loaded for DB -->
-    <script src="../../components/components.js" defer></script>
-    
-    <script>
-        let currentAgentId = new URLSearchParams(window.location.search).get('id');
+            <!-- Right: Controls sidebar -->
+            <div>
+                <!-- Membership -->
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">Membership Tier</div></div>
+                    <div class="panel-body" style="padding: 1.5rem;">
+                        <div class="field-label" style="margin-bottom:0.5rem;">Assign Membership</div>
+                        <select id="membership-select" class="field-input" style="width:100%;margin-bottom:0.75rem;">
+                            <option value="basic">Basic</option>
+                            <option value="mn_lake_specialist">MN Lake Specialist</option>
+                            <option value="top_agent">Top Agent</option>
+                        </select>
+                        <button class="btn-save" style="width:100%;" onclick="changeMembership()">Update Membership</button>
+                        <div id="mem-result" class="action-result"></div>
+                    </div>
+                </div>
 
-        document.addEventListener('DOMContentLoaded', () => {
-            // Need slight delay to ensure components.js injected db.js
-            setTimeout(async () => {
-                if(!currentAgentId) {
-                    document.getElementById('dynamic-agent-payload').innerHTML = "No Agent ID Provided.";
-                    return;
-                }
+                <!-- Status Actions -->
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">Profile Controls</div></div>
+                    <div class="panel-body" style="padding: 1.5rem;">
+                        <button class="action-btn btn-publish" id="btn-publish" onclick="setStatus('published')">
+                            ✓ Approve &amp; Publish Live
+                        </button>
+                        <button class="action-btn btn-unpublish" id="btn-unpublish" onclick="setStatus('pending_review')">
+                            ↩ Unpublish (Pending Review)
+                        </button>
+                        <button class="action-btn btn-draft" onclick="setStatus('draft')">
+                            Return to Draft
+                        </button>
+                        <hr style="border:none;border-top:1px solid #edf2f7;margin:1rem 0;">
+                        <button class="action-btn btn-suspend" id="btn-suspend-account" onclick="setAccountStatus('suspended')">
+                            ⊘ Suspend Account
+                        </button>
+                        <button class="action-btn btn-reactivate" id="btn-reactivate-account" onclick="setAccountStatus('active')" style="display:none;">
+                            ↺ Reactivate Account
+                        </button>
+                        <div id="action-result" class="action-result"></div>
+                    </div>
+                </div>
 
-                try {
-                    const res = await fetch(`/api/admin/${currentAgentId}`);
-                    if(!res.ok) {
-                        document.getElementById('dynamic-agent-payload').innerHTML = "Agent ID Not Found in Database.";
-                        return;
-                    }
-                    const agent = await res.json();
-                    renderAgentData(agent);
-                } catch(err) {
-                    document.getElementById('dynamic-agent-payload').innerHTML = "Database Connection Failed.";
-                }
-            }, 100);
-        });
+                <!-- Quick Links -->
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">Quick Links</div></div>
+                    <div class="panel-body" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                        <a id="link-public-profile" href="#" target="_blank"
+                            style="color:#1d6df2;font-size:0.9rem;font-weight:600;text-decoration:none;">
+                            → View Public Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
 
-        function renderAgentData(a) {
-            document.getElementById('headerName').innerText = a.display_name;
-            document.getElementById('membershipSelect').value = a.membership_name || a.membership_badge || 'Select Tier';
+<script>
+    const agentId = new URLSearchParams(window.location.search).get('id');
+    let agentData = null;
 
-            // Update Badge Logic
-            const statusContainer = document.getElementById('statusHook');
-            if (a.profile_status === 'published') {
-                statusContainer.innerHTML = `<span class="s-badge s-published" style="display:inline-block">Published Live</span>`;
-            } else if (a.profile_status === 'pending_review') {
-                statusContainer.innerHTML = `<span class="s-badge s-pending">Pending Review</span>`;
+    // ── Init ─────────────────────────────────────────────────────────────────
+    async function init() {
+        // Session guard
+        try {
+            const res = await fetch('/api/auth/session');
+            if (!res.ok) { window.location.href = '../../pages/public/login.html'; return; }
+            const s = await res.json();
+            if (s.role !== 'admin' && s.role !== 'super_admin') {
+                window.location.href = '../../pages/public/forbidden.html'; return;
+            }
+            document.querySelector('.admin-side h1').innerHTML =
+                `MNLH <span>ADMIN</span><div style="font-size:0.7rem;color:#718096;font-weight:400;margin-top:4px;">${s.display_name}</div>`;
+        } catch(_) {
+            window.location.href = '../../pages/public/login.html'; return;
+        }
+
+        if (!agentId) {
+            document.getElementById('agent-headline').textContent = 'No Agent ID';
+            return;
+        }
+
+        await loadAgent();
+    }
+
+    async function loadAgent() {
+        try {
+            const res = await fetch(`/api/admin/${agentId}`);
+            if (!res.ok) throw new Error('Not found');
+            agentData = await res.json();
+            renderAgent(agentData);
+        } catch(e) {
+            document.getElementById('agent-headline').textContent = 'Agent Not Found';
+            document.getElementById('agent-sub').textContent = 'This agent ID does not exist in the database.';
+        }
+    }
+
+    function renderAgent(a) {
+        // Header
+        document.title = `${a.display_name} | Admin`;
+        document.getElementById('agent-headline').textContent = a.display_name;
+        document.getElementById('agent-sub').textContent = `${a.email || ''} · ${a.brokerage_name || 'Independent'}`;
+        document.getElementById('status-badge-container').innerHTML = statusBadge(a.profile_status);
+
+        // Account panel
+        document.getElementById('acc-first').value      = a.first_name      || '';
+        document.getElementById('acc-last').value       = a.last_name       || '';
+        document.getElementById('acc-email').value      = a.email           || '';
+        document.getElementById('acc-phone').value      = a.user_phone      || '';
+        document.getElementById('acc-role').value       = a.user_role       || '';
+        document.getElementById('acc-status').value     = a.user_status     || '';
+        document.getElementById('acc-created').value    = a.user_created_at ? new Date(a.user_created_at).toLocaleDateString() : '—';
+        document.getElementById('acc-lastlogin').value  = a.last_login_at   ? new Date(a.last_login_at).toLocaleString()    : 'Never';
+
+        // Account status badge
+        const isActive = a.user_status === 'active';
+        document.getElementById('account-status-badge').innerHTML =
+            isActive ? '<span class="s-badge s-published">Active</span>' : '<span class="s-badge s-suspended">Suspended</span>';
+
+        // Suspend / Reactivate toggle
+        document.getElementById('btn-suspend-account').style.display    = isActive ? 'block' : 'none';
+        document.getElementById('btn-reactivate-account').style.display = isActive ? 'none'  : 'block';
+
+        // Profile panel
+        document.getElementById('p-name').value     = a.display_name    || '';
+        document.getElementById('p-brokerage').value= a.brokerage_name  || '';
+        document.getElementById('p-license').value  = a.license_number  || '';
+        document.getElementById('p-years').value    = a.years_experience || '';
+        document.getElementById('p-phone').value    = a.phone_public    || '';
+        document.getElementById('p-email').value    = a.email_public    || '';
+        document.getElementById('p-city').value     = a.city            || '';
+        document.getElementById('p-state').value    = a.state           || 'Minnesota';
+        document.getElementById('p-bio').value      = a.bio             || '';
+        document.getElementById('p-slug').value     = a.slug            || '';
+        document.getElementById('p-id').value       = a.id              || '';
+
+        try {
+            const areas = Array.isArray(a.service_areas) ? a.service_areas : JSON.parse(a.service_areas || '[]');
+            const specs = Array.isArray(a.specialties)   ? a.specialties   : JSON.parse(a.specialties   || '[]');
+            document.getElementById('p-areas').value = areas.join(', ');
+            document.getElementById('p-specs').value = specs.join(', ');
+        } catch(_) {}
+
+        // Profile status badge
+        document.getElementById('profile-status-badge').innerHTML = statusBadge(a.profile_status);
+
+        // Membership
+        document.getElementById('membership-select').value = a.membership_code || 'basic';
+
+        // Public profile link
+        document.getElementById('link-public-profile').href =
+            `/pages/public/agent-profile.html?slug=${a.slug}`;
+    }
+
+    function statusBadge(status) {
+        const map = {
+            pending_review: `<span class="s-badge s-pending">Pending Review</span>`,
+            published:      `<span class="s-badge s-published">Published Live</span>`,
+            draft:          `<span class="s-badge s-draft">Draft</span>`,
+            suspended:      `<span class="s-badge s-suspended">Suspended</span>`
+        };
+        return map[status] || `<span class="s-badge s-draft">${status || '—'}</span>`;
+    }
+
+    // ── Save Account Profile ─────────────────────────────────────────────────
+    async function saveAccountProfile() {
+        // Note: updating user record via agent profile endpoint until a dedicated user PATCH route exists
+        const payload = {
+            display_name:   `${document.getElementById('acc-first').value.trim()} ${document.getElementById('acc-last').value.trim()}`.trim(),
+            phone_public:    document.getElementById('acc-phone').value.trim()
+        };
+
+        try {
+            const res = await fetch(`/api/admin/${agentId}/profile`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                showMsg('account-save-msg');
             } else {
-                statusContainer.innerHTML = `<span class="s-badge" style="background:#edf2f7; color:#4a5568">${(a.profile_status || '').toUpperCase()}</span>`;
+                const d = await res.json();
+                alert(d.error || 'Save failed.');
             }
+        } catch(_) { alert('Network error.'); }
+    }
 
-            const getPills = (arr) => arr ? arr.map(i => `<span style="background: #edf2f7; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.85rem;">${i}</span>`).join('') : 'None Set';
+    // ── Save Agent Profile ───────────────────────────────────────────────────
+    async function saveAgentProfile() {
+        const payload = {
+            display_name:    document.getElementById('p-name').value.trim(),
+            brokerage_name:  document.getElementById('p-brokerage').value.trim(),
+            license_number:  document.getElementById('p-license').value.trim(),
+            years_experience:parseInt(document.getElementById('p-years').value) || null,
+            phone_public:    document.getElementById('p-phone').value.trim(),
+            email_public:    document.getElementById('p-email').value.trim(),
+            city:            document.getElementById('p-city').value.trim(),
+            state:           document.getElementById('p-state').value.trim(),
+            bio:             document.getElementById('p-bio').value.trim(),
+            service_areas:   document.getElementById('p-areas').value.split(',').map(s=>s.trim()).filter(Boolean),
+            specialties:     document.getElementById('p-specs').value.split(',').map(s=>s.trim()).filter(Boolean)
+        };
 
-            const serviceAreas = Array.isArray(a.service_areas) ? a.service_areas : (JSON.parse(a.service_areas || '[]'));
-            const specialties = Array.isArray(a.specialties) ? a.specialties : (JSON.parse(a.specialties || '[]'));
-
-            document.getElementById('dynamic-agent-payload').innerHTML = `
-                <div class="data-section">
-                    <h3 class="data-title">Identity & Brokerage</h3>
-                    <div class="data-grid">
-                        <div class="data-point"><label>Display Name</label><div>${a.display_name}</div></div>
-                        <div class="data-point"><label>Brokerage Name</label><div>${a.brokerage_name || 'Not Provided'}</div></div>
-                        <div class="data-point"><label>License Number</label><div>${a.license_number || 'Pending'}</div></div>
-                        <div class="data-point"><label>Database ID</label><div style="font-size:0.8rem">${a.id}</div></div>
-                    </div>
-                </div>
-                <div class="data-section">
-                    <h3 class="data-title">Market Coverage</h3>
-                    <div class="data-grid" style="grid-template-columns: 1fr;">
-                        <div class="data-point"><label>Base City</label><div>${a.city || 'Not Set'}</div></div>
-                        <div class="data-point"><label>Service Arrays</label><div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">${getPills(serviceAreas)}</div></div>
-                        <div class="data-point"><label>Specialties</label><div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">${getPills(specialties)}</div></div>
-                    </div>
-                </div>
-                <div class="data-section">
-                    <h3 class="data-title">Professional Narrative</h3>
-                    <div class="data-point"><label>Agent Biography</label>
-                        <div style="line-height: 1.6; color: #4a5568;">${(a.bio || 'No Biography Provided.').replace(/\\n/g, '<br>')}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        async function executeAdminAction(newStatus) {
-            const panel = document.getElementById('actionResponse');
-            const newBadgeVal = document.getElementById('membershipSelect').value;
-
-            try {
-                const res = await fetch(`/api/admin/${currentAgentId}/status`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: newStatus, membership_name: newBadgeVal })
-                });
-
-                if(res.ok) {
-                    panel.style.display = 'block';
-                    panel.style.background = '#f0fff4';
-                    panel.style.color = '#2f855a';
-                    panel.innerHTML = `Transaction Successful: Set status to '${newStatus}'`;
-                    
-                    // Force UI Reload to show accurate status
-                    setTimeout(() => window.location.reload(), 1000);
-                } else {
-                    throw new Error('Database Update Failed');
-                }
-            } catch (err) {
-                panel.style.display = 'block';
-                panel.style.background = '#fff5f5';
-                panel.style.color = '#c53030';
-                panel.innerHTML = 'Database Update explicitly Failed.';
+        try {
+            const res = await fetch(`/api/admin/${agentId}/profile`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                showMsg('profile-save-msg');
+                // Refresh header
+                document.getElementById('agent-headline').textContent = payload.display_name || agentData.display_name;
+            } else {
+                const d = await res.json();
+                alert(d.error || 'Save failed.');
             }
-        }
+        } catch(_) { alert('Network error.'); }
+    }
+
+    // ── Profile Status Actions ───────────────────────────────────────────────
+    async function setStatus(newStatus) {
+        const membership_code = document.getElementById('membership-select').value;
+        try {
+            const res = await fetch(`/api/admin/${agentId}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus, membership_code })
+            });
+            const d = await res.json();
+            if (res.ok) {
+                showActionResult(`Profile set to '${newStatus}'`, true);
+                setTimeout(() => loadAgent(), 600);
+            } else {
+                showActionResult(d.error || 'Failed', false);
+            }
+        } catch(_) { showActionResult('Network error', false); }
+    }
+
+    // ── Account Status Actions ───────────────────────────────────────────────
+    async function setAccountStatus(status) {
+        try {
+            const res = await fetch(`/api/admin/${agentId}/account-status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ account_status: status })
+            });
+            const d = await res.json();
+            if (res.ok) {
+                showActionResult(`Account set to '${status}'`, true);
+                setTimeout(() => loadAgent(), 600);
+            } else {
+                showActionResult(d.error || 'Failed', false);
+            }
+        } catch(_) { showActionResult('Network error', false); }
+    }
+
+    // ── Membership ───────────────────────────────────────────────────────────
+    async function changeMembership() {
+        const membership_code = document.getElementById('membership-select').value;
+        try {
+            const res = await fetch(`/api/admin/${agentId}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ membership_code })
+            });
+            const d = await res.json();
+            const el = document.getElementById('mem-result');
+            el.style.display = 'block';
+            el.style.background = res.ok ? '#f0fff4' : '#fff5f5';
+            el.style.color      = res.ok ? '#2f855a' : '#c53030';
+            el.textContent      = res.ok ? 'Membership updated.' : (d.error || 'Failed');
+            if (res.ok) setTimeout(() => { el.style.display = 'none'; loadAgent(); }, 2000);
+        } catch(_) {}
+    }
+
+    function showActionResult(msg, ok) {
+        const el = document.getElementById('action-result');
+        el.style.display    = 'block';
+        el.style.background = ok ? '#f0fff4' : '#fff5f5';
+        el.style.color      = ok ? '#2f855a' : '#c53030';
+        el.textContent      = msg;
+        if (ok) setTimeout(() => { el.style.display = 'none'; }, 3000);
+    }
+
+    function showMsg(id) {
+        const el = document.getElementById(id);
+        el.style.display = 'flex';
+        setTimeout(() => { el.style.display = 'none'; }, 2500);
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+</script>
     <global-footer></global-footer>
 </body>
 </html>

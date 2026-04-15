@@ -63,7 +63,7 @@
                 <a href="#" class="side-link dim">Users Management</a>
                 <a href="#" class="side-link dim">Membership Tiers</a>
             </nav>
-            <a href="../../index.html" class="side-signout">Sign Out</a>
+            <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>{window.location.href='/index.html';})" class="side-signout">Sign Out</a>
         </aside>
 
         <!-- Main Content -->

@@ -45,8 +45,8 @@
             <div style="background: #fff; padding: 2rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); position: sticky; top: 100px;">
                 
                 <div style="margin-bottom: 2rem; text-align: center; padding-bottom: 1.5rem; border-bottom: 1px solid #edf2f7;">
-                    <div style="font-weight: 800; font-size: 1.1rem; color: #1a202c; margin-bottom: 0.25rem;">David Chen</div>
-                    <span style="background: #e2e8f0; color: #4a5568; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 4px; display: inline-block;">BASIC TIER</span>
+                    <div id="sidebar-name" style="font-weight: 800; font-size: 1.1rem; color: #1a202c; margin-bottom: 0.25rem;">Loading...</div>
+                    <span id="sidebar-tier" style="background: #e2e8f0; color: #4a5568; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 4px; display: inline-block;">—</span>
                 </div>
 
                 <h4 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 1rem;">Platform Access</h4>
@@ -116,80 +116,76 @@
     </div>
 
     <script>
-        // Hydrate the Form with Real Session Data (PostgreSQL)
-        document.addEventListener("DOMContentLoaded", async () => {
+        const REDIRECT_LOGIN = '../../pages/public/login.html';
+        const REDIRECT_FORBIDDEN = '../../pages/public/forbidden.html';
+
+        // ── Auth Check + Profile Load ────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', async () => {
             try {
-                let agent;
-                
-                // STAGING MOCK: Check if user logged in via UI
-                if (localStorage.getItem('auth_session') === 'active') {
-                    agent = {
-                        display_name: "Mock Agent User",
-                        membership_badge: "BASIC TIER",
-                        service_areas: [],
-                        specialties: [],
-                        bio: ""
-                    };
-                } else {
-                    const res = await fetch('/api/agents/me');
-                    if (!res.ok) {
-                        window.location.href = '../../index.html';
-                        return;
-                    }
-                    agent = await res.json();
+                const res = await fetch('/api/agents/me');
+
+                if (res.status === 401) {
+                    window.location.href = REDIRECT_LOGIN;
+                    return;
                 }
-
-                // Fill Identity Sidebar
-                const nameEl = document.getElementById('sidebar-name');
-                const tierEl = document.getElementById('sidebar-tier');
-                if (nameEl) nameEl.innerText = agent.display_name;
-                if (tierEl) tierEl.innerText = agent.membership_badge ? agent.membership_badge.toUpperCase() : 'AGENT';
-
-                // Safely parse JSON blocks
-                let serviceAreas = [];
-                let specialties = [];
-                try { serviceAreas = Array.isArray(agent.service_areas) ? agent.service_areas : JSON.parse(agent.service_areas || '[]'); } catch(e){}
-                try { specialties = Array.isArray(agent.specialties) ? agent.specialties : JSON.parse(agent.specialties || '[]'); } catch(e){}
-
-                const areaEl = document.getElementById('f-areas');
-                const specEl = document.getElementById('f-specs');
-                const bioEl = document.getElementById('f-bio');
-                
-                if (areaEl) areaEl.value = serviceAreas.join(', ');
-                if (specEl) specEl.value = specialties.join(', ');
-                if (bioEl) bioEl.value = agent.bio || '';
-
-                // Status Banners
-                if (agent.profile_status === 'pending_review' || agent.profile_status === 'published') {
-                    document.getElementById('banner-draft').style.display = 'none';
-                    if (agent.profile_status === 'pending_review') document.getElementById('banner-pending').style.display = 'flex';
-                    
-                    const submitBtn = document.getElementById('submit-review-btn');
-                    submitBtn.textContent = agent.profile_status === 'published' ? "Published Live" : "Updates Pending Review";
-                    submitBtn.disabled = true;
-                    submitBtn.style.opacity = "0.7";
+                if (res.status === 403) {
+                    window.location.href = REDIRECT_FORBIDDEN;
+                    return;
                 }
+                if (!res.ok) throw new Error('Profile load failed');
 
-                // Hydrate Inputs
-                document.getElementById('f-name').value = agent.display_name || '';
-                document.getElementById('f-brokerage').value = agent.brokerage_name || '';
-                document.getElementById('f-city').value = agent.city || '';
-                
-                // Parse JSON arrays from Postgres safely
-                const serviceAreas = Array.isArray(agent.service_areas) ? agent.service_areas : (JSON.parse(agent.service_areas || '[]'));
-                const specialties = Array.isArray(agent.specialties) ? agent.specialties : (JSON.parse(agent.specialties || '[]'));
+                const agent = await res.json();
+                hydrateForm(agent);
 
-                document.getElementById('f-areas').value = serviceAreas.join(', ');
-                document.getElementById('f-specs').value = specialties.join(', ');
-                document.getElementById('f-bio').value = agent.bio || '';
-
-                calcProgress();
             } catch (err) {
-                console.error("Auth Fail", err);
-                window.location.href = '../../index.html';
+                console.error('[Dashboard Load]', err.message);
+                window.location.href = REDIRECT_LOGIN;
             }
         });
 
+        function hydrateForm(agent) {
+            // Sidebar
+            const nameEl = document.getElementById('sidebar-name');
+            const tierEl = document.getElementById('sidebar-tier');
+            if (nameEl) nameEl.innerText = agent.display_name || '—';
+            if (tierEl) tierEl.innerText = agent.membership_badge || agent.membership_name || 'Agent';
+
+            // Form fields
+            document.getElementById('f-name').value      = agent.display_name   || '';
+            document.getElementById('f-brokerage').value = agent.brokerage_name  || '';
+            document.getElementById('f-phone').value     = agent.phone_public    || '';
+            document.getElementById('f-city').value      = agent.city            || '';
+
+            try {
+                const areas = Array.isArray(agent.service_areas) ? agent.service_areas : JSON.parse(agent.service_areas || '[]');
+                const specs = Array.isArray(agent.specialties)   ? agent.specialties   : JSON.parse(agent.specialties   || '[]');
+                document.getElementById('f-areas').value = areas.join(', ');
+                document.getElementById('f-specs').value = specs.join(', ');
+            } catch(_) {}
+
+            document.getElementById('f-bio').value = agent.bio || '';
+
+            // Status banners
+            if (agent.profile_status === 'pending_review') {
+                document.getElementById('banner-draft').style.display    = 'none';
+                document.getElementById('banner-pending').style.display  = 'flex';
+                const btn = document.getElementById('submit-review-btn');
+                btn.textContent = 'Updates Pending Review';
+                btn.disabled = true;
+                btn.style.opacity = '0.7';
+            } else if (agent.profile_status === 'published') {
+                document.getElementById('banner-draft').style.display    = 'none';
+                document.getElementById('banner-pending').style.display  = 'none';
+                const btn = document.getElementById('submit-review-btn');
+                btn.textContent = 'Profile is Live';
+                btn.disabled = true;
+                btn.style.opacity = '0.7';
+            }
+
+            calcProgress();
+        }
+
+        // ── Progress Bar ─────────────────────────────────────────────────────────
         function calcProgress() {
             const reqds = ['f-name', 'f-brokerage', 'f-phone', 'f-city', 'f-areas', 'f-specs', 'f-bio'];
             let filled = 0;
@@ -198,101 +194,109 @@
                 if (el && el.value.trim() !== '') filled++;
             });
             const pct = Math.round((filled / reqds.length) * 100);
-            
+
             document.getElementById('completion-bar').style.width = pct + '%';
-            document.getElementById('completion-text').innerText = pct + '% Complete' + (pct === 100 ? ' - Ready for Review!' : '');
-            
+            document.getElementById('completion-text').innerText = pct + '% Complete' + (pct === 100 ? ' — Ready for Review!' : '');
+
             const submitBtn = document.getElementById('submit-review-btn');
-            if(submitBtn.textContent === "Updates Pending Review" || submitBtn.textContent === "Published Live") return; 
-            
-            if (pct === 100) {
-                submitBtn.disabled = false;
-                submitBtn.style.opacity = '1';
-                submitBtn.style.cursor = 'pointer';
-            } else {
-                submitBtn.disabled = true;
-                submitBtn.style.opacity = '0.5';
-                submitBtn.style.cursor = 'not-allowed';
-            }
+            const locked = ['Updates Pending Review', 'Profile is Live'];
+            if (locked.includes(submitBtn.textContent)) return;
+
+            submitBtn.disabled     = pct < 100;
+            submitBtn.style.opacity = pct === 100 ? '1' : '0.5';
+            submitBtn.style.cursor  = pct === 100 ? 'pointer' : 'not-allowed';
         }
 
+        // ── Extract Form Payload ─────────────────────────────────────────────────
         function extractFormPayload() {
             return {
-                city: document.getElementById('f-city').value,
-                service_areas: document.getElementById('f-areas').value.split(',').map(s => s.trim()).filter(Boolean),
-                specialties: document.getElementById('f-specs').value.split(',').map(s => s.trim()).filter(Boolean),
-                bio: document.getElementById('f-bio').value
+                display_name:   document.getElementById('f-name').value.trim(),
+                brokerage_name: document.getElementById('f-brokerage').value.trim(),
+                phone_public:   document.getElementById('f-phone').value.trim(),
+                city:           document.getElementById('f-city').value.trim(),
+                service_areas:  document.getElementById('f-areas').value.split(',').map(s => s.trim()).filter(Boolean),
+                specialties:    document.getElementById('f-specs').value.split(',').map(s => s.trim()).filter(Boolean),
+                bio:            document.getElementById('f-bio').value.trim()
             };
         }
 
-        function saveDraft() {
+        // ── Save Draft ───────────────────────────────────────────────────────────
+        async function saveDraft() {
             const btn = document.querySelector('button[onclick="saveDraft()"]');
-            btn.textContent = "Saving...";
-            setTimeout(() => {
-                btn.textContent = "Draft Saved ✓";
-                setTimeout(() => { btn.textContent = "Save Draft"; }, 2000);
-            }, 600);
-        }
+            const orig = btn.textContent;
+            btn.textContent = 'Saving...';
+            btn.disabled = true;
 
-        async function submitForReview() {
-            const btn = document.getElementById('submit-review-btn');
-            btn.textContent = "Submitting...";
-            
-            const payload = extractFormPayload();
-            
             try {
-                // STAGING MOCK
-                if (localStorage.getItem('auth_session') === 'active') {
-                    setTimeout(() => {
-                        document.getElementById('banner-draft').style.display = 'none';
-                        document.getElementById('banner-pending').style.display = 'flex';
-                        btn.textContent = "Updates Pending Review";
-                        btn.disabled = true;
-                        btn.style.opacity = "0.7";
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }, 800);
-                    return;
-                }
-
                 const res = await fetch('/api/agents/me', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(extractFormPayload())
                 });
-                
-                if (res.ok) {
-                    document.getElementById('banner-draft').style.display = 'none';
-                    document.getElementById('banner-pending').style.display = 'flex';
-                    btn.textContent = "Updates Pending Review";
-                    btn.disabled = true;
-                    btn.style.opacity = "0.7";
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                } else {
-                    alert('Session expired. Please log in.');
-                }
-            } catch (err) {
-                alert('Network Error.');
+
+                if (res.status === 401) { window.location.href = REDIRECT_LOGIN; return; }
+
+                const data = await res.json();
+                btn.textContent = data.success ? 'Draft Saved ✓' : 'Save Failed';
+            } catch(err) {
+                btn.textContent = 'Network Error';
+            } finally {
+                setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2500);
             }
         }
 
-        // Handle local image preview
+        // ── Submit for Review ────────────────────────────────────────────────────
+        async function submitForReview() {
+            const btn = document.getElementById('submit-review-btn');
+            btn.textContent = 'Submitting...';
+            btn.disabled = true;
+
+            try {
+                // Save latest form data first
+                await fetch('/api/agents/me', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(extractFormPayload())
+                });
+
+                const res = await fetch('/api/agents/me/submit', { method: 'POST' });
+
+                if (res.status === 401) { window.location.href = REDIRECT_LOGIN; return; }
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    document.getElementById('banner-draft').style.display   = 'none';
+                    document.getElementById('banner-pending').style.display = 'flex';
+                    btn.textContent = 'Updates Pending Review';
+                    btn.style.opacity = '0.7';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    alert(data.error || 'Submission failed. Check all required fields.');
+                    btn.textContent = 'Submit for Approval';
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                }
+            } catch(err) {
+                alert('Network error. Please try again.');
+                btn.textContent = 'Submit for Approval';
+                btn.disabled = false;
+            }
+        }
+
+        // ── Image Preview (local only until backend upload is built) ─────────────
         function previewImage(event) {
             const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('profile-preview').innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
-                    
-                    // Mocking session avatar update for the global navbar if they upload here
-                    const avatarBtns = document.querySelectorAll('.profile-dropdown button');
-                    avatarBtns.forEach(btn => {
-                        btn.style.backgroundImage = `url('${e.target.result}')`;
-                    });
-                };
-                reader.readAsDataURL(file);
-            }
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('profile-preview').innerHTML =
+                    `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+            };
+            reader.readAsDataURL(file);
         }
     </script>
     <global-footer></global-footer>
 </body>
 </html>
+

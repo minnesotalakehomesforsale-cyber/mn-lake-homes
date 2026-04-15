@@ -1,11 +1,15 @@
 const pool = require('../database/pool');
 
+/**
+ * GET /api/agents/public
+ * Returns published agents for the public directory.
+ */
 const getPublicAgents = async (req, res) => {
     try {
-        // Only return published agents joined with membership data
         const query = `
-            SELECT a.slug, a.display_name, a.brokerage_name, a.city, a.service_areas, 
-                   a.specialties, a.is_featured, m.display_badge_label as membership_badge
+            SELECT a.slug, a.display_name, a.brokerage_name, a.city, a.service_areas,
+                   a.specialties, a.is_featured, a.phone_public, a.email_public,
+                   m.display_badge_label as membership_badge
             FROM agents a
             JOIN memberships m ON a.membership_id = m.id
             WHERE a.profile_status = 'published' AND a.is_published = true
@@ -14,85 +18,178 @@ const getPublicAgents = async (req, res) => {
         const { rows } = await pool.query(query);
         res.json(rows);
     } catch (err) {
-        res.status(500).json({ error: 'Database query failed' });
+        console.error('[getPublicAgents]', err.message);
+        res.status(500).json({ error: 'Failed to load agent directory.' });
     }
 };
 
+/**
+ * GET /api/agents/public/:slug
+ * Returns a single published agent by slug.
+ */
 const getAgentBySlug = async (req, res) => {
     const { slug } = req.params;
     try {
         const query = `
-            SELECT a.id, a.slug, a.display_name, a.brokerage_name, a.city, a.service_areas, 
-                   a.specialties, a.is_featured, a.license_number, a.bio, m.display_badge_label as membership_badge
+            SELECT a.id, a.slug, a.display_name, a.brokerage_name, a.city, a.state,
+                   a.service_areas, a.specialties, a.is_featured, a.license_number, a.bio,
+                   a.years_experience, a.phone_public, a.email_public, a.website_url,
+                   a.facebook_url, a.instagram_url, a.linkedin_url,
+                   m.display_badge_label as membership_badge, m.name as membership_name
             FROM agents a
             JOIN memberships m ON a.membership_id = m.id
             WHERE a.slug = $1 AND a.profile_status = 'published' AND a.is_published = true
         `;
         const { rows } = await pool.query(query, [slug]);
-        if (rows.length === 0) return res.status(404).json({ error: 'Agent not found' });
+        if (rows.length === 0) return res.status(404).json({ error: 'Agent not found.' });
         res.json(rows[0]);
     } catch (err) {
-        res.status(500).json({ error: 'Server error' });
+        console.error('[getAgentBySlug]', err.message);
+        res.status(500).json({ error: 'Server error.' });
     }
 };
 
-// PROTECTED ROUTE (Requires verifyToken filter)
+/**
+ * GET /api/agents/me
+ * Returns the current agent's full profile. Protected by verifyToken + requireRole('agent').
+ */
 const getMyProfile = async (req, res) => {
     try {
         const query = `
-            SELECT a.*, u.email as account_email 
+            SELECT a.*, u.email as account_email, u.full_name as account_full_name,
+                   u.account_status, m.name as membership_name, m.display_badge_label as membership_badge
             FROM agents a
             JOIN users u ON a.user_id = u.id
+            JOIN memberships m ON a.membership_id = m.id
             WHERE a.user_id = $1
         `;
         const { rows } = await pool.query(query, [req.user.userId]);
-        if (rows.length === 0) return res.status(404).json({ error: 'Profile not mapped' });
+        if (rows.length === 0) return res.status(404).json({ error: 'Agent profile not found for this account.' });
         res.json(rows[0]);
     } catch (err) {
-        res.status(500).json({ error: 'Server error' });
+        console.error('[getMyProfile]', err.message);
+        res.status(500).json({ error: 'Server error.' });
     }
 };
 
-// PROTECTED ROUTE (Requires verifyToken filter)
-const updateMyProfile = async (req, res) => {
-    let { city, service_areas, specialties, bio } = req.body;
+/**
+ * PATCH /api/agents/me
+ * Saves agent profile as draft. Agents cannot change their own status or membership.
+ */
+const saveDraft = async (req, res) => {
+    let {
+        display_name, brokerage_name, phone_public, email_public, website_url,
+        license_number, years_experience, city, service_areas, specialties, bio
+    } = req.body;
+
     try {
-        // Enforce array normalization (Test 5.5) cleanly
-        const cleanArray = (arr) => Array.isArray(arr) ? arr.map(a => a.trim()).filter(a => a.length > 0) : [];
+        const cleanArray = (arr) =>
+            Array.isArray(arr)
+                ? arr.map(a => a.trim()).filter(a => a.length > 0)
+                : typeof arr === 'string'
+                ? arr.split(',').map(a => a.trim()).filter(a => a.length > 0)
+                : [];
+
         const finalAreas = cleanArray(service_areas);
         const finalSpecs = cleanArray(specialties);
-        
-        city = (city || '').trim();
-        bio = (bio || '').trim();
 
-        // Enforce 100% fill rate for review (Test 5.3 & 5.4). If fields missing, we downgrade gracefully to "draft" state instead of breaking.
-        let statusToSet = 'pending_review';
-        if (!city || !bio || finalAreas.length === 0 || finalSpecs.length === 0) {
-            statusToSet = 'draft';
-        }
+        await pool.query(
+            `UPDATE agents SET
+                display_name = COALESCE(NULLIF($1,''), display_name),
+                brokerage_name = COALESCE(NULLIF($2,''), brokerage_name),
+                phone_public = COALESCE(NULLIF($3,''), phone_public),
+                email_public = COALESCE(NULLIF($4,''), email_public),
+                website_url = COALESCE(NULLIF($5,''), website_url),
+                license_number = COALESCE(NULLIF($6,''), license_number),
+                years_experience = COALESCE($7, years_experience),
+                city = COALESCE(NULLIF($8,''), city),
+                service_areas = COALESCE($9, service_areas),
+                specialties = COALESCE($10, specialties),
+                bio = COALESCE(NULLIF($11,''), bio),
+                updated_at = NOW()
+             WHERE user_id = $12`,
+            [
+                display_name?.trim() || null,
+                brokerage_name?.trim() || null,
+                phone_public?.trim() || null,
+                email_public?.trim() || null,
+                website_url?.trim() || null,
+                license_number?.trim() || null,
+                years_experience ? parseInt(years_experience) : null,
+                city?.trim() || null,
+                finalAreas.length > 0 ? JSON.stringify(finalAreas) : null,
+                finalSpecs.length > 0 ? JSON.stringify(finalSpecs) : null,
+                bio?.trim() || null,
+                req.user.userId
+            ]
+        );
 
-        const query = `
-            UPDATE agents 
-            SET city = $1, service_areas = $2, specialties = $3, bio = $4, profile_status = $5
-            WHERE user_id = $6
-            RETURNING *
-        `;
-        const { rows } = await pool.query(query, [
-            city, 
-            JSON.stringify(finalAreas), 
-            JSON.stringify(finalSpecs), 
-            bio, 
-            statusToSet,
-            req.user.userId
-        ]);
-        
-        if (statusToSet === 'draft') {
-            return res.status(400).json({ error: 'Missing Required Fields. Save completed as Draft.', profile: rows[0] });
-        }
+        const { rows } = await pool.query(`SELECT * FROM agents WHERE user_id = $1`, [req.user.userId]);
         res.json({ success: true, profile: rows[0] });
     } catch (err) {
-        res.status(500).json({ error: 'Failed to update profile' });
+        console.error('[saveDraft]', err.message);
+        res.status(500).json({ error: 'Failed to save draft.' });
     }
 };
 
-module.exports = { getPublicAgents, getAgentBySlug, getMyProfile, updateMyProfile };
+/**
+ * POST /api/agents/me/submit
+ * Submits the agent profile for admin review. Validates required fields first.
+ * Agents cannot publish themselves — this only sets status to 'pending_review'.
+ */
+const submitForReview = async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT display_name, brokerage_name, phone_public, city, bio, service_areas, specialties
+             FROM agents WHERE user_id = $1`,
+            [req.user.userId]
+        );
+
+        if (rows.length === 0) return res.status(404).json({ error: 'Profile not found.' });
+
+        const agent = rows[0];
+        const areas = Array.isArray(agent.service_areas)
+            ? agent.service_areas
+            : JSON.parse(agent.service_areas || '[]');
+        const specs = Array.isArray(agent.specialties)
+            ? agent.specialties
+            : JSON.parse(agent.specialties || '[]');
+
+        const missing = [];
+        if (!agent.display_name) missing.push('Display Name');
+        if (!agent.brokerage_name) missing.push('Brokerage Name');
+        if (!agent.phone_public) missing.push('Phone');
+        if (!agent.city) missing.push('Primary City');
+        if (!agent.bio || agent.bio.trim().length < 20) missing.push('Bio (minimum 20 characters)');
+        if (areas.length === 0) missing.push('Service Areas');
+        if (specs.length === 0) missing.push('Specialties');
+
+        if (missing.length > 0) {
+            return res.status(400).json({
+                error: `Profile is incomplete. Please fill in: ${missing.join(', ')}`
+            });
+        }
+
+        await pool.query(
+            `UPDATE agents SET profile_status = 'pending_review', updated_at = NOW() WHERE user_id = $1`,
+            [req.user.userId]
+        );
+
+        res.json({ success: true, message: 'Profile submitted for review. An admin will review it shortly.' });
+    } catch (err) {
+        console.error('[submitForReview]', err.message);
+        res.status(500).json({ error: 'Failed to submit for review.' });
+    }
+};
+
+// Legacy alias for old PATCH /me route used by some admin call paths
+const updateMyProfile = saveDraft;
+
+module.exports = {
+    getPublicAgents,
+    getAgentBySlug,
+    getMyProfile,
+    saveDraft,
+    submitForReview,
+    updateMyProfile
+};
