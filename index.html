@@ -41,7 +41,7 @@
             <div class="promo-content">
                 <p><strong>Stop dreaming, start living.</strong> Browse our exclusive list of<br>Minnesota lake properties and find your perfect getaway.</p>
             </div>
-            <button class="btn btn-white btn-sm" onclick="openModal()" style="border:none;">Start browsing</button>
+            <button class="btn btn-white btn-sm" onclick="openForm('buy')" style="border:none;">Start browsing</button>
         </div>
     </main>
 
@@ -53,57 +53,50 @@
             </h2>
             
             <div class="flex-tab-container">
-                <button class="flex-tab active" onclick="switchTab('buy-home')">Buy a Home</button>
-                <button class="flex-tab" onclick="switchTab('sell-home')">Sell a Home</button>
-                <button class="flex-tab" onclick="switchTab('rent-home')">Rent</button>
-                <button class="flex-tab" onclick="switchTab('find-agent')">Find an Agent</button>
+                <button class="flex-tab active" onclick="switchTab(this, 'tab-buy')">Buy a Home</button>
+                <button class="flex-tab" onclick="switchTab(this, 'tab-sell')">Sell a Home</button>
+                <button class="flex-tab" onclick="switchTab(this, 'tab-rent')">Rent</button>
+                <button class="flex-tab" onclick="switchTab(this, 'tab-agent')">Find an Agent</button>
             </div>
             <div class="flex-card">
-                <!-- Buy Home Content -->
-                <div class="flex-card-content" id="buy-home">
+                <div class="flex-card-content" id="tab-buy">
                     <div class="flex-card-header">
                         <p>Explore exclusive lakeside listings, schedule private tours, and find your family's next retreat.</p>
-                        <a href="buy.html" class="btn btn-primary">Explore Listings</a>
+                        <a href="pages/public/buy.html" class="btn btn-primary" style="text-decoration:none;">Get Started Buying</a>
                     </div>
                     <div class="flex-images">
                         <img src="https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=1200" alt="Modern Lake House Living" class="flex-img">
                         <img src="https://images.unsplash.com/photo-1560185127-6ed189bf02f4?q=80&w=1200" alt="Family on Dock" class="flex-img">
                     </div>
                 </div>
-
-                <!-- Sell Home Content -->
-                <div class="flex-card-content" id="sell-home" style="display: none;">
+                <div class="flex-card-content" id="tab-sell" style="display:none;">
                     <div class="flex-card-header">
-                        <p>Expert marketing, professional photography, and access to a nationwide network of lake home buyers.</p>
-                        <a href="sell.html" class="btn btn-primary">Sell Your Property</a>
+                        <p>List your lakefront property with Minnesota's top specialists and get the best market value for your home.</p>
+                        <a href="pages/public/sell.html" class="btn btn-primary" style="text-decoration:none;">Get Started Selling</a>
                     </div>
                     <div class="flex-images">
-                        <img src="https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?q=80&w=1200" alt="Staged Lake Home" class="flex-img">
-                        <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=1200" alt="Aerial Lake View" class="flex-img">
+                        <img src="https://images.unsplash.com/photo-1582268612140-1bc6b4bbed2c?q=80&w=1200" alt="Selling a Lake Home" class="flex-img">
+                        <img src="https://images.unsplash.com/photo-1560185007-cde436f6a4d0?q=80&w=1200" alt="Lakefront Estate" class="flex-img">
                     </div>
                 </div>
-
-                <!-- Rent Home Content -->
-                <div class="flex-card-content" id="rent-home" style="display: none;">
+                <div class="flex-card-content" id="tab-rent" style="display:none;">
                     <div class="flex-card-header">
-                        <p>Discover beautiful seasonal cabins and year-round waterfront rentals for your next getaway.</p>
-                        <button class="btn btn-primary" onclick="openModal()">View Rentals</button>
+                        <p>Discover seasonal and year-round lake home rentals across Minnesota's most beautiful waterways.</p>
+                        <a href="pages/public/rent.html" class="btn btn-primary" style="text-decoration:none;">Browse Rentals</a>
                     </div>
                     <div class="flex-images">
-                        <img src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1200" alt="Rental Cabin" class="flex-img">
-                        <img src="https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?q=80&w=1200" alt="Lake House Rental" class="flex-img">
+                        <img src="https://images.unsplash.com/photo-1499696010180-025ef6e1a8f9?q=80&w=1200" alt="Minnesota Lake Dock" class="flex-img">
+                        <img src="https://images.unsplash.com/photo-1533038590840-0229ce375960?q=80&w=1200" alt="Boat on Lake" class="flex-img">
                     </div>
                 </div>
-
-                <!-- Find Agent Content -->
-                <div class="flex-card-content" id="find-agent" style="display: none;">
+                <div class="flex-card-content" id="tab-agent" style="display:none;">
                     <div class="flex-card-header">
-                        <p>Connect with local experts who know the lakes, understand regulations, and can find hidden gems.</p>
-                        <a href="agents.html" class="btn btn-primary">Meet Our Agents</a>
+                        <p>Connect with a local lake specialist who knows your market inside and out and is ready to guide you every step of the way.</p>
+                        <a href="pages/public/agents.html" class="btn btn-primary" style="text-decoration:none;">Find an Agent</a>
                     </div>
                     <div class="flex-images">
-                        <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1200" alt="Real Estate Agent" class="flex-img">
-                        <img src="https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?q=80&w=1200" alt="Client Consultation" class="flex-img">
+                        <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=1200" alt="Lake Specialist Agent" class="flex-img">
+                        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1200" alt="Agent with Client" class="flex-img">
                     </div>
                 </div>
             </div>
@@ -221,7 +214,7 @@
         </div>
         <div class="agents-grid" style="padding-top: 0;">
             <!-- Agent 1 -->
-            <a href="agent-david.html" style="text-decoration: none; color: inherit; display: block;" class="agent-link-wrapper">
+            <a href="pages/public/agent-profile.html?slug=david-chen" style="text-decoration: none; color: inherit; display: block;" class="agent-link-wrapper">
             <div class="agent-card">
                 <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=800&auto=format&fit=crop" alt="David Chen" class="agent-image">
                 <div class="agent-info">
@@ -233,6 +226,7 @@
             </a>
 
             <!-- Agent 2 -->
+            <a href="pages/public/agent-profile.html?slug=sarah-jenkins" style="text-decoration: none; color: inherit; display: block;" class="agent-link-wrapper">
             <div class="agent-card">
                 <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=800&auto=format&fit=crop" alt="Sarah Jenkins" class="agent-image">
                 <div class="agent-info">
@@ -241,16 +235,19 @@
                     <p class="agent-bio">Sarah dominates the Brainerd Lakes Area market. Her comprehensive marketing strategies and massive out-of-state network ensure her sellers receive premium cash offers.</p>
                 </div>
             </div>
+            </a>
 
             <!-- Agent 3 -->
+            <a href="pages/public/agent-profile.html?slug=marcus-washington" style="text-decoration: none; color: inherit; display: block;" class="agent-link-wrapper">
             <div class="agent-card">
                 <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=800&auto=format&fit=crop" alt="Marcus Washington" class="agent-image">
                 <div class="agent-info">
                     <h3 class="agent-name">Marcus Washington</h3>
-                    <div class="agent-title">Buyer's Agent</div>
+                    <div class="agent-title">Buyer's Agent — Northern Lakes Specialist</div>
                     <p class="agent-bio">A Northern Lakes Specialist who loves nothing more than helping first-time buyers find 'the one'. Marcus has an unmatched eye for sturdy construction and hidden value.</p>
                 </div>
             </div>
+            </a>
         </div>
         <div style="text-align: center; margin-top: -1rem;">
             <a href="agents.html" class="btn btn-primary" style="padding: 1.2rem 2.5rem; font-size: 1.1rem; text-decoration: none;">View all agents &rarr;</a>
@@ -387,11 +384,9 @@
 
         function openModalFromSection() {
             const select = document.getElementById('industry-select');
-            if(select.value === "") {
-                alert("Please select what you are looking to do first!");
-                return;
-            }
-            openModal();
+            if (!select.value) { alert('Please select what you are looking to do first!'); return; }
+            const map = { buy: 'buy', sell: 'sell', explore: 'general', agent: 'agent' };
+            openForm(map[select.value] || 'general');
         }
 
         function closeModal() {
@@ -403,16 +398,11 @@
             document.getElementById('modal-step-' + stepNumber).classList.add('active');
         }
 
-        function switchTab(tabId) {
-            // Update tabs
-            document.querySelectorAll('.flex-tab').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-
-            // Update content visibility
-            document.querySelectorAll('.flex-card-content').forEach(content => {
-                content.style.display = 'none';
-            });
-            document.getElementById(tabId).style.display = 'block';
+        function switchTab(btn, tabId) {
+            document.querySelectorAll('.flex-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('.flex-card-content').forEach(c => c.style.display = 'none');
+            document.getElementById(tabId).style.display = '';
         }
 
         // Hide floating promo when scrolling into footer
