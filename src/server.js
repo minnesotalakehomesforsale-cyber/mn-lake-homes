@@ -42,6 +42,7 @@ app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/agents', require('./routes/agent.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
 app.use('/api/leads', require('./routes/lead.routes'));
+app.use('/api/blog', require('./routes/blog.routes'));
 
 app.get('/api/health', (req, res) => {
     res.json({ status: 'live', environment: process.env.NODE_ENV || 'local' });

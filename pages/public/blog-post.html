@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog | MN Lake Homes</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .post-hero {
+            position: relative;
+            height: 55vh;
+            min-height: 380px;
+            overflow: hidden;
+            background: #1a202c;
+        }
+        .post-hero img {
+            width: 100%; height: 100%; object-fit: cover; opacity: 0.55;
+        }
+        .post-hero-content {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column; justify-content: flex-end;
+            padding: 3rem 2rem;
+            max-width: 860px;
+            margin: 0 auto;
+            width: 100%;
+            left: 50%; transform: translateX(-50%);
+        }
+        .post-tag { display: inline-block; background: #1d6df2; color: #fff; font-size: 0.75rem; font-weight: 700; padding: 0.3rem 0.75rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem; width: fit-content; }
+        .post-title { font-size: 3rem; font-weight: 800; color: #fff; letter-spacing: -1.5px; line-height: 1.15; margin-bottom: 1rem; }
+        .post-byline { color: rgba(255,255,255,0.7); font-size: 0.9rem; font-weight: 500; display: flex; gap: 1.5rem; flex-wrap: wrap; }
+
+        .post-body-wrap { max-width: 720px; margin: 0 auto; padding: 4rem 2rem 6rem; }
+        .post-body-wrap p { font-size: 1.1rem; line-height: 1.8; color: #2d3748; margin-bottom: 1.5rem; }
+        .post-body-wrap h2 { font-size: 1.6rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; margin-top: 2.5rem; margin-bottom: 1rem; }
+        .post-body-wrap h3 { font-size: 1.25rem; font-weight: 700; color: #1a202c; margin-top: 2rem; margin-bottom: 0.75rem; }
+        .post-body-wrap ul, .post-body-wrap ol { padding-left: 1.5rem; margin-bottom: 1.5rem; }
+        .post-body-wrap li { font-size: 1.05rem; line-height: 1.7; color: #2d3748; margin-bottom: 0.5rem; }
+        .post-body-wrap blockquote { border-left: 4px solid #1d6df2; padding: 0.5rem 1.5rem; margin: 2rem 0; background: #f7f9fa; border-radius: 0 8px 8px 0; }
+        .post-body-wrap blockquote p { color: #4a5568; font-style: italic; }
+
+        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: #718096; text-decoration: none; font-weight: 600; font-size: 0.9rem; margin-bottom: 2rem; transition: color 0.15s; }
+        .back-link:hover { color: #1a202c; }
+    </style>
+    <script src="../../components/components.js" defer></script>
+</head>
+<body style="background: #fff;">
+    <global-header></global-header>
+
+    <div id="post-hero" class="post-hero">
+        <img id="hero-img" src="" alt="">
+        <div class="post-hero-content">
+            <span id="post-tag" class="post-tag"></span>
+            <h1 id="post-title" class="post-title">Loading...</h1>
+            <div class="post-byline">
+                <span id="post-author"></span>
+                <span id="post-date"></span>
+                <span id="post-read-time"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-body-wrap">
+        <a href="/pages/public/blog.html" class="back-link">← Back to all posts</a>
+        <div id="post-body"></div>
+    </div>
+
+    <global-footer></global-footer>
+    <lead-modal></lead-modal>
+
+    <script>
+        async function loadPost() {
+            const slug = new URLSearchParams(window.location.search).get('slug');
+            if (!slug) { document.getElementById('post-title').textContent = 'Post not found.'; return; }
+
+            try {
+                const res = await fetch(`/api/blog/${slug}`);
+                if (!res.ok) throw new Error('Not found');
+                const post = await res.json();
+
+                document.title = `${post.title} | MN Lake Homes`;
+
+                const heroImg = document.getElementById('hero-img');
+                if (post.cover_image_url) {
+                    heroImg.src = post.cover_image_url;
+                    heroImg.alt = post.title;
+                } else {
+                    document.getElementById('post-hero').style.minHeight = '120px';
+                    document.getElementById('post-hero').style.height = 'auto';
+                    heroImg.style.display = 'none';
+                }
+
+                document.getElementById('post-tag').textContent  = post.tag || 'General';
+                document.getElementById('post-title').textContent = post.title;
+                document.getElementById('post-author').textContent = `By ${post.author_name || 'MN Lake Homes Team'}`;
+                document.getElementById('post-read-time').textContent = `${post.read_time_minutes || 4} min read`;
+
+                const pubDate = post.published_at || post.created_at;
+                document.getElementById('post-date').textContent = pubDate
+                    ? new Date(pubDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                    : '';
+
+                document.getElementById('post-body').innerHTML = post.body || '<p>No content yet.</p>';
+            } catch (err) {
+                document.getElementById('post-title').textContent = 'Post not found';
+                document.getElementById('post-body').innerHTML = '<p>This post could not be loaded.</p>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadPost);
+    </script>
+</body>
+</html>

@@ -21,13 +21,13 @@
         .side-signout:hover { background: rgba(252,129,129,0.1); }
         .admin-main { padding: 3rem 3.5rem; background: #f7f9fa; overflow-y: auto; }
 
-        /* Marketing sub-tabs */
+        /* Top-level tabs */
         .mkt-tabs { display: flex; gap: 0; border-bottom: 2px solid #edf2f7; margin-bottom: 2.5rem; }
         .mkt-tab { padding: 0.85rem 1.75rem; border: none; background: none; font-family: inherit; font-size: 0.95rem; font-weight: 600; color: #718096; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
         .mkt-tab:hover { color: #1a202c; }
         .mkt-tab.active { color: #1d6df2; border-bottom-color: #1d6df2; }
 
-        /* Stat strip */
+        /* Stats */
         .stat-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; margin-bottom: 2rem; }
         .stat-chip { background: #fff; border: 1px solid #edf2f7; border-radius: 10px; padding: 1.25rem 1.5rem; }
         .stat-chip .label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 0.5rem; }
@@ -38,7 +38,7 @@
         .toolbar { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
         .search-box { flex: 1; min-width: 220px; padding: 0.65rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.875rem; font-family: inherit; }
         .search-box:focus { outline: none; border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.1); }
-        .filter-pill { padding: 0.5rem 1rem; border: 1px solid #e2e8f0; border-radius: 20px; background: #fff; font-size: 0.8rem; font-weight: 600; color: #718096; cursor: pointer; transition: all 0.15s; }
+        .filter-pill { padding: 0.5rem 1rem; border: 1px solid #e2e8f0; border-radius: 20px; background: #fff; font-size: 0.8rem; font-weight: 600; color: #718096; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
         .filter-pill.active { background: #1d6df2; color: #fff; border-color: #1d6df2; }
         .filter-pill:hover:not(.active) { border-color: #a0aec0; color: #1a202c; }
         .export-btn { padding: 0.65rem 1.25rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #4a5568; transition: all 0.15s; white-space: nowrap; }
@@ -60,10 +60,53 @@
         .tb-seller  { background: #faf5ff; color: #6b46c1; }
         .tb-agent   { background: #fff5f5; color: #c53030; }
         .tb-general { background: #edf2f7; color: #4a5568; }
-        .tb-agent_list { background: #ebf4ff; color: #2b6cb0; }
-
         .source-tag { font-size: 0.78rem; color: #a0aec0; font-weight: 600; }
         .empty-state { padding: 4rem 2rem; text-align: center; color: #a0aec0; }
+
+        /* Blog post editor modal */
+        .blog-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 9000; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; }
+        .blog-overlay.open { display: flex; }
+        .blog-modal { background: #fff; border-radius: 16px; width: 100%; max-width: 900px; box-shadow: 0 30px 60px rgba(0,0,0,0.25); overflow: hidden; margin: auto; }
+        .blog-modal-header { background: #1a202c; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .blog-modal-header h2 { color: #fff; font-size: 1.2rem; font-weight: 800; margin: 0; }
+        .blog-modal-close { background: none; border: none; color: rgba(255,255,255,0.6); font-size: 1.5rem; cursor: pointer; padding: 0; line-height: 1; }
+        .blog-modal-close:hover { color: #fff; }
+        .blog-modal-body { padding: 2rem; max-height: 80vh; overflow-y: auto; }
+        .blog-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+        .blog-form-row.full { grid-template-columns: 1fr; }
+        .blog-form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .blog-form-group label { font-size: 0.78rem; font-weight: 700; color: #4a5568; text-transform: uppercase; letter-spacing: 0.5px; }
+        .blog-input { padding: 0.75rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; font-family: inherit; color: #1a202c; width: 100%; box-sizing: border-box; }
+        .blog-input:focus { outline: none; border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.08); }
+        .blog-textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+        .blog-body-textarea { resize: vertical; min-height: 280px; font-family: 'Courier New', monospace; font-size: 0.85rem; line-height: 1.6; }
+        .blog-img-preview { width: 100%; height: 160px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0; display: block; margin-top: 0.5rem; background: #f7f9fa; }
+        .blog-modal-footer { padding: 1.5rem 2rem; border-top: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .blog-publish-toggle { display: flex; align-items: center; gap: 0.75rem; }
+        .toggle-switch { position: relative; width: 44px; height: 24px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; inset: 0; background: #cbd5e0; border-radius: 24px; cursor: pointer; transition: 0.2s; }
+        .toggle-slider:before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: 0.2s; }
+        .toggle-switch input:checked + .toggle-slider { background: #38a169; }
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
+        .modal-actions { display: flex; gap: 0.75rem; }
+        .btn-save-draft { padding: 0.75rem 1.5rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.9rem; transition: all 0.15s; }
+        .btn-save-draft:hover { background: #f7f9fa; }
+        .btn-publish-post { padding: 0.75rem 1.75rem; border: none; border-radius: 8px; background: #1d6df2; color: #fff; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 0.9rem; transition: opacity 0.2s; }
+        .btn-publish-post:hover { opacity: 0.85; }
+        .btn-delete-post { padding: 0.75rem 1.25rem; border: none; border-radius: 8px; background: #fff5f5; color: #c53030; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 0.9rem; transition: opacity 0.2s; }
+        .btn-delete-post:hover { background: #fed7d7; }
+        .blog-error { color: #c53030; font-size: 0.85rem; font-weight: 600; display: none; }
+
+        /* Blog post table specific */
+        .post-cover-thumb { width: 56px; height: 40px; object-fit: cover; border-radius: 6px; background: #edf2f7; display: block; }
+        .post-status-live { background: #f0fff4; color: #2f855a; border: 1px solid #c6f6d5; display:inline-block; padding:0.2rem 0.55rem; border-radius:6px; font-size:0.7rem; font-weight:700; text-transform:uppercase; }
+        .post-status-draft { background: #fefcbf; color: #975a16; border: 1px solid #f6e05e; display:inline-block; padding:0.2rem 0.55rem; border-radius:6px; font-size:0.7rem; font-weight:700; text-transform:uppercase; }
+        .post-action-btn { padding: 0.3rem 0.7rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; font-family: inherit; transition: opacity 0.15s; }
+        .post-action-btn:hover { opacity: 0.8; }
+        .pa-edit { background: #ebf4ff; color: #2b6cb0; }
+        .pa-preview { background: #edf2f7; color: #4a5568; }
+        .pa-delete { background: #fff5f5; color: #c53030; }
     </style>
 </head>
 <body>
@@ -88,32 +131,32 @@
     <main class="admin-main">
         <header style="margin-bottom: 2rem;">
             <h1 style="font-size: 2rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 0.25rem;">Marketing</h1>
-            <p style="color: #718096;">Newsletter audiences, email lists, and outreach tools.</p>
+            <p style="color: #718096;">Newsletter audiences, blog content, and outreach tools.</p>
         </header>
 
-        <!-- Marketing Sub-tabs -->
+        <!-- Top-level tabs -->
         <div class="mkt-tabs">
-            <button class="mkt-tab active" onclick="switchTab('newsletter', this)">Newsletter</button>
+            <button class="mkt-tab active" id="mtab-newsletter" onclick="switchMainTab('newsletter', this)">Newsletter</button>
+            <button class="mkt-tab"        id="mtab-blog"       onclick="switchMainTab('blog', this)">Blog Posts</button>
         </div>
 
-        <!-- ── NEWSLETTER TAB ── -->
+        <!-- ══════════════════════════════════════════════════════
+             NEWSLETTER TAB
+             ══════════════════════════════════════════════════════ -->
         <div id="tab-newsletter">
-
-            <!-- Inner tabs: Customer vs Agent -->
             <div style="display:flex; gap:0.75rem; margin-bottom:2rem;">
-                <button id="nl-btn-customer" class="filter-pill active" onclick="switchList('customer', this)">Customer Newsletter</button>
-                <button id="nl-btn-agents"   class="filter-pill"        onclick="switchList('agents', this)">Agent Newsletter</button>
+                <button id="nl-btn-customer" class="filter-pill active" onclick="switchList('customer')">Customer Newsletter</button>
+                <button id="nl-btn-agents"   class="filter-pill"        onclick="switchList('agents')">Agent Newsletter</button>
             </div>
 
             <!-- CUSTOMER NEWSLETTER -->
             <div id="nl-customer">
-                <div class="stat-strip" id="customer-stats">
+                <div class="stat-strip">
                     <div class="stat-chip"><div class="label">Total Subscribers</div><div class="val" id="cs-total">—</div><div class="sub">leads with email</div></div>
                     <div class="stat-chip"><div class="label">Buyers</div><div class="val" id="cs-buyers" style="color:#2f855a;">—</div><div class="sub">buyer leads</div></div>
                     <div class="stat-chip"><div class="label">Sellers</div><div class="val" id="cs-sellers" style="color:#6b46c1;">—</div><div class="sub">seller leads</div></div>
                     <div class="stat-chip"><div class="label">General / Other</div><div class="val" id="cs-general" style="color:#718096;">—</div><div class="sub">inquiries & other</div></div>
                 </div>
-
                 <div class="toolbar">
                     <input type="text" class="search-box" placeholder="Search name or email..." oninput="filterCustomer(this.value)">
                     <button class="filter-pill active" id="cpill-all"    onclick="filterCustomerType('all',this)">All</button>
@@ -123,34 +166,20 @@
                     <button class="export-btn" onclick="exportCSV(filteredCustomer, 'customer-newsletter')">↓ Export CSV</button>
                     <button class="copy-btn" onclick="copyEmails(filteredCustomer)">Copy All Emails</button>
                 </div>
-
                 <div class="list-card">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Type</th>
-                                <th>Source</th>
-                                <th>Date Added</th>
-                            </tr>
-                        </thead>
-                        <tbody id="customer-tbody">
-                            <tr><td colspan="5" class="empty-state">Loading...</td></tr>
-                        </tbody>
-                    </table>
+                    <table><thead><tr><th>Name</th><th>Email</th><th>Type</th><th>Source</th><th>Date Added</th></tr></thead>
+                    <tbody id="customer-tbody"><tr><td colspan="5" class="empty-state">Loading...</td></tr></tbody></table>
                 </div>
             </div>
 
             <!-- AGENT NEWSLETTER -->
             <div id="nl-agents" style="display:none;">
-                <div class="stat-strip" id="agent-stats">
+                <div class="stat-strip">
                     <div class="stat-chip"><div class="label">Total Agents</div><div class="val" id="as-total">—</div><div class="sub">on platform</div></div>
                     <div class="stat-chip"><div class="label">Published</div><div class="val" id="as-published" style="color:#2f855a;">—</div><div class="sub">live profiles</div></div>
                     <div class="stat-chip"><div class="label">Pending Review</div><div class="val" id="as-pending" style="color:#dd6b20;">—</div><div class="sub">awaiting approval</div></div>
                     <div class="stat-chip"><div class="label">Draft</div><div class="val" id="as-draft" style="color:#718096;">—</div><div class="sub">incomplete profiles</div></div>
                 </div>
-
                 <div class="toolbar">
                     <input type="text" class="search-box" placeholder="Search name, email, or brokerage..." oninput="filterAgent(this.value)">
                     <button class="filter-pill active" id="apill-all"       onclick="filterAgentStatus('all',this)">All</button>
@@ -160,235 +189,433 @@
                     <button class="export-btn" onclick="exportCSV(filteredAgents, 'agent-newsletter')">↓ Export CSV</button>
                     <button class="copy-btn" onclick="copyEmails(filteredAgents)">Copy All Emails</button>
                 </div>
-
                 <div class="list-card">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Agent Name</th>
-                                <th>Email</th>
-                                <th>Brokerage</th>
-                                <th>Status</th>
-                                <th>Location</th>
-                                <th>Joined</th>
-                            </tr>
-                        </thead>
-                        <tbody id="agent-tbody">
-                            <tr><td colspan="6" class="empty-state">Loading...</td></tr>
-                        </tbody>
-                    </table>
+                    <table><thead><tr><th>Agent Name</th><th>Email</th><th>Brokerage</th><th>Status</th><th>Location</th><th>Joined</th></tr></thead>
+                    <tbody id="agent-tbody"><tr><td colspan="6" class="empty-state">Loading...</td></tr></tbody></table>
                 </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+             BLOG POSTS TAB
+             ══════════════════════════════════════════════════════ -->
+        <div id="tab-blog" style="display:none;">
+            <div class="stat-strip" style="grid-template-columns:repeat(3,1fr);">
+                <div class="stat-chip"><div class="label">Total Posts</div><div class="val" id="bp-total">—</div><div class="sub">all posts</div></div>
+                <div class="stat-chip"><div class="label">Published</div><div class="val" id="bp-published" style="color:#2f855a;">—</div><div class="sub">live on blog</div></div>
+                <div class="stat-chip"><div class="label">Drafts</div><div class="val" id="bp-drafts" style="color:#975a16;">—</div><div class="sub">unpublished</div></div>
+            </div>
+
+            <div class="toolbar">
+                <input type="text" class="search-box" placeholder="Search posts by title or tag..." oninput="filterBlogPosts(this.value)">
+                <button class="filter-pill active" id="bpill-all"       onclick="filterBlogStatus('all',this)">All</button>
+                <button class="filter-pill"        id="bpill-published" onclick="filterBlogStatus('published',this)">Published</button>
+                <button class="filter-pill"        id="bpill-draft"     onclick="filterBlogStatus('draft',this)">Drafts</button>
+                <button class="copy-btn" onclick="openBlogEditor(null)" style="margin-left:auto;">+ New Post</button>
+            </div>
+
+            <div class="list-card">
+                <table>
+                    <thead><tr><th style="width:56px;"></th><th>Title</th><th>Tag</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+                    <tbody id="blog-tbody"><tr><td colspan="6" class="empty-state">Loading...</td></tr></tbody>
+                </table>
             </div>
         </div>
     </main>
 </div>
 
+<!-- ══════════════════════════════════════════════════════
+     BLOG EDITOR MODAL
+     ══════════════════════════════════════════════════════ -->
+<div class="blog-overlay" id="blog-overlay" onclick="handleOverlayClick(event)">
+    <div class="blog-modal">
+        <div class="blog-modal-header">
+            <h2 id="modal-title">New Blog Post</h2>
+            <button class="blog-modal-close" onclick="closeBlogEditor()">×</button>
+        </div>
+        <div class="blog-modal-body">
+            <p class="blog-error" id="blog-error"></p>
+
+            <div class="blog-form-row">
+                <div class="blog-form-group" style="grid-column:1/-1;">
+                    <label>Post Title *</label>
+                    <input type="text" class="blog-input" id="bp-title" placeholder="e.g. 5 Tips for Buying a Lake Home">
+                </div>
+            </div>
+            <div class="blog-form-row">
+                <div class="blog-form-group">
+                    <label>Tag / Category</label>
+                    <input type="text" class="blog-input" id="bp-tag" placeholder="e.g. Buyer Guide, Local Life" list="tag-suggestions">
+                    <datalist id="tag-suggestions">
+                        <option value="Buyer Guide">
+                        <option value="Seller Resources">
+                        <option value="Local Life">
+                        <option value="Community">
+                        <option value="Market Update">
+                        <option value="Investment">
+                        <option value="Lifestyle">
+                    </datalist>
+                </div>
+                <div class="blog-form-group">
+                    <label>Author Name</label>
+                    <input type="text" class="blog-input" id="bp-author" value="MN Lake Homes Team" placeholder="MN Lake Homes Team">
+                </div>
+            </div>
+            <div class="blog-form-row">
+                <div class="blog-form-group">
+                    <label>Read Time (minutes)</label>
+                    <input type="number" class="blog-input" id="bp-readtime" value="4" min="1" max="60">
+                </div>
+                <div class="blog-form-group">
+                    <label>Cover Image URL</label>
+                    <input type="url" class="blog-input" id="bp-cover" placeholder="https://images.unsplash.com/..." oninput="previewCover(this.value)">
+                </div>
+            </div>
+            <div class="blog-form-row full">
+                <div class="blog-form-group">
+                    <img id="cover-preview" class="blog-img-preview" src="" alt="" style="display:none;">
+                </div>
+            </div>
+            <div class="blog-form-row full">
+                <div class="blog-form-group">
+                    <label>Excerpt (shown on blog index card)</label>
+                    <textarea class="blog-input blog-textarea" id="bp-excerpt" placeholder="Short summary that appears on the blog index page..."></textarea>
+                </div>
+            </div>
+            <div class="blog-form-row full">
+                <div class="blog-form-group">
+                    <label>Body Content (HTML supported — use &lt;h2&gt;, &lt;p&gt;, &lt;ul&gt;, &lt;strong&gt;, etc.)</label>
+                    <textarea class="blog-input blog-body-textarea" id="bp-body" placeholder="<p>Write your full article here. You can use HTML tags for formatting.</p>&#10;&#10;<h2>Section Title</h2>&#10;<p>Content...</p>"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="blog-modal-footer">
+            <div class="blog-publish-toggle">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="bp-published">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span style="font-weight:600;font-size:0.9rem;" id="publish-label">Save as Draft</span>
+            </div>
+            <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+                <button class="btn-delete-post" id="delete-post-btn" onclick="deleteCurrentPost()" style="display:none;">Delete Post</button>
+                <button class="btn-save-draft" onclick="savePost()">Save</button>
+                <a id="preview-post-link" href="#" target="_blank" style="display:none; padding:0.75rem 1.25rem; border:1px solid #e2e8f0; border-radius:8px; font-weight:600; font-size:0.9rem; color:#4a5568; text-decoration:none;">↗ Preview</a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    // ── State ────────────────────────────────────────────────────────────────
-    let allCustomer = [];
-    let filteredCustomer = [];
-    let customerTypeFilter = 'all';
-    let customerSearch = '';
+    // ── State ────────────────────────────────────────────────────────────────────
+    let allCustomer = [], filteredCustomer = [], customerTypeFilter = 'all', customerSearch = '';
+    let allAgents   = [], filteredAgents   = [], agentStatusFilter  = 'all', agentSearch    = '';
+    let allPosts    = [], filteredPosts    = [], postStatusFilter   = 'all', postSearch     = '';
+    let currentPostId = null;
 
-    let allAgents = [];
-    let filteredAgents = [];
-    let agentStatusFilter = 'all';
-    let agentSearch = '';
-
-    // ── Tab Switching ────────────────────────────────────────────────────────
-    function switchTab(tab, btn) {
+    // ── Main tab switching ───────────────────────────────────────────────────────
+    function switchMainTab(tab, btn) {
         document.querySelectorAll('.mkt-tab').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById('tab-newsletter').style.display = tab === 'newsletter' ? 'block' : 'none';
+        document.getElementById('tab-blog').style.display       = tab === 'blog'       ? 'block' : 'none';
+        if (tab === 'blog' && allPosts.length === 0) loadBlogPosts();
     }
 
-    function switchList(which, btn) {
+    function switchList(which) {
         document.getElementById('nl-btn-customer').classList.toggle('active', which === 'customer');
-        document.getElementById('nl-btn-agents').classList.toggle('active', which === 'agents');
+        document.getElementById('nl-btn-agents').classList.toggle('active',   which === 'agents');
         document.getElementById('nl-customer').style.display = which === 'customer' ? 'block' : 'none';
         document.getElementById('nl-agents').style.display   = which === 'agents'   ? 'block' : 'none';
     }
 
-    // ── Load Data ────────────────────────────────────────────────────────────
-    async function loadAll() {
+    // ── Load Newsletter Data ─────────────────────────────────────────────────────
+    async function loadNewsletterData() {
         const [leadsRes, agentsRes] = await Promise.all([
             fetch('/api/leads/admin/inbox').then(r => r.ok ? r.json() : []).catch(() => []),
             fetch('/api/admin').then(r => r.ok ? r.json() : []).catch(() => [])
         ]);
-
-        // Customer list = leads with email
-        allCustomer = leadsRes.filter(l => l.email && l.email.trim() !== '');
+        allCustomer = leadsRes.filter(l => l.email && l.email.trim());
         filteredCustomer = [...allCustomer];
-        renderCustomerStats();
-        renderCustomerTable(filteredCustomer);
+        renderCustomerStats(); renderCustomerTable(filteredCustomer);
 
-        // Agent list = agents with email (u.email from getLedger)
-        allAgents = agentsRes.filter(a => a.email && a.email.trim() !== '');
+        allAgents = agentsRes.filter(a => a.email && a.email.trim());
         filteredAgents = [...allAgents];
-        renderAgentStats();
-        renderAgentTable(filteredAgents);
+        renderAgentStats(); renderAgentTable(filteredAgents);
     }
 
-    // ── Customer Newsletter ──────────────────────────────────────────────────
+    // ── Customer Newsletter ──────────────────────────────────────────────────────
     function renderCustomerStats() {
         document.getElementById('cs-total').textContent   = allCustomer.length;
         document.getElementById('cs-buyers').textContent  = allCustomer.filter(l => l.type === 'buyer').length;
         document.getElementById('cs-sellers').textContent = allCustomer.filter(l => l.type === 'seller').length;
         document.getElementById('cs-general').textContent = allCustomer.filter(l => !['buyer','seller'].includes(l.type)).length;
     }
-
     function applyCustomerFilters() {
         filteredCustomer = allCustomer.filter(l => {
-            const matchType = customerTypeFilter === 'all'
-                || (customerTypeFilter === 'buyer'  && l.type === 'buyer')
-                || (customerTypeFilter === 'seller' && l.type === 'seller')
-                || (customerTypeFilter === 'other'  && !['buyer','seller'].includes(l.type));
-            const q = customerSearch.toLowerCase();
-            const matchSearch = !q || (l.name||'').toLowerCase().includes(q) || (l.email||'').toLowerCase().includes(q);
-            return matchType && matchSearch;
+            const mt = customerTypeFilter === 'all' || (customerTypeFilter === 'buyer' && l.type === 'buyer') || (customerTypeFilter === 'seller' && l.type === 'seller') || (customerTypeFilter === 'other' && !['buyer','seller'].includes(l.type));
+            const q  = customerSearch.toLowerCase();
+            return mt && (!q || (l.name||'').toLowerCase().includes(q) || (l.email||'').toLowerCase().includes(q));
         });
         renderCustomerTable(filteredCustomer);
     }
-
     function filterCustomer(q) { customerSearch = q; applyCustomerFilters(); }
-
     function filterCustomerType(type, btn) {
         customerTypeFilter = type;
         ['all','buyer','seller','other'].forEach(t => document.getElementById(`cpill-${t}`).classList.remove('active'));
-        btn.classList.add('active');
-        applyCustomerFilters();
+        btn.classList.add('active'); applyCustomerFilters();
     }
-
     function renderCustomerTable(rows) {
         const tbody = document.getElementById('customer-tbody');
-        if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No subscribers match this filter.</td></tr>';
-            return;
-        }
-        tbody.innerHTML = rows.map(l => {
-            const typeMap = { buyer: 'tb-buyer', seller: 'tb-seller', agent_inquiry: 'tb-agent' };
-            const typeClass = typeMap[l.type] || 'tb-general';
-            const typeLabel = (l.type || 'general').replace(/_/g, ' ');
-            const date = new Date(l.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            const src = l.source || '—';
-            return `<tr>
-                <td style="font-weight:700;color:#1a202c;">${l.name}</td>
-                <td><a href="mailto:${l.email}" style="color:#1d6df2;text-decoration:none;font-weight:500;">${l.email}</a></td>
-                <td><span class="type-badge ${typeClass}">${typeLabel}</span></td>
-                <td class="source-tag">${src}</td>
-                <td style="color:#a0aec0;font-weight:600;font-size:0.8rem;">${date}</td>
-            </tr>`;
-        }).join('');
+        if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No subscribers match.</td></tr>'; return; }
+        const typeMap = { buyer:'tb-buyer', seller:'tb-seller', agent_inquiry:'tb-agent' };
+        tbody.innerHTML = rows.map(l => `<tr>
+            <td style="font-weight:700;color:#1a202c;">${l.name}</td>
+            <td><a href="mailto:${l.email}" style="color:#1d6df2;text-decoration:none;font-weight:500;">${l.email}</a></td>
+            <td><span class="type-badge ${typeMap[l.type]||'tb-general'}">${(l.type||'general').replace(/_/g,' ')}</span></td>
+            <td class="source-tag">${l.source||'—'}</td>
+            <td style="color:#a0aec0;font-weight:600;font-size:0.8rem;">${new Date(l.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td>
+        </tr>`).join('');
     }
 
-    // ── Agent Newsletter ─────────────────────────────────────────────────────
+    // ── Agent Newsletter ─────────────────────────────────────────────────────────
     function renderAgentStats() {
         document.getElementById('as-total').textContent     = allAgents.length;
         document.getElementById('as-published').textContent = allAgents.filter(a => a.profile_status === 'published').length;
         document.getElementById('as-pending').textContent   = allAgents.filter(a => a.profile_status === 'pending_review').length;
         document.getElementById('as-draft').textContent     = allAgents.filter(a => a.profile_status === 'draft').length;
     }
-
     function applyAgentFilters() {
         filteredAgents = allAgents.filter(a => {
-            const matchStatus = agentStatusFilter === 'all' || a.profile_status === agentStatusFilter;
-            const q = agentSearch.toLowerCase();
-            const matchSearch = !q
-                || (a.display_name||'').toLowerCase().includes(q)
-                || (a.email||'').toLowerCase().includes(q)
-                || (a.brokerage_name||'').toLowerCase().includes(q);
-            return matchStatus && matchSearch;
+            const ms = agentStatusFilter === 'all' || a.profile_status === agentStatusFilter;
+            const q  = agentSearch.toLowerCase();
+            return ms && (!q || (a.display_name||'').toLowerCase().includes(q) || (a.email||'').toLowerCase().includes(q) || (a.brokerage_name||'').toLowerCase().includes(q));
         });
         renderAgentTable(filteredAgents);
     }
-
     function filterAgent(q) { agentSearch = q; applyAgentFilters(); }
-
     function filterAgentStatus(status, btn) {
         agentStatusFilter = status;
-        ['all','published','pending_review','draft'].forEach(s => {
-            const id = `apill-${s === 'pending_review' ? 'pending' : s}`;
-            const el = document.getElementById(id);
-            if (el) el.classList.remove('active');
-        });
-        btn.classList.add('active');
-        applyAgentFilters();
+        ['all','published','pending_review','draft'].forEach(s => { const el = document.getElementById(`apill-${s==='pending_review'?'pending':s}`); if(el) el.classList.remove('active'); });
+        btn.classList.add('active'); applyAgentFilters();
     }
-
     function renderAgentTable(rows) {
         const tbody = document.getElementById('agent-tbody');
-        if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No agents match this filter.</td></tr>';
-            return;
+        if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No agents match.</td></tr>'; return; }
+        const sBadge = s => { const m={published:'background:#f0fff4;color:#2f855a;',pending_review:'background:#fffaf0;color:#c05621;',draft:'background:#fefcbf;color:#975a16;',suspended:'background:#fff5f5;color:#c53030;'}; return `<span style="display:inline-block;padding:0.2rem 0.55rem;border-radius:6px;font-size:0.7rem;font-weight:700;text-transform:uppercase;${m[s]||'background:#edf2f7;color:#4a5568;'}">${(s||'').replace('_',' ')}</span>`; };
+        tbody.innerHTML = rows.map(a => `<tr>
+            <td><div style="font-weight:700;color:#1a202c;">${a.display_name||a.full_name||'—'}</div>${a.is_published?'<div style="font-size:0.72rem;color:#2f855a;font-weight:600;margin-top:2px;">● Live</div>':''}</td>
+            <td><a href="mailto:${a.email}" style="color:#1d6df2;text-decoration:none;font-weight:500;">${a.email}</a></td>
+            <td style="color:#4a5568;">${a.brokerage_name||'—'}</td>
+            <td>${sBadge(a.profile_status)}</td>
+            <td style="color:#718096;">${[a.city,a.state].filter(Boolean).join(', ')||'—'}</td>
+            <td style="color:#a0aec0;font-weight:600;font-size:0.8rem;">${a.created_at?new Date(a.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—'}</td>
+        </tr>`).join('');
+    }
+
+    // ── Blog Posts ───────────────────────────────────────────────────────────────
+    async function loadBlogPosts() {
+        document.getElementById('blog-tbody').innerHTML = '<tr><td colspan="6" class="empty-state">Loading...</td></tr>';
+        try {
+            const res = await fetch('/api/blog/admin/all');
+            if (!res.ok) throw new Error();
+            allPosts = await res.json();
+            filteredPosts = [...allPosts];
+            renderBlogStats(); renderBlogTable(filteredPosts);
+        } catch {
+            document.getElementById('blog-tbody').innerHTML = '<tr><td colspan="6" class="empty-state">Failed to load posts.</td></tr>';
         }
-        const statusBadge = s => {
-            const map = { published: 'background:#f0fff4;color:#2f855a;', pending_review: 'background:#fffaf0;color:#c05621;', draft: 'background:#fefcbf;color:#975a16;', suspended: 'background:#fff5f5;color:#c53030;' };
-            const style = map[s] || 'background:#edf2f7;color:#4a5568;';
-            return `<span style="display:inline-block;padding:0.2rem 0.55rem;border-radius:6px;font-size:0.7rem;font-weight:700;text-transform:uppercase;${style}">${(s||'').replace('_',' ')}</span>`;
-        };
-        tbody.innerHTML = rows.map(a => {
-            const date = a.created_at ? new Date(a.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-            const location = [a.city, a.state].filter(Boolean).join(', ') || '—';
+    }
+
+    function renderBlogStats() {
+        document.getElementById('bp-total').textContent     = allPosts.length;
+        document.getElementById('bp-published').textContent = allPosts.filter(p => p.is_published).length;
+        document.getElementById('bp-drafts').textContent    = allPosts.filter(p => !p.is_published).length;
+    }
+
+    function applyBlogFilters() {
+        filteredPosts = allPosts.filter(p => {
+            const ms = postStatusFilter === 'all' || (postStatusFilter === 'published' && p.is_published) || (postStatusFilter === 'draft' && !p.is_published);
+            const q  = postSearch.toLowerCase();
+            return ms && (!q || (p.title||'').toLowerCase().includes(q) || (p.tag||'').toLowerCase().includes(q));
+        });
+        renderBlogTable(filteredPosts);
+    }
+    function filterBlogPosts(q) { postSearch = q; applyBlogFilters(); }
+    function filterBlogStatus(status, btn) {
+        postStatusFilter = status;
+        ['all','published','draft'].forEach(s => document.getElementById(`bpill-${s}`).classList.remove('active'));
+        btn.classList.add('active'); applyBlogFilters();
+    }
+
+    function renderBlogTable(posts) {
+        const tbody = document.getElementById('blog-tbody');
+        if (!posts.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No posts found.</td></tr>'; return; }
+        tbody.innerHTML = posts.map(p => {
+            const date = p.published_at || p.created_at;
+            const dateStr = date ? new Date(date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+            const statusBadge = p.is_published
+                ? `<span class="post-status-live">Live</span>`
+                : `<span class="post-status-draft">Draft</span>`;
             return `<tr>
+                <td>${p.cover_image_url ? `<img src="${p.cover_image_url}" class="post-cover-thumb" alt="">` : '<div class="post-cover-thumb" style="background:#edf2f7;"></div>'}</td>
                 <td>
-                    <div style="font-weight:700;color:#1a202c;">${a.display_name || a.full_name || '—'}</div>
-                    ${a.is_published ? '<div style="font-size:0.72rem;color:#2f855a;font-weight:600;margin-top:2px;">● Live Profile</div>' : ''}
+                    <div style="font-weight:700;color:#1a202c;">${p.title}</div>
+                    ${p.excerpt ? `<div style="font-size:0.78rem;color:#718096;margin-top:3px;">${p.excerpt.slice(0,80)}${p.excerpt.length>80?'…':''}</div>` : ''}
                 </td>
-                <td><a href="mailto:${a.email}" style="color:#1d6df2;text-decoration:none;font-weight:500;">${a.email}</a></td>
-                <td style="color:#4a5568;font-weight:500;">${a.brokerage_name || '—'}</td>
-                <td>${statusBadge(a.profile_status)}</td>
-                <td style="color:#718096;font-size:0.85rem;">${location}</td>
-                <td style="color:#a0aec0;font-weight:600;font-size:0.8rem;">${date}</td>
+                <td><span style="background:#ebf4ff;color:#2b6cb0;display:inline-block;padding:0.2rem 0.55rem;border-radius:6px;font-size:0.7rem;font-weight:700;">${p.tag||'General'}</span></td>
+                <td>${statusBadge}</td>
+                <td style="color:#a0aec0;font-weight:600;font-size:0.8rem;">${dateStr}</td>
+                <td>
+                    <div style="display:flex;gap:0.5rem;">
+                        <button class="post-action-btn pa-edit" onclick="openBlogEditor('${p.id}')">Edit</button>
+                        <button class="post-action-btn pa-preview" onclick="window.open('/pages/public/blog-post.html?slug=${p.slug}','_blank')">Preview</button>
+                    </div>
+                </td>
             </tr>`;
         }).join('');
     }
 
-    // ── Utilities ────────────────────────────────────────────────────────────
-    function copyEmails(rows) {
-        const emails = rows.map(r => r.email).filter(Boolean).join(', ');
-        navigator.clipboard.writeText(emails).then(() => {
-            alert(`${rows.length} email${rows.length !== 1 ? 's' : ''} copied to clipboard.`);
-        }).catch(() => {
-            prompt('Copy these emails:', emails);
-        });
+    // ── Blog Editor Modal ────────────────────────────────────────────────────────
+    function openBlogEditor(postId) {
+        currentPostId = postId;
+        const overlay = document.getElementById('blog-overlay');
+        const err = document.getElementById('blog-error');
+        err.style.display = 'none';
+
+        if (postId) {
+            // Edit existing
+            const post = allPosts.find(p => p.id === postId);
+            if (!post) return;
+            document.getElementById('modal-title').textContent = 'Edit Post';
+            document.getElementById('bp-title').value     = post.title || '';
+            document.getElementById('bp-tag').value       = post.tag || '';
+            document.getElementById('bp-author').value    = post.author_name || 'MN Lake Homes Team';
+            document.getElementById('bp-readtime').value  = post.read_time_minutes || 4;
+            document.getElementById('bp-cover').value     = post.cover_image_url || '';
+            document.getElementById('bp-excerpt').value   = post.excerpt || '';
+            document.getElementById('bp-body').value      = post.body || '';
+            document.getElementById('bp-published').checked = post.is_published;
+            document.getElementById('publish-label').textContent = post.is_published ? 'Published (Live)' : 'Save as Draft';
+            const previewLink = document.getElementById('preview-post-link');
+            previewLink.href = `/pages/public/blog-post.html?slug=${post.slug}`;
+            previewLink.style.display = post.is_published ? 'inline-block' : 'none';
+            document.getElementById('delete-post-btn').style.display = 'inline-block';
+            previewCover(post.cover_image_url);
+        } else {
+            // New post
+            document.getElementById('modal-title').textContent = 'New Blog Post';
+            document.getElementById('bp-title').value     = '';
+            document.getElementById('bp-tag').value       = '';
+            document.getElementById('bp-author').value    = 'MN Lake Homes Team';
+            document.getElementById('bp-readtime').value  = 4;
+            document.getElementById('bp-cover').value     = '';
+            document.getElementById('bp-excerpt').value   = '';
+            document.getElementById('bp-body').value      = '';
+            document.getElementById('bp-published').checked = false;
+            document.getElementById('publish-label').textContent = 'Save as Draft';
+            document.getElementById('preview-post-link').style.display = 'none';
+            document.getElementById('delete-post-btn').style.display   = 'none';
+            previewCover('');
+        }
+
+        overlay.classList.add('open');
     }
 
+    function closeBlogEditor() {
+        document.getElementById('blog-overlay').classList.remove('open');
+        currentPostId = null;
+    }
+
+    function handleOverlayClick(e) {
+        if (e.target === document.getElementById('blog-overlay')) closeBlogEditor();
+    }
+
+    function previewCover(url) {
+        const img = document.getElementById('cover-preview');
+        if (url && url.startsWith('http')) {
+            img.src = url;
+            img.style.display = 'block';
+            img.onerror = () => { img.style.display = 'none'; };
+        } else {
+            img.style.display = 'none';
+        }
+    }
+
+    document.getElementById('bp-published').addEventListener('change', function() {
+        document.getElementById('publish-label').textContent = this.checked ? 'Published (Live)' : 'Save as Draft';
+    });
+
+    async function savePost() {
+        const err = document.getElementById('blog-error');
+        err.style.display = 'none';
+        const title = document.getElementById('bp-title').value.trim();
+        if (!title) { err.textContent = 'Title is required.'; err.style.display = 'block'; return; }
+
+        const payload = {
+            title,
+            tag:              document.getElementById('bp-tag').value.trim() || 'General',
+            author_name:      document.getElementById('bp-author').value.trim() || 'MN Lake Homes Team',
+            read_time_minutes:parseInt(document.getElementById('bp-readtime').value) || 4,
+            cover_image_url:  document.getElementById('bp-cover').value.trim() || null,
+            excerpt:          document.getElementById('bp-excerpt').value.trim() || null,
+            body:             document.getElementById('bp-body').value || null,
+            is_published:     document.getElementById('bp-published').checked,
+        };
+
+        const btn = document.querySelector('.btn-save-draft');
+        btn.textContent = 'Saving...'; btn.disabled = true;
+
+        try {
+            let res;
+            if (currentPostId) {
+                res = await fetch(`/api/blog/admin/${currentPostId}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+            } else {
+                res = await fetch('/api/blog/admin', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+            }
+            if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Save failed.'); }
+            const saved = await res.json();
+            closeBlogEditor();
+            await loadBlogPosts();
+        } catch (e) {
+            err.textContent = e.message; err.style.display = 'block';
+        } finally {
+            btn.textContent = 'Save'; btn.disabled = false;
+        }
+    }
+
+    async function deleteCurrentPost() {
+        if (!currentPostId) return;
+        if (!confirm('Delete this post? This cannot be undone.')) return;
+        try {
+            const res = await fetch(`/api/blog/admin/${currentPostId}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error();
+            closeBlogEditor();
+            await loadBlogPosts();
+        } catch {
+            alert('Failed to delete post.');
+        }
+    }
+
+    // ── Shared Utilities ─────────────────────────────────────────────────────────
+    function copyEmails(rows) {
+        const emails = rows.map(r => r.email).filter(Boolean).join(', ');
+        navigator.clipboard.writeText(emails).then(() => alert(`${rows.length} email${rows.length!==1?'s':''} copied.`)).catch(() => prompt('Copy:', emails));
+    }
     function exportCSV(rows, filename) {
         if (!rows.length) return alert('No data to export.');
         const isAgent = filename.includes('agent');
-        let header, lines;
-        if (isAgent) {
-            header = 'Name,Email,Brokerage,Status,City,State';
-            lines = rows.map(r => [
-                `"${r.display_name || r.full_name || ''}"`,
-                `"${r.email || ''}"`,
-                `"${r.brokerage_name || ''}"`,
-                `"${r.profile_status || ''}"`,
-                `"${r.city || ''}"`,
-                `"${r.state || ''}"`
-            ].join(','));
-        } else {
-            header = 'Name,Email,Type,Source,Date';
-            lines = rows.map(r => [
-                `"${r.name || ''}"`,
-                `"${r.email || ''}"`,
-                `"${r.type || ''}"`,
-                `"${r.source || ''}"`,
-                `"${r.created_at ? new Date(r.created_at).toLocaleDateString() : ''}"`
-            ].join(','));
-        }
-        const csv = [header, ...lines].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${filename}-${new Date().toISOString().slice(0,10)}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
+        const header = isAgent ? 'Name,Email,Brokerage,Status,City,State' : 'Name,Email,Type,Source,Date';
+        const lines = rows.map(r => isAgent
+            ? [`"${r.display_name||r.full_name||''}"`,`"${r.email||''}"`,`"${r.brokerage_name||''}"`,`"${r.profile_status||''}"`,`"${r.city||''}"`,`"${r.state||''}"`].join(',')
+            : [`"${r.name||''}"`,`"${r.email||''}"`,`"${r.type||''}"`,`"${r.source||''}"`,`"${r.created_at?new Date(r.created_at).toLocaleDateString():''}"`].join(',')
+        );
+        const blob = new Blob([[header,...lines].join('\n')], {type:'text/csv'});
+        const a = Object.assign(document.createElement('a'), {href:URL.createObjectURL(blob), download:`${filename}-${new Date().toISOString().slice(0,10)}.csv`});
+        a.click(); URL.revokeObjectURL(a.href);
     }
 
-    // ── Init ─────────────────────────────────────────────────────────────────
-    document.addEventListener('DOMContentLoaded', loadAll);
+    document.addEventListener('DOMContentLoaded', loadNewsletterData);
 </script>
 </body>
 </html>

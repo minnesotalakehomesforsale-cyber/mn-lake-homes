@@ -29,6 +29,16 @@
             margin: 0 auto;
             line-height: 1.6;
         }
+        .blog-card { text-decoration: none; color: inherit; display: block; }
+        .blog-card:hover .blog-title { color: var(--accent-blue, #1d6df2); }
+        .blog-card:hover .blog-image img { transform: scale(1.03); }
+        .blog-image { overflow: hidden; border-radius: 12px; aspect-ratio: 16/10; margin-bottom: 1.25rem; }
+        .blog-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; display: block; }
+        .blog-meta { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+        .blog-tag { background: #ebf4ff; color: #1d6df2; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .blog-time { display: flex; align-items: center; gap: 0.35rem; color: #718096; font-size: 0.82rem; font-weight: 500; }
+        .blog-title { font-size: 1.25rem; font-weight: 700; color: #1a202c; line-height: 1.4; margin-bottom: 0.5rem; transition: color 0.15s; }
+        .blog-excerpt { color: #718096; font-size: 0.9rem; line-height: 1.6; }
     </style>
     <script src="../../components/components.js" defer></script>
 </head>
@@ -40,77 +50,51 @@
         <p class="blog-index-subtitle">Stories, strategies, and buyer guides built to help you find and enjoy your perfect Minnesota lakefront property.</p>
     </div>
 
-    <!-- Reusing the css natively applied to .blog-section from style.css -->
-    <section class="blog-section" style="padding-top: 5rem;">
+    <section class="blog-section" style="padding-top: 5rem; padding-bottom: 6rem;">
         <div class="blog-container">
-            <div class="blog-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 3rem;">
-                
-                <a href="#" class="blog-card">
-                    <div class="blog-image">
-                        <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=1200" alt="Lake House Interior">
-                    </div>
-                    <div class="blog-meta">
-                        <span class="blog-tag">Buyer Guide</span>
-                        <span class="blog-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Read: 4 minutes</span>
-                    </div>
-                    <h3 class="blog-title">5 Things to Look For in a Lake Property</h3>
-                </a>
-
-                <a href="#" class="blog-card">
-                    <div class="blog-image">
-                        <img src="https://images.unsplash.com/photo-1533038590840-0229ce375960?q=80&w=1200" alt="Boat on Lake">
-                    </div>
-                    <div class="blog-meta">
-                        <span class="blog-tag">Local Life</span>
-                        <span class="blog-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Read: 3 minutes</span>
-                    </div>
-                    <h3 class="blog-title">Top 10 Lakes in Minnesota for Boating Enthusiasts</h3>
-                </a>
-
-                <a href="#" class="blog-card">
-                    <div class="blog-image">
-                        <img src="https://images.unsplash.com/photo-1582268612140-1bc6b4bbed2c?q=80&w=1200" alt="Selling a Home">
-                    </div>
-                    <div class="blog-meta">
-                        <span class="blog-tag">Seller Resources</span>
-                        <span class="blog-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Read: 5 minutes</span>
-                    </div>
-                    <h3 class="blog-title">How to Stage Your Cabin for Maximum Value</h3>
-                </a>
-
-                <a href="#" class="blog-card">
-                    <div class="blog-image">
-                        <img src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1400" alt="Pine Trees">
-                    </div>
-                    <div class="blog-meta">
-                        <span class="blog-tag">Community</span>
-                        <span class="blog-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Read: 4 minutes</span>
-                    </div>
-                    <h3 class="blog-title">Discovering the Magic of Northern Minnesota</h3>
-                </a>
-
+            <div id="blog-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 3rem;">
+                <div style="grid-column: 1/-1; text-align:center; padding: 3rem; color: #a0aec0;">Loading posts...</div>
             </div>
         </div>
     </section>
 
     <global-footer></global-footer>
-
     <lead-modal></lead-modal>
 
     <script>
-        function openModal() {
-            document.getElementById('lead-modal').classList.add('active');
-            nextModalStep(1);
+        const clockSVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
+
+        async function loadPosts() {
+            const grid = document.getElementById('blog-grid');
+            try {
+                const res = await fetch('/api/blog');
+                if (!res.ok) throw new Error();
+                const posts = await res.json();
+
+                if (!posts.length) {
+                    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#a0aec0;">No posts yet.</div>';
+                    return;
+                }
+
+                grid.innerHTML = posts.map(p => `
+                    <a href="/pages/public/blog-post.html?slug=${p.slug}" class="blog-card">
+                        <div class="blog-image">
+                            <img src="${p.cover_image_url || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1200'}" alt="${p.title}" loading="lazy">
+                        </div>
+                        <div class="blog-meta">
+                            <span class="blog-tag">${p.tag || 'General'}</span>
+                            <span class="blog-time">${clockSVG} Read: ${p.read_time_minutes || 4} minutes</span>
+                        </div>
+                        <h3 class="blog-title">${p.title}</h3>
+                        ${p.excerpt ? `<p class="blog-excerpt">${p.excerpt}</p>` : ''}
+                    </a>
+                `).join('');
+            } catch (err) {
+                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#a0aec0;">Could not load posts.</div>';
+            }
         }
 
-        function closeModal() {
-            document.getElementById('lead-modal').classList.remove('active');
-        }
-
-        function nextModalStep(step) {
-            document.querySelectorAll('.modal-step').forEach(el => el.classList.remove('active'));
-            document.getElementById('modal-step-' + step).classList.add('active');
-        }
+        document.addEventListener('DOMContentLoaded', loadPosts);
     </script>
 </body>
 </html>
