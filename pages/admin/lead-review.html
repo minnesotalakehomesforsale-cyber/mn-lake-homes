@@ -150,15 +150,6 @@
         const leadId = urlParams.get('id');
 
         document.addEventListener('DOMContentLoaded', async () => {
-            // Auth guard
-            try {
-                const sessionRes = await fetch('/api/auth/session');
-                if (!sessionRes.ok) { window.location.href = '/pages/public/login.html'; return; }
-                const session = await sessionRes.json();
-                if (!['admin', 'super_admin'].includes(session.role)) { window.location.href = '/index.html'; return; }
-            } catch (e) {
-                window.location.href = '/pages/public/login.html'; return;
-            }
 
             if (!leadId) return alert("No Lead ID provided.");
 

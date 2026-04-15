@@ -139,16 +139,14 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            // Auth guard
+            // Show name if logged in, otherwise just show default
             try {
                 const sessionRes = await fetch('/api/auth/session');
-                if (!sessionRes.ok) { window.location.href = '/pages/public/login.html'; return; }
-                const session = await sessionRes.json();
-                if (!['admin', 'super_admin'].includes(session.role)) { window.location.href = '/index.html'; return; }
-                document.getElementById('welcome-msg').textContent = `Welcome back, ${session.display_name.split(' ')[0]}`;
-            } catch (e) {
-                window.location.href = '/pages/public/login.html'; return;
-            }
+                if (sessionRes.ok) {
+                    const session = await sessionRes.json();
+                    document.getElementById('welcome-msg').textContent = `Welcome back, ${session.display_name.split(' ')[0]}`;
+                }
+            } catch (e) { /* not logged in, continue */ }
 
             document.getElementById('date-line').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 

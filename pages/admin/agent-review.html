@@ -271,18 +271,14 @@
 
     // ── Init ─────────────────────────────────────────────────────────────────
     async function init() {
-        // Session guard
         try {
             const res = await fetch('/api/auth/session');
-            if (!res.ok) { window.location.href = '../../pages/public/login.html'; return; }
-            const s = await res.json();
-            if (s.role !== 'admin' && s.role !== 'super_admin') {
-                window.location.href = '../../pages/public/forbidden.html'; return;
+            if (res.ok) {
+                const s = await res.json();
+                document.querySelector('.admin-side h1').innerHTML =
+                    `MNLH <span>ADMIN</span><div style="font-size:0.7rem;color:#718096;font-weight:400;margin-top:4px;">${s.display_name}</div>`;
             }
-            document.querySelector('.admin-side h1').innerHTML =
-                `MNLH <span>ADMIN</span><div style="font-size:0.7rem;color:#718096;font-weight:400;margin-top:4px;">${s.display_name}</div>`;
         } catch(_) {
-            window.location.href = '../../pages/public/login.html'; return;
         }
 
         if (!agentId) {
