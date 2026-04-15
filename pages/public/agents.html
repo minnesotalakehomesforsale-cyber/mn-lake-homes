@@ -87,13 +87,16 @@
                     card.style.display = 'block';
                     card.className = 'agent-link-wrapper';
 
+                    const fullBio = agent.bio || 'A dedicated Minnesota lake home specialist ready to help you find your perfect waterfront property.';
+                    const shortBio = fullBio.length > 120 ? fullBio.slice(0, 120).trimEnd() + '…' : fullBio;
+
                     card.innerHTML = `
                         <div class="agent-card">
                             <img src="${photoUrl}" alt="${agent.display_name}" class="agent-image">
                             <div class="agent-info">
                                 <h3 class="agent-name">${agent.display_name}</h3>
                                 <div class="agent-title">${title.toUpperCase()}</div>
-                                <p class="agent-bio">${agent.bio || 'A dedicated Minnesota lake home specialist ready to help you find your perfect waterfront property.'}</p>
+                                <p class="agent-bio">${shortBio}</p>
                             </div>
                         </div>
                     `;
