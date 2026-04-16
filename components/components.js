@@ -35,18 +35,40 @@ class GlobalHeader extends HTMLElement {
     }
 
     _wireMegamenu() {
-        const trigger = this.querySelector('#nav-agents-trigger');
-        const menu    = this.querySelector('#nav-agents-megamenu');
-        if (!trigger || !menu) return;
+        const triggers = this.querySelectorAll('[data-nav-id]');
+        if (!triggers.length) return;
+
+        const menus = {};
+        this.querySelectorAll('.nav-megamenu[data-nav-id]').forEach(m => {
+            menus[m.getAttribute('data-nav-id')] = m;
+        });
 
         let hideTimer = null;
-        const show = () => { clearTimeout(hideTimer); menu.style.display = 'block'; };
-        const hide = () => { hideTimer = setTimeout(() => { menu.style.display = 'none'; }, 150); };
+        const hideAll = () => {
+            Object.values(menus).forEach(m => { m.style.display = 'none'; });
+        };
 
-        trigger.addEventListener('mouseenter', show);
-        trigger.addEventListener('mouseleave', hide);
-        menu.addEventListener('mouseenter', show);
-        menu.addEventListener('mouseleave', hide);
+        const showMenu = (id) => {
+            clearTimeout(hideTimer);
+            hideAll();
+            if (menus[id]) menus[id].style.display = 'block';
+        };
+        const scheduleHide = () => {
+            hideTimer = setTimeout(hideAll, 150);
+        };
+
+        // Wire each trigger
+        triggers.forEach(trigger => {
+            const id = trigger.getAttribute('data-nav-id');
+            trigger.addEventListener('mouseenter', () => showMenu(id));
+            trigger.addEventListener('mouseleave', scheduleHide);
+        });
+
+        // Wire each menu so hovering it keeps it open
+        Object.entries(menus).forEach(([id, menu]) => {
+            menu.addEventListener('mouseenter', () => showMenu(id));
+            menu.addEventListener('mouseleave', scheduleHide);
+        });
     }
 
     _buildHeader(bp, rp, user) {
@@ -123,6 +145,124 @@ class GlobalHeader extends HTMLElement {
             </div>`;
         }
 
+        // ── Nav data model ─────────────────────────────────────────────────
+        // Each nav item: { id, label, href, columns: [{ heading, links: [{label, href, starIcon?}] }] }
+        const starIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1.5" stroke-linejoin="round" style="vertical-align:-2px;margin-right:0.35rem;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>';
+
+        const navItems = [
+            {
+                id: 'buy', label: 'Buy', href: `${bp}buy.html`,
+                columns: [
+                    { heading: 'Browse Properties', links: [
+                        { label: 'All Listings', href: `${bp}buy.html` },
+                        { label: 'Lake Minnetonka Homes', href: `${bp}lake-minnetonka.html` },
+                    ]},
+                    { heading: 'Tools', links: [
+                        { label: 'Get a Cash Offer', href: `${bp}cash-offer.html` },
+                        { label: 'How It Works', href: `${bp}buy.html` },
+                    ]},
+                    { heading: 'Resources', links: [
+                        { label: 'Buyer Guides', href: `${bp}blog.html` },
+                        { label: 'FAQ', href: `${bp}faq.html` },
+                    ]},
+                ]
+            },
+            {
+                id: 'sell', label: 'Sell', href: `${bp}sell.html`,
+                columns: [
+                    { heading: 'Sell Your Home', links: [
+                        { label: 'List With an Agent', href: `${bp}sell.html` },
+                        { label: 'Free Home Valuation', href: `${bp}sell.html` },
+                    ]},
+                    { heading: 'Skip the Hassle', links: [
+                        { label: 'Get a Cash Offer', href: `${bp}cash-offer.html` },
+                        { label: 'How Cash Offers Work', href: `${bp}cash-offer.html` },
+                    ]},
+                    { heading: 'Resources', links: [
+                        { label: 'Seller Guides', href: `${bp}blog.html` },
+                        { label: 'FAQ', href: `${bp}faq.html` },
+                    ]},
+                ]
+            },
+            {
+                id: 'rent', label: 'Rent', href: `${bp}rent.html`,
+                columns: [
+                    { heading: 'Browse Rentals', links: [
+                        { label: 'All Rentals', href: `${bp}rent.html` },
+                        { label: 'Lake Minnetonka Rentals', href: `${bp}rent.html` },
+                    ]},
+                    { heading: 'Property Owners', links: [
+                        { label: 'List Your Property', href: `${bp}rent.html` },
+                        { label: 'Management Services', href: `${bp}contact.html` },
+                    ]},
+                    { heading: 'Resources', links: [
+                        { label: 'Rental Guide', href: `${bp}blog.html` },
+                        { label: 'FAQ', href: `${bp}faq.html` },
+                    ]},
+                ]
+            },
+            {
+                id: 'agents', label: 'Agents', href: `${bp}agents.html`,
+                columns: [
+                    { heading: 'Browse', links: [
+                        { label: 'All Agents', href: `${bp}agents.html` },
+                        { label: 'Featured Agents', href: `${bp}agents.html?featured=1`, prefixIcon: starIcon },
+                    ]},
+                    { heading: 'Become a Partner', links: [
+                        { label: 'Join the Network', href: `${bp}join.html` },
+                        { label: 'Contact Us', href: `${bp}contact.html` },
+                    ]},
+                    { heading: 'Resources', links: [
+                        { label: 'Blog &amp; Resources', href: `${bp}blog.html` },
+                        { label: 'Lake Minnetonka Guide', href: `${bp}lake-minnetonka.html` },
+                        { label: 'About MNLH', href: `${bp}about.html` },
+                    ]},
+                ]
+            },
+            {
+                id: 'company', label: 'Company', href: `${bp}about.html`,
+                columns: [
+                    { heading: 'About', links: [
+                        { label: 'Our Story', href: `${bp}about.html` },
+                        { label: 'Part of CommonRealtor', href: `${bp}commonrealtor.html` },
+                    ]},
+                    { heading: 'Content', links: [
+                        { label: 'Blog &amp; Resources', href: `${bp}blog.html` },
+                        { label: 'Lake Minnetonka Guide', href: `${bp}lake-minnetonka.html` },
+                    ]},
+                    { heading: 'Get in Touch', links: [
+                        { label: 'Contact Us', href: `${bp}contact.html` },
+                        { label: 'FAQ', href: `${bp}faq.html` },
+                        { label: 'Careers / Join the Network', href: `${bp}join.html` },
+                    ]},
+                ]
+            },
+        ];
+
+        const caret = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+
+        const navLinksHtml = navItems.map(item => `
+            <a href="${item.href}" id="nav-${item.id}-trigger" data-nav-id="${item.id}" style="display:inline-flex; align-items:center; gap:0.3rem;">
+                ${item.label}
+                ${caret}
+            </a>
+        `).join('');
+
+        const megamenusHtml = navItems.map(item => `
+            <div id="nav-${item.id}-megamenu" class="nav-megamenu" data-nav-id="${item.id}" style="display:none;">
+                <div class="nav-megamenu-inner">
+                    ${item.columns.map(col => `
+                        <div class="nav-megamenu-col">
+                            <h4 class="nav-megamenu-heading">${col.heading}</h4>
+                            ${col.links.map(lnk => `
+                                <a href="${lnk.href}">${lnk.prefixIcon || ''}${lnk.label}</a>
+                            `).join('')}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
+
         return `
         <header class="navbar" style="background-color: var(--bg-dark); border-bottom: 1px solid rgba(255,255,255,0.08);
                 position: fixed; width: 100%; z-index: 1000; top: 0;">
@@ -136,42 +276,13 @@ class GlobalHeader extends HTMLElement {
                 </a>
             </div>
             <nav class="nav-links">
-                <a href="${bp}buy.html">Buy</a>
-                <a href="${bp}sell.html">Sell</a>
-                <a href="${bp}rent.html">Rent</a>
-                <a href="${bp}agents.html" id="nav-agents-trigger" style="display:inline-flex; align-items:center; gap:0.3rem;">
-                    Agents
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </a>
-                <a href="${bp}about.html">About</a>
+                ${navLinksHtml}
             </nav>
             <div class="nav-actions">
                 ${authHtml}
             </div>
 
-            <!-- Full-width Agents megamenu — styled to match the footer -->
-            <div id="nav-agents-megamenu" class="nav-megamenu" style="display:none;">
-                <div class="nav-megamenu-inner">
-                    <div class="nav-megamenu-col">
-                        <h4 class="nav-megamenu-heading">Browse</h4>
-                        <a href="${bp}agents.html">All Agents</a>
-                        <a href="${bp}agents.html?featured=1">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1.5" stroke-linejoin="round" style="vertical-align:-2px;margin-right:0.35rem;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>Featured Agents
-                        </a>
-                    </div>
-                    <div class="nav-megamenu-col">
-                        <h4 class="nav-megamenu-heading">Become a Partner</h4>
-                        <a href="${bp}join.html">Join the Network</a>
-                        <a href="${bp}contact.html">Contact Us</a>
-                    </div>
-                    <div class="nav-megamenu-col">
-                        <h4 class="nav-megamenu-heading">Resources</h4>
-                        <a href="${bp}blog.html">Blog &amp; Resources</a>
-                        <a href="${bp}lake-minnetonka.html">Lake Minnetonka Guide</a>
-                        <a href="${bp}about.html">About MNLH</a>
-                    </div>
-                </div>
-            </div>
+            ${megamenusHtml}
         </header>`;
     }
 }
