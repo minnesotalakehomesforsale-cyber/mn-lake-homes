@@ -17,6 +17,9 @@ router.patch('/leads/:id/status', adminController.updateLeadStatus);
 router.patch('/leads/:id/assign', adminController.assignLead);
 router.post('/leads/:id/notes', verifyToken, requireRole(['admin', 'super_admin']), adminController.addLeadNote);
 
+// ─── AGENT LEADS (must come before /:id to avoid shadowing) ─────────────────
+router.get('/:id/leads', verifyToken, requireRole(['admin', 'super_admin']), adminController.getAgentLeads);
+
 // ─── AGENT DETAIL (generic /:id last, so specific prefixes match first) ──────
 router.get('/:id', adminController.getAgentDetail);                      // GET /api/admin/:id
 router.patch('/:id/profile', adminController.updateAgentProfile);        // PATCH /api/admin/:id/profile

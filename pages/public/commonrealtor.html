@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CommonRealtor | AI-Powered Real Estate</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .cr-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem 3rem;
+            background-color: var(--bg-dark);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 50;
+            box-sizing: border-box;
+        }
+        .cr-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 700;
+            font-size: 1.15rem;
+            letter-spacing: -0.5px;
+            color: #fff;
+            text-decoration: none;
+        }
+        .cr-nav-links {
+            display: flex;
+            gap: 2rem;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .cr-nav-links a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+        .cr-nav-links a:hover { opacity: 0.7; }
+
+        .cr-hero {
+            min-height: 100vh;
+            padding: 10rem 2rem 5rem;
+            background-color: var(--bg-dark);
+            color: #fff;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .cr-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 45% at 20% 30%, rgba(29, 109, 242, 0.28), transparent 60%),
+                radial-gradient(ellipse 55% 50% at 82% 72%, rgba(59, 130, 246, 0.22), transparent 65%),
+                radial-gradient(ellipse 40% 35% at 50% 100%, rgba(14, 165, 233, 0.18), transparent 70%);
+            filter: blur(10px);
+            pointer-events: none;
+            animation: cr-drift 18s ease-in-out infinite alternate;
+        }
+        .cr-hero::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+            background-size: 56px 56px;
+            mask-image: radial-gradient(ellipse 70% 70% at 50% 40%, #000 30%, transparent 80%);
+            -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 40%, #000 30%, transparent 80%);
+            pointer-events: none;
+        }
+        @keyframes cr-drift {
+            0%   { transform: translate3d(0, 0, 0) scale(1); }
+            50%  { transform: translate3d(-2%, 1.5%, 0) scale(1.05); }
+            100% { transform: translate3d(2%, -1%, 0) scale(1.02); }
+        }
+        .cr-hero-inner {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+        .cr-ai-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 0.95rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: #e2e8f0;
+            letter-spacing: 0.2px;
+            margin-bottom: 1.75rem;
+        }
+        .cr-ai-badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.7);
+            animation: cr-pulse 1.8s ease-in-out infinite;
+        }
+        @keyframes cr-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%      { opacity: 0.55; transform: scale(0.8); }
+        }
+        .cr-hero h1 {
+            font-size: 5.25rem;
+            font-weight: 700;
+            letter-spacing: -2.5px;
+            line-height: 1.02;
+            margin-bottom: 2rem;
+        }
+        .cr-hero h1 .cr-gradient {
+            background: linear-gradient(120deg, #60a5fa 0%, #3b82f6 50%, #22d3ee 100%);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: cr-shift 8s ease-in-out infinite;
+        }
+        @keyframes cr-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50%      { background-position: 100% 50%; }
+        }
+        .cr-hero p {
+            font-size: 1.3rem;
+            color: #a0aec0;
+            line-height: 1.6;
+            max-width: 680px;
+            margin: 0 auto 2.5rem;
+        }
+        .cr-hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+        .cr-scroll-chip {
+            position: absolute;
+            right: 2.5rem;
+            bottom: 2.5rem;
+            z-index: 3;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.75rem 1rem 0.75rem 0.7rem;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.14);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 999px;
+            color: #e2e8f0;
+            font-size: 0.82rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            animation: cr-bounce 2.4s ease-in-out infinite;
+            transition: background 0.2s, border-color 0.2s, color 0.2s;
+        }
+        .cr-scroll-chip:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.25);
+            color: #fff;
+        }
+        .cr-scroll-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #22d3ee 100%);
+            background-size: 200% 200%;
+            animation: cr-shift 6s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            box-shadow: 0 0 18px rgba(59, 130, 246, 0.55);
+        }
+        .cr-scroll-arrow {
+            width: 16px;
+            height: 16px;
+            color: #e2e8f0;
+        }
+        @keyframes cr-bounce {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-10px); }
+        }
+        @media (max-width: 780px) {
+            .cr-scroll-chip { right: 1.25rem; bottom: 1.25rem; padding: 0.6rem 0.85rem 0.6rem 0.6rem; font-size: 0.75rem; }
+            .cr-scroll-icon { width: 24px; height: 24px; }
+        }
+
+        .cr-feature-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-top: 4rem;
+        }
+        .cr-feature {
+            padding: 2.5rem 2rem;
+            background: #f7f9fa;
+            border-radius: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .cr-feature:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+        }
+        .cr-feature-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            background: #e6effb;
+            color: var(--accent-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+        .cr-feature h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 0.6rem;
+        }
+        .cr-feature p {
+            color: #4a5568;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        @media (max-width: 900px) { .cr-feature-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 560px) { .cr-feature-grid { grid-template-columns: 1fr; } }
+
+        .cr-contact-wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 5rem;
+            align-items: start;
+        }
+        .cr-contact-form-container {
+            background: #fff;
+            padding: 3.5rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+            border: 1px solid #edf2f7;
+        }
+        .cr-cf-textarea {
+            width: 100%;
+            padding: 1.25rem 1.5rem;
+            font-size: 1rem;
+            border: 1px solid #dcdfe3;
+            border-radius: 12px;
+            background-color: #fafafa;
+            color: #000;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+        .cr-cf-textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            background-color: #fff;
+        }
+        @media (max-width: 900px) {
+            .cr-contact-wrap { grid-template-columns: 1fr; gap: 3rem; }
+            .cr-contact-form-container { padding: 2rem; }
+            .cr-hero h1 { font-size: 3.2rem; letter-spacing: -1.5px; }
+        }
+
+        .cr-footer {
+            background-color: var(--bg-dark);
+            color: #6b7280;
+            padding: 5rem 2rem 2.5rem;
+            font-size: 0.85rem;
+        }
+        .cr-footer a { color: #cbd5e0; text-decoration: underline; }
+        .cr-footer a:hover { color: #fff; }
+        .cr-footer-top {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            padding-bottom: 3rem;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .cr-footer-brand p {
+            color: #9ca3af;
+            line-height: 1.7;
+            font-size: 0.9rem;
+            max-width: 360px;
+        }
+        .cr-footer-newsletter h4 {
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.3px;
+        }
+        .cr-footer-newsletter p {
+            color: #9ca3af;
+            line-height: 1.6;
+            font-size: 0.9rem;
+            margin-bottom: 1.25rem;
+            max-width: 400px;
+        }
+        .cr-newsletter-form {
+            display: flex;
+            gap: 0.5rem;
+            max-width: 420px;
+        }
+        .cr-newsletter-form input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .cr-newsletter-form input::placeholder { color: #6b7280; }
+        .cr-newsletter-form input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            background: rgba(255,255,255,0.08);
+        }
+        .cr-newsletter-form button {
+            padding: 0.75rem 1.25rem;
+            font-size: 0.85rem;
+        }
+        .cr-newsletter-status {
+            min-height: 1.25rem;
+            margin-top: 0.75rem;
+            font-size: 0.82rem;
+            color: #68d391;
+        }
+        .cr-footer-bottom {
+            max-width: 1100px;
+            margin: 2.5rem auto 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            align-items: center;
+            text-align: center;
+        }
+        .cr-footer-disclosure {
+            color: #6b7280;
+            font-size: 0.75rem;
+            line-height: 1.65;
+            max-width: 820px;
+        }
+        .cr-footer-copy {
+            color: #9ca3af;
+            font-size: 0.82rem;
+        }
+        @media (max-width: 780px) {
+            .cr-footer-top { grid-template-columns: 1fr; gap: 2.5rem; }
+        }
+    </style>
+</head>
+<body style="background-color: #fff;">
+
+    <nav class="cr-nav">
+        <a href="/pages/public/commonrealtor.html" class="cr-logo">
+            CommonRealtor
+        </a>
+        <div class="cr-nav-links">
+            <a href="#platform">Platform</a>
+            <a href="#brands">Brands</a>
+            <a href="#contact">Contact</a>
+        </div>
+        <a href="#contact" class="btn btn-white btn-sm">Get in touch</a>
+    </nav>
+
+    <!-- Hero -->
+    <section class="cr-hero">
+        <div class="cr-hero-inner">
+            <div class="cr-ai-badge">
+                <span class="cr-ai-badge-dot"></span>
+                AI-powered real estate, live in beta
+            </div>
+            <h1>The one-stop shop<br>for <span class="cr-gradient">modern real estate.</span></h1>
+            <p>CommonRealtor is reimagining how agents, buyers, sellers, and renters connect — using AI to replace fragmented tools with a single, intelligent platform.</p>
+            <div class="cr-hero-actions">
+                <a href="#contact" class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem;">Contact us</a>
+                <a href="#platform" class="btn btn-outline" style="padding: 1.1rem 2.25rem; font-size: 1.05rem;">Learn more</a>
+            </div>
+        </div>
+
+        <a href="#platform" class="cr-scroll-chip" aria-label="Scroll to explore more">
+            <span class="cr-scroll-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M5.5 18.5l2.1-2.1M16.4 7.6l2.1-2.1"/>
+                    <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>
+                </svg>
+            </span>
+            <span>Explore more</span>
+            <svg class="cr-scroll-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <polyline points="5 12 12 19 19 12"></polyline>
+            </svg>
+        </a>
+    </section>
+
+    <!-- Platform -->
+    <section class="sp-section" id="platform" style="padding: 8rem 2rem;">
+        <div style="max-width: 800px;">
+            <div class="cr-eyebrow" style="color:#2b6cb0;">The Platform</div>
+            <h2 class="sp-title" style="font-size: 3.5rem; letter-spacing: -1.5px; color: #1a202c; line-height: 1.1;">One platform.<br>Every side of the deal.</h2>
+            <p style="color: #4a5568; font-size: 1.2rem; line-height: 1.7; margin-top: 1.5rem;">Agents, buyers, sellers, and renters have always been served by separate, disjointed tools. CommonRealtor brings them together under one AI-native system &mdash; so every conversation, showing, offer, and closing runs on shared intelligence.</p>
+        </div>
+
+        <div class="cr-feature-grid">
+            <div class="cr-feature">
+                <div class="cr-feature-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </div>
+                <h3>For Agents</h3>
+                <p>AI-matched leads, automated follow-ups, and a CRM that understands your entire pipeline.</p>
+            </div>
+            <div class="cr-feature">
+                <div class="cr-feature-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                </div>
+                <h3>For Buyers</h3>
+                <p>Smarter search that learns what you love &mdash; from shoreline quality to school districts.</p>
+            </div>
+            <div class="cr-feature">
+                <div class="cr-feature-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                </div>
+                <h3>For Sellers</h3>
+                <p>Instant valuations, AI marketing plans, and a transparent view of every offer in real time.</p>
+            </div>
+            <div class="cr-feature">
+                <div class="cr-feature-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18"></path><path d="M9 21V9"></path></svg>
+                </div>
+                <h3>For Renters</h3>
+                <p>Verified listings, automated applications, and seasonal matching for every type of stay.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Brands -->
+    <section class="sp-dark-section" id="brands" style="padding: 8rem 2rem;">
+        <div class="sp-grid" style="max-width: 1200px; margin: 0 auto; align-items: center;">
+            <div class="sp-media-wrapper" style="height: 500px;">
+                <img src="/assets/images/mn-stillwater-aerial.webp" style="height: 100%; width: 100%; object-fit: cover; border-radius: 20px;" alt="Minnesota Lake Homes">
+            </div>
+            <div style="padding-left: 2rem;">
+                <div class="cr-eyebrow">Our Brands</div>
+                <h2 class="sp-title" style="font-size: 3.2rem; margin-bottom: 2rem; letter-spacing: -1.5px;">MinnesotaLake<br>HomesForSale.com</h2>
+                <p style="color: #a0aec0; font-size: 1.2rem; line-height: 1.7; margin-bottom: 2rem;">Our flagship brand, dedicated to connecting buyers, sellers, and agents with Minnesota's finest lakefront properties &mdash; powered end-to-end by the CommonRealtor platform.</p>
+                <a href="/index.html" class="btn btn-outline" style="color: #fff; border-color: rgba(255,255,255,0.4); padding: 1rem 2rem;">Visit the site &rarr;</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact" style="padding: 8rem 2rem; background-color: #fff;">
+        <div class="cr-contact-wrap">
+            <div>
+                <div class="cr-eyebrow">Get in touch</div>
+                <h2 style="font-size: 3rem; font-weight: 700; letter-spacing: -1.5px; line-height: 1.1; color: #1a202c; margin-bottom: 1.5rem;">Let's talk about<br>what's next.</h2>
+                <p style="color: #4a5568; font-size: 1.15rem; line-height: 1.7; margin-bottom: 3rem;">Whether you're an agent ready to modernize your practice, an investor exploring the space, or a partner curious about what we're building &mdash; we'd love to hear from you.</p>
+
+                <div style="margin-bottom: 2rem;">
+                    <h4 style="font-size: 0.85rem; color: #718096; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Email</h4>
+                    <p style="font-size: 1.25rem; font-weight: 500; color: var(--accent-blue);">hello@commonrealtor.com</p>
+                </div>
+                <div>
+                    <h4 style="font-size: 0.85rem; color: #718096; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Headquarters</h4>
+                    <p style="font-size: 1.25rem; font-weight: 500; color: #1a202c;">Minneapolis, MN</p>
+                </div>
+            </div>
+
+            <div class="cr-contact-form-container">
+                <h3 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; color: #1a202c;">Send a message</h3>
+                <p style="color: #718096; margin-bottom: 2.5rem; font-size: 1.05rem;">We'll get back to you within one business day.</p>
+
+                <form onsubmit="submitContact(event)">
+                    <div class="form-group">
+                        <input type="text" placeholder="Full Name" required>
+                    </div>
+                    <div class="form-group" style="display: flex; gap: 1rem;">
+                        <input type="email" placeholder="Email Address" required style="flex: 1;">
+                        <input type="tel" placeholder="Phone Number" style="flex: 1;">
+                    </div>
+                    <div class="form-group">
+                        <div class="select-wrapper">
+                            <select required>
+                                <option value="" disabled selected>I am a...</option>
+                                <option value="agent">Real Estate Agent</option>
+                                <option value="buyer">Buyer</option>
+                                <option value="seller">Seller</option>
+                                <option value="renter">Renter</option>
+                                <option value="partner">Partner / Investor</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <textarea class="cr-cf-textarea" rows="6" placeholder="How can we help you?" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1.25rem; font-size: 1.1rem; border: none; margin-top: 1rem;">Send message</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Our Vision -->
+    <section style="background-color: var(--bg-dark); color: #fff; padding: 7rem 2rem; position: relative; overflow: hidden; border-top: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.06);">
+        <div style="position: absolute; inset: 0; background: radial-gradient(ellipse 60% 55% at 50% 50%, rgba(29,109,242,0.15), transparent 70%); pointer-events: none;"></div>
+        <div style="max-width: 1000px; margin: 0 auto; text-align: center; position: relative; z-index: 1;">
+            <div style="display: inline-block; font-weight: 600; color: #60a5fa; letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem; margin-bottom: 1.75rem;">Our vision</div>
+            <h2 style="font-size: 2.75rem; font-weight: 700; letter-spacing: -1.25px; line-height: 1.15; color: #fff; margin-bottom: 1.5rem;">A unified intelligence layer for<br>every real estate decision.</h2>
+            <p style="color: #a0aec0; font-size: 1.2rem; line-height: 1.7; max-width: 760px; margin: 0 auto;">Buying, selling, renting, listing &mdash; today each runs on its own disconnected stack. CommonRealtor's vision is a single, open platform where agents and clients work from the same data, the same insights, and the same source of truth.</p>
+        </div>
+    </section>
+
+    <!-- Our Approach -->
+    <section class="sp-section" style="padding: 8rem 2rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 5rem; align-items: start; max-width: 1200px; margin: 0 auto;">
+            <div>
+                <div class="cr-eyebrow" style="color:#2b6cb0;">Our approach</div>
+                <h2 class="sp-title" style="font-size: 3.2rem; letter-spacing: -1.5px; color: #1a202c; line-height: 1.1; margin-bottom: 1.5rem;">Real estate deserves<br>a reset.</h2>
+                <p style="color: #4a5568; font-size: 1.15rem; line-height: 1.7;">We're not bolting AI onto legacy workflows. We're rebuilding the real estate stack from the ground up &mdash; around the people who actually use it every day.</p>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                <div style="padding: 2rem; background: #f7f9fa; border-radius: 16px; border-left: 3px solid var(--accent-blue);">
+                    <h3 style="font-size: 1.2rem; font-weight: 700; color: #1a202c; margin-bottom: 0.6rem;">Built by operators.</h3>
+                    <p style="color: #4a5568; line-height: 1.65; font-size: 0.98rem;">Our team has closed deals, run brokerages, and marketed homes. We're building the tools we wished existed when we were in the seat.</p>
+                </div>
+                <div style="padding: 2rem; background: #f7f9fa; border-radius: 16px; border-left: 3px solid var(--accent-blue);">
+                    <h3 style="font-size: 1.2rem; font-weight: 700; color: #1a202c; margin-bottom: 0.6rem;">AI-native by default.</h3>
+                    <p style="color: #4a5568; line-height: 1.65; font-size: 0.98rem;">Matching, valuations, and follow-ups aren't features &mdash; they're the substrate. The platform gets smarter with every transaction.</p>
+                </div>
+                <div style="padding: 2rem; background: #f7f9fa; border-radius: 16px; border-left: 3px solid var(--accent-blue);">
+                    <h3 style="font-size: 1.2rem; font-weight: 700; color: #1a202c; margin-bottom: 0.6rem;">Transparent, always.</h3>
+                    <p style="color: #4a5568; line-height: 1.65; font-size: 0.98rem;">Clear pricing, explainable recommendations, and no hidden commissions. Clients and agents see the same data, at the same time.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="cr-footer">
+        <div class="cr-footer-top">
+            <div class="cr-footer-brand">
+                <div style="font-size: 1.15rem; font-weight: 700; color: #fff; letter-spacing: -0.5px; margin-bottom: 0.75rem;">CommonRealtor</div>
+                <p>AI-powered real estate, built for agents, buyers, sellers, and renters.</p>
+            </div>
+
+            <div class="cr-footer-newsletter">
+                <h4>Join our newsletter</h4>
+                <p>Product updates, industry insights, and the occasional peek behind the curtain. No spam.</p>
+                <form onsubmit="submitNewsletter(event)" class="cr-newsletter-form">
+                    <input type="email" placeholder="you@email.com" required>
+                    <button type="submit" class="btn btn-white btn-sm">Subscribe</button>
+                </form>
+                <div class="cr-newsletter-status" id="cr-newsletter-status"></div>
+            </div>
+        </div>
+
+        <div class="cr-footer-bottom">
+            <p class="cr-footer-disclosure">CommonRealtor is a technology platform and real estate network, not a licensed brokerage. We do not represent buyers or sellers directly. All transactions on CommonRealtor-operated sites are facilitated by independently licensed real estate professionals. The platform and its subsidiary brands are currently in beta &mdash; features, availability, and performance may vary. Nothing on this site constitutes legal, financial, or investment advice.</p>
+            <p class="cr-footer-copy">&copy; 2026 CommonRealtor. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        function submitContact(event) {
+            event.preventDefault();
+            event.target.reset();
+            alert('Thanks! We\'ll be in touch within one business day.');
+        }
+
+        function submitNewsletter(event) {
+            event.preventDefault();
+            event.target.reset();
+            const status = document.getElementById('cr-newsletter-status');
+            status.textContent = 'Subscribed. Welcome aboard.';
+        }
+    </script>
+</body>
+</html>

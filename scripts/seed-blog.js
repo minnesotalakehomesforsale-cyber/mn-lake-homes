@@ -14,7 +14,7 @@ const posts = [
         tag: 'Buyer Guide',
         read_time_minutes: 4,
         excerpt: "Buying a lake home is one of the most exciting purchases you'll ever make — but it comes with unique considerations that a traditional home purchase doesn't. Here's what to evaluate before you sign.",
-        cover_image_url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=1200',
+        cover_image_url: '/assets/images/mn-cape-cod-lakefront.jpg',
         is_published: true,
         published_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
         body: `<p>Buying a lake home is one of the most exciting purchases you'll ever make. Whether it's a weekend retreat or a permanent residence, lakefront property comes with a lifestyle unlike anything else. But it also comes with considerations that most buyers — especially first-timers — overlook. Before you fall in love with the view and make an offer, here are the five things you absolutely need to evaluate.</p>
@@ -48,7 +48,7 @@ const posts = [
         tag: 'Local Life',
         read_time_minutes: 3,
         excerpt: "Minnesota is home to over 11,000 lakes, but not all are created equal for boating. Here's our ranked list of the best lakes for powerboaters, pontoon cruisers, and watersport lovers.",
-        cover_image_url: 'https://images.unsplash.com/photo-1533038590840-0229ce375960?q=80&w=1200',
+        cover_image_url: '/assets/images/mn-purple-sunset-marina.webp',
         is_published: true,
         published_at: new Date(Date.now() - 22 * 24 * 60 * 60 * 1000),
         body: `<p>Minnesota is called the "Land of 10,000 Lakes" — though the real count is closer to 11,842. With so many options, choosing where to boat can feel overwhelming. We've narrowed it down to the top 10 lakes that consistently rank among the best for powerboating, pontoon cruising, wake sports, and fishing from a boat.</p>
@@ -92,7 +92,7 @@ const posts = [
         tag: 'Seller Resources',
         read_time_minutes: 5,
         excerpt: "Staging a lakefront cabin is different from staging a suburban home. Buyers are purchasing a lifestyle, not just square footage. Here's how to show them exactly what that lifestyle looks like at its best.",
-        cover_image_url: 'https://images.unsplash.com/photo-1582268612140-1bc6b4bbed2c?q=80&w=1200',
+        cover_image_url: '/assets/images/mn-rustic-modern-lake-house.jpg',
         is_published: true,
         published_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
         body: `<p>Selling a lakefront cabin or lake home is a fundamentally different sales process than selling a house in the suburbs. Buyers aren't just evaluating square footage and lot size — they're buying into a fantasy. They want to see themselves on the dock at sunset, hear the loons in the morning, and imagine family weekends spent exactly where you've been spending yours. Your job, as a seller, is to make that vision as vivid as possible.</p>
@@ -130,7 +130,7 @@ const posts = [
         tag: 'Community',
         read_time_minutes: 4,
         excerpt: "Northern Minnesota is more than a destination — it's a mindset. For those who've experienced it, no explanation is needed. For those who haven't, here's what you're missing.",
-        cover_image_url: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1400',
+        cover_image_url: '/assets/images/mn-wilderness-lake-dock.jpg',
         is_published: true,
         published_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
         body: `<p>There's a particular kind of quiet that only exists in northern Minnesota. It's not the absence of sound — the loons call, the pines creak in the wind, the fish jump — it's the absence of urgency. Time moves differently up north. The pace is dictated by sunrises and sunsets, not calendars and commutes. If you've been there, you already know. If you haven't, this is your introduction.</p>

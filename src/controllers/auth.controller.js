@@ -2,6 +2,69 @@ const pool = require('../database/pool');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+/**
+ * POST /api/auth/waitlist
+ * Public-facing "create account" endpoint for the beta waitlist.
+ * Creates a non-loggable draft user (role: 'client', status: 'pending').
+ * Rejects duplicates by email OR phone.
+ */
+const waitlist = async (req, res) => {
+    let { first_name, last_name, email, phone } = req.body || {};
+
+    first_name = (first_name || '').trim();
+    last_name  = (last_name  || '').trim();
+    email      = (email      || '').trim().toLowerCase();
+    phone      = (phone      || '').trim();
+
+    if (!first_name || !last_name || !email || !phone) {
+        return res.status(400).json({ error: 'First name, last name, email, and phone are all required.' });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ error: 'Please enter a valid email address.' });
+    }
+
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 10) {
+        return res.status(400).json({ error: 'Please enter a valid phone number.' });
+    }
+
+    try {
+        const dup = await pool.query(
+            `SELECT email, phone FROM users
+              WHERE LOWER(email) = $1
+                 OR REGEXP_REPLACE(COALESCE(phone, ''), '[^0-9]', '', 'g') = $2
+              LIMIT 1`,
+            [email, digits]
+        );
+        if (dup.rows.length > 0) {
+            const existing = dup.rows[0];
+            const hitEmail = existing.email && existing.email.toLowerCase() === email;
+            return res.status(409).json({
+                error: hitEmail
+                    ? 'An account with that email already exists.'
+                    : 'An account with that phone number already exists.'
+            });
+        }
+
+        // Unusable password hash — waitlist accounts cannot sign in during beta.
+        const unusable = await bcrypt.hash(`waitlist:${Date.now()}:${Math.random()}`, 10);
+
+        await pool.query(
+            `INSERT INTO users (first_name, last_name, full_name, email, phone, password_hash, role, account_status)
+             VALUES ($1, $2, $3, $4, $5, $6, 'client', 'pending')`,
+            [first_name, last_name, `${first_name} ${last_name}`, email, phone, unusable]
+        );
+
+        res.status(201).json({ success: true });
+    } catch (err) {
+        console.error('[waitlist]', err.message);
+        if (err.code === '23505') {
+            return res.status(409).json({ error: 'An account with that email already exists.' });
+        }
+        res.status(500).json({ error: 'Something went wrong. Please try again shortly.' });
+    }
+};
+
 const setCookie = (res, token) => {
     res.cookie('auth_session', token, {
         httpOnly: true,
@@ -195,4 +258,4 @@ const session = async (req, res) => {
     }
 };
 
-module.exports = { register, login, logout, session };
+module.exports = { register, login, logout, session, waitlist };

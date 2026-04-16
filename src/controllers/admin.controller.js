@@ -282,6 +282,20 @@ const updateAccountStatus = async (req, res) => {
             agentRes.rows[0].user_id
         ]);
 
+        // Suspending an account must also remove the agent from the public directory.
+        // Reactivating sends them back to draft so admin must explicitly re-publish.
+        if (account_status === 'suspended') {
+            await pool.query(
+                `UPDATE agents SET is_published = false, profile_status = 'suspended', updated_at = NOW() WHERE id = $1`,
+                [id]
+            );
+        } else if (account_status === 'active') {
+            await pool.query(
+                `UPDATE agents SET profile_status = 'draft', updated_at = NOW() WHERE id = $1 AND profile_status = 'suspended'`,
+                [id]
+            );
+        }
+
         res.json({ success: true });
     } catch (err) {
         console.error('[updateAccountStatus]', err.message);
@@ -399,6 +413,26 @@ const addLeadNote = async (req, res) => {
     }
 };
 
+const getAgentLeads = async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT l.id, l.full_name as name, l.first_name, l.email, l.phone,
+                   l.message, l.lead_type as type, l.lead_source as source,
+                   l.lead_status as status, l.budget_min, l.budget_max,
+                   l.timeline_text, l.location_text, l.contact_preference,
+                   l.source_page_title, l.created_at
+            FROM leads l
+            WHERE l.agent_id = $1
+              AND l.deleted_at IS NULL
+            ORDER BY l.created_at DESC
+        `, [req.params.id]);
+        res.json(rows);
+    } catch (err) {
+        console.error('[getAgentLeads]', err.message);
+        res.status(500).json({ error: 'Failed to fetch agent leads.' });
+    }
+};
+
 module.exports = {
     getLedger,
     getAgentDetail,
@@ -411,5 +445,6 @@ module.exports = {
     getLeadDetail,
     updateLeadStatus,
     assignLead,
-    addLeadNote
+    addLeadNote,
+    getAgentLeads
 };

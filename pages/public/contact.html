@@ -2,12 +2,64 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contact Us | MN Lake Homes</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+
+    <title>Contact Us | MinnesotaLakeHomesForSale.com</title>
+    <meta name="description" content="Connect with MinnesotaLakeHomesForSale.com's local lake home specialists. Call (218) 850-1115 or message us for a free consultation on your waterfront buy, sell, or rental goals.">
+    <meta name="keywords" content="contact minnesota lake home agent, minnesotalakehomesforsale contact, lake home realtor phone minnesota, waterfront real estate contact">
+    <meta name="author" content="MinnesotaLakeHomesForSale.com">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/pages/public/contact.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MinnesotaLakeHomesForSale.com">
+    <meta property="og:url" content="https://minnesotalakehomesforsale.com/pages/public/contact.html">
+    <meta property="og:title" content="Contact Us | MinnesotaLakeHomesForSale.com">
+    <meta property="og:description" content="Reach Minnesota's dedicated lake home specialists. Call, email, or send a message — we respond within 24 hours.">
+    <meta property="og:image" content="https://minnesotalakehomesforsale.com/assets/images/mn-split-level-sunset.webp">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Contact Us | MinnesotaLakeHomesForSale.com">
+    <meta name="twitter:description" content="Reach Minnesota's dedicated lake home specialists.">
+    <meta name="twitter:image" content="https://minnesotalakehomesforsale.com/assets/images/mn-split-level-sunset.webp">
+
     <link rel="stylesheet" href="../../styles/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Structured data: ContactPage + LocalBusiness -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ContactPage",
+      "name": "Contact MinnesotaLakeHomesForSale.com",
+      "url": "https://minnesotalakehomesforsale.com/pages/public/contact.html",
+      "mainEntity": {
+        "@type": "RealEstateAgent",
+        "name": "MinnesotaLakeHomesForSale.com",
+        "url": "https://minnesotalakehomesforsale.com/",
+        "telephone": "+1-218-850-1115",
+        "email": "minnesotalakehomesforsale@gmail.com",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "1200 Lakeview Blvd",
+          "addressLocality": "Wayzata",
+          "addressRegion": "MN",
+          "postalCode": "55391",
+          "addressCountry": "US"
+        },
+        "areaServed": { "@type": "State", "name": "Minnesota" },
+        "parentOrganization": { "@type": "Organization", "name": "CommonRealtor" }
+      }
+    }
+    </script>
     <style>
         .page-header {
             padding: 12rem 2rem 5rem;
@@ -78,13 +130,24 @@
         }
 
         @media (max-width: 900px) {
+            .page-header { padding: 8rem 1.25rem 3rem; }
+            .page-title { font-size: 3rem; letter-spacing: -1.25px; }
+            .page-subtitle { font-size: 1rem; }
+            .contact-section { padding: 4rem 1.25rem 5rem !important; }
             .contact-wrapper {
                 flex-direction: column;
-                gap: 4rem;
+                gap: 3rem;
             }
+            .contact-info h2 { font-size: 2.25rem !important; margin-bottom: 2rem !important; }
             .contact-form-container {
-                padding: 2rem;
+                padding: 2rem 1.5rem;
             }
+            .contact-form-container h3 { font-size: 1.6rem !important; }
+            .form-group[style*="flex"] { flex-direction: column !important; }
+        }
+        @media (max-width: 480px) {
+            .page-title { font-size: 2.25rem; }
+            .contact-info h2 { font-size: 1.9rem !important; }
         }
     </style>
     <script src="../../components/components.js" defer></script>
@@ -104,21 +167,36 @@
             <div class="contact-info">
                 <h2 style="font-size: 3rem; font-weight: 700; margin-bottom: 3rem; letter-spacing: -1px; line-height: 1.1;">We'd love to<br>hear from you</h2>
                 
-                <div style="margin-bottom: 2.5rem;">
-                    <h4 style="font-size: 0.95rem; color: #718096; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Office Location</h4>
-                    <p style="font-size: 1.3rem; font-weight: 500; color: #1a202c; line-height: 1.5;">1200 Lakeview Blvd<br>Wayzata, MN 55391</p>
+                <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 2rem;">
+                    <div style="width: 42px; height: 42px; border-radius: 50%; background: #ebf4ff; color: var(--accent-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 0.8rem; color: #718096; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Office Location</h4>
+                        <p style="font-size: 1.05rem; font-weight: 500; color: #1a202c; line-height: 1.5;">1200 Lakeview Blvd<br>Wayzata, MN 55391</p>
+                    </div>
                 </div>
-                <div style="margin-bottom: 2.5rem;">
-                    <h4 style="font-size: 0.95rem; color: #718096; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Call Us</h4>
-                    <p style="font-size: 1.3rem; font-weight: 500; color: #1a202c;">(612) 555-LAKE</p>
-                </div>
-                <div style="margin-bottom: 2.5rem;">
-                    <h4 style="font-size: 0.95rem; color: #718096; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Email Us</h4>
-                    <p style="font-size: 1.3rem; font-weight: 500; color: var(--accent-blue);">hello@mnlakehomes.com</p>
-                </div>
+                <a href="tel:+12188501115" style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 2rem; text-decoration: none; color: inherit;">
+                    <div style="width: 42px; height: 42px; border-radius: 50%; background: #ebf4ff; color: var(--accent-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 0.8rem; color: #718096; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Call Us</h4>
+                        <p style="font-size: 1.05rem; font-weight: 500; color: #1a202c;">(218) 850-1115</p>
+                    </div>
+                </a>
+                <a href="mailto:minnesotalakehomesforsale@gmail.com" style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 2rem; text-decoration: none; color: inherit;">
+                    <div style="width: 42px; height: 42px; border-radius: 50%; background: #ebf4ff; color: var(--accent-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                    </div>
+                    <div style="min-width: 0;">
+                        <h4 style="font-size: 0.8rem; color: #718096; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Email Us</h4>
+                        <p style="font-size: 1.05rem; font-weight: 500; color: var(--accent-blue); word-break: break-all;">minnesotalakehomesforsale@gmail.com</p>
+                    </div>
+                </a>
                 
                 <div style="margin-top: 4rem;">
-                    <img src="https://images.unsplash.com/photo-1558227691-41ea78d1f631?q=80&w=1200&auto=format&fit=crop" style="width: 100%; border-radius: 20px; object-fit: cover; height: 300px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);" alt="Minnesota Lake Area">
+                    <img src="/assets/images/mn-split-level-sunset.webp" style="width: 100%; border-radius: 20px; object-fit: cover; height: 300px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);" alt="Minnesota lakefront area at split-level sunset" loading="lazy" width="1200" height="800">
                 </div>
             </div>
 

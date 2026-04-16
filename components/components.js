@@ -92,18 +92,31 @@ class GlobalHeader extends HTMLElement {
                 </div>
             </div>`;
         } else {
-            authHtml = `<a href="${bp}login.html" style="color: #fff; font-weight: 600; text-decoration: none;
-                padding: 0.5rem 1rem; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; transition: all 0.2s;"
-                onmouseover="this.style.background='rgba(255,255,255,0.1)'"
-                onmouseout="this.style.background='transparent'">Login</a>`;
+            authHtml = `<div style="display: flex; gap: 0.6rem; align-items: center;">
+                <button onclick="window.openForm('agent')" style="background: #1d6df2; color: #fff; font-weight: 600;
+                    border: none; padding: 0.55rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+                    font-family: inherit; transition: background 0.2s;"
+                    onmouseover="this.style.background='#1558c7'"
+                    onmouseout="this.style.background='#1d6df2'">Get Started</button>
+                <a href="${rp}pages/public/signup.html" style="background: #fff; color: #1a202c; font-weight: 600;
+                    border: none; padding: 0.55rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+                    font-family: inherit; transition: background 0.2s; text-decoration: none; display: inline-block;"
+                    onmouseover="this.style.background='#edf2f7'"
+                    onmouseout="this.style.background='#fff'">Log In</a>
+            </div>`;
         }
 
         return `
         <header class="navbar" style="background-color: var(--bg-dark); border-bottom: 1px solid rgba(255,255,255,0.08);
                 position: fixed; width: 100%; z-index: 1000; top: 0;">
             <div class="logo">
-                <div class="logo-icon"></div>
-                <span><a href="${rp}index.html" style="color:#fff; text-decoration:none;">MN Lake Homes</a></span>
+                <a href="${rp}index.html" style="display:flex;align-items:center;">
+                    <svg width="34" height="32" viewBox="0 0 100 88" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="4,52 50,10 96,52"/>
+                        <polyline points="72,28 72,16 84,16 84,42"/>
+                        <polyline points="17,52 17,82 83,82 83,52"/>
+                    </svg>
+                </a>
             </div>
             <nav class="nav-links">
                 <a href="${bp}buy.html">Buy</a>
@@ -149,46 +162,50 @@ class GlobalFooter extends HTMLElement {
 
         this.innerHTML = `<footer class="site-footer">
         <div class="footer-container">
+
             <div class="footer-brand">
                 <div class="logo">
-                    <div class="logo-icon" style="background-color: var(--accent-blue);"></div>
-                    <span>MN Lake Homes</span>
+                    <a href="${rp}index.html" style="display:flex;align-items:center;gap:0.6rem;text-decoration:none;">
+                        <svg width="28" height="26" viewBox="0 0 100 88" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="4,52 50,10 96,52"/>
+                            <polyline points="72,28 72,16 84,16 84,42"/>
+                            <polyline points="17,52 17,82 83,82 83,52"/>
+                        </svg>
+                        <span>MinnesotaLakeHomesForSale.com</span>
+                    </a>
                 </div>
-                <p class="footer-desc">Minnesota's premier real estate platform, dedicated to connecting buyers and sellers of the state's finest lakeside properties.</p>
+                <p class="footer-desc">Minnesota's premier lakefront real estate network — connecting buyers, sellers, and agents across the state's finest waterfront communities.</p>
+                <button class="btn btn-primary" onclick="window.openForm('general')" style="font-size:0.85rem;padding:0.65rem 1.4rem;border:none;cursor:pointer;">Get in Touch</button>
             </div>
+
             <div class="footer-links">
                 <div class="link-column">
                     <h4>Real Estate</h4>
                     <a href="${bp}buy.html">Buy a Home</a>
                     <a href="${bp}sell.html">Sell a Home</a>
                     <a href="${bp}rent.html">Rent a Home</a>
+                    <a href="${bp}agents.html">Find an Agent</a>
                 </div>
                 <div class="link-column">
-                    <h4>Top Lakes</h4>
-                    <a href="${bp}lake-minnetonka.html">Lake Minnetonka</a>
-                </div>
-                <div class="link-column">
-                    <h4>Company</h4>
+                    <h4>Explore</h4>
                     <a href="${bp}blog.html">Blog &amp; Resources</a>
-                    <a href="${bp}join.html">Join the Network</a>
+                    <a href="${bp}lake-minnetonka.html">Lake Minnetonka</a>
+                    <a href="${bp}about.html">About Us</a>
                     <a href="${bp}faq.html">FAQs</a>
-                    <a href="${bp}agents.html">Our Agents</a>
+                </div>
+                <div class="link-column">
+                    <h4>Network</h4>
+                    <a href="${bp}join.html">Join the Network</a>
                     <a href="${bp}contact.html">Contact Us</a>
-                    <div style="margin-top: 1rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 0.25rem;">
-                        <a href="${rp}pages/public/login.html" style="color: #718096; font-size: 0.85rem;">Agent Login</a>
-                        <a href="${rp}pages/admin/dashboard.html" style="color: #718096; font-size: 0.85rem;">Admin Portal</a>
-                    </div>
+                    <a href="${rp}pages/public/login.html" style="color:#4b5563;">Agent Login</a>
+                    <a href="${rp}pages/admin/dashboard.html" style="color:#4b5563;">Admin Portal</a>
                 </div>
             </div>
-            <div class="footer-cta">
-                <button class="btn btn-primary" style="padding: 1rem 2rem;" onclick="openModal()">Get in touch</button>
-            </div>
+
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2026 MN Lake Homes. All rights reserved.</p>
-            <p class="group-disclaimer" style="margin-top: 1rem; color: #666; font-size: 0.85rem;">
-                Part of the <a href="#" style="color: #a0aab2; text-decoration: underline;">MN Lake Group</a> portfolio.
-            </p>
+            <p class="footer-copyright">&copy; 2026 MinnesotaLakeHomesForSale.com &mdash; Part of the <a href="/pages/public/commonrealtor.html" style="color:inherit;text-decoration:underline;">CommonRealtor</a> portfolio. All rights reserved.</p>
+            <p class="footer-disclaimer">MinnesotaLakeHomesForSale.com is a real estate network and lead generation platform, not a licensed brokerage. We do not represent buyers or sellers directly. All transactions are facilitated by independently licensed real estate professionals. This platform is currently in beta &mdash; we are testing an agent match experience designed to enhance the real estate journey and Minnesota lake life. Results and agent availability may vary.</p>
         </div>
     </footer>`;
     }
@@ -248,6 +265,18 @@ const _LF_CFG = {
             { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
             { q: d => `How can we help you, ${d.first}?`,                                                                                        field: { id: 'intent',   type: 'select',  ph: 'Select one…',             opts: ['I want to buy a home','I want to sell my property',"I'm looking for a rental",'I need to find an agent','General question'] } },
             { q: d => `Perfect, ${d.first}. How can we reach you?`,         hint: "We'll be in touch within one business day.",                  field: { id: 'contact', type: 'contact' } }
+        ]
+    },
+    cash_offer: {
+        source: 'cash_offer',
+        steps: [
+            { q: 'Let\'s get your cash offer started.',     hint: "First, what's your first name?",                                             field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
+            { q: d => `Thanks, ${d.first}! What's your last name?`,                                                                              field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
+            { q: d => `${d.first}, what's the property address?`,           hint: 'Full address or the lake + nearest city works too.',          field: { id: 'address',  type: 'text',    ph: 'e.g. 123 Shoreline Dr, Wayzata, MN' } },
+            { q: 'What type of property is it?',                                                                                                  field: { id: 'property_type', type: 'select', ph: 'Select one…',       opts: ['Single-family lake home','Cabin / cottage','Condo or townhouse','Multi-family','Vacant lakefront land','Other'] } },
+            { q: 'What condition is the home in?',          hint: 'A ballpark is fine — we\'ll confirm during the walkthrough.',                 field: { id: 'condition', type: 'select', ph: 'Select one…',            opts: ['Move-in ready','Light cosmetic updates needed','Major repairs needed','Tear-down / as-is'] } },
+            { q: 'When would you like to close?',                                                                                                 field: { id: 'timeline', type: 'select',  ph: 'Select a timeline…',      opts: ['As soon as possible (7–14 days)','2–4 weeks','1–2 months','Just exploring options'] } },
+            { q: d => `Last step, ${d.first}. How can we reach you?`,       hint: "Your cash offer will arrive within 48 hours.",                 field: { id: 'contact', type: 'contact' } }
         ]
     }
 };

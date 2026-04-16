@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog & Content | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
+        .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        .admin-side { background: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+        .admin-side h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 2.5rem; padding-left: 0.5rem; color: #fff; margin-top: 0; }
+        .admin-side h1 span { color: #1d6df2; }
+        .side-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; margin-bottom: 0.75rem; padding-left: 0.5rem; font-weight: 700; margin-top: 0; }
+        .side-nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+        .side-link { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #a0aec0; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.15s; }
+        .side-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .side-link.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+        .side-signout { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #fc8181; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-top: 1rem; transition: all 0.15s; }
+        .side-signout:hover { background: rgba(252,129,129,0.1); }
+        .admin-main { padding: 3rem 3.5rem; overflow-y: auto; }
+
+        /* Stats row */
+        .stat-row { display: flex; gap: 1rem; margin-bottom: 2rem; }
+        .stat-pill { background: #fff; border: 1px solid #edf2f7; border-radius: 99px; padding: 0.5rem 1.25rem; font-size: 0.85rem; font-weight: 700; color: #718096; cursor: pointer; transition: all 0.15s; }
+        .stat-pill:hover { border-color: #1d6df2; color: #1d6df2; }
+        .stat-pill.active { background: #1d6df2; color: #fff; border-color: #1d6df2; }
+        .stat-pill .pill-count { font-size: 0.75rem; font-weight: 800; margin-left: 0.35rem; opacity: 0.8; }
+
+        /* Post list */
+        .post-row { background: #fff; border: 1px solid #edf2f7; border-radius: 10px; padding: 1.5rem; margin-bottom: 0.75rem; display: grid; grid-template-columns: 72px 1fr auto; gap: 1.25rem; align-items: center; transition: box-shadow 0.15s; }
+        .post-row:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+        .post-thumb { width: 72px; height: 52px; border-radius: 6px; object-fit: cover; background: #edf2f7; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
+        .post-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .post-thumb-placeholder { width: 72px; height: 52px; border-radius: 6px; background: #edf2f7; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .post-title { font-size: 1rem; font-weight: 700; color: #1a202c; margin-bottom: 0.3rem; }
+        .post-meta { font-size: 0.8rem; color: #718096; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+        .tag-badge { display: inline-block; padding: 0.2rem 0.55rem; border-radius: 5px; font-size: 0.7rem; font-weight: 700; background: #ebf8ff; color: #2b6cb0; }
+        .pub-badge { display: inline-block; padding: 0.2rem 0.55rem; border-radius: 5px; font-size: 0.7rem; font-weight: 700; }
+        .pub-live { background: #f0fff4; color: #2f855a; }
+        .pub-draft { background: #fefcbf; color: #975a16; }
+        .post-actions { display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0; }
+        .act-btn { padding: 0.45rem 0.9rem; border-radius: 7px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #4a5568; font-family: inherit; transition: all 0.15s; }
+        .act-btn:hover { background: #f7f9fa; }
+        .act-btn.publish { border-color: #c6f6d5; color: #2f855a; background: #f0fff4; }
+        .act-btn.publish:hover { background: #c6f6d5; }
+        .act-btn.unpublish { border-color: #feebc8; color: #c05621; background: #fffaf0; }
+        .act-btn.unpublish:hover { background: #feebc8; }
+        .act-btn.danger { border-color: #fed7d7; color: #c53030; background: #fff5f5; }
+        .act-btn.danger:hover { background: #fed7d7; }
+
+        /* Editor overlay */
+        .editor-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 500; overflow-y: auto; padding: 2rem; }
+        .editor-overlay.open { display: flex; align-items: flex-start; justify-content: center; }
+        .editor-panel { background: #fff; border-radius: 16px; width: 100%; max-width: 860px; margin: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .editor-header { padding: 1.75rem 2rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; }
+        .editor-header h2 { font-size: 1.25rem; font-weight: 800; margin: 0; }
+        .editor-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #718096; padding: 0.25rem 0.5rem; border-radius: 6px; }
+        .editor-close:hover { background: #f7f9fa; color: #1a202c; }
+        .editor-body { padding: 2rem; }
+        .field-row { display: grid; gap: 1.25rem; margin-bottom: 1.5rem; }
+        .field-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .field-row.cols-2 { grid-template-columns: 1fr 1fr; }
+        .field-row.cols-1 { grid-template-columns: 1fr; }
+        .field-grp { display: flex; flex-direction: column; gap: 0.35rem; }
+        .field-lbl { font-size: 0.75rem; font-weight: 700; color: #718096; text-transform: uppercase; letter-spacing: 0.8px; }
+        .field-inp { padding: 0.7rem 0.9rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; font-family: inherit; color: #1a202c; background: #fff; width: 100%; box-sizing: border-box; }
+        .field-inp:focus { outline: none; border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.08); }
+        textarea.field-inp { resize: vertical; }
+        .cover-preview { width: 100%; height: 160px; border-radius: 8px; object-fit: cover; margin-top: 0.5rem; display: none; background: #f7f9fa; border: 1px solid #edf2f7; }
+        .pub-toggle-row { display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: #f7f9fa; border-radius: 8px; margin-bottom: 1.5rem; }
+        .toggle-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; inset: 0; background: #cbd5e0; border-radius: 24px; cursor: pointer; transition: 0.2s; }
+        .toggle-slider:before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.2s; }
+        .toggle-switch input:checked + .toggle-slider { background: #38a169; }
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
+        .editor-footer { padding: 1.25rem 2rem; border-top: 1px solid #edf2f7; display: flex; justify-content: flex-end; gap: 0.75rem; }
+        .btn-cancel { padding: 0.7rem 1.5rem; background: #edf2f7; color: #4a5568; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .btn-save { padding: 0.7rem 1.75rem; background: #1d6df2; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
+        .btn-save:hover { opacity: 0.9; }
+        .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+<div class="admin-wrap">
+    <aside class="admin-side">
+        <h1>MNLH <span>ADMIN</span></h1>
+        <p class="side-label">Platform Operations</p>
+        <nav class="side-nav">
+            <a href="dashboard.html"  class="side-link">Dashboard</a>
+            <a href="agents.html"    class="side-link">Agents Directory</a>
+            <a href="leads.html"     class="side-link">Central Leads</a>
+            <a href="blog.html"      class="side-link active">Blog & Content</a>
+            <a href="users.html"     class="side-link">Users Management</a>
+            <a href="marketing.html" class="side-link">Marketing</a>
+            <a href="tasks.html"     class="side-link">Tasks</a>
+        </nav>
+        <a href="/index.html" target="_blank" style="display:block;padding:0.75rem 1rem;border-radius:8px;color:#a0aec0;text-decoration:none;font-size:0.85rem;font-weight:500;margin-top:0.5rem;border:1px solid rgba(255,255,255,0.08);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">↗ View Live Site</a>
+        <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>{window.location.href='/index.html';})" class="side-signout">Sign Out</a>
+    </aside>
+
+    <main class="admin-main">
+
+        <header style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:2rem;">
+            <div>
+                <h1 style="font-size:2rem; font-weight:800; letter-spacing:-1px; margin:0 0 0.25rem;">Blog & Content</h1>
+                <p style="color:#718096; margin:0;">Create and manage all published and draft posts.</p>
+            </div>
+            <button onclick="openEditor()" style="padding:0.75rem 1.5rem; background:#1d6df2; color:#fff; border:none; border-radius:8px; font-weight:700; font-size:0.9rem; cursor:pointer; font-family:inherit;">+ New Post</button>
+        </header>
+
+        <!-- Filter pills -->
+        <div class="stat-row" id="filter-row">
+            <button class="stat-pill active" onclick="filterPosts('all', this)">All <span class="pill-count" id="cnt-all">—</span></button>
+            <button class="stat-pill" onclick="filterPosts('published', this)">Published <span class="pill-count" id="cnt-pub">—</span></button>
+            <button class="stat-pill" onclick="filterPosts('draft', this)">Drafts <span class="pill-count" id="cnt-draft">—</span></button>
+        </div>
+
+        <!-- Posts list -->
+        <div id="posts-list">
+            <div style="text-align:center; padding:4rem; color:#a0aec0;">Loading posts...</div>
+        </div>
+
+    </main>
+</div>
+
+<!-- Editor Overlay -->
+<div class="editor-overlay" id="editor-overlay">
+    <div class="editor-panel">
+        <div class="editor-header">
+            <h2 id="editor-title">New Post</h2>
+            <button class="editor-close" onclick="closeEditor()">✕</button>
+        </div>
+        <div class="editor-body">
+
+            <div class="field-row cols-1">
+                <div class="field-grp">
+                    <label class="field-lbl">Title *</label>
+                    <input type="text" class="field-inp" id="f-title" placeholder="Enter post title…">
+                </div>
+            </div>
+
+            <div class="field-row cols-3">
+                <div class="field-grp">
+                    <label class="field-lbl">Tag / Category</label>
+                    <select class="field-inp" id="f-tag">
+                        <option>Buyer Guide</option>
+                        <option>Seller Resources</option>
+                        <option>Local Life</option>
+                        <option>Community</option>
+                        <option>Market Update</option>
+                        <option>General</option>
+                    </select>
+                </div>
+                <div class="field-grp">
+                    <label class="field-lbl">Read Time (minutes)</label>
+                    <input type="number" class="field-inp" id="f-readtime" min="1" max="60" value="4">
+                </div>
+                <div class="field-grp">
+                    <label class="field-lbl">Author Name</label>
+                    <input type="text" class="field-inp" id="f-author" placeholder="MN Lake Homes Team">
+                </div>
+            </div>
+
+            <div class="field-row cols-1">
+                <div class="field-grp">
+                    <label class="field-lbl">Cover Image URL</label>
+                    <input type="url" class="field-inp" id="f-cover" placeholder="https://images.unsplash.com/…" oninput="previewCover(this.value)">
+                    <img id="cover-preview" class="cover-preview" alt="Cover preview">
+                </div>
+            </div>
+
+            <div class="field-row cols-1">
+                <div class="field-grp">
+                    <label class="field-lbl">Excerpt <span style="font-weight:400;text-transform:none;letter-spacing:0;">(shown in card previews)</span></label>
+                    <textarea class="field-inp" id="f-excerpt" rows="3" placeholder="One or two sentences summarising the post…"></textarea>
+                </div>
+            </div>
+
+            <div class="field-row cols-1">
+                <div class="field-grp">
+                    <label class="field-lbl">Body <span style="font-weight:400;text-transform:none;letter-spacing:0;">(HTML accepted)</span></label>
+                    <textarea class="field-inp" id="f-body" rows="12" placeholder="<p>Start writing your post here...</p>&#10;<h2>Section heading</h2>&#10;<p>More content...</p>"></textarea>
+                </div>
+            </div>
+
+            <div class="pub-toggle-row">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="f-published">
+                    <span class="toggle-slider"></span>
+                </label>
+                <div>
+                    <div style="font-weight:700; font-size:0.9rem; color:#1a202c;">Publish immediately</div>
+                    <div style="font-size:0.8rem; color:#718096;">Post goes live on the blog the moment you save.</div>
+                </div>
+            </div>
+
+        </div>
+        <div class="editor-footer">
+            <button class="btn-cancel" onclick="closeEditor()">Cancel</button>
+            <button class="btn-save" id="save-btn" onclick="savePost()">Save Post</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let allPosts = [];
+    let editingId = null;
+    let currentFilter = 'all';
+
+    // ── Auth guard ─────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const res = await fetch('/api/auth/session');
+            if (!res.ok) { window.location.href = '/pages/public/login.html'; return; }
+            const s = await res.json();
+            if (!['admin', 'super_admin'].includes(s.role)) { window.location.href = '/index.html'; return; }
+        } catch(_) { window.location.href = '/pages/public/login.html'; return; }
+        loadPosts();
+    });
+
+    // ── Load all posts ─────────────────────────────────────────────────────────
+    async function loadPosts() {
+        try {
+            const res = await fetch('/api/blog/admin/all');
+            if (!res.ok) throw new Error();
+            allPosts = await res.json();
+            updateCounts();
+            renderPosts(filterList(currentFilter));
+        } catch(_) {
+            document.getElementById('posts-list').innerHTML =
+                '<div style="text-align:center;padding:3rem;color:#fc8181;">Failed to load posts.</div>';
+        }
+    }
+
+    function filterList(filter) {
+        if (filter === 'published') return allPosts.filter(p => p.is_published);
+        if (filter === 'draft')     return allPosts.filter(p => !p.is_published);
+        return allPosts;
+    }
+
+    function updateCounts() {
+        document.getElementById('cnt-all').textContent   = allPosts.length;
+        document.getElementById('cnt-pub').textContent   = allPosts.filter(p => p.is_published).length;
+        document.getElementById('cnt-draft').textContent = allPosts.filter(p => !p.is_published).length;
+    }
+
+    function filterPosts(filter, el) {
+        currentFilter = filter;
+        document.querySelectorAll('.stat-pill').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        renderPosts(filterList(filter));
+    }
+
+    // ── Render list ────────────────────────────────────────────────────────────
+    function renderPosts(posts) {
+        const container = document.getElementById('posts-list');
+        if (!posts.length) {
+            container.innerHTML = `
+                <div style="background:#fff;border-radius:12px;border:1px solid #edf2f7;padding:4rem;text-align:center;">
+                    <div style="font-size:1.5rem;margin-bottom:0.75rem;">📝</div>
+                    <p style="color:#718096;font-weight:500;">No posts here yet.</p>
+                    <button onclick="openEditor()" style="margin-top:1rem;padding:0.65rem 1.5rem;background:#1d6df2;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit;">Create your first post</button>
+                </div>`;
+            return;
+        }
+        container.innerHTML = posts.map(p => {
+            const date = new Date(p.published_at || p.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+            const thumb = p.cover_image_url
+                ? `<div class="post-thumb"><img src="${p.cover_image_url}" alt="" onerror="this.parentElement.innerHTML='📷'"></div>`
+                : `<div class="post-thumb-placeholder" style="font-size:1.25rem;">📷</div>`;
+            return `
+                <div class="post-row">
+                    ${thumb}
+                    <div>
+                        <div class="post-title">${p.title}</div>
+                        <div class="post-meta">
+                            <span class="tag-badge">${p.tag || 'General'}</span>
+                            <span class="${p.is_published ? 'pub-badge pub-live' : 'pub-badge pub-draft'}">${p.is_published ? 'Live' : 'Draft'}</span>
+                            <span>${p.read_time_minutes || 4} min read</span>
+                            <span>${p.author_name || 'MN Lake Homes Team'}</span>
+                            <span style="color:#cbd5e0;">•</span>
+                            <span>${date}</span>
+                        </div>
+                        ${p.excerpt ? `<div style="font-size:0.82rem;color:#718096;margin-top:0.4rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">${p.excerpt}</div>` : ''}
+                    </div>
+                    <div class="post-actions">
+                        ${p.is_published
+                            ? `<button class="act-btn unpublish" onclick="event.stopPropagation();togglePublish('${p.id}', true)">Unpublish</button>`
+                            : `<button class="act-btn publish"    onclick="event.stopPropagation();togglePublish('${p.id}', false)">Publish</button>`
+                        }
+                        <button class="act-btn" onclick="event.stopPropagation();openEditor('${p.id}')">Edit</button>
+                        <button class="act-btn danger" onclick="event.stopPropagation();deletePost('${p.id}')">Delete</button>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    // ── Toggle publish ─────────────────────────────────────────────────────────
+    async function togglePublish(id, currentlyPublished) {
+        try {
+            const res = await fetch(`/api/blog/admin/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_published: !currentlyPublished })
+            });
+            if (!res.ok) throw new Error();
+            await loadPosts();
+        } catch(_) {
+            alert('Failed to update publish status.');
+        }
+    }
+
+    // ── Delete ─────────────────────────────────────────────────────────────────
+    async function deletePost(id) {
+        const post = allPosts.find(p => p.id === id);
+        if (!confirm(`Delete "${post?.title}"? This cannot be undone.`)) return;
+        try {
+            const res = await fetch(`/api/blog/admin/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error();
+            await loadPosts();
+        } catch(_) {
+            alert('Failed to delete post.');
+        }
+    }
+
+    // ── Open / close editor ────────────────────────────────────────────────────
+    function openEditor(id) {
+        editingId = id || null;
+        document.getElementById('editor-title').textContent = id ? 'Edit Post' : 'New Post';
+
+        // Reset form
+        document.getElementById('f-title').value     = '';
+        document.getElementById('f-tag').value       = 'General';
+        document.getElementById('f-readtime').value  = '4';
+        document.getElementById('f-author').value    = '';
+        document.getElementById('f-cover').value     = '';
+        document.getElementById('f-excerpt').value   = '';
+        document.getElementById('f-body').value      = '';
+        document.getElementById('f-published').checked = false;
+        document.getElementById('cover-preview').style.display = 'none';
+
+        if (id) {
+            const p = allPosts.find(p => p.id === id);
+            if (p) {
+                document.getElementById('f-title').value    = p.title || '';
+                document.getElementById('f-tag').value      = p.tag || 'General';
+                document.getElementById('f-readtime').value = p.read_time_minutes || 4;
+                document.getElementById('f-author').value   = p.author_name || '';
+                document.getElementById('f-cover').value    = p.cover_image_url || '';
+                document.getElementById('f-excerpt').value  = p.excerpt || '';
+                document.getElementById('f-body').value     = p.body || '';
+                document.getElementById('f-published').checked = !!p.is_published;
+                if (p.cover_image_url) previewCover(p.cover_image_url);
+            }
+        }
+
+        document.getElementById('editor-overlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditor() {
+        document.getElementById('editor-overlay').classList.remove('open');
+        document.body.style.overflow = '';
+        editingId = null;
+    }
+
+    // ── Save post ──────────────────────────────────────────────────────────────
+    async function savePost() {
+        const title = document.getElementById('f-title').value.trim();
+        if (!title) { alert('Title is required.'); document.getElementById('f-title').focus(); return; }
+
+        const btn = document.getElementById('save-btn');
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+
+        const payload = {
+            title,
+            tag:               document.getElementById('f-tag').value,
+            read_time_minutes: parseInt(document.getElementById('f-readtime').value) || 4,
+            author_name:       document.getElementById('f-author').value.trim() || 'MN Lake Homes Team',
+            cover_image_url:   document.getElementById('f-cover').value.trim() || null,
+            excerpt:           document.getElementById('f-excerpt').value.trim() || null,
+            body:              document.getElementById('f-body').value.trim() || null,
+            is_published:      document.getElementById('f-published').checked,
+        };
+
+        try {
+            const url    = editingId ? `/api/blog/admin/${editingId}` : '/api/blog/admin';
+            const method = editingId ? 'PATCH' : 'POST';
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) {
+                const d = await res.json();
+                throw new Error(d.error || 'Save failed');
+            }
+            closeEditor();
+            await loadPosts();
+        } catch(err) {
+            alert(err.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Save Post';
+        }
+    }
+
+    // ── Cover image preview ────────────────────────────────────────────────────
+    function previewCover(url) {
+        const img = document.getElementById('cover-preview');
+        if (url) {
+            img.src = url;
+            img.style.display = 'block';
+            img.onerror = () => { img.style.display = 'none'; };
+        } else {
+            img.style.display = 'none';
+        }
+    }
+
+    // Close overlay on background click
+    document.getElementById('editor-overlay').addEventListener('click', function(e) {
+        if (e.target === this) closeEditor();
+    });
+</script>
+
+</body>
+</html>

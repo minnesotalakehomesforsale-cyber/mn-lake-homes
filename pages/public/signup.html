@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create an Account | MN Lake Homes</title>
+    <meta name="description" content="Create your MN Lake Homes account to get early access when we launch.">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #fff;
+            color: #1a202c;
+            display: block;
+            min-height: 100vh;
+        }
+
+        .signup-split {
+            display: grid;
+            grid-template-columns: minmax(360px, 520px) 1fr;
+            min-height: 100vh;
+        }
+
+        .signup-left {
+            display: flex;
+            flex-direction: column;
+            padding: 2.5rem 3rem;
+            overflow-y: auto;
+        }
+
+        .signup-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-weight: 700;
+            font-size: 1.05rem;
+            letter-spacing: -0.3px;
+            color: #1a202c;
+            text-decoration: none;
+            margin-bottom: 3.5rem;
+        }
+
+        .signup-brand svg { color: #1a202c; }
+
+        .signup-form-wrap {
+            max-width: 400px;
+            width: 100%;
+            margin: auto 0;
+            padding-bottom: 2rem;
+        }
+
+        .signup-header h1 {
+            font-size: 1.7rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 0.4rem;
+        }
+        .signup-header p {
+            color: #4a5568;
+            font-size: 0.92rem;
+            line-height: 1.5;
+            margin-bottom: 2rem;
+        }
+
+        .signup-form .form-group { margin-bottom: 1rem; }
+        .signup-form .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 0.4rem;
+        }
+        .signup-form .form-input {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            box-sizing: border-box;
+            background: #fff;
+        }
+        .signup-form .form-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+        }
+
+        .signup-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .signup-submit {
+            width: 100%;
+            padding: 0.95rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 0.75rem;
+            background-color: #6b8afd;
+            color: #fff;
+        }
+        .signup-submit:hover:not(:disabled) { background-color: #5774dd; }
+        .signup-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .signup-alert {
+            display: none;
+            padding: 0.85rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.88rem;
+            font-weight: 500;
+        }
+        .signup-alert.error   { background-color: #fff5f5; color: #c53030; border: 1px solid #feb2b2; }
+        .signup-alert.success { background-color: #f0fff4; color: #276749; border: 1px solid #9ae6b4; }
+
+        .signup-divider {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+            color: #a0aec0;
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
+        .signup-divider::before, .signup-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #edf2f7;
+        }
+
+        .agent-btn {
+            width: 100%;
+            padding: 0.85rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #fff;
+            color: #1a202c;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .agent-btn:hover { border-color: #cbd5e0; background: #f7f9fa; }
+
+        .new-note {
+            font-size: 0.82rem;
+            color: #718096;
+            margin-top: 0.5rem;
+            line-height: 1.5;
+        }
+        .new-note a { color: #1a202c; font-weight: 600; text-decoration: underline; }
+
+        .signup-footnote {
+            font-size: 0.72rem;
+            color: #a0aec0;
+            margin-top: 1.75rem;
+            line-height: 1.5;
+        }
+
+        .signup-right {
+            background: #e8e5db url('/assets/images/mn-split-level-sunset.webp') center/cover no-repeat;
+            position: relative;
+            min-height: 100vh;
+        }
+        .signup-right::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,0.25) 100%);
+        }
+
+        @media (max-width: 900px) {
+            .signup-split { grid-template-columns: 1fr; }
+            .signup-right { min-height: 260px; }
+            .signup-left  { padding: 2rem 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="signup-split">
+
+        <div class="signup-left">
+            <a href="/index.html" class="signup-brand" aria-label="MN Lake Homes home">
+                <svg width="26" height="24" viewBox="0 0 100 88" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="4,52 50,10 96,52"/>
+                    <polyline points="72,28 72,16 84,16 84,42"/>
+                    <polyline points="17,52 17,82 83,82 83,52"/>
+                </svg>
+                <span>MN Lake Homes</span>
+            </a>
+
+            <div class="signup-form-wrap">
+                <div class="signup-header">
+                    <h1>Create your account</h1>
+                    <p>We're currently in beta. Create an account now and we'll notify you the moment we go live.</p>
+                </div>
+
+                <div id="signup-alert" class="signup-alert"></div>
+
+                <form id="signup-form" class="signup-form" onsubmit="handleSignup(event)">
+                    <div class="form-group signup-row">
+                        <div>
+                            <label class="form-label" for="first_name">First name</label>
+                            <input type="text" id="first_name" class="form-input" autocomplete="given-name" required>
+                        </div>
+                        <div>
+                            <label class="form-label" for="last_name">Last name</label>
+                            <input type="text" id="last_name" class="form-input" autocomplete="family-name" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="email">Email address</label>
+                        <input type="email" id="email" class="form-input" placeholder="you@email.com" autocomplete="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="phone">Phone number</label>
+                        <input type="tel" id="phone" class="form-input" placeholder="(612) 555-0150" autocomplete="tel" required>
+                    </div>
+
+                    <button type="submit" class="signup-submit" id="signup-submit">Create account</button>
+
+                    <p class="new-note">
+                        Already on the waitlist? <a href="/pages/public/contact.html">Contact us</a>
+                    </p>
+                </form>
+
+                <div class="signup-divider">OR</div>
+
+                <a class="agent-btn" href="/pages/public/join.html">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    Are you an agent? Join here &rarr;
+                </a>
+
+                <p class="signup-footnote">
+                    <strong style="color:#4a5568;">MinnesotaLakeHomesForSale.com</strong> is Minnesota's dedicated lakefront real estate network — connecting buyers, sellers, and renters to the state's top waterfront specialists. A subsidiary of <a href="/pages/public/commonrealtor.html" style="color:#4a5568;">CommonRealtor</a>, the AI-powered platform reimagining real estate.
+                    <br><br>
+                    By creating an account, you agree to be notified by email or phone about platform updates. We're currently in beta — login access will open once we go live.
+                </p>
+            </div>
+        </div>
+
+        <div class="signup-right" aria-hidden="true"></div>
+
+    </div>
+
+    <script>
+        async function handleSignup(event) {
+            event.preventDefault();
+            const alertEl = document.getElementById('signup-alert');
+            const btn     = document.getElementById('signup-submit');
+
+            alertEl.style.display = 'none';
+            alertEl.className = 'signup-alert';
+
+            const payload = {
+                first_name: document.getElementById('first_name').value.trim(),
+                last_name:  document.getElementById('last_name').value.trim(),
+                email:      document.getElementById('email').value.trim(),
+                phone:      document.getElementById('phone').value.trim()
+            };
+
+            btn.disabled = true;
+            btn.textContent = 'Creating account…';
+
+            try {
+                const res = await fetch('/api/auth/waitlist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json().catch(() => ({}));
+
+                if (res.status === 409) {
+                    alertEl.textContent = data.error || 'An account already exists with those details.';
+                    alertEl.classList.add('error');
+                    alertEl.style.display = 'block';
+                    return;
+                }
+                if (!res.ok) {
+                    alertEl.textContent = data.error || 'Something went wrong. Please try again.';
+                    alertEl.classList.add('error');
+                    alertEl.style.display = 'block';
+                    return;
+                }
+
+                // Success — swap form out for a confirmation view
+                document.getElementById('signup-form').style.display = 'none';
+                document.querySelector('.signup-divider').style.display = 'none';
+                document.querySelector('.agent-btn').style.display = 'none';
+                document.querySelector('.signup-footnote').style.display = 'none';
+
+                const header = document.querySelector('.signup-header');
+                header.innerHTML = `
+                    <div style="display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#ecfdf5;color:#059669;margin-bottom:1.25rem;">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <h1 style="margin-bottom:0.6rem;">You're on the list, ${payload.first_name}.</h1>
+                    <p style="margin-bottom:2rem;">Your account has been created. We'll send you an email the moment MN Lake Homes opens its doors — expect early access before the public launch.</p>
+                    <a href="/index.html" style="display:inline-flex;align-items:center;gap:0.4rem;color:#1a202c;font-weight:600;font-size:0.9rem;text-decoration:none;border:1px solid #e2e8f0;border-radius:8px;padding:0.75rem 1.25rem;">&larr; Back to home</a>
+                `;
+            } catch (err) {
+                console.error(err);
+                alertEl.textContent = 'Network error. Please check your connection and try again.';
+                alertEl.classList.add('error');
+                alertEl.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Create account';
+            }
+        }
+    </script>
+</body>
+</html>

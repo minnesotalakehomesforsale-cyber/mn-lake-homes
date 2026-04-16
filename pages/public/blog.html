@@ -2,12 +2,53 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MN Lake Homes Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+
+    <title>Minnesota Lake Home Blog &amp; Resources | Buyer Guides, Market Advice</title>
+    <meta name="description" content="Expert advice on buying, selling, and living the Minnesota lake life. Waterfront buyer guides, pricing strategy, cabin staging, and local area insights — all in one place.">
+    <meta name="keywords" content="minnesota lake home blog, lake home buyer guide, lake home seller resources, minnesota waterfront advice, cabin staging tips, lake home pricing strategy, minnesota lake life blog, waterfront real estate blog">
+    <meta name="author" content="MinnesotaLakeHomesForSale.com">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/pages/public/blog.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MinnesotaLakeHomesForSale.com">
+    <meta property="og:url" content="https://minnesotalakehomesforsale.com/pages/public/blog.html">
+    <meta property="og:title" content="Minnesota Lake Home Blog &amp; Resources">
+    <meta property="og:description" content="Expert advice on buying, selling, and living the Minnesota lake life — buyer guides, market trends, and cabin staging.">
+    <meta property="og:image" content="https://minnesotalakehomesforsale.com/assets/images/mn-cape-cod-lakefront.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Minnesota Lake Home Blog &amp; Resources">
+    <meta name="twitter:description" content="Expert advice on buying, selling, and living the Minnesota lake life.">
+    <meta name="twitter:image" content="https://minnesotalakehomesforsale.com/assets/images/mn-cape-cod-lakefront.jpg">
+
     <link rel="stylesheet" href="../../styles/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Structured data: Blog listing -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Blog",
+      "name": "MinnesotaLakeHomesForSale.com — Blog &amp; Resources",
+      "url": "https://minnesotalakehomesforsale.com/pages/public/blog.html",
+      "description": "Expert advice on buying, selling, and living the Minnesota lake life.",
+      "publisher": {
+        "@type": "RealEstateAgent",
+        "name": "MinnesotaLakeHomesForSale.com",
+        "url": "https://minnesotalakehomesforsale.com/"
+      }
+    }
+    </script>
     <style>
         .blog-index-header {
             padding: 12rem 2rem 5rem;
@@ -39,6 +80,61 @@
         .blog-time { display: flex; align-items: center; gap: 0.35rem; color: #718096; font-size: 0.82rem; font-weight: 500; }
         .blog-title { font-size: 1.25rem; font-weight: 700; color: #1a202c; line-height: 1.4; margin-bottom: 0.5rem; transition: color 0.15s; }
         .blog-excerpt { color: #718096; font-size: 0.9rem; line-height: 1.6; }
+        .blog-filter-btn { padding: 0.5rem 1rem; border-radius: 99px; border: 1px solid #e2e8f0; background: #fff; font-size: 0.85rem; font-weight: 600; color: #4a5568; cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap; }
+        .blog-filter-btn:hover { border-color: #1d6df2; color: #1d6df2; }
+        .blog-filter-btn.active { background: #1d6df2; border-color: #1d6df2; color: #fff; }
+
+        .blog-filter-bar {
+            position: fixed;
+            top: 72px;
+            left: 0;
+            right: 0;
+            z-index: 40;
+            background: #fff;
+            border-bottom: 1px solid #edf2f7;
+            padding: 1.1rem 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+        .blog-filter-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .blog-search-wrap { position: relative; flex: 1; min-width: 220px; }
+        .blog-search-wrap input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            outline: none;
+            box-sizing: border-box;
+        }
+        .blog-tag-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+        .blog-index-section { padding: 10rem 2rem 6rem !important; }
+        #blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 3rem; }
+
+        @media (max-width: 900px) {
+            .blog-index-header { padding: 8rem 1.25rem 3.5rem; }
+            .blog-index-title { font-size: 3rem; letter-spacing: -1.25px; }
+            .blog-index-subtitle { font-size: 1.05rem; }
+            .blog-filter-bar { padding: 0.85rem 1rem; }
+            .blog-filter-inner { gap: 0.6rem; }
+            .blog-tag-filters { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; scrollbar-width: none; padding-bottom: 0.25rem; }
+            .blog-tag-filters::-webkit-scrollbar { display: none; }
+            .blog-index-section { padding: 11rem 1.25rem 4rem !important; }
+            #blog-grid { grid-template-columns: 1fr; gap: 2rem; }
+            .blog-image { aspect-ratio: 16/9; margin-bottom: 1rem; }
+        }
+        @media (max-width: 480px) {
+            .blog-index-title { font-size: 2.25rem; }
+            .blog-index-section { padding: 12rem 1.25rem 3rem !important; }
+        }
     </style>
     <script src="../../components/components.js" defer></script>
 </head>
@@ -50,9 +146,25 @@
         <p class="blog-index-subtitle">Stories, strategies, and buyer guides built to help you find and enjoy your perfect Minnesota lakefront property.</p>
     </div>
 
-    <section class="blog-section" style="padding-top: 5rem; padding-bottom: 6rem;">
+    <!-- Search + Filter Bar (fixed below nav so it pins properly even with body overflow-x hidden) -->
+    <div class="blog-filter-bar">
+        <div class="blog-filter-inner">
+            <div class="blog-search-wrap">
+                <svg style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:#a0aec0;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input id="blog-search" type="text" placeholder="Search articles…"
+                    oninput="filterPosts()"
+                    onfocus="this.style.borderColor='#1d6df2'" onblur="this.style.borderColor='#e2e8f0'">
+            </div>
+            <div id="tag-filters" class="blog-tag-filters">
+                <button class="blog-filter-btn active" onclick="setTag('all', this)">All Posts</button>
+            </div>
+        </div>
+    </div>
+
+    <section class="blog-section blog-index-section">
         <div class="blog-container">
-            <div id="blog-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 3rem;">
+            <p id="no-results" style="display:none;text-align:center;padding:4rem 2rem;color:#718096;">No articles match your search. <a href="#" onclick="resetBlog();return false;" style="color:#1d6df2;">Clear filters</a></p>
+            <div id="blog-grid">
                 <div style="grid-column: 1/-1; text-align:center; padding: 3rem; color: #a0aec0;">Loading posts...</div>
             </div>
         </div>
@@ -64,31 +176,90 @@
     <script>
         const clockSVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
 
+        let allPosts = [];
+        let activeTag = 'all';
+
+        function buildCard(p) {
+            return `
+                <a href="/pages/public/blog-post.html?slug=${p.slug}" class="blog-card">
+                    <div class="blog-image">
+                        <img src="${p.cover_image_url || '/assets/images/beach-style-exterior.jpg'}" alt="${p.title}" loading="lazy" width="800" height="500">
+                    </div>
+                    <div class="blog-meta">
+                        <span class="blog-tag">${p.tag || 'General'}</span>
+                        <span class="blog-time">${clockSVG} Read: ${p.read_time_minutes || 4} minutes</span>
+                    </div>
+                    <h3 class="blog-title">${p.title}</h3>
+                    ${p.excerpt ? `<p class="blog-excerpt">${p.excerpt}</p>` : ''}
+                </a>`;
+        }
+
+        function renderGrid(posts) {
+            const grid = document.getElementById('blog-grid');
+            const noResults = document.getElementById('no-results');
+            if (!posts.length) {
+                grid.innerHTML = '';
+                noResults.style.display = 'block';
+            } else {
+                noResults.style.display = 'none';
+                grid.innerHTML = posts.map(buildCard).join('');
+            }
+        }
+
+        function filterPosts() {
+            const query = document.getElementById('blog-search').value.toLowerCase().trim();
+            const filtered = allPosts.filter(p => {
+                const tagMatch = activeTag === 'all' || (p.tag || 'General') === activeTag;
+                const searchMatch = !query ||
+                    (p.title || '').toLowerCase().includes(query) ||
+                    (p.excerpt || '').toLowerCase().includes(query) ||
+                    (p.tag || '').toLowerCase().includes(query) ||
+                    (p.author_name || '').toLowerCase().includes(query);
+                return tagMatch && searchMatch;
+            });
+            renderGrid(filtered);
+        }
+
+        function setTag(tag, btn) {
+            activeTag = tag;
+            document.querySelectorAll('.blog-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            filterPosts();
+        }
+
+        function resetBlog() {
+            document.getElementById('blog-search').value = '';
+            activeTag = 'all';
+            document.querySelectorAll('.blog-filter-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+            filterPosts();
+        }
+
+        function buildTagFilters(posts) {
+            const tags = [...new Set(posts.map(p => p.tag || 'General'))].sort();
+            const container = document.getElementById('tag-filters');
+            tags.forEach(tag => {
+                const btn = document.createElement('button');
+                btn.className = 'blog-filter-btn';
+                btn.textContent = tag;
+                btn.onclick = () => setTag(tag, btn);
+                container.appendChild(btn);
+            });
+        }
+
         async function loadPosts() {
             const grid = document.getElementById('blog-grid');
             try {
                 const res = await fetch('/api/blog');
                 if (!res.ok) throw new Error();
-                const posts = await res.json();
+                allPosts = await res.json();
 
-                if (!posts.length) {
+                if (!allPosts.length) {
                     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#a0aec0;">No posts yet.</div>';
                     return;
                 }
 
-                grid.innerHTML = posts.map(p => `
-                    <a href="/pages/public/blog-post.html?slug=${p.slug}" class="blog-card">
-                        <div class="blog-image">
-                            <img src="${p.cover_image_url || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1200'}" alt="${p.title}" loading="lazy">
-                        </div>
-                        <div class="blog-meta">
-                            <span class="blog-tag">${p.tag || 'General'}</span>
-                            <span class="blog-time">${clockSVG} Read: ${p.read_time_minutes || 4} minutes</span>
-                        </div>
-                        <h3 class="blog-title">${p.title}</h3>
-                        ${p.excerpt ? `<p class="blog-excerpt">${p.excerpt}</p>` : ''}
-                    </a>
-                `).join('');
+                buildTagFilters(allPosts);
+                renderGrid(allPosts);
             } catch (err) {
                 grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#a0aec0;">Could not load posts.</div>';
             }

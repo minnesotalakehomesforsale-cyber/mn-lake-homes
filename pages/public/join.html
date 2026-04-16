@@ -2,12 +2,58 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Join The Network | MN Lake Homes</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+
+    <title>Join the Network | Minnesota Lake Home Agent Partnership</title>
+    <meta name="description" content="Become a Minnesota lake home specialist. Partner with MinnesotaLakeHomesForSale.com for high-intent buyer leads, exclusive marketing tools, and guaranteed territory access.">
+    <meta name="keywords" content="minnesota real estate agent network, join lake home network, waterfront real estate partnership, minnesota agent referral, real estate agent leads minnesota, lake specialist agent program">
+    <meta name="author" content="MinnesotaLakeHomesForSale.com">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/pages/public/join.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MinnesotaLakeHomesForSale.com">
+    <meta property="og:url" content="https://minnesotalakehomesforsale.com/pages/public/join.html">
+    <meta property="og:title" content="Join the Network | Minnesota Lake Home Agent Partnership">
+    <meta property="og:description" content="Partner with MinnesotaLakeHomesForSale.com for high-intent buyer leads, exclusive marketing tools, and guaranteed territory access.">
+    <meta property="og:image" content="https://minnesotalakehomesforsale.com/assets/images/beach-style-exterior.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Join the Network | Minnesota Lake Home Agent Partnership">
+    <meta name="twitter:description" content="Partner with MinnesotaLakeHomesForSale.com for high-intent buyer leads and exclusive marketing tools.">
+    <meta name="twitter:image" content="https://minnesotalakehomesforsale.com/assets/images/beach-style-exterior.jpg">
+
     <link rel="stylesheet" href="../../styles/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "JobPosting",
+      "title": "Minnesota Lake Home Agent — Network Partnership",
+      "description": "Join the MinnesotaLakeHomesForSale.com agent network for high-intent lakefront buyer leads, exclusive marketing technology, and territory access.",
+      "hiringOrganization": {
+        "@type": "RealEstateAgent",
+        "name": "MinnesotaLakeHomesForSale.com",
+        "url": "https://minnesotalakehomesforsale.com/"
+      },
+      "jobLocation": {
+        "@type": "Place",
+        "address": { "@type": "PostalAddress", "addressRegion": "MN", "addressCountry": "US" }
+      },
+      "employmentType": "CONTRACTOR",
+      "datePosted": "2026-01-01"
+    }
+    </script>
     <style>
         /* Hero Section */
         .join-hero {
@@ -23,7 +69,7 @@
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background-image: url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=2000&auto=format&fit=crop');
+            background-image: url('/assets/images/beach-style-exterior.jpg');
             background-size: cover;
             background-position: center;
             opacity: 0.15;
@@ -259,6 +305,17 @@
         @media (max-width: 900px) {
             .stats-grid { grid-template-columns: 1fr; gap: 3rem; }
             .pricing-card.popular { padding: 3.5rem 2.5rem; }
+            .value-grid { grid-template-columns: 1fr !important; gap: 1.25rem !important; }
+            .value-card { padding: 2rem 1.5rem !important; }
+            .agent-hero-split { grid-template-columns: 1fr !important; gap: 2rem !important; }
+            .pricing-cards { flex-direction: column; align-items: stretch; gap: 1.5rem; }
+            .pricing-card { width: 100% !important; max-width: 500px; margin: 0 auto; }
+        }
+        @media (max-width: 600px) {
+            .join-hero { padding: 8rem 1.25rem 4rem !important; }
+            .reg-form-container { padding: 2rem 1.5rem !important; border-radius: 14px !important; }
+            .reg-form-container h2 { font-size: 1.8rem !important; }
+            .reg-form .form-row { grid-template-columns: 1fr !important; }
         }
     </style>
     <script src="../../components/components.js" defer>
@@ -319,12 +376,10 @@
     <global-header></global-header>
 
     <!-- Hero Section -->
-    <section class="join-hero-new" style="height: 80vh; min-height: 600px; background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=2000&auto=format&fit=crop') center/cover; display: flex; align-items: center; justify-content: center; text-align: center; color: #fff; padding: 0 2rem; margin-top: 80px;">
-        <div style="max-width: 900px; position: relative;">
-            <h1 style="font-size: 4rem; font-weight: 700; line-height: 1.1; margin-bottom: 1.5rem; letter-spacing: -2px;">Elevate Your Career On <br><span style="color: var(--accent-blue);">Minnesota's Premier Platform</span></h1>
-            <p style="font-size: 1.25rem; color: #cbd5e0; margin-bottom: 2.5rem; font-weight: 400; max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.6;">Partner with MN Lake Homes to access high-intent luxury buyers, exclusive marketing technologies, and guaranteed territory exclusivity.</p>
-            <button class="btn btn-primary" style="padding: 1.25rem 3rem; font-size: 1.2rem; border: none; margin-top: 1rem;" onclick="document.getElementById('pricing').scrollIntoView({behavior: 'smooth'})">View Partnership Tiers</button>
-        </div>
+    <section style="padding: 12rem 2rem 5rem; text-align: center; background-color: var(--bg-dark); color: #fff;">
+        <h1 style="font-size: 4.5rem; font-weight: 700; letter-spacing: -2px; line-height: 1.05; margin-bottom: 1.5rem;">Elevate your career on<br><span style="color: var(--accent-blue);">Minnesota's premier platform</span></h1>
+        <p style="font-size: 1.25rem; color: var(--text-secondary); font-weight: 400; max-width: 650px; margin: 0 auto 2.5rem; line-height: 1.6;">Partner with MN Lake Homes to access high-intent luxury buyers, exclusive marketing technologies, and guaranteed territory exclusivity.</p>
+        <button class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none;" onclick="document.getElementById('pricing').scrollIntoView({behavior: 'smooth'})">View partnership tiers</button>
     </section>
 
     <!-- Value Propositions -->
@@ -410,7 +465,7 @@
             <div class="testimonial-media">
                 <div class="media-vertical-tab">Jessica & Co.</div>
                 <div class="media-image-wrapper">
-                    <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1200" alt="Successful Real Estate Agent">
+                    <img src="/assets/images/mn-stillwater-aerial.webp" alt="Aerial view of Stillwater, Minnesota — successful lake agent territory" loading="lazy" width="1200" height="800">
                 </div>
             </div>
         </div>
@@ -437,7 +492,7 @@
                         <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Access to our private agent community</li>
                         <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Use of MN Lake Homes branding</li>
                     </ul>
-                    <button class="btn pricing-btn" style="background-color: #edf2f7; color: #1a202c; border: none;" onclick="document.getElementById('register-form-section').scrollIntoView({behavior: 'smooth'})">Apply Now</button>
+                    <button class="btn pricing-btn" style="background-color: #edf2f7; color: #1a202c; border: none;" onclick="openJoinForm()">Apply Now</button>
                 </div>
 
                 <!-- Tier 2 -->
@@ -453,7 +508,7 @@
                         <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> 1 Target Zip Code Lockout</li>
                         <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Dedicated marketing support & PR assets</li>
                     </ul>
-                    <button class="btn btn-primary pricing-btn" style="border: none; box-shadow: 0 10px 20px rgba(66, 153, 225, 0.3);" onclick="document.getElementById('register-form-section').scrollIntoView({behavior: 'smooth'})">Apply Now</button>
+                    <button class="btn btn-primary pricing-btn" style="border: none; box-shadow: 0 10px 20px rgba(66, 153, 225, 0.3);" onclick="openJoinForm()">Apply Now</button>
                 </div>
 
                 <!-- Tier 3 -->
@@ -468,7 +523,7 @@
                         <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> First access to off-market network listings</li>
                         <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> 24/7 dedicated account manager</li>
                     </ul>
-                    <button class="btn pricing-btn" style="background-color: #1a202c; color: #fff; border: none;" onclick="document.getElementById('register-form-section').scrollIntoView({behavior: 'smooth'})">Apply Now</button>
+                    <button class="btn pricing-btn" style="background-color: #1a202c; color: #fff; border: none;" onclick="openJoinForm()">Apply Now</button>
                 </div>
 
             </div>
@@ -512,7 +567,7 @@
             </div>
 
             <div class="sp-media-wrapper" style="height: 100%;">
-                <img src="https://images.unsplash.com/photo-1560520653-9e0e4c89eb11?q=80&w=1600&auto=format&fit=crop" style="height: 100%; object-fit: cover;" alt="Agents Closing Deal">
+                <img src="/assets/images/mn-lanesboro-downtown.jpg" style="height: 100%; width: 100%; object-fit: cover;" alt="Minnesota lake-town downtown where our agents close deals" loading="lazy" width="1200" height="800">
             </div>
         </div>
     </section>
@@ -522,109 +577,84 @@
         <div style="max-width: 700px; margin: 0 auto;">
             <h2 style="font-size: 3.5rem; font-weight: 800; margin-bottom: 1.5rem; letter-spacing: -1px; line-height: 1.1;">Ready to dominate your lakeshore market?</h2>
             <p style="font-size: 1.25rem; color: #a0aec0; margin-bottom: 3rem; line-height: 1.6;">Join Minnesota's fastest-growing luxury network. Submit your inquiry today and our growth team will be in touch within 24 hours.</p>
-            <button class="btn btn-primary" style="padding: 1.25rem 3rem; font-size: 1.2rem; border: none; box-shadow: 0 10px 25px rgba(66, 153, 225, 0.3);" onclick="document.getElementById('register-form-section').scrollIntoView({behavior: 'smooth'})">Apply For Partnership</button>
+            <button class="btn btn-primary" style="padding: 1.25rem 3rem; font-size: 1.2rem; border: none; box-shadow: 0 10px 25px rgba(66, 153, 225, 0.3);" onclick="openJoinForm()">Apply For Partnership</button>
         </div>
     </section>
 
     
-    <!-- Agent Registration Section -->
-    <section id="register-form-section" style="padding: 6rem 2rem; background-color: #f7f9fa; border-top: 1px solid #edf2f7;">
-        <div style="max-width: 600px; margin: 0 auto; background: #fff; padding: 3rem; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #edf2f7;">
-            <h2 style="font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; text-align: center;">Partner Registration</h2>
-            <p style="text-align: center; color: #718096; margin-bottom: 2rem;">Create your secure account shell. Your public profile will remain private until explicitly approved by our review team.</p>
-            
-            <div id="register-alert" style="display: none; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-weight: 500;"></div>
-
-            <form id="agent-register-form">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div class="form-group-sys">
-                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #4a5568;">First Name *</label>
-                        <input type="text" id="reg-firstName" class="input-sys" placeholder="John" required>
-                    </div>
-                    <div class="form-group-sys">
-                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #4a5568;">Last Name *</label>
-                        <input type="text" id="reg-lastName" class="input-sys" placeholder="Smith" required>
-                    </div>
-                </div>
-
-                <div class="form-group-sys" style="margin-bottom: 1rem;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #4a5568;">Email Address *</label>
-                    <input type="email" id="reg-email" class="input-sys" placeholder="john.smith@example.com" required>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div class="form-group-sys">
-                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #4a5568;">Phone Number *</label>
-                        <input type="tel" id="reg-phone" class="input-sys" placeholder="(555) 000-0000" required>
-                    </div>
-                    <div class="form-group-sys">
-                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #4a5568;">Brokerage Name</label>
-                        <input type="text" id="reg-brokerage" class="input-sys" placeholder="e.g. Sotheby's">
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
-                    <div class="form-group-sys">
-                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #4a5568;">Password *</label>
-                        <input type="password" id="reg-password" class="input-sys" placeholder="••••••••" required minlength="8">
-                    </div>
-                    <div class="form-group-sys">
-                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #4a5568;">Confirm Password *</label>
-                        <input type="password" id="reg-confirm" class="input-sys" placeholder="••••••••" required>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1.25rem; font-size: 1.1rem; border: none; font-weight: 700; box-shadow: 0 4px 6px rgba(66, 153, 225, 0.2);">Create Secure Account</button>
-            </form>
-        </div>
-    </section>
-
     <!-- Global Footer -->
 
     <global-footer></global-footer>
 
-    <!-- Full Screen Lead Modal -->
+    <!-- Agent Join Popup — matches openForm() full-screen style exactly -->
+    <div id="join-overlay" style="display:none;position:fixed;inset:0;z-index:9000;background:#fff;font-family:'Inter',sans-serif;">
+        <!-- Progress bar -->
+        <div style="position:absolute;top:0;left:0;right:0;height:4px;background:#f0f4f8;">
+            <div id="join-bar" style="height:100%;background:#1d6df2;width:0%;transition:width 0.4s ease;border-radius:0 99px 99px 0;"></div>
+        </div>
+        <!-- Top chrome -->
+        <div style="position:absolute;top:0;left:0;right:0;padding:1.25rem 1.75rem;display:flex;justify-content:space-between;align-items:center;z-index:10;">
+            <button id="join-back" onclick="joinGoBack()"
+                style="background:none;border:none;cursor:pointer;font-size:0.875rem;font-weight:600;color:#a0aec0;font-family:inherit;padding:0.4rem 0;visibility:hidden;transition:color 0.15s;"
+                onmouseover="this.style.color='#1a202c'" onmouseout="this.style.color='#a0aec0'">&#8592; Back</button>
+            <div style="display:flex;align-items:center;gap:0.45rem;">
+                <div style="width:8px;height:8px;border-radius:50%;background:#1d6df2;"></div>
+                <span style="font-weight:700;font-size:0.875rem;color:#1a202c;letter-spacing:-0.2px;">MN Lake Homes</span>
+            </div>
+            <button onclick="closeJoinForm()"
+                style="width:36px;height:36px;border-radius:50%;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:1rem;color:#718096;display:flex;align-items:center;justify-content:center;transition:all 0.15s;"
+                onmouseover="this.style.background='#f7f9fa'" onmouseout="this.style.background='#fff'">&#x2715;</button>
+        </div>
+        <!-- Step content -->
+        <div style="display:flex;align-items:center;justify-content:center;height:100%;padding:5rem 1.5rem 3rem;">
+            <div id="join-body" style="width:100%;max-width:520px;transition:opacity 0.15s ease,transform 0.15s ease;">
+                <h2 id="join-question" style="font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;color:#1a202c;letter-spacing:-1px;line-height:1.2;margin:0 0 0.75rem;text-align:center;"></h2>
+                <p  id="join-hint"     style="color:#a0aec0;font-size:0.95rem;margin:0 0 2rem;text-align:center;line-height:1.5;display:none;"></p>
+                <div id="join-field"   style="margin-bottom:1.25rem;"></div>
+                <div id="join-error"   style="display:none;color:#c53030;font-size:0.85rem;margin-bottom:1rem;padding:0.75rem 1rem;background:#fff5f5;border-radius:10px;border:1px solid #fed7d7;text-align:center;"></div>
+                <button id="join-btn" onclick="joinNext()"
+                    style="width:100%;padding:1rem 1.5rem;background:#1a202c;color:#fff;border:none;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer;font-family:inherit;transition:background 0.2s;"
+                    onmouseover="if(!this.disabled)this.style.background='#2d3748'" onmouseout="if(!this.disabled)this.style.background='#1a202c'">Continue &#8594;</button>
+                <p style="text-align:center;color:#cbd5e0;font-size:0.75rem;margin-top:0.9rem;">We respect your privacy. No spam, ever.</p>
+            </div>
+        </div>
+        <!-- Success screen -->
+        <div id="join-success" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;">
+            <div style="width:72px;height:72px;border-radius:50%;background:#f0fff4;display:flex;align-items:center;justify-content:center;margin:0 0 1.5rem;border:2px solid #c6f6d5;">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <h3 style="font-size:2rem;font-weight:800;color:#1a202c;letter-spacing:-1px;margin:0 0 0.75rem;">Welcome to the network!</h3>
+            <p  style="color:#718096;line-height:1.6;max-width:380px;margin:0 auto;">Your agent profile is being set up. Redirecting to your dashboard…</p>
+        </div>
+    </div>
+
     <lead-modal></lead-modal>
 
     <script>
-        function openModal() {
-            document.getElementById('lead-modal').classList.add('active');
-            nextModalStep(1);
-        }
-
-        function closeModal() {
-            document.getElementById('lead-modal').classList.remove('active');
-        }
-
-        function nextModalStep(step) {
-            document.querySelectorAll('.modal-step').forEach(el => el.classList.remove('active'));
-            document.getElementById('modal-step-' + step).classList.add('active');
-        }
-
         const testimonials = [
             {
                 category: "Premier Partner",
                 brand: "Jessica & Co.",
                 quote: '"Since joining MN Lake Homes, my luxury listing appointments have tripled. The centralized marketing is an absolute game-changer."',
-                image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1200"
+                image: "/assets/images/mn-stillwater-aerial.webp"
             },
             {
                 category: "Elite Team Leader",
                 brand: "The Carter Group",
                 quote: '"We needed a reliable influx of high-net-worth buyer leads. MN Lake Homes delivered in month one. The best ROI we’ve seen."',
-                image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=1200"
+                image: "/assets/images/mn-stillwater-aerial.webp"
             },
             {
                 category: "Associate Agent",
                 brand: "Robert T.",
                 quote: '"The credibility of the brand alone has helped me win listings I previously would never have been considered for."',
-                image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=1200"
+                image: "/assets/images/mn-stillwater-aerial.webp"
             },
             {
                 category: "Investment Sales",
                 brand: "Marcus W.",
                 quote: '"The zip-code lockout feature ensures I dominate my specific lake chain without competing against internal agents."',
-                image: "https://images.unsplash.com/photo-1552058544-f2b08422138a?q=80&w=1200"
+                image: "/assets/images/mn-split-level-sunset.webp"
             }
         ];
 
@@ -650,75 +680,126 @@
             updateTestimonialUI();
         }
     
-        document.getElementById("agent-register-form")?.addEventListener("submit", async function(e) {
-            e.preventDefault();
-            const alertBox = document.getElementById("register-alert");
-            alertBox.style.display = "block";
-            
-            const pwd = document.getElementById("reg-password").value;
-            const confirm = document.getElementById("reg-confirm").value;
+        // ── Join Form — mirrors openForm() rendering exactly ──────────────────
+        const JOIN_STEPS = [
+            { q: "Who are we speaking with today?",                    hint: "Let's start with your first name.",                                                                       field: 'first',    type: 'text',     ph: 'Your first name',         required: true },
+            { q: d => `Great, ${d.first}! What's your last name?`,     hint: '',                                                                                                        field: 'last',     type: 'text',     ph: 'Your last name',          required: true },
+            { q: d => `Nice to meet you, ${d.first}. Best email?`,     hint: 'This becomes your login email.',                                                                          field: 'email',    type: 'email',    ph: 'you@brokerage.com',       required: true },
+            { q: "Best phone number to reach you?",                    hint: 'For our team to follow up on your application.',                                                          field: 'phone',    type: 'tel',      ph: '(612) 555-0000',          required: true },
+            { q: "Which brokerage are you with?",                      hint: 'Independent? No worries — just press Continue.',                                                          field: 'brokerage',type: 'text',     ph: "e.g. Keller Williams, Sotheby's", required: false },
+            { q: "Do you have a real estate license number?",          hint: 'Optional — you can update this later in your profile.',                                                   field: 'license',  type: 'text',     ph: 'e.g. MN-40012345',        required: false },
+            { q: "Create a password for your account.",                hint: 'Needed for the upcoming agent portal — this site is launching as the beta. Min 8 characters.',           field: 'password', type: 'password', ph: '••••••••',                required: true, minlength: 8 },
+            { q: "One more — confirm your password.",                  hint: 'Must match the password above.',                                                                          field: 'confirm',  type: 'password', ph: '••••••••',                required: true },
+        ];
 
-            if (pwd !== confirm) {
-                alertBox.style.backgroundColor = "#fff5f5";
-                alertBox.style.color = "#c53030";
-                alertBox.innerText = "Passwords do not match.";
-                return;
-            }
+        let _js = { step: 0, data: {} };
+        const iStyle = 'width:100%;padding:1rem 1.25rem;border:2px solid #e2e8f0;border-radius:12px;font-family:inherit;font-size:1.15rem;box-sizing:border-box;outline:none;transition:border-color 0.2s;background:#fff;text-align:center;';
+        const focus  = `onfocus="this.style.borderColor='#1d6df2'" onblur="this.style.borderColor='#e2e8f0'"`;
 
-            const payload = {
-                firstName: document.getElementById("reg-firstName").value,
-                lastName: document.getElementById("reg-lastName").value,
-                email: document.getElementById("reg-email").value,
-                phone: document.getElementById("reg-phone").value,
-                brokerage: document.getElementById("reg-brokerage").value,
-                password: pwd
-            };
+        function openJoinForm() {
+            _js = { step: 0, data: {} };
+            document.getElementById('join-success').style.display = 'none';
+            document.getElementById('join-body').style.display = 'block';
+            document.getElementById('join-back').style.visibility = 'hidden';
+            document.getElementById('join-overlay').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            _joinRender();
+        }
 
-            const fullName = payload.firstName + ' ' + payload.lastName;
+        function closeJoinForm() {
+            document.getElementById('join-overlay').style.display = 'none';
+            document.body.style.overflow = '';
+        }
 
-            // Physical Database Transaction (PostgreSQL Network Pipeline)
+        function joinGoBack() {
+            if (_js.step > 0) { _js.step--; _joinSlide(); }
+        }
+
+        function _joinRender() {
+            const s     = JOIN_STEPS[_js.step];
+            const total = JOIN_STEPS.length;
+            const q     = typeof s.q === 'function' ? s.q(_js.data) : s.q;
+
+            document.getElementById('join-bar').style.width = Math.round((_js.step / total) * 100) + '%';
+            document.getElementById('join-back').style.visibility = _js.step === 0 ? 'hidden' : 'visible';
+            document.getElementById('join-question').textContent = q;
+            document.getElementById('join-error').style.display = 'none';
+
+            const hint = document.getElementById('join-hint');
+            hint.textContent = s.hint || '';
+            hint.style.display = s.hint ? 'block' : 'none';
+
+            const area = document.getElementById('join-field');
+            area.innerHTML = `<input id="join-input" type="${s.type}" placeholder="${s.ph}" autocomplete="off"
+                style="${iStyle}" ${focus} onkeydown="if(event.key==='Enter')joinNext()"
+                value="${_js.data[s.field] || ''}">`;
+
+            setTimeout(() => document.getElementById('join-input')?.focus(), 60);
+
+            const btn = document.getElementById('join-btn');
+            btn.disabled = false;
+            btn.style.background = '#1a202c';
+            btn.textContent = _js.step === total - 1 ? 'Create My Account →' : 'Continue →';
+        }
+
+        function _joinSlide() {
+            const body = document.getElementById('join-body');
+            body.style.opacity = '0'; body.style.transform = 'translateY(12px)';
+            setTimeout(() => { _joinRender(); body.style.opacity = '1'; body.style.transform = 'translateY(0)'; }, 140);
+        }
+
+        async function joinNext() {
+            const s   = JOIN_STEPS[_js.step];
+            const val = (document.getElementById('join-input')?.value || '').trim();
+            const err = document.getElementById('join-error');
+
+            if (s.required && !val) { err.textContent = 'This field is required.'; err.style.display = 'block'; return; }
+            if (s.type === 'email' && val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { err.textContent = 'Please enter a valid email address.'; err.style.display = 'block'; return; }
+            if (s.minlength && val.length < s.minlength) { err.textContent = `Password must be at least ${s.minlength} characters.`; err.style.display = 'block'; return; }
+            if (s.field === 'confirm' && val !== _js.data.password) { err.textContent = 'Passwords do not match.'; err.style.display = 'block'; return; }
+
+            _js.data[s.field] = val;
+
+            if (_js.step < JOIN_STEPS.length - 1) { _js.step++; _joinSlide(); }
+            else await _joinSubmit();
+        }
+
+        async function _joinSubmit() {
+            const btn = document.getElementById('join-btn');
+            btn.disabled = true; btn.textContent = 'Creating your account…'; btn.style.background = '#a0aec0';
+
             try {
-                alertBox.style.backgroundColor = "#ebf8ff";
-                alertBox.style.color = "#2b6cb0";
-                alertBox.innerText = "Provisioning secure account...";
-
                 const res = await fetch('/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        email: payload.email,
-                        password: payload.password,
-                        display_name: fullName,
-                        license_number: 'Lic-Pending',
-                        brokerage_name: payload.brokerage
+                        email:          _js.data.email,
+                        password:       _js.data.password,
+                        display_name:   `${_js.data.first} ${_js.data.last}`.trim(),
+                        license_number: _js.data.license   || null,
+                        brokerage_name: _js.data.brokerage || null
                     })
                 });
-
                 const result = await res.json();
-                
                 if (!res.ok || result.error) {
-                    alertBox.style.backgroundColor = "#fff5f5";
-                    alertBox.style.color = "#c53030";
-                    alertBox.innerText = result.error || 'Server error';
+                    const err = document.getElementById('join-error');
+                    err.textContent = result.error || 'Something went wrong. Please try again.';
+                    err.style.display = 'block';
+                    btn.disabled = false; btn.textContent = 'Create My Account →'; btn.style.background = '#1a202c';
                     return;
                 }
-
-                alertBox.style.backgroundColor = "#f0fff4";
-                alertBox.style.color = "#2f855a";
-                alertBox.innerText = "Account created! Redirecting to setup portal...";
-                
-                setTimeout(() => {
-                    window.location.href = "../../pages/agent/dashboard.html";
-                    }, 1000);
-                }, 500);
-
-            } catch (err) {
-                alertBox.style.backgroundColor = "#fff5f5";
-                alertBox.style.color = "#c53030";
-                alertBox.innerText = "Database connection error.";
+                document.getElementById('join-bar').style.width = '100%';
+                document.getElementById('join-body').style.display = 'none';
+                document.getElementById('join-back').style.visibility = 'hidden';
+                document.getElementById('join-success').style.display = 'flex';
+                setTimeout(() => { window.location.href = '../../pages/agent/dashboard.html'; }, 2200);
+            } catch(e) {
+                const err = document.getElementById('join-error');
+                err.textContent = 'Connection error. Please try again.';
+                err.style.display = 'block';
+                btn.disabled = false; btn.textContent = 'Create My Account →'; btn.style.background = '#1a202c';
             }
-        });
-
+        }
     </script>
 </body>
 </html>

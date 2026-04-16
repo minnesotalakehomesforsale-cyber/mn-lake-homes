@@ -2,13 +2,72 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MN Lake Homes</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+
+    <title>Minnesota Lake Homes for Sale | Lakefront Real Estate Specialists</title>
+    <meta name="description" content="Minnesota's dedicated lake home network. Browse lakefront listings on Lake Minnetonka, Brainerd, Lake Vermilion & more. Buy, sell, or rent with a local waterfront specialist.">
+    <meta name="keywords" content="minnesota lake homes, lake homes for sale minnesota, lakefront property minnesota, lake minnetonka real estate, brainerd lake homes, lake vermilion homes, minnesota waterfront realtor, cabin for sale minnesota, lake cabin realtor, minnesota lake property">
+    <meta name="author" content="MinnesotaLakeHomesForSale.com">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MinnesotaLakeHomesForSale.com">
+    <meta property="og:url" content="https://minnesotalakehomesforsale.com/">
+    <meta property="og:title" content="Minnesota Lake Homes for Sale | Lakefront Real Estate Specialists">
+    <meta property="og:description" content="Browse Minnesota's finest lakefront listings. Buy, sell, or rent your dream lake home with a local waterfront specialist who actually knows the shoreline.">
+    <meta property="og:image" content="https://minnesotalakehomesforsale.com/assets/images/mn-most-expensive-listing.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Minnesota Lake Homes for Sale | Lakefront Real Estate Specialists">
+    <meta name="twitter:description" content="Browse Minnesota's finest lakefront listings. Buy, sell, or rent your dream lake home with a local waterfront specialist.">
+    <meta name="twitter:image" content="https://minnesotalakehomesforsale.com/assets/images/mn-most-expensive-listing.jpg">
+
+    <!-- Fonts & styles -->
     <link rel="stylesheet" href="styles/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- LCP hint: preload the hero's primary image -->
+    <link rel="preload" as="image" href="/assets/images/mn-rustic-modern-lake-house.jpg">
+
     <script src="components/components.js" defer></script>
+
+    <!-- Structured data: RealEstateAgent + WebSite -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "RealEstateAgent",
+          "@id": "https://minnesotalakehomesforsale.com/#org",
+          "name": "MinnesotaLakeHomesForSale.com",
+          "alternateName": "MN Lake Homes",
+          "url": "https://minnesotalakehomesforsale.com/",
+          "image": "https://minnesotalakehomesforsale.com/assets/images/mn-most-expensive-listing.jpg",
+          "telephone": "+1-218-850-1115",
+          "email": "minnesotalakehomesforsale@gmail.com",
+          "areaServed": { "@type": "State", "name": "Minnesota" },
+          "parentOrganization": { "@type": "Organization", "name": "CommonRealtor" },
+          "description": "Minnesota's dedicated network of lakefront real estate specialists — connecting buyers, sellers, and renters with waterfront properties across the state."
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://minnesotalakehomesforsale.com/#site",
+          "url": "https://minnesotalakehomesforsale.com/",
+          "name": "MinnesotaLakeHomesForSale.com",
+          "publisher": { "@id": "https://minnesotalakehomesforsale.com/#org" }
+        }
+      ]
+    }
+    </script>
 </head>
 <body>
     <global-header></global-header>
@@ -19,21 +78,21 @@
             <h1 class="title">
                 Find your <span class="text-blue">dream lake<br/>home</span> today
             </h1>
-            <div style="display: flex; gap: 1rem; margin-top: 2.5rem; flex-wrap: wrap; justify-content: center; position: relative; z-index: 5;">
-                <a href="#services" class="btn btn-primary" style="padding: 1.2rem 2.5rem; font-size: 1.1rem;">Get Started</a>
-                <a href="agents.html" class="btn" style="padding: 1.2rem 2.5rem; font-size: 1.1rem; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px); text-decoration: none; border-radius: 99px;">Find an Agent</a>
+            <div class="hero-ctas">
+                <a href="#services" class="btn btn-primary hero-cta">Get Started</a>
+                <a href="pages/public/agents.html" class="btn hero-cta hero-cta-ghost">Find an Agent</a>
             </div>
         </div>
 
         <div class="hero-showcase">
             <div class="showcase-card left-card">
-                <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1200" alt="Lakefront Property">
+                <img src="/assets/images/mn-most-expensive-listing.jpg" width="320" height="480" alt="Luxury Minnesota lakefront estate listing" fetchpriority="high">
             </div>
             <div class="showcase-card center-card">
-                <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=1200" alt="Lake Home Interior">
+                <img src="/assets/images/mn-rustic-modern-lake-house.jpg" width="500" height="520" alt="Rustic modern lake home exterior at golden hour" fetchpriority="high">
             </div>
             <div class="showcase-card right-card">
-                <img src="https://images.unsplash.com/photo-1499696010180-025ef6e1a8f9?q=80&w=1200" alt="Minnesota Lake Dock">
+                <img src="/assets/images/mn-canoe-shore.webp" width="320" height="480" alt="Canoe on a Minnesota lake shoreline at sunrise" fetchpriority="high">
             </div>
         </div>
 
@@ -42,6 +101,9 @@
                 <p><strong>Stop dreaming, start living.</strong> Browse our exclusive list of<br>Minnesota lake properties and find your perfect getaway.</p>
             </div>
             <button class="btn btn-white btn-sm" onclick="openForm('buy')" style="border:none;">Start browsing</button>
+            <button class="promo-close" onclick="this.parentElement.classList.add('dismissed')" aria-label="Dismiss">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
         </div>
     </main>
 
@@ -65,8 +127,8 @@
                         <a href="pages/public/buy.html" class="btn btn-primary" style="text-decoration:none;">Get Started Buying</a>
                     </div>
                     <div class="flex-images">
-                        <img src="https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=1200" alt="Modern Lake House Living" class="flex-img">
-                        <img src="https://images.unsplash.com/photo-1560185127-6ed189bf02f4?q=80&w=1200" alt="Family on Dock" class="flex-img">
+                        <img src="/assets/images/mn-beach-craftsman-cabin.jpg" alt="Craftsman lake cabin exterior in Minnesota" class="flex-img" loading="lazy" width="800" height="500">
+                        <img src="/assets/images/mn-purple-sunset-marina.webp" alt="Minnesota marina at purple sunset" class="flex-img" loading="lazy" width="800" height="500">
                     </div>
                 </div>
                 <div class="flex-card-content" id="tab-sell" style="display:none;">
@@ -75,8 +137,8 @@
                         <a href="pages/public/sell.html" class="btn btn-primary" style="text-decoration:none;">Get Started Selling</a>
                     </div>
                     <div class="flex-images">
-                        <img src="https://images.unsplash.com/photo-1582268612140-1bc6b4bbed2c?q=80&w=1200" alt="Selling a Lake Home" class="flex-img">
-                        <img src="https://images.unsplash.com/photo-1560185007-cde436f6a4d0?q=80&w=1200" alt="Lakefront Estate" class="flex-img">
+                        <img src="/assets/images/mn-marina-night.webp" alt="Minnesota marina lit up at night" class="flex-img" loading="lazy" width="800" height="500">
+                        <img src="/assets/images/mn-white-farmhouse.jpg" alt="White farmhouse lake estate in Minnesota" class="flex-img" loading="lazy" width="800" height="500">
                     </div>
                 </div>
                 <div class="flex-card-content" id="tab-rent" style="display:none;">
@@ -85,8 +147,8 @@
                         <a href="pages/public/rent.html" class="btn btn-primary" style="text-decoration:none;">Browse Rentals</a>
                     </div>
                     <div class="flex-images">
-                        <img src="https://images.unsplash.com/photo-1499696010180-025ef6e1a8f9?q=80&w=1200" alt="Minnesota Lake Dock" class="flex-img">
-                        <img src="https://images.unsplash.com/photo-1533038590840-0229ce375960?q=80&w=1200" alt="Boat on Lake" class="flex-img">
+                        <img src="/assets/images/mn-canoe-shore.webp" alt="Canoe on a Minnesota lakeshore" class="flex-img" loading="lazy" width="800" height="500">
+                        <img src="/assets/images/mn-chateau-aerial.jpg" alt="Aerial view of Minnesota lakeside chateau" class="flex-img" loading="lazy" width="800" height="500">
                     </div>
                 </div>
                 <div class="flex-card-content" id="tab-agent" style="display:none;">
@@ -95,8 +157,8 @@
                         <a href="pages/public/agents.html" class="btn btn-primary" style="text-decoration:none;">Find an Agent</a>
                     </div>
                     <div class="flex-images">
-                        <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=1200" alt="Lake Specialist Agent" class="flex-img">
-                        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1200" alt="Agent with Client" class="flex-img">
+                        <img src="/assets/images/mn-stillwater-aerial.webp" alt="Aerial view of Stillwater, Minnesota" class="flex-img" loading="lazy" width="800" height="500">
+                        <img src="/assets/images/mn-stillwater-aerial.webp" alt="Stillwater Minnesota waterfront agent area" class="flex-img" loading="lazy" width="800" height="500">
                     </div>
                 </div>
             </div>
@@ -140,7 +202,7 @@
             <p class="mission-desc">
                 We’re here to help families who want to invest in the Minnesota lake lifestyle. Because if you’ve got the dream of lakeside living, you ought to have the freedom to <span class="text-slate">find the perfect property</span>. Whether you need expert marketing to sell your estate or local knowledge to find a hidden gem, we work with you to build a strategy tailored to <span class="text-slate">your real estate goals</span>. We believe true local expertise and dedicated agents can make the difference between a house and a home. And we actually care <span class="text-slate">about your lakefront life</span>.
             </p>
-            <a href="#" class="btn btn-primary btn-lg" onclick="openModal()">Why MN Lake Homes?</a>
+            <a href="pages/public/about.html" class="btn btn-primary btn-lg">Why MN Lake Homes?</a>
         </div>
     </section>
 
@@ -166,7 +228,7 @@
             <div class="testimonial-media">
                 <div class="media-vertical-tab">The Johnson Family</div>
                 <div class="media-image-wrapper">
-                    <img src="https://images.unsplash.com/photo-1544723048-fd4487b11306?q=80&w=1200" alt="Happy Family on Deck">
+                    <img src="/assets/images/mn-colonial-lake-home.jpg" alt="Colonial-style Minnesota lake home" loading="lazy" width="800" height="600">
                 </div>
             </div>
         </div>
@@ -178,7 +240,7 @@
                 <h2 class="sp-title" style="font-size: 4rem;">We know<br>Minnesota Lakes</h2>
             </div>
             <div class="sp-media-wrapper" style="height: 500px;">
-                <img src="https://images.unsplash.com/photo-1501426026826-31c667bdf23d?q=80&w=1200" style="height: 100%; object-fit: cover; border-radius: 20px;" alt="Minnesota Lake">
+                <img src="/assets/images/mn-wilderness-lake-dock.jpg" style="height: 100%; width: 100%; object-fit: cover; border-radius: 20px;" alt="Private dock on a wilderness Minnesota lake" loading="lazy" width="1200" height="800">
             </div>
             <div>
                 <p style="color: #a0aec0; line-height: 1.6; margin-bottom: 2rem;">Real estate agent gone AWOL? Maybe they care more about their commission than your dream home. At MN Lake Homes, hospitality is in our DNA. With us, you get:</p>
@@ -200,57 +262,21 @@
                         <div class="sp-check-text">7-days-a-week phone support from real people who respond within minutes</div>
                     </div>
                 </div>
-                <a href="#" class="sp-link-blue">Why MN Lake Homes &rarr;</a>
+                <a href="#" class="btn btn-primary" onclick="openForm('general'); return false;" style="display:inline-block; margin-top:1.5rem; text-decoration:none; padding:1rem 2rem;">Start Your Journey Today &rarr;</a>
             </div>
         </div>
     </section>
 
-    <section style="background-color: #f7f9fa; padding: 6rem 0;">
-        <div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem; display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
-            <div>
-                <h2 style="font-size: 2.5rem; font-weight: 700; color: #1a202c; margin-bottom: 0.5rem; letter-spacing: -1px;">Featured Agents</h2>
-                <p style="color: #718096; font-size: 1.1rem;">Meet the local experts who know Minnesota's lakes better than anyone else.</p>
-            </div>
+    <section class="featured-agents-section" aria-label="Featured Minnesota lake home agents">
+        <div class="featured-agents-header">
+            <h2>Featured Agents</h2>
+            <p>Meet the local experts who know Minnesota's lakes better than anyone else.</p>
         </div>
-        <div class="agents-grid" style="padding-top: 0;">
-            <!-- Agent 1 -->
-            <a href="pages/public/agent-profile.html?slug=david-chen" style="text-decoration: none; color: inherit; display: block;" class="agent-link-wrapper">
-            <div class="agent-card">
-                <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=800&auto=format&fit=crop" alt="David Chen" class="agent-image">
-                <div class="agent-info">
-                    <h3 class="agent-name">David Chen</h3>
-                    <div class="agent-title">Senior Lake Specialist</div>
-                    <p class="agent-bio">With over 15 years on Lake Minnetonka, David is an expert in luxury shoreline estates, high-value negotiations, and navigating complex zoning laws for ambitious buyers.</p>
-                </div>
-            </div>
-            </a>
-
-            <!-- Agent 2 -->
-            <a href="pages/public/agent-profile.html?slug=sarah-jenkins" style="text-decoration: none; color: inherit; display: block;" class="agent-link-wrapper">
-            <div class="agent-card">
-                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=800&auto=format&fit=crop" alt="Sarah Jenkins" class="agent-image">
-                <div class="agent-info">
-                    <h3 class="agent-name">Sarah Jenkins</h3>
-                    <div class="agent-title">Luxury Waterfront Director</div>
-                    <p class="agent-bio">Sarah dominates the Brainerd Lakes Area market. Her comprehensive marketing strategies and massive out-of-state network ensure her sellers receive premium cash offers.</p>
-                </div>
-            </div>
-            </a>
-
-            <!-- Agent 3 -->
-            <a href="pages/public/agent-profile.html?slug=marcus-washington" style="text-decoration: none; color: inherit; display: block;" class="agent-link-wrapper">
-            <div class="agent-card">
-                <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=800&auto=format&fit=crop" alt="Marcus Washington" class="agent-image">
-                <div class="agent-info">
-                    <h3 class="agent-name">Marcus Washington</h3>
-                    <div class="agent-title">Buyer's Agent — Northern Lakes Specialist</div>
-                    <p class="agent-bio">A Northern Lakes Specialist who loves nothing more than helping first-time buyers find 'the one'. Marcus has an unmatched eye for sturdy construction and hidden value.</p>
-                </div>
-            </div>
-            </a>
+        <div id="featured-agents-grid" class="agents-grid">
+            <!-- JS injects featured agent cards here -->
         </div>
-        <div style="text-align: center; margin-top: -1rem;">
-            <a href="agents.html" class="btn btn-primary" style="padding: 1.2rem 2.5rem; font-size: 1.1rem; text-decoration: none;">View all agents &rarr;</a>
+        <div class="featured-agents-cta">
+            <a href="pages/public/agents.html" class="btn btn-primary">View all agents &rarr;</a>
         </div>
     </section>
 
@@ -262,53 +288,11 @@
                     <button class="blog-nav-btn" onclick="scrollBlog('left')">&larr;</button>
                     <button class="blog-nav-btn" onclick="scrollBlog('right')">&rarr;</button>
                 </div>
-                <a href="blog.html" class="blog-link">Read more &rarr;</a>
+                <a href="pages/public/blog.html" class="blog-link">Read more &rarr;</a>
             </div>
             
-            <div class="blog-cards">
-                <a href="#" class="blog-card">
-                    <div class="blog-image">
-                        <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=1200" alt="Lake House Interior">
-                    </div>
-                    <div class="blog-meta">
-                        <span class="blog-tag">Buyer Guide</span>
-                        <span class="blog-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Read: 4 minutes</span>
-                    </div>
-                    <h3 class="blog-title">5 Things to Look For in a Lake Property</h3>
-                </a>
-
-                <a href="#" class="blog-card">
-                    <div class="blog-image">
-                        <img src="https://images.unsplash.com/photo-1533038590840-0229ce375960?q=80&w=1200" alt="Boat on Lake">
-                    </div>
-                    <div class="blog-meta">
-                        <span class="blog-tag">Local Life</span>
-                        <span class="blog-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Read: 3 minutes</span>
-                    </div>
-                    <h3 class="blog-title">Top 10 Lakes in Minnesota for Boating Enthusiasts</h3>
-                </a>
-
-                <a href="#" class="blog-card">
-                    <div class="blog-image">
-                        <img src="https://images.unsplash.com/photo-1582268612140-1bc6b4bbed2c?q=80&w=1200" alt="Selling a Home">
-                    </div>
-                    <div class="blog-meta">
-                        <span class="blog-tag">Seller Resources</span>
-                        <span class="blog-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Read: 5 minutes</span>
-                    </div>
-                    <h3 class="blog-title">How to Stage Your Cabin for Maximum Value</h3>
-                </a>
-
-                <a href="#" class="blog-card">
-                    <div class="blog-image">
-                        <img src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1400" alt="Pine Trees">
-                    </div>
-                    <div class="blog-meta">
-                        <span class="blog-tag">Community</span>
-                        <span class="blog-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Read: 4 minutes</span>
-                    </div>
-                    <h3 class="blog-title">Discovering the Magic of Northern Minnesota</h3>
-                </a>
+            <div class="blog-cards" id="home-blog-cards">
+                <!-- JS injects posts fetched from /api/blog -->
             </div>
         </div>
     </section>
@@ -323,25 +307,25 @@
                 category: "First-Time Lake Home Buyer",
                 brand: "The Johnson Family",
                 quote: '"By working with MN Lake Homes, we found our dream cabin on Lake Minnetonka. They guided us through shoreline regulations and helped us negotiate a great price."',
-                image: "https://images.unsplash.com/photo-1544723048-fd4487b11306?q=80&w=800&auto=format&fit=crop"
+                image: "/assets/images/mn-colonial-lake-home.jpg"
             },
             {
                 category: "Seller near Nisswa",
                 brand: "Sarah & Mike T.",
                 quote: '"The marketing team at MN Lake Homes was phenomenal. They highlighted the best features of our property, and we had multiple offers within the first week on the market."',
-                image: "https://images.unsplash.com/photo-1560185007-cde436f6a4d0?q=80&w=800&auto=format&fit=crop"
+                image: "/assets/images/mn-white-farmhouse.jpg"
             },
             {
                 category: "Luxury Lakeside Estate",
                 brand: "The Robertsons",
                 quote: '"We appreciated their attention to detail and extensive network of luxury buyers. MN Lake Homes handled the sale of our Brainerd estate with absolute professionalism."',
-                image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop"
+                image: "/assets/images/mn-rustic-modern-lake-house.jpg"
             },
             {
                 category: "Local Investor",
                 brand: "David M.",
                 quote: '"As someone who invests in vacation rentals, the data and insights provided by MN Lake Homes are invaluable. They know exactly which lakes yield the best ROI."',
-                image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=800&auto=format&fit=crop"
+                image: "/assets/images/mn-most-expensive-listing.jpg"
             }
         ];
 
@@ -377,25 +361,11 @@
             }
         }
 
-        function openModal() {
-            document.getElementById('lead-modal').classList.add('active');
-            nextModalStep(1); // Reset to step 1
-        }
-
         function openModalFromSection() {
             const select = document.getElementById('industry-select');
             if (!select.value) { alert('Please select what you are looking to do first!'); return; }
             const map = { buy: 'buy', sell: 'sell', explore: 'general', agent: 'agent' };
             openForm(map[select.value] || 'general');
-        }
-
-        function closeModal() {
-            document.getElementById('lead-modal').classList.remove('active');
-        }
-
-        function nextModalStep(stepNumber) {
-            document.querySelectorAll('.modal-step').forEach(el => el.classList.remove('active'));
-            document.getElementById('modal-step-' + stepNumber).classList.add('active');
         }
 
         function switchTab(btn, tabId) {
@@ -405,23 +375,85 @@
             document.getElementById(tabId).style.display = '';
         }
 
-        // Hide floating promo when scrolling into footer
+        async function loadHomeBlog() {
+            const grid = document.getElementById('home-blog-cards');
+            if (!grid) return;
+            try {
+                const res = await fetch('/api/blog');
+                if (!res.ok) return;
+                const posts = await res.json();
+                if (!posts.length) return;
+                grid.innerHTML = posts.slice(0, 6).map(p => `
+                    <a href="/pages/public/blog-post.html?slug=${p.slug}" class="blog-card">
+                        <div class="blog-image">
+                            <img src="${p.cover_image_url || '/assets/images/beach-style-exterior.jpg'}" alt="${p.title}" loading="lazy">
+                        </div>
+                        <div class="blog-meta">
+                            <span class="blog-tag">${p.tag || 'General'}</span>
+                            <span class="blog-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Read: ${p.read_time_minutes || 4} minutes</span>
+                        </div>
+                        <h3 class="blog-title">${p.title}</h3>
+                    </a>
+                `).join('');
+            } catch (err) {
+                console.error('Failed to load blog posts:', err);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadHomeBlog);
+
+        async function loadFeaturedAgents() {
+            const grid = document.getElementById('featured-agents-grid');
+            if (!grid) return;
+            try {
+                const res = await fetch('/api/agents/public');
+                if (!res.ok) return;
+                const agents = await res.json();
+                const featured = agents.filter(a => a.is_featured).slice(0, 3);
+                const list = featured.length ? featured : agents.slice(0, 3);
+                grid.innerHTML = list.map(agent => {
+                    const photo = agent.profile_photo_url || '/assets/images/mn-stillwater-aerial.webp';
+                    const title = agent.membership_badge || 'Lake Specialist';
+                    const bio = agent.bio || 'A dedicated Minnesota lake home specialist ready to help you find your perfect waterfront property.';
+                    const shortBio = bio.length > 180 ? bio.slice(0, 180).trimEnd() + '…' : bio;
+                    return `
+                        <a href="pages/public/agent-profile.html?slug=${agent.slug}" style="text-decoration:none;color:inherit;display:block;" class="agent-link-wrapper">
+                            <div class="agent-card">
+                                <img src="${photo}" alt="${agent.display_name}" class="agent-image">
+                                <div class="agent-info">
+                                    <h3 class="agent-name">${agent.display_name}</h3>
+                                    <div class="agent-title">${title.toUpperCase()}</div>
+                                    <p class="agent-bio">${shortBio}</p>
+                                </div>
+                            </div>
+                        </a>`;
+                }).join('');
+            } catch (err) {
+                console.error('Failed to load featured agents:', err);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadFeaturedAgents);
+
+        // Reveal floating promo only after scrolling past the 2nd/3rd section boundary.
+        // Hide again when the footer comes into view.
         document.addEventListener('DOMContentLoaded', () => {
             const promo = document.querySelector('.floating-promo');
             const footer = document.querySelector('.site-footer');
-            if (promo && footer) {
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            promo.classList.add('hide-promo');
-                        } else {
-                            promo.classList.remove('hide-promo');
-                        }
-                    });
-                }, { threshold: 0.05 });
-                
-                observer.observe(footer);
+            if (!promo) return;
+
+            if (footer) {
+                new IntersectionObserver(entries => {
+                    entries.forEach(e => promo.classList.toggle('hide-promo', e.isIntersecting));
+                }, { threshold: 0.05 }).observe(footer);
             }
+
+            const toggleReveal = () => {
+                if (promo.classList.contains('dismissed')) return;
+                promo.classList.toggle('revealed', window.scrollY > window.innerHeight * 0.8);
+            };
+            toggleReveal();
+            window.addEventListener('scroll', toggleReveal, { passive: true });
         });
     </script>
 </body>

@@ -2,64 +2,242 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About Us | MN Lake Homes</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+
+    <title>About MinnesotaLakeHomesForSale.com | Minnesota Lake Home Specialists</title>
+    <meta name="description" content="Meet the Minnesota lake home team behind MinnesotaLakeHomesForSale.com — local specialists who grew up on the lakes, treat your home like their own, and pioneered transparent waterfront real estate.">
+    <meta name="keywords" content="about minnesotalakehomesforsale, minnesota lake home specialists, waterfront real estate team, mn lake homes about, minnesota lake realtor team, common realtor subsidiary">
+    <meta name="author" content="MinnesotaLakeHomesForSale.com">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/pages/public/about.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MinnesotaLakeHomesForSale.com">
+    <meta property="og:url" content="https://minnesotalakehomesforsale.com/pages/public/about.html">
+    <meta property="og:title" content="About MinnesotaLakeHomesForSale.com | Minnesota Lake Home Specialists">
+    <meta property="og:description" content="We grew up on Minnesota's lakes. Meet the team behind MinnesotaLakeHomesForSale.com — local specialists pioneering transparent waterfront real estate.">
+    <meta property="og:image" content="https://minnesotalakehomesforsale.com/assets/images/mn-dock-water-tower.webp">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="About MinnesotaLakeHomesForSale.com | Lake Home Specialists">
+    <meta name="twitter:description" content="We grew up on Minnesota's lakes. Meet the team pioneering transparent waterfront real estate.">
+    <meta name="twitter:image" content="https://minnesotalakehomesforsale.com/assets/images/mn-dock-water-tower.webp">
+
     <link rel="stylesheet" href="../../styles/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- LCP hint -->
+    <link rel="preload" as="image" href="/assets/images/mn-dock-water-tower.webp">
+
     <script src="../../components/components.js" defer></script>
+
+    <!-- Structured data: AboutPage + RealEstateAgent -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "AboutPage",
+      "name": "About MinnesotaLakeHomesForSale.com",
+      "url": "https://minnesotalakehomesforsale.com/pages/public/about.html",
+      "description": "The story and team behind MinnesotaLakeHomesForSale.com — local Minnesota lake home specialists and a subsidiary of CommonRealtor.",
+      "mainEntity": {
+        "@type": "RealEstateAgent",
+        "name": "MinnesotaLakeHomesForSale.com",
+        "url": "https://minnesotalakehomesforsale.com/",
+        "telephone": "+1-218-850-1115",
+        "email": "minnesotalakehomesforsale@gmail.com",
+        "areaServed": { "@type": "State", "name": "Minnesota" },
+        "parentOrganization": { "@type": "Organization", "name": "CommonRealtor" }
+      }
+    }
+    </script>
+
+    <style>
+        .about-hero { padding: 12rem 2rem 5rem; text-align: left; background-color: var(--bg-dark); color: #fff; }
+        .about-hero-inner {
+            max-width: 1200px; margin: 0 auto;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;
+        }
+        .about-hero h1 { font-size: 5rem; font-weight: 700; letter-spacing: -2px; margin-bottom: 2rem; line-height: 1.1; }
+        .about-hero h1 span { color: #2b6cb0; }
+        .about-hero p.lede { font-size: 1.35rem; color: #a0aec0; font-weight: 400; line-height: 1.6; margin-bottom: 1rem; }
+        .about-hero p.sub  { font-size: 1.05rem; color: #718096; font-weight: 400; line-height: 1.7; }
+        .about-hero-img { height: 500px; }
+        .about-hero-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; }
+
+        .about-narrative { padding: 4rem 2rem 8rem; }
+        .about-narrative-inner { max-width: 800px; margin: 0 auto; }
+        .about-narrative h2 { font-size: 3.5rem; font-weight: 700; margin-bottom: 2rem; letter-spacing: -1.5px; text-align: center; line-height: 1.1; color: #1a202c; }
+        .about-narrative p { font-size: 1.3rem; color: #4a5568; line-height: 1.8; margin-bottom: 1.5rem; }
+        .about-narrative-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 5rem; }
+        .about-narrative-grid > div { padding: 4rem 3rem; background: #f7f9fa; border-radius: 20px; }
+        .about-narrative-grid h3 { font-size: 1.8rem; margin-bottom: 1rem; color: #1a202c; }
+        .about-narrative-grid p { color: #4a5568; line-height: 1.6; font-size: 1.1rem; margin-bottom: 0; }
+
+        @media (max-width: 900px) {
+            .about-hero { padding: 8rem 1.25rem 3.5rem; }
+            .about-hero-inner { grid-template-columns: 1fr; gap: 2rem; }
+            .about-hero h1 { font-size: 3.25rem; letter-spacing: -1.25px; margin-bottom: 1.25rem; }
+            .about-hero p.lede { font-size: 1.1rem; }
+            .about-hero p.sub  { font-size: 0.95rem; }
+            .about-hero-img { height: 280px; }
+            .about-narrative { padding: 3rem 1.25rem 5rem; }
+            .about-narrative h2 { font-size: 2.25rem; letter-spacing: -1px; }
+            .about-narrative p { font-size: 1.05rem; }
+            .about-narrative-grid { grid-template-columns: 1fr; gap: 1.25rem; margin-top: 3rem; }
+            .about-narrative-grid > div { padding: 2.25rem 1.75rem; }
+            .about-narrative-grid h3 { font-size: 1.4rem; }
+            .about-narrative-grid p { font-size: 1rem; }
+        }
+        @media (max-width: 480px) {
+            .about-hero h1 { font-size: 2.5rem; }
+            .about-narrative h2 { font-size: 1.9rem; }
+        }
+    </style>
 </head>
 <body style="background-color: #fff;">
 
     <global-header></global-header>
 
-    <div style="padding: 12rem 2rem 5rem; text-align: left; background-color: var(--bg-dark); color: #fff;">
-        <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;">
+    <section class="about-hero">
+        <div class="about-hero-inner">
             <div>
-                <h1 style="font-size: 5rem; font-weight: 700; letter-spacing: -2px; margin-bottom: 2rem; line-height: 1.1;">We grew up on<br><span style="color: #2b6cb0;">the lakes.</span></h1>
-                <p style="font-size: 1.35rem; color: #a0aec0; font-weight: 400; line-height: 1.6; margin-bottom: 2rem;">We didn't start in a boardroom. We started our mornings on the dock, fishing the inlets, and watching sunsets over the water. We know exactly how much value a true local expert brings to finding your perfect lakefront home.</p>
+                <h1>We grew up on<br><span>the lakes.</span></h1>
+                <p class="lede">MinnesotaLakeHomesForSale.com didn't start in a boardroom. We started our mornings on the dock, fishing the inlets, and watching sunsets over the water. We know exactly how much value a true local expert brings to finding your perfect lakefront home.</p>
+                <p class="sub">From the chain of lakes in Brainerd to the quiet coves of Lake Vermilion, MinnesotaLakeHomesForSale.com is built for one thing: connecting Minnesotans (and the ones who want to be) with the waterfront life they've been dreaming about.</p>
             </div>
-            <div style="height: 500px;">
-                <img src="https://images.unsplash.com/photo-1510334812328-97730e6c6dbe?q=80&w=800&auto=format&fit=crop" style="width: 100%; height: 100%; object-fit: cover; border-radius: 20px;" alt="Dock on a Minnesota Lake">
+            <div class="about-hero-img">
+                <img src="/assets/images/mn-dock-water-tower.webp" alt="Dock and water tower on a Minnesota lake" width="1200" height="900" fetchpriority="high">
             </div>
         </div>
-    </div>
+    </section>
 
     <!-- The Narrative -->
-    <section class="sp-section" style="padding: 4rem 2rem 8rem 2rem;">
-        <div style="max-width: 800px; margin: 0 auto;">
-            <h2 style="font-size: 3.5rem; font-weight: 700; margin-bottom: 2rem; letter-spacing: -1.5px; text-align: center; line-height: 1.1; color: #1a202c;">We Built A Better Way.</h2>
-            
-            <p style="font-size: 1.3rem; color: #4a5568; line-height: 1.8; margin-bottom: 1.5rem;">For years, we watched out-of-town buyers and local sellers get frustrated by agents who didn't understand shoreline regulations, water quality, or the true lifestyle value of a lakefront property.</p>
-            
-            <p style="font-size: 1.3rem; color: #4a5568; line-height: 1.8; margin-bottom: 3rem;">We realized that traditional brokerages forgot what makes lake living so special. So we founded <strong>MN Lake Homes</strong>. Our philosophy is incredibly simple: we treat your home like it's our home. We cut out the generic sales tactics, mastered the local market data, and built a dedicated agency that actually answers the phone when you need help.</p>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 5rem;">
-                <div style="padding: 4rem 3rem; background: #f7f9fa; border-radius: 20px;">
-                    <h3 style="font-size: 1.8rem; margin-bottom: 1rem; color: #1a202c;">Total Transparency</h3>
-                    <p style="color: #4a5568; line-height: 1.6; font-size: 1.1rem;">No hidden agendas. No empty promises. You know exactly what a property is worth and what our marketing strategy entails. We make our living by successfully closing your deal, not by over-promising.</p>
+    <section class="about-narrative">
+        <div class="about-narrative-inner">
+            <h2>We Built A Better Way.</h2>
+
+            <p>For years, we watched out-of-town buyers and local sellers get frustrated by agents who didn't understand shoreline regulations, water quality, or the true lifestyle value of a lakefront property.</p>
+
+            <p>We realized that traditional brokerages forgot what makes lake living so special. So we founded <strong>MinnesotaLakeHomesForSale.com</strong> — a dedicated platform built exclusively for Minnesota's waterfront market. Our philosophy is incredibly simple: we treat your home like it's our home. We cut out the generic sales tactics, mastered the local market data, and built a dedicated agency that actually answers the phone when you need help.</p>
+
+            <div class="about-narrative-grid">
+                <div>
+                    <h3>Total Transparency</h3>
+                    <p>No hidden agendas. No empty promises. You know exactly what a property is worth and what our marketing strategy entails. We make our living by successfully closing your deal, not by over-promising.</p>
                 </div>
-                <div style="padding: 4rem 3rem; background: #f7f9fa; border-radius: 20px;">
-                    <h3 style="font-size: 1.8rem; margin-bottom: 1rem; color: #1a202c;">Local Expertise First</h3>
-                    <p style="color: #4a5568; line-height: 1.6; font-size: 1.1rem;">When you're trying to close on a seasonal cabin, you don't have time for agents who don't know the area. We assign dedicated local specialists to every client. If you call us, we pick up. If there's an issue with an inspection, we're there in person.</p>
+                <div>
+                    <h3>Local Expertise First</h3>
+                    <p>When you're trying to close on a seasonal cabin, you don't have time for agents who don't know the area. We assign dedicated local specialists to every client. If you call us, we pick up. If there's an issue with an inspection, we're there in person.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Part of 602 Group -> Part of MN Lake Group -->
+    <!-- Part of CommonRealtor -->
     <section class="sp-dark-section" style="padding: 8rem 2rem;">
         <div class="sp-grid" style="max-width: 1200px; margin: 0 auto; align-items: center;">
             <div class="sp-media-wrapper" style="height: 600px;">
-                <img src="https://images.unsplash.com/photo-1560520653-9e0e4c89eb11?q=80&w=1600&auto=format&fit=crop" style="height: 100%; object-fit: cover; border-radius: 20px;" alt="The MN Lake Group Team">
+                <img src="/assets/images/mn-lanesboro-downtown.jpg" style="height: 100%; width: 100%; object-fit: cover; border-radius: 20px;" alt="Downtown Lanesboro, Minnesota — home community of the CommonRealtor team" loading="lazy" width="1200" height="800">
             </div>
             <div style="padding-left: 2rem;">
-                <div style="font-weight: 600; color: #2b6cb0; margin-bottom: 1rem; letter-spacing: 1px; text-transform: uppercase;">An MN Lake Group Company</div>
+                <div style="font-weight: 600; color: #2b6cb0; margin-bottom: 1rem; letter-spacing: 1px; text-transform: uppercase;">A CommonRealtor Company</div>
                 <h2 class="sp-title" style="font-size: 3.5rem; margin-bottom: 2rem;">Rooted in our community.</h2>
-                <p style="color: #a0aec0; font-size: 1.25rem; line-height: 1.8; margin-bottom: 2rem;">As a proud subsidiary of the <a href="#" style="color:#fff; text-decoration: underline;">MN Lake Group</a>, we operate alongside a powerful umbrella of real estate and property management brands. We aren't some faceless tech conglomerate located across the country. We live here, we fish these lakes, and we are part of these communities.</p>
-                <p style="color: #a0aec0; font-size: 1.25rem; line-height: 1.8; margin-bottom: 3rem;">We succeed when our local neighborhoods thrive. That's why we pioneered transparent real estate marketing—to immediately put equity back into the hands of the sellers and find the perfect retreats for our buyers.</p>
-                <a href="#" class="btn btn-outline" style="color: #fff; border-color: rgba(255,255,255,0.4); padding: 1rem 2rem;">Discover the MN Lake Group</a>
+                <p style="color: #a0aec0; font-size: 1.25rem; line-height: 1.8; margin-bottom: 2rem;"><strong style="color:#fff;">MinnesotaLakeHomesForSale.com</strong> is a proud subsidiary of <a href="/pages/public/commonrealtor.html" style="color:#fff; text-decoration: underline;">CommonRealtor</a>, the AI-powered platform reimagining real estate for agents, buyers, sellers, and renters. We aren't some faceless tech conglomerate located across the country. We live here, we fish these lakes, and we are part of these communities.</p>
+                <p style="color: #a0aec0; font-size: 1.25rem; line-height: 1.8; margin-bottom: 3rem;">We succeed when our local neighborhoods thrive. That's why MinnesotaLakeHomesForSale.com pioneered transparent real estate marketing—to immediately put equity back into the hands of the sellers and find the perfect retreats for our buyers.</p>
+                <a href="/pages/public/commonrealtor.html" class="btn btn-outline" style="color: #fff; border-color: rgba(255,255,255,0.4); padding: 1rem 2rem;">Discover CommonRealtor</a>
+            </div>
+        </div>
+    </section>
+
+<!-- Meet Our Team -->
+    <section class="sp-section" style="padding: 6rem 2rem;">
+        <div style="text-align: center; margin-bottom: 4rem;">
+            <div style="font-weight: 600; color: #2b6cb0; margin-bottom: 1rem; letter-spacing: 1px; text-transform: uppercase;">Meet the team</div>
+            <h2 style="font-size: 2.75rem; font-weight: 700; color: #1a202c; letter-spacing: -1.25px; line-height: 1.1;">The people behind<br>MinnesotaLakeHomesForSale.com</h2>
+        </div>
+
+        <div class="team-grid">
+            <div class="team-card">
+                <div class="team-card-inner">
+                    <div class="team-card-face team-card-front">
+                        <img src="https://i.pravatar.cc/600?img=60" alt="Hunter Burnside — Founder & CEO of MinnesotaLakeHomesForSale.com" class="team-photo" loading="lazy" width="600" height="600">
+                        <div class="team-info">
+                            <h3>Hunter Burnside</h3>
+                            <p>Founder &amp; CEO</p>
+                        </div>
+                        <button class="team-flip-btn" onclick="flipCard(this)" aria-label="Show bio">
+                            <span>Bio</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        </button>
+                    </div>
+                    <div class="team-card-face team-card-back">
+                        <h3>Hunter Burnside</h3>
+                        <div class="team-role">Founder &amp; CEO</div>
+                        <p>Hunter grew up fishing the inlets of Lake Minnetonka and built MinnesotaLakeHomesForSale.com to bring genuine local expertise back to Minnesota's waterfront market. He leads our vision and keeps the team anchored in what matters: the client.</p>
+                        <button class="team-flip-btn" onclick="flipCard(this)" aria-label="Back">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                            <span>Back</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="team-card">
+                <div class="team-card-inner">
+                    <div class="team-card-face team-card-front">
+                        <img src="https://i.pravatar.cc/600?img=47" alt="Emily Larson — Head of Operations at MinnesotaLakeHomesForSale.com" class="team-photo" loading="lazy" width="600" height="600">
+                        <div class="team-info">
+                            <h3>Emily Larson</h3>
+                            <p>Head of Operations</p>
+                        </div>
+                        <button class="team-flip-btn" onclick="flipCard(this)" aria-label="Show bio">
+                            <span>Bio</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        </button>
+                    </div>
+                    <div class="team-card-face team-card-back">
+                        <h3>Emily Larson</h3>
+                        <div class="team-role">Head of Operations</div>
+                        <p>Emily runs the matchmaking engine between buyers, sellers, and our specialist agents. With a decade in Brainerd-area real estate, she's the reason every client gets the right fit — not just an available one.</p>
+                        <button class="team-flip-btn" onclick="flipCard(this)" aria-label="Back">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                            <span>Back</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="team-card">
+                <div class="team-card-inner">
+                    <div class="team-card-face team-card-front">
+                        <img src="https://i.pravatar.cc/600?img=33" alt="Marcus Bell — Director of Marketing at MinnesotaLakeHomesForSale.com" class="team-photo" loading="lazy" width="600" height="600">
+                        <div class="team-info">
+                            <h3>Marcus Bell</h3>
+                            <p>Director of Marketing</p>
+                        </div>
+                        <button class="team-flip-btn" onclick="flipCard(this)" aria-label="Show bio">
+                            <span>Bio</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        </button>
+                    </div>
+                    <div class="team-card-face team-card-back">
+                        <h3>Marcus Bell</h3>
+                        <div class="team-role">Director of Marketing</div>
+                        <p>Marcus designs the campaigns that turn lake properties into must-see listings — drone tours, targeted digital reach, and the editorial touch that makes buyers fall in love before they've set foot on the dock.</p>
+                        <button class="team-flip-btn" onclick="flipCard(this)" aria-label="Back">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                            <span>Back</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -87,7 +265,7 @@
             <div class="testimonial-media">
                 <div class="media-vertical-tab">The Johnson Family</div>
                 <div class="media-image-wrapper">
-                    <img src="https://images.unsplash.com/photo-1544723048-fd4487b11306?q=80&w=1600&auto=format&fit=crop" alt="Testimonial View">
+                    <img src="/assets/images/mn-colonial-lake-home.jpg" alt="Minnesota colonial lake home client testimonial view" loading="lazy" width="800" height="600">
                 </div>
             </div>
         </div>
@@ -102,7 +280,7 @@
                 <button class="btn btn-primary" onclick="openModal()">Talk to an agent</button>
             </div>
         </div>
-        <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1600&auto=format&fit=crop" class="sp-fw-image" alt="Real Estate Consultation" style="height: 600px;">
+        <img src="/assets/images/mn-prior-lake-home.jpg" class="sp-fw-image" alt="Minnesota Prior Lake home real estate consultation" style="height: 600px;" loading="lazy" width="1600" height="900">
     </section>
 
     <!-- Global Footer -->
@@ -117,25 +295,25 @@
                 category: "First-Time Lake Home Buyer",
                 brand: "The Johnson Family",
                 quote: '"By working with MN Lake Homes, we found our dream cabin on Lake Minnetonka. They guided us through shoreline regulations and helped us negotiate a great price."',
-                image: "https://images.unsplash.com/photo-1544723048-fd4487b11306?q=80&w=800&auto=format&fit=crop"
+                image: "/assets/images/mn-colonial-lake-home.jpg"
             },
             {
                 category: "Seller near Nisswa",
                 brand: "Sarah & Mike T.",
                 quote: '"The marketing team at MN Lake Homes was phenomenal. They highlighted the best features of our property, and we had multiple offers within the first week on the market."',
-                image: "https://images.unsplash.com/photo-1560185007-cde436f6a4d0?q=80&w=800&auto=format&fit=crop"
+                image: "/assets/images/mn-white-farmhouse.jpg"
             },
             {
                 category: "Luxury Lakeside Estate",
                 brand: "The Robertsons",
                 quote: '"We appreciated their attention to detail and extensive network of luxury buyers. MN Lake Homes handled the sale of our Brainerd estate with absolute professionalism."',
-                image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop"
+                image: "/assets/images/mn-rustic-modern-lake-house.jpg"
             },
             {
                 category: "Local Investor",
                 brand: "David M.",
                 quote: '"As someone who invests in vacation rentals, the data and insights provided by MN Lake Homes are invaluable. They know exactly which lakes yield the best ROI."',
-                image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=800&auto=format&fit=crop"
+                image: "/assets/images/mn-most-expensive-listing.jpg"
             }
         ];
 
@@ -173,6 +351,11 @@
         function nextModalStep(step) {
             document.querySelectorAll('.modal-step').forEach(el => el.classList.remove('active'));
             document.getElementById('modal-step-' + step).classList.add('active');
+        }
+
+        function flipCard(btn) {
+            const card = btn.closest('.team-card');
+            if (card) card.classList.toggle('is-flipped');
         }
     </script>
 </body>

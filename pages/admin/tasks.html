@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
+        .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        .admin-side { background: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+        .admin-side h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 2.5rem; padding-left: 0.5rem; color: #fff; margin-top: 0; }
+        .admin-side h1 span { color: #1d6df2; }
+        .side-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; margin-bottom: 0.75rem; padding-left: 0.5rem; font-weight: 700; margin-top: 0; }
+        .side-nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+        .side-link { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #a0aec0; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.15s; }
+        .side-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .side-link.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+        .side-signout { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #fc8181; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-top: 1rem; transition: all 0.15s; }
+        .side-signout:hover { background: rgba(252,129,129,0.1); }
+        .admin-main { padding: 3rem 3.5rem; background: #f7f9fa; overflow-y: auto; }
+
+        .task-panel { background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow: hidden; max-width: 860px; }
+        .task-panel-header { padding: 1.5rem 2rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; }
+        .task-panel-title { font-size: 1rem; font-weight: 700; color: #1a202c; }
+
+        .add-task-bar { display: flex; gap: 0.75rem; padding: 1.25rem 2rem; border-bottom: 1px solid #edf2f7; background: #fafbfc; }
+        .add-task-input { flex: 1; padding: 0.7rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; font-family: inherit; outline: none; color: #1a202c; background: #fff; transition: border-color 0.15s; }
+        .add-task-input:focus { border-color: #1d6df2; }
+        .add-task-btn { padding: 0.7rem 1.4rem; background: #1d6df2; color: #fff; border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; transition: background 0.15s; }
+        .add-task-btn:hover { background: #155bc8; }
+        .add-task-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .filter-bar { display: flex; gap: 0.5rem; padding: 1rem 2rem; border-bottom: 1px solid #edf2f7; }
+        .filter-pill { padding: 0.35rem 0.85rem; border-radius: 99px; border: 1px solid #e2e8f0; background: #fff; font-size: 0.8rem; font-weight: 600; color: #4a5568; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+        .filter-pill:hover { border-color: #1d6df2; color: #1d6df2; }
+        .filter-pill.active { background: #1d6df2; border-color: #1d6df2; color: #fff; }
+
+        .task-list { list-style: none; margin: 0; padding: 0; }
+        .task-item { display: flex; align-items: flex-start; gap: 0.9rem; padding: 1rem 2rem; border-bottom: 1px solid #f7f9fa; transition: background 0.1s; }
+        .task-item:last-child { border-bottom: none; }
+        .task-item:hover { background: #f7f9fa; }
+        .task-item.done .task-note { text-decoration: line-through; color: #a0aec0; }
+
+        .task-check { width: 20px; height: 20px; border-radius: 6px; border: 2px solid #e2e8f0; background: #fff; cursor: pointer; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+        .task-check:hover { border-color: #1d6df2; }
+        .task-check.checked { background: #1d6df2; border-color: #1d6df2; }
+        .task-check svg { display: none; }
+        .task-check.checked svg { display: block; }
+
+        .task-body { flex: 1; min-width: 0; }
+        .task-note { font-size: 0.9rem; color: #1a202c; line-height: 1.5; word-break: break-word; }
+        .task-meta { font-size: 0.75rem; color: #a0aec0; margin-top: 0.3rem; }
+
+        .task-delete { background: none; border: none; cursor: pointer; padding: 0.25rem; border-radius: 4px; color: #cbd5e0; transition: color 0.15s; flex-shrink: 0; line-height: 1; }
+        .task-delete:hover { color: #fc8181; }
+
+        .task-empty { padding: 4rem 2rem; text-align: center; color: #a0aec0; font-size: 0.9rem; }
+        .task-count-badge { background: #edf2f7; color: #4a5568; font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 99px; }
+        .task-count-badge.active { background: #1d6df2; color: #fff; }
+    </style>
+</head>
+<body>
+<div class="admin-wrap">
+    <!-- Sidebar -->
+    <aside class="admin-side">
+        <h1>MNLH <span>ADMIN</span></h1>
+        <p class="side-label">Platform Operations</p>
+        <nav class="side-nav">
+            <a href="dashboard.html"  class="side-link">Dashboard</a>
+            <a href="agents.html"     class="side-link">Agents Directory</a>
+            <a href="leads.html"      class="side-link">Central Leads</a>
+            <a href="blog.html"       class="side-link">Blog & Content</a>
+            <a href="users.html"      class="side-link">Users Management</a>
+            <a href="marketing.html"  class="side-link">Marketing</a>
+            <a href="tasks.html"      class="side-link active">Tasks</a>
+        </nav>
+        <a href="/index.html" target="_blank" style="display:block;padding:0.75rem 1rem;border-radius:8px;color:#a0aec0;text-decoration:none;font-size:0.85rem;font-weight:500;margin-top:0.5rem;border:1px solid rgba(255,255,255,0.08);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">↗ View Live Site</a>
+        <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>{window.location.href='/index.html';})" class="side-signout">Sign Out</a>
+    </aside>
+
+    <!-- Main -->
+    <main class="admin-main">
+        <header style="margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+                <h2 style="font-size: 1.8rem; font-weight: 800; letter-spacing: -0.75px; margin: 0 0 0.25rem;">Tasks</h2>
+                <p style="color: #718096; font-size: 0.9rem; margin: 0;">Track internal platform work and follow-up items.</p>
+            </div>
+            <span id="summary-text" style="font-size:0.85rem;color:#a0aec0;font-weight:500;"></span>
+        </header>
+
+        <div class="task-panel">
+            <!-- Add task -->
+            <div class="add-task-bar">
+                <input id="new-task-input" class="add-task-input" type="text" placeholder="Add a new task…" maxlength="500"
+                    onkeydown="if(event.key==='Enter') addTask()">
+                <button id="add-btn" class="add-task-btn" onclick="addTask()">Add Task</button>
+            </div>
+
+            <!-- Filter pills -->
+            <div class="filter-bar">
+                <button class="filter-pill active" onclick="setFilter('all',this)">All <span id="cnt-all" class="task-count-badge active"></span></button>
+                <button class="filter-pill" onclick="setFilter('pending',this)">Pending <span id="cnt-pending" class="task-count-badge"></span></button>
+                <button class="filter-pill" onclick="setFilter('done',this)">Completed <span id="cnt-done" class="task-count-badge"></span></button>
+            </div>
+
+            <!-- Task list -->
+            <ul class="task-list" id="task-list">
+                <li class="task-empty" id="loading-msg">Loading tasks…</li>
+            </ul>
+        </div>
+    </main>
+</div>
+
+<script>
+    let allTasks = [];
+    let activeFilter = 'all';
+
+    function fmt(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function buildItem(t) {
+        const li = document.createElement('li');
+        li.className = 'task-item' + (t.is_completed ? ' done' : '');
+        li.dataset.id = t.id;
+        li.innerHTML = `
+            <div class="task-check ${t.is_completed ? 'checked' : ''}" onclick="toggle('${t.id}')">
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5,6 4.5,9 10.5,3"/></svg>
+            </div>
+            <div class="task-body">
+                <div class="task-note">${escHtml(t.note)}</div>
+                <div class="task-meta">${t.is_completed ? 'Completed ' + fmt(t.completed_at) : 'Added ' + fmt(t.created_at)}</div>
+            </div>
+            <button class="task-delete" title="Delete" onclick="deleteTask('${t.id}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            </button>`;
+        return li;
+    }
+
+    function escHtml(s) {
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function updateCounts() {
+        const pending = allTasks.filter(t => !t.is_completed).length;
+        const done    = allTasks.filter(t =>  t.is_completed).length;
+        document.getElementById('cnt-all').textContent     = allTasks.length;
+        document.getElementById('cnt-pending').textContent = pending;
+        document.getElementById('cnt-done').textContent    = done;
+        const s = `${pending} pending · ${done} completed`;
+        document.getElementById('summary-text').textContent = s;
+    }
+
+    function renderList() {
+        const list = document.getElementById('task-list');
+        let visible = allTasks;
+        if (activeFilter === 'pending') visible = allTasks.filter(t => !t.is_completed);
+        if (activeFilter === 'done')    visible = allTasks.filter(t =>  t.is_completed);
+
+        if (!visible.length) {
+            const msg = activeFilter === 'done' ? 'No completed tasks yet.' :
+                        activeFilter === 'pending' ? 'Nothing pending — all clear!' :
+                        'No tasks yet. Add one above.';
+            list.innerHTML = `<li class="task-empty">${msg}</li>`;
+            return;
+        }
+        list.innerHTML = '';
+        visible.forEach(t => list.appendChild(buildItem(t)));
+        updateCounts();
+    }
+
+    function setFilter(f, btn) {
+        activeFilter = f;
+        document.querySelectorAll('.filter-pill').forEach(b => {
+            b.classList.remove('active');
+            b.querySelector('.task-count-badge')?.classList.remove('active');
+        });
+        btn.classList.add('active');
+        btn.querySelector('.task-count-badge')?.classList.add('active');
+        renderList();
+    }
+
+    async function loadTasks() {
+        try {
+            const res = await fetch('/api/tasks');
+            if (res.status === 401 || res.status === 403) { window.location.href = '/index.html'; return; }
+            if (!res.ok) throw new Error();
+            allTasks = await res.json();
+            updateCounts();
+            renderList();
+        } catch {
+            document.getElementById('task-list').innerHTML = '<li class="task-empty">Failed to load tasks.</li>';
+        }
+    }
+
+    async function addTask() {
+        const input = document.getElementById('new-task-input');
+        const note  = input.value.trim();
+        if (!note) { input.focus(); return; }
+        const btn = document.getElementById('add-btn');
+        btn.disabled = true;
+        try {
+            const res = await fetch('/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ note })
+            });
+            if (!res.ok) throw new Error();
+            const task = await res.json();
+            allTasks.unshift(task);
+            input.value = '';
+            updateCounts();
+            renderList();
+        } catch {
+            alert('Failed to add task. Please try again.');
+        } finally {
+            btn.disabled = false;
+            input.focus();
+        }
+    }
+
+    async function toggle(id) {
+        try {
+            const res = await fetch(`/api/tasks/${id}`, { method: 'PATCH' });
+            if (!res.ok) throw new Error();
+            const updated = await res.json();
+            const idx = allTasks.findIndex(t => t.id === id);
+            if (idx !== -1) allTasks[idx] = updated;
+            // re-sort: pending first
+            allTasks.sort((a,b) => a.is_completed - b.is_completed || new Date(b.created_at) - new Date(a.created_at));
+            updateCounts();
+            renderList();
+        } catch {
+            alert('Failed to update task.');
+        }
+    }
+
+    async function deleteTask(id) {
+        if (!confirm('Delete this task?')) return;
+        try {
+            const res = await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error();
+            allTasks = allTasks.filter(t => t.id !== id);
+            updateCounts();
+            renderList();
+        } catch {
+            alert('Failed to delete task.');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadTasks);
+</script>
+</body>
+</html>

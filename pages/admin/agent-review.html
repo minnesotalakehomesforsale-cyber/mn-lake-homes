@@ -60,6 +60,37 @@
         .btn-suspend   { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
         .btn-reactivate{ background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; }
         .action-result { display: none; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; margin-top: 0.75rem; text-align: center; }
+
+        /* Tab system */
+        .page-tabs { display: flex; gap: 0.25rem; margin-bottom: 2rem; border-bottom: 2px solid #edf2f7; padding-bottom: 0; }
+        .page-tab { padding: 0.75rem 1.5rem; font-size: 0.9rem; font-weight: 600; color: #718096; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; font-family: inherit; transition: all 0.15s; }
+        .page-tab:hover { color: #1a202c; }
+        .page-tab.active { color: #1d6df2; border-bottom-color: #1d6df2; }
+        .page-tab .tab-count { background: #1d6df2; color: #fff; border-radius: 20px; padding: 0.1rem 0.5rem; font-size: 0.7rem; font-weight: 700; margin-left: 0.4rem; }
+
+        /* Lead tracker */
+        .lead-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+        .lead-stat { background: #fff; border: 1px solid #edf2f7; border-radius: 10px; padding: 1.25rem 1.5rem; }
+        .lead-stat .ls-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 0.4rem; }
+        .lead-stat .ls-value { font-size: 2rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; }
+        .lead-filter { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+        .lf-chip { padding: 0.35rem 0.9rem; border: 1px solid #e2e8f0; border-radius: 20px; background: #fff; font-size: 0.8rem; font-weight: 600; color: #718096; cursor: pointer; transition: all 0.15s; }
+        .lf-chip:hover { border-color: #1d6df2; color: #1d6df2; }
+        .lf-chip.active { background: #1d6df2; color: #fff; border-color: #1d6df2; }
+        .lead-row { background: #fff; border: 1px solid #edf2f7; border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 0.75rem; cursor: pointer; transition: box-shadow 0.15s; }
+        .lead-row:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.07); }
+        .lbadge { display: inline-block; padding: 0.2rem 0.55rem; border-radius: 5px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; }
+        .lb-buyer    { background:#f0fff4; color:#2f855a; }
+        .lb-seller   { background:#faf5ff; color:#6b46c1; }
+        .lb-agent_inquiry { background:#fff5f5; color:#c53030; }
+        .lb-general_contact,.lb-property_question,.lb-market_report { background:#edf2f7; color:#4a5568; }
+        .ls-new        { background:#e6fffa; color:#319795; border:1px solid #b2f5ea; }
+        .ls-unassigned { background:#fffaf0; color:#dd6b20; border:1px solid #feebc8; }
+        .ls-assigned   { background:#ebf8ff; color:#2b6cb0; border:1px solid #bee3f8; }
+        .ls-in_progress{ background:#ebf4ff; color:#4c51bf; border:1px solid #c3dafe; }
+        .ls-contacted  { background:#f0fff4; color:#276749; border:1px solid #c6f6d5; }
+        .ls-closed     { background:#edf2f7; color:#4a5568; }
+        .ls-archived   { background:#fff5f5; color:#9b2c2c; }
     </style>
 </head>
 <body>
@@ -72,8 +103,10 @@
             <a href="dashboard.html"  class="side-link">Dashboard</a>
             <a href="agents.html"    class="side-link active">Agents Directory</a>
             <a href="leads.html"     class="side-link">Central Leads</a>
+            <a href="blog.html"      class="side-link">Blog & Content</a>
             <a href="users.html"     class="side-link">Users Management</a>
             <a href="marketing.html" class="side-link">Marketing</a>
+            <a href="tasks.html"     class="side-link">Tasks</a>
         </nav>
         <a href="/index.html" target="_blank" style="display:block;padding:0.75rem 1rem;border-radius:8px;color:#a0aec0;text-decoration:none;font-size:0.85rem;font-weight:500;margin-top:0.5rem;border:1px solid rgba(255,255,255,0.08);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">↗ View Live Site</a>
         <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>{window.location.href='/index.html';})" class="side-signout">Sign Out</a>
@@ -92,6 +125,16 @@
             <div id="status-badge-container"></div>
         </div>
 
+        <!-- Page Tabs -->
+        <div class="page-tabs">
+            <button class="page-tab active" id="ptab-profile" onclick="switchPageTab('profile')">Account &amp; Profile</button>
+            <button class="page-tab" id="ptab-leads" onclick="switchPageTab('leads')">
+                Lead Tracker <span class="tab-count" id="lead-tab-count" style="display:none;">0</span>
+            </button>
+        </div>
+
+        <!-- TAB: Account & Profile -->
+        <div id="tab-content-profile">
         <div class="layout">
             <!-- Left: Account + Profile panels -->
             <div>
@@ -265,6 +308,36 @@
                 </div>
             </div>
         </div>
+        </div><!-- end tab-content-profile -->
+
+        <!-- TAB: Lead Tracker -->
+        <div id="tab-content-leads" style="display:none;">
+
+            <!-- Stat Cards -->
+            <div class="lead-stats" id="lead-stats">
+                <div class="lead-stat"><div class="ls-label">Total Leads</div><div class="ls-value" id="lst-total">—</div></div>
+                <div class="lead-stat"><div class="ls-label">Active</div><div class="ls-value" id="lst-active" style="color:#2b6cb0;">—</div></div>
+                <div class="lead-stat"><div class="ls-label">In Progress</div><div class="ls-value" id="lst-progress" style="color:#4c51bf;">—</div></div>
+                <div class="lead-stat"><div class="ls-label">Closed</div><div class="ls-value" id="lst-closed" style="color:#718096;">—</div></div>
+            </div>
+
+            <!-- Filter chips -->
+            <div class="lead-filter">
+                <button class="lf-chip active" onclick="filterAgentLeads('all',this)">All</button>
+                <button class="lf-chip" onclick="filterAgentLeads('new',this)">New</button>
+                <button class="lf-chip" onclick="filterAgentLeads('assigned',this)">Assigned</button>
+                <button class="lf-chip" onclick="filterAgentLeads('in_progress',this)">In Progress</button>
+                <button class="lf-chip" onclick="filterAgentLeads('contacted',this)">Contacted</button>
+                <button class="lf-chip" onclick="filterAgentLeads('closed',this)">Closed</button>
+                <button class="lf-chip" onclick="filterAgentLeads('archived',this)">Archived</button>
+            </div>
+
+            <!-- Leads list -->
+            <div id="agent-leads-list">
+                <div style="text-align:center;padding:3rem;color:#a0aec0;">Loading leads...</div>
+            </div>
+        </div><!-- end tab-content-leads -->
+
     </main>
 </div>
 
@@ -496,6 +569,103 @@
         const el = document.getElementById(id);
         el.style.display = 'flex';
         setTimeout(() => { el.style.display = 'none'; }, 2500);
+    }
+
+    // ── Page Tab Switching ───────────────────────────────────────────────────
+    function switchPageTab(tab) {
+        document.getElementById('tab-content-profile').style.display = tab === 'profile' ? 'block' : 'none';
+        document.getElementById('tab-content-leads').style.display   = tab === 'leads'   ? 'block' : 'none';
+        document.getElementById('ptab-profile').classList.toggle('active', tab === 'profile');
+        document.getElementById('ptab-leads').classList.toggle('active',   tab === 'leads');
+        if (tab === 'leads' && agentLeadsAll === null) loadAgentLeads();
+    }
+
+    // ── Agent Lead Tracker ───────────────────────────────────────────────────
+    let agentLeadsAll = null;
+    let agentLeadsFilter = 'all';
+
+    async function loadAgentLeads() {
+        document.getElementById('agent-leads-list').innerHTML =
+            '<div style="text-align:center;padding:3rem;color:#a0aec0;">Loading...</div>';
+        try {
+            const res = await fetch(`/api/admin/${agentId}/leads`);
+            if (!res.ok) throw new Error();
+            agentLeadsAll = await res.json();
+            updateLeadStats(agentLeadsAll);
+            renderAgentLeads(agentLeadsAll);
+            // Update tab badge
+            const badge = document.getElementById('lead-tab-count');
+            const active = agentLeadsAll.filter(l => !['closed','archived'].includes(l.status)).length;
+            badge.textContent = agentLeadsAll.length;
+            badge.style.display = 'inline-block';
+        } catch(e) {
+            document.getElementById('agent-leads-list').innerHTML =
+                '<div style="text-align:center;padding:3rem;color:#fc8181;">Failed to load leads.</div>';
+        }
+    }
+
+    function updateLeadStats(leads) {
+        document.getElementById('lst-total').textContent   = leads.length;
+        document.getElementById('lst-active').textContent  = leads.filter(l => ['new','assigned','unassigned'].includes(l.status)).length;
+        document.getElementById('lst-progress').textContent= leads.filter(l => ['in_progress','contacted'].includes(l.status)).length;
+        document.getElementById('lst-closed').textContent  = leads.filter(l => ['closed','archived'].includes(l.status)).length;
+    }
+
+    function filterAgentLeads(status, el) {
+        agentLeadsFilter = status;
+        document.querySelectorAll('.lf-chip').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        const filtered = status === 'all' ? agentLeadsAll : agentLeadsAll.filter(l => l.status === status);
+        renderAgentLeads(filtered);
+    }
+
+    function renderAgentLeads(leads) {
+        const container = document.getElementById('agent-leads-list');
+        if (!leads || leads.length === 0) {
+            container.innerHTML = `
+                <div style="background:#fff;border-radius:12px;border:1px solid #edf2f7;padding:4rem 2rem;text-align:center;">
+                    <div style="font-size:1.5rem;margin-bottom:0.75rem;">📭</div>
+                    <p style="color:#718096;font-weight:500;">No leads in this category.</p>
+                </div>`;
+            return;
+        }
+        container.innerHTML = leads.map(l => {
+            const date   = new Date(l.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+            const budget = (l.budget_min || l.budget_max)
+                ? `$${Number(l.budget_min||0).toLocaleString()} – $${Number(l.budget_max||0).toLocaleString()}`
+                : null;
+            const pills = [
+                l.email           ? `<span style="color:#2b6cb0;">${l.email}</span>` : null,
+                l.phone           ? `<span>${l.phone}</span>` : null,
+                l.location_text   ? `<span>📍 ${l.location_text}</span>` : null,
+                budget            ? `<span>💰 ${budget}</span>` : null,
+                l.timeline_text   ? `<span>⏱ ${l.timeline_text}</span>` : null,
+                l.contact_preference ? `<span>Prefers: ${l.contact_preference}</span>` : null,
+            ].filter(Boolean).join('<span style="color:#e2e8f0;margin:0 0.25rem;">|</span>');
+
+            return `
+                <div class="lead-row" onclick="window.location.href='lead-review.html?id=${l.id}'">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.6rem;">
+                        <div>
+                            <div style="font-size:1rem;font-weight:800;color:#1a202c;margin-bottom:0.3rem;">${l.name}</div>
+                            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                                <span class="lbadge lb-${l.type}">${(l.type||'general').replace(/_/g,' ')}</span>
+                                <span class="lbadge ls-${l.status}">${(l.status||'').replace(/_/g,' ')}</span>
+                                ${l.source_page_title ? `<span style="font-size:0.68rem;color:#a0aec0;font-weight:600;align-self:center;">via ${l.source_page_title}</span>` : ''}
+                            </div>
+                        </div>
+                        <span style="font-size:0.78rem;color:#a0aec0;font-weight:600;white-space:nowrap;margin-left:1rem;">${date}</span>
+                    </div>
+                    ${pills ? `<div style="font-size:0.8rem;color:#718096;font-weight:500;display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.75rem;">${pills}</div>` : ''}
+                    ${l.message ? `
+                        <div style="background:#f7f9fa;border-left:3px solid #e2e8f0;border-radius:0 6px 6px 0;padding:0.75rem 1rem;">
+                            <p style="font-size:0.85rem;color:#4a5568;line-height:1.5;margin:0;">"${l.message}"</p>
+                        </div>` : ''}
+                    <div style="text-align:right;margin-top:0.75rem;">
+                        <span style="font-size:0.78rem;color:#1d6df2;font-weight:600;">Open full record →</span>
+                    </div>
+                </div>`;
+        }).join('');
     }
 
     document.addEventListener('DOMContentLoaded', init);

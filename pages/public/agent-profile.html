@@ -15,10 +15,54 @@
 
     <global-header></global-header>
 
+    <!-- Back-to-agents link (sits on top of hero background) -->
+    <div class="agent-back-wrap">
+        <a href="agents.html" class="agent-back-link" aria-label="Back to all agents">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            All agents
+        </a>
+    </div>
+
     <!-- Dark centered hero — exact same as blog.html -->
     <div style="padding: 12rem 2rem 5rem; text-align: center; background-color: var(--bg-dark); color: #fff;" id="profile-hero">
         <div style="color: #a0aec0; font-size: 1.1rem;">Loading profile...</div>
     </div>
+
+    <style>
+        .agent-back-wrap {
+            position: absolute;
+            top: 6.5rem;
+            left: 2rem;
+            z-index: 10;
+        }
+        .agent-back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #a0aec0;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            padding: 0.5rem 0.9rem;
+            border-radius: 99px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.04);
+            transition: color 0.2s, background 0.2s, border-color 0.2s, transform 0.2s;
+        }
+        .agent-back-link:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.25);
+            transform: translateX(-2px);
+        }
+        @media (max-width: 600px) {
+            .agent-back-wrap { top: 5.5rem; left: 1rem; }
+            .agent-back-link { font-size: 0.82rem; padding: 0.4rem 0.75rem; }
+        }
+    </style>
 
     <!-- Main content — white bg, matches rest of site -->
     <section style="background-color: #f7f9fa; padding: 4rem 0 8rem;">
@@ -62,10 +106,12 @@
             const specialties = Array.isArray(agent.specialties) ? agent.specialties : (JSON.parse(agent.specialties || '[]'));
 
             // Hero — matches blog.html dark centered style
+            const initials = agent.display_name.split(' ').map(n => n[0]).join('');
+            const avatarHtml = agent.profile_photo_url
+                ? `<img src="${agent.profile_photo_url}" alt="${agent.display_name}" style="display:inline-block; width:120px; height:120px; border-radius:50%; object-fit:cover; margin-bottom:2rem; border:3px solid rgba(255,255,255,0.1); box-shadow:0 15px 40px rgba(0,0,0,0.3);">`
+                : `<div style="display:inline-block; background: var(--accent-blue); color:#fff; width:120px; height:120px; border-radius:50%; line-height:120px; font-size:2.75rem; font-weight:800; margin-bottom:2rem;">${initials}</div>`;
             hero.innerHTML = `
-                <div style="display:inline-block; background: var(--accent-blue); color:#fff; width:100px; height:100px; border-radius:50%; line-height:100px; font-size:2.5rem; font-weight:800; margin-bottom:2rem;">
-                    ${agent.display_name.split(' ').map(n => n[0]).join('')}
-                </div>
+                ${avatarHtml}
                 <h1 style="font-size:3.5rem; font-weight:700; letter-spacing:-2px; margin-bottom:0.75rem;">${agent.display_name}</h1>
                 <p style="font-size:1.25rem; color:#a0aec0; margin-bottom:1.5rem;">${agent.brokerage_name || 'Independent Realtor'} &nbsp;·&nbsp; ${agent.city || 'Minnesota'}</p>
                 <span style="display:inline-block; background:var(--accent-blue); color:#fff; padding:0.4rem 1.2rem; border-radius:99px; font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;">${agent.membership_badge || 'Agent'}</span>

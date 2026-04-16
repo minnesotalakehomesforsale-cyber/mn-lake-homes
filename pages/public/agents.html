@@ -2,13 +2,58 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agent Directory | MN Lake Homes</title>
-    <meta name="description" content="Browse Minnesota's top lake home specialists. Find a verified agent who knows your lake, your market, and your goals.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+
+    <title>Find a Minnesota Lake Home Agent | Verified Waterfront Specialists</title>
+    <meta name="description" content="Browse Minnesota's top verified lake home agents. Match with a local waterfront specialist who knows your lake, your market, and your goals — from Lake Minnetonka to Lake Vermilion.">
+    <meta name="keywords" content="minnesota lake home agents, lake home realtor minnesota, waterfront real estate agent, lake minnetonka agent, brainerd realtor, lake vermilion agent, find a lake home realtor, minnesota waterfront specialist">
+    <meta name="author" content="MinnesotaLakeHomesForSale.com">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/pages/public/agents.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MinnesotaLakeHomesForSale.com">
+    <meta property="og:url" content="https://minnesotalakehomesforsale.com/pages/public/agents.html">
+    <meta property="og:title" content="Find a Minnesota Lake Home Agent | Verified Waterfront Specialists">
+    <meta property="og:description" content="Meet the verified local experts who know Minnesota's lakes better than anyone else. Match with a lakefront specialist for your exact market.">
+    <meta property="og:image" content="https://minnesotalakehomesforsale.com/assets/images/mn-stillwater-aerial.webp">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Find a Minnesota Lake Home Agent | Verified Specialists">
+    <meta name="twitter:description" content="Meet the verified local experts who know Minnesota's lakes better than anyone else.">
+    <meta name="twitter:image" content="https://minnesotalakehomesforsale.com/assets/images/mn-stillwater-aerial.webp">
+
     <link rel="stylesheet" href="../../styles/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Structured data: Directory listing of real estate agents -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "name": "Minnesota Lake Home Agent Directory",
+      "url": "https://minnesotalakehomesforsale.com/pages/public/agents.html",
+      "description": "Verified Minnesota lakefront real estate agents, organized by service area and specialty.",
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "MinnesotaLakeHomesForSale.com",
+        "url": "https://minnesotalakehomesforsale.com/"
+      },
+      "about": {
+        "@type": "RealEstateAgent",
+        "name": "MinnesotaLakeHomesForSale.com",
+        "areaServed": { "@type": "State", "name": "Minnesota" }
+      }
+    }
+    </script>
     <style>
         .blog-index-header {
             padding: 12rem 2rem 5rem;
@@ -21,6 +66,7 @@
             font-weight: 700;
             letter-spacing: -2px;
             margin-bottom: 1.5rem;
+            line-height: 1.05;
         }
         .blog-index-subtitle {
             font-size: 1.25rem;
@@ -29,6 +75,48 @@
             max-width: 650px;
             margin: 0 auto;
             line-height: 1.6;
+        }
+        .agents-bottom-cta {
+            padding: 8rem 2rem;
+            background-color: var(--bg-dark);
+            color: #fff;
+            text-align: center;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .agents-bottom-cta-inner { max-width: 700px; margin: 0 auto; }
+        .agents-bottom-cta h2 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            letter-spacing: -1px;
+            line-height: 1.1;
+        }
+        .agents-bottom-cta p {
+            font-size: 1.25rem;
+            color: #a0aec0;
+            margin-bottom: 3rem;
+            line-height: 1.6;
+        }
+        .agents-bottom-cta .btn {
+            padding: 1.25rem 3rem;
+            font-size: 1.15rem;
+            border: none;
+            box-shadow: 0 10px 25px rgba(66,153,225,0.3);
+        }
+
+        @media (max-width: 900px) {
+            .blog-index-header { padding: 8rem 1.25rem 3.5rem; }
+            .blog-index-title { font-size: 3rem; letter-spacing: -1.25px; }
+            .blog-index-subtitle { font-size: 1.05rem; }
+            .agents-bottom-cta { padding: 5rem 1.25rem; }
+            .agents-bottom-cta h2 { font-size: 2.5rem; }
+            .agents-bottom-cta h2 br { display: none; }
+            .agents-bottom-cta p { font-size: 1rem; margin-bottom: 2rem; }
+            .agents-bottom-cta .btn { width: 100%; padding: 1.1rem 1.5rem; font-size: 1rem; }
+        }
+        @media (max-width: 480px) {
+            .blog-index-title { font-size: 2.25rem; letter-spacing: -1px; }
+            .agents-bottom-cta h2 { font-size: 2rem; }
         }
     </style>
     <script src="../../components/components.js" defer></script>
@@ -43,8 +131,8 @@
         <p class="blog-index-subtitle">Meet the local experts who know Minnesota's lakes better than anyone else.</p>
     </div>
 
-    <!-- Agent Grid: exact same classes as homepage Featured Agents section -->
-    <section style="background-color: #f7f9fa; padding: 6rem 0;">
+    <!-- Agent Grid -->
+    <section style="background-color: #f7f9fa; padding: 5rem 0 6rem;">
         <div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem;">
             <div id="agent-directory-grid" class="agents-grid" style="padding-top: 0;">
                 <!-- JS injects .agent-card elements here -->
@@ -52,74 +140,55 @@
         </div>
     </section>
 
+    <!-- Bottom CTA -->
+    <section class="agents-bottom-cta">
+        <div class="agents-bottom-cta-inner">
+            <h2>Can't find the right fit?<br>We'll find them for you.</h2>
+            <p>Tell us what you're looking for and our team will personally match you with the best local specialist for your goals, lake, and budget.</p>
+            <button onclick="openForm('agent')" class="btn btn-primary">Find my perfect agent</button>
+        </div>
+    </section>
+
     <global-footer></global-footer>
     <lead-modal></lead-modal>
 
     <script>
+        function buildCard(agent) {
+            const photoUrl = agent.profile_photo_url ||
+                '/assets/images/mn-stillwater-aerial.webp';
+            const title = agent.membership_badge || 'Lake Specialist';
+            const fullBio = agent.bio || 'A dedicated Minnesota lake home specialist ready to help you find your perfect waterfront property.';
+            const shortBio = fullBio.length > 120 ? fullBio.slice(0, 120).trimEnd() + '…' : fullBio;
+
+            const card = document.createElement('a');
+            card.href = `agent-profile.html?slug=${agent.slug}`;
+            card.style.cssText = 'text-decoration:none;color:inherit;display:block;';
+            card.className = 'agent-link-wrapper';
+            card.innerHTML = `
+                <div class="agent-card">
+                    <img src="${photoUrl}" alt="${agent.display_name} — Minnesota lake home specialist" class="agent-image" loading="lazy" width="600" height="600">
+                    <div class="agent-info">
+                        <h3 class="agent-name">${agent.display_name}</h3>
+                        <div class="agent-title">${title.toUpperCase()}</div>
+                        <p class="agent-bio">${shortBio}</p>
+                    </div>
+                </div>`;
+            return card;
+        }
+
         async function renderDirectory() {
             const grid = document.getElementById('agent-directory-grid');
-
             try {
                 const res = await fetch('/api/agents/public');
-
-                if (!res.ok) {
-                    grid.innerHTML = '<p style="color:#c53030; padding: 2rem;">Could not load agents. Please try again later.</p>';
-                    return;
-                }
-
+                if (!res.ok) { grid.innerHTML = '<p style="color:#c53030;padding:2rem;">Could not load agents. Please try again later.</p>'; return; }
                 const agents = await res.json();
-
-                if (agents.length === 0) {
-                    grid.innerHTML = '<p style="color:#718096; padding: 2rem;">No agents are currently listed. Check back soon.</p>';
-                    return;
-                }
-
-                agents.forEach(agent => {
-                    const photoUrl = agent.profile_photo_url ||
-                        'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=800&auto=format&fit=crop';
-
-                    const title = agent.membership_badge || 'Lake Specialist';
-
-                    const card = document.createElement('a');
-                    card.href = `agent-profile.html?slug=${agent.slug}`;
-                    card.style.textDecoration = 'none';
-                    card.style.color = 'inherit';
-                    card.style.display = 'block';
-                    card.className = 'agent-link-wrapper';
-
-                    const fullBio = agent.bio || 'A dedicated Minnesota lake home specialist ready to help you find your perfect waterfront property.';
-                    const shortBio = fullBio.length > 120 ? fullBio.slice(0, 120).trimEnd() + '…' : fullBio;
-
-                    card.innerHTML = `
-                        <div class="agent-card">
-                            <img src="${photoUrl}" alt="${agent.display_name}" class="agent-image">
-                            <div class="agent-info">
-                                <h3 class="agent-name">${agent.display_name}</h3>
-                                <div class="agent-title">${title.toUpperCase()}</div>
-                                <p class="agent-bio">${shortBio}</p>
-                            </div>
-                        </div>
-                    `;
-
-                    grid.appendChild(card);
-                });
-
+                if (agents.length === 0) { grid.innerHTML = '<p style="color:#718096;padding:2rem;">No agents are currently listed. Check back soon.</p>'; return; }
+                grid.innerHTML = '';
+                agents.forEach(a => grid.appendChild(buildCard(a)));
             } catch (err) {
                 console.error('Directory render error:', err);
-                grid.innerHTML = '<p style="color:#c53030; padding: 2rem;">Failed to load agent directory.</p>';
+                grid.innerHTML = '<p style="color:#c53030;padding:2rem;">Failed to load agent directory.</p>';
             }
-        }
-
-        function openModal() {
-            document.getElementById('lead-modal').classList.add('active');
-            nextModalStep(1);
-        }
-        function closeModal() {
-            document.getElementById('lead-modal').classList.remove('active');
-        }
-        function nextModalStep(step) {
-            document.querySelectorAll('.modal-step').forEach(el => el.classList.remove('active'));
-            document.getElementById('modal-step-' + step).classList.add('active');
         }
 
         document.addEventListener('DOMContentLoaded', renderDirectory);

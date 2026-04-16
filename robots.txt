@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /pages/admin/
+Disallow: /pages/agent/
+Disallow: /api/
+
+Sitemap: https://minnesotalakehomesforsale.com/sitemap.xml
