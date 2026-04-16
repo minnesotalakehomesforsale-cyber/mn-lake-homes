@@ -1,6 +1,7 @@
 const pool = require('../database/pool');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const email = require('../services/email');
 
 /**
  * POST /api/auth/waitlist
@@ -54,6 +55,9 @@ const waitlist = async (req, res) => {
              VALUES ($1, $2, $3, $4, $5, $6, 'client', 'pending')`,
             [first_name, last_name, `${first_name} ${last_name}`, email, phone, unusable]
         );
+
+        // Fire-and-forget welcome email
+        email.sendWelcome({ email, first_name, full_name: `${first_name} ${last_name}` });
 
         res.status(201).json({ success: true });
     } catch (err) {
@@ -132,6 +136,9 @@ const register = async (req, res) => {
 
         const token = jwt.sign({ userId, role: 'agent' }, process.env.JWT_SECRET, { expiresIn: '24h' });
         setCookie(res, token);
+
+        // Fire-and-forget agent welcome email
+        email.sendAgentWelcome({ email, display_name });
 
         res.status(201).json({ success: true, role: 'agent', display_name });
 

@@ -1,8 +1,9 @@
 const pool = require('../database/pool');
+const emailService = require('../services/email');
 
 const createLead = async (req, res) => {
     let { name, email, phone, notes, source, agent_id } = req.body;
-    
+
     name = (name || '').trim();
     email = (email || '').trim().toLowerCase();
 
@@ -22,7 +23,7 @@ const createLead = async (req, res) => {
         `;
         // We extrapolate first name logically
         const firstName = name.split(' ')[0] || 'Unknown';
-        
+
         // Map source to lead_type enum using exact matching
         const enumMap = {
             'agent_inquiry': 'agent_inquiry',
@@ -35,6 +36,12 @@ const createLead = async (req, res) => {
         const enumType = enumMap[source] || 'general_contact';
 
         await pool.query(query, [name, firstName, email, phone, notes, enumType, source, finalAgentId]);
+
+        // Fire-and-forget lead confirmation email (only if they provided one)
+        if (email) {
+            emailService.sendLeadConfirmation({ email, first_name: firstName, full_name: name });
+        }
+
         res.status(201).json({ success: true, message: 'Lead logged' });
     } catch (err) {
         console.error(err);

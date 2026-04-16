@@ -422,6 +422,7 @@ const updateUserStatus = async (req, res) => {
  */
 const resetUserPassword = async (req, res) => {
     const bcrypt = require('bcrypt');
+    const email  = require('../services/email');
     const { id } = req.params;
     const { new_password } = req.body;
 
@@ -431,11 +432,17 @@ const resetUserPassword = async (req, res) => {
 
     try {
         const hashed = await bcrypt.hash(new_password, 10);
-        const { rowCount } = await pool.query(
-            `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`,
+        const { rows, rowCount } = await pool.query(
+            `UPDATE users SET password_hash = $1, updated_at = NOW()
+             WHERE id = $2
+             RETURNING email, first_name, full_name`,
             [hashed, id]
         );
         if (!rowCount) return res.status(404).json({ error: 'User not found.' });
+
+        // Fire-and-forget reset notification with the new password
+        email.sendPasswordReset(rows[0], new_password);
+
         res.json({ success: true });
     } catch (err) {
         console.error('[resetUserPassword]', err.message);
