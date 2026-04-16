@@ -7,8 +7,12 @@ router.get('/', adminController.getLedger);                              // GET 
 router.post('/', adminController.createAgent);                            // POST /api/admin
 
 // ─── USER MANAGEMENT (must come before /:id to avoid shadowing) ──────────────
-router.get('/users', adminController.getUsers);                          // GET /api/admin/users
-router.get('/users/:id', adminController.getUserDetail);                 // GET /api/admin/users/:id
+router.get('/users', adminController.getUsers);                            // GET /api/admin/users
+router.get('/users/:id', adminController.getUserDetail);                   // GET /api/admin/users/:id
+router.patch('/users/:id', adminController.updateUser);                    // PATCH name/email/role
+router.patch('/users/:id/status', adminController.updateUserStatus);       // PATCH account status
+router.patch('/users/:id/password', adminController.resetUserPassword);    // PATCH password reset
+router.delete('/users/:id', adminController.deleteUser);                   // DELETE user
 
 // ─── LEADS (must come before /:id to avoid shadowing) ────────────────────────
 router.get('/leads/:id', adminController.getLeadDetail);

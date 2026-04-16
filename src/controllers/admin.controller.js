@@ -305,12 +305,16 @@ const updateAccountStatus = async (req, res) => {
 
 /**
  * GET /api/admin/users
- * Returns all user accounts.
+ * Returns all user accounts (password hashes stripped).
  */
 const getUsers = async (req, res) => {
     try {
         const { rows } = await pool.query(
-            `SELECT u.*, a.id as agent_id, a.display_name as agent_display_name, a.profile_status, a.is_published
+            `SELECT u.id, u.first_name, u.last_name, u.full_name, u.email, u.role,
+                    u.account_status, u.last_login_at, u.created_at, u.updated_at,
+                    (u.password_hash IS NOT NULL) AS has_password,
+                    a.id as agent_id, a.display_name as agent_display_name,
+                    a.profile_status, a.is_published
              FROM users u
              LEFT JOIN agents a ON a.user_id = u.id
              ORDER BY u.created_at DESC`
@@ -324,12 +328,15 @@ const getUsers = async (req, res) => {
 
 /**
  * GET /api/admin/users/:id
- * Returns a single user + linked agent record.
+ * Returns a single user + linked agent record (password hash stripped).
  */
 const getUserDetail = async (req, res) => {
     try {
         const { rows } = await pool.query(
-            `SELECT u.*, a.id as agent_id, a.display_name, a.brokerage_name, a.profile_status,
+            `SELECT u.id, u.first_name, u.last_name, u.full_name, u.email, u.role,
+                    u.account_status, u.last_login_at, u.created_at, u.updated_at,
+                    (u.password_hash IS NOT NULL) AS has_password,
+                    a.id as agent_id, a.display_name, a.brokerage_name, a.profile_status,
                     a.is_published, a.slug, m.name as membership_name, m.code as membership_code
              FROM users u
              LEFT JOIN agents a ON a.user_id = u.id
@@ -342,6 +349,121 @@ const getUserDetail = async (req, res) => {
     } catch (err) {
         console.error('[getUserDetail]', err.message);
         res.status(500).json({ error: 'Failed to fetch user detail.' });
+    }
+};
+
+/**
+ * PATCH /api/admin/users/:id
+ * Update user's basic info (name, email, role).
+ */
+const updateUser = async (req, res) => {
+    const { id } = req.params;
+    const body = req.body || {};
+
+    try {
+        const fields = [];
+        const vals = [];
+        let i = 1;
+
+        if ('first_name' in body) { fields.push(`first_name = $${i++}`); vals.push(body.first_name || null); }
+        if ('last_name'  in body) { fields.push(`last_name = $${i++}`);  vals.push(body.last_name || null);  }
+        if ('full_name'  in body) { fields.push(`full_name = $${i++}`);  vals.push(body.full_name || null);  }
+        if ('email'      in body) {
+            const email = (body.email || '').trim().toLowerCase();
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email.' });
+            const exists = await pool.query('SELECT id FROM users WHERE email = $1 AND id <> $2', [email, id]);
+            if (exists.rows.length) return res.status(409).json({ error: 'Email already in use.' });
+            fields.push(`email = $${i++}`); vals.push(email);
+        }
+        if ('role' in body) {
+            if (!['agent', 'admin', 'super_admin'].includes(body.role)) return res.status(400).json({ error: 'Invalid role.' });
+            fields.push(`role = $${i++}`); vals.push(body.role);
+        }
+
+        if (!fields.length) return res.json({ success: true, noop: true });
+
+        fields.push('updated_at = NOW()');
+        vals.push(id);
+        await pool.query(`UPDATE users SET ${fields.join(', ')} WHERE id = $${i}`, vals);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[updateUser]', err.message);
+        res.status(500).json({ error: 'Failed to update user.' });
+    }
+};
+
+/**
+ * PATCH /api/admin/users/:id/status
+ * Update account_status on the user record directly (works for users with or without agent records).
+ */
+const updateUserStatus = async (req, res) => {
+    const { id } = req.params;
+    const { account_status } = req.body;
+    if (!['active', 'suspended', 'archived', 'pending'].includes(account_status)) {
+        return res.status(400).json({ error: 'Invalid status.' });
+    }
+
+    try {
+        const { rowCount } = await pool.query(
+            `UPDATE users SET account_status = $1, updated_at = NOW() WHERE id = $2`,
+            [account_status, id]
+        );
+        if (!rowCount) return res.status(404).json({ error: 'User not found.' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[updateUserStatus]', err.message);
+        res.status(500).json({ error: 'Failed to update status.' });
+    }
+};
+
+/**
+ * PATCH /api/admin/users/:id/password
+ * Resets a user's password. Admin-only action.
+ */
+const resetUserPassword = async (req, res) => {
+    const bcrypt = require('bcrypt');
+    const { id } = req.params;
+    const { new_password } = req.body;
+
+    if (!new_password || new_password.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+    }
+
+    try {
+        const hashed = await bcrypt.hash(new_password, 10);
+        const { rowCount } = await pool.query(
+            `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`,
+            [hashed, id]
+        );
+        if (!rowCount) return res.status(404).json({ error: 'User not found.' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[resetUserPassword]', err.message);
+        res.status(500).json({ error: 'Failed to reset password.' });
+    }
+};
+
+/**
+ * DELETE /api/admin/users/:id
+ * Permanently deletes a user. Cascading deletes remove the linked agent record.
+ */
+const deleteUser = async (req, res) => {
+    const { id } = req.params;
+    try {
+        // Protect at least one super_admin from deletion — don't allow deleting the last one
+        const check = await pool.query(`SELECT role FROM users WHERE id = $1`, [id]);
+        if (!check.rows.length) return res.status(404).json({ error: 'User not found.' });
+        if (check.rows[0].role === 'super_admin') {
+            const adminCount = await pool.query(`SELECT COUNT(*) FROM users WHERE role = 'super_admin'`);
+            if (parseInt(adminCount.rows[0].count) <= 1) {
+                return res.status(400).json({ error: 'Cannot delete the last super admin account.' });
+            }
+        }
+        await pool.query(`DELETE FROM users WHERE id = $1`, [id]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[deleteUser]', err.message);
+        res.status(500).json({ error: 'Failed to delete user.' });
     }
 };
 
@@ -452,6 +574,10 @@ module.exports = {
     updateAccountStatus,
     getUsers,
     getUserDetail,
+    updateUser,
+    updateUserStatus,
+    resetUserPassword,
+    deleteUser,
     getLeadDetail,
     updateLeadStatus,
     assignLead,

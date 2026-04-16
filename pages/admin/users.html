@@ -194,7 +194,7 @@
         const fmtTime = d => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Never';
 
         document.getElementById('tableBody').innerHTML = rows.map(u => `
-            <tr>
+            <tr onclick="window.location.href='user-review.html?id=${u.id}'" style="cursor:pointer;">
                 <td>
                     <div style="font-weight: 700; color: #1a202c;">${u.full_name || '—'}</div>
                     <div style="font-size: 0.78rem; color: #a0aec0; margin-top: 2px;">${u.agent_display_name ? `Agent: ${u.agent_display_name}` : ''}</div>
@@ -204,7 +204,7 @@
                 <td><span class="badge ${statusClass(u.account_status)}">${u.account_status}</span></td>
                 <td>
                     ${u.agent_id
-                        ? `<a href="agent-review.html?id=${u.agent_id}" style="color:#1d6df2;font-weight:600;font-size:0.85rem;text-decoration:none;">
+                        ? `<a href="agent-review.html?id=${u.agent_id}" onclick="event.stopPropagation()" style="color:#1d6df2;font-weight:600;font-size:0.85rem;text-decoration:none;">
                                ${u.profile_status === 'published' ? '✓ Published' : u.profile_status || 'View Profile'}
                            </a>`
                         : `<span style="color:#a0aec0;font-size:0.85rem;">No profile</span>`
@@ -222,6 +222,7 @@
                             ? `<button class="action-btn btn-archive" onclick="setAccountStatus('${u.id}', 'archived', this)">Archive</button>`
                             : ''
                         }
+                        <button class="action-btn" style="background:#fff5f5;color:#c53030;" onclick="deleteUser('${u.id}', this)">Delete</button>
                     </div>
                 </td>
             </tr>
@@ -229,29 +230,44 @@
     }
 
     async function setAccountStatus(userId, status, btn) {
-        // Find the agent_id for this user
-        const user = allUsers.find(u => u.id === userId);
-        if (!user?.agent_id) {
-            alert('No linked agent record found for this user.');
-            return;
-        }
-
         btn.disabled = true;
+        const orig = btn.textContent;
         btn.textContent = '...';
 
         try {
-            const res = await fetch(`/api/admin/${user.agent_id}/account-status`, {
+            const res = await fetch(`/api/admin/users/${userId}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ account_status: status })
             });
-            if (!res.ok) throw new Error();
-            user.account_status = status;
+            if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Request failed'); }
+            const user = allUsers.find(u => u.id === userId);
+            if (user) user.account_status = status;
             updateCounts();
             renderTable();
-        } catch(_) {
-            alert('Failed to update account status.');
+        } catch(err) {
+            alert(`Failed to update status: ${err.message}`);
             btn.disabled = false;
+            btn.textContent = orig;
+        }
+    }
+
+    async function deleteUser(userId, btn) {
+        const user = allUsers.find(u => u.id === userId);
+        if (!user) return;
+        if (!confirm(`Permanently delete ${user.full_name || user.email}?\n\nThis cannot be undone.`)) return;
+        btn.disabled = true;
+        btn.textContent = '...';
+        try {
+            const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
+            if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Request failed'); }
+            allUsers = allUsers.filter(u => u.id !== userId);
+            updateCounts();
+            renderTable();
+        } catch(err) {
+            alert(`Failed to delete user: ${err.message}`);
+            btn.disabled = false;
+            btn.textContent = 'Delete';
         }
     }
 

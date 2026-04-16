@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Detail | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
+        .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        .admin-side { background: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+        .admin-side h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 2.5rem; padding-left: 0.5rem; color: #fff; margin-top: 0; }
+        .admin-side h1 span { color: #1d6df2; }
+        .side-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; margin-bottom: 0.75rem; padding-left: 0.5rem; font-weight: 700; margin-top: 0; }
+        .side-nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+        .side-link { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #a0aec0; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.15s; }
+        .side-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .side-link.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+        .side-signout { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #fc8181; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-top: 1rem; transition: all 0.15s; cursor: pointer; }
+        .side-signout:hover { background: rgba(252,129,129,0.1); }
+        .admin-main { padding: 3rem 3.5rem; overflow-y: auto; }
+
+        .back-link { display: inline-flex; align-items: center; gap: 0.4rem; color: #718096; font-weight: 600; font-size: 0.9rem; text-decoration: none; margin-bottom: 1.5rem; }
+        .back-link:hover { color: #1a202c; }
+
+        .detail-grid { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; align-items: start; }
+        .panel { background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 1.5rem; overflow: hidden; }
+        .panel-hd { padding: 1.25rem 1.75rem; border-bottom: 1px solid #edf2f7; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; }
+        .panel-body { padding: 1.75rem; }
+
+        .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 1.25rem; }
+        .field-grp { display: flex; flex-direction: column; gap: 0.35rem; }
+        .field-grp.full { grid-column: 1/-1; }
+        .field-lbl { font-size: 0.72rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.8px; }
+        .field-inp, .field-sel { padding: 0.7rem 0.9rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; font-family: inherit; color: #1a202c; background: #fff; }
+        .field-inp:focus, .field-sel:focus { outline: none; border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.08); }
+        .field-val { font-size: 0.95rem; color: #2d3748; font-weight: 500; padding: 0.35rem 0; }
+
+        .s-badge { padding: 0.3rem 0.7rem; border-radius: 99px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; display: inline-block; }
+        .sb-active    { background: #f0fff4; color: #2f855a; border: 1px solid #c6f6d5; }
+        .sb-suspended { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+        .sb-archived  { background: #edf2f7; color: #4a5568; border: 1px solid #e2e8f0; }
+        .sb-pending   { background: #fffaf0; color: #c05621; border: 1px solid #feebc8; }
+
+        .role-badge { display: inline-block; padding: 0.3rem 0.7rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .rb-agent       { background: #f0fff4; color: #276749; }
+        .rb-admin       { background: #ebf8ff; color: #2b6cb0; }
+        .rb-super_admin { background: #faf5ff; color: #553c9a; }
+
+        .btn { padding: 0.7rem 1.25rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+        .btn-save { background: #1d6df2; color: #fff; }
+        .btn-save:hover { opacity: 0.9; }
+        .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-wide { width: 100%; margin-bottom: 0.6rem; padding: 0.8rem; }
+        .btn-warning { background: #fffaf0; color: #c05621; border: 1px solid #feebc8; }
+        .btn-warning:hover { background: #feebc8; }
+        .btn-success { background: #f0fff4; color: #2f855a; border: 1px solid #c6f6d5; }
+        .btn-success:hover { background: #c6f6d5; }
+        .btn-danger { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+        .btn-danger:hover { background: #fed7d7; }
+        .btn-neutral { background: #f7f9fa; color: #4a5568; border: 1px solid #e2e8f0; }
+        .btn-neutral:hover { background: #edf2f7; }
+
+        .save-row { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.25rem; align-items: center; }
+        .save-msg { font-size: 0.85rem; font-weight: 600; color: #2f855a; display: none; }
+        .save-msg.err { color: #c53030; }
+        .save-msg.show { display: inline-flex; }
+
+        .meta-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #f7f9fa; font-size: 0.875rem; }
+        .meta-row:last-child { border-bottom: none; }
+        .meta-label { color: #718096; font-weight: 600; }
+        .meta-value { color: #1a202c; font-weight: 500; text-align: right; }
+    </style>
+</head>
+<body>
+<div class="admin-wrap">
+    <aside class="admin-side">
+        <h1>MNLH <span>ADMIN</span></h1>
+        <p class="side-label">Platform Operations</p>
+        <nav class="side-nav">
+            <a href="dashboard.html" class="side-link">Dashboard</a>
+            <a href="agents.html"    class="side-link">Agents Directory</a>
+            <a href="leads.html"     class="side-link">Central Leads</a>
+            <a href="blog.html"      class="side-link">Blog & Content</a>
+            <a href="users.html"     class="side-link active">Users Management</a>
+            <a href="marketing.html" class="side-link">Marketing</a>
+            <a href="tasks.html"     class="side-link">Tasks</a>
+        </nav>
+        <a href="/index.html" target="_blank" style="display:block;padding:0.75rem 1rem;border-radius:8px;color:#a0aec0;text-decoration:none;font-size:0.85rem;font-weight:500;margin-top:0.5rem;border:1px solid rgba(255,255,255,0.08);">↗ View Live Site</a>
+        <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>{window.location.href='/index.html';})" class="side-signout">Sign Out</a>
+    </aside>
+
+    <main class="admin-main">
+        <a href="users.html" class="back-link">← Back to Users</a>
+
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:2rem; gap:1rem; flex-wrap:wrap;">
+            <div>
+                <h1 id="page-title" style="font-size:2rem; font-weight:800; letter-spacing:-1px; margin:0 0 0.25rem;">Loading...</h1>
+                <p style="color:#718096; margin:0;" id="page-sub">—</p>
+            </div>
+            <div style="display:flex; gap:0.6rem; align-items:center;">
+                <span id="badge-role" class="role-badge" style="display:none;"></span>
+                <span id="badge-status" class="s-badge" style="display:none;"></span>
+            </div>
+        </div>
+
+        <div class="detail-grid">
+            <!-- LEFT: Editable fields -->
+            <div>
+                <div class="panel">
+                    <div class="panel-hd">Profile Information</div>
+                    <div class="panel-body">
+                        <div class="field-grid">
+                            <div class="field-grp">
+                                <label class="field-lbl">First Name</label>
+                                <input type="text" class="field-inp" id="f-first_name">
+                            </div>
+                            <div class="field-grp">
+                                <label class="field-lbl">Last Name</label>
+                                <input type="text" class="field-inp" id="f-last_name">
+                            </div>
+                            <div class="field-grp full">
+                                <label class="field-lbl">Email *</label>
+                                <input type="email" class="field-inp" id="f-email">
+                            </div>
+                            <div class="field-grp">
+                                <label class="field-lbl">Role</label>
+                                <select class="field-sel" id="f-role">
+                                    <option value="agent">Agent</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="super_admin">Super Admin</option>
+                                </select>
+                            </div>
+                            <div class="field-grp">
+                                <label class="field-lbl">Display Name</label>
+                                <input type="text" class="field-inp" id="f-full_name">
+                            </div>
+                        </div>
+                        <div class="save-row">
+                            <span class="save-msg" id="save-msg"></span>
+                            <button class="btn btn-save" onclick="saveProfile()">Save Changes</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-hd">Password / Login Credentials</div>
+                    <div class="panel-body">
+                        <div style="margin-bottom:1rem; padding:0.85rem 1rem; background:#f7f9fa; border-radius:8px; font-size:0.85rem; color:#4a5568;">
+                            <strong style="color:#1a202c;">Password Status:</strong>
+                            <span id="pwd-status">—</span>
+                            <br>
+                            <span style="font-size:0.8rem;color:#718096;">For security, actual passwords are hashed and cannot be displayed. Use the field below to set a new one.</span>
+                        </div>
+                        <div class="field-grid">
+                            <div class="field-grp full">
+                                <label class="field-lbl">Set New Password (min 6 characters)</label>
+                                <div style="display:flex; gap:0.5rem;">
+                                    <input type="text" class="field-inp" id="f-new-password" placeholder="Enter a new password…" style="flex:1;">
+                                    <button class="btn btn-neutral" type="button" onclick="generatePassword()">Generate</button>
+                                    <button class="btn btn-warning" type="button" onclick="resetPassword()">Reset Password</button>
+                                </div>
+                                <span class="save-msg" id="pwd-msg" style="margin-top:0.5rem;"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel" id="agent-panel" style="display:none;">
+                    <div class="panel-hd">Linked Agent Profile</div>
+                    <div class="panel-body">
+                        <div class="meta-row"><span class="meta-label">Display Name</span><span class="meta-value" id="agent-name">—</span></div>
+                        <div class="meta-row"><span class="meta-label">Brokerage</span><span class="meta-value" id="agent-brokerage">—</span></div>
+                        <div class="meta-row"><span class="meta-label">Profile Status</span><span class="meta-value" id="agent-status">—</span></div>
+                        <div class="meta-row"><span class="meta-label">Membership</span><span class="meta-value" id="agent-membership">—</span></div>
+                        <div style="margin-top:1rem;">
+                            <a id="agent-link" class="btn btn-neutral" style="text-decoration:none;display:inline-block;" href="#">→ Open Agent Profile Review</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Account actions & metadata -->
+            <div>
+                <div class="panel">
+                    <div class="panel-hd">Account Actions</div>
+                    <div class="panel-body">
+                        <button class="btn btn-success btn-wide" id="btn-activate" onclick="setStatus('active')">✓ Activate Account</button>
+                        <button class="btn btn-warning btn-wide" id="btn-suspend" onclick="setStatus('suspended')">⏸ Suspend Account</button>
+                        <button class="btn btn-neutral btn-wide" id="btn-archive" onclick="setStatus('archived')">🗄 Archive Account</button>
+                        <hr style="border:none; border-top:1px solid #edf2f7; margin:0.75rem 0;">
+                        <button class="btn btn-danger btn-wide" onclick="deleteUser()">🗑 Delete User Permanently</button>
+                        <span class="save-msg" id="action-msg" style="margin-top:0.5rem;"></span>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-hd">Metadata</div>
+                    <div class="panel-body">
+                        <div class="meta-row"><span class="meta-label">User ID</span><span class="meta-value" id="meta-id" style="font-family:monospace;font-size:0.7rem;">—</span></div>
+                        <div class="meta-row"><span class="meta-label">Joined</span><span class="meta-value" id="meta-joined">—</span></div>
+                        <div class="meta-row"><span class="meta-label">Last Login</span><span class="meta-value" id="meta-last-login">—</span></div>
+                        <div class="meta-row"><span class="meta-label">Last Updated</span><span class="meta-value" id="meta-updated">—</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get('id');
+    let user = null;
+
+    function setMsg(el, text, isErr) {
+        el.textContent = text;
+        el.classList.toggle('err', !!isErr);
+        el.classList.add('show');
+        setTimeout(() => { el.classList.remove('show'); }, 3500);
+    }
+
+    function fmtDate(d) {
+        return d ? new Date(d).toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' }) : '—';
+    }
+
+    async function load() {
+        if (!userId) { window.location.href = 'users.html'; return; }
+        try {
+            const res = await fetch(`/api/admin/users/${userId}`);
+            if (!res.ok) throw new Error();
+            user = await res.json();
+            hydrate();
+        } catch {
+            document.getElementById('page-title').textContent = 'User not found';
+        }
+    }
+
+    function hydrate() {
+        document.getElementById('page-title').textContent = user.full_name || user.email || '—';
+        document.getElementById('page-sub').textContent   = user.email || '';
+
+        const roleBadge   = document.getElementById('badge-role');
+        const statusBadge = document.getElementById('badge-status');
+        roleBadge.textContent = (user.role || '—').replace('_', ' ');
+        roleBadge.className   = `role-badge rb-${user.role}`;
+        roleBadge.style.display = 'inline-block';
+        statusBadge.textContent = user.account_status || '—';
+        statusBadge.className   = `s-badge sb-${user.account_status}`;
+        statusBadge.style.display = 'inline-block';
+
+        document.getElementById('f-first_name').value = user.first_name || '';
+        document.getElementById('f-last_name').value  = user.last_name  || '';
+        document.getElementById('f-email').value      = user.email      || '';
+        document.getElementById('f-role').value       = user.role       || 'agent';
+        document.getElementById('f-full_name').value  = user.full_name  || '';
+
+        document.getElementById('pwd-status').textContent = user.has_password
+            ? '✓ Set — user can log in'
+            : '⚠ No password set — user cannot log in';
+
+        document.getElementById('meta-id').textContent         = user.id;
+        document.getElementById('meta-joined').textContent     = fmtDate(user.created_at);
+        document.getElementById('meta-last-login').textContent = user.last_login_at ? fmtDate(user.last_login_at) : 'Never';
+        document.getElementById('meta-updated').textContent    = fmtDate(user.updated_at);
+
+        // Linked agent profile
+        if (user.agent_id) {
+            document.getElementById('agent-panel').style.display = 'block';
+            document.getElementById('agent-name').textContent        = user.display_name || '—';
+            document.getElementById('agent-brokerage').textContent   = user.brokerage_name || '—';
+            document.getElementById('agent-status').textContent      = user.profile_status || '—';
+            document.getElementById('agent-membership').textContent  = user.membership_name || user.membership_code || '—';
+            document.getElementById('agent-link').href               = `agent-review.html?id=${user.agent_id}`;
+        }
+
+        // Hide the activate/suspend/archive button that matches the current state
+        ['active','suspended','archived'].forEach(s => {
+            const btnId = s === 'active' ? 'btn-activate' : s === 'suspended' ? 'btn-suspend' : 'btn-archive';
+            document.getElementById(btnId).style.display = user.account_status === s ? 'none' : '';
+        });
+    }
+
+    async function saveProfile() {
+        const btn = document.querySelector('.btn-save');
+        btn.disabled = true; btn.textContent = 'Saving…';
+
+        const first = document.getElementById('f-first_name').value.trim();
+        const last  = document.getElementById('f-last_name').value.trim();
+        const fullProvided = document.getElementById('f-full_name').value.trim();
+        const fullName = fullProvided || [first, last].filter(Boolean).join(' ').trim() || null;
+
+        const payload = {
+            first_name: first,
+            last_name:  last,
+            full_name:  fullName,
+            email:      document.getElementById('f-email').value.trim(),
+            role:       document.getElementById('f-role').value,
+        };
+
+        try {
+            const res = await fetch(`/api/admin/users/${userId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Save failed.'); }
+            setMsg(document.getElementById('save-msg'), '✓ Saved');
+            await load();
+        } catch (err) {
+            setMsg(document.getElementById('save-msg'), err.message, true);
+        } finally {
+            btn.disabled = false; btn.textContent = 'Save Changes';
+        }
+    }
+
+    async function setStatus(status) {
+        const msg = document.getElementById('action-msg');
+        try {
+            const res = await fetch(`/api/admin/users/${userId}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ account_status: status })
+            });
+            if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed.'); }
+            setMsg(msg, `✓ Status updated to ${status}`);
+            await load();
+        } catch (err) {
+            setMsg(msg, err.message, true);
+        }
+    }
+
+    function generatePassword() {
+        const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+        let pwd = '';
+        for (let i = 0; i < 12; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
+        document.getElementById('f-new-password').value = pwd;
+    }
+
+    async function resetPassword() {
+        const input = document.getElementById('f-new-password');
+        const pwd = input.value.trim();
+        const msg = document.getElementById('pwd-msg');
+        if (pwd.length < 6) {
+            setMsg(msg, 'Password must be at least 6 characters.', true);
+            return;
+        }
+        if (!confirm(`Reset password for ${user.email}?\n\nThe new password will be:\n${pwd}\n\nMake sure to copy and send this to the user.`)) return;
+        try {
+            const res = await fetch(`/api/admin/users/${userId}/password`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ new_password: pwd })
+            });
+            if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed.'); }
+            setMsg(msg, '✓ Password reset — new password is active immediately.');
+            input.value = '';
+            await load();
+        } catch (err) {
+            setMsg(msg, err.message, true);
+        }
+    }
+
+    async function deleteUser() {
+        if (!confirm(`Permanently delete ${user.full_name || user.email}?\n\nThis cannot be undone. Linked agent records will also be removed.`)) return;
+        const confirmEmail = prompt(`Type the user's email (${user.email}) to confirm:`);
+        if (confirmEmail !== user.email) { alert('Email did not match. Deletion cancelled.'); return; }
+        try {
+            const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
+            if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed.'); }
+            alert('User deleted.');
+            window.location.href = 'users.html';
+        } catch (err) {
+            setMsg(document.getElementById('action-msg'), err.message, true);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', load);
+</script>
+</body>
+</html>
