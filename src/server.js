@@ -46,7 +46,13 @@ app.use('/api/blog', require('./routes/blog.routes'));
 app.use('/api/tasks', require('./routes/task.routes'));
 
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'live', environment: process.env.NODE_ENV || 'local' });
+    res.json({
+        status: 'live',
+        environment: process.env.NODE_ENV || 'local',
+        deploy_time: process.env.RENDER_DEPLOY_TIME || new Date().toISOString(),
+        commit: process.env.RENDER_GIT_COMMIT || 'unknown',
+        node: process.version
+    });
 });
 
 // ==========================================
