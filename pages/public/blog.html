@@ -116,24 +116,20 @@
         }
         .blog-tag-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
-        .blog-index-section { padding: 10rem 2rem 6rem !important; }
+        .blog-index-section { padding: 5rem 2rem 6rem !important; }
         #blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 3rem; }
 
         @media (max-width: 900px) {
             .blog-index-header { padding: 8rem 1.25rem 3.5rem; }
             .blog-index-title { font-size: 3rem; letter-spacing: -1.25px; }
             .blog-index-subtitle { font-size: 1.05rem; }
-            .blog-filter-bar { padding: 0.85rem 1rem; }
-            .blog-filter-inner { gap: 0.6rem; }
-            .blog-tag-filters { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; scrollbar-width: none; padding-bottom: 0.25rem; }
-            .blog-tag-filters::-webkit-scrollbar { display: none; }
-            .blog-index-section { padding: 11rem 1.25rem 4rem !important; }
+            .blog-index-section { padding: 4rem 1.25rem 4rem !important; }
             #blog-grid { grid-template-columns: 1fr; gap: 2rem; }
             .blog-image { aspect-ratio: 16/9; margin-bottom: 1rem; }
         }
         @media (max-width: 480px) {
             .blog-index-title { font-size: 2.25rem; }
-            .blog-index-section { padding: 12rem 1.25rem 3rem !important; }
+            .blog-index-section { padding: 3rem 1.25rem 3rem !important; }
         }
     </style>
     <script src="../../components/components.js" defer></script>
@@ -146,24 +142,8 @@
         <p class="blog-index-subtitle">Stories, strategies, and buyer guides built to help you find and enjoy your perfect Minnesota lakefront property.</p>
     </div>
 
-    <!-- Search + Filter Bar (fixed below nav so it pins properly even with body overflow-x hidden) -->
-    <div class="blog-filter-bar">
-        <div class="blog-filter-inner">
-            <div class="blog-search-wrap">
-                <svg style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:#a0aec0;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                <input id="blog-search" type="text" placeholder="Search articles…"
-                    oninput="filterPosts()"
-                    onfocus="this.style.borderColor='#1d6df2'" onblur="this.style.borderColor='#e2e8f0'">
-            </div>
-            <div id="tag-filters" class="blog-tag-filters">
-                <button class="blog-filter-btn active" onclick="setTag('all', this)">All Posts</button>
-            </div>
-        </div>
-    </div>
-
     <section class="blog-section blog-index-section">
         <div class="blog-container">
-            <p id="no-results" style="display:none;text-align:center;padding:4rem 2rem;color:#718096;">No articles match your search. <a href="#" onclick="resetBlog();return false;" style="color:#1d6df2;">Clear filters</a></p>
             <div id="blog-grid">
                 <div style="grid-column: 1/-1; text-align:center; padding: 3rem; color: #a0aec0;">Loading posts...</div>
             </div>
@@ -175,9 +155,6 @@
 
     <script>
         const clockSVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
-
-        let allPosts = [];
-        let activeTag = 'all';
 
         function buildCard(p) {
             return `
@@ -194,72 +171,17 @@
                 </a>`;
         }
 
-        function renderGrid(posts) {
-            const grid = document.getElementById('blog-grid');
-            const noResults = document.getElementById('no-results');
-            if (!posts.length) {
-                grid.innerHTML = '';
-                noResults.style.display = 'block';
-            } else {
-                noResults.style.display = 'none';
-                grid.innerHTML = posts.map(buildCard).join('');
-            }
-        }
-
-        function filterPosts() {
-            const query = document.getElementById('blog-search').value.toLowerCase().trim();
-            const filtered = allPosts.filter(p => {
-                const tagMatch = activeTag === 'all' || (p.tag || 'General') === activeTag;
-                const searchMatch = !query ||
-                    (p.title || '').toLowerCase().includes(query) ||
-                    (p.excerpt || '').toLowerCase().includes(query) ||
-                    (p.tag || '').toLowerCase().includes(query) ||
-                    (p.author_name || '').toLowerCase().includes(query);
-                return tagMatch && searchMatch;
-            });
-            renderGrid(filtered);
-        }
-
-        function setTag(tag, btn) {
-            activeTag = tag;
-            document.querySelectorAll('.blog-filter-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            filterPosts();
-        }
-
-        function resetBlog() {
-            document.getElementById('blog-search').value = '';
-            activeTag = 'all';
-            document.querySelectorAll('.blog-filter-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
-            filterPosts();
-        }
-
-        function buildTagFilters(posts) {
-            const tags = [...new Set(posts.map(p => p.tag || 'General'))].sort();
-            const container = document.getElementById('tag-filters');
-            tags.forEach(tag => {
-                const btn = document.createElement('button');
-                btn.className = 'blog-filter-btn';
-                btn.textContent = tag;
-                btn.onclick = () => setTag(tag, btn);
-                container.appendChild(btn);
-            });
-        }
-
         async function loadPosts() {
             const grid = document.getElementById('blog-grid');
             try {
                 const res = await fetch('/api/blog');
                 if (!res.ok) throw new Error();
-                allPosts = await res.json();
-
-                if (!allPosts.length) {
+                const posts = await res.json();
+                if (!posts.length) {
                     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#a0aec0;">No posts yet.</div>';
                     return;
                 }
-
-                buildTagFilters(allPosts);
-                renderGrid(allPosts);
+                grid.innerHTML = posts.map(buildCard).join('');
             } catch (err) {
                 grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#a0aec0;">Could not load posts.</div>';
             }

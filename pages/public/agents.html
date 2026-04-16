@@ -118,6 +118,27 @@
             .blog-index-title { font-size: 2.25rem; letter-spacing: -1px; }
             .agents-bottom-cta h2 { font-size: 2rem; }
         }
+
+        /* Top Agent corner badge on cards */
+        .top-agent-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            padding: 0.35rem 0.7rem;
+            border-radius: 99px;
+            box-shadow: 0 4px 12px rgba(245,158,11,0.35);
+        }
+        .top-agent-badge svg { display: block; }
     </style>
     <script src="../../components/components.js" defer></script>
 </head>
@@ -160,15 +181,27 @@
             const fullBio = agent.bio || 'A dedicated Minnesota lake home specialist ready to help you find your perfect waterfront property.';
             const shortBio = fullBio.length > 120 ? fullBio.slice(0, 120).trimEnd() + '…' : fullBio;
 
+            const topBadge = agent.is_featured
+                ? `<div class="top-agent-badge" title="Top Agent — featured on MN Lake Homes">
+                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                       <span>Top Agent</span>
+                   </div>`
+                : '';
+
+            const inlineTopIcon = agent.is_featured
+                ? `<svg style="vertical-align:-2px; margin-left:0.4rem; color:#f59e0b;" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-label="Top Agent"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`
+                : '';
+
             const card = document.createElement('a');
             card.href = `agent-profile.html?slug=${agent.slug}`;
             card.style.cssText = 'text-decoration:none;color:inherit;display:block;';
             card.className = 'agent-link-wrapper';
             card.innerHTML = `
-                <div class="agent-card">
+                <div class="agent-card" style="position:relative;">
+                    ${topBadge}
                     <img src="${photoUrl}" alt="${agent.display_name} — Minnesota lake home specialist" class="agent-image" loading="lazy" width="600" height="600">
                     <div class="agent-info">
-                        <h3 class="agent-name">${agent.display_name}</h3>
+                        <h3 class="agent-name">${agent.display_name}${inlineTopIcon}</h3>
                         <div class="agent-title">${title.toUpperCase()}</div>
                         <p class="agent-bio">${shortBio}</p>
                     </div>
