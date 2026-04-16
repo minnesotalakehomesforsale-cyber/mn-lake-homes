@@ -156,6 +156,7 @@ class GlobalHeader extends HTMLElement {
                     { heading: 'Browse Properties', links: [
                         { label: 'All Listings', href: `${bp}buy.html` },
                         { label: 'Lake Minnetonka Homes', href: `${bp}lake-minnetonka.html` },
+                        { label: 'Rent a Home', href: `${bp}rent.html` },
                     ]},
                     { heading: 'Tools', links: [
                         { label: 'Get a Cash Offer', href: `${bp}cash-offer.html` },
@@ -173,6 +174,7 @@ class GlobalHeader extends HTMLElement {
                     { heading: 'Sell Your Home', links: [
                         { label: 'List With an Agent', href: `${bp}sell.html` },
                         { label: 'Free Home Valuation', href: `${bp}sell.html` },
+                        { label: 'List as a Rental', href: `${bp}rent.html` },
                     ]},
                     { heading: 'Skip the Hassle', links: [
                         { label: 'Get a Cash Offer', href: `${bp}cash-offer.html` },
@@ -180,23 +182,6 @@ class GlobalHeader extends HTMLElement {
                     ]},
                     { heading: 'Resources', links: [
                         { label: 'Seller Guides', href: `${bp}blog.html` },
-                        { label: 'FAQ', href: `${bp}faq.html` },
-                    ]},
-                ]
-            },
-            {
-                id: 'rent', label: 'Rent', href: `${bp}rent.html`,
-                columns: [
-                    { heading: 'Browse Rentals', links: [
-                        { label: 'All Rentals', href: `${bp}rent.html` },
-                        { label: 'Lake Minnetonka Rentals', href: `${bp}rent.html` },
-                    ]},
-                    { heading: 'Property Owners', links: [
-                        { label: 'List Your Property', href: `${bp}rent.html` },
-                        { label: 'Management Services', href: `${bp}contact.html` },
-                    ]},
-                    { heading: 'Resources', links: [
-                        { label: 'Rental Guide', href: `${bp}blog.html` },
                         { label: 'FAQ', href: `${bp}faq.html` },
                     ]},
                 ]
