@@ -10,6 +10,120 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Window-pane hero — looking through 3 panes at Lake Minnetonka */
+        .mn-hero-window {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            min-height: 640px;
+            margin-top: 80px; /* clear the fixed nav */
+            overflow: hidden;
+            background: #0a0a0a;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;         /* mullion thickness */
+            background-color: #0a0a0a; /* mullion color = dark */
+        }
+        .mn-hero-window::after {
+            /* subtle vignette to focus attention on centered text */
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.75) 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .mn-pane {
+            position: relative;
+            overflow: hidden;
+        }
+        .mn-pane img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            transition: transform 8s ease-out;
+            transform: scale(1.05);
+        }
+        .mn-hero-window:hover .mn-pane img { transform: scale(1.12); }
+
+        .mn-hero-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+            color: #fff;
+            pointer-events: none;
+        }
+        .mn-hero-overlay > * { pointer-events: auto; }
+        .mn-hero-subtitle {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: rgba(255,255,255,0.85);
+            margin-bottom: 1.25rem;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+        }
+        .mn-hero-title {
+            font-size: clamp(2.5rem, 6vw, 5.5rem);
+            font-weight: 700;
+            letter-spacing: -2px;
+            line-height: 1.05;
+            margin: 0 0 1rem;
+            max-width: 1100px;
+            text-shadow: 0 4px 24px rgba(0,0,0,0.5);
+        }
+        .mn-hero-title .accent { color: #60a5fa; }
+        .mn-hero-lede {
+            max-width: 640px;
+            font-size: clamp(1rem, 1.5vw, 1.2rem);
+            color: rgba(255,255,255,0.88);
+            line-height: 1.6;
+            margin: 0 0 2rem;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.7);
+        }
+        .mn-hero-ctas { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+        .mn-hero-ctas .btn {
+            padding: 1rem 2.25rem;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 10px;
+            text-decoration: none;
+            cursor: pointer;
+            font-family: inherit;
+            border: none;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .mn-hero-ctas .btn-primary {
+            background: #1d6df2;
+            color: #fff;
+            box-shadow: 0 10px 30px rgba(29,109,242,0.35);
+        }
+        .mn-hero-ctas .btn-primary:hover { transform: translateY(-2px); }
+        .mn-hero-ctas .btn-ghost {
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.35);
+            backdrop-filter: blur(8px);
+        }
+        .mn-hero-ctas .btn-ghost:hover { background: rgba(255,255,255,0.22); }
+
+        @media (max-width: 780px) {
+            .mn-hero-window {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr 1fr;
+                height: 100vh;
+                min-height: 580px;
+            }
+        }
+
         .seo-stats-bar {
             background-color: var(--bg-dark);
             border-top: 1px solid rgba(255,255,255,0.1);
@@ -85,40 +199,33 @@
 
     <global-header></global-header>
 
-    <main class="hero-section">
-        <div class="hero-content">
-            <p class="subtitle">Minnesota's Premier Luxury Lake</p>
-            <h1 class="title">
-                Your new view from <span class="text-blue">Lake<br/>Minnetonka</span>
-            </h1>
-            <div class="hero-ctas">
-                <a href="#listings" class="btn btn-primary hero-cta">View Listings</a>
-                <button onclick="openModal()" class="btn hero-cta hero-cta-ghost" style="border:none;cursor:pointer;font-family:inherit;">Contact an Expert</button>
+    <main>
+        <!-- Window-pane hero: 3 panes looking out at Lake Minnetonka -->
+        <section class="mn-hero-window" aria-label="Lake Minnetonka hero">
+            <div class="mn-pane">
+                <img src="/assets/images/mn-most-expensive-listing.jpg" alt="Luxury Lake Minnetonka waterfront estate" fetchpriority="high">
             </div>
-        </div>
+            <div class="mn-pane">
+                <img src="/assets/images/mn-harbor-town.webp" alt="Lake Minnetonka harbor and marina" fetchpriority="high">
+            </div>
+            <div class="mn-pane">
+                <img src="/assets/images/mn-rustic-modern-lake-house.jpg" alt="Modern Lake Minnetonka lake home at sunset" fetchpriority="high">
+            </div>
 
-        <div class="hero-showcase">
-            <div class="showcase-card left-card">
-                <img src="/assets/images/mn-most-expensive-listing.jpg" width="320" height="480" alt="Lake Minnetonka luxury waterfront estate" fetchpriority="high">
+            <div class="mn-hero-overlay">
+                <p class="mn-hero-subtitle">Minnesota's Premier Luxury Lake</p>
+                <h1 class="mn-hero-title">
+                    Your new view from <span class="accent">Lake Minnetonka</span>
+                </h1>
+                <p class="mn-hero-lede">
+                    14,500 acres of crystal-clear water. 110 miles of shoreline. The most coveted addresses in Minnesota — waiting.
+                </p>
+                <div class="mn-hero-ctas">
+                    <a href="#listings" class="btn btn-primary">View Listings</a>
+                    <button onclick="openModal()" class="btn btn-ghost">Contact an Expert</button>
+                </div>
             </div>
-            <div class="showcase-card center-card">
-                <img src="/assets/images/mn-harbor-town.webp" width="500" height="520" alt="Lake Minnetonka harbor at sunset" fetchpriority="high">
-            </div>
-            <div class="showcase-card right-card">
-                <img src="/assets/images/mn-rustic-modern-lake-house.jpg" width="320" height="480" alt="Modern Lake Minnetonka lake home" fetchpriority="high">
-            </div>
-        </div>
-
-        <div class="floating-promo">
-            <div class="promo-content">
-                <p><strong>14,500 acres. 110 miles of shoreline.</strong> Browse exclusive<br>Lake Minnetonka listings and connect with top local experts.</p>
-            </div>
-            <button class="btn btn-white btn-sm" onclick="openModal()" style="border:none;">Start browsing</button>
-            <button class="promo-close" onclick="this.parentElement.classList.add('dismissed')" aria-label="Dismiss">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
-        </div>
-    </main>
+        </section>
 
     <div>
         <!-- SEO Content Block 1 -->
@@ -251,7 +358,7 @@
                 </div>
             </div>
         </section>
-    </div>
+    </main>
 
     <!-- Global Footer -->
     <global-footer></global-footer>
