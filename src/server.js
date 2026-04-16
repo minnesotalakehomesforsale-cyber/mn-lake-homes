@@ -67,14 +67,45 @@ app.get('/:page', (req, res, next) => {
 });
 
 // ==========================================
+// AUTO-MIGRATE: ensure any new tables exist
+// ==========================================
+const pool = require('./database/pool');
+async function ensureTables() {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS blog_posts (
+                id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                title            TEXT NOT NULL,
+                slug             TEXT UNIQUE NOT NULL,
+                excerpt          TEXT,
+                body             TEXT,
+                cover_image_url  TEXT,
+                tag              TEXT DEFAULT 'General',
+                read_time_minutes INT DEFAULT 4,
+                author_name      TEXT DEFAULT 'MN Lake Homes Team',
+                is_published     BOOLEAN DEFAULT false,
+                published_at     TIMESTAMPTZ,
+                created_at       TIMESTAMPTZ DEFAULT NOW(),
+                updated_at       TIMESTAMPTZ DEFAULT NOW(),
+                deleted_at       TIMESTAMPTZ
+            );
+        `);
+        console.log(' Tables verified.');
+    } catch (err) {
+        console.error(' Table migration warning:', err.message);
+    }
+}
+
+// ==========================================
 // INITIALIZE
 // ==========================================
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     console.log(`=======================================`);
     console.log(` MN LAKE HOMES PLATFORM ENGINE `);
     console.log(` Environment  : ${process.env.NODE_ENV || 'local'}`);
     console.log(` Listening on : http://localhost:${PORT}`);
     console.log(` Connected to : PostgreSQL Database`);
     console.log(`=======================================`);
+    await ensureTables();
 });
