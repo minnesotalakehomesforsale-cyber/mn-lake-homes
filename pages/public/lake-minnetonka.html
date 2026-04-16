@@ -10,19 +10,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        .hero-seo {
-            height: 80vh;
-            min-height: 600px;
-            background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), url('/assets/images/beach-style-exterior.jpg') center/cover;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: #fff;
-            padding: 0 2rem;
-            margin-top: 80px; 
-        }
-
         .seo-stats-bar {
             background-color: var(--bg-dark);
             border-top: 1px solid rgba(255,255,255,0.1);
@@ -98,19 +85,42 @@
 
     <global-header></global-header>
 
-    <main>
-        <!-- SEO Hero -->
-        <section class="hero-seo">
-            <div style="max-width: 900px;">
-                <h1 style="font-size: 4rem; font-weight: 700; line-height: 1.1; margin-bottom: 1.5rem; letter-spacing: -2px;">Lake Homes For Sale <br><span style="color: var(--accent-blue);">On Lake Minnetonka</span></h1>
-                <p style="font-size: 1.25rem; color: #cbd5e0; margin-bottom: 2.5rem; font-weight: 400; max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.6;">Discover the pinnacle of Minnesota luxury. Experience unmatched waterfront estates, private yacht clubs, and elite dining just minutes from the Twin Cities.</p>
-                <div style="display: flex; gap: 1rem; justify-content: center;">
-                    <a href="#listings" class="btn btn-primary" style="padding: 1.2rem 2.5rem; font-size: 1.1rem; text-decoration: none;">View Listings</a>
-                    <button onclick="openModal()" class="btn btn-outline" style="padding: 1.2rem 2.5rem; font-size: 1.1rem; background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.3);">Contact an Expert</button>
-                </div>
+    <main class="hero-section">
+        <div class="hero-content">
+            <p class="subtitle">Minnesota's Premier Luxury Lake</p>
+            <h1 class="title">
+                Your new view from <span class="text-blue">Lake<br/>Minnetonka</span>
+            </h1>
+            <div class="hero-ctas">
+                <a href="#listings" class="btn btn-primary hero-cta">View Listings</a>
+                <button onclick="openModal()" class="btn hero-cta hero-cta-ghost" style="border:none;cursor:pointer;font-family:inherit;">Contact an Expert</button>
             </div>
-        </section>
+        </div>
 
+        <div class="hero-showcase">
+            <div class="showcase-card left-card">
+                <img src="/assets/images/mn-most-expensive-listing.jpg" width="320" height="480" alt="Lake Minnetonka luxury waterfront estate" fetchpriority="high">
+            </div>
+            <div class="showcase-card center-card">
+                <img src="/assets/images/mn-harbor-town.webp" width="500" height="520" alt="Lake Minnetonka harbor at sunset" fetchpriority="high">
+            </div>
+            <div class="showcase-card right-card">
+                <img src="/assets/images/mn-rustic-modern-lake-house.jpg" width="320" height="480" alt="Modern Lake Minnetonka lake home" fetchpriority="high">
+            </div>
+        </div>
+
+        <div class="floating-promo">
+            <div class="promo-content">
+                <p><strong>14,500 acres. 110 miles of shoreline.</strong> Browse exclusive<br>Lake Minnetonka listings and connect with top local experts.</p>
+            </div>
+            <button class="btn btn-white btn-sm" onclick="openModal()" style="border:none;">Start browsing</button>
+            <button class="promo-close" onclick="this.parentElement.classList.add('dismissed')" aria-label="Dismiss">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+    </main>
+
+    <div>
         <!-- SEO Content Block 1 -->
         <section class="sp-section" style="padding: 6rem 0;">
             <div class="sp-grid">
@@ -241,7 +251,7 @@
                 </div>
             </div>
         </section>
-    </main>
+    </div>
 
     <!-- Global Footer -->
     <global-footer></global-footer>
