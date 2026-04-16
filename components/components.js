@@ -19,6 +19,7 @@ class GlobalHeader extends HTMLElement {
 
         // Render skeleton header immediately, then hydrate auth state asynchronously
         this.innerHTML = this._buildHeader(bp, rp, null);
+        this._wireMegamenu();
 
         // Check real session
         fetch('/api/auth/session')
@@ -26,10 +27,26 @@ class GlobalHeader extends HTMLElement {
             .then(data => {
                 // Re-render with authenticated state
                 this.innerHTML = this._buildHeader(bp, rp, data);
+                this._wireMegamenu();
             })
             .catch(() => {
                 // Not logged in — already rendered guest state above
             });
+    }
+
+    _wireMegamenu() {
+        const trigger = this.querySelector('#nav-agents-trigger');
+        const menu    = this.querySelector('#nav-agents-megamenu');
+        if (!trigger || !menu) return;
+
+        let hideTimer = null;
+        const show = () => { clearTimeout(hideTimer); menu.style.display = 'block'; };
+        const hide = () => { hideTimer = setTimeout(() => { menu.style.display = 'none'; }, 150); };
+
+        trigger.addEventListener('mouseenter', show);
+        trigger.addEventListener('mouseleave', hide);
+        menu.addEventListener('mouseenter', show);
+        menu.addEventListener('mouseleave', hide);
     }
 
     _buildHeader(bp, rp, user) {
@@ -122,32 +139,38 @@ class GlobalHeader extends HTMLElement {
                 <a href="${bp}buy.html">Buy</a>
                 <a href="${bp}sell.html">Sell</a>
                 <a href="${bp}rent.html">Rent</a>
-                <div class="nav-dropdown" style="position:relative; display:inline-block;">
-                    <a href="${bp}agents.html" class="nav-dropdown-trigger" style="display:inline-flex; align-items:center; gap:0.25rem;">
-                        Agents
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                    </a>
-                    <div class="nav-dropdown-menu" style="position:absolute; top:100%; left:50%; transform:translateX(-50%); padding-top:0.75rem; min-width:220px; display:none; z-index:1002;">
-                        <div style="background:#fff; border:1px solid #edf2f7; border-radius:12px; box-shadow:0 12px 32px rgba(0,0,0,0.12); overflow:hidden; font-family:'Inter',sans-serif;">
-                            <a href="${bp}agents.html" style="display:block; padding:0.8rem 1.25rem; color:#2d3748; text-decoration:none; font-size:0.875rem; font-weight:500;"
-                                onmouseover="this.style.background='#f7f9fa';this.style.color='#1d6df2';"
-                                onmouseout="this.style.background='transparent';this.style.color='#2d3748';">All Agents</a>
-                            <a href="${bp}agents.html?featured=1" style="display:flex; align-items:center; gap:0.4rem; padding:0.8rem 1.25rem; color:#2d3748; text-decoration:none; font-size:0.875rem; font-weight:500; border-top:1px solid #edf2f7;"
-                                onmouseover="this.style.background='#f7f9fa';this.style.color='#1d6df2';"
-                                onmouseout="this.style.background='transparent';this.style.color='#2d3748';">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                                Featured Agents
-                            </a>
-                            <a href="${bp}join.html" style="display:block; padding:0.8rem 1.25rem; color:#1d6df2; text-decoration:none; font-size:0.875rem; font-weight:700; border-top:1px solid #edf2f7; background:#f7fafd;"
-                                onmouseover="this.style.background='#ebf4ff';"
-                                onmouseout="this.style.background='#f7fafd';">Join the Network →</a>
-                        </div>
-                    </div>
-                </div>
+                <a href="${bp}agents.html" id="nav-agents-trigger" style="display:inline-flex; align-items:center; gap:0.3rem;">
+                    Agents
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </a>
                 <a href="${bp}about.html">About</a>
             </nav>
             <div class="nav-actions">
                 ${authHtml}
+            </div>
+
+            <!-- Full-width Agents megamenu — styled to match the footer -->
+            <div id="nav-agents-megamenu" class="nav-megamenu" style="display:none;">
+                <div class="nav-megamenu-inner">
+                    <div class="nav-megamenu-col">
+                        <h4 class="nav-megamenu-heading">Browse</h4>
+                        <a href="${bp}agents.html">All Agents</a>
+                        <a href="${bp}agents.html?featured=1">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1.5" stroke-linejoin="round" style="vertical-align:-2px;margin-right:0.35rem;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>Featured Agents
+                        </a>
+                    </div>
+                    <div class="nav-megamenu-col">
+                        <h4 class="nav-megamenu-heading">Become a Partner</h4>
+                        <a href="${bp}join.html">Join the Network</a>
+                        <a href="${bp}contact.html">Contact Us</a>
+                    </div>
+                    <div class="nav-megamenu-col">
+                        <h4 class="nav-megamenu-heading">Resources</h4>
+                        <a href="${bp}blog.html">Blog &amp; Resources</a>
+                        <a href="${bp}lake-minnetonka.html">Lake Minnetonka Guide</a>
+                        <a href="${bp}about.html">About MNLH</a>
+                    </div>
+                </div>
             </div>
         </header>`;
     }
