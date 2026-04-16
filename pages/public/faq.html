@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FAQs | MN Lake Homes</title>
+    <meta name="description" content="Answers to the most common questions about buying, selling, and renting Minnesota lake homes — from shoreline regulations and dock permits to agent partnerships and our platform.">
     <link rel="stylesheet" href="../../styles/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         .page-header {
-            padding: 12rem 2rem 5rem;
+            padding: 12rem 2rem 4rem;
             text-align: center;
             background-color: var(--bg-dark);
             color: #fff;
@@ -29,65 +30,126 @@
             margin: 0 auto;
             line-height: 1.6;
         }
-        
+
+        /* Category nav — horizontal pill bar */
+        .faq-nav {
+            background: #fff;
+            border-bottom: 1px solid #edf2f7;
+            padding: 1.25rem 2rem;
+            position: sticky;
+            top: 72px;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+        .faq-nav-inner {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .faq-pill {
+            padding: 0.55rem 1.15rem;
+            border-radius: 99px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            color: #4a5568;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .faq-pill:hover { border-color: #1d6df2; color: #1d6df2; }
+        .faq-pill.active { background: #1a202c; color: #fff; border-color: #1a202c; }
+
         .faq-section {
-            padding: 6rem 2rem 8rem 2rem;
+            padding: 4rem 2rem 6rem;
             background-color: #fff;
         }
         .faq-container {
-            max-width: 800px;
+            max-width: 820px;
             margin: 0 auto;
         }
-        
+
+        .faq-group { margin-bottom: 3.5rem; scroll-margin-top: 140px; }
+        .faq-group-heading {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #1d6df2;
+            margin-bottom: 0.4rem;
+        }
+        .faq-group-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #1a202c;
+            letter-spacing: -0.5px;
+            margin: 0 0 1.5rem;
+        }
+
         details.faq-item {
             border-bottom: 1px solid #e2e8f0;
-            padding: 1.5rem 0;
+            padding: 1.4rem 0;
             transition: all 0.3s ease;
         }
-        
         details.faq-item summary {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             font-weight: 600;
             color: #1a202c;
             cursor: pointer;
-            list-style: none; /* Standard */
+            list-style: none;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 1rem;
         }
-        
-        details.faq-item summary::-webkit-details-marker {
-            display: none; /* WebKit */
-        }
-        
+        details.faq-item summary::-webkit-details-marker { display: none; }
         details.faq-item summary::after {
             content: '+';
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: 400;
             color: var(--accent-blue);
             transition: transform 0.2s ease;
             line-height: 1;
+            flex-shrink: 0;
         }
-        
         details.faq-item[open] summary::after {
             transform: rotate(45deg);
             color: #718096;
         }
-        
         details.faq-item p {
-            padding-top: 1.5rem;
+            padding-top: 1.25rem;
             color: #4a5568;
             line-height: 1.7;
-            font-size: 1.1rem;
+            font-size: 1rem;
             margin: 0;
         }
+        details.faq-item p + p { padding-top: 0.75rem; }
 
         .faq-contact-box {
             background-color: #f7f9fa;
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 3rem;
             text-align: center;
-            margin-top: 4rem;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 780px) {
+            .page-header { padding: 9rem 1.25rem 3rem; }
+            .page-title { font-size: 2.75rem; letter-spacing: -1px; }
+            .page-subtitle { font-size: 1rem; }
+            .faq-nav { padding: 0.75rem 1rem; }
+            .faq-nav-inner { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; justify-content: flex-start; scrollbar-width: none; }
+            .faq-nav-inner::-webkit-scrollbar { display: none; }
+            .faq-section { padding: 2.5rem 1.25rem 4rem; }
+            .faq-group-title { font-size: 1.5rem; }
+            details.faq-item summary { font-size: 1rem; }
+            .faq-contact-box { padding: 2rem 1.5rem; }
         }
     </style>
     <script src="../../components/components.js" defer></script>
@@ -101,39 +163,213 @@
         <p class="page-subtitle">Everything you need to know about buying, selling, and living on Minnesota's beautiful lakes.</p>
     </div>
 
+    <!-- Category nav -->
+    <nav class="faq-nav" aria-label="FAQ categories">
+        <div class="faq-nav-inner">
+            <a href="#buying"   class="faq-pill">Buying</a>
+            <a href="#selling"  class="faq-pill">Selling</a>
+            <a href="#agents"   class="faq-pill">Agents</a>
+            <a href="#lake"     class="faq-pill">Lake Life &amp; Regulations</a>
+            <a href="#rentals"  class="faq-pill">Rentals</a>
+            <a href="#about"    class="faq-pill">About Us</a>
+        </div>
+    </nav>
+
     <section class="faq-section">
         <div class="faq-container">
-            
-            <details class="faq-item">
-                <summary>Do you only sell lakefront properties, or do you list homes near lakes as well?</summary>
-                <p>While we specialize in direct lakefront and waterfront estates, we also strongly represent properties that have deeded lake access or are situated within premium lake communities. Our focus is the lakeside lifestyle, and we assist buyers and sellers in all aspects of that market.</p>
-            </details>
 
-            <details class="faq-item">
-                <summary>What is the best time of year to buy or sell a Minnesota lake home?</summary>
-                <p>Historically, the market peaks in early spring (March through May) as buyers look to secure a property and close right before summer begins. However, selling in the late summer or fall can be highly advantageous as serious buyers look to close before winter descends. Our agents can help you time the market perfectly based on your specific lake and goals.</p>
-            </details>
+            <!-- ══════════════ BUYING ══════════════ -->
+            <div id="buying" class="faq-group">
+                <p class="faq-group-heading">Category 01</p>
+                <h2 class="faq-group-title">Buying a Lake Home</h2>
 
-            <details class="faq-item">
-                <summary>Are there specific shoreline regulations I need to be aware of before buying?</summary>
-                <p>Absolutely. The Minnesota Department of Natural Resources (DNR) and local county watersheds have very specific zoning laws regarding shoreline alterations, dock placements, tree removal, and structural setbacks. Our local agents are experts in these regulations and will guide you through the compliance and permit process during your purchase.</p>
-            </details>
+                <details class="faq-item">
+                    <summary>Do you only sell lakefront properties, or do you list homes near lakes as well?</summary>
+                    <p>While we specialize in direct lakefront and waterfront estates, we also strongly represent properties with deeded lake access or homes situated within premium lake communities. Our focus is the lakeside lifestyle — our agents assist buyers and sellers across every type of lake-adjacent property.</p>
+                </details>
 
-            <details class="faq-item">
-                <summary>How do you determine the true value of a lakefront home?</summary>
-                <p>Pricing a lake property is significantly more complex than a standard residential home. We evaluate variables such as water clarity, shoreline quality (sand, weed, rock), elevation to the water, dock type, lake size/depth, and comparable sales on that specific body of water to ensure an accurate and competitive listing price.</p>
-            </details>
+                <details class="faq-item">
+                    <summary>What is the best time of year to buy a Minnesota lake home?</summary>
+                    <p>The market typically peaks in early spring (March through May) as buyers rush to secure a property and close before summer. Late summer and fall can actually be advantageous for buyers — inventory stays high and motivated sellers become more negotiable before winter. A good agent will help you time your specific lake and price range correctly.</p>
+                </details>
 
-            <details class="faq-item">
-                <summary>Can you help me find an off-market or private listing?</summary>
-                <p>Yes. Due to our extensive network and specialization in the luxury waterfront market across the state, we frequently have access to 'pocket listings' that never reach public platforms like Zillow or the MLS. We highly recommend connecting with an agent directly to get on our private buyer notification list.</p>
-            </details>
+                <details class="faq-item">
+                    <summary>How do you determine the true value of a lakefront home?</summary>
+                    <p>Pricing a lake property is significantly more complex than a standard residential home. We evaluate water clarity, shoreline quality (sand, weed, rock bottom), elevation to the water, dock type and grandfathered rights, lake size and depth, and comparable sales on that specific body of water. Two homes two bays apart can trade for very different prices.</p>
+                </details>
 
-            <details class="faq-item">
-                <summary>Do you offer property management or rental services?</summary>
-                <p>Yes, through our parent company network at <a href="/pages/public/commonrealtor.html" style="color:#2b6cb0;text-decoration:underline;">CommonRealtor</a>, we offer comprehensive property management and seasonal rental services for investors looking to maximize the ROI on their waterfront assets while ensuring the home stays in pristine condition while they are away.</p>
-            </details>
+                <details class="faq-item">
+                    <summary>Can you help me find an off-market or private listing?</summary>
+                    <p>Yes. Through our statewide network of agents specialized in the luxury waterfront market, we frequently have access to pocket listings that never reach Zillow or the MLS. We recommend connecting with an agent directly to get added to our private buyer notification list.</p>
+                </details>
 
+                <details class="faq-item">
+                    <summary>What should I look for during a lake-home inspection?</summary>
+                    <p>Beyond the standard home-inspection checklist, you should specifically inspect the dock's structural integrity, the seawall or shoreline erosion control, the septic system (most lake homes are on private septic, not municipal sewer), any boathouses or lifts, and water well quality. Budget for a specialized inspector if your chosen home has complex waterfront infrastructure.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>Do lake homes require special insurance?</summary>
+                    <p>Usually yes. Lake homes often need additional flood coverage, separate policies for docks and boathouses, and umbrella policies for watercraft liability. Some lakes carry higher insurance costs than others due to shoreline erosion risk or wildfire exposure. We'll connect you with local insurers who specialize in lakefront policies.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>Are cash offers actually faster than financing?</summary>
+                    <p>Yes — cash offers typically close in 7–14 days versus 30–45 days for financed purchases. In a competitive lake market where multiple buyers compete for the same property, a cash offer can win you the home even at a slightly lower price. We partner with institutional cash-offer programs for buyers who want the speed advantage.</p>
+                </details>
+            </div>
+
+            <!-- ══════════════ SELLING ══════════════ -->
+            <div id="selling" class="faq-group">
+                <p class="faq-group-heading">Category 02</p>
+                <h2 class="faq-group-title">Selling Your Property</h2>
+
+                <details class="faq-item">
+                    <summary>When should I list my lake home for sale?</summary>
+                    <p>For most Minnesota lakes, the sweet spot is late February through early May — buyers are actively looking to secure a home before summer. Properties listed in this window consistently achieve higher sale prices and shorter days on market. That said, a well-priced home in great condition sells in any season.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>How do I prepare a lake property for photography and showings?</summary>
+                    <p>The dock and shoreline are as important as the interior. Power-wash the boards, replace any rotted planks, and stage the dock with a couple of Adirondack chairs. Inside, declutter aggressively and pull the furniture toward the water-facing windows. Book a photographer who shoots at golden hour — the light on the water at sunset sells lake homes like nothing else.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>What's the difference between listing with an agent and taking a cash offer?</summary>
+                    <p>Listing with an agent typically nets you 8–15% more but takes 30–90 days and requires showings, repairs, and closing-cost negotiation. A cash offer closes in under two weeks with no showings or repairs, but the offer price reflects the convenience — usually 5–10% below market. We'll give you both numbers so you can choose based on your situation.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>Do I need to disclose things like shoreline issues or old septic systems?</summary>
+                    <p>Yes. Minnesota requires sellers to disclose any known material defects, including septic system age and condition, shoreline erosion, water quality issues, and any past flooding. Hiding these almost always surfaces during inspection and kills the deal — or worse, causes legal liability after closing. Your agent will walk you through proper disclosure.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>How much will I actually walk away with after closing?</summary>
+                    <p>Your net varies based on the sale price, outstanding mortgage, agent commissions (typically 5–6% total), closing costs (about 1–3%), title fees, and any concessions or repairs negotiated. We provide a detailed net-sheet before you list so there are no surprises on closing day.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>Can I sell my lake home and rent it back until I find a new one?</summary>
+                    <p>Yes, this is a common arrangement called a "rent-back" or "post-closing occupancy agreement." It's popular among sellers whose kids are still in school or who need time to find their next home. The terms — including rent amount and duration — are negotiated as part of the purchase contract. Most buyers accommodate up to 60 days.</p>
+                </details>
+            </div>
+
+            <!-- ══════════════ AGENTS ══════════════ -->
+            <div id="agents" class="faq-group">
+                <p class="faq-group-heading">Category 03</p>
+                <h2 class="faq-group-title">Working With Agents</h2>
+
+                <details class="faq-item">
+                    <summary>How is MN Lake Homes different from Zillow or Redfin?</summary>
+                    <p>We're not a listings aggregator. We're a curated network of Minnesota real estate agents who specialize specifically in lakefront and waterfront properties. Every agent on our platform is independently licensed, vetted, and has demonstrated expertise on specific Minnesota lakes — not a national algorithm matching you to the nearest random agent.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>How do you vet the agents on your platform?</summary>
+                    <p>We verify each agent's license, brokerage affiliation, and track record of lakefront transactions in the last 24 months. Agents apply to join, submit credentials, and go through an admin review before their profile goes live. We remove any agent whose performance or client feedback slips below our standards.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>Does it cost anything to work with an agent through your platform?</summary>
+                    <p>No. As a buyer or seller, working with an agent through MN Lake Homes is completely free — agent commissions are paid by the seller at closing (standard in Minnesota real estate). You pay nothing extra for being matched through our platform.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>I'm a licensed agent — how do I join the network?</summary>
+                    <p>Head to our <a href="/pages/public/join.html" style="color:#2b6cb0;text-decoration:underline;">Join the Network</a> page. We offer three partnership tiers based on your production volume and lake specialization. Apply, submit your credentials, and our team will get back to you within 48 hours.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>What's a "Top Agent" or "Featured Agent" designation mean?</summary>
+                    <p>Top Agents are hand-picked specialists who've closed at least $10M in lakefront transactions over the past 18 months and maintain a 4.8+ average client rating. Featured Agents appear at the top of our directory and on specific lake-guide pages like Lake Minnetonka. It's a quality signal, not pay-to-play.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>Can I switch agents if I don't like the match?</summary>
+                    <p>Absolutely, as long as you haven't signed an exclusive representation agreement. If you've started working with an agent through our platform and it's not a fit, just tell us — we'll match you with someone else with no awkwardness. Your experience matters more than any single agent's pipeline.</p>
+                </details>
+            </div>
+
+            <!-- ══════════════ LAKE LIFE & REGULATIONS ══════════════ -->
+            <div id="lake" class="faq-group">
+                <p class="faq-group-heading">Category 04</p>
+                <h2 class="faq-group-title">Lake Life &amp; Regulations</h2>
+
+                <details class="faq-item">
+                    <summary>Are there specific shoreline regulations I need to be aware of before buying?</summary>
+                    <p>Absolutely. The Minnesota Department of Natural Resources (DNR) and local county watersheds enforce specific zoning laws around shoreline alterations, dock placements, tree removal, and structural setbacks. Most lakes have a 75-foot minimum structure setback; some protected lakes enforce 150+ feet. Our agents know these rules cold and will guide you through permits during your purchase.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>Do dock rights automatically transfer when I buy a lakefront home?</summary>
+                    <p>Not automatically. Dock permits are issued at the county level and depend on the lake's classification, your shoreline type, and whether the existing dock is grandfathered. Always ask for current permit documentation and verify transferability before closing. Unpermitted docks become your problem the day you take ownership.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>Can I build, expand, or renovate on a lakefront lot?</summary>
+                    <p>Usually yes, but with constraints. Minnesota's Shoreland Management Act and county ordinances dictate minimum setbacks, impervious surface limits, and vegetation preservation rules. A home that's inside the current setback zone is typically grandfathered but can't necessarily be expanded toward the water. Always pull local zoning before you commit to renovation plans.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>What about winter access and road maintenance?</summary>
+                    <p>That picturesque road you drove in July might be impassable in February. Many lakefront properties share a private road, which means owners split the cost of plowing and maintenance via a road association. Ask for the road maintenance agreement and annual assessment before closing. Year-round access also affects financing — some lenders treat seasonal-access homes differently.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>How do I know if a lake is good for swimming, fishing, or boating?</summary>
+                    <p>The MN DNR publishes lake-specific data on water clarity, fish populations, boat density, and water quality. Lakes vary dramatically: some are crystal-clear and sandy-bottomed; others are weedy, shallow, or loaded with muskie. Our agents know the local lakes intimately and can help you match the lake's personality to the lifestyle you actually want.</p>
+                </details>
+            </div>
+
+            <!-- ══════════════ RENTALS & PROPERTY MGMT ══════════════ -->
+            <div id="rentals" class="faq-group">
+                <p class="faq-group-heading">Category 05</p>
+                <h2 class="faq-group-title">Rentals &amp; Property Management</h2>
+
+                <details class="faq-item">
+                    <summary>Do you offer property management or rental services?</summary>
+                    <p>Yes, through our parent company network at <a href="/pages/public/commonrealtor.html" style="color:#2b6cb0;text-decoration:underline;">CommonRealtor</a>, we offer full-service property management and seasonal rental services for owners who want their lake home to generate income and stay in pristine condition between personal stays.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>Can I rent out my lake home on Airbnb or VRBO?</summary>
+                    <p>That depends on the municipality. Many lake towns — including parts of Lake Minnetonka, Brainerd Lakes, and the BWCA region — restrict short-term rentals (STRs) to preserve residential character. Some require permits, insurance, and minimum stay lengths. Before you buy with STR income in mind, verify the specific city or township STR ordinance.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>What's a realistic rental income for a Minnesota lake home?</summary>
+                    <p>Highly seasonal and location-dependent. A 4-bedroom home on a popular lake like Minnetonka or Gull can gross $30–60K per summer renting on weekly terms. Smaller homes or secondary lakes can still cover taxes and upkeep. We can model a specific property's rental potential as part of any buying analysis.</p>
+                </details>
+            </div>
+
+            <!-- ══════════════ ABOUT US ══════════════ -->
+            <div id="about" class="faq-group">
+                <p class="faq-group-heading">Category 06</p>
+                <h2 class="faq-group-title">About MN Lake Homes</h2>
+
+                <details class="faq-item">
+                    <summary>Is MN Lake Homes a brokerage?</summary>
+                    <p>No. MN Lake Homes is a real estate network and lead-generation platform, not a licensed brokerage. We don't represent buyers or sellers directly — every transaction is facilitated by independently licensed real estate professionals in our network. We're the matchmaker, not the negotiator.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>Are you part of a larger company?</summary>
+                    <p>Yes — MN Lake Homes is part of the <a href="/pages/public/commonrealtor.html" style="color:#2b6cb0;text-decoration:underline;">CommonRealtor</a> portfolio of regional real estate networks. This gives us access to national relocation buyers, institutional cash-offer programs, and property management infrastructure that most local platforms can't match.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>How do you make money?</summary>
+                    <p>Agents in our network pay a monthly subscription plus referral fees on closed deals. Buyers and sellers pay nothing to use the platform. We don't sell your contact information or run third-party ads — we keep the experience clean for users and rely on agent partnerships for revenue.</p>
+                </details>
+
+                <details class="faq-item">
+                    <summary>What areas of Minnesota do you cover?</summary>
+                    <p>Statewide — with concentrated agent coverage around the Twin Cities metro lakes (Minnetonka, White Bear, Prior), the Brainerd Lakes Area (Gull, Mille Lacs, Whitefish Chain), the Alexandria Lakes Region, the Otter Tail Lakes, Lake Vermilion, Leech Lake, and the Boundary Waters entry points. If it's a significant Minnesota lake, we have agents who know it deeply.</p>
+                </details>
+            </div>
+
+            <!-- Contact CTA -->
             <div class="faq-contact-box">
                 <h3 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 1rem; color: #1a202c;">Still have questions?</h3>
                 <p style="color: #4a5568; line-height: 1.6; margin-bottom: 2rem; font-size: 1.05rem;">We're happy to help. Reach out with any questions about specific lakes, communities, the buying or selling process, or anything else — our team will get back to you quickly.</p>
@@ -143,22 +379,30 @@
         </div>
     </section>
 
-    <!-- Global Footer -->
     <global-footer></global-footer>
-
-    <!-- Full Screen Lead Modal -->
     <lead-modal></lead-modal>
 
     <script>
+        // Highlight the active category pill based on which group is on screen
+        document.addEventListener('DOMContentLoaded', () => {
+            const pills = document.querySelectorAll('.faq-pill');
+            const groups = document.querySelectorAll('.faq-group');
+            const setActive = (id) => {
+                pills.forEach(p => p.classList.toggle('active', p.getAttribute('href') === `#${id}`));
+            };
+            const io = new IntersectionObserver((entries) => {
+                entries.forEach(e => { if (e.isIntersecting) setActive(e.target.id); });
+            }, { rootMargin: '-30% 0px -55% 0px' });
+            groups.forEach(g => io.observe(g));
+        });
+
         function openModal() {
             document.getElementById('lead-modal').classList.add('active');
             nextModalStep(1);
         }
-
         function closeModal() {
             document.getElementById('lead-modal').classList.remove('active');
         }
-
         function nextModalStep(step) {
             document.querySelectorAll('.modal-step').forEach(el => el.classList.remove('active'));
             document.getElementById('modal-step-' + step).classList.add('active');
