@@ -445,26 +445,57 @@
     }
 
     // ── Save Account Profile ─────────────────────────────────────────────────
+    // Writes first_name / last_name / email to the users table, and
+    // phone + display_name to the linked agent record.
     async function saveAccountProfile() {
-        // Note: updating user record via agent profile endpoint until a dedicated user PATCH route exists
-        const payload = {
-            display_name:   `${document.getElementById('acc-first').value.trim()} ${document.getElementById('acc-last').value.trim()}`.trim(),
-            phone_public:    document.getElementById('acc-phone').value.trim()
-        };
+        if (!agentData || !agentData.user_id_ref) {
+            alert('Cannot save — user record not loaded.');
+            return;
+        }
+
+        const firstName = document.getElementById('acc-first').value.trim();
+        const lastName  = document.getElementById('acc-last').value.trim();
+        const email     = document.getElementById('acc-email').value.trim();
+        const phone     = document.getElementById('acc-phone').value.trim();
+        const fullName  = [firstName, lastName].filter(Boolean).join(' ').trim();
 
         try {
-            const res = await fetch(`/api/admin/${agentId}/profile`, {
+            // 1. Update the user record (first/last/full name + email)
+            const userRes = await fetch(`/api/admin/users/${agentData.user_id_ref}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    first_name: firstName,
+                    last_name:  lastName,
+                    full_name:  fullName,
+                    email:      email
+                })
             });
-            if (res.ok) {
-                showMsg('account-save-msg');
-            } else {
-                const d = await res.json();
-                alert(d.error || 'Save failed.');
+            if (!userRes.ok) {
+                const d = await userRes.json().catch(() => ({}));
+                throw new Error(d.error || `User update failed (HTTP ${userRes.status})`);
             }
-        } catch(_) { alert('Network error.'); }
+
+            // 2. Update the agent record (display name + public phone)
+            const agentRes = await fetch(`/api/admin/${agentId}/profile`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    display_name: fullName,
+                    phone_public: phone
+                })
+            });
+            if (!agentRes.ok) {
+                const d = await agentRes.json().catch(() => ({}));
+                throw new Error(d.error || `Agent update failed (HTTP ${agentRes.status})`);
+            }
+
+            showMsg('account-save-msg');
+            // Reload the page data so what's on screen matches the DB
+            await loadAgent();
+        } catch (err) {
+            alert(err.message);
+        }
     }
 
     // ── Save Agent Profile ───────────────────────────────────────────────────
