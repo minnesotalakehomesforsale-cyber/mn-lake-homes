@@ -253,7 +253,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status })
                 });
-                if (!res.ok) throw new Error('Status update failed.');
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `Status update failed (HTTP ${res.status}).`);
                 window.location.reload();
             } catch (err) {
                 alert(err.message);
@@ -268,7 +269,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ agentId })
                 });
-                if (!res.ok) throw new Error('Assignment failed.');
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `Assignment failed (HTTP ${res.status}).`);
                 window.location.reload();
             } catch (err) {
                 alert(err.message);
@@ -284,7 +286,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content: input.value })
                 });
-                if (!res.ok) throw new Error('Note failed to save.');
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `Note failed to save (HTTP ${res.status}).`);
                 input.value = '';
                 window.location.reload();
             } catch (err) {

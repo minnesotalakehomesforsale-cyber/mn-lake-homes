@@ -499,23 +499,34 @@ const getLeadDetail = async (req, res) => {
 const updateLeadStatus = async (req, res) => {
     try {
         const { status } = req.body;
-        await pool.query('UPDATE leads SET lead_status = $1, updated_at = NOW() WHERE id = $2', [status, req.params.id]);
-        res.json({ success: true });
+        if (!status) return res.status(400).json({ error: 'Status is required.' });
+        const result = await pool.query(
+            `UPDATE leads SET lead_status = $1::lead_status_type, updated_at = NOW() WHERE id = $2 RETURNING id, lead_status`,
+            [status, req.params.id]
+        );
+        if (!result.rowCount) return res.status(404).json({ error: 'Lead not found.' });
+        res.json({ success: true, lead: result.rows[0] });
     } catch (err) {
-        res.status(500).json({ error: 'Failed to update lead status.' });
+        console.error('[updateLeadStatus]', err.message, '| code:', err.code, '| detail:', err.detail);
+        res.status(500).json({ error: `Failed to update lead status: ${err.message}` });
     }
 };
 
 const assignLead = async (req, res) => {
     try {
         const { agentId, userId } = req.body;
-        await pool.query(
-            'UPDATE leads SET agent_id = $1, assigned_user_id = $2, lead_status = $3, updated_at = NOW() WHERE id = $4',
-            [agentId || null, userId || null, 'assigned', req.params.id]
+        const result = await pool.query(
+            `UPDATE leads
+             SET agent_id = $1, assigned_user_id = $2, lead_status = $3::lead_status_type, updated_at = NOW()
+             WHERE id = $4
+             RETURNING id, agent_id, assigned_user_id, lead_status`,
+            [agentId || null, userId || null, agentId || userId ? 'assigned' : 'unassigned', req.params.id]
         );
-        res.json({ success: true });
+        if (!result.rowCount) return res.status(404).json({ error: 'Lead not found.' });
+        res.json({ success: true, lead: result.rows[0] });
     } catch (err) {
-        res.status(500).json({ error: 'Failed to assign lead.' });
+        console.error('[assignLead]', err.message, '| code:', err.code, '| detail:', err.detail, '| body:', req.body);
+        res.status(500).json({ error: `Failed to assign lead: ${err.message}` });
     }
 };
 

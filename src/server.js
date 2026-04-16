@@ -110,6 +110,37 @@ async function ensureTables() {
         await pool.query(`
             ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
         `);
+
+        // Backfill lead table columns for older production databases.
+        // These are referenced by /api/admin/leads/:id/assign and related endpoints.
+        await pool.query(`
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS assigned_user_id UUID;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS contact_preference VARCHAR(50);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS location_text VARCHAR(255);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS budget_min DECIMAL(15,2);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS budget_max DECIMAL(15,2);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS timeline_text VARCHAR(150);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS form_payload_json JSONB;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS source_page_url VARCHAR(1000);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS source_page_title VARCHAR(255);
+        `);
+
+        // Ensure the FK constraint from assigned_user_id → users exists (best-effort)
+        await pool.query(`
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.table_constraints
+                    WHERE table_name = 'leads' AND constraint_name = 'leads_assigned_user_id_fkey'
+                ) THEN
+                    ALTER TABLE leads
+                    ADD CONSTRAINT leads_assigned_user_id_fkey
+                    FOREIGN KEY (assigned_user_id) REFERENCES users(id) ON DELETE SET NULL;
+                END IF;
+            END $$;
+        `);
+
         console.log(' Tables verified.');
 
         // Migrate default seeded cover images from Unsplash URLs to local /assets/images/ paths
