@@ -4,7 +4,8 @@ const blog = require('../controllers/blog.controller');
 
 // Public
 router.get('/', blog.getPublished);
-router.get('/admin/all', blog.getAll);      // must come before /:slug
+router.get('/admin/all', blog.getAll);           // must come before /:slug
+router.post('/admin/upload-image', blog.uploadImage);
 router.get('/:slug', blog.getBySlug);
 
 // Admin CRUD (no auth wall per project convention)

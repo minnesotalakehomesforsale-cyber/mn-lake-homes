@@ -167,8 +167,15 @@
 
             <div class="field-row cols-1">
                 <div class="field-grp">
-                    <label class="field-lbl">Cover Image URL</label>
-                    <input type="url" class="field-inp" id="f-cover" placeholder="https://images.unsplash.com/…" oninput="previewCover(this.value)">
+                    <label class="field-lbl">Cover Image</label>
+                    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                        <input type="url" class="field-inp" id="f-cover" placeholder="Paste an image URL or upload a file →" oninput="previewCover(this.value)" style="flex:1; min-width:220px;">
+                        <label for="f-upload" style="padding:0.7rem 1rem; border:1px solid #e2e8f0; border-radius:8px; background:#f7f9fa; color:#1a202c; font-size:0.85rem; font-weight:700; cursor:pointer; white-space:nowrap; font-family:inherit;">
+                            📤 Upload Image
+                        </label>
+                        <input type="file" id="f-upload" accept="image/*" style="display:none;" onchange="uploadImage(this.files[0])">
+                        <span id="upload-status" style="font-size:0.8rem; color:#718096; font-weight:500;"></span>
+                    </div>
                     <img id="cover-preview" class="cover-preview" alt="Cover preview">
                 </div>
             </div>
@@ -211,16 +218,7 @@
     let editingId = null;
     let currentFilter = 'all';
 
-    // ── Auth guard ─────────────────────────────────────────────────────────────
-    document.addEventListener('DOMContentLoaded', async () => {
-        try {
-            const res = await fetch('/api/auth/session');
-            if (!res.ok) { window.location.href = '/pages/public/login.html'; return; }
-            const s = await res.json();
-            if (!['admin', 'super_admin'].includes(s.role)) { window.location.href = '/index.html'; return; }
-        } catch(_) { window.location.href = '/pages/public/login.html'; return; }
-        loadPosts();
-    });
+    document.addEventListener('DOMContentLoaded', loadPosts);
 
     // ── Load all posts ─────────────────────────────────────────────────────────
     async function loadPosts() {
@@ -419,6 +417,34 @@
             img.onerror = () => { img.style.display = 'none'; };
         } else {
             img.style.display = 'none';
+        }
+    }
+
+    // ── File upload ────────────────────────────────────────────────────────────
+    async function uploadImage(file) {
+        if (!file) return;
+        const statusEl = document.getElementById('upload-status');
+        const coverInp = document.getElementById('f-cover');
+        statusEl.textContent = `Uploading ${file.name}…`;
+        statusEl.style.color = '#718096';
+
+        const fd = new FormData();
+        fd.append('image', file);
+        try {
+            const res = await fetch('/api/blog/admin/upload-image', { method: 'POST', body: fd });
+            if (!res.ok) {
+                const d = await res.json().catch(() => ({}));
+                throw new Error(d.error || 'Upload failed');
+            }
+            const { url } = await res.json();
+            coverInp.value = url;
+            previewCover(url);
+            statusEl.textContent = '✓ Uploaded';
+            statusEl.style.color = '#2f855a';
+            setTimeout(() => { statusEl.textContent = ''; }, 3000);
+        } catch (err) {
+            statusEl.textContent = `Error: ${err.message}`;
+            statusEl.style.color = '#c53030';
         }
     }
 

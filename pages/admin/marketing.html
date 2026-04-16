@@ -269,8 +269,13 @@
                     <input type="number" class="blog-input" id="bp-readtime" value="4" min="1" max="60">
                 </div>
                 <div class="blog-form-group">
-                    <label>Cover Image URL</label>
-                    <input type="url" class="blog-input" id="bp-cover" placeholder="https://images.unsplash.com/..." oninput="previewCover(this.value)">
+                    <label>Cover Image</label>
+                    <div style="display:flex; gap:0.5rem; align-items:center;">
+                        <input type="url" class="blog-input" id="bp-cover" placeholder="Paste URL or upload →" oninput="previewCover(this.value)" style="flex:1;">
+                        <label for="bp-upload" style="padding:0.75rem 1rem; border:1px solid #e2e8f0; border-radius:8px; background:#f7f9fa; font-size:0.8rem; font-weight:700; cursor:pointer; white-space:nowrap;">📤 Upload</label>
+                        <input type="file" id="bp-upload" accept="image/*" style="display:none;" onchange="uploadCoverImage(this.files[0])">
+                    </div>
+                    <span id="bp-upload-status" style="font-size:0.78rem; color:#718096; font-weight:500; margin-top:0.25rem; display:block;"></span>
                 </div>
             </div>
             <div class="blog-form-row full">
@@ -531,6 +536,28 @@
 
     function handleOverlayClick(e) {
         if (e.target === document.getElementById('blog-overlay')) closeBlogEditor();
+    }
+
+    async function uploadCoverImage(file) {
+        if (!file) return;
+        const statusEl = document.getElementById('bp-upload-status');
+        statusEl.textContent = `Uploading ${file.name}…`;
+        statusEl.style.color = '#718096';
+        const fd = new FormData();
+        fd.append('image', file);
+        try {
+            const res = await fetch('/api/blog/admin/upload-image', { method: 'POST', body: fd });
+            if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Upload failed'); }
+            const { url } = await res.json();
+            document.getElementById('bp-cover').value = url;
+            previewCover(url);
+            statusEl.textContent = '✓ Uploaded';
+            statusEl.style.color = '#2f855a';
+            setTimeout(() => { statusEl.textContent = ''; }, 3000);
+        } catch (err) {
+            statusEl.textContent = `Error: ${err.message}`;
+            statusEl.style.color = '#c53030';
+        }
     }
 
     function previewCover(url) {

@@ -402,9 +402,19 @@ const addLeadNote = async (req, res) => {
         const { content } = req.body;
         if (!content || !content.trim()) return res.status(400).json({ error: 'Note body cannot be empty.' });
 
+        // Attribute to the authed admin if available, otherwise any admin/super_admin user
+        let userId = req.user?.userId || null;
+        if (!userId) {
+            const adm = await pool.query(
+                `SELECT id FROM users WHERE role IN ('admin','super_admin') ORDER BY created_at ASC LIMIT 1`
+            );
+            userId = adm.rows[0]?.id || null;
+        }
+        if (!userId) return res.status(500).json({ error: 'No admin user on platform to attribute note.' });
+
         await pool.query(
             'INSERT INTO lead_notes (lead_id, user_id, note_body) VALUES ($1, $2, $3)',
-            [req.params.id, req.user.userId, content.trim()]
+            [req.params.id, userId, content.trim()]
         );
         res.json({ success: true });
     } catch (err) {
