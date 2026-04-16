@@ -102,6 +102,11 @@ body {
     opacity: 0.7;
 }
 
+/* Dropdown menu in header nav */
+.nav-dropdown:hover .nav-dropdown-menu,
+.nav-dropdown:focus-within .nav-dropdown-menu { display: block !important; }
+.nav-dropdown-trigger { cursor: pointer; }
+
 .nav-actions {
     display: flex;
     gap: 1rem;

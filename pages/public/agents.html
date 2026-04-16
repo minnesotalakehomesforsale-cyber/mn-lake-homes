@@ -211,11 +211,27 @@
 
         async function renderDirectory() {
             const grid = document.getElementById('agent-directory-grid');
+            const featuredOnly = new URLSearchParams(window.location.search).get('featured') === '1';
+
+            // Update hero heading if we're in featured mode
+            if (featuredOnly) {
+                const headerTitle = document.querySelector('.blog-index-title, .agents-hero-title, h1');
+                if (headerTitle) headerTitle.textContent = 'Featured Agents';
+                const headerSub = document.querySelector('.blog-index-subtitle, .agents-hero-sub');
+                if (headerSub) headerSub.textContent = 'Our top-rated Minnesota lake home specialists, hand-picked and vetted.';
+            }
+
             try {
                 const res = await fetch('/api/agents/public');
                 if (!res.ok) { grid.innerHTML = '<p style="color:#c53030;padding:2rem;">Could not load agents. Please try again later.</p>'; return; }
-                const agents = await res.json();
-                if (agents.length === 0) { grid.innerHTML = '<p style="color:#718096;padding:2rem;">No agents are currently listed. Check back soon.</p>'; return; }
+                let agents = await res.json();
+                if (featuredOnly) agents = agents.filter(a => a.is_featured);
+                if (agents.length === 0) {
+                    grid.innerHTML = featuredOnly
+                        ? '<p style="color:#718096;padding:2rem;">No featured agents yet. <a href="agents.html" style="color:#1d6df2;">See all agents →</a></p>'
+                        : '<p style="color:#718096;padding:2rem;">No agents are currently listed. Check back soon.</p>';
+                    return;
+                }
                 grid.innerHTML = '';
                 agents.forEach(a => grid.appendChild(buildCard(a)));
             } catch (err) {
