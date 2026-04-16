@@ -17,22 +17,17 @@ const app = express();
 app.use(helmet({
     contentSecurityPolicy: false, // Temporarily disabled to allow inline scripts from existing UI prototypes
 }));
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-    : [`http://localhost:${process.env.PORT || 3000}`];
 
+// Permissive CORS — this is a staging/admin environment with no auth walls.
+// Previous config rejected requests from any origin except http://localhost:3000
+// unless ALLOWED_ORIGINS was set, which silently broke every POST/PATCH/DELETE
+// on the live site because browsers send Origin headers for non-GET requests.
 app.use(cors({
-    origin: (origin, callback) => {
-        // Allow server-to-server requests (no origin) and whitelisted origins
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error(`CORS: origin '${origin}' not allowed`));
-        }
-    },
+    origin: true,       // reflect the request origin (effectively 'accept any')
     credentials: true
 }));
-app.use(express.json());
+
+app.use(express.json({ limit: '5mb' }));
 app.use(cookieParser());
 
 // ==========================================
@@ -52,6 +47,48 @@ app.get('/api/health', (req, res) => {
         deploy_time: process.env.RENDER_DEPLOY_TIME || new Date().toISOString(),
         commit: process.env.RENDER_GIT_COMMIT || 'unknown',
         node: process.version
+    });
+});
+
+// /api/_diagnostic — quick test of DB connectivity and schema
+app.get('/api/_diagnostic', async (req, res) => {
+    const pool = require('./database/pool');
+    const out = { status: 'ok', checks: {} };
+    try {
+        const t = await pool.query(`SELECT 1 AS ok`);
+        out.checks.db_connection = t.rows[0].ok === 1 ? 'pass' : 'fail';
+    } catch (e) { out.checks.db_connection = `fail: ${e.message}`; out.status = 'degraded'; }
+
+    for (const table of ['leads', 'agents', 'users', 'blog_posts', 'admin_tasks']) {
+        try {
+            const r = await pool.query(`SELECT COUNT(*) AS c FROM ${table}`);
+            out.checks[`table_${table}`] = `ok (${r.rows[0].c} rows)`;
+        } catch (e) {
+            out.checks[`table_${table}`] = `missing: ${e.message}`;
+            out.status = 'degraded';
+        }
+    }
+
+    try {
+        const r = await pool.query(`
+            SELECT column_name FROM information_schema.columns
+            WHERE table_name = 'leads' ORDER BY ordinal_position
+        `);
+        out.checks.leads_columns = r.rows.map(x => x.column_name);
+    } catch (e) { out.checks.leads_columns = `error: ${e.message}`; }
+
+    res.json(out);
+});
+
+// Global API error handler — guarantees JSON responses for /api routes
+// (instead of Express's default HTML error page which makes fetches fail silently)
+app.use('/api', (err, req, res, next) => {
+    console.error(`[API Error] ${req.method} ${req.originalUrl}:`, err.message);
+    if (res.headersSent) return next(err);
+    res.status(err.status || 500).json({
+        error: err.message || 'Unexpected server error.',
+        path: req.originalUrl,
+        method: req.method
     });
 });
 
