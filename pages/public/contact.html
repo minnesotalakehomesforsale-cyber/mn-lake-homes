@@ -204,17 +204,17 @@
                 <h3 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Send a message</h3>
                 <p style="color: #718096; margin-bottom: 2.5rem; font-size: 1.05rem;">Fill out the form below and a local specialist will be in touch within 24 hours.</p>
                 
-                <form onsubmit="event.preventDefault(); alert('Message sent successfully! Our team will reach out to you shortly.');">
+                <form id="mnlh-contact-form" onsubmit="submitMnlhContact(event)">
                     <div class="form-group">
-                        <input type="text" placeholder="Full Name" required>
+                        <input type="text" id="mnlh-name" placeholder="Full Name" required>
                     </div>
                     <div class="form-group" style="display: flex; gap: 1rem;">
-                        <input type="email" placeholder="Email Address" required style="flex: 1;">
-                        <input type="tel" placeholder="Phone Number" style="flex: 1;">
+                        <input type="email" id="mnlh-email" placeholder="Email Address" required style="flex: 1;">
+                        <input type="tel" id="mnlh-phone" placeholder="Phone Number" style="flex: 1;">
                     </div>
                     <div class="form-group">
                         <div class="select-wrapper">
-                            <select required>
+                            <select id="mnlh-type" required>
                                 <option value="" disabled selected>I'm interested in...</option>
                                 <option value="buying">Buying a property</option>
                                 <option value="selling">Selling a property</option>
@@ -224,10 +224,51 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <textarea class="cf-textarea" rows="6" placeholder="How can we help you?" required></textarea>
+                        <textarea id="mnlh-message" class="cf-textarea" rows="6" placeholder="How can we help you?" required></textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1.25rem; font-size: 1.1rem; border: none; margin-top: 1rem;">Send Message</button>
+                    <div id="mnlh-form-status" style="display:none; padding:0.85rem 1rem; border-radius:8px; margin-bottom:1rem; font-size:0.9rem; font-weight:500;"></div>
+                    <button type="submit" id="mnlh-submit-btn" class="btn btn-primary" style="width: 100%; padding: 1.25rem; font-size: 1.1rem; border: none; margin-top: 1rem;">Send Message</button>
                 </form>
+                <script>
+                    async function submitMnlhContact(event) {
+                        event.preventDefault();
+                        const form   = event.target;
+                        const btn    = document.getElementById('mnlh-submit-btn');
+                        const status = document.getElementById('mnlh-form-status');
+                        status.style.display = 'none';
+
+                        const payload = {
+                            source: 'mnlakehomes',
+                            name:          document.getElementById('mnlh-name').value.trim(),
+                            email:         document.getElementById('mnlh-email').value.trim(),
+                            phone:         document.getElementById('mnlh-phone').value.trim() || null,
+                            inquirer_type: document.getElementById('mnlh-type').value || null,
+                            message:       document.getElementById('mnlh-message').value.trim(),
+                            page_url:      window.location.href,
+                        };
+
+                        btn.disabled = true;
+                        btn.textContent = 'Sending…';
+                        try {
+                            const res = await fetch('/api/inquiries', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+                            const data = await res.json().catch(() => ({}));
+                            if (!res.ok) throw new Error(data.error || 'Send failed');
+                            status.textContent = '✓ Message sent — a local specialist will reach out within 24 hours.';
+                            status.style.cssText = 'display:block;padding:0.85rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.9rem;font-weight:500;background:#f0fff4;color:#276749;border:1px solid #9ae6b4;';
+                            form.reset();
+                        } catch (err) {
+                            status.textContent = err.message || 'Something went wrong. Please try again or call us directly.';
+                            status.style.cssText = 'display:block;padding:0.85rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.9rem;font-weight:500;background:#fff5f5;color:#c53030;border:1px solid #feb2b2;';
+                        } finally {
+                            btn.disabled = false;
+                            btn.textContent = 'Send Message';
+                        }
+                    }
+                </script>
             </div>
             
         </div>

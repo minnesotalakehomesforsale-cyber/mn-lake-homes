@@ -496,17 +496,17 @@
                 <h3 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; color: #1a202c;">Send a message</h3>
                 <p style="color: #718096; margin-bottom: 2.5rem; font-size: 1.05rem;">We'll get back to you within one business day.</p>
 
-                <form onsubmit="submitContact(event)">
+                <form id="cr-contact-form" onsubmit="submitContact(event)">
                     <div class="form-group">
-                        <input type="text" placeholder="Full Name" required>
+                        <input type="text" id="cr-name" placeholder="Full Name" required>
                     </div>
                     <div class="form-group" style="display: flex; gap: 1rem;">
-                        <input type="email" placeholder="Email Address" required style="flex: 1;">
-                        <input type="tel" placeholder="Phone Number" style="flex: 1;">
+                        <input type="email" id="cr-email" placeholder="Email Address" required style="flex: 1;">
+                        <input type="tel" id="cr-phone" placeholder="Phone Number" style="flex: 1;">
                     </div>
                     <div class="form-group">
                         <div class="select-wrapper">
-                            <select required>
+                            <select id="cr-type" required>
                                 <option value="" disabled selected>I am a...</option>
                                 <option value="agent">Real Estate Agent</option>
                                 <option value="buyer">Buyer</option>
@@ -518,9 +518,10 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <textarea class="cr-cf-textarea" rows="6" placeholder="How can we help you?" required></textarea>
+                        <textarea id="cr-message" class="cr-cf-textarea" rows="6" placeholder="How can we help you?" required></textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1.25rem; font-size: 1.1rem; border: none; margin-top: 1rem;">Send message</button>
+                    <div id="cr-form-status" style="display:none; padding:0.85rem 1rem; border-radius:8px; margin-bottom:1rem; font-size:0.9rem; font-weight:500;"></div>
+                    <button type="submit" id="cr-submit-btn" class="btn btn-primary" style="width: 100%; padding: 1.25rem; font-size: 1.1rem; border: none; margin-top: 1rem;">Send message</button>
                 </form>
             </div>
         </div>
@@ -587,10 +588,43 @@
     </footer>
 
     <script>
-        function submitContact(event) {
+        async function submitContact(event) {
             event.preventDefault();
-            event.target.reset();
-            alert('Thanks! We\'ll be in touch within one business day.');
+            const form   = event.target;
+            const btn    = document.getElementById('cr-submit-btn');
+            const status = document.getElementById('cr-form-status');
+            status.style.display = 'none';
+
+            const payload = {
+                source: 'commonrealtor',
+                name:          document.getElementById('cr-name').value.trim(),
+                email:         document.getElementById('cr-email').value.trim(),
+                phone:         document.getElementById('cr-phone').value.trim() || null,
+                inquirer_type: document.getElementById('cr-type').value || null,
+                message:       document.getElementById('cr-message').value.trim(),
+                page_url:      window.location.href,
+            };
+
+            btn.disabled = true;
+            btn.textContent = 'Sending…';
+            try {
+                const res = await fetch('/api/inquiries', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || 'Send failed');
+                status.textContent = '✓ Message sent — we\'ll be in touch within one business day.';
+                status.style.cssText = 'display:block;padding:0.85rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.9rem;font-weight:500;background:#f0fff4;color:#276749;border:1px solid #9ae6b4;';
+                form.reset();
+            } catch (err) {
+                status.textContent = err.message || 'Something went wrong. Please try again or email us directly.';
+                status.style.cssText = 'display:block;padding:0.85rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.9rem;font-weight:500;background:#fff5f5;color:#c53030;border:1px solid #feb2b2;';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Send message';
+            }
         }
 
         function submitNewsletter(event) {

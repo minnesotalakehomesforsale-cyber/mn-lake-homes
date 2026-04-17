@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inquiries | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
+        .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        .admin-side { background: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+        .admin-side h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 2.5rem; padding-left: 0.5rem; color: #fff; margin-top: 0; }
+        .admin-side h1 span { color: #1d6df2; }
+        .side-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; margin-bottom: 0.75rem; padding-left: 0.5rem; font-weight: 700; margin-top: 0; }
+        .side-nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+        .side-link { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 8px; color: #a0aec0; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.15s; }
+        .side-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .side-link.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+        .side-badge { background: #ef4444; color: #fff; font-size: 0.68rem; font-weight: 800; padding: 0.1rem 0.45rem; border-radius: 99px; min-width: 18px; text-align: center; line-height: 1.3; }
+        .side-signout { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #fc8181; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-top: 1rem; transition: all 0.15s; }
+        .side-signout:hover { background: rgba(252,129,129,0.1); }
+        .admin-main { padding: 3rem 3.5rem; overflow-y: auto; }
+
+        /* Filter pills */
+        .filter-row { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center; }
+        .fpill { padding: 0.5rem 1rem; border: 1px solid #e2e8f0; background: #fff; color: #4a5568; border-radius: 99px; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+        .fpill:hover { border-color: #1d6df2; color: #1d6df2; }
+        .fpill.active { background: #1a202c; color: #fff; border-color: #1a202c; }
+        .fpill .c { background: rgba(255,255,255,0.15); color: inherit; padding: 0.1rem 0.45rem; border-radius: 99px; font-size: 0.72rem; font-weight: 800; margin-left: 0.35rem; }
+        .fpill:not(.active) .c { background: #edf2f7; color: #4a5568; }
+        .divider { width: 1px; height: 24px; background: #e2e8f0; margin: 0 0.25rem; }
+
+        /* Stat cards */
+        .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { background: #fff; border: 1px solid #edf2f7; border-radius: 10px; padding: 1.25rem 1.5rem; }
+        .stat-card .lbl { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 0.35rem; }
+        .stat-card .val { font-size: 2rem; font-weight: 800; letter-spacing: -1px; line-height: 1; color: #1a202c; }
+
+        /* Inquiry list */
+        .inq-list { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; overflow: hidden; }
+        .inq-row { display: grid; grid-template-columns: 12px 1.2fr 1.5fr 1.1fr 90px 100px; gap: 1rem; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #f7f9fa; cursor: pointer; transition: background 0.1s; }
+        .inq-row:hover { background: #fcfcfc; }
+        .inq-row:last-child { border-bottom: none; }
+        .inq-row.unread .col-name { font-weight: 800; }
+        .inq-row.unread .col-msg { color: #1a202c; }
+        .inq-row .dot { width: 8px; height: 8px; border-radius: 50%; background: transparent; }
+        .inq-row.unread .dot { background: #1d6df2; }
+        .col-name { font-size: 0.9rem; color: #2d3748; }
+        .col-name .email { font-size: 0.78rem; color: #a0aec0; font-weight: 500; display: block; margin-top: 2px; }
+        .col-msg { color: #718096; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .col-src { font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; width: fit-content; }
+        .src-mnlakehomes { background: #ebf8ff; color: #2b6cb0; }
+        .src-commonrealtor { background: #faf5ff; color: #6b46c1; }
+        .col-status { font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; }
+        .s-new { background: #e6fffa; color: #319795; border: 1px solid #b2f5ea; }
+        .s-pending { background: #fffaf0; color: #c05621; border: 1px solid #feebc8; }
+        .s-complete { background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+        .col-date { font-size: 0.78rem; color: #a0aec0; font-weight: 600; text-align: right; }
+        .empty { padding: 4rem 2rem; text-align: center; color: #a0aec0; }
+
+        /* Detail modal */
+        .ovl { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 9000; align-items: flex-start; justify-content: center; padding: 3rem 1rem; overflow-y: auto; }
+        .ovl.open { display: flex; }
+        .modal { background: #fff; border-radius: 16px; width: 100%; max-width: 680px; box-shadow: 0 30px 60px rgba(0,0,0,0.25); overflow: hidden; margin: auto; }
+        .m-hdr { background: #1a202c; padding: 1.75rem 2rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+        .m-hdr h2 { color: #fff; font-size: 1.3rem; font-weight: 800; margin: 0 0 0.4rem; }
+        .m-hdr .meta { color: #a0aec0; font-size: 0.85rem; }
+        .m-close { background: none; border: none; color: rgba(255,255,255,0.6); font-size: 1.75rem; cursor: pointer; line-height: 1; padding: 0; }
+        .m-close:hover { color: #fff; }
+        .m-body { padding: 2rem; }
+        .m-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2rem; }
+        .m-field .lbl { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 0.35rem; }
+        .m-field .val { font-size: 0.95rem; color: #1a202c; font-weight: 500; word-break: break-word; }
+        .m-field .val a { color: #1d6df2; text-decoration: none; }
+        .m-message { background: #f7f9fa; border-left: 3px solid #1d6df2; border-radius: 0 10px 10px 0; padding: 1.25rem 1.5rem; margin-bottom: 2rem; }
+        .m-message .lbl { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #718096; margin-bottom: 0.5rem; }
+        .m-message p { margin: 0; font-size: 0.95rem; line-height: 1.65; color: #2d3748; white-space: pre-wrap; }
+        .m-status-row { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .m-status-btn { flex: 1; padding: 0.8rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; font-weight: 700; font-size: 0.85rem; cursor: pointer; font-family: inherit; transition: all 0.15s; text-transform: uppercase; letter-spacing: 0.5px; }
+        .m-status-btn:hover { background: #f7f9fa; }
+        .m-status-btn.active { border-color: transparent; }
+        .m-status-btn.active.s-new      { background: #e6fffa; color: #319795; }
+        .m-status-btn.active.s-pending  { background: #fffaf0; color: #c05621; }
+        .m-status-btn.active.s-complete { background: #f0fff4; color: #276749; }
+        .m-footer { display: flex; justify-content: space-between; gap: 1rem; padding: 1.25rem 2rem; border-top: 1px solid #edf2f7; background: #fafbfc; }
+        .btn-reply { background: #1d6df2; color: #fff; border: none; padding: 0.7rem 1.5rem; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 0.9rem; text-decoration: none; display: inline-block; }
+        .btn-reply:hover { opacity: 0.9; }
+        .btn-delete { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; padding: 0.7rem 1.25rem; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 0.9rem; }
+        .btn-delete:hover { background: #fed7d7; }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-nav-badges.js" defer></script>
+</head>
+<body>
+<div class="admin-wrap">
+    <aside class="admin-side">
+        <h1>MNLH <span>ADMIN</span></h1>
+        <p class="side-label">Platform Operations</p>
+        <nav class="side-nav">
+            <a href="dashboard.html"  class="side-link">Dashboard</a>
+            <a href="agents.html"     class="side-link">Agents Directory</a>
+            <a href="leads.html"      class="side-link">Central Leads</a>
+            <a href="inquiries.html"  class="side-link active">
+                <span>Inquiries</span>
+                <span class="side-badge" id="nav-badge-inquiries" style="display:none;">0</span>
+            </a>
+            <a href="blog.html"       class="side-link">Blog & Content</a>
+            <a href="users.html"      class="side-link">Users Management</a>
+            <a href="marketing.html"  class="side-link">Marketing</a>
+            <a href="tasks.html"      class="side-link">Tasks</a>
+        </nav>
+        <a href="/index.html" target="_blank" style="display:block;padding:0.75rem 1rem;border-radius:8px;color:#a0aec0;text-decoration:none;font-size:0.85rem;font-weight:500;margin-top:0.5rem;border:1px solid rgba(255,255,255,0.08);">↗ View Live Site</a>
+        <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>{window.location.href='/index.html';})" class="side-signout">Sign Out</a>
+    </aside>
+
+    <main class="admin-main">
+        <header style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:2rem;">
+            <div>
+                <h1 style="font-size:2rem; font-weight:800; letter-spacing:-1px; margin:0 0 0.25rem;">Inquiries</h1>
+                <p style="color:#718096; margin:0;">All contact-form submissions from your public pages.</p>
+            </div>
+            <button onclick="loadAll()" style="border:1px solid #e2e8f0; background:#fff; padding:0.55rem 1rem; border-radius:8px; font-weight:600; font-size:0.85rem; cursor:pointer;">↻ Refresh</button>
+        </header>
+
+        <!-- Stats -->
+        <div class="stat-row">
+            <div class="stat-card"><div class="lbl">Total</div><div class="val" id="stat-total">—</div></div>
+            <div class="stat-card"><div class="lbl">New / Unread</div><div class="val" id="stat-new" style="color:#319795;">—</div></div>
+            <div class="stat-card"><div class="lbl">Pending</div><div class="val" id="stat-pending" style="color:#c05621;">—</div></div>
+            <div class="stat-card"><div class="lbl">Complete</div><div class="val" id="stat-complete" style="color:#276749;">—</div></div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-row">
+            <button class="fpill active" onclick="setStatusFilter('all', this)">All <span class="c" id="c-all">0</span></button>
+            <button class="fpill" onclick="setStatusFilter('new', this)">New <span class="c" id="c-new">0</span></button>
+            <button class="fpill" onclick="setStatusFilter('pending', this)">Pending <span class="c" id="c-pending">0</span></button>
+            <button class="fpill" onclick="setStatusFilter('complete', this)">Complete <span class="c" id="c-complete">0</span></button>
+            <div class="divider"></div>
+            <button class="fpill active" onclick="setSourceFilter('all', this)">Both Sources</button>
+            <button class="fpill" onclick="setSourceFilter('mnlakehomes', this)">MN Lake Homes</button>
+            <button class="fpill" onclick="setSourceFilter('commonrealtor', this)">CommonRealtor</button>
+        </div>
+
+        <!-- List -->
+        <div class="inq-list" id="inq-list">
+            <div class="empty">Loading…</div>
+        </div>
+    </main>
+</div>
+
+<!-- Detail Modal -->
+<div class="ovl" id="ovl" onclick="if(event.target===this) closeModal()">
+    <div class="modal">
+        <div class="m-hdr">
+            <div>
+                <h2 id="m-title">—</h2>
+                <div class="meta" id="m-meta">—</div>
+            </div>
+            <button class="m-close" onclick="closeModal()">×</button>
+        </div>
+        <div class="m-body">
+            <div class="m-grid">
+                <div class="m-field"><div class="lbl">Name</div><div class="val" id="m-name">—</div></div>
+                <div class="m-field"><div class="lbl">Source</div><div class="val" id="m-source">—</div></div>
+                <div class="m-field"><div class="lbl">Email</div><div class="val" id="m-email">—</div></div>
+                <div class="m-field"><div class="lbl">Phone</div><div class="val" id="m-phone">—</div></div>
+                <div class="m-field"><div class="lbl">Inquirer Type</div><div class="val" id="m-type">—</div></div>
+                <div class="m-field"><div class="lbl">Submitted</div><div class="val" id="m-date">—</div></div>
+            </div>
+
+            <div class="m-message">
+                <div class="lbl">Message</div>
+                <p id="m-message">—</p>
+            </div>
+
+            <div>
+                <div class="lbl" style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#a0aec0;margin-bottom:0.75rem;">Status</div>
+                <div class="m-status-row">
+                    <button class="m-status-btn s-new"      id="ms-new"      onclick="setStatus('new')">New</button>
+                    <button class="m-status-btn s-pending"  id="ms-pending"  onclick="setStatus('pending')">Pending</button>
+                    <button class="m-status-btn s-complete" id="ms-complete" onclick="setStatus('complete')">Complete</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="m-footer">
+            <button class="btn-delete" onclick="deleteInquiry()">Delete</button>
+            <a class="btn-reply" id="btn-reply" href="#">Reply via Email</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    let all = [];
+    let filtered = [];
+    let current = null;
+    let statusFilter = 'all';
+    let sourceFilter = 'all';
+
+    async function loadAll() {
+        try {
+            const res = await fetch('/api/inquiries');
+            if (!res.ok) throw new Error();
+            all = await res.json();
+            applyFilters();
+            updateStats();
+            updateNavBadge();
+        } catch (err) {
+            document.getElementById('inq-list').innerHTML = '<div class="empty" style="color:#c53030;">Failed to load inquiries.</div>';
+        }
+    }
+
+    function updateStats() {
+        document.getElementById('stat-total').textContent    = all.length;
+        document.getElementById('stat-new').textContent      = all.filter(i => i.status === 'new').length;
+        document.getElementById('stat-pending').textContent  = all.filter(i => i.status === 'pending').length;
+        document.getElementById('stat-complete').textContent = all.filter(i => i.status === 'complete').length;
+
+        document.getElementById('c-all').textContent      = all.length;
+        document.getElementById('c-new').textContent      = all.filter(i => i.status === 'new').length;
+        document.getElementById('c-pending').textContent  = all.filter(i => i.status === 'pending').length;
+        document.getElementById('c-complete').textContent = all.filter(i => i.status === 'complete').length;
+    }
+
+    function updateNavBadge() {
+        const unread = all.filter(i => !i.is_read).length;
+        const badge = document.getElementById('nav-badge-inquiries');
+        if (unread > 0) {
+            badge.textContent = unread;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    function applyFilters() {
+        filtered = all.filter(i =>
+            (statusFilter === 'all' || i.status === statusFilter) &&
+            (sourceFilter === 'all' || i.source === sourceFilter)
+        );
+        render();
+    }
+
+    function setStatusFilter(f, btn) {
+        statusFilter = f;
+        // Only reset status pills (first 4)
+        document.querySelectorAll('.filter-row > .fpill').forEach((b, idx) => {
+            if (idx < 4) b.classList.remove('active');
+        });
+        btn.classList.add('active');
+        applyFilters();
+    }
+
+    function setSourceFilter(f, btn) {
+        sourceFilter = f;
+        // Only reset source pills (last 3)
+        const pills = document.querySelectorAll('.filter-row > .fpill');
+        pills.forEach((b, idx) => {
+            if (idx >= pills.length - 3) b.classList.remove('active');
+        });
+        btn.classList.add('active');
+        applyFilters();
+    }
+
+    function render() {
+        const list = document.getElementById('inq-list');
+        if (!filtered.length) {
+            list.innerHTML = '<div class="empty">No inquiries match these filters.</div>';
+            return;
+        }
+        list.innerHTML = filtered.map(i => {
+            const date = new Date(i.created_at);
+            const dateStr = date.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+            const snippet = (i.message || '').replace(/\s+/g, ' ').slice(0, 100);
+            return `
+                <div class="inq-row ${i.is_read ? '' : 'unread'}" onclick="openModal('${i.id}')">
+                    <div class="dot"></div>
+                    <div class="col-name">
+                        ${i.name}
+                        <span class="email">${i.email}</span>
+                    </div>
+                    <div class="col-msg">${snippet}</div>
+                    <div>
+                        <span class="col-src src-${i.source}">${i.source === 'commonrealtor' ? 'CommonRealtor' : 'MN Lake Homes'}</span>
+                    </div>
+                    <div>
+                        <span class="col-status s-${i.status}">${i.status}</span>
+                    </div>
+                    <div class="col-date">${dateStr}</div>
+                </div>`;
+        }).join('');
+    }
+
+    async function openModal(id) {
+        current = all.find(i => i.id === id);
+        if (!current) return;
+
+        document.getElementById('m-title').textContent = current.name;
+        document.getElementById('m-meta').textContent  = current.source === 'commonrealtor' ? 'CommonRealtor inquiry' : 'MN Lake Homes inquiry';
+        document.getElementById('m-name').textContent  = current.name;
+        document.getElementById('m-source').textContent = current.source === 'commonrealtor' ? 'CommonRealtor' : 'MN Lake Homes';
+        document.getElementById('m-email').innerHTML   = `<a href="mailto:${current.email}">${current.email}</a>`;
+        document.getElementById('m-phone').textContent = current.phone || '—';
+        document.getElementById('m-type').textContent  = current.inquirer_type || '—';
+        document.getElementById('m-date').textContent  = new Date(current.created_at).toLocaleString('en-US', { month:'long', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' });
+        document.getElementById('m-message').textContent = current.message;
+        document.getElementById('btn-reply').href = `mailto:${current.email}?subject=Re: Your inquiry on ${current.source === 'commonrealtor' ? 'CommonRealtor' : 'MN Lake Homes'}`;
+
+        updateStatusButtons();
+        document.getElementById('ovl').classList.add('open');
+
+        // Mark as read if unread
+        if (!current.is_read) {
+            try {
+                await fetch(`/api/inquiries/${current.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_read: true })
+                });
+                current.is_read = true;
+                updateNavBadge();
+                render();
+            } catch(_) {}
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('ovl').classList.remove('open');
+        current = null;
+    }
+
+    function updateStatusButtons() {
+        ['new', 'pending', 'complete'].forEach(s => {
+            document.getElementById(`ms-${s}`).classList.toggle('active', current && current.status === s);
+        });
+    }
+
+    async function setStatus(status) {
+        if (!current) return;
+        try {
+            const res = await fetch(`/api/inquiries/${current.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+            if (!res.ok) throw new Error();
+            current.status = status;
+            updateStatusButtons();
+            updateStats();
+            applyFilters();
+        } catch (err) {
+            alert('Failed to update status.');
+        }
+    }
+
+    async function deleteInquiry() {
+        if (!current) return;
+        if (!confirm(`Delete this inquiry from ${current.name}? This cannot be undone.`)) return;
+        try {
+            const res = await fetch(`/api/inquiries/${current.id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error();
+            all = all.filter(i => i.id !== current.id);
+            closeModal();
+            applyFilters();
+            updateStats();
+            updateNavBadge();
+        } catch (err) {
+            alert('Failed to delete.');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadAll);
+</script>
+</body>
+</html>

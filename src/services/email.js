@@ -256,6 +256,65 @@ function sendAdminLeadNotification({ name, first_name, email, phone, type, sourc
 }
 
 /**
+ * Inquiry — admin notification when a contact form is submitted.
+ * `source` is 'mnlakehomes' or 'commonrealtor' and routes to the right inbox.
+ */
+function sendInquiryNotification({ to, source, name, email: senderEmail, phone, inquirer_type, message, inquiryId, createdAt }) {
+    const brand = source === 'commonrealtor' ? 'CommonRealtor' : 'MN Lake Homes';
+    const row = (k, v) => v ? `<tr><td style="padding:8px 0;color:#718096;font-size:13px;width:120px;">${k}</td><td style="padding:8px 0;color:#1a202c;font-size:14px;font-weight:500;">${v}</td></tr>` : '';
+
+    return sendEmail({
+        to,
+        subject: `📨 New ${brand} inquiry — ${name}`,
+        replyTo: senderEmail,  // replying goes straight back to the submitter
+        html: layout({
+            title: `New contact-form inquiry`,
+            preheader: `${name} via ${brand}: ${message.slice(0, 80)}${message.length > 80 ? '…' : ''}`,
+            body: `
+                <p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Someone just reached out through the <strong>${brand}</strong> contact form.
+                </p>
+                <table style="width:100%;border-collapse:collapse;margin:0 0 10px;">
+                    ${row('Name', name)}
+                    ${row('Email', `<a href="mailto:${senderEmail}" style="color:#1d6df2;text-decoration:none;">${senderEmail}</a>`)}
+                    ${row('Phone', phone)}
+                    ${row('They are a', inquirer_type)}
+                    ${row('Source', brand)}
+                </table>
+                <div style="margin-top:20px;padding:16px 18px;background:#f7f9fa;border-left:3px solid #1d6df2;border-radius:0 8px 8px 0;">
+                    <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:0.8px;">Message</p>
+                    <p style="margin:0;font-size:14px;line-height:1.6;color:#2d3748;white-space:pre-wrap;">${message}</p>
+                </div>`,
+            ctaText: 'View in Admin',
+            ctaUrl: `${SITE_URL}/pages/admin/inquiries.html`,
+        })
+    });
+}
+
+/**
+ * Inquiry — confirmation email back to the submitter.
+ */
+function sendInquiryConfirmation({ to, name, source }) {
+    const brand = source === 'commonrealtor' ? 'CommonRealtor' : 'MN Lake Homes';
+    const first = (name || '').split(' ')[0] || 'there';
+    return sendEmail({
+        to,
+        subject: `We got your message — ${brand}`,
+        html: layout({
+            title: `Thanks for reaching out, ${first}.`,
+            preheader: "We'll get back to you within one business day.",
+            body: `
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Thanks for your message — it's in our inbox and we'll get back to you within one business day.
+                </p>
+                <p style="margin:0;font-size:15px;line-height:1.65;color:#2d3748;">
+                  If anything is time-sensitive, reply directly to this email and we'll prioritize it.
+                </p>`,
+        })
+    });
+}
+
+/**
  * Simple custom send — lets us use the base `sendEmail` from elsewhere for
  * ad-hoc sends like newsletter campaigns later.
  */
@@ -271,6 +330,8 @@ module.exports = {
     sendLeadConfirmation,
     sendContactConfirmation,
     sendAdminLeadNotification,
+    sendInquiryNotification,
+    sendInquiryConfirmation,
     sendCustom,
     layout,
 };

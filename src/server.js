@@ -43,6 +43,7 @@ app.use('/api/leads', require('./routes/lead.routes'));
 app.use('/api/blog', require('./routes/blog.routes'));
 app.use('/api/tasks', require('./routes/task.routes'));
 app.use('/api/stripe', require('./routes/stripe.routes'));
+app.use('/api/inquiries', require('./routes/inquiry.routes'));
 
 app.get('/api/health', (req, res) => {
     res.json({
@@ -146,6 +147,25 @@ async function ensureTables() {
                 completed_at TIMESTAMPTZ,
                 created_at   TIMESTAMPTZ DEFAULT NOW()
             );
+        `);
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS contact_inquiries (
+                id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                source         TEXT NOT NULL DEFAULT 'mnlakehomes',
+                name           TEXT NOT NULL,
+                email          TEXT NOT NULL,
+                phone          TEXT,
+                inquirer_type  TEXT,
+                message        TEXT NOT NULL,
+                page_url       TEXT,
+                status         TEXT NOT NULL DEFAULT 'new',
+                is_read        BOOLEAN NOT NULL DEFAULT false,
+                created_at     TIMESTAMPTZ DEFAULT NOW(),
+                updated_at     TIMESTAMPTZ DEFAULT NOW(),
+                deleted_at     TIMESTAMPTZ
+            );
+            CREATE INDEX IF NOT EXISTS idx_contact_inquiries_unread ON contact_inquiries(is_read) WHERE is_read = false AND deleted_at IS NULL;
+            CREATE INDEX IF NOT EXISTS idx_contact_inquiries_created ON contact_inquiries(created_at DESC);
         `);
         // Add deleted_at to blog_posts if it doesn't exist yet (migration for existing tables)
         await pool.query(`
