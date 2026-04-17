@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+
+    <title>Careers at MN Lake Homes | Join Our Growing Minnesota Team</title>
+    <meta name="description" content="We're a Minnesota startup building the future of lakefront real estate. Engineering, marketing, sales, operations — we're looking for all kinds of talent. Everyone welcome. Apply today.">
+    <meta name="keywords" content="mn lake homes careers, minnesota lake homes jobs, startup jobs minnesota, lake real estate careers, minneapolis startup jobs">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/pages/public/careers.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MinnesotaLakeHomesForSale.com">
+    <meta property="og:url" content="https://minnesotalakehomesforsale.com/pages/public/careers.html">
+    <meta property="og:title" content="Careers at MN Lake Homes — Join a growing Minnesota startup">
+    <meta property="og:description" content="We're building the future of Minnesota lakefront real estate. All skill sets welcome.">
+    <meta property="og:image" content="https://minnesotalakehomesforsale.com/assets/images/mn-stillwater-aerial.webp">
+    <meta property="og:locale" content="en_US">
+
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Hero — mirrors join.html style */
+        .careers-hero {
+            padding: 12rem 2rem 5rem;
+            text-align: center;
+            background-color: var(--bg-dark);
+            color: #fff;
+        }
+        .careers-hero h1 {
+            font-size: 4.5rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            line-height: 1.05;
+            margin: 0 0 1.5rem;
+        }
+        .careers-hero h1 .accent { color: var(--accent-blue); }
+        .careers-hero p {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            max-width: 720px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.6;
+        }
+
+        /* Value pillars */
+        .careers-values { background: #fff; padding: 6rem 2rem; }
+        .careers-values-inner { max-width: 1100px; margin: 0 auto; }
+        .careers-values-title {
+            font-size: 2.5rem; font-weight: 700; color: #1a202c;
+            text-align: center; letter-spacing: -1px; margin: 0 0 1rem;
+        }
+        .careers-values-lede {
+            text-align: center; color: #4a5568; font-size: 1.1rem;
+            line-height: 1.65; max-width: 760px; margin: 0 auto 3.5rem;
+        }
+        .values-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;
+        }
+        .value-card {
+            padding: 2rem 1.75rem; background: #f7f9fa; border-radius: 14px;
+            border: 1px solid #edf2f7;
+        }
+        .value-card .val-icon {
+            width: 44px; height: 44px; border-radius: 10px;
+            background: #ebf4ff; color: var(--accent-blue);
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 1rem;
+        }
+        .value-card h3 { font-size: 1.15rem; font-weight: 700; color: #1a202c; margin: 0 0 0.5rem; }
+        .value-card p { color: #4a5568; line-height: 1.6; font-size: 0.95rem; margin: 0; }
+
+        /* Open roles banner */
+        .roles-banner { background: #f7f9fa; padding: 4rem 2rem; }
+        .roles-banner-inner {
+            max-width: 900px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.75rem;
+        }
+        .role-pill {
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 99px;
+            padding: 0.85rem 1.25rem; text-align: center;
+            color: #2d3748; font-weight: 600; font-size: 0.95rem;
+        }
+        .roles-banner h2 {
+            text-align: center; font-size: 2rem; font-weight: 700;
+            color: #1a202c; letter-spacing: -0.5px; margin: 0 0 2rem;
+            grid-column: 1 / -1;
+        }
+        .roles-note {
+            grid-column: 1 / -1; text-align: center; color: #718096;
+            font-size: 0.95rem; margin-top: 1.5rem; max-width: 600px;
+            margin-left: auto; margin-right: auto; line-height: 1.6;
+        }
+
+        /* Form */
+        .careers-form-section { background: #fff; padding: 6rem 2rem; }
+        .careers-form-inner {
+            max-width: 720px; margin: 0 auto;
+            background: #fff; border: 1px solid #edf2f7; border-radius: 16px;
+            padding: 3rem; box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+        }
+        .careers-form-inner h2 {
+            font-size: 2rem; font-weight: 700; color: #1a202c;
+            letter-spacing: -0.5px; margin: 0 0 0.5rem;
+        }
+        .careers-form-inner > p {
+            color: #718096; margin: 0 0 2.5rem; font-size: 1.05rem; line-height: 1.6;
+        }
+        .c-form-group { margin-bottom: 1.1rem; }
+        .c-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .c-form-group label {
+            display: block; font-size: 0.8rem; font-weight: 700;
+            color: #4a5568; text-transform: uppercase; letter-spacing: 0.5px;
+            margin-bottom: 0.45rem;
+        }
+        .c-form-group input, .c-form-group select, .c-form-group textarea {
+            width: 100%; padding: 0.85rem 1rem; border: 1px solid #e2e8f0;
+            border-radius: 10px; font-family: inherit; font-size: 0.95rem;
+            color: #1a202c; background: #fff; box-sizing: border-box;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .c-form-group input:focus, .c-form-group select:focus, .c-form-group textarea:focus {
+            outline: none; border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(29,109,242,0.1);
+        }
+        .c-form-group textarea { min-height: 130px; resize: vertical; }
+        .c-submit {
+            width: 100%; padding: 1.1rem; font-size: 1rem; font-weight: 700;
+            background: var(--accent-blue); color: #fff; border: none;
+            border-radius: 10px; cursor: pointer; font-family: inherit;
+            margin-top: 0.5rem; transition: opacity 0.15s;
+        }
+        .c-submit:hover:not(:disabled) { opacity: 0.9; }
+        .c-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+        #careers-status {
+            display: none; padding: 0.85rem 1rem; border-radius: 10px;
+            margin-bottom: 1rem; font-size: 0.9rem; font-weight: 500;
+        }
+
+        @media (max-width: 780px) {
+            .careers-hero { padding: 8rem 1.25rem 4rem; }
+            .careers-hero h1 { font-size: 2.75rem; letter-spacing: -1px; }
+            .careers-hero p { font-size: 1rem; }
+            .careers-values { padding: 4rem 1.25rem; }
+            .values-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .careers-values-title { font-size: 2rem; }
+            .roles-banner { padding: 3rem 1.25rem; }
+            .careers-form-section { padding: 4rem 1rem; }
+            .careers-form-inner { padding: 2rem 1.25rem; }
+            .c-form-row { grid-template-columns: 1fr; gap: 0; }
+        }
+    </style>
+    <script src="../../components/components.js" defer></script>
+</head>
+<body style="background-color: #fff;">
+
+    <global-header></global-header>
+
+    <!-- Hero -->
+    <section class="careers-hero">
+        <h1>Help us build Minnesota's<br><span class="accent">next great lake company</span></h1>
+        <p>MN Lake Homes is an early-stage Minneapolis startup reshaping how people discover, buy, sell, and live on Minnesota's lakes. We're small, moving fast, and looking for curious, talented people who want to build something real from the ground up. Engineers, marketers, designers, operators, agents — every skill set welcome.</p>
+        <a href="#apply" class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none; text-decoration:none;">Apply to join us</a>
+    </section>
+
+    <!-- Values / why work here -->
+    <section class="careers-values">
+        <div class="careers-values-inner">
+            <h2 class="careers-values-title">Why build with us</h2>
+            <p class="careers-values-lede">We're genuinely a small team and genuinely in the early innings. Whoever joins now helps define the culture, the product, and the market we become known for.</p>
+            <div class="values-grid">
+                <div class="value-card">
+                    <div class="val-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+                    <h3>Real ownership, from day one</h3>
+                    <p>You won't be shipping incremental tickets in a 200-person org. You'll own features, decisions, and outcomes. Your work will be live on the site within days, not quarters.</p>
+                </div>
+                <div class="value-card">
+                    <div class="val-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+                    <h3>Local to the bone</h3>
+                    <p>We live here. We ice-fish here. We bring our kids to the same lakes we're helping people buy homes on. Local expertise isn't a marketing bullet for us — it's the product.</p>
+                </div>
+                <div class="value-card">
+                    <div class="val-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                    <h3>Everyone is welcome to apply</h3>
+                    <p>Career-switchers, self-taught, formally trained, returning to work, just starting — we look at the person first and the resume second. If you're excited by what we're doing, we want to hear from you.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Open roles banner -->
+    <section class="roles-banner">
+        <div class="roles-banner-inner">
+            <h2>We're hiring across the board</h2>
+            <div class="role-pill">Engineering</div>
+            <div class="role-pill">Design</div>
+            <div class="role-pill">Marketing</div>
+            <div class="role-pill">Sales &amp; BD</div>
+            <div class="role-pill">Operations</div>
+            <div class="role-pill">Customer Success</div>
+            <div class="role-pill">Agent Partnerships</div>
+            <div class="role-pill">Content &amp; SEO</div>
+            <p class="roles-note">Don't see a perfect match? Apply anyway — we're building the team around the people, not the org chart. Tell us what you're great at and we'll find the right shape.</p>
+        </div>
+    </section>
+
+    <!-- Apply form -->
+    <section id="apply" class="careers-form-section">
+        <div class="careers-form-inner">
+            <h2>Tell us about yourself</h2>
+            <p>Applications go straight to our team. We respond within a few days — whether it's a yes, a not-yet, or an intro call.</p>
+
+            <div id="careers-status"></div>
+
+            <form id="careers-form" onsubmit="submitCareers(event)">
+                <div class="c-form-row">
+                    <div class="c-form-group">
+                        <label for="c-first">First name</label>
+                        <input type="text" id="c-first" autocomplete="given-name" required>
+                    </div>
+                    <div class="c-form-group">
+                        <label for="c-last">Last name</label>
+                        <input type="text" id="c-last" autocomplete="family-name" required>
+                    </div>
+                </div>
+
+                <div class="c-form-row">
+                    <div class="c-form-group">
+                        <label for="c-email">Email</label>
+                        <input type="email" id="c-email" autocomplete="email" required>
+                    </div>
+                    <div class="c-form-group">
+                        <label for="c-phone">Phone (optional)</label>
+                        <input type="tel" id="c-phone" autocomplete="tel">
+                    </div>
+                </div>
+
+                <div class="c-form-row">
+                    <div class="c-form-group">
+                        <label for="c-role">Interested role</label>
+                        <select id="c-role" required>
+                            <option value="" disabled selected>Select one…</option>
+                            <option value="Engineering">Engineering</option>
+                            <option value="Design">Design</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Sales & BD">Sales &amp; BD</option>
+                            <option value="Operations">Operations</option>
+                            <option value="Customer Success">Customer Success</option>
+                            <option value="Agent Partnerships">Agent Partnerships</option>
+                            <option value="Content / SEO">Content / SEO</option>
+                            <option value="Open to anything">Open to anything</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="c-form-group">
+                        <label for="c-experience">Years of experience</label>
+                        <input type="text" id="c-experience" placeholder="e.g. 5, or 'just starting'">
+                    </div>
+                </div>
+
+                <div class="c-form-group">
+                    <label for="c-link">Resume or LinkedIn (optional)</label>
+                    <input type="url" id="c-link" placeholder="https://linkedin.com/in/your-profile or Google Drive link">
+                </div>
+
+                <div class="c-form-group">
+                    <label for="c-message">Tell us about you</label>
+                    <textarea id="c-message" placeholder="What excites you about MN Lake Homes? What have you built or done that you're most proud of? What are you hoping to do here?" required></textarea>
+                </div>
+
+                <button type="submit" class="c-submit" id="c-submit-btn">Submit application</button>
+            </form>
+        </div>
+    </section>
+
+    <global-footer></global-footer>
+    <lead-modal></lead-modal>
+
+    <script>
+        async function submitCareers(e) {
+            e.preventDefault();
+            const btn = document.getElementById('c-submit-btn');
+            const status = document.getElementById('careers-status');
+            status.style.display = 'none';
+
+            const first = document.getElementById('c-first').value.trim();
+            const last  = document.getElementById('c-last').value.trim();
+            const fullName = `${first} ${last}`.trim();
+            const role = document.getElementById('c-role').value;
+            const experience = document.getElementById('c-experience').value.trim();
+            const link = document.getElementById('c-link').value.trim();
+            const coverLetter = document.getElementById('c-message').value.trim();
+
+            // Compose a single rich message so the admin sees everything in one place
+            let message = `CAREER APPLICATION — ${role}\n\n`;
+            if (experience) message += `Experience: ${experience}\n`;
+            if (link)       message += `Resume / LinkedIn: ${link}\n`;
+            message += `\n${coverLetter}`;
+
+            const payload = {
+                source: 'mnlakehomes',
+                name: fullName,
+                email: document.getElementById('c-email').value.trim(),
+                phone: document.getElementById('c-phone').value.trim() || null,
+                inquirer_type: `career — ${role}`,
+                message,
+                page_url: window.location.href,
+            };
+
+            btn.disabled = true;
+            btn.textContent = 'Submitting…';
+            try {
+                const res = await fetch('/api/inquiries', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || 'Submission failed');
+                status.textContent = '✓ Thanks! Your application is in our inbox — we\'ll get back to you within a few days.';
+                status.style.cssText = 'display:block;padding:0.85rem 1rem;border-radius:10px;margin-bottom:1rem;font-size:0.9rem;font-weight:500;background:#f0fff4;color:#276749;border:1px solid #9ae6b4;';
+                document.getElementById('careers-form').reset();
+                window.scrollTo({ top: document.querySelector('.careers-form-inner').offsetTop - 40, behavior: 'smooth' });
+            } catch (err) {
+                status.textContent = err.message || 'Something went wrong. Please try again or email us directly.';
+                status.style.cssText = 'display:block;padding:0.85rem 1rem;border-radius:10px;margin-bottom:1rem;font-size:0.9rem;font-weight:500;background:#fff5f5;color:#c53030;border:1px solid #feb2b2;';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Submit application';
+            }
+        }
+    </script>
+</body>
+</html>

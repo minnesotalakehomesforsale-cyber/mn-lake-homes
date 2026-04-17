@@ -283,7 +283,7 @@ class GlobalHeader extends HTMLElement {
                     { heading: 'Get in Touch', links: [
                         { label: 'Contact Us', href: `${bp}contact.html` },
                         { label: 'FAQ', href: `${bp}faq.html` },
-                        { label: 'Careers / Join the Network', href: `${bp}join.html` },
+                        { label: 'Careers', href: `${bp}careers.html` },
                     ]},
                 ]
             },
