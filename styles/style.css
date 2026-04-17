@@ -400,7 +400,7 @@ body {
 .hero-content {
     text-align: center;
     z-index: 2;
-    margin-top: 8rem;
+    margin-top: 5.5rem;
     margin-bottom: 2rem;
 }
 
@@ -773,7 +773,7 @@ body {
         scroll-snap-align: center;
     }
     .hero-section { padding-bottom: 6rem; }
-    .hero-content { margin-top: 6rem; }
+    .hero-content { margin-top: 4.5rem; }
 }
 
 @media (max-width: 600px) {
