@@ -1,4 +1,43 @@
 const pool = require('../database/pool');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+
+// ─── Agent profile photo upload ──────────────────────────────────────────────
+const PHOTO_DIR = path.join(__dirname, '..', '..', 'assets', 'uploads', 'agents');
+if (!fs.existsSync(PHOTO_DIR)) fs.mkdirSync(PHOTO_DIR, { recursive: true });
+
+const photoStorage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, PHOTO_DIR),
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+        const safe = path.basename(file.originalname, ext).toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'photo';
+        cb(null, `agent-${Date.now()}-${safe}${ext}`);
+    }
+});
+const photoUpload = multer({
+    storage: photoStorage,
+    limits: { fileSize: 8 * 1024 * 1024 }, // 8 MB
+    fileFilter: (req, file, cb) => {
+        if (/^image\//.test(file.mimetype)) cb(null, true);
+        else cb(new Error('Please upload an image file.'));
+    }
+}).single('photo');
+
+// POST /api/agents/upload-photo — public-ish endpoint that returns a URL
+// (persisting to a specific agent happens via PATCH /me or /admin/:id/profile)
+const uploadPhoto = (req, res) => {
+    photoUpload(req, res, (err) => {
+        if (err) return res.status(400).json({ error: err.message });
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+        res.json({
+            url: `/assets/uploads/agents/${req.file.filename}`,
+            filename: req.file.originalname,
+            size: req.file.size,
+        });
+    });
+};
 
 /**
  * GET /api/agents/public
@@ -80,7 +119,8 @@ const getMyProfile = async (req, res) => {
 const saveDraft = async (req, res) => {
     let {
         display_name, brokerage_name, phone_public, email_public, website_url,
-        license_number, years_experience, city, service_areas, specialties, bio
+        license_number, years_experience, city, service_areas, specialties, bio,
+        profile_photo_url
     } = req.body;
 
     try {
@@ -107,8 +147,9 @@ const saveDraft = async (req, res) => {
                 service_areas = COALESCE($9, service_areas),
                 specialties = COALESCE($10, specialties),
                 bio = COALESCE(NULLIF($11,''), bio),
+                profile_photo_url = COALESCE(NULLIF($12,''), profile_photo_url),
                 updated_at = NOW()
-             WHERE user_id = $12`,
+             WHERE user_id = $13`,
             [
                 display_name?.trim() || null,
                 brokerage_name?.trim() || null,
@@ -121,6 +162,7 @@ const saveDraft = async (req, res) => {
                 finalAreas.length > 0 ? JSON.stringify(finalAreas) : null,
                 finalSpecs.length > 0 ? JSON.stringify(finalSpecs) : null,
                 bio?.trim() || null,
+                profile_photo_url?.trim() || null,
                 req.user.userId
             ]
         );
@@ -220,5 +262,6 @@ module.exports = {
     saveDraft,
     submitForReview,
     updateMyProfile,
-    getMyLeads
+    getMyLeads,
+    uploadPhoto
 };

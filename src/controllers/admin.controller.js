@@ -157,7 +157,8 @@ const updateAgentProfile = async (req, res) => {
     const {
         display_name, brokerage_name, license_number, years_experience,
         phone_public, email_public, website_url,
-        city, state, service_areas, specialties, bio
+        city, state, service_areas, specialties, bio,
+        profile_photo_url
     } = req.body;
 
     try {
@@ -177,8 +178,9 @@ const updateAgentProfile = async (req, res) => {
                 service_areas = COALESCE($10, service_areas),
                 specialties = COALESCE($11, specialties),
                 bio = COALESCE($12, bio),
+                profile_photo_url = COALESCE($13, profile_photo_url),
                 updated_at = NOW()
-             WHERE id = $13`,
+             WHERE id = $14`,
             [
                 display_name || null,
                 brokerage_name || null,
@@ -192,6 +194,7 @@ const updateAgentProfile = async (req, res) => {
                 service_areas !== undefined ? JSON.stringify(cleanArray(service_areas)) : null,
                 specialties !== undefined ? JSON.stringify(cleanArray(specialties)) : null,
                 bio || null,
+                profile_photo_url || null,
                 id
             ]
         );
@@ -368,6 +371,7 @@ const updateUser = async (req, res) => {
         if ('first_name' in body) { fields.push(`first_name = $${i++}`); vals.push(body.first_name || null); }
         if ('last_name'  in body) { fields.push(`last_name = $${i++}`);  vals.push(body.last_name || null);  }
         if ('full_name'  in body) { fields.push(`full_name = $${i++}`);  vals.push(body.full_name || null);  }
+        if ('phone'      in body) { fields.push(`phone = $${i++}`);      vals.push(body.phone || null);      }
         if ('email'      in body) {
             const email = (body.email || '').trim().toLowerCase();
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email.' });

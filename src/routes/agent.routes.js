@@ -7,6 +7,10 @@ const { verifyToken, requireRole } = require('../middleware/auth');
 router.get('/public', agentController.getPublicAgents);
 router.get('/public/:slug', agentController.getAgentBySlug);
 
+// Photo upload — returns a URL; caller (agent or admin) PATCHes it via their
+// own route to persist against a specific agent record.
+router.post('/upload-photo', agentController.uploadPhoto);
+
 // ─── PROTECTED — Agent only ───────────────────────────────────────────────────
 router.get('/me', verifyToken, requireRole('agent'), agentController.getMyProfile);
 router.get('/me/leads', verifyToken, requireRole('agent'), agentController.getMyLeads);

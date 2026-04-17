@@ -201,6 +201,21 @@
                         <div id="profile-status-badge"></div>
                     </div>
                     <div class="panel-body">
+                        <!-- Profile Photo -->
+                        <div style="display:flex; gap:1.5rem; align-items:center; padding-bottom:1.5rem; margin-bottom:1.5rem; border-bottom:1px solid #edf2f7;">
+                            <div id="p-photo-preview" style="width:88px; height:88px; border-radius:50%; background:#edf2f7; border:2px solid #e2e8f0; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            </div>
+                            <div>
+                                <div class="field-label">Profile Photo</div>
+                                <label for="p-photo-upload" style="display:inline-block; cursor:pointer; background:#1d6df2; color:#fff; font-weight:600; font-size:0.82rem; padding:0.5rem 1rem; border-radius:7px; margin-top:0.25rem;">
+                                    <span id="p-photo-btn-label">+ Upload Photo</span>
+                                    <input type="file" id="p-photo-upload" style="display:none;" accept="image/*" onchange="uploadAgentPhoto(event)">
+                                </label>
+                                <div style="font-size:0.75rem; color:#718096; margin-top:0.4rem;">Shown on the public directory, lake pages, and all agent cards.</div>
+                                <div id="p-photo-status" style="font-size:0.75rem; font-weight:600; margin-top:0.3rem; display:none;"></div>
+                            </div>
+                        </div>
                         <div class="field-grid">
                             <div class="field-group">
                                 <div class="field-label">Display Name</div>
@@ -424,6 +439,17 @@
         document.getElementById('p-slug').value     = a.slug            || '';
         document.getElementById('p-id').value       = a.id              || '';
 
+        // Profile photo preview
+        const photoPreview = document.getElementById('p-photo-preview');
+        const photoBtnLabel = document.getElementById('p-photo-btn-label');
+        if (a.profile_photo_url) {
+            photoPreview.innerHTML = `<img src="${a.profile_photo_url}" style="width:100%;height:100%;object-fit:cover;">`;
+            photoBtnLabel.textContent = 'Change Photo';
+        } else {
+            photoPreview.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
+            photoBtnLabel.textContent = '+ Upload Photo';
+        }
+
         try {
             const areas = Array.isArray(a.service_areas) ? a.service_areas : JSON.parse(a.service_areas || '[]');
             const specs = Array.isArray(a.specialties)   ? a.specialties   : JSON.parse(a.specialties   || '[]');
@@ -476,7 +502,8 @@
                     first_name: firstName,
                     last_name:  lastName,
                     full_name:  fullName,
-                    email:      email
+                    email:      email,
+                    phone:      phone
                 })
             });
             if (!userRes.ok) {
@@ -503,6 +530,57 @@
             await loadAgent();
         } catch (err) {
             alert(err.message);
+        }
+    }
+
+    // ── Upload Agent Photo ───────────────────────────────────────────────────
+    async function uploadAgentPhoto(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (file.size > 8 * 1024 * 1024) {
+            alert('File too large. Max 8 MB.');
+            event.target.value = '';
+            return;
+        }
+
+        // Local preview immediately
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById('p-photo-preview').innerHTML =
+                `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+        };
+        reader.readAsDataURL(file);
+
+        const status = document.getElementById('p-photo-status');
+        status.style.display = 'block';
+        status.style.color = '#718096';
+        status.textContent = 'Uploading...';
+
+        try {
+            const fd = new FormData();
+            fd.append('photo', file);
+            const upRes = await fetch('/api/agents/upload-photo', { method: 'POST', body: fd });
+            if (!upRes.ok) {
+                const d = await upRes.json().catch(() => ({}));
+                throw new Error(d.error || 'Upload failed.');
+            }
+            const { url } = await upRes.json();
+
+            const saveRes = await fetch(`/api/admin/${agentId}/profile`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ profile_photo_url: url })
+            });
+            if (!saveRes.ok) throw new Error('Failed to save photo to agent profile.');
+
+            status.style.color = '#2f855a';
+            status.textContent = 'Photo saved ✓';
+            document.getElementById('p-photo-btn-label').textContent = 'Change Photo';
+            setTimeout(() => { status.style.display = 'none'; }, 2500);
+        } catch (err) {
+            status.style.color = '#c53030';
+            status.textContent = err.message || 'Upload failed.';
         }
     }
 

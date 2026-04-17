@@ -101,17 +101,21 @@
                     </div>
 
                     <form id="profile-edit-form" onsubmit="event.preventDefault();">
-                        <h3 class="form-section-title">Media Assets</h3>
+                        <h3 class="form-section-title">Profile Photo</h3>
                         <div style="display: flex; gap: 2rem; margin-bottom: 3rem; align-items: center;">
                             <div id="profile-preview" style="width: 100px; height: 100px; border-radius: 50%; background-color: #edf2f7; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #e2e8f0;">
                                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                             </div>
-                            <label class="photo-upload-placeholder" style="cursor: pointer;" for="profile-upload">
-                                <span style="font-size: 0.85rem; font-weight: 600;">+ Select Image</span>
-                                <input type="file" id="profile-upload" style="opacity: 0; position: absolute; z-index: -1; width: 0.1px; height: 0.1px;" accept="image/*" onchange="previewImage(event)">
-                            </label>
-                            <p style="font-size: 0.8rem; color: #718096; margin-left: 1rem;">Recommended: Square, minimum 400x400px.</p>
+                            <div>
+                                <label for="profile-upload" style="display:inline-block; cursor:pointer; background:#1d6df2; color:#fff; font-weight:600; font-size:0.85rem; padding:0.6rem 1.1rem; border-radius:8px;">
+                                    <span id="photo-btn-label">+ Upload Photo</span>
+                                    <input type="file" id="profile-upload" style="display:none;" accept="image/*" onchange="uploadProfilePhoto(event)">
+                                </label>
+                                <p style="font-size: 0.78rem; color: #718096; margin-top: 0.5rem;">Shown on your public profile, lake pages, and all agent cards. Square, ≥400×400px, max 8MB.</p>
+                                <p id="photo-status" style="font-size:0.78rem; font-weight:600; margin-top:0.35rem; display:none;"></p>
+                            </div>
                         </div>
+                        <input type="hidden" id="f-photo-url" value="">
 
                         <h3 class="form-section-title">Core Information</h3>
                         <div class="grid-2">
@@ -315,6 +319,14 @@
 
             document.getElementById('f-bio').value = agent.bio || '';
 
+            // Hydrate photo preview
+            if (agent.profile_photo_url) {
+                document.getElementById('f-photo-url').value = agent.profile_photo_url;
+                document.getElementById('profile-preview').innerHTML =
+                    `<img src="${agent.profile_photo_url}" style="width:100%;height:100%;object-fit:cover;">`;
+                document.getElementById('photo-btn-label').textContent = 'Change Photo';
+            }
+
             // ── State management: draft → ready-to-pay → live ──
             const activateSection = document.getElementById('view-activate');
 
@@ -436,13 +448,14 @@
         // ── Extract Form Payload ─────────────────────────────────────────────────
         function extractFormPayload() {
             return {
-                display_name:   document.getElementById('f-name').value.trim(),
-                brokerage_name: document.getElementById('f-brokerage').value.trim(),
-                phone_public:   document.getElementById('f-phone').value.trim(),
-                city:           document.getElementById('f-city').value.trim(),
-                service_areas:  document.getElementById('f-areas').value.split(',').map(s => s.trim()).filter(Boolean),
-                specialties:    document.getElementById('f-specs').value.split(',').map(s => s.trim()).filter(Boolean),
-                bio:            document.getElementById('f-bio').value.trim()
+                display_name:     document.getElementById('f-name').value.trim(),
+                brokerage_name:   document.getElementById('f-brokerage').value.trim(),
+                phone_public:     document.getElementById('f-phone').value.trim(),
+                city:             document.getElementById('f-city').value.trim(),
+                service_areas:    document.getElementById('f-areas').value.split(',').map(s => s.trim()).filter(Boolean),
+                specialties:      document.getElementById('f-specs').value.split(',').map(s => s.trim()).filter(Boolean),
+                bio:              document.getElementById('f-bio').value.trim(),
+                profile_photo_url: document.getElementById('f-photo-url').value.trim()
             };
         }
 
@@ -470,16 +483,57 @@
 
         // (Submit for review removed — Phase 1 uses self-serve Stripe checkout instead)
 
-        // ── Image Preview ─────────────────────────────────────────────────────────
-        function previewImage(event) {
+        // ── Photo Upload ─────────────────────────────────────────────────────────
+        async function uploadProfilePhoto(event) {
             const file = event.target.files[0];
             if (!file) return;
+
+            if (file.size > 8 * 1024 * 1024) {
+                alert('File too large. Max 8 MB.');
+                event.target.value = '';
+                return;
+            }
+
+            // Local preview first
             const reader = new FileReader();
             reader.onload = (e) => {
                 document.getElementById('profile-preview').innerHTML =
                     `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
             };
             reader.readAsDataURL(file);
+
+            const status = document.getElementById('photo-status');
+            status.style.display = 'block';
+            status.style.color = '#718096';
+            status.textContent = 'Uploading...';
+
+            try {
+                const fd = new FormData();
+                fd.append('photo', file);
+                const upRes = await fetch('/api/agents/upload-photo', { method: 'POST', body: fd });
+                if (!upRes.ok) {
+                    const d = await upRes.json().catch(() => ({}));
+                    throw new Error(d.error || 'Upload failed.');
+                }
+                const { url } = await upRes.json();
+
+                document.getElementById('f-photo-url').value = url;
+
+                const saveRes = await fetch('/api/agents/me', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ profile_photo_url: url })
+                });
+                if (!saveRes.ok) throw new Error('Failed to save photo to profile.');
+
+                status.style.color = '#2f855a';
+                status.textContent = 'Photo saved ✓';
+                document.getElementById('photo-btn-label').textContent = 'Change Photo';
+                setTimeout(() => { status.style.display = 'none'; }, 2500);
+            } catch (err) {
+                status.style.color = '#c53030';
+                status.textContent = err.message || 'Upload failed.';
+            }
         }
 
         // ── Tier Pricing / Go-Live ──────────────────────────────────────────────
