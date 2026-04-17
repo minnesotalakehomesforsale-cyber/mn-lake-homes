@@ -66,6 +66,14 @@ class GlobalHeader extends HTMLElement {
             if (a.getAttribute('href') === '#') return;
             a.addEventListener('click', () => setTimeout(closeMenu, 50));
         });
+        // Accordion toggle on section titles
+        menu.querySelectorAll('.mobile-menu-section-title').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const section = btn.closest('.mobile-menu-section');
+                const isOpen = section.classList.toggle('open');
+                btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+        });
         // Esc key closes
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && menu.classList.contains('open')) closeMenu();
@@ -325,13 +333,19 @@ class GlobalHeader extends HTMLElement {
                 <div class="mobile-menu-body">
                     ${navItems.map(item => `
                         <div class="mobile-menu-section">
-                            <a href="${item.href}" class="mobile-menu-section-title">${item.label}</a>
-                            ${item.columns.map(col => `
-                                <div class="mobile-menu-col">
-                                    <div class="mobile-menu-col-heading">${col.heading}</div>
-                                    ${col.links.map(lnk => `<a href="${lnk.href}" class="mobile-menu-link">${lnk.prefixIcon || ''}${lnk.label}</a>`).join('')}
-                                </div>
-                            `).join('')}
+                            <button class="mobile-menu-section-title" type="button" aria-expanded="false">
+                                <span>${item.label}</span>
+                                <svg class="mobile-menu-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                            <div class="mobile-menu-section-body">
+                                <a href="${item.href}" class="mobile-menu-link mobile-menu-link-primary">All ${item.label} &rarr;</a>
+                                ${item.columns.map(col => `
+                                    <div class="mobile-menu-col">
+                                        <div class="mobile-menu-col-heading">${col.heading}</div>
+                                        ${col.links.map(lnk => `<a href="${lnk.href}" class="mobile-menu-link">${lnk.prefixIcon || ''}${lnk.label}</a>`).join('')}
+                                    </div>
+                                `).join('')}
+                            </div>
                         </div>
                     `).join('')}
                 </div>
