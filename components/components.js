@@ -319,7 +319,34 @@ class GlobalFooter extends HTMLElement {
         const bp = getDepth();
         const rp = getRoot();
 
-        this.innerHTML = `<footer class="site-footer">
+        // Render skeleton footer immediately (guest view), then hydrate with
+        // admin-only staff links once we confirm the session role.
+        this.innerHTML = this._buildFooter(bp, rp, null);
+
+        fetch('/api/auth/session')
+            .then(r => { if (r.ok) return r.json(); throw new Error('not_logged_in'); })
+            .then(data => {
+                // Only admin / super_admin see the staff links
+                if (data.role === 'admin' || data.role === 'super_admin') {
+                    this.innerHTML = this._buildFooter(bp, rp, data);
+                }
+            })
+            .catch(() => { /* guest — already rendered */ });
+    }
+
+    _buildFooter(bp, rp, user) {
+        const isStaff = user && (user.role === 'admin' || user.role === 'super_admin');
+
+        const networkLinks = `
+            <a href="${bp}join.html">Join the Network</a>
+            <a href="${bp}contact.html">Contact Us</a>
+            ${isStaff ? `
+                <a href="${rp}pages/public/login.html" style="color:#4b5563;">Agent Login</a>
+                <a href="${rp}pages/admin/dashboard.html" style="color:#4b5563;">Admin Portal</a>
+            ` : ''}
+        `;
+
+        return `<footer class="site-footer">
         <div class="footer-container">
 
             <div class="footer-brand">
@@ -354,10 +381,7 @@ class GlobalFooter extends HTMLElement {
                 </div>
                 <div class="link-column">
                     <h4>Network</h4>
-                    <a href="${bp}join.html">Join the Network</a>
-                    <a href="${bp}contact.html">Contact Us</a>
-                    <a href="${rp}pages/public/login.html" style="color:#4b5563;">Agent Login</a>
-                    <a href="${rp}pages/admin/dashboard.html" style="color:#4b5563;">Admin Portal</a>
+                    ${networkLinks}
                 </div>
             </div>
 
