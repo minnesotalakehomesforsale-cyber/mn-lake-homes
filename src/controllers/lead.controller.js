@@ -42,6 +42,17 @@ const createLead = async (req, res) => {
             emailService.sendLeadConfirmation({ email, first_name: firstName, full_name: name });
         }
 
+        // Fire-and-forget admin notification with full lead details
+        emailService.sendAdminLeadNotification({
+            name,
+            first_name: firstName,
+            email,
+            phone,
+            type: enumType,
+            source,
+            notes
+        });
+
         res.status(201).json({ success: true, message: 'Lead logged' });
     } catch (err) {
         console.error(err);

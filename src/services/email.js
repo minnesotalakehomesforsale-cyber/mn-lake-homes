@@ -206,6 +206,56 @@ function sendContactConfirmation(lead) {
 }
 
 /**
+ * Admin lead notification — sent to the team when a new lead comes in.
+ * Includes full lead details and a direct link to the admin leads page.
+ */
+function sendAdminLeadNotification({ name, first_name, email, phone, type, source, notes }) {
+    const adminTo = REPLY_TO;
+    const typeLabel = (type || source || 'General').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const timestamp = new Date().toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+    const detailRows = [
+        { label: 'Name', value: name || '—' },
+        { label: 'Email', value: email || 'Not provided' },
+        { label: 'Phone', value: phone || 'Not provided' },
+        { label: 'Lead Type', value: typeLabel },
+        { label: 'Source', value: source || '—' },
+        { label: 'Received', value: timestamp },
+    ].map(r => `
+        <tr>
+            <td style="padding:8px 12px;font-size:13px;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.5px;vertical-align:top;white-space:nowrap;">${r.label}</td>
+            <td style="padding:8px 12px;font-size:15px;color:#1a202c;">${r.value}</td>
+        </tr>
+    `).join('');
+
+    const notesHtml = notes
+        ? `<div style="margin:20px 0 0;padding:16px;background:#f7f9fa;border-left:3px solid #1d6df2;border-radius:0 8px 8px 0;">
+               <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:0.5px;">Details</p>
+               <p style="margin:0;font-size:14px;color:#2d3748;line-height:1.65;white-space:pre-line;">${notes}</p>
+           </div>`
+        : '';
+
+    return sendEmail({
+        to: adminTo,
+        subject: `🔔 New ${typeLabel} Lead — ${name || 'Unknown'}`,
+        html: layout({
+            title: `New lead from ${first_name || name || 'the website'}`,
+            preheader: `${typeLabel} lead: ${name} — ${email || phone || 'no contact yet'}`,
+            body: `
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  A new lead just came in through the website. Here are the details:
+                </p>
+                <table style="width:100%;border-collapse:collapse;margin:0 0 8px;">
+                    ${detailRows}
+                </table>
+                ${notesHtml}`,
+            ctaText: 'View in Admin Dashboard',
+            ctaUrl: `${SITE_URL}/pages/admin/leads.html`,
+        })
+    });
+}
+
+/**
  * Simple custom send — lets us use the base `sendEmail` from elsewhere for
  * ad-hoc sends like newsletter campaigns later.
  */
@@ -220,6 +270,7 @@ module.exports = {
     sendPasswordReset,
     sendLeadConfirmation,
     sendContactConfirmation,
+    sendAdminLeadNotification,
     sendCustom,
     layout,
 };

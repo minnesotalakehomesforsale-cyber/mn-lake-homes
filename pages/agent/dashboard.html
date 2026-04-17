@@ -46,8 +46,8 @@
         <div id="banner-draft" class="status-banner status-draft">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
             <div style="flex-grow: 1;">
-                <h3 style="font-weight: 700; margin-bottom: 0.25rem;">Profile Action Required (Draft Mode)</h3>
-                <p style="font-size: 0.95rem;">Your agent profile is hidden from the public directory. Complete the required fields below.</p>
+                <h3 style="font-weight: 700; margin-bottom: 0.25rem;">Complete your profile to go live</h3>
+                <p style="font-size: 0.95rem;">Fill in all required fields below, then choose a membership tier to publish your profile on the directory.</p>
                 <div class="progress-bar-container">
                     <div id="completion-bar" class="progress-bar"></div>
                 </div>
@@ -55,11 +55,11 @@
             </div>
         </div>
 
-        <div id="banner-pending" class="status-banner status-pending">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        <div id="banner-live" class="status-banner" style="display:none; background: #f0fff4; border: 1px solid #c6f6d5; color: #276749; align-items: center; gap: 1rem; padding: 1.5rem 2rem; border-radius: 12px; margin-bottom: 2rem;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             <div>
-                <h3 style="font-weight: 700; margin-bottom: 0.25rem;">Under Administrative Review</h3>
-                <p style="font-size: 0.95rem;">Your profile has been submitted and is awaiting approval from the operations team.</p>
+                <h3 style="font-weight: 700; margin-bottom: 0.25rem; color: #276749;">Your profile is live</h3>
+                <p style="font-size: 0.95rem; color: #2f855a;">Your agent profile is published and visible on the public directory. Leads assigned to you will appear in your inbox.</p>
             </div>
         </div>
 
@@ -97,7 +97,6 @@
                         </div>
                         <div style="display: flex; gap: 1rem;">
                             <button class="btn" onclick="saveDraft()" style="background: #edf2f7; color: #4a5568; font-weight: 600; border: none; padding: 0.75rem 1.5rem;">Save Draft</button>
-                            <button id="submit-review-btn" onclick="submitForReview()" class="btn btn-primary" style="background: #38a169; border: none; padding: 0.75rem 1.5rem; font-weight: 700;" disabled>Submit for Approval</button>
                         </div>
                     </div>
 
@@ -144,6 +143,80 @@
                     </form>
                 </div>
 
+                <!-- ── ACTIVATE MEMBERSHIP / GO LIVE ── -->
+                <div id="view-activate" style="display: none; background: #fff; padding: 3rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-top: 2rem;">
+                    <style>
+                        .tier-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2rem; }
+                        .tier-card { border: 2px solid #edf2f7; border-radius: 14px; padding: 2rem 1.75rem; text-align: center; position: relative; transition: border-color 0.2s, box-shadow 0.2s; background: #fff; }
+                        .tier-card:hover { border-color: #cbd5e0; box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+                        .tier-card.featured { border-color: #1d6df2; box-shadow: 0 8px 24px rgba(29,109,242,0.12); }
+                        .tier-popular-badge { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); background: #1d6df2; color: #fff; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 0.3rem 1rem; border-radius: 20px; white-space: nowrap; }
+                        .tier-name { font-size: 1.25rem; font-weight: 800; color: #1a202c; margin-bottom: 0.25rem; }
+                        .tier-price { font-size: 2.5rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; margin: 0.75rem 0 0.25rem; }
+                        .tier-price-period { font-size: 0.9rem; font-weight: 500; color: #718096; }
+                        .tier-toggle { display: inline-flex; background: #f7f9fa; border-radius: 8px; border: 1px solid #edf2f7; overflow: hidden; margin: 1.25rem 0; }
+                        .tier-toggle-btn { padding: 0.4rem 1rem; font-size: 0.8rem; font-weight: 600; border: none; background: transparent; color: #718096; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+                        .tier-toggle-btn.active { background: #1a202c; color: #fff; border-radius: 6px; }
+                        .tier-get-started { display: inline-block; width: 100%; padding: 0.85rem 1.5rem; border-radius: 10px; font-weight: 700; font-size: 0.95rem; border: none; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+                        .tier-get-started.primary { background: #1d6df2; color: #fff; }
+                        .tier-get-started.primary:hover { background: #155bc8; }
+                        .tier-get-started.outline { background: #fff; color: #1a202c; border: 2px solid #e2e8f0; }
+                        .tier-get-started.outline:hover { border-color: #1a202c; }
+                        .tier-save-label { font-size: 0.75rem; font-weight: 600; color: #38a169; margin-top: 0.5rem; display: none; }
+                        .tier-save-label.visible { display: block; }
+                        @media (max-width: 900px) {
+                            .tier-cards { grid-template-columns: 1fr; max-width: 400px; margin-left: auto; margin-right: auto; }
+                        }
+                    </style>
+
+                    <div style="text-align: center; margin-bottom: 0.5rem;">
+                        <h2 style="font-size: 1.75rem; font-weight: 800; color: #1a202c; margin-bottom: 0.5rem;">Activate your membership</h2>
+                        <p style="color: #718096; font-size: 1rem; max-width: 480px; margin: 0 auto;">Choose a tier to publish your profile and start receiving leads.</p>
+                    </div>
+
+                    <div class="tier-cards">
+
+                        <!-- Standard -->
+                        <div class="tier-card" id="tier-card-standard">
+                            <div class="tier-name">Standard</div>
+                            <div class="tier-price" id="price-standard">$9</div>
+                            <div class="tier-price-period" id="period-standard">/month</div>
+                            <div class="tier-toggle">
+                                <button class="tier-toggle-btn active" onclick="setTierPeriod('standard','monthly',this)">Monthly</button>
+                                <button class="tier-toggle-btn" onclick="setTierPeriod('standard','annual',this)">Annual</button>
+                            </div>
+                            <div class="tier-save-label" id="save-standard">Save 20% with annual</div>
+                            <button class="tier-get-started outline" onclick="activateTier('standard', getTierPeriod('standard'))">Get started</button>
+                        </div>
+
+                        <!-- Prime (Featured) -->
+                        <div class="tier-card featured" id="tier-card-prime">
+                            <div class="tier-popular-badge">Most Popular</div>
+                            <div class="tier-name">Prime</div>
+                            <div class="tier-price" id="price-prime">$19</div>
+                            <div class="tier-price-period" id="period-prime">/month</div>
+                            <div class="tier-toggle">
+                                <button class="tier-toggle-btn active" onclick="setTierPeriod('prime','monthly',this)">Monthly</button>
+                                <button class="tier-toggle-btn" onclick="setTierPeriod('prime','annual',this)">Annual</button>
+                            </div>
+                            <div class="tier-save-label" id="save-prime">Save 21% with annual</div>
+                            <button class="tier-get-started primary" onclick="activateTier('prime', getTierPeriod('prime'))">Get started</button>
+                        </div>
+
+                        <!-- Founder (month-to-month only) -->
+                        <div class="tier-card" id="tier-card-founder">
+                            <div class="tier-name">Founder</div>
+                            <div class="tier-price" id="price-founder">$449</div>
+                            <div class="tier-price-period" id="period-founder">/month</div>
+                            <div style="font-size: 0.78rem; color: #718096; margin: 0.5rem 0 0.25rem;">Month-to-month only</div>
+                            <button class="tier-get-started outline" onclick="activateTier('founder', 'monthly')">Get started</button>
+                        </div>
+
+                    </div>
+
+                    <p style="text-align: center; font-size: 0.85rem; color: #a0aec0; margin-top: 1.75rem;">Your profile will be auto-published once payment is confirmed.</p>
+                </div>
+
                 <!-- ── LEAD INBOX VIEW ── -->
                 <div id="view-leads" style="display: none;">
                     <div style="background: #fff; padding: 2rem 2.5rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 1.5rem;">
@@ -180,8 +253,13 @@
 
         // ── View Switching ───────────────────────────────────────────────────────
         function switchView(view) {
-            document.getElementById('view-profile').style.display = view === 'profile' ? 'block' : 'none';
-            document.getElementById('view-leads').style.display   = view === 'leads'   ? 'block' : 'none';
+            document.getElementById('view-profile').style.display  = view === 'profile' ? 'block' : 'none';
+            document.getElementById('view-leads').style.display    = view === 'leads'   ? 'block' : 'none';
+            const activateEl = document.getElementById('view-activate');
+            if (activateEl) {
+                if (view === 'profile') calcProgress(); // re-evaluate tier visibility
+                else activateEl.style.display = 'none';
+            }
             document.getElementById('tab-btn-profile').classList.toggle('active', view === 'profile');
             document.getElementById('tab-btn-leads').classList.toggle('active',   view === 'leads');
             if (view === 'leads' && allLeads.length === 0) loadLeads();
@@ -237,23 +315,25 @@
 
             document.getElementById('f-bio').value = agent.bio || '';
 
-            if (agent.profile_status === 'pending_review') {
-                document.getElementById('banner-draft').style.display    = 'none';
-                document.getElementById('banner-pending').style.display  = 'flex';
-                const btn = document.getElementById('submit-review-btn');
-                btn.textContent = 'Updates Pending Review';
-                btn.disabled = true;
-                btn.style.opacity = '0.7';
-            } else if (agent.profile_status === 'published') {
-                document.getElementById('banner-draft').style.display    = 'none';
-                document.getElementById('banner-pending').style.display  = 'none';
-                const btn = document.getElementById('submit-review-btn');
-                btn.textContent = 'Profile is Live';
-                btn.disabled = true;
-                btn.style.opacity = '0.7';
+            // ── State management: draft → ready-to-pay → live ──
+            const activateSection = document.getElementById('view-activate');
+
+            if (agent.is_published && agent.profile_status === 'published') {
+                // LIVE — profile is published and paid
+                document.getElementById('banner-draft').style.display = 'none';
+                document.getElementById('banner-live').style.display  = 'flex';
+                if (activateSection) activateSection.style.display = 'none';
+            } else {
+                // DRAFT — profile not yet published
+                document.getElementById('banner-draft').style.display = 'flex';
+                document.getElementById('banner-live').style.display  = 'none';
+                // Tier selection visibility is controlled by calcProgress()
             }
 
             calcProgress();
+
+            // Store agent slug for the "view profile" link on success page
+            if (agent.slug) window._agentSlug = agent.slug;
         }
 
         // ── Leads ────────────────────────────────────────────────────────────────
@@ -340,13 +420,17 @@
             reqds.forEach(id => { const el = document.getElementById(id); if (el && el.value.trim() !== '') filled++; });
             const pct = Math.round((filled / reqds.length) * 100);
             document.getElementById('completion-bar').style.width = pct + '%';
-            document.getElementById('completion-text').innerText = pct + '% Complete' + (pct === 100 ? ' — Ready for Review!' : '');
-            const submitBtn = document.getElementById('submit-review-btn');
-            const locked = ['Updates Pending Review', 'Profile is Live'];
-            if (locked.includes(submitBtn.textContent)) return;
-            submitBtn.disabled      = pct < 100;
-            submitBtn.style.opacity  = pct === 100 ? '1' : '0.5';
-            submitBtn.style.cursor   = pct === 100 ? 'pointer' : 'not-allowed';
+
+            const activateSection = document.getElementById('view-activate');
+            if (pct === 100) {
+                document.getElementById('completion-text').innerText = '100% Complete — Choose a tier below to go live!';
+                if (activateSection && activateSection.style.display !== 'none') {
+                    activateSection.style.display = 'block';
+                }
+            } else {
+                document.getElementById('completion-text').innerText = pct + '% Complete';
+                if (activateSection) activateSection.style.display = 'none';
+            }
         }
 
         // ── Extract Form Payload ─────────────────────────────────────────────────
@@ -384,38 +468,7 @@
             }
         }
 
-        // ── Submit for Review ────────────────────────────────────────────────────
-        async function submitForReview() {
-            const btn = document.getElementById('submit-review-btn');
-            btn.textContent = 'Submitting...';
-            btn.disabled = true;
-            try {
-                await fetch('/api/agents/me', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(extractFormPayload())
-                });
-                const res = await fetch('/api/agents/me/submit', { method: 'POST' });
-                if (res.status === 401) { window.location.href = REDIRECT_LOGIN; return; }
-                const data = await res.json();
-                if (res.ok) {
-                    document.getElementById('banner-draft').style.display   = 'none';
-                    document.getElementById('banner-pending').style.display = 'flex';
-                    btn.textContent = 'Updates Pending Review';
-                    btn.style.opacity = '0.7';
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                } else {
-                    alert(data.error || 'Submission failed. Check all required fields.');
-                    btn.textContent = 'Submit for Approval';
-                    btn.disabled = false;
-                    btn.style.opacity = '1';
-                }
-            } catch(err) {
-                alert('Network error. Please try again.');
-                btn.textContent = 'Submit for Approval';
-                btn.disabled = false;
-            }
-        }
+        // (Submit for review removed — Phase 1 uses self-serve Stripe checkout instead)
 
         // ── Image Preview ─────────────────────────────────────────────────────────
         function previewImage(event) {
@@ -427,6 +480,87 @@
                     `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
             };
             reader.readAsDataURL(file);
+        }
+
+        // ── Tier Pricing / Go-Live ──────────────────────────────────────────────
+        const tierPricing = {
+            standard: { monthly: { display: '$9',   period: '/month' }, annual: { display: '$86',  period: '/year' } },
+            prime:    { monthly: { display: '$19',  period: '/month' }, annual: { display: '$179', period: '/year' } },
+            founder:  { monthly: { display: '$449', period: '/month' }, annual: { display: '$449', period: '/month' } }
+        };
+
+        const tierPeriodState = { standard: 'monthly', prime: 'monthly', founder: 'monthly' };
+
+        function getTierPeriod(tier) {
+            return tierPeriodState[tier] || 'monthly';
+        }
+
+        function setTierPeriod(tier, period, btnEl) {
+            tierPeriodState[tier] = period;
+            const p = tierPricing[tier][period];
+            document.getElementById('price-' + tier).textContent = p.display;
+            document.getElementById('period-' + tier).textContent = p.period;
+
+            // Toggle active button within the same card
+            const card = btnEl.closest('.tier-card');
+            card.querySelectorAll('.tier-toggle-btn').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+
+            // Show/hide save label
+            const saveEl = document.getElementById('save-' + tier);
+            if (saveEl) {
+                saveEl.classList.toggle('visible', period === 'annual' && tier !== 'founder');
+            }
+        }
+
+        async function activateTier(tier, period) {
+            const card = document.getElementById('tier-card-' + tier);
+            const btn = card.querySelector('.tier-get-started');
+            const origText = btn.textContent;
+            btn.textContent = 'Saving profile...';
+            btn.disabled = true;
+            btn.style.opacity = '0.7';
+
+            try {
+                // Auto-save profile before sending to Stripe so nothing is lost
+                await fetch('/api/agents/me', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(extractFormPayload())
+                });
+
+                btn.textContent = 'Redirecting to checkout...';
+
+                const res = await fetch('/api/stripe/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ tier, period })
+                });
+
+                if (res.status === 401) {
+                    window.location.href = REDIRECT_LOGIN;
+                    return;
+                }
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || 'Failed to create checkout session.');
+                }
+
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    throw new Error('No checkout URL returned.');
+                }
+            } catch (err) {
+                alert(err.message || 'Something went wrong. Please try again.');
+                btn.textContent = origText;
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
         }
     </script>
     <global-footer></global-footer>

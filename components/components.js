@@ -38,36 +38,54 @@ class GlobalHeader extends HTMLElement {
         const triggers = this.querySelectorAll('[data-nav-id]');
         if (!triggers.length) return;
 
+        const header = this.querySelector('.navbar');
         const menus = {};
         this.querySelectorAll('.nav-megamenu[data-nav-id]').forEach(m => {
             menus[m.getAttribute('data-nav-id')] = m;
         });
 
-        let hideTimer = null;
+        let activeMenu = null;
+
         const hideAll = () => {
             Object.values(menus).forEach(m => { m.style.display = 'none'; });
+            activeMenu = null;
         };
 
         const showMenu = (id) => {
-            clearTimeout(hideTimer);
-            hideAll();
+            if (activeMenu === id) return;
+            Object.values(menus).forEach(m => { m.style.display = 'none'; });
             if (menus[id]) menus[id].style.display = 'block';
-        };
-        const scheduleHide = () => {
-            hideTimer = setTimeout(hideAll, 150);
+            activeMenu = id;
         };
 
-        // Wire each trigger
+        // Hovering a trigger shows its menu immediately
         triggers.forEach(trigger => {
             const id = trigger.getAttribute('data-nav-id');
             trigger.addEventListener('mouseenter', () => showMenu(id));
-            trigger.addEventListener('mouseleave', scheduleHide);
         });
 
-        // Wire each menu so hovering it keeps it open
-        Object.entries(menus).forEach(([id, menu]) => {
-            menu.addEventListener('mouseenter', () => showMenu(id));
-            menu.addEventListener('mouseleave', scheduleHide);
+        // The menu stays open while cursor is anywhere inside the header OR the dropdown.
+        // It only closes when the cursor leaves BOTH the header and all menus.
+        const isInsideNav = (e) => {
+            const related = e.relatedTarget;
+            if (!related) return false;
+            if (header && header.contains(related)) return true;
+            for (const m of Object.values(menus)) {
+                if (m.contains(related)) return true;
+            }
+            return false;
+        };
+
+        if (header) {
+            header.addEventListener('mouseleave', (e) => {
+                if (!isInsideNav(e)) hideAll();
+            });
+        }
+
+        Object.values(menus).forEach(menu => {
+            menu.addEventListener('mouseleave', (e) => {
+                if (!isInsideNav(e)) hideAll();
+            });
         });
     }
 
@@ -195,6 +213,7 @@ class GlobalHeader extends HTMLElement {
                     ]},
                     { heading: 'Become a Partner', links: [
                         { label: 'Join the Network', href: `${bp}join.html` },
+                        { label: 'Agent Login', href: `${bp}agent-login.html` },
                         { label: 'Contact Us', href: `${bp}contact.html` },
                     ]},
                     { heading: 'Resources', links: [
