@@ -149,17 +149,17 @@ class GlobalHeader extends HTMLElement {
                 </div>
             </div>`;
         } else {
-            authHtml = `<div style="display: flex; gap: 0.6rem; align-items: center;">
+            authHtml = `<div style="display: flex; gap: 1.25rem; align-items: center;">
+                <a href="${rp}pages/public/login.html" style="color: #fff; font-weight: 600;
+                    font-size: 0.9rem; font-family: inherit; text-decoration: none;
+                    transition: opacity 0.2s;"
+                    onmouseover="this.style.opacity='0.7'"
+                    onmouseout="this.style.opacity='1'">Log In</a>
                 <button onclick="window.openForm('agent')" style="background: #1d6df2; color: #fff; font-weight: 600;
                     border: none; padding: 0.55rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
                     font-family: inherit; transition: background 0.2s;"
                     onmouseover="this.style.background='#1558c7'"
                     onmouseout="this.style.background='#1d6df2'">Get Started</button>
-                <a href="${rp}pages/public/login.html" style="background: #fff; color: #1a202c; font-weight: 600;
-                    border: none; padding: 0.55rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
-                    font-family: inherit; transition: background 0.2s; text-decoration: none; display: inline-block;"
-                    onmouseover="this.style.background='#edf2f7'"
-                    onmouseout="this.style.background='#fff'">Log In</a>
             </div>`;
         }
 
