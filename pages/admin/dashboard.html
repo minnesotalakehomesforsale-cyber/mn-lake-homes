@@ -78,7 +78,11 @@
                 <a href="blog.html"      class="side-link">Blog & Content</a>
                 <a href="users.html"     class="side-link">Users Management</a>
                 <a href="marketing.html" class="side-link">Marketing</a>
-                <a href="tasks.html"     class="side-link">Tasks</a>
+                <a href="tasks.html"     class="side-link" id="nav-link-tasks" style="display:flex;align-items:center;justify-content:space-between;">
+                    <span>Tasks</span>
+                    <span id="nav-badge-tasks" style="background:#ef4444;color:#fff;font-size:0.68rem;font-weight:800;padding:0.1rem 0.45rem;border-radius:99px;margin-left:auto;display:none;">0</span>
+                </a>
+                <a href="database.html"  class="side-link">Database</a>
             </nav>
             <a href="/index.html" target="_blank" style="display:block;padding:0.75rem 1rem;border-radius:8px;color:#a0aec0;text-decoration:none;font-size:0.85rem;font-weight:500;margin-top:0.5rem;border:1px solid rgba(255,255,255,0.08);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">↗ View Live Site</a>
             <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>{window.location.href='/index.html';})" class="side-signout">Sign Out</a>
@@ -145,6 +149,17 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Tasks Panel -->
+            <div class="dash-panel" style="margin-top: 2rem;">
+                <div class="panel-header">
+                    <span class="panel-title">Tasks requiring attention</span>
+                    <a href="tasks.html" class="panel-link">Open Tasks &rarr;</a>
+                </div>
+                <div class="panel-body" id="attention-tasks-body">
+                    <div class="panel-empty">Loading...</div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -161,10 +176,11 @@
 
             document.getElementById('date-line').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-            // Fetch agents + leads in parallel
-            const [agents, leads] = await Promise.all([
+            // Fetch agents + leads + tasks in parallel
+            const [agents, leads, tasks] = await Promise.all([
                 fetch('/api/admin').then(r => r.ok ? r.json() : []).catch(() => []),
-                fetch('/api/leads/admin/inbox').then(r => r.ok ? r.json() : []).catch(() => [])
+                fetch('/api/leads/admin/inbox').then(r => r.ok ? r.json() : []).catch(() => []),
+                fetch('/api/tasks').then(r => r.ok ? r.json() : []).catch(() => [])
             ]);
 
             // Stats
@@ -192,6 +208,39 @@
                         <span class="s-badge badge-pending">Review</span>
                     </div>
                 `).join('');
+            }
+
+            // Attention-tasks panel (overdue + due today)
+            const isSameDay = (d1, d2) => d1.getFullYear()===d2.getFullYear() && d1.getMonth()===d2.getMonth() && d1.getDate()===d2.getDate();
+            const now = new Date();
+            const attentionTasks = tasks
+                .filter(t => !t.is_completed && t.due_date)
+                .filter(t => {
+                    const d = new Date(t.due_date);
+                    return d.getTime() < now.getTime() || isSameDay(d, now);
+                })
+                .sort((a,b) => new Date(a.due_date) - new Date(b.due_date))
+                .slice(0, 8);
+            const atBody = document.getElementById('attention-tasks-body');
+            if (attentionTasks.length === 0) {
+                atBody.innerHTML = '<div class="panel-empty">No overdue or due-today tasks. You\'re clear.</div>';
+            } else {
+                atBody.innerHTML = attentionTasks.map(t => {
+                    const due = new Date(t.due_date);
+                    const isOverdue = due.getTime() < now.getTime() && !isSameDay(due, now);
+                    const badge = isOverdue
+                        ? '<span class="s-badge" style="background:#fee2e2;color:#c53030;">Overdue</span>'
+                        : '<span class="s-badge" style="background:#fef3c7;color:#b7791f;">Today</span>';
+                    const when = due.toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+                    return `
+                        <div class="panel-row" style="grid-template-columns: 1fr auto auto; gap: 1rem; cursor: pointer;" onclick="window.location.href='tasks.html'">
+                            <div>
+                                <div style="font-weight: 700; color: #1a202c; font-size: 0.9rem;">${(t.note||'').replace(/</g,'&lt;')}</div>
+                                <div style="font-size: 0.78rem; color: #718096; margin-top: 2px;">Due ${when}</div>
+                            </div>
+                            ${badge}
+                        </div>`;
+                }).join('');
             }
 
             // Recent leads table

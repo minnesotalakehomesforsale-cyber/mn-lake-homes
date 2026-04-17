@@ -262,11 +262,35 @@
                 <p class="testimonial-quote">"By working with MN Lake Homes, we found our dream cabin on Lake Minnetonka. They guided us through shoreline regulations and helped us negotiate a great price."</p>
             </div>
             
-            <div class="testimonial-media">
-                <div class="media-vertical-tab">The Johnson Family</div>
-                <div class="media-image-wrapper">
-                    <img src="/assets/images/mn-colonial-lake-home.jpg" alt="Minnesota colonial lake home client testimonial view" loading="lazy" width="800" height="600">
-                </div>
+        </div>
+    </section>
+
+    <section class="mn-photo-gallery" aria-label="Minnesota communities and lake homes gallery">
+        <div class="mn-photo-gallery-container">
+            <div class="mn-photo-gallery-header">
+                <div class="mn-photo-gallery-eyebrow">Our Minnesota</div>
+                <h2 class="mn-photo-gallery-title">The communities<br>we call home.</h2>
+                <p class="mn-photo-gallery-subtitle">From the lake country up north to the classic neighborhoods of the Twin Cities metro, these are the places where our team lives, works, and closes deals every week.</p>
+            </div>
+            <div class="mn-photo-gallery-grid">
+                <img src="/assets/images/mn-gallery-026.jpg" alt="Minnesota neighborhood view" loading="lazy" width="400" height="300">
+                <img src="/assets/images/mn-gallery-027.jpg" alt="Minnesota historic home" loading="lazy" width="400" height="300">
+                <img src="/assets/images/mn-gallery-028.jpg" alt="Minnesota lake community" loading="lazy" width="400" height="300">
+                <img src="/assets/images/mn-gallery-029.jpg" alt="Minnesota residential street" loading="lazy" width="400" height="300">
+                <img src="/assets/images/mn-gallery-030.jpg" alt="Minnesota lakefront view" loading="lazy" width="400" height="300">
+                <img src="/assets/images/mn-gallery-031.jpg" alt="Minnesota classic home" loading="lazy" width="400" height="300">
+                <img src="/assets/images/mn-gallery-032.jpg" alt="Minnesota waterfront property" loading="lazy" width="400" height="300">
+                <img src="/assets/images/mn-gallery-033.jpg" alt="Minnesota cabin in nature" loading="lazy" width="400" height="300">
+                <img src="/assets/images/mn-gallery-034.jpg" alt="Minnesota town scenery" loading="lazy" width="400" height="300">
+                <img src="/assets/images/mn-gallery-035.jpg" alt="Minnesota lakeside home" loading="lazy" width="400" height="300">
+                <img src="/assets/images/mn-gallery-036.jpg" alt="Minnesota countryside view" loading="lazy" width="400" height="300">
+                <img src="/assets/images/mn-gallery-037.jpg" alt="Minnesota home architecture" loading="lazy" width="400" height="300">
+                <img src="/assets/images/mn-gallery-038.jpg" alt="Minnesota lake lifestyle" loading="lazy" width="400" height="300">
+                <img src="/assets/images/mn-gallery-039.jpg" alt="Minnesota suburban home" loading="lazy" width="400" height="300">
+                <img src="/assets/images/mn-gallery-040.jpg" alt="Minnesota residential area" loading="lazy" width="400" height="300">
+                <img src="/assets/images/mn-gallery-041.jpg" alt="Minnesota lake cabin" loading="lazy" width="400" height="300">
+                <img src="/assets/images/mn-gallery-042.jpg" alt="Minnesota community home" loading="lazy" width="400" height="300">
+                <img src="/assets/images/mn-gallery-043.jpg" alt="Minnesota charming neighborhood" loading="lazy" width="400" height="300">
             </div>
         </div>
     </section>
@@ -294,26 +318,22 @@
             {
                 category: "First-Time Lake Home Buyer",
                 brand: "The Johnson Family",
-                quote: '"By working with MN Lake Homes, we found our dream cabin on Lake Minnetonka. They guided us through shoreline regulations and helped us negotiate a great price."',
-                image: "/assets/images/mn-colonial-lake-home.jpg"
+                quote: '"By working with MN Lake Homes, we found our dream cabin on Lake Minnetonka. They guided us through shoreline regulations and helped us negotiate a great price."'
             },
             {
                 category: "Seller near Nisswa",
                 brand: "Sarah & Mike T.",
-                quote: '"The marketing team at MN Lake Homes was phenomenal. They highlighted the best features of our property, and we had multiple offers within the first week on the market."',
-                image: "/assets/images/mn-white-farmhouse.jpg"
+                quote: '"The marketing team at MN Lake Homes was phenomenal. They highlighted the best features of our property, and we had multiple offers within the first week on the market."'
             },
             {
                 category: "Luxury Lakeside Estate",
                 brand: "The Robertsons",
-                quote: '"We appreciated their attention to detail and extensive network of luxury buyers. MN Lake Homes handled the sale of our Brainerd estate with absolute professionalism."',
-                image: "/assets/images/mn-rustic-modern-lake-house.jpg"
+                quote: '"We appreciated their attention to detail and extensive network of luxury buyers. MN Lake Homes handled the sale of our Brainerd estate with absolute professionalism."'
             },
             {
                 category: "Local Investor",
                 brand: "David M.",
-                quote: '"As someone who invests in vacation rentals, the data and insights provided by MN Lake Homes are invaluable. They know exactly which lakes yield the best ROI."',
-                image: "/assets/images/mn-most-expensive-listing.jpg"
+                quote: '"As someone who invests in vacation rentals, the data and insights provided by MN Lake Homes are invaluable. They know exactly which lakes yield the best ROI."'
             }
         ];
 
@@ -324,8 +344,6 @@
             document.querySelector('.testimonial-category').textContent = t.category;
             document.querySelector('.testimonial-brand').textContent = t.brand;
             document.querySelector('.testimonial-quote').textContent = t.quote;
-            document.querySelector('.media-image-wrapper img').src = t.image;
-            document.querySelector('.media-vertical-tab').textContent = t.brand;
             document.querySelector('.slide-count').textContent = `0${currentTestimonial + 1} / 04`;
         }
 

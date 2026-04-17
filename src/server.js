@@ -45,6 +45,7 @@ app.use('/api/tasks', require('./routes/task.routes'));
 app.use('/api/stripe', require('./routes/stripe.routes'));
 app.use('/api/inquiries', require('./routes/inquiry.routes'));
 app.use('/api/assistant', require('./routes/assistant.routes'));
+app.use('/api/activity', require('./routes/activity.routes'));
 
 app.get('/api/health', (req, res) => {
     res.json({
@@ -201,6 +202,37 @@ async function ensureTables() {
         await pool.query(`
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT;
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
+        `);
+
+        // Reminders-style columns on admin_tasks (details + due date)
+        await pool.query(`
+            ALTER TABLE admin_tasks ADD COLUMN IF NOT EXISTS details TEXT;
+            ALTER TABLE admin_tasks ADD COLUMN IF NOT EXISTS due_date TIMESTAMPTZ;
+            CREATE INDEX IF NOT EXISTS idx_admin_tasks_due_date ON admin_tasks(due_date) WHERE is_completed = false;
+        `);
+
+        // Activity log — site-wide audit trail of everything that happens
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS activity_log (
+                id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                event_type    TEXT NOT NULL,
+                event_scope   TEXT,
+                actor_type    TEXT,
+                actor_id      UUID,
+                actor_label   TEXT,
+                target_type   TEXT,
+                target_id     UUID,
+                target_label  TEXT,
+                details       JSONB,
+                ip_address    TEXT,
+                user_agent    TEXT,
+                severity      TEXT NOT NULL DEFAULT 'info',
+                created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_activity_log_created  ON activity_log(created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_activity_log_type     ON activity_log(event_type);
+            CREATE INDEX IF NOT EXISTS idx_activity_log_scope    ON activity_log(event_scope);
+            CREATE INDEX IF NOT EXISTS idx_activity_log_severity ON activity_log(severity);
         `);
 
         // Ensure the FK constraint from assigned_user_id → users exists (best-effort)

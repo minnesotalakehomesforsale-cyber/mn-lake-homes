@@ -16,6 +16,7 @@ const email = require('../services/email');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const { logActivity } = require('../services/activity-log');
 
 // ─── Resume upload config ────────────────────────────────────────────────────
 const RESUME_DIR = path.join(__dirname, '..', '..', 'assets', 'uploads', 'resumes');
@@ -94,6 +95,15 @@ exports.createInquiry = async (req, res) => {
         });
         email.sendInquiryConfirmation({
             to: submitterEmail, name, source,
+        });
+
+        logActivity({
+            event_type: 'inquiry.create',
+            event_scope: 'inquiry',
+            actor: { type: 'public', label: submitterEmail },
+            target: { type: 'inquiry', id: saved.id, label: `${name} via ${source}` },
+            details: { source, inquirer_type, page_url },
+            req,
         });
 
         res.status(201).json({ success: true, id: saved.id });

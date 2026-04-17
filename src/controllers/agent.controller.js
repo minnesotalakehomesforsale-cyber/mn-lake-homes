@@ -2,9 +2,10 @@ const pool = require('../database/pool');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const { logActivity } = require('../services/activity-log');
 
 // ─── Agent profile photo upload ──────────────────────────────────────────────
-const PHOTO_DIR = path.join(__dirname, '..', '..', 'assets', 'uploads', 'agents');
+const PHOTO_DIR = path.join(__dirname, '..', '..', 'assets', 'images', 'agents');
 if (!fs.existsSync(PHOTO_DIR)) fs.mkdirSync(PHOTO_DIR, { recursive: true });
 
 const photoStorage = multer.diskStorage({
@@ -31,8 +32,17 @@ const uploadPhoto = (req, res) => {
     photoUpload(req, res, (err) => {
         if (err) return res.status(400).json({ error: err.message });
         if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+
+        logActivity({
+            event_type: 'agent.photo.upload',
+            event_scope: 'agent',
+            actor: { type: req.user?.role || 'agent', id: req.user?.userId },
+            details: { filename: req.file.filename, size: req.file.size, mimetype: req.file.mimetype },
+            req,
+        });
+
         res.json({
-            url: `/assets/uploads/agents/${req.file.filename}`,
+            url: `/assets/images/agents/${req.file.filename}`,
             filename: req.file.originalname,
             size: req.file.size,
         });
@@ -168,6 +178,19 @@ const saveDraft = async (req, res) => {
         );
 
         const { rows } = await pool.query(`SELECT * FROM agents WHERE user_id = $1`, [req.user.userId]);
+
+        logActivity({
+            event_type: 'agent.profile.update',
+            event_scope: 'agent',
+            actor: { type: 'agent', id: req.user.userId, label: rows[0]?.display_name },
+            target: { type: 'agent', id: rows[0]?.id, label: rows[0]?.display_name },
+            details: Object.fromEntries(Object.entries({
+                display_name, brokerage_name, phone_public, email_public, website_url,
+                license_number, years_experience, city, bio, profile_photo_url,
+            }).filter(([, v]) => v !== undefined && v !== null && v !== '')),
+            req,
+        });
+
         res.json({ success: true, profile: rows[0] });
     } catch (err) {
         console.error('[saveDraft]', err.message);

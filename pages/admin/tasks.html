@@ -22,26 +22,39 @@
         .admin-main { padding: 3rem 3.5rem; background: #f7f9fa; overflow-y: auto; }
 
         .task-panel { background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow: hidden; max-width: 860px; }
-        .task-panel-header { padding: 1.5rem 2rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; }
-        .task-panel-title { font-size: 1rem; font-weight: 700; color: #1a202c; }
+        .task-panel-header { padding: 1.25rem 2rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
 
-        .add-task-bar { display: flex; gap: 0.75rem; padding: 1.25rem 2rem; border-bottom: 1px solid #edf2f7; background: #fafbfc; }
-        .add-task-input { flex: 1; padding: 0.7rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; font-family: inherit; outline: none; color: #1a202c; background: #fff; transition: border-color 0.15s; }
+        .add-task-form { padding: 1.25rem 2rem; border-bottom: 1px solid #edf2f7; background: #fafbfc; display: grid; gap: 0.75rem; }
+        .add-task-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+        .add-task-input { flex: 1 1 280px; padding: 0.7rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; font-family: inherit; outline: none; color: #1a202c; background: #fff; transition: border-color 0.15s; }
         .add-task-input:focus { border-color: #1d6df2; }
+        textarea.add-task-input { min-height: 60px; resize: vertical; font-family: inherit; }
+        .add-task-datetime { padding: 0.6rem 0.8rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; font-family: inherit; outline: none; background: #fff; color: #1a202c; }
+        .add-task-datetime:focus { border-color: #1d6df2; }
         .add-task-btn { padding: 0.7rem 1.4rem; background: #1d6df2; color: #fff; border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; transition: background 0.15s; }
         .add-task-btn:hover { background: #155bc8; }
         .add-task-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .add-task-clear { background: none; border: none; color: #718096; font-size: 0.8rem; cursor: pointer; padding: 0.5rem 0.75rem; font-family: inherit; }
+        .add-task-clear:hover { color: #1a202c; }
 
-        .filter-bar { display: flex; gap: 0.5rem; padding: 1rem 2rem; border-bottom: 1px solid #edf2f7; }
-        .filter-pill { padding: 0.35rem 0.85rem; border-radius: 99px; border: 1px solid #e2e8f0; background: #fff; font-size: 0.8rem; font-weight: 600; color: #4a5568; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+        .filter-bar { display: flex; gap: 0.5rem; padding: 1rem 2rem; border-bottom: 1px solid #edf2f7; flex-wrap: wrap; align-items: center; }
+        .filter-bar .sort-wrap { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #718096; }
+        .sort-select { padding: 0.35rem 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.8rem; font-family: inherit; background: #fff; color: #1a202c; cursor: pointer; }
+        .filter-pill { padding: 0.35rem 0.85rem; border-radius: 99px; border: 1px solid #e2e8f0; background: #fff; font-size: 0.8rem; font-weight: 600; color: #4a5568; cursor: pointer; font-family: inherit; transition: all 0.15s; display: inline-flex; align-items: center; gap: 0.4rem; }
         .filter-pill:hover { border-color: #1d6df2; color: #1d6df2; }
         .filter-pill.active { background: #1d6df2; border-color: #1d6df2; color: #fff; }
+        .filter-pill.attn { border-color: #fca5a5; color: #c53030; }
+        .filter-pill.attn.active { background: #ef4444; border-color: #ef4444; color: #fff; }
+        .filter-pill.today { border-color: #f6ad55; color: #b7791f; }
+        .filter-pill.today.active { background: #dd6b20; border-color: #dd6b20; color: #fff; }
 
         .task-list { list-style: none; margin: 0; padding: 0; }
-        .task-item { display: flex; align-items: flex-start; gap: 0.9rem; padding: 1rem 2rem; border-bottom: 1px solid #f7f9fa; transition: background 0.1s; }
+        .task-item { display: flex; align-items: flex-start; gap: 0.9rem; padding: 0.95rem 2rem; border-bottom: 1px solid #f7f9fa; transition: background 0.1s; cursor: pointer; }
         .task-item:last-child { border-bottom: none; }
         .task-item:hover { background: #f7f9fa; }
         .task-item.done .task-note { text-decoration: line-through; color: #a0aec0; }
+        .task-item.overdue { background: linear-gradient(90deg, rgba(239,68,68,0.04), transparent 30%); }
+        .task-item.expanded { background: #f7f9fa; cursor: default; }
 
         .task-check { width: 20px; height: 20px; border-radius: 6px; border: 2px solid #e2e8f0; background: #fff; cursor: pointer; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
         .task-check:hover { border-color: #1d6df2; }
@@ -50,15 +63,37 @@
         .task-check.checked svg { display: block; }
 
         .task-body { flex: 1; min-width: 0; }
-        .task-note { font-size: 0.9rem; color: #1a202c; line-height: 1.5; word-break: break-word; }
-        .task-meta { font-size: 0.75rem; color: #a0aec0; margin-top: 0.3rem; }
+        .task-note { font-size: 0.92rem; color: #1a202c; line-height: 1.45; word-break: break-word; font-weight: 500; }
+        .task-meta { font-size: 0.75rem; color: #a0aec0; margin-top: 0.3rem; display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+        .task-detail-preview { font-size: 0.82rem; color: #4a5568; margin-top: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+        .chip { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 99px; background: #edf2f7; color: #4a5568; text-transform: uppercase; letter-spacing: 0.5px; }
+        .chip.overdue { background: #fee2e2; color: #c53030; }
+        .chip.today   { background: #fef3c7; color: #b7791f; }
+        .chip.upcoming { background: #e6effb; color: #1d6df2; }
 
         .task-delete { background: none; border: none; cursor: pointer; padding: 0.25rem; border-radius: 4px; color: #cbd5e0; transition: color 0.15s; flex-shrink: 0; line-height: 1; }
         .task-delete:hover { color: #fc8181; }
 
         .task-empty { padding: 4rem 2rem; text-align: center; color: #a0aec0; font-size: 0.9rem; }
+
+        .task-expand { padding: 0 2rem 1.25rem calc(2rem + 20px + 0.9rem); background: #f7f9fa; border-bottom: 1px solid #f7f9fa; display: grid; gap: 0.75rem; }
+        .task-expand label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #718096; margin-bottom: 0.3rem; display: block; }
+        .task-expand input, .task-expand textarea { width: 100%; padding: 0.55rem 0.8rem; border: 1px solid #e2e8f0; border-radius: 7px; font-size: 0.88rem; font-family: inherit; outline: none; color: #1a202c; background: #fff; transition: border-color 0.15s; box-sizing: border-box; }
+        .task-expand input:focus, .task-expand textarea:focus { border-color: #1d6df2; }
+        .task-expand textarea { min-height: 70px; resize: vertical; line-height: 1.5; }
+        .task-expand-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .task-expand-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.3rem; }
+        .btn-sm { padding: 0.5rem 1rem; border-radius: 7px; font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit; border: 1px solid transparent; transition: all 0.15s; }
+        .btn-save { background: #1d6df2; color: #fff; border-color: #1d6df2; }
+        .btn-save:hover { background: #155bc8; border-color: #155bc8; }
+        .btn-cancel { background: #fff; color: #4a5568; border-color: #e2e8f0; }
+        .btn-cancel:hover { border-color: #cbd5e0; color: #1a202c; }
+        .btn-clear-date { background: none; color: #718096; border: none; font-size: 0.78rem; cursor: pointer; padding: 0.25rem 0; margin-top: 0.25rem; font-family: inherit; }
+        .btn-clear-date:hover { color: #c53030; }
+
         .task-count-badge { background: #edf2f7; color: #4a5568; font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 99px; }
-        .task-count-badge.active { background: #1d6df2; color: #fff; }
+        .task-count-badge.active { background: rgba(255,255,255,0.25); color: #fff; }
     </style>
     <script src="../../components/admin-guard.js"></script>
     <script src="../../components/admin-responsive.js" defer></script>
@@ -82,7 +117,11 @@
             <a href="blog.html"       class="side-link">Blog & Content</a>
             <a href="users.html"      class="side-link">Users Management</a>
             <a href="marketing.html"  class="side-link">Marketing</a>
-            <a href="tasks.html"      class="side-link active">Tasks</a>
+            <a href="tasks.html"      class="side-link active" id="nav-link-tasks" style="display:flex;align-items:center;justify-content:space-between;">
+                <span>Tasks</span>
+                <span id="nav-badge-tasks" style="background:#ef4444;color:#fff;font-size:0.68rem;font-weight:800;padding:0.1rem 0.45rem;border-radius:99px;margin-left:auto;display:none;">0</span>
+            </a>
+            <a href="database.html"  class="side-link">Database</a>
         </nav>
         <a href="/index.html" target="_blank" style="display:block;padding:0.75rem 1rem;border-radius:8px;color:#a0aec0;text-decoration:none;font-size:0.85rem;font-weight:500;margin-top:0.5rem;border:1px solid rgba(255,255,255,0.08);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">↗ View Live Site</a>
         <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>{window.location.href='/index.html';})" class="side-signout">Sign Out</a>
@@ -93,24 +132,40 @@
         <header style="margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: flex-end;">
             <div>
                 <h2 style="font-size: 1.8rem; font-weight: 800; letter-spacing: -0.75px; margin: 0 0 0.25rem;">Tasks</h2>
-                <p style="color: #718096; font-size: 0.9rem; margin: 0;">Track internal platform work and follow-up items.</p>
+                <p style="color: #718096; font-size: 0.9rem; margin: 0;">Due dates, notes, and follow-ups — your internal to-do list.</p>
             </div>
             <span id="summary-text" style="font-size:0.85rem;color:#a0aec0;font-weight:500;"></span>
         </header>
 
         <div class="task-panel">
             <!-- Add task -->
-            <div class="add-task-bar">
-                <input id="new-task-input" class="add-task-input" type="text" placeholder="Add a new task…" maxlength="500"
-                    onkeydown="if(event.key==='Enter') addTask()">
-                <button id="add-btn" class="add-task-btn" onclick="addTask()">Add Task</button>
-            </div>
+            <form class="add-task-form" id="new-task-form" onsubmit="event.preventDefault(); addTask();">
+                <div class="add-task-row">
+                    <input id="new-task-input" class="add-task-input" type="text" placeholder="New task title…" maxlength="500" required>
+                    <button type="submit" id="add-btn" class="add-task-btn">Add Task</button>
+                </div>
+                <div class="add-task-row">
+                    <input id="new-task-due" class="add-task-datetime" type="datetime-local" title="Due date (optional)">
+                    <textarea id="new-task-details" class="add-task-input" placeholder="Notes (optional)…" maxlength="4000"></textarea>
+                </div>
+            </form>
 
-            <!-- Filter pills -->
+            <!-- Filter pills + sort -->
             <div class="filter-bar">
-                <button class="filter-pill active" onclick="setFilter('all',this)">All <span id="cnt-all" class="task-count-badge active"></span></button>
-                <button class="filter-pill" onclick="setFilter('pending',this)">Pending <span id="cnt-pending" class="task-count-badge"></span></button>
-                <button class="filter-pill" onclick="setFilter('done',this)">Completed <span id="cnt-done" class="task-count-badge"></span></button>
+                <button class="filter-pill active" data-filter="all"       onclick="setFilter('all',this)">All <span id="cnt-all" class="task-count-badge active"></span></button>
+                <button class="filter-pill attn"   data-filter="overdue"   onclick="setFilter('overdue',this)">Overdue <span id="cnt-overdue" class="task-count-badge"></span></button>
+                <button class="filter-pill today"  data-filter="today"     onclick="setFilter('today',this)">Today <span id="cnt-today" class="task-count-badge"></span></button>
+                <button class="filter-pill"        data-filter="pending"   onclick="setFilter('pending',this)">Pending <span id="cnt-pending" class="task-count-badge"></span></button>
+                <button class="filter-pill"        data-filter="done"      onclick="setFilter('done',this)">Completed <span id="cnt-done" class="task-count-badge"></span></button>
+
+                <div class="sort-wrap">
+                    Sort:
+                    <select id="sort-select" class="sort-select" onchange="changeSort(this.value)">
+                        <option value="smart">Smart (overdue → upcoming)</option>
+                        <option value="due">Due date</option>
+                        <option value="created">Date added</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Task list -->
@@ -124,60 +179,184 @@
 <script>
     let allTasks = [];
     let activeFilter = 'all';
+    let activeSort = 'smart';
+    let expandedId = null;
 
-    function fmt(iso) {
+    function isSameDay(d1, d2) {
+        return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+    }
+
+    function dueStatus(t) {
+        if (t.is_completed || !t.due_date) return null;
+        const due = new Date(t.due_date);
+        const now = new Date();
+        if (due.getTime() < now.getTime() && !isSameDay(due, now)) return 'overdue';
+        if (isSameDay(due, now)) return 'today';
+        return 'upcoming';
+    }
+
+    function fmtDate(iso) {
         if (!iso) return '';
         const d = new Date(iso);
         return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
+    function fmtDateTime(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+    }
+    function fmtRelative(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        const now = new Date();
+        if (isSameDay(d, now)) return 'Today · ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+        const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate()+1);
+        if (isSameDay(d, tomorrow)) return 'Tomorrow · ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+        const yesterday = new Date(now); yesterday.setDate(yesterday.getDate()-1);
+        if (isSameDay(d, yesterday)) return 'Yesterday';
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    // Convert an ISO timestamp to the "datetime-local" input value in local tz
+    function toDateTimeLocal(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        const pad = n => String(n).padStart(2,'0');
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function escHtml(s) {
+        return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
 
     function buildItem(t) {
+        const status = dueStatus(t);
         const li = document.createElement('li');
-        li.className = 'task-item' + (t.is_completed ? ' done' : '');
+        li.className = 'task-item' + (t.is_completed ? ' done' : '') + (status === 'overdue' ? ' overdue' : '') + (expandedId === t.id ? ' expanded' : '');
         li.dataset.id = t.id;
+
+        const dueChip = t.due_date && !t.is_completed
+            ? `<span class="chip ${status}">${status === 'overdue' ? '⚠ ' : ''}${fmtRelative(t.due_date)}</span>`
+            : '';
+        const detailsChip = t.details ? `<span style="color:#cbd5e0;">·</span><span style="color:#718096;">has notes</span>` : '';
+        const metaTxt = t.is_completed
+            ? `Completed ${fmtDate(t.completed_at)}`
+            : (t.due_date ? `Due ${fmtDateTime(t.due_date)}` : `Added ${fmtDate(t.created_at)}`);
+
         li.innerHTML = `
-            <div class="task-check ${t.is_completed ? 'checked' : ''}" onclick="toggle('${t.id}')">
+            <div class="task-check ${t.is_completed ? 'checked' : ''}" onclick="event.stopPropagation(); toggle('${t.id}')">
                 <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5,6 4.5,9 10.5,3"/></svg>
             </div>
             <div class="task-body">
                 <div class="task-note">${escHtml(t.note)}</div>
-                <div class="task-meta">${t.is_completed ? 'Completed ' + fmt(t.completed_at) : 'Added ' + fmt(t.created_at)}</div>
+                ${t.details ? `<div class="task-detail-preview">${escHtml(t.details.split('\n')[0]).slice(0, 120)}</div>` : ''}
+                <div class="task-meta">
+                    ${dueChip}
+                    <span>${metaTxt}</span>
+                    ${detailsChip}
+                </div>
             </div>
-            <button class="task-delete" title="Delete" onclick="deleteTask('${t.id}')">
+            <button class="task-delete" title="Delete" onclick="event.stopPropagation(); deleteTask('${t.id}')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
             </button>`;
+
+        li.addEventListener('click', () => expand(t.id));
         return li;
     }
 
-    function escHtml(s) {
-        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    function buildExpandPanel(t) {
+        const li = document.createElement('li');
+        li.className = 'task-expand';
+        li.dataset.expandFor = t.id;
+        li.innerHTML = `
+            <div>
+                <label>Title</label>
+                <input type="text" id="edit-note-${t.id}" value="${escHtml(t.note)}" maxlength="500">
+            </div>
+            <div class="task-expand-row">
+                <div>
+                    <label>Due Date</label>
+                    <input type="datetime-local" id="edit-due-${t.id}" value="${toDateTimeLocal(t.due_date)}">
+                    ${t.due_date ? `<button class="btn-clear-date" onclick="clearDueDate('${t.id}')">Clear due date</button>` : ''}
+                </div>
+                <div>
+                    <label>Status</label>
+                    <select id="edit-status-${t.id}" class="sort-select" style="width:100%;padding:0.55rem 0.8rem;font-size:0.88rem;">
+                        <option value="false" ${!t.is_completed ? 'selected':''}>Pending</option>
+                        <option value="true"  ${ t.is_completed ? 'selected':''}>Completed</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label>Notes</label>
+                <textarea id="edit-details-${t.id}" placeholder="Add notes…" maxlength="4000">${escHtml(t.details || '')}</textarea>
+            </div>
+            <div class="task-expand-actions">
+                <button class="btn-sm btn-cancel" onclick="collapse()">Cancel</button>
+                <button class="btn-sm btn-save"   onclick="saveEdits('${t.id}')">Save Changes</button>
+            </div>
+        `;
+        // Prevent row-click bubble (clicks inside expand shouldn't re-collapse)
+        li.addEventListener('click', e => e.stopPropagation());
+        return li;
+    }
+
+    function expand(id) {
+        if (expandedId === id) { collapse(); return; }
+        expandedId = id;
+        renderList();
+    }
+    function collapse() {
+        expandedId = null;
+        renderList();
     }
 
     function updateCounts() {
         const pending = allTasks.filter(t => !t.is_completed).length;
         const done    = allTasks.filter(t =>  t.is_completed).length;
+        const overdue = allTasks.filter(t => dueStatus(t) === 'overdue').length;
+        const today   = allTasks.filter(t => dueStatus(t) === 'today').length;
         document.getElementById('cnt-all').textContent     = allTasks.length;
         document.getElementById('cnt-pending').textContent = pending;
         document.getElementById('cnt-done').textContent    = done;
-        const s = `${pending} pending · ${done} completed`;
-        document.getElementById('summary-text').textContent = s;
+        document.getElementById('cnt-overdue').textContent = overdue;
+        document.getElementById('cnt-today').textContent   = today;
+        const bits = [];
+        if (overdue) bits.push(`${overdue} overdue`);
+        if (today)   bits.push(`${today} due today`);
+        bits.push(`${pending} pending`);
+        bits.push(`${done} completed`);
+        document.getElementById('summary-text').textContent = bits.join(' · ');
+    }
+
+    function filteredTasks() {
+        let visible = allTasks;
+        if (activeFilter === 'pending') visible = visible.filter(t => !t.is_completed);
+        if (activeFilter === 'done')    visible = visible.filter(t =>  t.is_completed);
+        if (activeFilter === 'overdue') visible = visible.filter(t => dueStatus(t) === 'overdue');
+        if (activeFilter === 'today')   visible = visible.filter(t => dueStatus(t) === 'today');
+        return visible;
     }
 
     function renderList() {
         const list = document.getElementById('task-list');
-        let visible = allTasks;
-        if (activeFilter === 'pending') visible = allTasks.filter(t => !t.is_completed);
-        if (activeFilter === 'done')    visible = allTasks.filter(t =>  t.is_completed);
+        const visible = filteredTasks();
 
         if (!visible.length) {
-            const msg = activeFilter === 'done' ? 'No completed tasks yet.' :
+            const msg = activeFilter === 'done'    ? 'No completed tasks yet.' :
                         activeFilter === 'pending' ? 'Nothing pending — all clear!' :
+                        activeFilter === 'overdue' ? 'Nothing overdue. Nice.' :
+                        activeFilter === 'today'   ? 'Nothing due today.' :
                         'No tasks yet. Add one above.';
             list.innerHTML = `<li class="task-empty">${msg}</li>`;
+            updateCounts();
             return;
         }
         list.innerHTML = '';
-        visible.forEach(t => list.appendChild(buildItem(t)));
+        visible.forEach(t => {
+            list.appendChild(buildItem(t));
+            if (expandedId === t.id) list.appendChild(buildExpandPanel(t));
+        });
         updateCounts();
     }
 
@@ -192,13 +371,17 @@
         renderList();
     }
 
+    function changeSort(v) {
+        activeSort = v;
+        loadTasks();
+    }
+
     async function loadTasks() {
         try {
-            const res = await fetch('/api/tasks');
+            const res = await fetch('/api/tasks?sort=' + encodeURIComponent(activeSort));
             if (res.status === 401 || res.status === 403) { window.location.href = '/index.html'; return; }
             if (!res.ok) throw new Error();
             allTasks = await res.json();
-            updateCounts();
             renderList();
         } catch {
             document.getElementById('task-list').innerHTML = '<li class="task-empty">Failed to load tasks.</li>';
@@ -206,8 +389,10 @@
     }
 
     async function addTask() {
-        const input = document.getElementById('new-task-input');
-        const note  = input.value.trim();
+        const input     = document.getElementById('new-task-input');
+        const dueInput  = document.getElementById('new-task-due');
+        const details   = document.getElementById('new-task-details');
+        const note = input.value.trim();
         if (!note) { input.focus(); return; }
         const btn = document.getElementById('add-btn');
         btn.disabled = true;
@@ -215,35 +400,90 @@
             const res = await fetch('/api/tasks', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ note })
+                body: JSON.stringify({
+                    note,
+                    details: details.value.trim() || null,
+                    due_date: dueInput.value ? new Date(dueInput.value).toISOString() : null,
+                })
             });
             if (!res.ok) throw new Error();
-            const task = await res.json();
-            allTasks.unshift(task);
+            await loadTasks();
             input.value = '';
-            updateCounts();
-            renderList();
+            dueInput.value = '';
+            details.value = '';
+            input.focus();
+            if (window.refreshTaskBadge) window.refreshTaskBadge();
         } catch {
             alert('Failed to add task. Please try again.');
         } finally {
             btn.disabled = false;
-            input.focus();
         }
     }
 
     async function toggle(id) {
         try {
-            const res = await fetch(`/api/tasks/${id}`, { method: 'PATCH' });
+            const current = allTasks.find(t => t.id === id);
+            const res = await fetch(`/api/tasks/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_completed: !current.is_completed })
+            });
             if (!res.ok) throw new Error();
             const updated = await res.json();
             const idx = allTasks.findIndex(t => t.id === id);
             if (idx !== -1) allTasks[idx] = updated;
-            // re-sort: pending first
-            allTasks.sort((a,b) => a.is_completed - b.is_completed || new Date(b.created_at) - new Date(a.created_at));
-            updateCounts();
             renderList();
+            if (window.refreshTaskBadge) window.refreshTaskBadge();
         } catch {
             alert('Failed to update task.');
+        }
+    }
+
+    async function saveEdits(id) {
+        const note     = document.getElementById('edit-note-'+id).value.trim();
+        const dueRaw   = document.getElementById('edit-due-'+id).value;
+        const details  = document.getElementById('edit-details-'+id).value;
+        const status   = document.getElementById('edit-status-'+id).value === 'true';
+        if (!note) { alert('Title can\'t be empty.'); return; }
+
+        try {
+            const res = await fetch(`/api/tasks/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    note,
+                    details: details.trim() === '' ? null : details,
+                    due_date: dueRaw ? new Date(dueRaw).toISOString() : null,
+                    is_completed: status,
+                })
+            });
+            if (!res.ok) throw new Error();
+            const updated = await res.json();
+            const idx = allTasks.findIndex(t => t.id === id);
+            if (idx !== -1) allTasks[idx] = updated;
+            expandedId = null;
+            renderList();
+            if (window.refreshTaskBadge) window.refreshTaskBadge();
+        } catch {
+            alert('Failed to save changes.');
+        }
+    }
+
+    async function clearDueDate(id) {
+        try {
+            const res = await fetch(`/api/tasks/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ due_date: null })
+            });
+            if (!res.ok) throw new Error();
+            const updated = await res.json();
+            const idx = allTasks.findIndex(t => t.id === id);
+            if (idx !== -1) allTasks[idx] = updated;
+            renderList();
+            if (window.refreshTaskBadge) window.refreshTaskBadge();
+        } catch {
+            alert('Failed to clear due date.');
         }
     }
 
@@ -253,8 +493,9 @@
             const res = await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error();
             allTasks = allTasks.filter(t => t.id !== id);
-            updateCounts();
+            if (expandedId === id) expandedId = null;
             renderList();
+            if (window.refreshTaskBadge) window.refreshTaskBadge();
         } catch {
             alert('Failed to delete task.');
         }

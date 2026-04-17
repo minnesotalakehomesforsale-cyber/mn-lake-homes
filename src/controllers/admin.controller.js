@@ -1,5 +1,6 @@
 const pool = require('../database/pool');
 const bcrypt = require('bcrypt');
+const { logActivity } = require('../services/activity-log');
 
 /**
  * GET /api/admin
@@ -137,6 +138,16 @@ const createAgent = async (req, res) => {
         );
 
         await client.query('COMMIT');
+
+        logActivity({
+            event_type: 'agent.admin.create',
+            event_scope: 'agent',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'agent', id: userId, label: display_name },
+            details: { email, brokerage_name, license_number, membership_code: memCode, profile_status: finalStatus, is_published: finalPublished },
+            req,
+        });
+
         res.status(201).json({ success: true, message: `Agent '${display_name}' created successfully.` });
 
     } catch (err) {
@@ -200,6 +211,20 @@ const updateAgentProfile = async (req, res) => {
                 id
             ]
         );
+
+        logActivity({
+            event_type: 'agent.admin.update',
+            event_scope: 'agent',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'agent', id, label: display_name || undefined },
+            details: Object.fromEntries(Object.entries({
+                display_name, brokerage_name, license_number, years_experience,
+                phone_public, email_public, website_url, city, state,
+                service_areas, specialties, bio, profile_photo_url, is_featured
+            }).filter(([, v]) => v !== undefined && v !== null && v !== '')),
+            req,
+        });
+
         res.json({ success: true });
     } catch (err) {
         console.error('[updateAgentProfile]', err.message);
@@ -251,6 +276,15 @@ const updateStatus = async (req, res) => {
             await client.query(`UPDATE agents SET ${fields.join(', ')} WHERE id = $${c}`, vals);
             await client.query('COMMIT');
 
+            logActivity({
+                event_type: status === 'published' ? 'agent.publish' : `agent.status.${status || 'update'}`,
+                event_scope: 'agent',
+                actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+                target: { type: 'agent', id },
+                details: { status, membership_code, is_published: isPublished },
+                req,
+            });
+
             res.json({ success: true });
         } catch (err) {
             await client.query('ROLLBACK');
@@ -300,6 +334,16 @@ const updateAccountStatus = async (req, res) => {
                 [id]
             );
         }
+
+        logActivity({
+            event_type: `agent.account.${account_status}`,
+            event_scope: 'agent',
+            severity: account_status === 'suspended' ? 'warning' : 'info',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'agent', id },
+            details: { account_status },
+            req,
+        });
 
         res.json({ success: true });
     } catch (err) {
@@ -391,6 +435,19 @@ const updateUser = async (req, res) => {
         fields.push('updated_at = NOW()');
         vals.push(id);
         await pool.query(`UPDATE users SET ${fields.join(', ')} WHERE id = $${i}`, vals);
+
+        logActivity({
+            event_type: 'user.update',
+            event_scope: 'user',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'user', id, label: body.full_name || body.email || undefined },
+            details: Object.fromEntries(Object.entries({
+                first_name: body.first_name, last_name: body.last_name, full_name: body.full_name,
+                phone: body.phone, email: body.email, role: body.role
+            }).filter(([, v]) => v !== undefined)),
+            req,
+        });
+
         res.json({ success: true });
     } catch (err) {
         console.error('[updateUser]', err.message);
@@ -415,6 +472,17 @@ const updateUserStatus = async (req, res) => {
             [account_status, id]
         );
         if (!rowCount) return res.status(404).json({ error: 'User not found.' });
+
+        logActivity({
+            event_type: `user.status.${account_status}`,
+            event_scope: 'user',
+            severity: account_status === 'suspended' ? 'warning' : 'info',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'user', id },
+            details: { account_status },
+            req,
+        });
+
         res.json({ success: true });
     } catch (err) {
         console.error('[updateUserStatus]', err.message);
@@ -449,6 +517,15 @@ const resetUserPassword = async (req, res) => {
         // Fire-and-forget reset notification with the new password
         email.sendPasswordReset(rows[0], new_password);
 
+        logActivity({
+            event_type: 'user.password.reset',
+            event_scope: 'user',
+            severity: 'warning',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'user', id, label: rows[0]?.email },
+            req,
+        });
+
         res.json({ success: true });
     } catch (err) {
         console.error('[resetUserPassword]', err.message);
@@ -472,7 +549,19 @@ const deleteUser = async (req, res) => {
                 return res.status(400).json({ error: 'Cannot delete the last super admin account.' });
             }
         }
+        const info = await pool.query(`SELECT email, full_name FROM users WHERE id = $1`, [id]);
         await pool.query(`DELETE FROM users WHERE id = $1`, [id]);
+
+        logActivity({
+            event_type: 'user.delete',
+            event_scope: 'user',
+            severity: 'warning',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'user', id, label: info.rows[0]?.full_name || info.rows[0]?.email },
+            details: { email: info.rows[0]?.email },
+            req,
+        });
+
         res.json({ success: true });
     } catch (err) {
         console.error('[deleteUser]', err.message);
@@ -518,6 +607,16 @@ const updateLeadStatus = async (req, res) => {
             [status, req.params.id]
         );
         if (!result.rowCount) return res.status(404).json({ error: 'Lead not found.' });
+
+        logActivity({
+            event_type: `lead.status.${req.body.status}`,
+            event_scope: 'lead',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'lead', id: req.params.id },
+            details: { status: req.body.status },
+            req,
+        });
+
         res.json({ success: true, lead: result.rows[0] });
     } catch (err) {
         console.error('[updateLeadStatus]', err.message, '| code:', err.code, '| detail:', err.detail);
@@ -536,6 +635,16 @@ const assignLead = async (req, res) => {
             [agentId || null, userId || null, agentId || userId ? 'assigned' : 'unassigned', req.params.id]
         );
         if (!result.rowCount) return res.status(404).json({ error: 'Lead not found.' });
+
+        logActivity({
+            event_type: 'lead.assign',
+            event_scope: 'lead',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'lead', id: req.params.id },
+            details: { agent_id: req.body.agentId || null, user_id: req.body.userId || null },
+            req,
+        });
+
         res.json({ success: true, lead: result.rows[0] });
     } catch (err) {
         console.error('[assignLead]', err.message, '| code:', err.code, '| detail:', err.detail, '| body:', req.body);

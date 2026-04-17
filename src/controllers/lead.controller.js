@@ -1,5 +1,6 @@
 const pool = require('../database/pool');
 const emailService = require('../services/email');
+const { logActivity } = require('../services/activity-log');
 
 const createLead = async (req, res) => {
     let { name, email, phone, notes, source, agent_id } = req.body;
@@ -35,7 +36,17 @@ const createLead = async (req, res) => {
         };
         const enumType = enumMap[source] || 'general_contact';
 
-        await pool.query(query, [name, firstName, email, phone, notes, enumType, source, finalAgentId]);
+        const { rows: leadRows } = await pool.query(query, [name, firstName, email, phone, notes, enumType, source, finalAgentId]);
+        const newLeadId = leadRows[0]?.id;
+
+        logActivity({
+            event_type: 'lead.create',
+            event_scope: 'lead',
+            actor: { type: 'public', label: email || phone || name },
+            target: { type: 'lead', id: newLeadId, label: `${name} (${enumType})` },
+            details: { lead_type: enumType, source, agent_id: finalAgentId, email, phone },
+            req,
+        });
 
         // Fire-and-forget lead confirmation email (only if they provided one)
         if (email) {

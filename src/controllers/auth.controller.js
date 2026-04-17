@@ -2,6 +2,7 @@ const pool = require('../database/pool');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const email = require('../services/email');
+const { logActivity } = require('../services/activity-log');
 
 /**
  * POST /api/auth/waitlist
@@ -58,6 +59,15 @@ const waitlist = async (req, res) => {
 
         // Fire-and-forget welcome email
         email.sendWelcome({ email, first_name, full_name: `${first_name} ${last_name}` });
+
+        logActivity({
+            event_type: 'waitlist.signup',
+            event_scope: 'auth',
+            actor: { type: 'public', label: email },
+            target: { type: 'user', label: `${first_name} ${last_name}` },
+            details: { email, phone },
+            req,
+        });
 
         res.status(201).json({ success: true });
     } catch (err) {
@@ -140,6 +150,15 @@ const register = async (req, res) => {
         // Fire-and-forget agent welcome email
         email.sendAgentWelcome({ email, display_name });
 
+        logActivity({
+            event_type: 'agent.register',
+            event_scope: 'agent',
+            actor: { type: 'agent', id: userId, label: display_name },
+            target: { type: 'agent', id: userId, label: display_name },
+            details: { email, brokerage_name, license_number },
+            req,
+        });
+
         res.status(201).json({ success: true, role: 'agent', display_name });
 
     } catch (err) {
@@ -174,6 +193,14 @@ const login = async (req, res) => {
         );
 
         if (userRes.rows.length === 0) {
+            logActivity({
+                event_type: 'auth.login.failed',
+                event_scope: 'auth',
+                severity: 'warning',
+                actor: { type: 'public', label: email.trim().toLowerCase() },
+                details: { reason: 'unknown_email' },
+                req,
+            });
             return res.status(401).json({ error: 'Invalid email or password.' });
         }
 
@@ -183,10 +210,26 @@ const login = async (req, res) => {
         const validPassword = await bcrypt.compare(password, user.password_hash);
 
         if (!validPassword) {
+            logActivity({
+                event_type: 'auth.login.failed',
+                event_scope: 'auth',
+                severity: 'warning',
+                actor: { type: user.role, id: user.id, label: user.full_name || user.email },
+                details: { reason: 'bad_password' },
+                req,
+            });
             return res.status(401).json({ error: 'Invalid email or password.' });
         }
 
         if (user.account_status === 'suspended') {
+            logActivity({
+                event_type: 'auth.login.blocked',
+                event_scope: 'auth',
+                severity: 'warning',
+                actor: { type: user.role, id: user.id, label: user.full_name || user.email },
+                details: { reason: 'suspended' },
+                req,
+            });
             return res.status(403).json({ error: 'This account has been suspended. Contact support.' });
         }
 
@@ -199,6 +242,14 @@ const login = async (req, res) => {
 
         const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
         setCookie(res, token);
+
+        logActivity({
+            event_type: 'auth.login',
+            event_scope: 'auth',
+            actor: { type: user.role, id: user.id, label: user.display_name || user.full_name || user.email },
+            details: { role: user.role },
+            req,
+        });
 
         res.json({
             success: true,
@@ -219,6 +270,14 @@ const login = async (req, res) => {
  * Clears the session cookie.
  */
 const logout = (req, res) => {
+    if (req.user?.userId) {
+        logActivity({
+            event_type: 'auth.logout',
+            event_scope: 'auth',
+            actor: { type: req.user.role || 'user', id: req.user.userId },
+            req,
+        });
+    }
     res.clearCookie('auth_session', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',

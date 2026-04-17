@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database & Activity | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
+        .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        .admin-side { background: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+        .admin-side h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 2.5rem; padding-left: 0.5rem; color: #fff; margin-top: 0; }
+        .admin-side h1 span { color: #1d6df2; }
+        .side-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; margin-bottom: 0.75rem; padding-left: 0.5rem; font-weight: 700; margin-top: 0; }
+        .side-nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+        .side-link { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #a0aec0; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.15s; }
+        .side-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .side-link.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+        .side-signout { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #fc8181; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-top: 1rem; transition: all 0.15s; }
+        .side-signout:hover { background: rgba(252,129,129,0.1); }
+        .admin-main { padding: 3rem 3.5rem; background: #f7f9fa; overflow-y: auto; }
+
+        /* Health */
+        .health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2.5rem; }
+        .health-card { background: #fff; border-radius: 12px; padding: 1.25rem 1.5rem; border: 1px solid #edf2f7; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .health-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 0.5rem; }
+        .health-value { font-size: 1.5rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; line-height: 1.1; }
+        .health-sub { font-size: 0.75rem; color: #718096; margin-top: 0.4rem; }
+        .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 0.4rem; vertical-align: 1px; }
+        .dot.ok { background: #48bb78; }
+        .dot.bad { background: #ef4444; }
+        .dot.warn { background: #ed8936; }
+
+        /* Tables panel */
+        .table-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; margin-bottom: 2.5rem; }
+        .table-card { background: #fff; border-radius: 10px; padding: 1rem 1.1rem; border: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; }
+        .table-name { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #4a5568; }
+        .table-count { font-size: 1.25rem; font-weight: 800; color: #1d6df2; }
+
+        /* Activity feed */
+        .activity-panel { background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow: hidden; }
+        .activity-header { padding: 1.25rem 2rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .activity-title { font-size: 1rem; font-weight: 700; color: #1a202c; }
+        .filter-bar { display: flex; gap: 0.5rem; padding: 1rem 2rem; border-bottom: 1px solid #edf2f7; flex-wrap: wrap; align-items: center; }
+        .filter-pill { padding: 0.35rem 0.85rem; border-radius: 99px; border: 1px solid #e2e8f0; background: #fff; font-size: 0.8rem; font-weight: 600; color: #4a5568; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+        .filter-pill:hover { border-color: #1d6df2; color: #1d6df2; }
+        .filter-pill.active { background: #1d6df2; border-color: #1d6df2; color: #fff; }
+        .filter-pill.danger { border-color: #fca5a5; color: #c53030; }
+        .filter-pill.danger.active { background: #ef4444; border-color: #ef4444; color: #fff; }
+        .search-input { padding: 0.45rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 7px; font-size: 0.85rem; font-family: inherit; outline: none; color: #1a202c; min-width: 220px; }
+        .search-input:focus { border-color: #1d6df2; }
+
+        .activity-list { list-style: none; padding: 0; margin: 0; }
+        .activity-row { padding: 1rem 2rem; border-bottom: 1px solid #f7f9fa; display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: start; font-size: 0.88rem; }
+        .activity-row:last-child { border-bottom: none; }
+        .activity-row:hover { background: #fafbfc; }
+        .activity-row.error   { background: linear-gradient(90deg, rgba(239,68,68,0.06), transparent 40%); }
+        .activity-row.warning { background: linear-gradient(90deg, rgba(237,137,54,0.06), transparent 40%); }
+
+        .event-icon { width: 32px; height: 32px; border-radius: 8px; background: #edf2f7; color: #4a5568; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; }
+        .event-icon.auth { background: #e6effb; color: #1d6df2; }
+        .event-icon.agent { background: #faf5ff; color: #6b46c1; }
+        .event-icon.lead { background: #f0fff4; color: #2f855a; }
+        .event-icon.inquiry { background: #e6fffa; color: #319795; }
+        .event-icon.user { background: #fff5f5; color: #c53030; }
+        .event-icon.blog { background: #fffaf0; color: #dd6b20; }
+        .event-icon.task { background: #fef3c7; color: #b7791f; }
+        .event-icon.system { background: #fee2e2; color: #c53030; }
+
+        .event-main { min-width: 0; }
+        .event-type { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: #1a202c; font-weight: 600; }
+        .event-desc { color: #4a5568; font-size: 0.85rem; margin-top: 0.2rem; line-height: 1.4; }
+        .event-meta { color: #a0aec0; font-size: 0.72rem; margin-top: 0.3rem; }
+        .event-details { background: #f7f9fa; border-radius: 6px; padding: 0.5rem 0.75rem; margin-top: 0.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #4a5568; white-space: pre-wrap; word-break: break-word; max-height: 150px; overflow: auto; }
+
+        .event-time { color: #718096; font-size: 0.75rem; text-align: right; white-space: nowrap; }
+
+        .sev-pill { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 99px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 0.35rem; }
+        .sev-pill.info { background: #edf2f7; color: #4a5568; }
+        .sev-pill.warning { background: #fef3c7; color: #b7791f; }
+        .sev-pill.error   { background: #fee2e2; color: #c53030; }
+
+        .activity-empty { padding: 4rem 2rem; text-align: center; color: #a0aec0; font-size: 0.9rem; }
+
+        .refresh-btn { padding: 0.45rem 1rem; background: #fff; color: #1a202c; border: 1px solid #e2e8f0; border-radius: 7px; font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+        .refresh-btn:hover { border-color: #1d6df2; color: #1d6df2; }
+
+        .errors-box { background: #fff5f5; border: 1px solid #fed7d7; border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 2rem; }
+        .errors-box h3 { margin: 0 0 0.75rem; font-size: 0.9rem; font-weight: 700; color: #c53030; display: flex; align-items: center; gap: 0.5rem; }
+        .errors-box .err-row { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: #742a2a; padding: 0.4rem 0; border-top: 1px solid #fed7d7; }
+        .errors-box .err-row:first-of-type { border-top: none; }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+    <script src="../../components/admin-assistant.js" defer></script>
+    <script src="../../components/admin-nav-badges.js" defer></script>
+</head>
+<body>
+<div class="admin-wrap">
+    <!-- Sidebar -->
+    <aside class="admin-side">
+        <h1>MNLH <span>ADMIN</span></h1>
+        <p class="side-label">Platform Operations</p>
+        <nav class="side-nav">
+            <a href="dashboard.html"  class="side-link">Dashboard</a>
+            <a href="agents.html"     class="side-link">Agents Directory</a>
+            <a href="leads.html"      class="side-link">Central Leads</a>
+            <a href="inquiries.html" class="side-link" id="nav-link-inquiries" style="display:flex;align-items:center;justify-content:space-between;">
+                <span>Inquiries</span>
+                <span id="nav-badge-inquiries" style="background:#ef4444;color:#fff;font-size:0.68rem;font-weight:800;padding:0.1rem 0.45rem;border-radius:99px;margin-left:auto;display:none;">0</span>
+            </a>
+            <a href="blog.html"       class="side-link">Blog & Content</a>
+            <a href="users.html"      class="side-link">Users Management</a>
+            <a href="marketing.html"  class="side-link">Marketing</a>
+            <a href="tasks.html" class="side-link" id="nav-link-tasks" style="display:flex;align-items:center;justify-content:space-between;">
+                <span>Tasks</span>
+                <span id="nav-badge-tasks" style="background:#ef4444;color:#fff;font-size:0.68rem;font-weight:800;padding:0.1rem 0.45rem;border-radius:99px;margin-left:auto;display:none;">0</span>
+            </a>
+            <a href="database.html"   class="side-link active">Database</a>
+        </nav>
+        <a href="/index.html" target="_blank" style="display:block;padding:0.75rem 1rem;border-radius:8px;color:#a0aec0;text-decoration:none;font-size:0.85rem;font-weight:500;margin-top:0.5rem;border:1px solid rgba(255,255,255,0.08);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">↗ View Live Site</a>
+        <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>{window.location.href='/index.html';})" class="side-signout">Sign Out</a>
+    </aside>
+
+    <!-- Main -->
+    <main class="admin-main">
+        <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap;">
+            <div>
+                <h2 style="font-size: 1.8rem; font-weight: 800; letter-spacing: -0.75px; margin: 0 0 0.25rem;">Database &amp; Activity</h2>
+                <p style="color: #718096; font-size: 0.9rem; margin: 0;">System health, table counts, and a full audit trail of what happens on the site.</p>
+            </div>
+            <button class="refresh-btn" onclick="refreshAll()">↻ Refresh</button>
+        </header>
+
+        <!-- Health cards -->
+        <section>
+            <h3 style="font-size: 0.8rem; font-weight: 700; color: #718096; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem;">System Health</h3>
+            <div class="health-grid" id="health-grid">
+                <div class="health-card"><div class="health-label">Loading…</div></div>
+            </div>
+        </section>
+
+        <!-- Recent errors -->
+        <div id="errors-box" style="display:none;"></div>
+
+        <!-- Table counts -->
+        <section>
+            <h3 style="font-size: 0.8rem; font-weight: 700; color: #718096; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem;">Database Tables</h3>
+            <div class="table-grid" id="table-grid"></div>
+        </section>
+
+        <!-- Activity feed -->
+        <section class="activity-panel">
+            <div class="activity-header">
+                <span class="activity-title">Activity Log</span>
+                <input type="text" class="search-input" id="search-input" placeholder="Search event type, actor, target…" oninput="onSearch()">
+            </div>
+            <div class="filter-bar">
+                <button class="filter-pill active" data-scope="all"       onclick="setScope('all',this)">All</button>
+                <button class="filter-pill"        data-scope="auth"      onclick="setScope('auth',this)">Auth</button>
+                <button class="filter-pill"        data-scope="agent"     onclick="setScope('agent',this)">Agents</button>
+                <button class="filter-pill"        data-scope="lead"      onclick="setScope('lead',this)">Leads</button>
+                <button class="filter-pill"        data-scope="inquiry"   onclick="setScope('inquiry',this)">Inquiries</button>
+                <button class="filter-pill"        data-scope="user"      onclick="setScope('user',this)">Users</button>
+                <button class="filter-pill"        data-scope="task"      onclick="setScope('task',this)">Tasks</button>
+                <button class="filter-pill"        data-scope="blog"      onclick="setScope('blog',this)">Blog</button>
+                <button class="filter-pill danger" data-scope="errors"    onclick="setScope('errors',this)">Errors Only</button>
+            </div>
+            <ul class="activity-list" id="activity-list">
+                <li class="activity-empty">Loading activity…</li>
+            </ul>
+        </section>
+    </main>
+</div>
+
+<script>
+    let currentScope = 'all';
+    let currentSearch = '';
+    let searchDebounce;
+
+    function escHtml(s) {
+        return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function timeAgo(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        const diff = Math.round((Date.now() - d.getTime()) / 1000);
+        if (diff < 60) return diff + 's ago';
+        if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+        return d.toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+    }
+
+    async function loadHealth() {
+        const grid = document.getElementById('health-grid');
+        const tgrid = document.getElementById('table-grid');
+        const errBox = document.getElementById('errors-box');
+        try {
+            const res = await fetch('/api/activity/summary');
+            if (!res.ok) throw new Error();
+            const s = await res.json();
+
+            const uptimeMin = Math.floor(s.uptime_seconds / 60);
+            const uptimeHr  = Math.floor(uptimeMin / 60);
+            const uptimeStr = uptimeHr > 0 ? `${uptimeHr}h ${uptimeMin % 60}m` : `${uptimeMin}m`;
+
+            grid.innerHTML = `
+                <div class="health-card">
+                    <div class="health-label">Database</div>
+                    <div class="health-value"><span class="dot ${s.db_connected ? 'ok' : 'bad'}"></span>${s.db_connected ? 'Connected' : 'Offline'}</div>
+                    <div class="health-sub">${s.db_error ? escHtml(s.db_error) : 'Postgres pool reachable'}</div>
+                </div>
+                <div class="health-card">
+                    <div class="health-label">Server Uptime</div>
+                    <div class="health-value">${uptimeStr}</div>
+                    <div class="health-sub">Node ${escHtml(s.node_version)} · ${escHtml(s.environment)}</div>
+                </div>
+                <div class="health-card">
+                    <div class="health-label">Memory (RSS)</div>
+                    <div class="health-value">${s.memory_rss_mb} <span style="font-size:0.9rem;color:#a0aec0;font-weight:500;">MB</span></div>
+                    <div class="health-sub">Process working set</div>
+                </div>
+                <div class="health-card">
+                    <div class="health-label">Events (24h)</div>
+                    <div class="health-value">${s.last_24h.total}</div>
+                    <div class="health-sub">
+                        <span class="dot ${s.last_24h.errors > 0 ? 'bad' : 'ok'}"></span>${s.last_24h.errors} errors ·
+                        <span class="dot ${s.last_24h.warnings > 0 ? 'warn' : 'ok'}"></span>${s.last_24h.warnings} warnings
+                    </div>
+                </div>
+            `;
+
+            // Tables
+            tgrid.innerHTML = Object.entries(s.tables).map(([name, c]) => `
+                <div class="table-card">
+                    <span class="table-name">${escHtml(name)}</span>
+                    <span class="table-count">${c == null ? '—' : c.toLocaleString()}</span>
+                </div>
+            `).join('');
+
+            // Recent errors
+            if (s.recent_errors && s.recent_errors.length) {
+                errBox.style.display = 'block';
+                errBox.className = 'errors-box';
+                errBox.innerHTML = `
+                    <h3>⚠ ${s.recent_errors.length} recent error${s.recent_errors.length === 1 ? '' : 's'}</h3>
+                    ${s.recent_errors.map(e => `
+                        <div class="err-row">[${new Date(e.created_at).toLocaleString()}] ${escHtml(e.event_type)}: ${escHtml(e.details?.message || e.target_label || '—')}</div>
+                    `).join('')}
+                `;
+            } else {
+                errBox.style.display = 'none';
+            }
+        } catch (err) {
+            grid.innerHTML = '<div class="health-card"><div class="health-label">Status</div><div class="health-value"><span class="dot bad"></span>Failed to load</div></div>';
+        }
+    }
+
+    async function loadActivity() {
+        const list = document.getElementById('activity-list');
+        list.innerHTML = '<li class="activity-empty">Loading activity…</li>';
+        try {
+            const params = new URLSearchParams();
+            if (currentScope === 'errors') {
+                params.set('severity', 'error');
+            } else if (currentScope !== 'all') {
+                params.set('scope', currentScope);
+            }
+            if (currentSearch) params.set('search', currentSearch);
+            params.set('limit', '200');
+
+            const res = await fetch('/api/activity?' + params.toString());
+            if (!res.ok) throw new Error();
+            const rows = await res.json();
+
+            if (!rows.length) {
+                list.innerHTML = '<li class="activity-empty">No events match this filter yet.</li>';
+                return;
+            }
+
+            list.innerHTML = rows.map(renderRow).join('');
+        } catch {
+            list.innerHTML = '<li class="activity-empty">Failed to load activity.</li>';
+        }
+    }
+
+    function renderRow(e) {
+        const scope = e.event_scope || 'system';
+        const initial = (e.event_type || '?').split('.').pop().charAt(0).toUpperCase();
+        const actor = e.actor_label
+            ? `<strong>${escHtml(e.actor_label)}</strong>` + (e.actor_type ? ` <span style="color:#a0aec0;">(${escHtml(e.actor_type)})</span>` : '')
+            : '<span style="color:#a0aec0;">System</span>';
+        const target = e.target_label ? ` → <strong>${escHtml(e.target_label)}</strong>` : '';
+
+        let detailsHtml = '';
+        if (e.details && Object.keys(e.details).length) {
+            try {
+                detailsHtml = `<div class="event-details">${escHtml(JSON.stringify(e.details, null, 2))}</div>`;
+            } catch (_) {}
+        }
+
+        const sev = e.severity || 'info';
+        const sevPill = sev !== 'info' ? `<span class="sev-pill ${sev}">${sev}</span>` : '';
+
+        return `
+            <li class="activity-row ${sev}">
+                <div class="event-icon ${scope}">${initial}</div>
+                <div class="event-main">
+                    <div class="event-type">${sevPill}${escHtml(e.event_type)}</div>
+                    <div class="event-desc">${actor}${target}</div>
+                    <div class="event-meta">${e.ip_address ? 'IP ' + escHtml(e.ip_address) + ' · ' : ''}${timeAgo(e.created_at)}</div>
+                    ${detailsHtml}
+                </div>
+                <div class="event-time">${new Date(e.created_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' })}</div>
+            </li>`;
+    }
+
+    function setScope(scope, btn) {
+        currentScope = scope;
+        document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadActivity();
+    }
+
+    function onSearch() {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => {
+            currentSearch = document.getElementById('search-input').value.trim();
+            loadActivity();
+        }, 250);
+    }
+
+    function refreshAll() {
+        loadHealth();
+        loadActivity();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        refreshAll();
+        // Auto-refresh health every 30s
+        setInterval(loadHealth, 30_000);
+    });
+</script>
+</body>
+</html>
