@@ -1,5 +1,16 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const pool = require('../database/pool');
+
+// Lazy-init Stripe so a missing STRIPE_SECRET_KEY doesn't crash the whole
+// server at boot — Stripe only gets constructed when an endpoint is actually
+// hit. Also lets the rest of the site keep working when Stripe isn't configured.
+let _stripe = null;
+function getStripe() {
+    if (_stripe) return _stripe;
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) return null;
+    _stripe = require('stripe')(key);
+    return _stripe;
+}
 
 // ─── Price ID mapping ────────────────────────────────────────────────────────
 const PRICE_MAP = {
@@ -23,6 +34,11 @@ function membershipCodeFromPriceId(priceId) {
 // Authenticated agent creates a Stripe Checkout Session
 exports.createCheckoutSession = async (req, res) => {
     try {
+        const stripe = getStripe();
+        if (!stripe) {
+            return res.status(503).json({ error: 'Stripe is not configured on this server. Set STRIPE_SECRET_KEY.' });
+        }
+
         const { tier, period } = req.body;
 
         // Validate inputs
@@ -66,6 +82,11 @@ exports.createCheckoutSession = async (req, res) => {
 // ─── POST /api/stripe/webhook ────────────────────────────────────────────────
 // Stripe sends events here — no auth middleware, verified via signature
 exports.handleWebhook = async (req, res) => {
+    const stripe = getStripe();
+    if (!stripe) {
+        return res.status(503).json({ error: 'Stripe not configured.' });
+    }
+
     const sig = req.headers['stripe-signature'];
     let event;
 
