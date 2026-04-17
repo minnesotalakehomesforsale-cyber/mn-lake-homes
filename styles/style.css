@@ -476,8 +476,6 @@ body {
     z-index: 2;
 }
 
-/* Desktop hides the 4th card (it's only part of the mobile carousel) */
-.mobile-only-card { display: none; }
 
 /* Floating Promo */
 .floating-promo {
@@ -767,8 +765,7 @@ body {
         scrollbar-width: none;
     }
     .hero-showcase::-webkit-scrollbar { display: none; }
-    .mobile-only-card { display: block; }
-    .left-card, .right-card, .center-card, .mobile-only-card {
+    .left-card, .right-card, .center-card {
         margin-top: 0;
         flex: 0 0 88vw;
         max-width: 440px;

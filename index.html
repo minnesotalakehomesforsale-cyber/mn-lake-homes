@@ -84,7 +84,7 @@
             </div>
         </div>
 
-        <div class="hero-showcase" id="hero-showcase">
+        <div class="hero-showcase">
             <div class="showcase-card left-card">
                 <img src="/assets/images/mn-most-expensive-listing.jpg" width="320" height="480" alt="Luxury Minnesota lakefront estate listing" fetchpriority="high">
             </div>
@@ -93,9 +93,6 @@
             </div>
             <div class="showcase-card right-card">
                 <img src="/assets/images/mn-canoe-shore.webp" width="320" height="480" alt="Canoe on a Minnesota lake shoreline at sunrise" fetchpriority="high">
-            </div>
-            <div class="showcase-card mobile-only-card">
-                <img src="/assets/images/mn-purple-sunset-marina.webp" width="320" height="480" alt="Minnesota marina glowing at purple sunset" loading="lazy">
             </div>
         </div>
 
@@ -445,52 +442,6 @@
         }
 
         document.addEventListener('DOMContentLoaded', loadFeaturedAgents);
-
-        // Mobile hero carousel: infinite horizontal loop
-        (function setupInfiniteHero() {
-            const track = document.getElementById('hero-showcase');
-            if (!track) return;
-
-            const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
-            let cloned = false;
-
-            function setup() {
-                if (!isMobile() || cloned) return;
-                // Triple the content so the user can scroll in either direction
-                const originals = Array.from(track.children);
-                originals.forEach(c => track.appendChild(c.cloneNode(true)));
-                originals.forEach(c => track.appendChild(c.cloneNode(true)));
-                cloned = true;
-
-                // Start positioned on the second (middle) copy
-                requestAnimationFrame(() => {
-                    const singleSetWidth = track.scrollWidth / 3;
-                    track.scrollLeft = singleSetWidth;
-
-                    // When user scrolls into the outer copies, silently teleport back to middle
-                    let suppress = false;
-                    track.addEventListener('scroll', () => {
-                        if (suppress) return;
-                        const x = track.scrollLeft;
-                        if (x <= 10) {
-                            suppress = true;
-                            track.scrollLeft = x + singleSetWidth;
-                            setTimeout(() => { suppress = false; }, 50);
-                        } else if (x >= singleSetWidth * 2 - 10) {
-                            suppress = true;
-                            track.scrollLeft = x - singleSetWidth;
-                            setTimeout(() => { suppress = false; }, 50);
-                        }
-                    }, { passive: true });
-                });
-            }
-
-            setup();
-            // Re-setup if the user resizes from desktop to mobile
-            window.addEventListener('resize', () => {
-                if (!cloned && isMobile()) setup();
-            });
-        })();
 
         // Reveal floating promo only after scrolling past the 2nd/3rd section boundary.
         // Hide again when the footer comes into view.
