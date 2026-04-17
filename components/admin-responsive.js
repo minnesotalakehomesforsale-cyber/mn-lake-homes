@@ -17,10 +17,11 @@
     const css = `
         /* ─── Mobile overrides for the shared admin shell ─── */
         @media (max-width: 900px) {
-            html, body { overflow-x: hidden; }
+            html, body { overflow-x: hidden; max-width: 100vw; }
             .admin-wrap {
                 grid-template-columns: 1fr !important;
                 min-height: 100vh;
+                width: 100%;
             }
             .admin-side {
                 position: fixed !important;
@@ -38,11 +39,13 @@
             body.admin-side-open .admin-side { transform: translateX(0); }
 
             .admin-main {
-                padding: 4.5rem 1.25rem 2rem !important;
+                padding: 4.5rem 1rem 2rem !important;
                 width: 100% !important;
                 max-width: 100vw;
                 overflow-x: hidden;
+                box-sizing: border-box;
             }
+            .admin-main > * { max-width: 100%; box-sizing: border-box; }
 
             /* Hamburger toggle — fixed top-left */
             .admin-hamburger {
@@ -85,49 +88,100 @@
                 grid-template-columns: 1fr 1fr !important;
                 gap: 0.75rem !important;
             }
+            .stat-grid > *, .stat-strip > *, .stat-row > *, .lead-stats > * {
+                padding: 1rem !important;
+                min-width: 0;
+            }
             .dash-grid, .review-grid, .detail-grid, .layout, .lm-expert-inner {
                 grid-template-columns: 1fr !important;
                 gap: 1.5rem !important;
             }
-            .admin-main header { flex-direction: column; align-items: flex-start !important; gap: 1rem; }
-            .quick-actions { width: 100%; }
-            .quick-actions .qa-btn { flex: 1; text-align: center; }
-            .controls-bar, .toolbar, .filter-row { gap: 0.5rem; }
-
-            /* Wide tables — horizontal scroll instead of overflow */
-            .table-card, .list-card, .ledger-table {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
+            .admin-main header {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 1rem !important;
             }
-            .ledger-table { display: block; }
-            table { min-width: 600px; }
+            .quick-actions { width: 100%; flex-wrap: wrap; }
+            .quick-actions .qa-btn { flex: 1 1 auto; text-align: center; }
+            .controls-bar, .toolbar, .filter-row, .filter-container, .filter-tabs {
+                gap: 0.5rem;
+                flex-wrap: wrap;
+            }
+            .controls-bar input, .search-box, .search-input { min-width: 0; width: 100%; }
+
+            /* Tables get wrapped into .mobile-table-scroll by JS — scroll horizontally */
+            .mobile-table-scroll {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch;
+                width: 100%;
+                max-width: 100%;
+                border-radius: 12px;
+            }
+            .mobile-table-scroll table,
+            .mobile-table-scroll .ledger-table { min-width: 680px; }
+            .table-card, .list-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .ledger-table { min-width: 680px; }
+
+            /* Blog post row — the 72px thumb + title + buttons overflow; shrink */
+            .post-row { grid-template-columns: 56px 1fr !important; gap: 0.75rem !important; padding: 1rem !important; }
+            .post-row .post-actions { grid-column: 1 / -1; flex-wrap: wrap; }
+            .post-thumb, .post-thumb-placeholder { width: 56px !important; height: 42px !important; }
+
+            /* Inquiry rows — collapse the wide grid */
+            .inq-row { grid-template-columns: 10px 1fr auto !important; gap: 0.6rem !important; padding: 0.9rem 1rem !important; }
+            .inq-row .col-msg, .inq-row .col-src { display: none !important; }
 
             /* Detail modals — full width with margin on mobile */
             .ovl .modal, .blog-overlay .blog-modal, .editor-overlay .editor-panel,
             .modal-overlay-admin .modal-box {
-                width: calc(100vw - 1.5rem) !important;
-                max-width: calc(100vw - 1.5rem) !important;
+                width: calc(100vw - 1rem) !important;
+                max-width: calc(100vw - 1rem) !important;
             }
+            .m-grid { grid-template-columns: 1fr !important; gap: 0.85rem !important; }
+            .field-grid, .blog-form-row, .modal-grid { grid-template-columns: 1fr !important; }
 
-            /* AI assistant bubble moves up so hamburger doesn't collide if both are visible */
+            /* AI assistant bubble — stay out of the way of hamburger */
             .ai-asst-bubble { bottom: 16px; right: 16px; }
 
             /* Sidebar inner tweaks */
             .admin-side h1 { margin-bottom: 2rem; }
             .admin-side { padding: 1.5rem 1.25rem; }
+
+            /* Inline action-cell row overflow */
+            td .action-btn, td .btn, td button { font-size: 0.75rem; padding: 0.3rem 0.55rem; }
+
+            /* Add-row buttons in table/page headers often overflow */
+            .btn-add, .copy-btn, .export-btn { white-space: nowrap; }
         }
         @media (max-width: 500px) {
             .stat-grid, .stat-strip, .stat-row, .lead-stats {
                 grid-template-columns: 1fr !important;
             }
-            .admin-main { padding: 4.5rem 1rem 1.5rem !important; }
-            h1 { font-size: 1.6rem !important; }
+            .admin-main { padding: 4.5rem 0.85rem 1.5rem !important; }
+            .admin-main h1 { font-size: 1.6rem !important; }
+            .m-hdr, .panel-body, .blog-modal-body, .editor-body { padding: 1.25rem !important; }
+            .mobile-table-scroll table,
+            .mobile-table-scroll .ledger-table,
+            .ledger-table { min-width: 600px; }
         }
     `;
     const style = document.createElement('style');
     style.id = 'admin-responsive-styles';
     style.textContent = css;
     document.head.appendChild(style);
+
+    // ── Wrap unwrapped tables so CSS overflow-x: auto can actually work ──
+    function wrapTables() {
+        document.querySelectorAll('table').forEach(tbl => {
+            // Skip if already wrapped or already inside a scrolling container
+            if (tbl.closest('.mobile-table-scroll')) return;
+            if (tbl.closest('.table-card, .list-card')) return;
+            const wrap = document.createElement('div');
+            wrap.className = 'mobile-table-scroll';
+            tbl.parentNode.insertBefore(wrap, tbl);
+            wrap.appendChild(tbl);
+        });
+    }
 
     // ── Inject hamburger + backdrop once the body exists ──
     function inject() {
@@ -170,6 +224,11 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') close();
         });
+
+        // Wrap tables now, and again after any dynamic data loads (observer)
+        wrapTables();
+        const mo = new MutationObserver(() => wrapTables());
+        mo.observe(document.body, { childList: true, subtree: true });
     }
 
     if (document.readyState === 'loading') {
