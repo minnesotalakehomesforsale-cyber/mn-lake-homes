@@ -463,14 +463,15 @@ body {
 
 .flex-images {
     display: flex;
+    justify-content: center;
     gap: 1.5rem;
 }
 
 .flex-img {
-    flex: 1;
     width: 100%;
+    max-width: 780px;
     min-width: 0;
-    height: 280px;
+    height: 380px;
     object-fit: cover;
     border-radius: 12px;
 }
