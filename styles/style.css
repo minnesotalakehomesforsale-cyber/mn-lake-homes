@@ -1908,10 +1908,12 @@ body {
         gap: 2.5rem;
     }
     .footer-links {
-        flex-wrap: wrap;
-        justify-content: flex-start;
-        gap: 2.5rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2rem;
+        width: 100%;
     }
+    .link-column { align-items: flex-start; width: 100%; }
 }
 
 /* ==================================================
