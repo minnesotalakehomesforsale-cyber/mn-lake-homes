@@ -13,6 +13,46 @@
 
 const pool = require('../database/pool');
 const email = require('../services/email');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+
+// ─── Resume upload config ────────────────────────────────────────────────────
+const RESUME_DIR = path.join(__dirname, '..', '..', 'assets', 'uploads', 'resumes');
+if (!fs.existsSync(RESUME_DIR)) fs.mkdirSync(RESUME_DIR, { recursive: true });
+
+const resumeStorage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, RESUME_DIR),
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase() || '.pdf';
+        const safe = path.basename(file.originalname, ext).toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'resume';
+        cb(null, `resume-${Date.now()}-${safe}${ext}`);
+    }
+});
+const resumeUpload = multer({
+    storage: resumeStorage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+    fileFilter: (req, file, cb) => {
+        // Accept PDFs, Word docs, and common image formats (for scanned resumes)
+        const ok = /\.(pdf|docx?|rtf|txt|pages|png|jpe?g)$/i.test(file.originalname);
+        if (ok) cb(null, true);
+        else cb(new Error('Please upload a PDF, Word doc, or image.'));
+    }
+}).single('resume');
+
+// POST /api/inquiries/upload-resume — public, accepts a file, returns URL
+exports.uploadResume = (req, res) => {
+    resumeUpload(req, res, (err) => {
+        if (err) return res.status(400).json({ error: err.message });
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+        res.json({
+            url: `/assets/uploads/resumes/${req.file.filename}`,
+            filename: req.file.originalname,
+            size: req.file.size,
+        });
+    });
+};
 
 const ADMIN_EMAIL_BY_SOURCE = {
     mnlakehomes:  'minnesotalakehomesforsale@gmail.com',

@@ -4,6 +4,7 @@ const ctrl = require('../controllers/inquiry.controller');
 
 // Public
 router.post('/', ctrl.createInquiry);
+router.post('/upload-resume', ctrl.uploadResume);
 
 // Admin (no auth wall — covered by admin-guard.js on the page)
 router.get('/',              ctrl.getInquiries);
