@@ -103,10 +103,17 @@
         @media (max-width: 520px) {
             .ai-asst-panel {
                 width: 100vw;
-                height: 100vh;
-                max-height: 100vh;
-                right: 0; bottom: 0; left: 0; top: 0;
+                /* dvh = dynamic viewport height — accounts for iOS Safari
+                   URL bar + bottom chrome so the input is never clipped */
+                height: 100dvh;
+                max-height: 100dvh;
+                inset: 0;
                 border-radius: 0;
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+            /* Fallback for older browsers that don't support dvh */
+            @supports not (height: 100dvh) {
+                .ai-asst-panel { height: 100vh; max-height: 100vh; }
             }
             .ai-asst-bubble { right: 16px; bottom: 16px; }
         }
