@@ -20,6 +20,7 @@ class GlobalHeader extends HTMLElement {
         // Render skeleton header immediately, then hydrate auth state asynchronously
         this.innerHTML = this._buildHeader(bp, rp, null);
         this._wireMegamenu();
+        this._wireMobileMenu();
 
         // Check real session
         fetch('/api/auth/session')
@@ -28,10 +29,47 @@ class GlobalHeader extends HTMLElement {
                 // Re-render with authenticated state
                 this.innerHTML = this._buildHeader(bp, rp, data);
                 this._wireMegamenu();
+                this._wireMobileMenu();
             })
             .catch(() => {
                 // Not logged in — already rendered guest state above
             });
+    }
+
+    _wireMobileMenu() {
+        const toggle   = this.querySelector('#mobile-menu-toggle');
+        const close    = this.querySelector('#mobile-menu-close');
+        const menu     = this.querySelector('#mobile-menu');
+        const backdrop = this.querySelector('#mobile-menu-backdrop');
+        if (!toggle || !menu || !backdrop) return;
+
+        const open = () => {
+            menu.classList.add('open');
+            backdrop.classList.add('open');
+            toggle.setAttribute('aria-expanded', 'true');
+            menu.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+        };
+        const closeMenu = () => {
+            menu.classList.remove('open');
+            backdrop.classList.remove('open');
+            toggle.setAttribute('aria-expanded', 'false');
+            menu.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        };
+
+        toggle.addEventListener('click', open);
+        if (close)    close.addEventListener('click', closeMenu);
+        backdrop.addEventListener('click', closeMenu);
+        // Close when any real link inside the panel is clicked (but not anchor-only "#")
+        menu.querySelectorAll('a[href]').forEach(a => {
+            if (a.getAttribute('href') === '#') return;
+            a.addEventListener('click', () => setTimeout(closeMenu, 50));
+        });
+        // Esc key closes
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && menu.classList.contains('open')) closeMenu();
+        });
     }
 
     _wireMegamenu() {
@@ -267,6 +305,49 @@ class GlobalHeader extends HTMLElement {
             </div>
         `).join('');
 
+        // Mobile menu — collapses the megamenu into scrollable accordion-ish sections
+        const mobileMenuHtml = `
+            <div class="mobile-menu-backdrop" id="mobile-menu-backdrop"></div>
+            <aside class="mobile-menu" id="mobile-menu" aria-hidden="true">
+                <div class="mobile-menu-hdr">
+                    <a href="${rp}index.html" style="display:flex;align-items:center;gap:0.5rem;text-decoration:none;color:#fff;font-weight:700;font-size:1rem;">
+                        <svg width="26" height="24" viewBox="0 0 100 88" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="4,52 50,10 96,52"/>
+                            <polyline points="72,28 72,16 84,16 84,42"/>
+                            <polyline points="17,52 17,82 83,82 83,52"/>
+                        </svg>
+                        MN Lake Homes
+                    </a>
+                    <button class="mobile-menu-close" id="mobile-menu-close" aria-label="Close menu">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                <div class="mobile-menu-body">
+                    ${navItems.map(item => `
+                        <div class="mobile-menu-section">
+                            <a href="${item.href}" class="mobile-menu-section-title">${item.label}</a>
+                            ${item.columns.map(col => `
+                                <div class="mobile-menu-col">
+                                    <div class="mobile-menu-col-heading">${col.heading}</div>
+                                    ${col.links.map(lnk => `<a href="${lnk.href}" class="mobile-menu-link">${lnk.prefixIcon || ''}${lnk.label}</a>`).join('')}
+                                </div>
+                            `).join('')}
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="mobile-menu-footer">
+                    ${user ? `
+                        <div style="color:#94a3b8;font-size:0.8rem;margin-bottom:0.75rem;">Signed in as <strong style="color:#fff;">${user.display_name || user.email}</strong></div>
+                        <a href="${user.role === 'admin' || user.role === 'super_admin' ? rp + 'pages/admin/dashboard.html' : rp + 'pages/agent/dashboard.html'}" class="mobile-menu-cta-outline">Dashboard</a>
+                        <a href="#" onclick="window._signOut(event)" class="mobile-menu-cta-outline" style="color:#fc8181;border-color:rgba(252,129,129,0.3);">Sign Out</a>
+                    ` : `
+                        <a href="${rp}pages/public/login.html" class="mobile-menu-cta-outline">Log In</a>
+                        <button onclick="window.openForm && window.openForm('agent')" class="mobile-menu-cta-primary">Get Started</button>
+                    `}
+                </div>
+            </aside>
+        `;
+
         return `
         <header class="navbar" style="background-color: var(--bg-dark); border-bottom: 1px solid rgba(255,255,255,0.08);
                 position: fixed; width: 100%; z-index: 1000; top: 0;">
@@ -285,8 +366,16 @@ class GlobalHeader extends HTMLElement {
             <div class="nav-actions">
                 ${authHtml}
             </div>
+            <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Open menu" aria-expanded="false">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
 
             ${megamenusHtml}
+            ${mobileMenuHtml}
         </header>`;
     }
 }
