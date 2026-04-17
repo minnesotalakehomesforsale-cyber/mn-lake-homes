@@ -288,7 +288,17 @@
                     return;
                 }
 
-                // Success — route based on role
+                // Honor ?redirect= query param if present and safe (same-origin path)
+                const params = new URLSearchParams(window.location.search);
+                const redirectTo = params.get('redirect');
+                const isSafeRedirect = redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//');
+
+                if (isSafeRedirect) {
+                    window.location.href = redirectTo;
+                    return;
+                }
+
+                // Otherwise route based on role
                 if (data.role === 'admin' || data.role === 'super_admin') {
                     window.location.href = '/pages/admin/dashboard.html';
                 } else if (data.role === 'agent') {
