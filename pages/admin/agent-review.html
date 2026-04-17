@@ -280,6 +280,22 @@
 
             <!-- Right: Controls sidebar -->
             <div>
+                <!-- Featured Agent -->
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">Featured Agent</div></div>
+                    <div class="panel-body" style="padding: 1.5rem;">
+                        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.85rem;">
+                            <svg id="featured-icon" width="22" height="22" viewBox="0 0 24 24" fill="#e2e8f0" stroke="#cbd5e0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                            <div style="flex:1;">
+                                <div style="font-weight:700; font-size:0.95rem; color:#1a202c;" id="featured-label">Not Featured</div>
+                                <div style="font-size:0.75rem; color:#718096;">Shows on the home page's Featured Agents section + star badge on cards.</div>
+                            </div>
+                        </div>
+                        <button class="btn-save" id="featured-toggle-btn" style="width:100%;" onclick="toggleFeatured()">Mark as Featured</button>
+                        <div id="featured-result" class="action-result"></div>
+                    </div>
+                </div>
+
                 <!-- Membership -->
                 <div class="panel">
                     <div class="panel-header"><div class="panel-title">Membership Tier</div></div>
@@ -439,6 +455,9 @@
         document.getElementById('p-slug').value     = a.slug            || '';
         document.getElementById('p-id').value       = a.id              || '';
 
+        // Featured agent state
+        renderFeaturedState(!!a.is_featured);
+
         // Profile photo preview
         const photoPreview = document.getElementById('p-photo-preview');
         const photoBtnLabel = document.getElementById('p-photo-btn-label');
@@ -530,6 +549,61 @@
             await loadAgent();
         } catch (err) {
             alert(err.message);
+        }
+    }
+
+    // ── Featured Agent Toggle ────────────────────────────────────────────────
+    function renderFeaturedState(isFeatured) {
+        const icon = document.getElementById('featured-icon');
+        const label = document.getElementById('featured-label');
+        const btn = document.getElementById('featured-toggle-btn');
+        if (isFeatured) {
+            icon.setAttribute('fill', '#f59e0b');
+            icon.setAttribute('stroke', '#f59e0b');
+            label.textContent = 'Featured Agent ★';
+            label.style.color = '#d97706';
+            btn.textContent = 'Remove from Featured';
+            btn.style.background = '#fff';
+            btn.style.color = '#c53030';
+            btn.style.border = '1px solid #feb2b2';
+        } else {
+            icon.setAttribute('fill', '#e2e8f0');
+            icon.setAttribute('stroke', '#cbd5e0');
+            label.textContent = 'Not Featured';
+            label.style.color = '#1a202c';
+            btn.textContent = 'Mark as Featured';
+            btn.style.background = '';
+            btn.style.color = '';
+            btn.style.border = '';
+        }
+        btn.dataset.featured = isFeatured ? '1' : '0';
+    }
+
+    async function toggleFeatured() {
+        const btn = document.getElementById('featured-toggle-btn');
+        const next = btn.dataset.featured !== '1';
+        const result = document.getElementById('featured-result');
+        btn.disabled = true;
+        const orig = btn.textContent;
+        btn.textContent = 'Saving...';
+        try {
+            const res = await fetch(`/api/admin/${agentId}/profile`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_featured: next })
+            });
+            if (!res.ok) throw new Error('Failed to update featured status.');
+            if (agentData) agentData.is_featured = next;
+            renderFeaturedState(next);
+            result.textContent = next ? '✓ Now featured across the site' : '✓ No longer featured';
+            result.style.color = '#2f855a';
+            setTimeout(() => { result.textContent = ''; }, 3000);
+        } catch (err) {
+            result.textContent = err.message;
+            result.style.color = '#c53030';
+            btn.textContent = orig;
+        } finally {
+            btn.disabled = false;
         }
     }
 

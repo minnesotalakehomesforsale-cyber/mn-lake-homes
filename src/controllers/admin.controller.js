@@ -158,7 +158,7 @@ const updateAgentProfile = async (req, res) => {
         display_name, brokerage_name, license_number, years_experience,
         phone_public, email_public, website_url,
         city, state, service_areas, specialties, bio,
-        profile_photo_url
+        profile_photo_url, is_featured
     } = req.body;
 
     try {
@@ -179,8 +179,9 @@ const updateAgentProfile = async (req, res) => {
                 specialties = COALESCE($11, specialties),
                 bio = COALESCE($12, bio),
                 profile_photo_url = COALESCE($13, profile_photo_url),
+                is_featured = COALESCE($14, is_featured),
                 updated_at = NOW()
-             WHERE id = $14`,
+             WHERE id = $15`,
             [
                 display_name || null,
                 brokerage_name || null,
@@ -195,6 +196,7 @@ const updateAgentProfile = async (req, res) => {
                 specialties !== undefined ? JSON.stringify(cleanArray(specialties)) : null,
                 bio || null,
                 profile_photo_url || null,
+                typeof is_featured === 'boolean' ? is_featured : null,
                 id
             ]
         );
