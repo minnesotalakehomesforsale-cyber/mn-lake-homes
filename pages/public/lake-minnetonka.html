@@ -61,21 +61,6 @@
         .lm-stat h3 { font-size: 2.5rem; font-weight: 700; color: var(--accent-blue); margin-bottom: 0.25rem; }
         .lm-stat p { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; }
 
-        .lm-listings-header { max-width: 1200px; margin: 0 auto; padding: 0 2rem; text-align: center; margin-bottom: 3rem; }
-        .lm-listings-header h2 { font-size: 2.5rem; font-weight: 700; color: #1a202c; margin-bottom: 1rem; letter-spacing: -1px; }
-        .lm-listings-header p { color: #718096; font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
-
-        .listing-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 2rem; max-width: 1200px; margin: 0 auto; padding: 0 2rem 4rem; }
-        .listing-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #edf2f7; transition: transform 0.2s, box-shadow 0.2s; }
-        .listing-card:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(0,0,0,0.1); }
-        .listing-img-wrapper { position: relative; height: 250px; }
-        .listing-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .listing-badge { position: absolute; top: 1rem; left: 1rem; background: #fff; color: var(--accent-blue); padding: 0.4rem 0.8rem; border-radius: 4px; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; }
-        .listing-info { padding: 1.5rem; }
-        .listing-price { font-size: 1.5rem; font-weight: 700; color: #1a202c; margin-bottom: 0.5rem; }
-        .listing-address { color: #4a5568; font-size: 1rem; margin-bottom: 1rem; }
-        .listing-specs { display: flex; gap: 1.5rem; font-size: 0.9rem; color: #718096; border-top: 1px solid #edf2f7; padding-top: 1rem; }
-
         .lm-expert { background-color: #f7f9fa; padding: 6rem 2rem; }
         .lm-expert-inner { max-width: 1200px; margin: 0 auto; text-align: center; }
         .lm-expert h2 { font-size: 2.5rem; font-weight: 700; color: #1a202c; margin-bottom: 1rem; letter-spacing: -1px; }
@@ -90,15 +75,11 @@
             .lm-hero-actions .btn { width: 100%; text-align: center; }
             .lm-stats-inner { grid-template-columns: 1fr; gap: 1.5rem; }
             .lm-stat h3 { font-size: 2rem; }
-            .listing-grid { grid-template-columns: 1fr; padding: 0 1.25rem 3rem; }
-            .lm-listings-header { padding: 0 1.25rem; }
-            .lm-listings-header h2 { font-size: 2rem; }
             .lm-expert { padding: 4rem 1.25rem; }
             .lm-expert h2 { font-size: 2rem; }
         }
         @media (max-width: 480px) {
             .lm-hero h1 { font-size: 2.25rem; }
-            .listing-img-wrapper { height: 200px; }
         }
     </style>
 </head>
@@ -113,7 +94,7 @@
                 <h1>Your new view on<br><span>Lake Minnetonka</span></h1>
                 <p>Discover the pinnacle of Minnesota luxury. Unmatched waterfront estates, private yacht clubs, and elite dining — just 30 minutes from the Twin Cities.</p>
                 <div class="lm-hero-actions">
-                    <a href="#listings" class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; text-decoration: none;">View listings</a>
+                    <a href="#expert" class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; text-decoration: none;">Meet Your Expert</a>
                     <button onclick="openForm('buy')" class="btn btn-outline" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; background: rgba(255,255,255,0.05); color: #fff; border-color: rgba(255,255,255,0.25);">Contact an expert</button>
                 </div>
             </div>
@@ -164,71 +145,14 @@
         </div>
     </section>
 
-    <!-- Active Listings -->
-    <section id="listings" style="padding: 6rem 0 2rem;">
-        <div class="lm-listings-header">
-            <h2>Exclusive Minnetonka listings</h2>
-            <p>Browse a curated feed of available properties currently dominating the local market.</p>
-        </div>
-
-        <div class="listing-grid">
-            <div class="listing-card">
-                <div class="listing-img-wrapper">
-                    <img src="/assets/images/mn-most-expensive-listing.jpg" class="listing-img" alt="$4.25M luxury lakefront listing in Wayzata, MN on Lake Minnetonka" loading="lazy" width="800" height="500">
-                    <div class="listing-badge">Active</div>
-                </div>
-                <div class="listing-info">
-                    <div class="listing-price">$4,250,000</div>
-                    <div class="listing-address">1204 Shoreline Dr, Wayzata, MN</div>
-                    <div class="listing-specs"><span>4 Beds</span><span>5 Baths</span><span>6,200 sqft</span></div>
-                </div>
-            </div>
-            <div class="listing-card">
-                <div class="listing-img-wrapper">
-                    <img src="/assets/images/mn-canoe-shore.webp" class="listing-img" alt="$2.1M lakefront property in Excelsior, MN on Lake Minnetonka" loading="lazy" width="800" height="500">
-                    <div class="listing-badge">Active</div>
-                </div>
-                <div class="listing-info">
-                    <div class="listing-price">$2,100,000</div>
-                    <div class="listing-address">90 Minnetonka Blvd, Excelsior, MN</div>
-                    <div class="listing-specs"><span>3 Beds</span><span>3 Baths</span><span>3,100 sqft</span></div>
-                </div>
-            </div>
-            <div class="listing-card">
-                <div class="listing-img-wrapper">
-                    <img src="/assets/images/mn-rustic-modern-lake-house.jpg" class="listing-img" alt="$5.8M just-listed luxury estate in Orono, MN on Lake Minnetonka" loading="lazy" width="800" height="500">
-                    <div class="listing-badge">Just Listed</div>
-                </div>
-                <div class="listing-info">
-                    <div class="listing-price">$5,800,000</div>
-                    <div class="listing-address">4400 Orono Orchard Rd, Orono, MN</div>
-                    <div class="listing-specs"><span>6 Beds</span><span>7 Baths</span><span>8,400 sqft</span></div>
-                </div>
-            </div>
-        </div>
-
-        <div style="text-align: center; margin-bottom: 4rem;">
-            <button onclick="openForm('buy')" class="btn btn-outline" style="padding: 1rem 3rem; color: #1a202c; border-color: #cbd5e0;">Request full inventory</button>
-        </div>
-    </section>
-
-    <!-- Local Expert -->
-    <section class="lm-expert">
+    <!-- Local Experts (pulled from agent database — only shows live/published agents) -->
+    <section id="expert" class="lm-expert">
         <div class="lm-expert-inner">
-            <h2>Your Lake Minnetonka expert</h2>
+            <h2>Your Lake Minnetonka experts</h2>
             <p style="color: #718096; font-size: 1.1rem; max-width: 700px; margin: 0 auto 3rem; line-height: 1.6;">To navigate Minnesota's most competitive luxury market, you need proven experience and off-market networks in your corner.</p>
 
-            <div style="max-width: 450px; margin: 0 auto; text-align: left;">
-                <a href="agent-profile.html?slug=david-chen" style="text-decoration: none; color: inherit; display: block;" class="agent-link-wrapper">
-                <div class="agent-card">
-                    <img src="/assets/images/mn-stillwater-aerial.webp" alt="David Chen — Senior Lake Minnetonka specialist" class="agent-image" loading="lazy" width="600" height="600">
-                    <div class="agent-info">
-                        <h3 class="agent-name">David Chen</h3>
-                        <div class="agent-title">SENIOR LAKE SPECIALIST</div>
-                        <p class="agent-bio">With over 15 years on Lake Minnetonka, David is an expert in luxury shoreline estates, high-value negotiations, and navigating complex zoning laws for ambitious buyers.</p>
-                    </div>
-                </div>
-                </a>
+            <div id="mn-agents-grid" class="agents-grid">
+                <div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">Loading featured agents…</div>
             </div>
         </div>
     </section>
@@ -248,5 +172,72 @@
     <global-footer></global-footer>
     <lead-modal></lead-modal>
 
+    <script>
+        // Featured Lake Minnetonka agents — pulled from /api/agents/public
+        // That endpoint already filters to profile_status='published' AND is_published=true,
+        // so deactivated / unpublished agents automatically disappear.
+        async function loadMinnetonkaAgents() {
+            const grid = document.getElementById('mn-agents-grid');
+            if (!grid) return;
+            try {
+                const res = await fetch('/api/agents/public');
+                if (!res.ok) throw new Error();
+                const agents = await res.json();
+
+                // Prefer agents with Minnetonka-area city or service areas; fall back
+                // to is_featured, then the full list. Only ever from the published pool.
+                const matchesMinnetonka = (a) => {
+                    const city = (a.city || '').toLowerCase();
+                    if (city.includes('minnetonka') || city.includes('wayzata') ||
+                        city.includes('excelsior') || city.includes('orono')) return true;
+                    const areas = Array.isArray(a.service_areas)
+                        ? a.service_areas
+                        : JSON.parse(a.service_areas || '[]');
+                    return areas.some(s => (s || '').toLowerCase().includes('minnetonka'));
+                };
+
+                const local    = agents.filter(matchesMinnetonka);
+                const featured = agents.filter(a => a.is_featured);
+                const list     = (local.length ? local : featured.length ? featured : agents).slice(0, 3);
+
+                if (!list.length) {
+                    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">No agents available yet.</div>';
+                    return;
+                }
+
+                grid.innerHTML = list.map(agent => {
+                    const photo = agent.profile_photo_url || '/assets/images/mn-stillwater-aerial.webp';
+                    const title = agent.membership_badge || 'Lake Specialist';
+                    const bio   = agent.bio || 'A dedicated Minnesota lake home specialist ready to help you find your perfect waterfront property.';
+                    const shortBio = bio.length > 180 ? bio.slice(0, 180).trimEnd() + '…' : bio;
+                    const topBadge = agent.is_featured
+                        ? `<div style="position:absolute;top:12px;left:12px;z-index:2;display:inline-flex;align-items:center;gap:0.35rem;background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);color:#fff;font-size:0.72rem;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;padding:0.35rem 0.7rem;border-radius:99px;box-shadow:0 4px 12px rgba(245,158,11,0.35);">
+                               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                               Top Agent
+                           </div>`
+                        : '';
+                    const inlineStar = agent.is_featured
+                        ? `<svg style="vertical-align:-2px;margin-left:0.4rem;color:#f59e0b;" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`
+                        : '';
+                    return `
+                        <a href="agent-profile.html?slug=${agent.slug}" style="text-decoration:none;color:inherit;display:block;" class="agent-link-wrapper">
+                            <div class="agent-card" style="position:relative;">
+                                ${topBadge}
+                                <img src="${photo}" alt="${agent.display_name} — Lake Minnetonka specialist" class="agent-image" loading="lazy">
+                                <div class="agent-info">
+                                    <h3 class="agent-name">${agent.display_name}${inlineStar}</h3>
+                                    <div class="agent-title">${title.toUpperCase()}</div>
+                                    <p class="agent-bio">${shortBio}</p>
+                                </div>
+                            </div>
+                        </a>`;
+                }).join('');
+            } catch (err) {
+                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">Could not load agents.</div>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadMinnetonkaAgents);
+    </script>
 </body>
 </html>
