@@ -419,6 +419,16 @@
                 const agents = await res.json();
                 const featured = agents.filter(a => a.is_featured).slice(0, 3);
                 const list = featured.length ? featured : agents.slice(0, 3);
+                if (!list.length) {
+                    grid.innerHTML = `
+                        <div style="grid-column:1/-1;background:#f7f9fa;border:1px solid #edf2f7;border-radius:14px;padding:3rem 2rem;text-align:center;max-width:680px;margin:0 auto;">
+                            <div style="display:inline-flex;align-items:center;gap:0.4rem;background:#ebf4ff;color:#1d6df2;font-size:0.72rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:0.35rem 0.75rem;border-radius:99px;margin-bottom:1rem;">Beta Release</div>
+                            <h3 style="font-size:1.35rem;font-weight:700;color:#1a202c;margin:0 0 0.6rem;">Agents coming soon</h3>
+                            <p style="color:#4a5568;line-height:1.6;margin:0 0 1.25rem;font-size:0.95rem;">We're actively onboarding lake specialists for your area. Check back soon — or let us know where you're looking and we'll notify you the moment someone's available.</p>
+                            <a href="pages/public/contact.html" style="display:inline-block;padding:0.75rem 1.5rem;background:#1d6df2;color:#fff;font-weight:700;border-radius:8px;text-decoration:none;font-size:0.9rem;">Contact us →</a>
+                        </div>`;
+                    return;
+                }
                 grid.innerHTML = list.map(agent => {
                     const photo = agent.profile_photo_url || '/assets/images/mn-stillwater-aerial.webp';
                     const title = agent.membership_badge || 'Lake Specialist';

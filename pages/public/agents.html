@@ -227,9 +227,18 @@
                 let agents = await res.json();
                 if (featuredOnly) agents = agents.filter(a => a.is_featured);
                 if (agents.length === 0) {
-                    grid.innerHTML = featuredOnly
-                        ? '<p style="color:#718096;padding:2rem;">No featured agents yet. <a href="agents.html" style="color:#1d6df2;">See all agents →</a></p>'
-                        : '<p style="color:#718096;padding:2rem;">No agents are currently listed. Check back soon.</p>';
+                    grid.innerHTML = `
+                        <div style="grid-column:1/-1;background:#f7f9fa;border:1px solid #edf2f7;border-radius:14px;padding:3rem 2rem;text-align:center;max-width:680px;margin:0 auto;">
+                            <div style="display:inline-flex;align-items:center;gap:0.4rem;background:#ebf4ff;color:#1d6df2;font-size:0.72rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:0.35rem 0.75rem;border-radius:99px;margin-bottom:1rem;">Beta Release</div>
+                            <h3 style="font-size:1.5rem;font-weight:700;color:#1a202c;margin:0 0 0.6rem;letter-spacing:-0.4px;">
+                                ${featuredOnly ? 'Featured agents coming soon' : 'Agents coming soon'}
+                            </h3>
+                            <p style="color:#4a5568;line-height:1.6;margin:0 0 1.5rem;font-size:1rem;">We're actively onboarding lake specialists across Minnesota. We're in beta — new agents join every week. Tell us which lake you're interested in and we'll reach out the moment a local specialist is ready for you.</p>
+                            <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+                                <a href="contact.html" style="display:inline-block;padding:0.8rem 1.5rem;background:#1d6df2;color:#fff;font-weight:700;border-radius:8px;text-decoration:none;font-size:0.9rem;">Contact us →</a>
+                                ${featuredOnly ? '<a href="agents.html" style="display:inline-block;padding:0.8rem 1.5rem;background:#fff;color:#1a202c;font-weight:700;border:1px solid #e2e8f0;border-radius:8px;text-decoration:none;font-size:0.9rem;">See all agents</a>' : ''}
+                            </div>
+                        </div>`;
                     return;
                 }
                 grid.innerHTML = '';
