@@ -15,13 +15,40 @@
     if (document.getElementById('admin-responsive-styles')) return;
 
     const css = `
+        /* ─── Hamburger — ALWAYS position:fixed, visibility toggled by media query ─── */
+        .admin-hamburger {
+            position: fixed !important;
+            top: 12px !important;
+            left: 12px !important;
+            z-index: 9999 !important;
+            width: 42px;
+            height: 42px;
+            align-items: center;
+            justify-content: center;
+            background: #1a202c;
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        .admin-hamburger:hover { background: #2d3748; }
+
         /* ─── Mobile overrides for the shared admin shell ─── */
         @media (max-width: 900px) {
             html, body { overflow-x: hidden; max-width: 100vw; }
-            /* Lock the page behind the sidebar while it's open —
-               only the sidebar itself is scrollable */
-            body.admin-side-open { overflow: hidden !important; height: 100vh; }
-            body.admin-side-open .admin-main { overflow: hidden; }
+
+            /* Bulletproof scroll lock (iOS-safe) — applied via JS setting
+               top:-scrollY. The class simply locks position:fixed. */
+            body.admin-side-open {
+                position: fixed !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                overflow: hidden !important;
+            }
+
             .admin-wrap {
                 grid-template-columns: 1fr !important;
                 min-height: 100vh;
@@ -32,15 +59,36 @@
                 top: 0 !important;
                 left: 0 !important;
                 bottom: 0 !important;
-                height: 100vh !important;
-                width: 280px !important;
-                max-width: 85vw;
+                height: 100dvh !important;
+                width: 100vw !important;
+                max-width: 100vw !important;
                 transform: translateX(-100%);
                 transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
                 z-index: 1200;
                 box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+                display: flex !important;
+                flex-direction: column !important;
+                padding-bottom: calc(1rem + env(safe-area-inset-bottom)) !important;
+            }
+            @supports not (height: 100dvh) {
+                .admin-side { height: 100vh !important; }
             }
             body.admin-side-open .admin-side { transform: translateX(0); }
+
+            /* Sidebar inner scrolling — nav takes remaining space, overflows
+               to scroll itself while the View Live Site + Sign Out stay anchored */
+            .admin-side .side-nav {
+                flex: 1 1 auto !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch;
+                min-height: 0;
+            }
+            /* The anchor + sign-out at the bottom of every admin sidebar */
+            .admin-side .side-signout,
+            .admin-side > a[href^="/index.html"] { flex-shrink: 0; }
+
+            /* Show hamburger (its base styles set position; just flip display) */
+            .admin-hamburger { display: flex !important; }
 
             .admin-main {
                 padding: 4.5rem 1rem 2rem !important;
@@ -51,30 +99,8 @@
             }
             .admin-main > * { max-width: 100%; box-sizing: border-box; }
 
-            /* Hamburger toggle — fixed top-left, stays pinned while scrolling */
-            .admin-hamburger {
-                display: flex !important;
-                position: fixed !important;
-                top: 0.85rem !important;
-                left: 0.85rem !important;
-                z-index: 1300;
-                width: 42px;
-                height: 42px;
-                align-items: center;
-                justify-content: center;
-                background: #1a202c;
-                color: #fff;
-                border: 1px solid rgba(255,255,255,0.1);
-                border-radius: 10px;
-                cursor: pointer;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                transition: opacity 0.2s ease, transform 0.2s ease;
-            }
-            .admin-hamburger:hover { background: #2d3748; }
-
-            /* Hide hamburger while sidebar is open — the sidebar has its own
-               close button, and keeping both visible obscures the sidebar
-               header ("MNLH ADMIN") */
+            /* Hide hamburger while sidebar is open — sidebar has its own
+               close button, and keeping both visible obscures the header */
             body.admin-side-open .admin-hamburger {
                 opacity: 0;
                 pointer-events: none;
@@ -240,9 +266,26 @@
         document.body.appendChild(btn);
         document.body.appendChild(backdrop);
 
-        const close = () => document.body.classList.remove('admin-side-open');
-        const open  = () => document.body.classList.add('admin-side-open');
-        const toggle = () => document.body.classList.toggle('admin-side-open');
+        // Scroll lock that survives iOS bounce: preserve scrollY, pin body,
+        // restore on close. Uses body.style.top = -scrollY so the page
+        // doesn't appear to jump.
+        let lockedScrollY = 0;
+        const open = () => {
+            if (document.body.classList.contains('admin-side-open')) return;
+            lockedScrollY = window.scrollY || window.pageYOffset || 0;
+            document.body.style.top = `-${lockedScrollY}px`;
+            document.body.classList.add('admin-side-open');
+        };
+        const close = () => {
+            if (!document.body.classList.contains('admin-side-open')) return;
+            document.body.classList.remove('admin-side-open');
+            document.body.style.top = '';
+            window.scrollTo(0, lockedScrollY);
+        };
+        const toggle = () => {
+            if (document.body.classList.contains('admin-side-open')) close();
+            else open();
+        };
 
         btn.addEventListener('click', toggle);
         backdrop.addEventListener('click', close);
