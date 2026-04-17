@@ -47,12 +47,12 @@
             }
             .admin-main > * { max-width: 100%; box-sizing: border-box; }
 
-            /* Hamburger toggle — fixed top-left */
+            /* Hamburger toggle — fixed top-left, stays pinned while scrolling */
             .admin-hamburger {
                 display: flex !important;
-                position: fixed;
-                top: 0.85rem;
-                left: 0.85rem;
+                position: fixed !important;
+                top: 0.85rem !important;
+                left: 0.85rem !important;
                 z-index: 1300;
                 width: 42px;
                 height: 42px;
@@ -64,8 +64,39 @@
                 border-radius: 10px;
                 cursor: pointer;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                transition: opacity 0.2s ease, transform 0.2s ease;
             }
             .admin-hamburger:hover { background: #2d3748; }
+
+            /* Hide hamburger while sidebar is open — the sidebar has its own
+               close button, and keeping both visible obscures the sidebar
+               header ("MNLH ADMIN") */
+            body.admin-side-open .admin-hamburger {
+                opacity: 0;
+                pointer-events: none;
+                transform: scale(0.9);
+            }
+
+            /* Close button injected inside the sidebar on mobile */
+            .admin-side-close {
+                position: absolute !important;
+                top: 0.75rem;
+                right: 0.75rem;
+                width: 36px;
+                height: 36px;
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+                background: rgba(255,255,255,0.08);
+                border: none;
+                border-radius: 8px;
+                color: #fff;
+                cursor: pointer;
+                z-index: 10;
+                transition: background 0.15s;
+            }
+            .admin-side-close:hover { background: rgba(255,255,255,0.18); }
+            .admin-side { padding-top: 3.5rem !important; }
 
             /* Backdrop behind sidebar */
             .admin-side-backdrop {
@@ -215,6 +246,16 @@
         // Close the mobile sidebar whenever a nav link inside it is tapped
         const sidebar = document.querySelector('.admin-side');
         if (sidebar) {
+            // Inject close-X button inside the sidebar (mobile only; CSS hides on desktop)
+            if (!sidebar.querySelector('.admin-side-close')) {
+                const closeX = document.createElement('button');
+                closeX.className = 'admin-side-close';
+                closeX.setAttribute('aria-label', 'Close menu');
+                closeX.style.display = 'none'; // media query flips to flex on mobile
+                closeX.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+                closeX.addEventListener('click', close);
+                sidebar.insertBefore(closeX, sidebar.firstChild);
+            }
             sidebar.querySelectorAll('a').forEach(a => {
                 a.addEventListener('click', () => setTimeout(close, 50));
             });
