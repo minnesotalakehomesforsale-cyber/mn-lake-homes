@@ -3,315 +3,309 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Access | MN Lake Homes</title>
+    <title>Sign In | MN Lake Homes</title>
+    <meta name="description" content="Sign in to your MN Lake Homes account to access your dashboard, saved listings, and agent matches.">
     <link rel="stylesheet" href="../../styles/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
-            background-color: #f7f9fa;
+            background-color: #fff;
             color: #1a202c;
-            display: flex;
-            flex-direction: column;
+            display: block;
             min-height: 100vh;
         }
 
-        .login-wrap {
-            flex: 1;
+        .signup-split {
+            display: grid;
+            grid-template-columns: minmax(360px, 520px) 1fr;
+            min-height: 100vh;
+        }
+
+        .signup-left {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            padding: 2.5rem 3rem;
+            overflow-y: auto;
+        }
+
+        .signup-brand {
+            display: inline-flex;
             align-items: center;
-            padding: 4rem 1.5rem;
-            margin-top: 80px; /* Offset for header */
+            gap: 0.6rem;
+            font-weight: 700;
+            font-size: 1.05rem;
+            letter-spacing: -0.3px;
+            color: #1a202c;
+            text-decoration: none;
+            margin-bottom: 3.5rem;
         }
 
-        .login-card {
-            background: #fff;
-            max-width: 440px;
+        .signup-brand svg { color: #1a202c; }
+
+        .signup-form-wrap {
+            max-width: 400px;
             width: 100%;
-            padding: 3rem 2.5rem;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.06);
-            border: 1px solid #edf2f7;
-            position: relative;
-            overflow: hidden;
+            margin: auto 0;
+            padding-bottom: 2rem;
         }
 
-        .login-header {
-            text-align: center;
-            margin-bottom: 2.5rem;
-        }
-
-        .login-header h1 {
-            font-size: 1.8rem;
+        .signup-header h1 {
+            font-size: 1.7rem;
             font-weight: 800;
             letter-spacing: -0.5px;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
+        }
+        .signup-header p {
+            color: #4a5568;
+            font-size: 0.92rem;
+            line-height: 1.5;
+            margin-bottom: 2rem;
         }
 
-        .login-header p {
-            color: #718096;
-            font-size: 0.95rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-label {
+        .signup-form .form-group { margin-bottom: 1rem; }
+        .signup-form .form-label {
             display: block;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 600;
             color: #4a5568;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
         }
-
-        .form-input {
+        .signup-form .form-input {
             width: 100%;
-            padding: 0.85rem 1rem;
+            padding: 0.9rem 1rem;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             font-family: inherit;
-            font-size: 1rem;
+            font-size: 0.95rem;
             transition: all 0.2s;
             box-sizing: border-box;
+            background: #fff;
         }
-
-        .form-input:focus {
+        .signup-form .form-input:focus {
             outline: none;
             border-color: var(--accent-blue);
             box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
         }
 
-        .form-submit {
+        .signup-submit {
             width: 100%;
-            padding: 1rem;
-            font-size: 1rem;
+            padding: 0.95rem;
+            font-size: 0.95rem;
             font-weight: 600;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
-            margin-top: 1rem;
-            background-color: #1a202c;
+            margin-top: 0.75rem;
+            background-color: #6b8afd;
             color: #fff;
         }
+        .signup-submit:hover:not(:disabled) { background-color: #5774dd; }
+        .signup-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        .form-submit.agent {
-            background-color: var(--accent-blue);
-        }
-
-        .form-submit:hover {
-            opacity: 0.9;
-        }
-
-        .alert-box {
+        .signup-alert {
             display: none;
-            padding: 1rem;
+            padding: 0.85rem 1rem;
             border-radius: 8px;
-            margin-bottom: 1.5rem;
-            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            font-size: 0.88rem;
             font-weight: 500;
-            text-align: center;
         }
+        .signup-alert.error   { background-color: #fff5f5; color: #c53030; border: 1px solid #feb2b2; }
+        .signup-alert.success { background-color: #f0fff4; color: #276749; border: 1px solid #9ae6b4; }
 
-        .alert-error { background-color: #fff5f5; color: #c53030; border: 1px solid #feb2b2; }
-        .alert-success { background-color: #f0fff4; color: #2f855a; border: 1px solid #9ae6b4; }
-
-        /* Toggles */
-        .portal-section { display: none; }
-        .portal-section.active { display: block; animation: fadeIn 0.3s ease; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .bottom-links {
-            text-align: center;
-            margin-top: 2rem;
-        }
-
-        .create-act {
-            font-size: 0.9rem;
-            color: #718096;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid #edf2f7;
-        }
-
-        .create-act a {
-            color: #1a202c;
-            font-weight: 600;
-            text-decoration: underline;
-        }
-
-        .switch-portal {
-            font-size: 0.85rem;
+        .signup-divider {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
             color: #a0aec0;
-            background: none;
-            border: none;
-            cursor: pointer;
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
+        .signup-divider::before, .signup-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #edf2f7;
+        }
+
+        .agent-btn {
+            width: 100%;
+            padding: 0.85rem;
+            font-size: 0.9rem;
             font-weight: 600;
-            transition: color 0.2s;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #fff;
+            color: #1a202c;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .agent-btn:hover { border-color: #cbd5e0; background: #f7f9fa; }
+
+        .new-note {
+            font-size: 0.82rem;
+            color: #718096;
+            margin-top: 0.5rem;
+            line-height: 1.5;
+            text-align: center;
+        }
+        .new-note a { color: #1a202c; font-weight: 600; text-decoration: underline; }
+
+        .forgot-link {
+            display: block;
+            text-align: right;
+            font-size: 0.8rem;
+            color: #718096;
+            text-decoration: none;
+            margin-top: -0.25rem;
+            margin-bottom: 0.5rem;
+        }
+        .forgot-link:hover { color: #1a202c; text-decoration: underline; }
+
+        .signup-footnote {
+            font-size: 0.72rem;
+            color: #a0aec0;
+            margin-top: 1.75rem;
+            line-height: 1.5;
         }
 
-        .switch-portal:hover {
-            color: var(--accent-blue);
+        .signup-right {
+            background: #e8e5db url('/assets/images/mn-split-level-sunset.webp') center/cover no-repeat;
+            position: relative;
+            min-height: 100vh;
+        }
+        .signup-right::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,0.25) 100%);
         }
 
+        @media (max-width: 900px) {
+            .signup-split { grid-template-columns: 1fr; }
+            .signup-right { min-height: 260px; }
+            .signup-left  { padding: 2rem 1.5rem; }
+        }
     </style>
 </head>
 <body>
 
-    <global-header></global-header>
+    <div class="signup-split">
 
-    <div class="login-wrap">
-        <div class="login-card">
-            
-            <!-- CLIENT PORTAL (Default) -->
-            <div id="client-portal" class="portal-section active">
-                <div class="login-header">
-                    <h1>Client Portal</h1>
-                    <p>Track your saved homes & property valuations.</p>
+        <div class="signup-left">
+            <a href="/index.html" class="signup-brand" aria-label="MN Lake Homes home">
+                <svg width="26" height="24" viewBox="0 0 100 88" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="4,52 50,10 96,52"/>
+                    <polyline points="72,28 72,16 84,16 84,42"/>
+                    <polyline points="17,52 17,82 83,82 83,52"/>
+                </svg>
+                <span>MN Lake Homes</span>
+            </a>
+
+            <div class="signup-form-wrap">
+                <div class="signup-header">
+                    <h1>Welcome back</h1>
+                    <p>Sign in to access your dashboard, saved listings, and agent matches.</p>
                 </div>
-                <div id="client-alert" class="alert-box"></div>
-                <form onsubmit="handleLogin(event, 'client')">
+
+                <div id="login-alert" class="signup-alert"></div>
+
+                <form id="login-form" class="signup-form" onsubmit="handleLogin(event)">
                     <div class="form-group">
-                        <label class="form-label" for="client-email">Email Address</label>
-                        <input type="email" id="client-email" class="form-input" placeholder="you@email.com" required>
+                        <label class="form-label" for="email">Email address</label>
+                        <input type="email" id="email" class="form-input" placeholder="you@email.com" autocomplete="email" required>
                     </div>
+
                     <div class="form-group">
-                        <label class="form-label" for="client-password">Password</label>
-                        <input type="password" id="client-password" class="form-input" placeholder="••••••••" required>
+                        <label class="form-label" for="password">Password</label>
+                        <input type="password" id="password" class="form-input" placeholder="••••••••" autocomplete="current-password" required>
                     </div>
-                    <button type="submit" class="form-submit">Sign In</button>
+
+                    <a href="/pages/public/contact.html" class="forgot-link">Forgot password?</a>
+
+                    <button type="submit" class="signup-submit" id="login-submit">Sign in</button>
+
+                    <p class="new-note">
+                        Don't have an account? <a href="/pages/public/signup.html">Join here &rarr;</a>
+                    </p>
                 </form>
-                <div class="bottom-links">
-                    <div class="create-act">
-                        Don't have an account? <a href="#">Register here</a>
-                    </div>
-                    <button class="switch-portal" onclick="togglePortal('agent')">Agent & Partner Login</button>
-                </div>
-            </div>
 
-            <!-- AGENT PORTAL -->
-            <div id="agent-portal" class="portal-section">
-                <div class="login-header">
-                    <h1>Agent Portal</h1>
-                    <p>Access your listings, leads, and analytics.</p>
-                </div>
-                <div id="agent-alert" class="alert-box"></div>
-                <form onsubmit="handleLogin(event, 'agent')">
-                    <div class="form-group">
-                        <label class="form-label" for="agent-email">Work Email</label>
-                        <input type="email" id="agent-email" class="form-input" placeholder="agent@mnlakehomes.com" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="agent-password">Password</label>
-                        <input type="password" id="agent-password" class="form-input" placeholder="••••••••" required>
-                    </div>
-                    <button type="submit" class="form-submit agent">Agent Sign In</button>
-                </form>
-                <div class="bottom-links">
-                    <div class="create-act">
-                        Not in the network? <a href="join.html">Apply to join</a>
-                    </div>
-                    <button class="switch-portal" onclick="togglePortal('client')">&larr; Back to Client Login</button>
-                </div>
-            </div>
+                <div class="signup-divider">OR</div>
 
+                <a class="agent-btn" href="/pages/public/agent-login.html">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    Are you an agent? Sign in here &rarr;
+                </a>
+
+                <p class="signup-footnote">
+                    <strong style="color:#4a5568;">MinnesotaLakeHomesForSale.com</strong> is Minnesota's dedicated lakefront real estate network — connecting buyers, sellers, and renters to the state's top waterfront specialists. A subsidiary of <a href="/pages/public/commonrealtor.html" style="color:#4a5568;">CommonRealtor</a>, the AI-powered platform reimagining real estate.
+                </p>
+            </div>
         </div>
+
+        <div class="signup-right" aria-hidden="true"></div>
+
     </div>
 
-    <global-footer></global-footer>
-    <lead-modal></lead-modal>
-
-    <script src="../../components/components.js"></script>
     <script>
-        function togglePortal(target) {
-            document.querySelectorAll('.portal-section').forEach(el => el.classList.remove('active'));
-            document.getElementById(`${target}-portal`).classList.add('active');
-        }
+        async function handleLogin(event) {
+            event.preventDefault();
+            const alertEl = document.getElementById('login-alert');
+            const btn     = document.getElementById('login-submit');
 
-        // Auto-switch to agent portal if ?portal=agent or ?admin=1 in URL
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('portal') === 'agent' || urlParams.get('admin') === '1') {
-            togglePortal('agent');
-        }
+            alertEl.style.display = 'none';
+            alertEl.className = 'signup-alert';
 
-        // If already logged in, redirect away from login page
-        fetch('/api/auth/session')
-            .then(r => { if (r.ok) return r.json(); throw new Error('not_logged_in'); })
-            .then(data => {
-                if (data.role === 'super_admin' || data.role === 'admin') {
-                    window.location.href = '../admin/dashboard.html';
-                } else if (data.role === 'agent') {
-                    window.location.href = '../agent/dashboard.html';
-                } else {
-                    window.location.href = '../../index.html';
-                }
-            })
-            .catch(() => { /* Not logged in — stay on login page */ });
+            const payload = {
+                email:    document.getElementById('email').value.trim(),
+                password: document.getElementById('password').value
+            };
 
-        async function handleLogin(e, type) {
-            e.preventDefault();
-
-            const alertBox = document.getElementById(`${type}-alert`);
-            const submitBtn = e.target.querySelector('.form-submit');
-            const email = document.getElementById(`${type}-email`).value.trim();
-            const password = document.getElementById(`${type}-password`).value;
-
-            alertBox.style.display = 'none';
-            submitBtn.innerHTML = 'Signing in...';
-            submitBtn.style.opacity = '0.7';
-            submitBtn.disabled = true;
+            btn.disabled = true;
+            btn.textContent = 'Signing in…';
 
             try {
                 const res = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify(payload)
                 });
-
-                const data = await res.json();
+                const data = await res.json().catch(() => ({}));
 
                 if (!res.ok) {
-                    alertBox.className = 'alert-box alert-error';
-                    alertBox.textContent = data.error || 'Authentication failed.';
-                    alertBox.style.display = 'block';
-                    submitBtn.innerHTML = type === 'agent' ? 'Agent Sign In' : 'Sign In';
-                    submitBtn.style.opacity = '1';
-                    submitBtn.disabled = false;
+                    alertEl.textContent = data.error || 'Invalid email or password. Please try again.';
+                    alertEl.classList.add('error');
+                    alertEl.style.display = 'block';
                     return;
                 }
 
-                alertBox.className = 'alert-box alert-success';
-                alertBox.textContent = `Welcome back, ${data.display_name || data.email}! Redirecting...`;
-                alertBox.style.display = 'block';
-
-                setTimeout(() => {
-                    if (data.role === 'super_admin' || data.role === 'admin') {
-                        window.location.href = '../admin/dashboard.html';
-                    } else if (data.role === 'agent') {
-                        window.location.href = '../agent/dashboard.html';
-                    } else {
-                        window.location.href = '../../index.html';
-                    }
-                }, 1000);
-
+                // Success — route based on role
+                if (data.role === 'admin' || data.role === 'super_admin') {
+                    window.location.href = '/pages/admin/dashboard.html';
+                } else if (data.role === 'agent') {
+                    window.location.href = '/pages/agent/dashboard.html';
+                } else {
+                    window.location.href = '/index.html';
+                }
             } catch (err) {
-                alertBox.className = 'alert-box alert-error';
-                alertBox.textContent = 'Network error. Please try again.';
-                alertBox.style.display = 'block';
-                submitBtn.innerHTML = type === 'agent' ? 'Agent Sign In' : 'Sign In';
-                submitBtn.style.opacity = '1';
-                submitBtn.disabled = false;
+                console.error(err);
+                alertEl.textContent = 'Network error. Please check your connection and try again.';
+                alertEl.classList.add('error');
+                alertEl.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Sign in';
             }
         }
     </script>
 </body>
 </html>
-
-

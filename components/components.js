@@ -155,7 +155,7 @@ class GlobalHeader extends HTMLElement {
                     font-family: inherit; transition: background 0.2s;"
                     onmouseover="this.style.background='#1558c7'"
                     onmouseout="this.style.background='#1d6df2'">Get Started</button>
-                <a href="${rp}pages/public/signup.html" style="background: #fff; color: #1a202c; font-weight: 600;
+                <a href="${rp}pages/public/login.html" style="background: #fff; color: #1a202c; font-weight: 600;
                     border: none; padding: 0.55rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
                     font-family: inherit; transition: background 0.2s; text-decoration: none; display: inline-block;"
                     onmouseover="this.style.background='#edf2f7'"
