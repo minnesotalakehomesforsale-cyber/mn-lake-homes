@@ -727,7 +727,9 @@ body {
         margin-top: 2rem;
         padding: 0 1rem;
     }
-    .left-card, .right-card, .center-card {
+    /* Mobile: only show the center card, hide the flanking two */
+    .left-card, .right-card { display: none; }
+    .center-card {
         margin-top: 0;
         width: 100%;
         max-width: 480px;
