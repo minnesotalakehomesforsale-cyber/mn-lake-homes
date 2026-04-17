@@ -231,7 +231,7 @@ const submitForReview = async (req, res) => {
  */
 const getMyLeads = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user.userId;
         const { rows } = await pool.query(`
             SELECT l.id, l.full_name as name, l.first_name, l.email, l.phone,
                    l.message, l.lead_type as type, l.lead_source as source,
