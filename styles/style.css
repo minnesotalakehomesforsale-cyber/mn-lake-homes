@@ -476,6 +476,9 @@ body {
     z-index: 2;
 }
 
+/* Desktop hides the 4th card (it's only part of the mobile carousel) */
+.mobile-only-card { display: none; }
+
 /* Floating Promo */
 .floating-promo {
     position: fixed;
@@ -747,7 +750,7 @@ body {
     .nav-actions {
         display: none;
     }
-    /* Mobile hero: horizontal swipeable carousel of the three showcase cards */
+    /* Mobile hero: horizontal swipeable carousel — wraps infinitely via JS */
     .hero-showcase {
         flex-direction: row;
         align-items: center;
@@ -764,12 +767,12 @@ body {
         scrollbar-width: none;
     }
     .hero-showcase::-webkit-scrollbar { display: none; }
-    .left-card, .right-card, .center-card { display: block; }
-    .left-card, .right-card, .center-card {
+    .mobile-only-card { display: block; }
+    .left-card, .right-card, .center-card, .mobile-only-card {
         margin-top: 0;
-        flex: 0 0 82vw;
-        max-width: 380px;
-        height: 260px;
+        flex: 0 0 88vw;
+        max-width: 440px;
+        height: 340px;
         scroll-snap-align: center;
     }
     .hero-section { padding-bottom: 6rem; }
