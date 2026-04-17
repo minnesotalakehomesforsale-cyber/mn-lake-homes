@@ -18,6 +18,10 @@
         /* ─── Mobile overrides for the shared admin shell ─── */
         @media (max-width: 900px) {
             html, body { overflow-x: hidden; max-width: 100vw; }
+            /* Lock the page behind the sidebar while it's open —
+               only the sidebar itself is scrollable */
+            body.admin-side-open { overflow: hidden !important; height: 100vh; }
+            body.admin-side-open .admin-main { overflow: hidden; }
             .admin-wrap {
                 grid-template-columns: 1fr !important;
                 min-height: 100vh;
