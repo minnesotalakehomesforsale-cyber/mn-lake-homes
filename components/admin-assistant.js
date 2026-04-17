@@ -96,8 +96,18 @@
         .ai-asst-send:disabled { opacity: 0.4; cursor: not-allowed; }
         .ai-asst-hint { font-size: 0.68rem; color: #a0aec0; margin-top: 0.4rem; text-align: center; }
 
+        /* Hide the floating bubble whenever the panel is open — prevents
+           overlap on narrow viewports where the panel extends to the bottom */
+        body.ai-asst-open .ai-asst-bubble { display: none; }
+
         @media (max-width: 520px) {
-            .ai-asst-panel { width: calc(100vw - 32px); right: 16px; bottom: 88px; height: calc(100vh - 120px); }
+            .ai-asst-panel {
+                width: 100vw;
+                height: 100vh;
+                max-height: 100vh;
+                right: 0; bottom: 0; left: 0; top: 0;
+                border-radius: 0;
+            }
             .ai-asst-bubble { right: 16px; bottom: 16px; }
         }
     `;
@@ -316,10 +326,14 @@
     // ── Wire events ───────────────────────────────────────────────────────
     bubble.addEventListener('click', () => {
         panel.classList.add('open');
+        document.body.classList.add('ai-asst-open');
         if (!bodyEl.hasChildNodes()) loadHistory();
         setTimeout(() => inputEl.focus(), 100);
     });
-    closeBtn.addEventListener('click', () => panel.classList.remove('open'));
+    closeBtn.addEventListener('click', () => {
+        panel.classList.remove('open');
+        document.body.classList.remove('ai-asst-open');
+    });
     clearBtn.addEventListener('click', clearHistory);
     sendBtn.addEventListener('click', sendMessage);
 
