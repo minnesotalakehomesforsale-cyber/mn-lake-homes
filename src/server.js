@@ -44,6 +44,7 @@ app.use('/api/blog', require('./routes/blog.routes'));
 app.use('/api/tasks', require('./routes/task.routes'));
 app.use('/api/stripe', require('./routes/stripe.routes'));
 app.use('/api/inquiries', require('./routes/inquiry.routes'));
+app.use('/api/assistant', require('./routes/assistant.routes'));
 
 app.get('/api/health', (req, res) => {
     res.json({
@@ -147,6 +148,15 @@ async function ensureTables() {
                 completed_at TIMESTAMPTZ,
                 created_at   TIMESTAMPTZ DEFAULT NOW()
             );
+        `);
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS ai_chat_messages (
+                id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                role       TEXT NOT NULL,
+                content    TEXT NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_ai_chat_created ON ai_chat_messages(created_at);
         `);
         await pool.query(`
             CREATE TABLE IF NOT EXISTS contact_inquiries (
