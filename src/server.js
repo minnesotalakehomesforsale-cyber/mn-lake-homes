@@ -211,7 +211,24 @@ async function ensureTables() {
             CREATE INDEX IF NOT EXISTS idx_admin_tasks_due_date ON admin_tasks(due_date) WHERE is_completed = false;
         `);
 
-        // Activity log — site-wide audit trail of everything that happens
+        // Activity log — site-wide audit trail of everything that happens.
+        // If an older-schema activity_log table already exists (columns like
+        // entity_type/action/actor_user_id from database/schema.sql), rename it
+        // out of the way so the new schema below can be created fresh.
+        await pool.query(`
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.tables
+                    WHERE table_schema = 'public' AND table_name = 'activity_log'
+                ) AND NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_schema = 'public' AND table_name = 'activity_log' AND column_name = 'event_type'
+                ) THEN
+                    ALTER TABLE activity_log RENAME TO activity_log_legacy;
+                END IF;
+            END $$;
+        `);
         await pool.query(`
             CREATE TABLE IF NOT EXISTS activity_log (
                 id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),

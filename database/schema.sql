@@ -220,25 +220,26 @@ CREATE INDEX IF NOT EXISTS idx_lead_notes_user ON lead_notes(user_id);
 -- 7. ACTIVITY LOG (System Ledger)
 -- ==========================================
 CREATE TABLE IF NOT EXISTS activity_log (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    actor_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    
-    entity_type VARCHAR(100) NOT NULL,
-    entity_id UUID NOT NULL,
-    
-    action VARCHAR(100) NOT NULL,
-    action_label VARCHAR(255),
-    
-    old_value_json JSONB,
-    new_value_json JSONB,
-    meta_json JSONB,
-    
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
+    id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    event_type    TEXT NOT NULL,
+    event_scope   TEXT,
+    actor_type    TEXT,
+    actor_id      UUID,
+    actor_label   TEXT,
+    target_type   TEXT,
+    target_id     UUID,
+    target_label  TEXT,
+    details       JSONB,
+    ip_address    TEXT,
+    user_agent    TEXT,
+    severity      TEXT NOT NULL DEFAULT 'info',
+    created_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_activity_actor ON activity_log(actor_user_id);
-CREATE INDEX IF NOT EXISTS idx_activity_entity ON activity_log(entity_type, entity_id);
-CREATE INDEX IF NOT EXISTS idx_activity_action ON activity_log(action);
+CREATE INDEX IF NOT EXISTS idx_activity_log_created  ON activity_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_activity_log_type     ON activity_log(event_type);
+CREATE INDEX IF NOT EXISTS idx_activity_log_scope    ON activity_log(event_scope);
+CREATE INDEX IF NOT EXISTS idx_activity_log_severity ON activity_log(severity);
 
 -- ==========================================
 -- 8. SYSTEM SETTINGS

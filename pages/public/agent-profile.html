@@ -173,7 +173,7 @@
             const initials = agent.display_name.split(' ').map(n => n[0]).join('');
             const initialsAvatar = `<div style="display:inline-block; background: var(--accent-blue); color:#fff; width:120px; height:120px; border-radius:50%; line-height:120px; font-size:2.75rem; font-weight:800; margin-bottom:2rem;">${initials}</div>`;
             const avatarHtml = agent.profile_photo_url
-                ? `<img src="${agent.profile_photo_url}" alt="${agent.display_name}" onerror="this.outerHTML=${JSON.stringify(initialsAvatar)}" style="display:inline-block; width:120px; height:120px; border-radius:50%; object-fit:cover; margin-bottom:2rem; border:3px solid rgba(255,255,255,0.1); box-shadow:0 15px 40px rgba(0,0,0,0.3);">`
+                ? `<img id="agent-avatar-img" src="${agent.profile_photo_url}" alt="${agent.display_name}" style="display:inline-block; width:120px; height:120px; border-radius:50%; object-fit:cover; margin-bottom:2rem; border:3px solid rgba(255,255,255,0.1); box-shadow:0 15px 40px rgba(0,0,0,0.3);">`
                 : initialsAvatar;
             const topAgentPill = agent.is_featured
                 ? `<span title="Top Agent — featured on MN Lake Homes" style="display:inline-flex; align-items:center; gap:0.4rem; background:linear-gradient(135deg,#1d6df2 0%,#155bc8 100%); color:#fff; padding:0.4rem 1rem; border-radius:99px; font-size:0.8rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; box-shadow:0 4px 14px rgba(29,109,242,0.4); margin-left:0.5rem; vertical-align:middle;">
@@ -182,15 +182,28 @@
                    </span>`
                 : '';
 
+            const badgeLabel = agent.membership_badge || 'Agent';
+            const showPlainBadge = !(agent.is_featured && badgeLabel.trim().toLowerCase() === 'top agent');
+            const plainBadge = showPlainBadge
+                ? `<span style="display:inline-block; background:var(--accent-blue); color:#fff; padding:0.4rem 1.2rem; border-radius:99px; font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;">${badgeLabel}</span>`
+                : '';
+
             hero.innerHTML = `
                 ${avatarHtml}
                 <h1 style="font-size:3.5rem; font-weight:700; letter-spacing:-2px; margin-bottom:0.75rem;">${agent.display_name}</h1>
                 <p style="font-size:1.25rem; color:#a0aec0; margin-bottom:1.5rem;">${agent.brokerage_name || 'Independent Realtor'} &nbsp;·&nbsp; ${agent.city || 'Minnesota'}</p>
                 <div style="display:inline-flex; align-items:center; flex-wrap:wrap; justify-content:center; gap:0.25rem;">
-                    <span style="display:inline-block; background:var(--accent-blue); color:#fff; padding:0.4rem 1.2rem; border-radius:99px; font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;">${agent.membership_badge || 'Agent'}</span>
+                    ${plainBadge}
                     ${topAgentPill}
                 </div>
             `;
+
+            const avatarImg = document.getElementById('agent-avatar-img');
+            if (avatarImg) {
+                avatarImg.addEventListener('error', () => {
+                    avatarImg.outerHTML = initialsAvatar;
+                });
+            }
 
             // Specialties & areas pills
             const specPills = specialties.map(s =>
