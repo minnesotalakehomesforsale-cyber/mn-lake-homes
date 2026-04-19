@@ -748,28 +748,26 @@ body {
     .nav-actions {
         display: none;
     }
-    /* Mobile hero: horizontal swipeable carousel — wraps infinitely via JS */
+    /* Mobile hero: horizontal swipeable carousel */
     .hero-showcase {
         flex-direction: row;
-        align-items: center;
-        gap: 1rem;
-        margin-top: 2rem;
-        padding: 0 1rem 0.5rem;
-        width: 100%;
-        max-width: 100vw;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 1.5rem;
         overflow-x: auto;
-        overflow-y: hidden;
-        -webkit-overflow-scrolling: touch;
         scroll-snap-type: x mandatory;
-        scroll-padding: 1rem;
+        padding: 0 1.5rem 1.5rem;
         scrollbar-width: none;
+        -ms-overflow-style: none;
+        -webkit-overflow-scrolling: touch;
     }
     .hero-showcase::-webkit-scrollbar { display: none; }
     .left-card, .right-card, .center-card {
+        width: 100%;
+        max-width: none;
+        flex: 0 0 75vw;
+        height: 380px;
         margin-top: 0;
-        flex: 0 0 88vw;
-        max-width: 440px;
-        height: 340px;
         scroll-snap-align: center;
     }
     .hero-section { padding-bottom: 6rem; }
@@ -779,6 +777,12 @@ body {
 @media (max-width: 600px) {
     .title {
         font-size: 3rem;
+    }
+    .hero-section { padding: 3.5rem 0.75rem 3rem; }
+    .hero-content { align-items: center; text-align: center; }
+    .left-card, .right-card, .center-card {
+        flex: 0 0 78vw;
+        height: 320px;
     }
     .floating-promo {
         width: calc(100vw - 1.5rem);
