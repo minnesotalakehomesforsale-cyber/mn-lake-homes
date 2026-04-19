@@ -373,6 +373,119 @@
         @media (max-width: 780px) {
             .cr-footer-top { grid-template-columns: 1fr; gap: 2.5rem; }
         }
+
+        /* =========================================================
+           MOBILE RESPONSIVE — tablet + phone optimizations
+           ========================================================= */
+        @media (max-width: 900px) {
+            /* Nav */
+            .cr-nav { padding: 1rem 1.25rem; }
+            .cr-nav-links { display: none; }
+
+            /* Hero */
+            .cr-hero {
+                min-height: auto;
+                padding: 7rem 1.25rem 4rem;
+            }
+            .cr-hero h1 {
+                font-size: 2.75rem;
+                letter-spacing: -1.25px;
+                line-height: 1.05;
+                margin-bottom: 1.5rem;
+            }
+            .cr-hero h1 br { display: none; }
+            .cr-hero p {
+                font-size: 1rem;
+                line-height: 1.55;
+                margin-bottom: 2rem;
+            }
+            .cr-ai-badge {
+                font-size: 0.72rem;
+                padding: 0.4rem 0.8rem;
+                margin-bottom: 1.25rem;
+            }
+            .cr-hero-actions {
+                flex-direction: column;
+                gap: 0.75rem;
+                width: 100%;
+                max-width: 320px;
+                margin: 0 auto;
+            }
+            .cr-hero-actions .btn {
+                width: 100%;
+                padding: 1rem 1.5rem !important;
+                font-size: 1rem !important;
+            }
+            /* Remove the floating scroll chip on mobile — takes up valuable space */
+            .cr-scroll-chip { display: none; }
+
+            /* Platform section */
+            #platform { padding: 4rem 1.25rem !important; }
+            #platform .sp-title { font-size: 2.25rem !important; letter-spacing: -1px !important; }
+            #platform .sp-title br { display: none; }
+            #platform > div[style*="max-width: 800px"] > p { font-size: 1rem !important; }
+            .cr-feature-grid { margin-top: 2.5rem !important; gap: 1rem !important; }
+            .cr-feature { padding: 2rem 1.5rem !important; border-radius: 16px !important; }
+
+            /* Brands (dark) section */
+            #brands { padding: 4rem 1.25rem !important; }
+            #brands .sp-grid { gap: 2rem !important; padding: 0 !important; align-items: start !important; }
+            #brands .sp-media-wrapper { height: 260px !important; }
+            #brands > div > div:last-child { padding-left: 0 !important; }
+            #brands .sp-title { font-size: 2.25rem !important; letter-spacing: -1px !important; margin-bottom: 1.25rem !important; }
+            #brands .sp-title br { display: none; }
+            #brands p { font-size: 1rem !important; margin-bottom: 1.5rem !important; }
+
+            /* Contact */
+            #contact { padding: 4rem 1.25rem !important; }
+            .cr-contact-wrap { gap: 2.5rem; }
+            #contact h2 { font-size: 2rem !important; letter-spacing: -1px !important; margin-bottom: 1rem !important; }
+            #contact h2 br { display: none; }
+            #contact > div > div > p { font-size: 1rem !important; margin-bottom: 2rem !important; }
+            .cr-contact-form-container { padding: 1.75rem 1.5rem !important; border-radius: 16px !important; }
+            .cr-contact-form-container h3 { font-size: 1.4rem !important; }
+            .cr-contact-form-container p { font-size: 0.95rem !important; margin-bottom: 1.5rem !important; }
+            /* Fix the side-by-side email/phone inputs */
+            #cr-contact-form .form-group[style*="flex"] {
+                flex-direction: column !important;
+                gap: 0 !important;
+            }
+
+            /* Vision */
+            section[style*="padding: 7rem 2rem"] { padding: 4rem 1.25rem !important; }
+            section[style*="padding: 7rem 2rem"] h2 { font-size: 1.9rem !important; letter-spacing: -0.75px !important; }
+            section[style*="padding: 7rem 2rem"] h2 br { display: none; }
+            section[style*="padding: 7rem 2rem"] p { font-size: 1rem !important; }
+
+            /* Our Approach */
+            .sp-section[style*="padding: 8rem 2rem"] { padding: 4rem 1.25rem !important; }
+            .sp-section[style*="padding: 8rem 2rem"] > div {
+                grid-template-columns: 1fr !important;
+                gap: 2rem !important;
+            }
+            .sp-section[style*="padding: 8rem 2rem"] .sp-title { font-size: 2rem !important; letter-spacing: -0.75px !important; }
+            .sp-section[style*="padding: 8rem 2rem"] .sp-title br { display: none; }
+            .sp-section[style*="padding: 8rem 2rem"] p { font-size: 1rem !important; }
+            .sp-section[style*="padding: 8rem 2rem"] > div > div:last-child > div {
+                padding: 1.5rem !important;
+            }
+
+            /* Footer */
+            .cr-footer { padding: 3rem 1.25rem 2rem; }
+            .cr-newsletter-form { flex-direction: column; gap: 0.6rem; max-width: 100%; }
+            .cr-newsletter-form button { width: 100%; padding: 0.85rem !important; }
+            .cr-footer-disclosure { font-size: 0.7rem; }
+        }
+
+        @media (max-width: 480px) {
+            .cr-hero h1 { font-size: 2.25rem; letter-spacing: -1px; }
+            .cr-hero { padding: 6rem 1rem 3rem; }
+            .cr-ai-badge { font-size: 0.68rem; }
+            #platform .sp-title,
+            #brands .sp-title { font-size: 1.9rem !important; }
+            .cr-feature h3 { font-size: 1.05rem; }
+            .cr-feature p { font-size: 0.88rem; }
+        }
     </style>
 </head>
 <body style="background-color: #fff;">
