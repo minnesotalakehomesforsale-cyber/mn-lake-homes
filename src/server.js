@@ -275,8 +275,10 @@ async function ensureTables() {
               WHERE slug = 'top-10-minnesota-lakes-for-boating'    AND cover_image_url LIKE 'https://images.unsplash.com/%';
             UPDATE blog_posts SET cover_image_url = '/assets/images/mn-rustic-modern-lake-house.jpg'
               WHERE slug = 'how-to-stage-your-cabin-for-maximum-value' AND cover_image_url LIKE 'https://images.unsplash.com/%';
-            UPDATE blog_posts SET cover_image_url = '/assets/images/mn-wilderness-lake-dock.jpg'
+            UPDATE blog_posts SET cover_image_url = '/assets/images/mn-canoe-shore.webp'
               WHERE slug = 'discovering-the-magic-of-northern-minnesota' AND cover_image_url LIKE 'https://images.unsplash.com/%';
+            UPDATE blog_posts SET cover_image_url = '/assets/images/mn-canoe-shore.webp'
+              WHERE slug = 'discovering-the-magic-of-northern-minnesota' AND cover_image_url = '/assets/images/mn-wilderness-lake-dock.jpg';
             UPDATE blog_posts SET cover_image_url = '/assets/images/mn-cape-cod-lakefront.jpg'
               WHERE slug = '5-things-to-look-for-in-a-lake-property'    AND cover_image_url LIKE 'https://images.unsplash.com/%';
         `);

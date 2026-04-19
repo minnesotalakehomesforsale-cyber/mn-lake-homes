@@ -139,7 +139,7 @@ const posts = [
         slug: 'discovering-the-magic-of-northern-minnesota',
         tag: 'Community',
         read_time_minutes: 5,
-        cover_image_url: '/assets/images/mn-wilderness-lake-dock.jpg',
+        cover_image_url: '/assets/images/mn-canoe-shore.webp',
         is_published: true,
         published_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
         excerpt: "Northern Minnesota lake country is more than a destination — it's a mindset. For those who've spent a week up north, no explanation is needed. For those who haven't, here's what you're missing — and where to consider buying.",
