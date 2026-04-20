@@ -310,12 +310,101 @@
             .agent-hero-split { grid-template-columns: 1fr !important; gap: 2rem !important; }
             .pricing-cards { flex-direction: column; align-items: stretch; gap: 1.5rem; }
             .pricing-card { width: 100% !important; max-width: 500px; margin: 0 auto; }
+            .pricing-grid { grid-template-columns: 1fr !important; max-width: 500px; }
         }
         @media (max-width: 600px) {
-            .join-hero { padding: 8rem 1.25rem 4rem !important; }
+            /* ── Hero ─────────────────────────────────────────────────────── */
+            .join-hero,
+            section[style*="padding: 12rem 2rem 5rem"] {
+                padding: 7rem 1.25rem 3.5rem !important;
+            }
+            .join-hero h1,
+            section[style*="padding: 12rem 2rem 5rem"] > h1 {
+                font-size: 2.6rem !important;
+                letter-spacing: -1.25px !important;
+                line-height: 1.1 !important;
+                margin-bottom: 1.25rem !important;
+            }
+            .join-hero h1 br { display: none; }
+            .join-hero + * p,
+            section[style*="padding: 12rem 2rem 5rem"] > p {
+                font-size: 1.02rem !important;
+                margin-bottom: 1.75rem !important;
+            }
+            /* ── Section headings across the page ─────────────────────────── */
+            .value-section,
+            .analytics-section,
+            .pricing-section {
+                padding: 4rem 1.25rem !important;
+            }
+            .value-section h2 { font-size: 1.85rem !important; }
+            .value-section p  { font-size: 1rem !important; }
+            .value-title { font-size: 1.2rem !important; }
+            .value-desc { font-size: 0.98rem !important; }
+            .value-icon { width: 52px; height: 52px; margin-bottom: 1rem; }
+            /* ── Stats ────────────────────────────────────────────────────── */
+            .stat-number { font-size: 2.8rem !important; }
+            .stat-label { font-size: 0.85rem !important; letter-spacing: 0.75px !important; }
+            /* ── Pricing ──────────────────────────────────────────────────── */
+            .pricing-header h2 { font-size: 1.85rem !important; }
+            .pricing-header p  { font-size: 1rem !important; }
+            .pricing-card {
+                max-width: 100% !important;
+                padding: 2rem 1.5rem !important;
+            }
+            .pricing-card.popular { padding: 2.5rem 1.5rem !important; }
+            .plan-price { font-size: 2.2rem !important; }
+            .pricing-btn { font-size: 1rem !important; padding: 1.05rem !important; }
+            /* ── Testimonials ─────────────────────────────────────────────── */
+            .testimonial-quote { font-size: 1.15rem !important; line-height: 1.5 !important; }
+            .testimonial-media,
+            .testimonial-slide img { max-width: 100% !important; height: 240px !important; }
+            .slide-nav-btn { min-width: 44px; min-height: 44px; font-size: 1.1rem; }
+            /* ── Final CTA ────────────────────────────────────────────────── */
+            section[style*="padding: 8rem 2rem"][style*="border-top"] {
+                padding: 4rem 1.25rem !important;
+            }
+            section[style*="padding: 8rem 2rem"][style*="border-top"] h2 {
+                font-size: 2.1rem !important;
+                margin-bottom: 1rem !important;
+            }
+            section[style*="padding: 8rem 2rem"][style*="border-top"] p {
+                font-size: 1rem !important;
+                margin-bottom: 1.75rem !important;
+            }
+            section[style*="padding: 8rem 2rem"][style*="border-top"] .btn {
+                padding: 1.05rem 1.75rem !important;
+                font-size: 1rem !important;
+            }
+            /* ── Join overlay form ────────────────────────────────────────── */
+            #join-overlay {
+                width: 100vw !important;
+                height: 100vh !important;
+                height: 100dvh !important;
+                overflow-y: auto !important;
+                overscroll-behavior: contain !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+            #join-overlay > div:nth-child(3) {
+                padding: 4.5rem 1rem 2rem !important;
+                min-height: 100vh;
+                min-height: 100dvh;
+            }
+            #join-overlay .coo-close,
+            #join-overlay [onclick="closeJoinForm()"] {
+                width: 44px !important;
+                height: 44px !important;
+            }
+            #join-question { font-size: 1.75rem !important; }
             .reg-form-container { padding: 2rem 1.5rem !important; border-radius: 14px !important; }
             .reg-form-container h2 { font-size: 1.8rem !important; }
             .reg-form .form-row { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 400px) {
+            section[style*="padding: 12rem 2rem 5rem"] > h1 { font-size: 2.15rem !important; }
+            .stat-number { font-size: 2.4rem !important; }
+            .plan-price  { font-size: 1.9rem !important; }
+            #join-question { font-size: 1.5rem !important; }
         }
     </style>
     <script src="../../components/components.js" defer>
@@ -642,7 +731,7 @@
     <global-footer></global-footer>
 
     <!-- Agent Join Popup — matches openForm() full-screen style exactly -->
-    <div id="join-overlay" style="display:none;position:fixed;inset:0;z-index:9000;background:#fff;font-family:'Inter',sans-serif;">
+    <div id="join-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;height:100dvh;z-index:9000;background:#fff;font-family:'Inter',sans-serif;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;">
         <!-- Progress bar -->
         <div style="position:absolute;top:0;left:0;right:0;height:4px;background:#f0f4f8;">
             <div id="join-bar" style="height:100%;background:#1d6df2;width:0%;transition:width 0.4s ease;border-radius:0 99px 99px 0;"></div>
@@ -768,19 +857,43 @@
             }
         }
 
+        // iOS-safe scroll lock (body { overflow: hidden } alone doesn't
+        // stop touch-scroll behind the overlay on Safari — pin position).
+        function _joinLockScroll() {
+            const y = window.scrollY || window.pageYOffset || 0;
+            document.body.dataset.joinSavedY = String(y);
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${y}px`;
+            document.body.style.left = '0';
+            document.body.style.right = '0';
+            document.body.style.width = '100%';
+            document.body.style.overflow = 'hidden';
+        }
+        function _joinUnlockScroll() {
+            const saved = Number(document.body.dataset.joinSavedY || 0);
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            delete document.body.dataset.joinSavedY;
+            window.scrollTo(0, saved);
+        }
+
         function openJoinForm() {
             _js = { step: 0, data: {} };
             document.getElementById('join-success').style.display = 'none';
             document.getElementById('join-body').style.display = 'block';
             document.getElementById('join-back').style.visibility = 'hidden';
             document.getElementById('join-overlay').style.display = 'block';
-            document.body.style.overflow = 'hidden';
+            _joinLockScroll();
             _joinRender();
         }
 
         function closeJoinForm() {
             document.getElementById('join-overlay').style.display = 'none';
-            document.body.style.overflow = '';
+            _joinUnlockScroll();
         }
 
         function joinGoBack() {
