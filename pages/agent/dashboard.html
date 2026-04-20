@@ -41,6 +41,7 @@
         .acct-badge.featured { background: #ebf4ff; color: #1d6df2; }
         .acct-badge.top { background: #fff8e1; color: #b45309; }
         .acct-badge.verified { background: #f0fff4; color: #2f855a; }
+        .field-hint { font-size: 0.75rem; color: #718096; margin: 0.15rem 0 0.5rem; line-height: 1.45; }
 
         /* ── Mobile ≤ 900px: collapse sidebar, single-column forms ────────── */
         @media (max-width: 900px) {
@@ -177,31 +178,75 @@
 
                         <h3 class="form-section-title">Core Information</h3>
                         <div class="grid-2">
-                            <div class="form-group-sys"><label>Display Name *</label><input type="text" id="f-name" class="input-sys" placeholder="E.g., David Chen" required oninput="calcProgress()"></div>
-                            <div class="form-group-sys"><label>Brokerage Name *</label><input type="text" id="f-brokerage" class="input-sys" placeholder="E.g., Lakeshore Realty Group" required oninput="calcProgress()"></div>
+                            <div class="form-group-sys">
+                                <label>Display Name *</label>
+                                <p class="field-hint">How your name appears on your public profile, agent cards, and lake pages.</p>
+                                <input type="text" id="f-name" class="input-sys" placeholder="E.g., David Chen" required oninput="calcProgress()">
+                            </div>
+                            <div class="form-group-sys">
+                                <label>Brokerage Name *</label>
+                                <p class="field-hint">The firm you're licensed under. Shown beside your name on listings.</p>
+                                <input type="text" id="f-brokerage" class="input-sys" placeholder="E.g., Lakeshore Realty Group" required oninput="calcProgress()">
+                            </div>
                         </div>
                         <div class="grid-2">
-                            <div class="form-group-sys"><label>License Number</label><input type="text" id="f-license" class="input-sys"></div>
-                            <div class="form-group-sys"><label>Years of Experience</label><input type="number" id="f-exp" class="input-sys"></div>
+                            <div class="form-group-sys">
+                                <label>License Number</label>
+                                <p class="field-hint">Your state real estate license ID (e.g., MN-40012345). Helps us verify you.</p>
+                                <input type="text" id="f-license" class="input-sys">
+                            </div>
+                            <div class="form-group-sys">
+                                <label>Years of Experience</label>
+                                <p class="field-hint">Total years you've been a licensed agent — shown as a stat on your profile.</p>
+                                <input type="number" id="f-exp" class="input-sys">
+                            </div>
                         </div>
 
                         <h3 class="form-section-title">Public Contact Details</h3>
                         <div class="grid-2">
-                            <div class="form-group-sys"><label>Public Phone *</label><input type="tel" id="f-phone" class="input-sys" placeholder="(612) 555-0101" required oninput="calcProgress()"></div>
-                            <div class="form-group-sys"><label>Public Email</label><input type="email" id="f-email" class="input-sys" placeholder="hello@davidchen.com"></div>
+                            <div class="form-group-sys">
+                                <label>Public Phone *</label>
+                                <p class="field-hint">The number clients will call and text. We also text you lead notifications here.</p>
+                                <input type="tel" id="f-phone" class="input-sys" placeholder="(612) 555-0101" required oninput="calcProgress()">
+                            </div>
+                            <div class="form-group-sys">
+                                <label>Public Email</label>
+                                <p class="field-hint">The email shown on your profile and where public inquiries arrive. Leave blank to route to your login email.</p>
+                                <input type="email" id="f-email" class="input-sys" placeholder="hello@davidchen.com">
+                            </div>
                         </div>
-                        <div class="form-group-sys" style="margin-bottom: 3rem;"><label>Personal Website URL</label><input type="url" id="f-web" class="input-sys"></div>
+                        <div class="form-group-sys" style="margin-bottom: 3rem;">
+                            <label>Personal Website URL</label>
+                            <p class="field-hint">Your personal, team, or brokerage site. Linked as a button from your public profile.</p>
+                            <input type="url" id="f-web" class="input-sys" placeholder="https://yoursite.com">
+                        </div>
 
                         <h3 class="form-section-title">Market Expertise</h3>
-                        <p style="font-size: 0.9rem; color: #718096; margin-bottom: 1.5rem;">Separate items with commas.</p>
+                        <p style="font-size: 0.9rem; color: #718096; margin-bottom: 1.5rem;">Separate multiple items with commas.</p>
                         <div class="grid-2">
-                            <div class="form-group-sys"><label>Primary City *</label><input type="text" id="f-city" class="input-sys" placeholder="E.g., Wayzata" required oninput="calcProgress()"></div>
-                            <div class="form-group-sys"><label>Service Areas *</label><input type="text" id="f-areas" class="input-sys" placeholder="Lake Minnetonka, Brainerd" required oninput="calcProgress()"></div>
+                            <div class="form-group-sys">
+                                <label>Primary City *</label>
+                                <p class="field-hint">Your home base — the main city or lake town you work out of.</p>
+                                <input type="text" id="f-city" class="input-sys" placeholder="E.g., Wayzata" required oninput="calcProgress()">
+                            </div>
+                            <div class="form-group-sys">
+                                <label>Service Areas *</label>
+                                <p class="field-hint">Lakes and towns you cover. Improves matches with buyer searches. Comma-separated.</p>
+                                <input type="text" id="f-areas" class="input-sys" placeholder="Lake Minnetonka, Brainerd" required oninput="calcProgress()">
+                            </div>
                         </div>
-                        <div class="form-group-sys" style="margin-bottom: 3rem;"><label>Specialties *</label><input type="text" id="f-specs" class="input-sys" placeholder="Luxury Waterfront, Relocation" required oninput="calcProgress()"></div>
+                        <div class="form-group-sys" style="margin-bottom: 3rem;">
+                            <label>Specialties *</label>
+                            <p class="field-hint">Your focus areas — helps us route the right leads to you. Comma-separated.</p>
+                            <input type="text" id="f-specs" class="input-sys" placeholder="Luxury Waterfront, Relocation" required oninput="calcProgress()">
+                        </div>
 
                         <h3 class="form-section-title">Professional Narrative</h3>
-                        <div class="form-group-sys" style="margin-bottom: 3rem;"><label>Agent Bio *</label><textarea id="f-bio" class="input-sys" rows="6" placeholder="Professional overview..." required oninput="calcProgress()"></textarea></div>
+                        <div class="form-group-sys" style="margin-bottom: 3rem;">
+                            <label>Agent Bio *</label>
+                            <p class="field-hint">Your pitch — experience, approach, and what makes you different. 2–4 short paragraphs work best.</p>
+                            <textarea id="f-bio" class="input-sys" rows="6" placeholder="Professional overview..." required oninput="calcProgress()"></textarea>
+                        </div>
                     </form>
                 </div>
 
