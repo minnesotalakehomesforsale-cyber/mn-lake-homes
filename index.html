@@ -495,6 +495,21 @@
             window.addEventListener('scroll', update, { passive: true });
             window.addEventListener('resize', update, { passive: true });
         });
+
+        // Mobile hero carousel: start on the center card (swipe L/R to see the others).
+        (function centerHeroCarousel() {
+            const shelf = document.querySelector('.hero-showcase');
+            const center = document.querySelector('.hero-showcase .center-card');
+            if (!shelf || !center) return;
+            const snap = () => {
+                if (window.innerWidth > 600) return;
+                const left = center.offsetLeft - (shelf.clientWidth - center.clientWidth) / 2;
+                shelf.scrollTo({ left, behavior: 'instant' in shelf.scrollTo ? 'instant' : 'auto' });
+            };
+            if (document.readyState === 'complete') snap();
+            else window.addEventListener('load', snap);
+            window.addEventListener('resize', snap, { passive: true });
+        })();
     </script>
 </body>
 </html>

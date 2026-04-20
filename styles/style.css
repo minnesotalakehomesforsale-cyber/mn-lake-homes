@@ -799,21 +799,12 @@ body {
     .subtitle { font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 1rem; }
     .hero-content { align-items: center; text-align: center; }
     .hero-section { padding: 3.5rem 0.75rem 3rem; }
-    /* Show only the center image on phones */
-    .hero-showcase {
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        overflow: visible;
-        padding: 0 1rem 1.5rem;
-    }
+    /* 3-card swipeable carousel — JS snaps it to the center card on load */
     .hero-showcase .left-card,
-    .hero-showcase .right-card { display: none; }
+    .hero-showcase .right-card,
     .hero-showcase .center-card {
-        flex: 0 0 auto;
-        width: 100%;
-        max-width: 420px;
-        height: 420px;
+        flex: 0 0 78vw;
+        height: 320px;
     }
     /* Floating banner becomes a full-screen glass overlay */
     .floating-promo {
