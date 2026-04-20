@@ -28,7 +28,24 @@
         { q: "One more — confirm your password.",                  hint: 'Must match the password above.',                                                                 field: 'confirm',  type: 'password', ph: '••••••••',                required: true },
     ];
 
-    const MAX_SERVICE_AREAS = 10;
+    // Admin-tunable via app_config.signup_max_service_areas. We fetch the
+    // current cap from /api/config/public the first time the tags step
+    // renders. If the fetch fails we fall back to 10.
+    let MAX_SERVICE_AREAS = 10;
+    let _capFetched = false;
+    async function _loadSignupCap() {
+        if (_capFetched) return MAX_SERVICE_AREAS;
+        _capFetched = true;
+        try {
+            const r = await fetch('/api/config/public');
+            if (r.ok) {
+                const cfg = await r.json();
+                const n = Number(cfg.signupMaxServiceAreas);
+                if (Number.isFinite(n) && n > 0) MAX_SERVICE_AREAS = Math.floor(n);
+            }
+        } catch (_) { /* keep fallback */ }
+        return MAX_SERVICE_AREAS;
+    }
 
     const iStyle = 'width:100%;padding:1rem 1.25rem;border:2px solid #e2e8f0;border-radius:12px;font-family:inherit;font-size:1.15rem;box-sizing:border-box;outline:none;transition:border-color 0.2s;background:#fff;text-align:center;';
     const focus  = `onfocus="this.style.borderColor='#1d6df2'" onblur="this.style.borderColor='#e2e8f0'"`;
@@ -305,7 +322,7 @@
 
         searchEl.addEventListener('input', renderList);
 
-        _loadTagsCatalog().then(() => {
+        Promise.all([_loadTagsCatalog(), _loadSignupCap()]).then(() => {
             renderPills();
             renderList();
             setTimeout(() => searchEl.focus(), 80);

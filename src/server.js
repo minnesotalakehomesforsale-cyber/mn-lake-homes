@@ -128,9 +128,22 @@ app.use('/api', (err, req, res, next) => {
 // ==========================================
 // PUBLIC CONFIG (safe-to-expose env values for the frontend)
 // ==========================================
-app.get('/api/config/public', (req, res) => {
+app.get('/api/config/public', async (req, res) => {
+    // Pull a few admin-tunable knobs from app_config. Safe defaults if
+    // the table doesn't exist yet (first boot on a stale DB).
+    let signupMaxServiceAreas = 10;
+    try {
+        const pool = require('./database/pool');
+        const { rows } = await pool.query(
+            `SELECT value FROM app_config WHERE key = 'signup_max_service_areas'`
+        );
+        const n = Number(rows[0]?.value);
+        if (Number.isFinite(n) && n > 0) signupMaxServiceAreas = Math.floor(n);
+    } catch (_) { /* degrade to default */ }
+
     res.json({
-        googlePlacesKey: process.env.GOOGLE_PLACES_API_KEY || ''
+        googlePlacesKey: process.env.GOOGLE_PLACES_API_KEY || '',
+        signupMaxServiceAreas,
     });
 });
 
@@ -411,7 +424,8 @@ async function ensureTables() {
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
             INSERT INTO app_config (key, value, description) VALUES
-                ('match_radius_miles', '15'::jsonb, 'Default radius (miles) used to match leads to tagged users.')
+                ('match_radius_miles',        '15'::jsonb, 'Default radius (miles) used to match leads to tagged users.'),
+                ('signup_max_service_areas',  '10'::jsonb, 'Max service-area tags an agent can pick during self-signup. Admins are not capped.')
             ON CONFLICT (key) DO NOTHING;
         `);
 

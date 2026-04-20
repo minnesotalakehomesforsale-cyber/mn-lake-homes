@@ -107,10 +107,21 @@ const register = async (req, res) => {
         return res.status(400).json({ error: 'Invalid email format.' });
     }
 
-    // Normalize incoming service-area tag ids: array of UUIDs, capped at 10.
+    // Normalize incoming service-area tag ids: array of UUIDs, capped by
+    // the admin-tunable app_config.signup_max_service_areas (default 10).
+    // Admins editing an agent from pages/admin/agent-review.html go
+    // through /api/tags/users/:userId which has no cap.
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    let signupCap = 10;
+    try {
+        const capRes = await pool.query(
+            `SELECT value FROM app_config WHERE key = 'signup_max_service_areas'`
+        );
+        const n = Number(capRes.rows[0]?.value);
+        if (Number.isFinite(n) && n > 0) signupCap = Math.floor(n);
+    } catch (_) { /* keep default */ }
     const tagIds = Array.isArray(service_area_tag_ids)
-        ? service_area_tag_ids.filter(id => typeof id === 'string' && UUID_RE.test(id)).slice(0, 10)
+        ? service_area_tag_ids.filter(id => typeof id === 'string' && UUID_RE.test(id)).slice(0, signupCap)
         : [];
 
     const client = await pool.connect();
