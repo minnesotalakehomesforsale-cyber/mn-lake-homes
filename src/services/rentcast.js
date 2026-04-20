@@ -77,8 +77,31 @@ function classifyConfidence(record) {
     return 'low';
 }
 
+// Fetch helper — swallows network errors, returns parsed JSON or null.
+async function rcFetch(path, apiKey) {
+    try {
+        const resp = await fetch(`${API_BASE}${path}`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json', 'X-Api-Key': apiKey },
+        });
+        if (!resp.ok) {
+            const body = await resp.text().catch(() => '');
+            console.error(`[cash-offer] RentCast HTTP ${resp.status} ${path} — ${body.slice(0, 200)}`);
+            return null;
+        }
+        return await resp.json();
+    } catch (err) {
+        console.error(`[cash-offer] RentCast fetch ${path} failed:`, err.message);
+        return null;
+    }
+}
+
 /**
  * Public API — lookupProperty(formattedAddress)
+ *
+ * Calls BOTH `/properties` (facts: beds/baths/sqft/yearBuilt/lotSize/lastSale)
+ * AND `/avm/value` (the actual AVM). RentCast's `/properties` endpoint does
+ * not return an AVM, so we must hit both and merge the results.
  *
  * @param {string} formattedAddress — full street address from Google Places
  * @returns {Promise<{ propertyData: Object|null, confidence: 'high'|'medium'|'low' }>}
@@ -93,40 +116,40 @@ async function lookupProperty(formattedAddress) {
         return { propertyData: null, confidence: 'low' };
     }
 
-    const url = `${API_BASE}/properties?address=${encodeURIComponent(formattedAddress)}`;
+    const addr = encodeURIComponent(formattedAddress);
 
-    try {
-        const resp = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'X-Api-Key': apiKey,
-            },
-        });
+    // Fire both requests in parallel — AVM endpoint does NOT return facts,
+    // facts endpoint does NOT return AVM, so we need both.
+    const [propsPayload, avmPayload] = await Promise.all([
+        rcFetch(`/properties?address=${addr}`, apiKey),
+        rcFetch(`/avm/value?address=${addr}`, apiKey),
+    ]);
 
-        if (!resp.ok) {
-            console.error(`[cash-offer] RentCast HTTP ${resp.status} for "${formattedAddress}"`);
-            return { propertyData: null, confidence: 'low' };
-        }
+    // Properties endpoint returns an array; grab the first match.
+    const propsFirst = Array.isArray(propsPayload) ? propsPayload[0] : propsPayload;
+    const record = normalizeRecord(propsFirst) || {
+        beds: null, baths: null, sqft: null, yearBuilt: null, lotSize: null,
+        lastSaleDate: null, lastSalePrice: null, avm: null,
+    };
 
-        const payload = await resp.json();
+    // Overlay the AVM from the dedicated AVM endpoint if present.
+    // RentCast returns { price, priceRangeLow, priceRangeHigh, ... }.
+    const num = (v) => {
+        if (v === null || v === undefined || v === '') return null;
+        const n = Number(v);
+        return Number.isFinite(n) ? n : null;
+    };
+    const avmFromEndpoint = num(avmPayload?.price ?? avmPayload?.value);
+    if (avmFromEndpoint) {
+        record.avm = avmFromEndpoint;
+    }
 
-        // RentCast returns an array; grab the best match (first element).
-        const first = Array.isArray(payload) ? payload[0] : payload;
-        if (!first) return { propertyData: null, confidence: 'low' };
-
-        const record = normalizeRecord(first);
-        const confidence = classifyConfidence(record);
-
-        if (confidence === 'low') {
-            return { propertyData: null, confidence: 'low' };
-        }
-
-        return { propertyData: record, confidence };
-    } catch (err) {
-        console.error('[cash-offer] RentCast lookup failed:', err.message);
+    const confidence = classifyConfidence(record);
+    if (!record.avm && confidence === 'low') {
         return { propertyData: null, confidence: 'low' };
     }
+
+    return { propertyData: record, confidence };
 }
 
 module.exports = { lookupProperty };

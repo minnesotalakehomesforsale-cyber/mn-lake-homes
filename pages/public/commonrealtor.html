@@ -690,7 +690,7 @@
         }
         #cash-offer-overlay.open { display: block; }
         .coo-progress { position: sticky; top: 0; left: 0; right: 0; height: 4px; background: #f0f4f8; z-index: 5; }
-        .coo-progress-bar { height: 100%; background: #1d6df2; width: 0%; transition: width 0.4s ease; border-radius: 0 99px 99px 0; }
+        .coo-progress-bar { height: 100%; background: #dc2626; width: 0%; transition: width 0.4s ease; border-radius: 0 99px 99px 0; }
         .coo-chrome {
             position: absolute; top: 0; left: 0; right: 0;
             padding: 1.25rem 1.75rem;
@@ -734,7 +734,7 @@
         .coo-spinner {
             width: 52px; height: 52px; border-radius: 50%;
             border: 4px solid #e2e8f0;
-            border-top-color: #1d6df2;
+            border-top-color: #dc2626;
             animation: coo-spin 0.9s linear infinite;
             margin: 0 auto 1.5rem;
         }
@@ -742,15 +742,15 @@
         .coo-calc-anim {
             width: 84px; height: 84px;
             border-radius: 18px;
-            background: linear-gradient(135deg, #1d6df2, #22d3ee);
+            background: linear-gradient(135deg, #dc2626, #ef4444);
             display: flex; align-items: center; justify-content: center;
             color: #fff; margin: 0 auto 1.75rem;
-            box-shadow: 0 20px 40px rgba(29,109,242,0.3);
+            box-shadow: 0 20px 40px rgba(220,38,38,0.3);
             animation: coo-pulse 1.6s ease-in-out infinite;
         }
         @keyframes coo-pulse {
-            0%,100% { transform: scale(1); box-shadow: 0 20px 40px rgba(29,109,242,0.3); }
-            50%     { transform: scale(1.06); box-shadow: 0 25px 55px rgba(29,109,242,0.5); }
+            0%,100% { transform: scale(1); box-shadow: 0 20px 40px rgba(220,38,38,0.3); }
+            50%     { transform: scale(1.06); box-shadow: 0 25px 55px rgba(220,38,38,0.5); }
         }
 
         .coo-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
@@ -770,8 +770,8 @@
             transition: border-color 0.15s, box-shadow 0.15s;
         }
         .coo-input:focus {
-            outline: none; border-color: #1d6df2;
-            box-shadow: 0 0 0 3px rgba(29,109,242,0.1);
+            outline: none; border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220,38,38,0.1);
         }
         select.coo-input { appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>"); background-repeat: no-repeat; background-position: right 1rem center; padding-right: 2.5rem; cursor: pointer; }
         .coo-consent {
@@ -828,7 +828,7 @@
             letter-spacing: -3px;
             line-height: 1;
             text-align: center;
-            background: linear-gradient(135deg, #1d6df2 0%, #22d3ee 100%);
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
