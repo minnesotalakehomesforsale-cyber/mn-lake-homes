@@ -15,142 +15,128 @@
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-        html, body { min-height: 100vh; -webkit-font-smoothing: antialiased; }
+        html, body { min-height: 100vh; -webkit-font-smoothing: antialiased; background-color: #fff; color: #1a202c; }
 
-        .login-split {
+        .signup-split {
             display: grid;
-            grid-template-columns: 480px 1fr;
+            grid-template-columns: minmax(360px, 520px) 1fr;
             min-height: 100vh;
         }
 
-        /* ── Left: form ── */
-        .login-left {
+        .signup-left {
             display: flex;
             flex-direction: column;
             padding: 2.5rem 3rem;
-            background: #fff;
+            overflow-y: auto;
         }
 
-        .login-brand {
+        .signup-brand {
             display: inline-flex;
             align-items: center;
             gap: 0.6rem;
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 1.05rem;
+            letter-spacing: -0.3px;
             color: #1a202c;
             text-decoration: none;
-            margin-bottom: 1rem;
+            margin-bottom: 3.5rem;
         }
-        .login-brand svg { color: #1a202c; }
+        .signup-brand svg { color: #1a202c; }
 
-        .login-form-wrap {
-            max-width: 360px;
+        .signup-form-wrap {
+            max-width: 400px;
             width: 100%;
             margin: auto 0;
+            padding-bottom: 2rem;
         }
 
-        .login-form-wrap h1 {
-            font-size: 1.6rem;
+        .signup-header h1 {
+            font-size: 1.7rem;
             font-weight: 800;
             letter-spacing: -0.5px;
-            color: #1a202c;
             margin-bottom: 0.4rem;
         }
-        .login-form-wrap .login-sub {
-            color: #718096;
-            font-size: 0.9rem;
+        .signup-header p {
+            color: #4a5568;
+            font-size: 0.92rem;
             line-height: 1.5;
             margin-bottom: 2rem;
         }
 
-        .field { margin-bottom: 1.25rem; }
-        .field label {
+        .signup-form .form-group { margin-bottom: 1rem; }
+        .signup-form .form-label {
             display: block;
             font-size: 0.8rem;
             font-weight: 600;
             color: #4a5568;
             margin-bottom: 0.4rem;
         }
-        .field input {
+        .signup-form .form-input {
             width: 100%;
-            padding: 0.85rem 1rem;
-            border: 1.5px solid #e2e8f0;
+            padding: 0.9rem 1rem;
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
             font-family: inherit;
             font-size: 0.95rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            transition: all 0.2s;
             box-sizing: border-box;
             background: #fff;
-            color: #1a202c;
         }
-        .field input:focus {
+        .signup-form .form-input:focus {
             outline: none;
             border-color: #1d6df2;
-            box-shadow: 0 0 0 3px rgba(29, 109, 242, 0.12);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
         }
 
-        .login-alert {
-            display: none;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        .login-alert.error   { background: #fff5f5; color: #c53030; border: 1px solid #feb2b2; }
-        .login-alert.success { background: #f0fff4; color: #276749; border: 1px solid #9ae6b4; }
-
-        .login-submit {
+        .signup-submit {
             width: 100%;
-            padding: 0.9rem;
+            padding: 0.95rem;
             font-size: 0.95rem;
-            font-weight: 700;
+            font-weight: 600;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            background: #1a202c;
+            transition: all 0.2s;
+            margin-top: 0.75rem;
+            background-color: #6b8afd;
             color: #fff;
-            font-family: inherit;
-            transition: background 0.2s;
-            margin-top: 0.25rem;
         }
-        .login-submit:hover:not(:disabled) { background: #2d3748; }
-        .login-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+        .signup-submit:hover:not(:disabled) { background-color: #5774dd; }
+        .signup-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        .login-links {
-            margin-top: 1.75rem;
+        .signup-alert {
+            display: none;
+            padding: 0.85rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
             font-size: 0.88rem;
-            color: #718096;
+            font-weight: 500;
         }
-        .login-links a {
-            color: #1a202c;
-            font-weight: 600;
-            text-decoration: none;
-        }
-        .login-links a:hover { text-decoration: underline; }
+        .signup-alert.error   { background-color: #fff5f5; color: #c53030; border: 1px solid #feb2b2; }
+        .signup-alert.success { background-color: #f0fff4; color: #276749; border: 1px solid #9ae6b4; }
 
-        .login-divider {
+        .signup-divider {
             display: flex;
             align-items: center;
             gap: 0.75rem;
             margin: 1.5rem 0;
-            color: #cbd5e0;
+            color: #a0aec0;
             font-size: 0.78rem;
             font-weight: 500;
         }
-        .login-divider::before, .login-divider::after {
+        .signup-divider::before, .signup-divider::after {
             content: '';
             flex: 1;
             height: 1px;
             background: #edf2f7;
         }
 
-        .login-alt-btn {
+        .agent-btn {
             width: 100%;
-            padding: 0.8rem;
-            font-size: 0.88rem;
+            padding: 0.85rem;
+            font-size: 0.9rem;
             font-weight: 600;
-            border: 1.5px solid #e2e8f0;
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
             background: #fff;
             color: #1a202c;
@@ -161,31 +147,35 @@
             justify-content: center;
             gap: 0.5rem;
             transition: border-color 0.2s, background 0.2s;
-            font-family: inherit;
         }
-        .login-alt-btn:hover { border-color: #cbd5e0; background: #f7f9fa; }
+        .agent-btn:hover { border-color: #cbd5e0; background: #f7f9fa; }
 
-        .login-footer {
-            display: flex;
-            gap: 2rem;
-            justify-content: center;
-            padding-top: 2rem;
-            font-size: 0.78rem;
+        .new-note {
+            font-size: 0.82rem;
+            color: #718096;
+            margin-top: 0.5rem;
+            line-height: 1.5;
+        }
+        .new-note a { color: #1a202c; font-weight: 600; text-decoration: underline; cursor: pointer; }
+
+        .signup-footnote {
+            font-size: 0.72rem;
             color: #a0aec0;
+            margin-top: 1.75rem;
+            line-height: 1.5;
         }
-        .login-footer a { color: #718096; text-decoration: none; }
-        .login-footer a:hover { color: #1a202c; }
 
-        /* ── Right: tagline ── */
-        .login-right {
+        /* ── Right: large tagline instead of image ── */
+        .signup-right {
+            background: #fafbfc;
+            padding: 4rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 4rem;
-            background: #fafbfc;
+            min-height: 100vh;
             border-left: 1px solid #edf2f7;
         }
-        .login-right h2 {
+        .signup-right h2 {
             font-size: 3.5rem;
             font-weight: 800;
             color: #1a202c;
@@ -194,69 +184,67 @@
             max-width: 520px;
         }
 
-        @media (max-width: 960px) {
-            .login-split { grid-template-columns: 1fr; }
-            .login-right { display: none; }
-            .login-left { padding: 2rem 1.5rem; }
-        }
-        @media (max-width: 480px) {
-            .login-form-wrap h1 { font-size: 1.4rem; }
+        @media (max-width: 900px) {
+            .signup-split { grid-template-columns: 1fr; }
+            .signup-right { padding: 2.5rem 1.5rem; min-height: auto; }
+            .signup-right h2 { font-size: 2rem; letter-spacing: -1px; }
+            .signup-left  { padding: 2rem 1.5rem; }
         }
     </style>
 </head>
 <body>
 
-    <div class="login-split">
+    <div class="signup-split">
 
-        <div class="login-left">
-            <a href="/index.html" class="login-brand">
-                <svg width="24" height="22" viewBox="0 0 100 88" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+        <div class="signup-left">
+            <a href="/index.html" class="signup-brand" aria-label="MN Lake Homes home">
+                <svg width="26" height="24" viewBox="0 0 100 88" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="4,52 50,10 96,52"/>
                     <polyline points="72,28 72,16 84,16 84,42"/>
                     <polyline points="17,52 17,82 83,82 83,52"/>
                 </svg>
-                MN Lake Homes
+                <span>MN Lake Homes</span>
             </a>
 
-            <div class="login-form-wrap">
-                <h1>Agent Sign In</h1>
-                <p class="login-sub">Access your leads, profile editor, and performance dashboard.</p>
+            <div class="signup-form-wrap">
+                <div class="signup-header">
+                    <h1>Agent sign in</h1>
+                    <p>Access your leads, profile editor, and performance dashboard.</p>
+                </div>
 
-                <div id="login-alert" class="login-alert"></div>
+                <div id="signup-alert" class="signup-alert"></div>
 
-                <form id="login-form" onsubmit="handleAgentLogin(event)">
-                    <div class="field">
-                        <label for="agent-email">Email address</label>
-                        <input type="email" id="agent-email" placeholder="you@email.com" autocomplete="email" required>
+                <form id="login-form" class="signup-form" onsubmit="handleAgentLogin(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="agent-email">Email address</label>
+                        <input type="email" id="agent-email" class="form-input" placeholder="you@email.com" autocomplete="email" required>
                     </div>
-                    <div class="field">
-                        <label for="agent-password">Password</label>
-                        <input type="password" id="agent-password" placeholder="••••••••" autocomplete="current-password" required>
+                    <div class="form-group">
+                        <label class="form-label" for="agent-password">Password</label>
+                        <input type="password" id="agent-password" class="form-input" placeholder="••••••••" autocomplete="current-password" required>
                     </div>
-                    <button type="submit" class="login-submit" id="login-submit">Sign in</button>
+                    <button type="submit" class="signup-submit" id="login-submit">Sign in</button>
+
+                    <p class="new-note">
+                        New to the network? <a onclick="openForm('agent'); return false;">Apply to join &rarr;</a>
+                    </p>
                 </form>
 
-                <p class="login-links">
-                    New to the network? <a href="#" onclick="openForm('agent'); return false;">Apply to join &rarr;</a>
-                </p>
+                <div class="signup-divider">OR</div>
 
-                <div class="login-divider">OR</div>
-
-                <a class="login-alt-btn" href="signup.html">
+                <a class="agent-btn" href="login.html">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    Sign up as a homeowner
+                    Sign in as a homeowner
                 </a>
 
-                <div class="login-footer">
-                    <a href="contact.html">Support</a>
-                    <a href="faq.html">FAQs</a>
-                    <span>(218) 850-1115</span>
-                </div>
+                <p class="signup-footnote">
+                    MinnesotaLakeHomesForSale.com is a technology network, not a licensed brokerage — all transactions are handled by independently licensed professionals. Agent accounts are for profile and lead management only. By signing in, you confirm you hold a valid real estate license and agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>. Currently in beta.
+                </p>
             </div>
         </div>
 
-        <div class="login-right">
-            <h2>One login across your leads, profile, and analytics</h2>
+        <div class="signup-right" aria-hidden="true">
+            <h2>One platform for all things Minnesota real estate</h2>
         </div>
 
     </div>
@@ -277,13 +265,13 @@
 
         async function handleAgentLogin(e) {
             e.preventDefault();
-            const alertEl = document.getElementById('login-alert');
+            const alertEl = document.getElementById('signup-alert');
             const btn = document.getElementById('login-submit');
             const email = document.getElementById('agent-email').value.trim();
             const password = document.getElementById('agent-password').value;
 
             alertEl.style.display = 'none';
-            alertEl.className = 'login-alert';
+            alertEl.className = 'signup-alert';
             btn.disabled = true;
             btn.textContent = 'Signing in…';
 

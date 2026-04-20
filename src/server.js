@@ -283,6 +283,14 @@ async function ensureTables() {
               WHERE slug = '5-things-to-look-for-in-a-lake-property'    AND cover_image_url LIKE 'https://images.unsplash.com/%';
         `);
 
+        // Clear any broken local-filesystem agent photo URLs — these were lost on
+        // every deploy before Cloudinary was wired up. Agents need to re-upload.
+        await pool.query(`
+            UPDATE agents
+               SET profile_photo_url = NULL
+             WHERE profile_photo_url LIKE '/assets/images/agents/%';
+        `);
+
         await seedBlogIfEmpty();
     } catch (err) {
         console.error(' Table migration warning:', err.message);

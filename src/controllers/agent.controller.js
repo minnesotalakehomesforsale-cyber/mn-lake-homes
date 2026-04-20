@@ -1,48 +1,69 @@
 const pool = require('../database/pool');
-const path = require('path');
-const fs = require('fs');
 const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const { logActivity } = require('../services/activity-log');
 
-// ─── Agent profile photo upload ──────────────────────────────────────────────
-const PHOTO_DIR = path.join(__dirname, '..', '..', 'assets', 'images', 'agents');
-if (!fs.existsSync(PHOTO_DIR)) fs.mkdirSync(PHOTO_DIR, { recursive: true });
-
-const photoStorage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, PHOTO_DIR),
-    filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
-        const safe = path.basename(file.originalname, ext).toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'photo';
-        cb(null, `agent-${Date.now()}-${safe}${ext}`);
-    }
+// ─── Cloudinary-backed agent profile photo upload ────────────────────────────
+// Files persist across deploys, served from Cloudinary CDN, auto-optimized.
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key:    process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure:     true,
 });
+
+const cloudStorage = new CloudinaryStorage({
+    cloudinary,
+    params: async (req, file) => ({
+        folder: 'mnlakehomes/agents',
+        resource_type: 'image',
+        // Cloudinary auto-picks a format; f_auto + q_auto on delivery handles WebP/AVIF
+        format: undefined,
+        public_id: `agent-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        transformation: [
+            { width: 1200, height: 1200, crop: 'limit' },  // cap source dims
+            { quality: 'auto:good' },
+        ],
+    }),
+});
+
 const photoUpload = multer({
-    storage: photoStorage,
+    storage: cloudStorage,
     limits: { fileSize: 8 * 1024 * 1024 }, // 8 MB
     fileFilter: (req, file, cb) => {
         if (/^image\//.test(file.mimetype)) cb(null, true);
         else cb(new Error('Please upload an image file.'));
-    }
+    },
 }).single('photo');
 
-// POST /api/agents/upload-photo — public-ish endpoint that returns a URL
-// (persisting to a specific agent happens via PATCH /me or /admin/:id/profile)
+// POST /api/agents/upload-photo
 const uploadPhoto = (req, res) => {
     photoUpload(req, res, (err) => {
-        if (err) return res.status(400).json({ error: err.message });
+        if (err) {
+            console.error('[uploadPhoto]', err.message);
+            return res.status(400).json({ error: err.message });
+        }
         if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+
+        // multer-storage-cloudinary puts the CDN URL on req.file.path
+        const url = req.file.path;
 
         logActivity({
             event_type: 'agent.photo.upload',
             event_scope: 'agent',
             actor: { type: req.user?.role || 'agent', id: req.user?.userId },
-            details: { filename: req.file.filename, size: req.file.size, mimetype: req.file.mimetype },
+            details: {
+                url,
+                public_id: req.file.filename,
+                size: req.file.size,
+                mimetype: req.file.mimetype,
+            },
             req,
         });
 
         res.json({
-            url: `/assets/images/agents/${req.file.filename}`,
+            url,
             filename: req.file.originalname,
             size: req.file.size,
         });
