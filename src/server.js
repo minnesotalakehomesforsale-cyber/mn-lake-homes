@@ -50,6 +50,7 @@ app.use('/api/inquiries', require('./routes/inquiry.routes'));
 app.use('/api/assistant', require('./routes/assistant.routes'));
 app.use('/api/activity', require('./routes/activity.routes'));
 app.use('/api/cash-offer', require('./routes/cash-offer.routes'));
+app.use('/api/tags', require('./routes/tag.routes'));
 
 app.get('/api/health', (req, res) => {
     res.json({
