@@ -48,6 +48,9 @@
         .sel-cash { color: #059669; font-weight: 700; }
         .sel-agent { color: #6366f1; font-weight: 700; }
         .sel-none { color: #a0aec0; }
+        .src-badge { display:inline-block; font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; padding:0.2rem 0.5rem; border-radius:6px; white-space:nowrap; }
+        .src-mnlake { background:#e6effb; color:#1d6df2; }
+        .src-cr     { background:#fee2e2; color:#b91c1c; }
 
         .row-btn { background: none; border: 1px solid #e2e8f0; border-radius: 7px; padding: 0.4rem 0.75rem; font-size: 0.78rem; font-weight: 600; cursor: pointer; color: #4a5568; font-family: inherit; transition: all 0.15s; }
         .row-btn:hover { background: #f7f9fa; border-color: #cbd5e0; color: #1a202c; }
@@ -202,6 +205,11 @@
         if (sel === 'agent') return `<span class="sel-agent">Agent</span>`;
         return `<span class="sel-none">—</span>`;
     }
+    function sourceBadge(src) {
+        if (src === 'mn_lake')       return `<span class="src-badge src-mnlake" title="MinnesotaLakeHomesForSale.com">MN Lake</span>`;
+        if (src === 'commonrealtor') return `<span class="src-badge src-cr" title="CommonRealtor.com">CR</span>`;
+        return `<span class="sel-none">—</span>`;
+    }
     function propertyFacts(o) {
         const p = o.property_data || o.propertyData || {};
         const beds = o.beds ?? p.beds;
@@ -269,6 +277,7 @@
                 <thead>
                     <tr>
                         <th>Status</th>
+                        <th>Site</th>
                         <th>Submitted</th>
                         <th>Name</th>
                         <th>Address</th>
@@ -292,6 +301,7 @@
             };
             tr.innerHTML = `
                 <td>${statusBadge(o.status)}</td>
+                <td>${sourceBadge(o.source_site)}</td>
                 <td style="color:#4a5568; font-size:0.82rem;">${fmtDate(o.created_at || o.submitted_at)}</td>
                 <td><strong style="color:#1a202c;">${escHtml(o.full_name || o.name || '—')}</strong></td>
                 <td style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escHtml(o.formatted_address || o.address || '')}">${escHtml(o.formatted_address || o.address || '—')}</td>

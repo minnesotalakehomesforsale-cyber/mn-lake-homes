@@ -138,6 +138,12 @@ exports.submit = async (req, res) => {
             ? b.propertyDataJson
             : null;
 
+        // Track which site the lead came from ('mn_lake' or 'commonrealtor').
+        // Bound to 40 chars to match the column; unknowns collapse to null.
+        const ALLOWED_SITES = new Set(['mn_lake', 'commonrealtor']);
+        const rawSource = sanitizeStr(b.source_site, 40);
+        const sourceSite = rawSource && ALLOWED_SITES.has(rawSource) ? rawSource : null;
+
         const insertSql = `
             INSERT INTO cash_offer_leads
               (status, full_name, email, phone,
@@ -145,14 +151,16 @@ exports.submit = async (req, res) => {
                property_data_json,
                beds, baths, sqft, year_built, lot_size, condition,
                last_sale_date, last_sale_price, avm,
-               offer_amount, offer_factors_json, offer_generated_at)
+               offer_amount, offer_factors_json, offer_generated_at,
+               source_site)
             VALUES
               ('new', $1, $2, $3,
                $4, $5,
                $6,
                $7, $8, $9, $10, $11, $12,
                $13, $14, $15,
-               $16, $17, NOW())
+               $16, $17, NOW(),
+               $18)
             RETURNING id, created_at
         `;
         const vals = [
@@ -162,6 +170,7 @@ exports.submit = async (req, res) => {
             beds, baths, sqft, yearBuilt, lotSize, condition,
             lastSaleDate || null, lastSalePrice, avm,
             finalOffer, finalFactors ? JSON.stringify(finalFactors) : null,
+            sourceSite,
         ];
 
         const { rows } = await pool.query(insertSql, vals);

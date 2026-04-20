@@ -341,6 +341,7 @@ async function ensureTables() {
             );
             CREATE INDEX IF NOT EXISTS idx_cash_offer_leads_created ON cash_offer_leads(created_at DESC);
             CREATE INDEX IF NOT EXISTS idx_cash_offer_leads_status  ON cash_offer_leads(status) WHERE archived_at IS NULL;
+            ALTER TABLE cash_offer_leads ADD COLUMN IF NOT EXISTS source_site VARCHAR(40);
         `);
         await pool.query(`
             CREATE TABLE IF NOT EXISTS cash_offer_config (

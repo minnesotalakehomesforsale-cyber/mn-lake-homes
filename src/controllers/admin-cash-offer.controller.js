@@ -56,7 +56,8 @@ exports.list = async (req, res) => {
                 offer_generated_at,
                 user_selection,
                 selection_made_at,
-                admin_notes
+                admin_notes,
+                source_site
             FROM cash_offer_leads
             ${where}
             ORDER BY created_at DESC
