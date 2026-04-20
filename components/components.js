@@ -582,7 +582,21 @@ function _lfInit() {
     if (document.getElementById('lf-overlay')) return;
     const el = document.createElement('div');
     el.id = 'lf-overlay';
-    el.style.cssText = 'display:none;position:fixed;inset:0;z-index:9000;background:#fff;font-family:"Inter",sans-serif;';
+    // Full viewport — explicit 100vw/100vh and 100dvh covers iOS Safari's
+    // dynamic viewport (address-bar collapse/expand) so the overlay never
+    // falls short of the visible area.
+    el.style.cssText = [
+        'display:none',
+        'position:fixed',
+        'top:0','left:0','right:0','bottom:0',
+        'width:100vw','height:100vh','height:100dvh',
+        'z-index:9000',
+        'background:#fff',
+        'font-family:"Inter",sans-serif',
+        'overflow-y:auto',
+        'overscroll-behavior:contain',
+        '-webkit-overflow-scrolling:touch',
+    ].join(';') + ';';
     el.innerHTML = `
         <!-- Progress bar -->
         <div style="position:absolute;top:0;left:0;right:0;height:4px;background:#f0f4f8;">
@@ -687,6 +701,30 @@ function _lfSlide() {
     setTimeout(() => { _lfRender(); body.style.opacity = '1'; body.style.transform = 'translateY(0)'; }, 140);
 }
 
+// iOS Safari ignores `body { overflow: hidden }` for scroll-lock; pin the
+// body with position:fixed instead and restore scroll on close.
+function _lfLockScroll() {
+    const y = window.scrollY || window.pageYOffset || 0;
+    document.body.dataset.lfSavedY = String(y);
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${y}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+    document.body.style.overflow = 'hidden';
+}
+function _lfUnlockScroll() {
+    const saved = Number(document.body.dataset.lfSavedY || 0);
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.width = '';
+    document.body.style.overflow = '';
+    delete document.body.dataset.lfSavedY;
+    window.scrollTo(0, saved);
+}
+
 window.openForm = function(type, prefill) {
     _lfInit();
     const t = type || 'general';
@@ -701,14 +739,14 @@ window.openForm = function(type, prefill) {
     document.getElementById('lf-ok').style.display   = 'none';
     document.getElementById('lf-body').style.display = 'block';
     document.getElementById('lf-overlay').style.display = 'block';
-    document.body.style.overflow = 'hidden';
+    _lfLockScroll();
     _lfRender();
 };
 
 window.closeForm = function() {
     const el = document.getElementById('lf-overlay');
     if (el) el.style.display = 'none';
-    document.body.style.overflow = '';
+    _lfUnlockScroll();
 };
 
 window._lfBack = function() {
