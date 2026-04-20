@@ -109,8 +109,7 @@
                     <input id="sell-hero-address" type="text" placeholder="Start typing your address…" autocomplete="off"
                         style="width:100%;padding:1rem 1rem 1rem 3rem;border:2px solid #e2e8f0;border-radius:12px;font-family:inherit;font-size:1rem;background:#fff;box-sizing:border-box;outline:none;transition:border-color 0.15s,box-shadow 0.15s;">
                 </div>
-                <p id="sell-hero-hint" style="color:#718096;font-size:0.82rem;margin:0 0 1.25rem;line-height:1.5;">Powered by Google. We'll tailor your free market report to this property.</p>
-                <button class="btn btn-primary" id="sell-hero-cta" style="margin-top:0;width:100%;" disabled>Get my free market report &rarr;</button>
+                <button class="btn btn-primary" id="sell-hero-cta" style="margin-top:0.5rem;width:100%;" disabled>Get my free market report &rarr;</button>
             </div>
         </div>
     </section>
@@ -566,7 +565,6 @@
         (function initSellHeroAddress() {
             const input = document.getElementById('sell-hero-address');
             const cta   = document.getElementById('sell-hero-cta');
-            const hint  = document.getElementById('sell-hero-hint');
             if (!input || !cta) return;
 
             const state = { formattedAddress: '', placeId: null };
@@ -581,7 +579,6 @@
 
             function fallbackTypingMode() {
                 // No Google — accept any ≥5 char address so user can continue.
-                hint.textContent = 'Type your full address and continue — we\'ll confirm details shortly.';
                 input.addEventListener('input', () => {
                     const v = input.value.trim();
                     if (v.length >= 5) { state.formattedAddress = v; state.placeId = null; enableCta(); }
@@ -601,7 +598,6 @@
                     if (!place || !place.place_id) { disableCta(); return; }
                     state.placeId = place.place_id;
                     state.formattedAddress = place.formatted_address || input.value;
-                    hint.textContent = '✓ Address selected. Click to continue.';
                     enableCta();
                 });
                 input.addEventListener('input', () => {
