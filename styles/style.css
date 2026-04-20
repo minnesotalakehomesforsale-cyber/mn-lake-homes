@@ -795,7 +795,7 @@ body {
 }
 
 @media (max-width: 600px) {
-    .title { font-size: 5rem; line-height: 1; letter-spacing: -2px; }
+    .title { font-size: 6rem; line-height: 1; letter-spacing: -2.5px; }
     .subtitle { font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 1rem; }
     .hero-content { align-items: center; text-align: center; }
     .hero-section { padding: 3.5rem 0.75rem 3rem; }
@@ -839,31 +839,13 @@ body {
     .promo-content strong { display: block; margin-bottom: 0.5rem; font-size: 2rem; color: var(--highlight-color); line-height: 1.1; }
     .floating-promo .btn { padding: 1.25rem 2rem; font-size: 1.2rem; border-radius: 50px; width: 100%; max-width: 300px; margin-top: 1rem; }
     .promo-close { top: 2rem; right: 2rem; font-size: 2rem; color: #fff; }
-    .floating-promo {
-        width: calc(100vw - 1.5rem);
-        flex-direction: column;
-        gap: 0.75rem;
-        text-align: center;
-        padding: 1rem 1rem 0.9rem;
-        bottom: 1rem;
-        position: fixed;
-    }
-    .floating-promo .promo-close {
-        position: absolute;
-        top: 0.35rem;
-        right: 0.35rem;
-    }
-    .promo-content p { font-size: 0.85rem; line-height: 1.45; }
-    .promo-content p br { display: none; }
-    .nav-actions {
-        display: none;
-    }
+    .nav-actions { display: none; }
     .navbar { padding: 1.1rem 1.25rem; }
     .hero-content { margin-top: 5rem; }
 }
 
 @media (max-width: 400px) {
-    .title { font-size: 4rem; letter-spacing: -2px; line-height: 1; }
+    .title { font-size: 4.8rem; letter-spacing: -2px; line-height: 1; }
 }
 
 /* Hero CTAs */
