@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geo Tags | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
+        .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        .admin-side { background: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+        .admin-side h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 2.5rem; padding-left: 0.5rem; color: #fff; margin-top: 0; }
+        .admin-side h1 span { color: #1d6df2; }
+        .side-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; margin-bottom: 0.75rem; padding-left: 0.5rem; font-weight: 700; margin-top: 0; }
+        .side-nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+        .side-link { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 8px; color: #a0aec0; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.15s; }
+        .side-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .side-link.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+        .side-signout { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #fc8181; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-top: 1rem; transition: all 0.15s; }
+        .side-signout:hover { background: rgba(252,129,129,0.1); }
+        .cash-offer-badge { display: none; background: #dc2626; color: #fff; font-size: 0.68rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 99px; margin-left: auto; min-width: 18px; text-align: center; }
+        .cash-offer-badge.visible { display: inline-block; }
+        .admin-main { padding: 3rem 3.5rem; overflow-y: auto; }
+
+        .toolbar { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.5rem; }
+        .toolbar input, .toolbar select { font-family: inherit; font-size: 0.9rem; padding: 0.55rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; outline: none; }
+        .toolbar input:focus, .toolbar select:focus { border-color: #1d6df2; }
+        .toolbar input[type="search"] { flex: 1; min-width: 240px; }
+        .btn-primary { background: #1d6df2; color: #fff; border: none; padding: 0.6rem 1rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; font-family: inherit; }
+        .btn-primary:hover { background: #155bc9; }
+        .btn-ghost { background: #fff; color: #4a5568; border: 1px solid #e2e8f0; padding: 0.55rem 0.85rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; font-family: inherit; }
+        .btn-ghost:hover { border-color: #1d6df2; color: #1d6df2; }
+
+        .tags-table { width: 100%; background: #fff; border: 1px solid #edf2f7; border-radius: 12px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+        .tags-table th { text-align: left; padding: 0.9rem 1rem; font-size: 0.72rem; font-weight: 800; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; background: #f7f9fa; border-bottom: 1px solid #edf2f7; }
+        .tags-table td { padding: 0.85rem 1rem; font-size: 0.9rem; color: #2d3748; border-bottom: 1px solid #f7f9fa; vertical-align: middle; }
+        .tags-table tr:last-child td { border-bottom: none; }
+        .tags-table td.muted { color: #a0aec0; font-size: 0.82rem; }
+        .pill { display: inline-block; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.55rem; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .pill.state { background: #ebf4ff; color: #2b6cb0; }
+        .pill.inactive { background: #fff5f5; color: #c53030; }
+        .pill.warn { background: #fffbea; color: #b45309; }
+        .row-actions { display: flex; gap: 0.35rem; }
+        .row-actions button { font-size: 0.78rem; padding: 0.35rem 0.7rem; }
+        .danger { color: #c53030; border-color: #feb2b2; }
+        .danger:hover { background: #fff5f5; border-color: #fc8181; }
+
+        /* Modal */
+        .ovl { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 9000; align-items: flex-start; justify-content: center; padding: 3rem 1rem; overflow-y: auto; }
+        .ovl.open { display: flex; }
+        .modal { background: #fff; border-radius: 16px; width: 100%; max-width: 520px; box-shadow: 0 30px 60px rgba(0,0,0,0.25); overflow: hidden; margin: auto; }
+        .m-hdr { background: #1a202c; padding: 1.5rem 1.75rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+        .m-hdr h2 { color: #fff; font-size: 1.1rem; font-weight: 800; margin: 0; }
+        .m-close { background: none; border: none; color: rgba(255,255,255,0.6); font-size: 1.5rem; cursor: pointer; line-height: 1; padding: 0; }
+        .m-body { padding: 1.75rem; }
+        .field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1rem; }
+        .field label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #4a5568; }
+        .field input { font-family: inherit; font-size: 0.95rem; padding: 0.65rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; outline: none; }
+        .field input:focus { border-color: #1d6df2; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .hint { font-size: 0.75rem; color: #718096; }
+        .err { display: none; color: #c53030; font-size: 0.85rem; padding: 0.6rem 0.85rem; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; margin-bottom: 1rem; }
+
+        @media (max-width: 900px) {
+            .admin-wrap { grid-template-columns: 1fr; }
+            .admin-side { position: static; height: auto; padding: 1.25rem 1rem; }
+            .admin-main { padding: 1.75rem 1.25rem; }
+            .tags-table { display: block; overflow-x: auto; }
+        }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+    <script src="../../components/admin-nav-badges.js" defer></script>
+</head>
+<body>
+    <div class="admin-wrap">
+        <aside class="admin-side">
+            <h1>MNLH <span>ADMIN</span></h1>
+            <p class="side-label">Platform Operations</p>
+            <nav class="side-nav">
+                <a href="dashboard.html"  class="side-link">Dashboard</a>
+                <a href="agents.html"     class="side-link">Agents Directory</a>
+                <a href="leads.html"      class="side-link">Central Leads</a>
+                <a href="inquiries.html"  class="side-link" id="nav-link-inquiries" style="display:flex;align-items:center;justify-content:space-between;">
+                    <span>Inquiries</span>
+                    <span id="nav-badge-inquiries" style="background:#ef4444;color:#fff;font-size:0.68rem;font-weight:800;padding:0.1rem 0.45rem;border-radius:99px;margin-left:auto;display:none;">0</span>
+                </a>
+                <a href="blog.html"       class="side-link">Blog &amp; Content</a>
+                <a href="cash-offers.html" class="side-link" style="display:flex;align-items:center;justify-content:space-between;">
+                    <span>Cash Offers</span>
+                    <span class="cash-offer-badge">0</span>
+                </a>
+                <a href="users.html"      class="side-link">Users Management</a>
+                <a href="tasks.html"      class="side-link" id="nav-link-tasks" style="display:flex;align-items:center;justify-content:space-between;">
+                    <span>Tasks</span>
+                    <span id="nav-badge-tasks" style="background:#ef4444;color:#fff;font-size:0.68rem;font-weight:800;padding:0.1rem 0.45rem;border-radius:99px;margin-left:auto;display:none;">0</span>
+                </a>
+                <a href="tags.html"       class="side-link active">Geo Tags</a>
+                <a href="database.html"   class="side-link">Database</a>
+            </nav>
+            <a href="/index.html" target="_blank" style="display:block;padding:0.75rem 1rem;border-radius:8px;color:#a0aec0;text-decoration:none;font-size:0.85rem;font-weight:500;margin-top:0.5rem;border:1px solid rgba(255,255,255,0.08);">↗ View Live Site</a>
+            <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>{window.location.href='/index.html';})" class="side-signout">Sign Out</a>
+        </aside>
+
+        <main class="admin-main">
+            <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h1 style="font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.75px; margin: 0 0 0.25rem;">Geo Tags</h1>
+                    <p style="color: #718096; font-size: 0.95rem; margin: 0;">Cities and towns used to route leads to nearby agents.</p>
+                </div>
+                <button class="btn-primary" onclick="openCreate()">+ New tag</button>
+            </header>
+
+            <div class="toolbar">
+                <input type="search" id="search" placeholder="Search by name…" oninput="applyFilters()">
+                <select id="filter-state" onchange="applyFilters()">
+                    <option value="">All states</option>
+                    <option value="MN">MN</option>
+                    <option value="ND">ND</option>
+                    <option value="WI">WI</option>
+                </select>
+                <select id="filter-region" onchange="applyFilters()">
+                    <option value="">All regions</option>
+                </select>
+                <select id="filter-active" onchange="load()">
+                    <option value="true">Active only</option>
+                    <option value="all">Active + inactive</option>
+                    <option value="false">Inactive only</option>
+                </select>
+                <span id="count" class="hint" style="margin-left:auto;"></span>
+            </div>
+
+            <div id="table-wrap">
+                <div style="padding:3rem;text-align:center;color:#a0aec0;">Loading tags…</div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="modal" class="ovl" onclick="if(event.target===this) closeModal()">
+        <div class="modal">
+            <div class="m-hdr">
+                <h2 id="modal-title">New tag</h2>
+                <button class="m-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="m-body">
+                <div id="modal-err" class="err"></div>
+                <div class="field">
+                    <label>Name *</label>
+                    <input id="f-name" placeholder="e.g. Detroit Lakes" oninput="onNameChange()">
+                    <span class="hint">Display name shown in admin lists and on agent profiles.</span>
+                </div>
+                <div class="grid-2">
+                    <div class="field">
+                        <label>State *</label>
+                        <input id="f-state" placeholder="MN" maxlength="2">
+                    </div>
+                    <div class="field">
+                        <label>Region</label>
+                        <input id="f-region" placeholder="e.g. Lakes Country">
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Slug</label>
+                    <input id="f-slug" placeholder="auto from name">
+                    <span class="hint">URL/API identifier. Auto-generated; safe to leave blank.</span>
+                </div>
+                <div class="grid-2">
+                    <div class="field">
+                        <label>Latitude</label>
+                        <input id="f-lat" type="number" step="0.000001" placeholder="Auto-geocoded">
+                    </div>
+                    <div class="field">
+                        <label>Longitude</label>
+                        <input id="f-lng" type="number" step="0.000001" placeholder="Auto-geocoded">
+                    </div>
+                </div>
+                <p class="hint" style="margin:0 0 1rem;">Leave lat/lng blank on create to auto-geocode from name + state.</p>
+                <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
+                    <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+                    <button class="btn-primary" id="save-btn" onclick="saveTag()">Save tag</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let _all = [];
+        let _editingId = null;
+
+        // ── Load + render ────────────────────────────────────────────────
+        async function load() {
+            const active = document.getElementById('filter-active').value;
+            const wrap = document.getElementById('table-wrap');
+            wrap.innerHTML = '<div style="padding:3rem;text-align:center;color:#a0aec0;">Loading…</div>';
+            try {
+                const res = await fetch(`/api/tags?active=${encodeURIComponent(active)}`);
+                if (!res.ok) throw new Error('Failed to load');
+                _all = await res.json();
+                populateRegionFilter();
+                applyFilters();
+            } catch (err) {
+                wrap.innerHTML = '<div style="padding:3rem;text-align:center;color:#c53030;">Failed to load tags.</div>';
+            }
+        }
+
+        function populateRegionFilter() {
+            const sel = document.getElementById('filter-region');
+            const current = sel.value;
+            const regions = [...new Set(_all.map(t => t.region).filter(Boolean))].sort();
+            sel.innerHTML = '<option value="">All regions</option>' +
+                regions.map(r => `<option value="${escHtml(r)}">${escHtml(r)}</option>`).join('');
+            if (regions.includes(current)) sel.value = current;
+        }
+
+        function applyFilters() {
+            const search = (document.getElementById('search').value || '').toLowerCase().trim();
+            const state  = document.getElementById('filter-state').value;
+            const region = document.getElementById('filter-region').value;
+            const filtered = _all.filter(t => {
+                if (state && t.state !== state) return false;
+                if (region && t.region !== region) return false;
+                if (search && !t.name.toLowerCase().includes(search)) return false;
+                return true;
+            });
+            render(filtered);
+            document.getElementById('count').textContent = `${filtered.length} of ${_all.length}`;
+        }
+
+        function render(rows) {
+            const wrap = document.getElementById('table-wrap');
+            if (!rows.length) {
+                wrap.innerHTML = '<div style="padding:3rem;text-align:center;color:#a0aec0;">No matching tags.</div>';
+                return;
+            }
+            wrap.innerHTML = `
+                <table class="tags-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 26%;">Name</th>
+                            <th style="width: 10%;">State</th>
+                            <th style="width: 22%;">Region</th>
+                            <th style="width: 18%;">Coordinates</th>
+                            <th style="width: 10%;">Status</th>
+                            <th style="width: 14%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows.map(t => `
+                            <tr>
+                                <td>
+                                    <strong>${escHtml(t.name)}</strong>
+                                    <div class="muted" style="font-size:0.72rem; font-family:monospace;">${escHtml(t.slug)}</div>
+                                </td>
+                                <td><span class="pill state">${escHtml(t.state)}</span></td>
+                                <td class="muted">${escHtml(t.region || '—')}</td>
+                                <td class="muted">
+                                    ${(t.latitude != null && t.longitude != null)
+                                        ? `${Number(t.latitude).toFixed(4)}, ${Number(t.longitude).toFixed(4)}`
+                                        : '<span class="pill warn">missing</span>'}
+                                </td>
+                                <td>${t.active ? '<span class="pill state" style="background:#f0fff4;color:#2f855a;">active</span>' : '<span class="pill inactive">inactive</span>'}</td>
+                                <td class="row-actions">
+                                    <button class="btn-ghost" onclick="openEdit('${t.id}')">Edit</button>
+                                    ${t.active ? `<button class="btn-ghost danger" onclick="deactivate('${t.id}','${escAttr(t.name)}')">Archive</button>` : `<button class="btn-ghost" onclick="reactivate('${t.id}')">Restore</button>`}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+        }
+
+        // ── Modal ────────────────────────────────────────────────────────
+        function openCreate() {
+            _editingId = null;
+            document.getElementById('modal-title').textContent = 'New tag';
+            ['f-name','f-state','f-region','f-slug','f-lat','f-lng'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('modal-err').style.display = 'none';
+            document.getElementById('modal').classList.add('open');
+            setTimeout(() => document.getElementById('f-name').focus(), 80);
+        }
+
+        function openEdit(id) {
+            const t = _all.find(x => x.id === id);
+            if (!t) return;
+            _editingId = id;
+            document.getElementById('modal-title').textContent = `Edit: ${t.name}`;
+            document.getElementById('f-name').value   = t.name   || '';
+            document.getElementById('f-state').value  = t.state  || '';
+            document.getElementById('f-region').value = t.region || '';
+            document.getElementById('f-slug').value   = t.slug   || '';
+            document.getElementById('f-lat').value    = t.latitude  ?? '';
+            document.getElementById('f-lng').value    = t.longitude ?? '';
+            document.getElementById('modal-err').style.display = 'none';
+            document.getElementById('modal').classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('open');
+        }
+
+        function onNameChange() {
+            if (_editingId) return; // don't auto-override the slug on edit
+            const name = document.getElementById('f-name').value.trim();
+            document.getElementById('f-slug').placeholder = name
+                ? name.toLowerCase().replace(/[^\w\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-')
+                : 'auto from name';
+        }
+
+        async function saveTag() {
+            const err = document.getElementById('modal-err');
+            err.style.display = 'none';
+            const name   = document.getElementById('f-name').value.trim();
+            const state  = document.getElementById('f-state').value.trim().toUpperCase();
+            const region = document.getElementById('f-region').value.trim();
+            const slug   = document.getElementById('f-slug').value.trim();
+            const lat    = document.getElementById('f-lat').value;
+            const lng    = document.getElementById('f-lng').value;
+            if (!name)  { err.textContent = 'Name is required.'; err.style.display = 'block'; return; }
+            if (!state) { err.textContent = 'State is required.'; err.style.display = 'block'; return; }
+
+            const body = {
+                name, state,
+                region: region || null,
+                slug: slug || undefined,
+                latitude:  lat === '' ? null : Number(lat),
+                longitude: lng === '' ? null : Number(lng),
+            };
+
+            const btn = document.getElementById('save-btn');
+            btn.disabled = true; btn.textContent = 'Saving…';
+            try {
+                const url = _editingId ? `/api/tags/${_editingId}` : '/api/tags';
+                const method = _editingId ? 'PATCH' : 'POST';
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                closeModal();
+                await load();
+            } catch (e) {
+                err.textContent = e.message || 'Save failed.';
+                err.style.display = 'block';
+            } finally {
+                btn.disabled = false; btn.textContent = 'Save tag';
+            }
+        }
+
+        async function deactivate(id, name) {
+            if (!confirm(`Archive "${name}"? It will stop matching new leads.`)) return;
+            try {
+                const res = await fetch(`/api/tags/${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error();
+                await load();
+            } catch (_) { alert('Failed to archive.'); }
+        }
+
+        async function reactivate(id) {
+            try {
+                const res = await fetch(`/api/tags/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ active: true })
+                });
+                if (!res.ok) throw new Error();
+                await load();
+            } catch (_) { alert('Failed to restore.'); }
+        }
+
+        // ── Utilities ────────────────────────────────────────────────────
+        function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+        function escAttr(s) { return escHtml(s); }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && document.getElementById('modal').classList.contains('open')) closeModal();
+        });
+
+        document.addEventListener('DOMContentLoaded', load);
+    </script>
+</body>
+</html>

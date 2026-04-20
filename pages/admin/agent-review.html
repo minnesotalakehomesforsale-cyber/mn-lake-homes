@@ -123,6 +123,7 @@
                 <span>Tasks</span>
                 <span id="nav-badge-tasks" style="background:#ef4444;color:#fff;font-size:0.68rem;font-weight:800;padding:0.1rem 0.45rem;border-radius:99px;margin-left:auto;display:none;">0</span>
             </a>
+            <a href="tags.html"     class="side-link">Geo Tags</a>
             <a href="database.html"  class="side-link">Database</a>
         </nav>
         <a href="/index.html" target="_blank" style="display:block;padding:0.75rem 1rem;border-radius:8px;color:#a0aec0;text-decoration:none;font-size:0.85rem;font-weight:500;margin-top:0.5rem;border:1px solid rgba(255,255,255,0.08);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">↗ View Live Site</a>
@@ -285,6 +286,31 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Geo Tags (service-area routing) -->
+                <div class="panel" id="geo-tags-panel">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-title">Service Area Tags</div>
+                            <div style="font-size:0.78rem;color:#718096;margin-top:0.2rem;">Leads submitted near any of these areas will route to this agent.</div>
+                        </div>
+                    </div>
+                    <div class="panel-body" style="padding:1.5rem;">
+                        <div id="tag-pills" style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.75rem; min-height:28px;">
+                            <span style="color:#a0aec0;font-size:0.85rem;">No tags attached.</span>
+                        </div>
+                        <div style="position:relative;">
+                            <input id="tag-search" type="search" placeholder="Add a service area (city or town)…"
+                                style="width:100%;padding:0.6rem 0.85rem;border:1px solid #e2e8f0;border-radius:8px;font-size:0.9rem;font-family:inherit;outline:none;"
+                                oninput="onTagSearch()" onfocus="onTagSearch()">
+                            <div id="tag-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:260px;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;border-radius:8px;margin-top:4px;z-index:20;box-shadow:0 10px 25px rgba(0,0,0,0.08);"></div>
+                        </div>
+                        <div class="save-row" style="margin-top:1rem;">
+                            <span id="tags-save-msg" class="save-msg">✓ Saved</span>
+                            <button class="btn-save" onclick="saveAgentTags()">Save Service Areas</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Right: Controls sidebar -->
@@ -419,11 +445,106 @@
             if (!res.ok) throw new Error('Not found');
             agentData = await res.json();
             renderAgent(agentData);
+            loadAgentTags();  // async — populates the Geo Tags panel
         } catch(e) {
             document.getElementById('agent-headline').textContent = 'Agent Not Found';
             document.getElementById('agent-sub').textContent = 'This agent ID does not exist in the database.';
         }
     }
+
+    // ── Geo Tags ─────────────────────────────────────────────────────────────
+    let _allTags = [];
+    let _attachedTagIds = new Set();
+
+    async function loadAgentTags() {
+        if (!agentData?.user_id_ref) return;
+        try {
+            const [catalogRes, attachedRes] = await Promise.all([
+                fetch('/api/tags?active=true'),
+                fetch(`/api/tags/users/${agentData.user_id_ref}`),
+            ]);
+            _allTags = catalogRes.ok ? await catalogRes.json() : [];
+            const attached = attachedRes.ok ? await attachedRes.json() : [];
+            _attachedTagIds = new Set(attached.map(t => t.id));
+            renderTagPills();
+        } catch (e) {
+            console.warn('[tags] load failed', e);
+        }
+    }
+
+    function renderTagPills() {
+        const host = document.getElementById('tag-pills');
+        const attached = _allTags.filter(t => _attachedTagIds.has(t.id));
+        if (!attached.length) {
+            host.innerHTML = '<span style="color:#a0aec0;font-size:0.85rem;">No tags attached.</span>';
+            return;
+        }
+        host.innerHTML = attached.map(t => `
+            <span data-id="${t.id}" style="display:inline-flex;align-items:center;gap:0.4rem;background:#ebf4ff;color:#1d6df2;padding:0.35rem 0.6rem;border-radius:20px;font-size:0.82rem;font-weight:600;">
+                ${escHtml(t.name)}, ${escHtml(t.state)}
+                <button type="button" onclick="removeTag('${t.id}')" aria-label="Remove"
+                    style="background:none;border:none;color:#1d6df2;cursor:pointer;padding:0;font-size:0.95rem;line-height:1;">×</button>
+            </span>
+        `).join('');
+    }
+
+    function onTagSearch() {
+        const q = (document.getElementById('tag-search').value || '').toLowerCase().trim();
+        const box = document.getElementById('tag-suggestions');
+        if (q.length < 1) { box.style.display = 'none'; box.innerHTML = ''; return; }
+        const matches = _allTags
+            .filter(t => !_attachedTagIds.has(t.id))
+            .filter(t => t.name.toLowerCase().includes(q) || (t.region && t.region.toLowerCase().includes(q)))
+            .slice(0, 20);
+        if (!matches.length) { box.style.display = 'block'; box.innerHTML = '<div style="padding:0.75rem;color:#a0aec0;font-size:0.85rem;">No matches.</div>'; return; }
+        box.innerHTML = matches.map(t => `
+            <button type="button" onclick="addTag('${t.id}')"
+                style="display:block;width:100%;text-align:left;padding:0.55rem 0.85rem;border:none;background:#fff;cursor:pointer;font-family:inherit;font-size:0.88rem;border-bottom:1px solid #f7f9fa;">
+                <strong style="color:#1a202c;">${escHtml(t.name)}</strong>
+                <span style="color:#a0aec0;font-size:0.78rem;">· ${escHtml(t.state)}${t.region ? ' · ' + escHtml(t.region) : ''}</span>
+            </button>
+        `).join('');
+        box.style.display = 'block';
+    }
+
+    function addTag(tagId) {
+        _attachedTagIds.add(tagId);
+        renderTagPills();
+        document.getElementById('tag-search').value = '';
+        document.getElementById('tag-suggestions').style.display = 'none';
+    }
+
+    function removeTag(tagId) {
+        _attachedTagIds.delete(tagId);
+        renderTagPills();
+    }
+
+    async function saveAgentTags() {
+        if (!agentData?.user_id_ref) return;
+        const msg = document.getElementById('tags-save-msg');
+        try {
+            const res = await fetch(`/api/tags/users/${agentData.user_id_ref}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tagIds: [..._attachedTagIds] }),
+            });
+            if (!res.ok) throw new Error('Save failed');
+            msg.classList.add('visible');
+            setTimeout(() => msg.classList.remove('visible'), 1800);
+        } catch (e) {
+            alert(e.message || 'Failed to save tags');
+        }
+    }
+
+    // Dismiss suggestions on outside click
+    document.addEventListener('click', e => {
+        if (!e.target.closest('#geo-tags-panel')) {
+            const box = document.getElementById('tag-suggestions');
+            if (box) box.style.display = 'none';
+        }
+    });
+
+    function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
 
     function renderAgent(a) {
         // Header
