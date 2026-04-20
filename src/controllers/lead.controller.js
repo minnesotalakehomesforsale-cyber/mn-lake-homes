@@ -1,6 +1,8 @@
 const pool = require('../database/pool');
 const emailService = require('../services/email');
 const { logActivity } = require('../services/activity-log');
+const { geocodeAddress } = require('../services/geocoder');
+const { matchTagsAndUsers } = require('../services/tag-matcher');
 
 const createLead = async (req, res) => {
     let {
@@ -87,6 +89,77 @@ const createLead = async (req, res) => {
             source,
             notes
         });
+
+        // Fire-and-forget geo routing: if we captured a property address,
+        // geocode it, find agents whose service-area tags fall within the
+        // configured radius, email each matched agent, and record the
+        // match set in lead_tags for audit/routing history.
+        const addressForRouting = propAddress
+            || [propStreet, propCity, propState, propZip].filter(Boolean).join(', ')
+            || null;
+        if (newLeadId && addressForRouting) {
+            (async () => {
+                try {
+                    const geo = await geocodeAddress(addressForRouting);
+                    if (!geo) return;
+                    const { tags, users } = await matchTagsAndUsers({ lat: geo.lat, lng: geo.lng });
+                    if (!tags.length) return;
+
+                    // Record which tags matched (+ each distance) for audit.
+                    const valuesSql = tags.map((_, i) =>
+                        `($1, $${i + 2}, $${i + 2 + tags.length})`
+                    ).join(', ');
+                    const params = [
+                        newLeadId,
+                        ...tags.map(t => t.id),
+                        ...tags.map(t => t.distance_miles),
+                    ];
+                    await pool.query(
+                        `INSERT INTO lead_tags (lead_id, tag_id, distance_miles) VALUES ${valuesSql}`,
+                        params
+                    );
+
+                    // Only notify active agent accounts. Admin roles see the
+                    // existing "new lead" admin email and don't need dupes.
+                    const tagNameById = new Map(tags.map(t => [t.id, `${t.name}, ${t.state}`]));
+                    const recipients = users.filter(u => u.role === 'agent' && u.email);
+                    recipients.forEach(u => {
+                        const areas = (u.matched_tag_ids || []).map(id => tagNameById.get(id)).filter(Boolean);
+                        emailService.sendMatchedAgentNotification({
+                            to: u.email,
+                            agentFirstName: (u.full_name || '').split(' ')[0] || 'there',
+                            lead: {
+                                id: newLeadId,
+                                name,
+                                email,
+                                phone,
+                                notes,
+                                type: enumType,
+                                source,
+                                address: geo.formattedAddress || addressForRouting,
+                            },
+                            distanceMiles: u.min_distance_miles,
+                            matchedAreas: areas,
+                        });
+                    });
+
+                    logActivity({
+                        event_type: 'lead.route_matched',
+                        event_scope: 'lead',
+                        actor: { type: 'system', label: 'tag-matcher' },
+                        target: { type: 'lead', id: newLeadId, label: `${name} (${enumType})` },
+                        details: {
+                            lat: geo.lat, lng: geo.lng,
+                            tag_count: tags.length,
+                            agent_count: recipients.length,
+                            tag_ids: tags.map(t => t.id),
+                        },
+                    });
+                } catch (err) {
+                    console.warn('[lead routing] failed:', err.message);
+                }
+            })();
+        }
 
         res.status(201).json({ success: true, message: 'Lead logged' });
     } catch (err) {

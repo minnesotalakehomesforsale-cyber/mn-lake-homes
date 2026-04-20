@@ -315,6 +315,65 @@ function sendInquiryConfirmation({ to, name, source }) {
 }
 
 /**
+ * Matched-agent notification — fires once per agent whose tagged service
+ * area matched the submitted property address within the configured radius.
+ */
+function sendMatchedAgentNotification({ to, agentFirstName, lead, distanceMiles, matchedAreas }) {
+    if (!to || !lead) return { skipped: true };
+    const typeLabel = (lead.type || lead.source || 'General').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const distanceStr = Number.isFinite(Number(distanceMiles))
+        ? `${Number(distanceMiles).toFixed(1)} mi from your service area`
+        : 'Within your service area';
+    const areasStr = Array.isArray(matchedAreas) && matchedAreas.length
+        ? matchedAreas.slice(0, 3).join(', ') + (matchedAreas.length > 3 ? `, +${matchedAreas.length - 3} more` : '')
+        : null;
+
+    const detailRows = [
+        { label: 'Name',     value: lead.name || '—' },
+        { label: 'Email',    value: lead.email ? `<a href="mailto:${lead.email}" style="color:#1d6df2;text-decoration:none;">${lead.email}</a>` : 'Not provided' },
+        { label: 'Phone',    value: lead.phone ? `<a href="tel:${lead.phone.replace(/[^\d+]/g,'')}" style="color:#1d6df2;text-decoration:none;">${lead.phone}</a>` : 'Not provided' },
+        { label: 'Type',     value: typeLabel },
+        { label: 'Property', value: lead.address || '—' },
+        { label: 'Proximity',value: distanceStr },
+    ].map(r => `
+        <tr>
+            <td style="padding:8px 12px;font-size:13px;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.5px;vertical-align:top;white-space:nowrap;">${r.label}</td>
+            <td style="padding:8px 12px;font-size:15px;color:#1a202c;">${r.value}</td>
+        </tr>
+    `).join('');
+
+    const notesHtml = lead.notes
+        ? `<div style="margin:20px 0 0;padding:16px;background:#f7f9fa;border-left:3px solid #1d6df2;border-radius:0 8px 8px 0;">
+               <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:0.5px;">Details</p>
+               <p style="margin:0;font-size:14px;color:#2d3748;line-height:1.65;white-space:pre-line;">${lead.notes}</p>
+           </div>`
+        : '';
+
+    return sendEmail({
+        to,
+        replyTo: lead.email || undefined,
+        subject: `📍 New lead near you — ${lead.name || 'Unknown'}`,
+        html: layout({
+            title: `New lead in your service area`,
+            preheader: `${lead.name} · ${lead.address || typeLabel} · ${distanceStr}`,
+            body: `
+                <p style="margin:0 0 12px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Hi ${agentFirstName || 'there'} — a new lead just came in for a property ${areasStr ? `near <strong>${areasStr}</strong>` : 'in your service area'}. You're receiving this because it falls within one of your tagged areas.
+                </p>
+                <table style="width:100%;border-collapse:collapse;margin:0 0 8px;">
+                    ${detailRows}
+                </table>
+                ${notesHtml}
+                <p style="margin:20px 0 0;font-size:13px;color:#718096;line-height:1.5;">
+                  Reach out promptly — leads often come to multiple agents in the area.
+                </p>`,
+            ctaText: 'View in Agent Dashboard',
+            ctaUrl: `${SITE_URL}/pages/agent/dashboard.html`,
+        })
+    });
+}
+
+/**
  * Simple custom send — lets us use the base `sendEmail` from elsewhere for
  * ad-hoc sends like newsletter campaigns later.
  */
@@ -332,6 +391,7 @@ module.exports = {
     sendAdminLeadNotification,
     sendInquiryNotification,
     sendInquiryConfirmation,
+    sendMatchedAgentNotification,
     sendCustom,
     layout,
 };
