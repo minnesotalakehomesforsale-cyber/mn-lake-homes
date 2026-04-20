@@ -1451,7 +1451,9 @@
             `;
         }
 
+        let _lastSubmitError = null;
         async function doSubmit() {
+            _lastSubmitError = null;
             try {
                 const payload = {
                     placeId: S.placeId,
@@ -1462,12 +1464,15 @@
                     yearBuilt: toNum($('coo-yearBuilt')?.value ?? S.propertyData?.yearBuilt),
                     lotSize: toNum($('coo-lotSize')?.value ?? S.propertyData?.lotSize),
                     condition: $('coo-condition')?.value || 'Good',
+                    avm: S.propertyData?.avm ?? null,
+                    lastSaleDate: S.propertyData?.lastSaleDate ?? null,
+                    lastSalePrice: S.propertyData?.lastSalePrice ?? null,
                     offerAmount: S.offerAmount,
                     offerFactors: S.offerFactors,
                     offerGeneratedAt: S.offerGeneratedAt,
-                    propertyData: S.propertyData,
-                    contact: S.contact,
-                    name: S.contact.name,
+                    propertyDataJson: S.propertyData,
+                    // Backend expects full_name/email/phone at top level
+                    full_name: S.contact.name,
                     email: S.contact.email,
                     phone: S.contact.phone,
                 };
@@ -1478,7 +1483,7 @@
                 });
                 if (!res.ok) {
                     const r = await res.json().catch(() => ({}));
-                    throw new Error(r.error || 'Submission failed');
+                    throw new Error(r.error || `Submission failed (${res.status})`);
                 }
                 const data = await res.json();
                 S.leadId = data.leadId;
@@ -1486,6 +1491,7 @@
                 return true;
             } catch (err) {
                 console.warn('[cash-offer] submit error', err);
+                _lastSubmitError = err.message || 'Network error';
                 return false;
             }
         }
@@ -1593,7 +1599,7 @@
                     if (!ok) {
                         btn.disabled = false;
                         btn.textContent = 'Reveal my offer';
-                        err.textContent = 'Something went wrong. Please try again.';
+                        err.textContent = _lastSubmitError || 'Something went wrong. Please try again.';
                         err.style.display = 'block';
                         return;
                     }
