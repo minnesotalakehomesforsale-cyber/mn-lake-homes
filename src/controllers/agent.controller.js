@@ -1,7 +1,6 @@
 const pool = require('../database/pool');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const { logActivity } = require('../services/activity-log');
 
 // ─── Cloudinary-backed agent profile photo upload ────────────────────────────
@@ -13,23 +12,11 @@ cloudinary.config({
     secure:     true,
 });
 
-const cloudStorage = new CloudinaryStorage({
-    cloudinary,
-    params: async (req, file) => ({
-        folder: 'mnlakehomes/agents',
-        resource_type: 'image',
-        // Cloudinary auto-picks a format; f_auto + q_auto on delivery handles WebP/AVIF
-        format: undefined,
-        public_id: `agent-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        transformation: [
-            { width: 1200, height: 1200, crop: 'limit' },  // cap source dims
-            { quality: 'auto:good' },
-        ],
-    }),
-});
-
+// Buffer the upload in memory, then stream it to Cloudinary ourselves.
+// More reliable than multer-storage-cloudinary (that package hasn't been
+// updated for multer v2 compatibility).
 const photoUpload = multer({
-    storage: cloudStorage,
+    storage: multer.memoryStorage(),
     limits: { fileSize: 8 * 1024 * 1024 }, // 8 MB
     fileFilter: (req, file, cb) => {
         if (/^image\//.test(file.mimetype)) cb(null, true);
@@ -37,36 +24,62 @@ const photoUpload = multer({
     },
 }).single('photo');
 
+function uploadBufferToCloudinary(buffer, publicId) {
+    return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+            {
+                folder: 'mnlakehomes/agents',
+                public_id: publicId,
+                resource_type: 'image',
+                overwrite: true,
+                transformation: [
+                    { width: 1200, height: 1200, crop: 'limit' },
+                    { quality: 'auto:good' },
+                ],
+            },
+            (err, result) => (err ? reject(err) : resolve(result))
+        );
+        stream.end(buffer);
+    });
+}
+
 // POST /api/agents/upload-photo
 const uploadPhoto = (req, res) => {
-    photoUpload(req, res, (err) => {
+    photoUpload(req, res, async (err) => {
         if (err) {
-            console.error('[uploadPhoto]', err.message);
+            console.error('[uploadPhoto multer]', err.message);
             return res.status(400).json({ error: err.message });
         }
-        if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+        if (!req.file || !req.file.buffer) {
+            return res.status(400).json({ error: 'No file uploaded.' });
+        }
 
-        // multer-storage-cloudinary puts the CDN URL on req.file.path
-        const url = req.file.path;
+        try {
+            const publicId = `agent-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            const result   = await uploadBufferToCloudinary(req.file.buffer, publicId);
 
-        logActivity({
-            event_type: 'agent.photo.upload',
-            event_scope: 'agent',
-            actor: { type: req.user?.role || 'agent', id: req.user?.userId },
-            details: {
-                url,
-                public_id: req.file.filename,
+            logActivity({
+                event_type: 'agent.photo.upload',
+                event_scope: 'agent',
+                actor: { type: req.user?.role || 'agent', id: req.user?.userId },
+                details: {
+                    url: result.secure_url,
+                    public_id: result.public_id,
+                    size: req.file.size,
+                    mimetype: req.file.mimetype,
+                },
+                req,
+            });
+
+            res.json({
+                url: result.secure_url,
+                filename: req.file.originalname,
                 size: req.file.size,
-                mimetype: req.file.mimetype,
-            },
-            req,
-        });
-
-        res.json({
-            url,
-            filename: req.file.originalname,
-            size: req.file.size,
-        });
+            });
+        } catch (cloudErr) {
+            console.error('[uploadPhoto cloudinary]', cloudErr.message || cloudErr);
+            res.status(500).json({ error: 'Image upload service failed. Please try again.' });
+        }
     });
 };
 
