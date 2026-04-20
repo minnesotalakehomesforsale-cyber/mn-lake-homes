@@ -77,8 +77,14 @@ const uploadPhoto = (req, res) => {
                 size: req.file.size,
             });
         } catch (cloudErr) {
-            console.error('[uploadPhoto cloudinary]', cloudErr.message || cloudErr);
-            res.status(500).json({ error: 'Image upload service failed. Please try again.' });
+            const msg = cloudErr && (cloudErr.message || cloudErr.error?.message || String(cloudErr));
+            console.error('[uploadPhoto cloudinary]', msg, cloudErr);
+            // Surface the actual Cloudinary error in the response so production issues
+            // (e.g. missing env vars) are diagnosable without tailing server logs.
+            res.status(500).json({
+                error: `Upload failed: ${msg || 'unknown Cloudinary error'}`,
+                cloudinary_configured: !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET),
+            });
         }
     });
 };

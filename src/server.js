@@ -84,6 +84,27 @@ app.get('/api/_diagnostic', async (req, res) => {
         out.checks.leads_columns = r.rows.map(x => x.column_name);
     } catch (e) { out.checks.leads_columns = `error: ${e.message}`; }
 
+    // Cloudinary health check — verifies env vars are loaded AND credentials work
+    out.checks.cloudinary_env = {
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? 'set' : 'MISSING',
+        api_key:    process.env.CLOUDINARY_API_KEY    ? 'set' : 'MISSING',
+        api_secret: process.env.CLOUDINARY_API_SECRET ? 'set' : 'MISSING',
+    };
+    try {
+        const cloudinary = require('cloudinary').v2;
+        cloudinary.config({
+            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+            api_key:    process.env.CLOUDINARY_API_KEY,
+            api_secret: process.env.CLOUDINARY_API_SECRET,
+            secure:     true,
+        });
+        const ping = await cloudinary.api.ping();
+        out.checks.cloudinary_ping = ping.status === 'ok' ? 'pass' : `fail: ${JSON.stringify(ping)}`;
+    } catch (e) {
+        out.checks.cloudinary_ping = `fail: ${e.message || e}`;
+        out.status = 'degraded';
+    }
+
     res.json(out);
 });
 
