@@ -34,6 +34,49 @@
         .inbox-tab.active { background: #1d6df2; color: #fff; border-color: #1d6df2; }
         .detail-row { display: flex; gap: 0.5rem; align-items: center; font-size: 0.82rem; color: #718096; }
         .detail-row svg { flex-shrink: 0; }
+
+        /* ── Mobile ≤ 900px: collapse sidebar, single-column forms ────────── */
+        @media (max-width: 900px) {
+            .dashboard-container { padding: 6rem 1rem 3rem !important; }
+            .dash-grid {
+                grid-template-columns: 1fr !important;
+                gap: 1.25rem !important;
+            }
+            .dash-sidebar {
+                position: static !important;
+                padding: 1.25rem !important;
+                top: auto !important;
+            }
+            .dash-sidebar h4 { display: none; }
+            .dash-sidebar .nav-tab { width: auto; }
+            .dash-sidebar > div:first-child { margin-bottom: 1rem !important; padding-bottom: 1rem !important; }
+            /* Stack nav tabs in a horizontal scroll row */
+            .dash-sidebar .nav-tab { display: inline-flex; }
+            .view-card { padding: 1.5rem 1.25rem !important; }
+            .view-card .grid-2 { grid-template-columns: 1fr !important; gap: 0.75rem !important; }
+            .profile-card-header {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 0.75rem;
+                margin-bottom: 1.5rem !important;
+                padding-bottom: 1rem !important;
+            }
+            .profile-card-header h2 { font-size: 1.5rem !important; }
+            .profile-card-header p  { font-size: 0.9rem !important; }
+            .profile-photo-row {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 1rem !important;
+                margin-bottom: 2rem !important;
+            }
+            .tier-card { padding: 1.5rem 1.25rem !important; }
+            .tier-price { font-size: 2.1rem !important; }
+            #view-activate { padding: 1.5rem 1.25rem !important; margin-top: 1.25rem !important; }
+        }
+        @media (max-width: 480px) {
+            .profile-card-header h2 { font-size: 1.3rem !important; }
+            .lead-card { padding: 1.1rem 1rem !important; }
+        }
     </style>
 </head>
 <body style="background-color: #f7f9fa;">
@@ -63,10 +106,10 @@
             </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 280px 1fr; gap: 2.5rem; align-items: start;">
+        <div class="dash-grid" style="display: grid; grid-template-columns: 280px 1fr; gap: 2.5rem; align-items: start;">
 
             <!-- Sidebar Navigation -->
-            <div style="background: #fff; padding: 2rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); position: sticky; top: 100px;">
+            <div class="dash-sidebar" style="background: #fff; padding: 2rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); position: sticky; top: 100px;">
 
                 <div style="margin-bottom: 2rem; text-align: center; padding-bottom: 1.5rem; border-bottom: 1px solid #edf2f7;">
                     <div id="sidebar-name" style="font-weight: 800; font-size: 1.1rem; color: #1a202c; margin-bottom: 0.25rem;">Loading...</div>
@@ -89,8 +132,8 @@
             <div>
 
                 <!-- ── PROFILE EDITOR VIEW ── -->
-                <div id="view-profile" style="background: #fff; padding: 3rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; border-bottom: 1px solid #edf2f7; padding-bottom: 1.5rem;">
+                <div id="view-profile" class="view-card" style="background: #fff; padding: 3rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                    <div class="profile-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; border-bottom: 1px solid #edf2f7; padding-bottom: 1.5rem;">
                         <div>
                             <h2 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem;">Edit Public Profile</h2>
                             <p style="color: #718096;">Ensure all information is accurate and perfectly formatted.</p>
@@ -102,7 +145,7 @@
 
                     <form id="profile-edit-form" onsubmit="event.preventDefault();">
                         <h3 class="form-section-title">Profile Photo</h3>
-                        <div style="display: flex; gap: 2rem; margin-bottom: 3rem; align-items: center;">
+                        <div class="profile-photo-row" style="display: flex; gap: 2rem; margin-bottom: 3rem; align-items: center;">
                             <div id="profile-preview" style="width: 100px; height: 100px; border-radius: 50%; background-color: #edf2f7; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #e2e8f0;">
                                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                             </div>
@@ -223,8 +266,8 @@
 
                 <!-- ── LEAD INBOX VIEW ── -->
                 <div id="view-leads" style="display: none;">
-                    <div style="background: #fff; padding: 2rem 2.5rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 1.5rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                    <div class="view-card" style="background: #fff; padding: 2rem 2.5rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 1.5rem;">
+                        <div class="profile-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
                             <h2 style="font-size: 1.75rem; font-weight: 700;">Lead Inbox</h2>
                             <button onclick="loadLeads()" style="border: 1px solid #e2e8f0; background: #f7f9fa; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #4a5568;">↺ Refresh</button>
                         </div>
