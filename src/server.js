@@ -358,6 +358,82 @@ async function ensureTables() {
             INSERT INTO cash_offer_config (id) VALUES (1) ON CONFLICT DO NOTHING;
         `);
 
+        // Geographic tag system (see docs/geo-tags.md — lead routing by
+        // proximity to a tagged service area). Tables are idempotent and
+        // safe to re-run on every boot.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS tags (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                slug VARCHAR(100) UNIQUE NOT NULL,
+                name VARCHAR(150) NOT NULL,
+                state VARCHAR(2) NOT NULL,
+                region VARCHAR(100),
+                latitude NUMERIC(9,6),
+                longitude NUMERIC(9,6),
+                active BOOLEAN NOT NULL DEFAULT TRUE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_tags_state_region ON tags(state, region);
+            CREATE INDEX IF NOT EXISTS idx_tags_active_coords ON tags(active, latitude, longitude)
+                WHERE active = TRUE AND latitude IS NOT NULL AND longitude IS NOT NULL;
+            CREATE INDEX IF NOT EXISTS idx_tags_name_lower ON tags(lower(name));
+
+            CREATE TABLE IF NOT EXISTS user_tags (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (user_id, tag_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_user_tags_tag ON user_tags(tag_id);
+            CREATE INDEX IF NOT EXISTS idx_user_tags_user ON user_tags(user_id);
+
+            CREATE TABLE IF NOT EXISTS lead_tags (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                lead_id UUID NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+                tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+                distance_miles NUMERIC(8,3),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_lead_tags_lead ON lead_tags(lead_id);
+            CREATE INDEX IF NOT EXISTS idx_lead_tags_tag  ON lead_tags(tag_id);
+        `);
+
+        // Generic key/value app config (match radius lives here; more knobs
+        // will follow). JSON-typed so future values can be objects.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS app_config (
+                key VARCHAR(100) PRIMARY KEY,
+                value JSONB NOT NULL,
+                description TEXT,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            INSERT INTO app_config (key, value, description) VALUES
+                ('match_radius_miles', '15'::jsonb, 'Default radius (miles) used to match leads to tagged users.')
+            ON CONFLICT (key) DO NOTHING;
+        `);
+
+        // Seed the geographic tags catalog. ON CONFLICT (slug) DO NOTHING
+        // makes this safe to run on every boot — existing tags are left
+        // alone (so admin tweaks aren't overwritten).
+        const TAGS_SEED = require('./database/tags-seed');
+        if (Array.isArray(TAGS_SEED) && TAGS_SEED.length) {
+            const values = [];
+            const params = [];
+            TAGS_SEED.forEach((t, i) => {
+                const base = i * 6;
+                values.push(`($${base+1}, $${base+2}, $${base+3}, $${base+4}, $${base+5}, $${base+6})`);
+                params.push(t.slug, t.name, t.state, t.region, t.latitude, t.longitude);
+            });
+            await pool.query(
+                `INSERT INTO tags (slug, name, state, region, latitude, longitude)
+                 VALUES ${values.join(', ')}
+                 ON CONFLICT (slug) DO NOTHING`,
+                params
+            );
+        }
+
         console.log(' Tables verified.');
 
         // Migrate default seeded cover images from Unsplash URLs to local /assets/images/ paths
