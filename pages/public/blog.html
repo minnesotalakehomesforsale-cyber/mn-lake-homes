@@ -120,16 +120,21 @@
         #blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 3rem; }
 
         @media (max-width: 900px) {
-            .blog-index-header { padding: 8rem 1.25rem 3.5rem; }
-            .blog-index-title { font-size: 3rem; letter-spacing: -1.25px; }
-            .blog-index-subtitle { font-size: 1.05rem; }
-            .blog-index-section { padding: 4rem 1.25rem 4rem !important; }
-            #blog-grid { grid-template-columns: 1fr; gap: 2rem; }
+            .blog-index-header { padding: 7rem 1.25rem 3rem; }
+            .blog-index-title { font-size: 2.75rem; letter-spacing: -1.25px; line-height: 1.05; }
+            .blog-index-subtitle { font-size: 1.02rem; }
+            .blog-index-section { padding: 3.5rem 1.25rem 4rem !important; }
+            #blog-grid { grid-template-columns: 1fr; gap: 1.75rem; }
             .blog-image { aspect-ratio: 16/9; margin-bottom: 1rem; }
+            .blog-title { font-size: 1.15rem; }
+            .blog-excerpt { font-size: 0.88rem; }
         }
         @media (max-width: 480px) {
+            .blog-index-header { padding: 6rem 1rem 2.5rem; }
             .blog-index-title { font-size: 2.25rem; }
-            .blog-index-section { padding: 3rem 1.25rem 3rem !important; }
+            .blog-index-subtitle { font-size: 0.98rem; }
+            .blog-index-section { padding: 2.75rem 1rem 3rem !important; }
+            #blog-grid { gap: 1.5rem; }
         }
     </style>
     <script src="../../components/components.js" defer></script>

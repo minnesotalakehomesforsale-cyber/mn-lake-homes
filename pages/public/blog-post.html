@@ -42,6 +42,31 @@
 
         .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: #718096; text-decoration: none; font-weight: 600; font-size: 0.9rem; margin-bottom: 2rem; transition: color 0.15s; }
         .back-link:hover { color: #1a202c; }
+        .post-body-wrap img { max-width: 100%; height: auto; border-radius: 10px; }
+
+        @media (max-width: 900px) {
+            .post-hero { height: auto; min-height: 280px; }
+            .post-hero-content { padding: 2rem 1.25rem; }
+            .post-title { font-size: 2rem; letter-spacing: -1px; line-height: 1.15; }
+            .post-tag { margin-bottom: 0.75rem; }
+            .post-byline { font-size: 0.82rem; gap: 1rem; }
+
+            .post-body-wrap { padding: 2.5rem 1.25rem 4rem; }
+            .post-body-wrap p { font-size: 1.02rem; line-height: 1.7; }
+            .post-body-wrap h2 { font-size: 1.35rem; margin-top: 2rem; }
+            .post-body-wrap h3 { font-size: 1.1rem; margin-top: 1.5rem; }
+            .post-body-wrap li { font-size: 0.98rem; line-height: 1.65; }
+            .post-body-wrap blockquote { padding: 0.4rem 1.1rem; margin: 1.5rem 0; }
+            .back-link { margin-bottom: 1.25rem; font-size: 0.85rem; }
+        }
+        @media (max-width: 480px) {
+            .post-hero { min-height: 240px; }
+            .post-hero-content { padding: 1.5rem 1rem; }
+            .post-title { font-size: 1.6rem; letter-spacing: -0.5px; }
+            .post-body-wrap { padding: 2rem 1rem 3rem; }
+            .post-body-wrap p { font-size: 0.98rem; }
+            .post-body-wrap h2 { font-size: 1.2rem; }
+        }
     </style>
     <script src="../../components/components.js" defer></script>
 </head>
