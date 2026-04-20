@@ -745,7 +745,13 @@ async function _lfDoSubmit() {
     const cfg  = _LF_CFG[_lfs.type];
     const d    = _lfs.data;
     const name = [d.first, d.last].filter(Boolean).join(' ');
-    const skip = new Set(['first','last','email','phone','placeId']);
+    // address + placeId + property_* live on the lead record directly,
+    // so exclude them from the free-form notes dump.
+    const skip = new Set([
+        'first','last','email','phone',
+        'address','placeId',
+        'property_street','property_city','property_state','property_zip',
+    ]);
     const notes = Object.entries(d).filter(([k,v]) => !skip.has(k) && v)
         .map(([k,v]) => `${k[0].toUpperCase()+k.slice(1).replace(/_/g,' ')}: ${v}`).join('\n');
 
@@ -757,7 +763,19 @@ async function _lfDoSubmit() {
         const res = await fetch('/api/leads', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email: d.email||null, phone: d.phone||null, notes: notes||null, source: cfg.source })
+            body: JSON.stringify({
+                name,
+                email: d.email||null,
+                phone: d.phone||null,
+                notes: notes||null,
+                source: cfg.source,
+                property_address:  d.address || null,
+                property_place_id: d.placeId || null,
+                property_street:   d.property_street || null,
+                property_city:     d.property_city   || null,
+                property_state:    d.property_state  || null,
+                property_zip:      d.property_zip    || null,
+            })
         });
         if (!res.ok) { const r = await res.json().catch(()=>({})); throw new Error(r.error || 'Submission failed.'); }
 

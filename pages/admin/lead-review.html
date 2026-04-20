@@ -219,11 +219,25 @@
             const statusDrop = document.getElementById('status-dropdown');
             if (statusDrop) statusDrop.value = lead.lead_status;
 
+            const hasPropAddr = !!(lead.property_address || lead.property_street || lead.property_city);
+            const mapsUrl = lead.property_place_id
+                ? `https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(lead.property_place_id)}`
+                : (lead.property_address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lead.property_address)}` : null);
+
             document.getElementById('meta-grid').innerHTML = `
                 <div class="data-point"><label>Full Name</label><div>${lead.full_name}</div></div>
                 <div class="data-point"><label>Email Address</label><div><a href="mailto:${lead.email}" style="color:var(--accent-blue);">${lead.email || 'N/A'}</a></div></div>
                 <div class="data-point"><label>Phone Number</label><div>${lead.phone || 'N/A'}</div></div>
                 <div class="data-point"><label>Origin Source</label><div style="font-family:monospace; color:#4a5568;">${lead.lead_source || 'Direct'}</div></div>
+                ${hasPropAddr ? `
+                    <div class="data-point" style="grid-column: 1 / -1;"><label>Property Address</label>
+                        <div>${mapsUrl ? `<a href="${mapsUrl}" target="_blank" rel="noopener" style="color:var(--accent-blue);">${lead.property_address || [lead.property_street, lead.property_city, lead.property_state, lead.property_zip].filter(Boolean).join(', ')}</a>` : (lead.property_address || 'N/A')}</div>
+                    </div>
+                    ${lead.property_street ? `<div class="data-point"><label>Street</label><div>${lead.property_street}</div></div>` : ''}
+                    ${lead.property_city   ? `<div class="data-point"><label>City</label><div>${lead.property_city}</div></div>`     : ''}
+                    ${lead.property_state  ? `<div class="data-point"><label>State</label><div>${lead.property_state}</div></div>`   : ''}
+                    ${lead.property_zip    ? `<div class="data-point"><label>ZIP</label><div>${lead.property_zip}</div></div>`       : ''}
+                ` : ''}
             `;
 
             document.getElementById('lead-message').innerText = lead.message || 'No direct message provided.';

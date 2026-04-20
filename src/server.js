@@ -230,6 +230,12 @@ async function ensureTables() {
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS form_payload_json JSONB;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS source_page_url VARCHAR(1000);
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS source_page_title VARCHAR(255);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS property_address TEXT;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS property_street VARCHAR(255);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS property_city VARCHAR(120);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS property_state VARCHAR(50);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS property_zip VARCHAR(20);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS property_place_id VARCHAR(255);
         `);
 
         // Stripe columns on agents table

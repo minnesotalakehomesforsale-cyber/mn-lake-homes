@@ -567,7 +567,23 @@
             const cta   = document.getElementById('sell-hero-cta');
             if (!input || !cta) return;
 
-            const state = { formattedAddress: '', placeId: null };
+            const state = { formattedAddress: '', placeId: null, components: null };
+
+            function parseAddressComponents(comps) {
+                const out = { street_number: '', route: '', city: '', state: '', zip: '' };
+                if (!Array.isArray(comps)) return out;
+                for (const c of comps) {
+                    const t = c.types || [];
+                    if (t.includes('street_number'))                    out.street_number = c.long_name;
+                    else if (t.includes('route'))                       out.route = c.long_name;
+                    else if (t.includes('locality'))                    out.city = c.long_name;
+                    else if (t.includes('sublocality') && !out.city)    out.city = c.long_name;
+                    else if (t.includes('administrative_area_level_1')) out.state = c.short_name;
+                    else if (t.includes('postal_code'))                 out.zip = c.long_name;
+                }
+                out.street = [out.street_number, out.route].filter(Boolean).join(' ').trim();
+                return out;
+            }
 
             const onFocus = () => { input.style.borderColor = '#1d6df2'; input.style.boxShadow = '0 0 0 3px rgba(29,109,242,0.1)'; };
             const onBlur  = () => { input.style.borderColor = '#e2e8f0'; input.style.boxShadow = 'none'; };
@@ -598,12 +614,14 @@
                     if (!place || !place.place_id) { disableCta(); return; }
                     state.placeId = place.place_id;
                     state.formattedAddress = place.formatted_address || input.value;
+                    state.components = parseAddressComponents(place.address_components);
                     enableCta();
                 });
                 input.addEventListener('input', () => {
                     if (!state.formattedAddress || input.value.trim() !== state.formattedAddress) {
                         disableCta();
                         state.placeId = null;
+                        state.components = null;
                     }
                 });
                 // Suppress Enter-triggered form submit
@@ -633,7 +651,15 @@
             cta.addEventListener('click', () => {
                 const addr = state.formattedAddress || input.value.trim();
                 if (!addr) return;
-                window.openForm('sell', { address: addr, placeId: state.placeId });
+                const c = state.components || {};
+                window.openForm('sell', {
+                    address: addr,
+                    placeId: state.placeId,
+                    property_street: c.street || null,
+                    property_city:   c.city   || null,
+                    property_state:  c.state  || null,
+                    property_zip:    c.zip    || null,
+                });
             });
 
             boot();

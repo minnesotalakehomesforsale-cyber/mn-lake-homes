@@ -3,7 +3,11 @@ const emailService = require('../services/email');
 const { logActivity } = require('../services/activity-log');
 
 const createLead = async (req, res) => {
-    let { name, email, phone, notes, source, agent_id } = req.body;
+    let {
+        name, email, phone, notes, source, agent_id,
+        property_address, property_street, property_city,
+        property_state, property_zip, property_place_id,
+    } = req.body;
 
     name = (name || '').trim();
     email = (email || '').trim().toLowerCase();
@@ -13,13 +17,29 @@ const createLead = async (req, res) => {
         return res.status(400).json({ error: 'Name and either Email or Phone are required to dispatch lead.' });
     }
 
+    const str = (v, max) => {
+        if (v === null || v === undefined || v === '') return null;
+        return String(v).trim().slice(0, max) || null;
+    };
+    const propAddress = str(property_address, 500);
+    const propStreet  = str(property_street, 255);
+    const propCity    = str(property_city, 120);
+    const propState   = str(property_state, 50);
+    const propZip     = str(property_zip, 20);
+    const propPlaceId = str(property_place_id, 255);
+
     try {
         // Coerce agent string if dummy provided
         const finalAgentId = (agent_id && agent_id !== 'uuid-string-dummy') ? agent_id : null;
 
         const query = `
-            INSERT INTO leads (full_name, first_name, email, phone, message, lead_type, lead_source, agent_id, lead_status)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new')
+            INSERT INTO leads (
+                full_name, first_name, email, phone, message,
+                lead_type, lead_source, agent_id, lead_status,
+                property_address, property_street, property_city,
+                property_state, property_zip, property_place_id
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', $9, $10, $11, $12, $13, $14)
             RETURNING id
         `;
         // We extrapolate first name logically
@@ -36,7 +56,11 @@ const createLead = async (req, res) => {
         };
         const enumType = enumMap[source] || 'general_contact';
 
-        const { rows: leadRows } = await pool.query(query, [name, firstName, email, phone, notes, enumType, source, finalAgentId]);
+        const { rows: leadRows } = await pool.query(query, [
+            name, firstName, email, phone, notes,
+            enumType, source, finalAgentId,
+            propAddress, propStreet, propCity, propState, propZip, propPlaceId,
+        ]);
         const newLeadId = leadRows[0]?.id;
 
         logActivity({
