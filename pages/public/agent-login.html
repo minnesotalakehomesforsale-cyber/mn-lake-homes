@@ -226,7 +226,7 @@
                     <button type="submit" class="signup-submit" id="login-submit">Sign in</button>
 
                     <p class="new-note">
-                        New to the network? <a href="/pages/public/join.html">Apply to join &rarr;</a>
+                        New to the network? <a href="#apply" onclick="event.preventDefault(); window.openJoinForm && window.openJoinForm();">Apply to join &rarr;</a>
                     </p>
                 </form>
 
@@ -250,6 +250,7 @@
     </div>
 
     <script src="../../components/components.js"></script>
+    <script src="../../components/join-form.js" defer></script>
     <script>
         // If already logged in, redirect to the right dashboard
         fetch('/api/auth/session', { credentials: 'include' })
