@@ -380,8 +380,74 @@
             display: grid; grid-template-columns: 1fr; gap: 0.7rem;
         }
 
+        @media (max-width: 900px) {
+            /* ── Static page sections ───────────────────────────────── */
+            /* "How It Works" — collapse 2-col, tighten padding, scale heading */
+            section#how-it-works { padding: 4rem 1.25rem !important; }
+            section#how-it-works > div {
+                grid-template-columns: 1fr !important;
+                gap: 2rem !important;
+            }
+            section#how-it-works .sp-title { font-size: 2rem !important; letter-spacing: -1px !important; }
+            section#how-it-works .sp-title br { display: none; }
+            section#how-it-works p { font-size: 1rem !important; }
+            section#how-it-works h3 { font-size: 1.1rem !important; }
+
+            /* "Cash vs Listing" dark section — stack + shrink image */
+            section.sp-dark-section { padding: 4rem 1.25rem !important; }
+            section.sp-dark-section .sp-title { font-size: 2rem !important; }
+            section.sp-dark-section .sp-title br { display: none; }
+            section.sp-dark-section .sp-media-wrapper { height: 240px !important; }
+            section.sp-dark-section .sp-grid {
+                grid-template-columns: 1fr !important;
+                gap: 1.5rem !important;
+            }
+
+            /* "Who It's For" — 3-col → 1-col */
+            section[style*="padding: 8rem 2rem"]:not(.sp-dark-section) { padding: 4rem 1.25rem !important; }
+            section[style*="padding: 8rem 2rem"] > div > div[style*="grid-template-columns: repeat(3, 1fr)"] {
+                grid-template-columns: 1fr !important;
+                gap: 1rem !important;
+            }
+            section[style*="padding: 8rem 2rem"] > div > div > div[style*="padding: 2.5rem 2rem"] {
+                padding: 1.75rem 1.5rem !important;
+            }
+            section[style*="padding: 8rem 2rem"] .sp-title { font-size: 2rem !important; }
+            section[style*="padding: 8rem 2rem"] .sp-title br { display: none; }
+
+            /* Final CTA — stack the header-split, shrink image */
+            section[style*="padding: 0 2rem 8rem"] { padding: 0 1.25rem 4rem !important; }
+            section[style*="padding: 0 2rem 8rem"] .sp-header-split {
+                grid-template-columns: 1fr !important;
+                gap: 1.5rem !important;
+                align-items: start !important;
+            }
+            section[style*="padding: 0 2rem 8rem"] .sp-header-split > div:last-child { justify-self: start !important; }
+            section[style*="padding: 0 2rem 8rem"] .sp-title { font-size: 2rem !important; letter-spacing: -0.75px !important; }
+            section[style*="padding: 0 2rem 8rem"] .sp-title br { display: none; }
+            section[style*="padding: 0 2rem 8rem"] > div > img { height: 260px !important; }
+        }
+
         @media (max-width: 600px) {
-            .coo-grid-2, .coo-grid-3 { grid-template-columns: 1fr; }
+            /* Overlay — tighten chrome, body padding, grid gaps */
+            .coo-chrome { padding: 0.75rem 1rem !important; }
+            .coo-brand-name { font-size: 0.8rem !important; }
+            .coo-body { padding: 3rem 1rem 2rem !important; min-height: 100vh; min-height: 100dvh; }
+            .coo-grid-2, .coo-grid-3 { grid-template-columns: 1fr !important; gap: 0.75rem !important; }
+            .coo-offer-amount { font-size: clamp(2.5rem, 14vw, 4rem) !important; letter-spacing: -2px; }
+            .coo-summary-card { padding: 1.1rem !important; }
+            .coo-summary-facts { gap: 0.4rem 0.9rem !important; font-size: 0.82rem !important; }
+
+            /* Hero tweaks on tight screens */
+            .co-hero { padding: 6.5rem 1rem 3rem !important; }
+        }
+
+        @media (max-width: 480px) {
+            .coo-chrome { padding: 0.6rem 0.85rem !important; }
+            .coo-close { width: 40px !important; height: 40px !important; }
+            .coo-back-btn { font-size: 0.8rem !important; }
+            .coo-step h2 { font-size: 1.45rem !important; }
+            .coo-primary-btn, .coo-outline-btn { padding: 0.95rem 1.25rem !important; font-size: 0.95rem !important; }
         }
     </style>
 </head>
