@@ -23,9 +23,12 @@
         { q: "Best phone number to reach you?",                    hint: 'For our team to follow up on your application.',                                                 field: 'phone',    type: 'tel',      ph: '(612) 555-0000',          required: true },
         { q: "Which brokerage are you with?",                      hint: 'Independent? No worries — just press Continue.',                                                 field: 'brokerage',type: 'text',     ph: "e.g. Keller Williams, Sotheby's", required: false },
         { q: "Do you have a real estate license number?",          hint: 'Optional — you can update this later in your profile.',                                          field: 'license',  type: 'text',     ph: 'e.g. MN-40012345',        required: false },
+        { q: "Which areas do you serve?",                          hint: 'Pick up to 10 cities or towns. We route leads near these areas to you. You can change this later.', field: 'service_area_tag_ids', type: 'tags',     required: true },
         { q: "Create a password for your account.",                hint: 'Needed for the upcoming agent portal — this site is launching as the beta. Min 8 characters.', field: 'password', type: 'password', ph: '••••••••',                required: true, minlength: 8 },
         { q: "One more — confirm your password.",                  hint: 'Must match the password above.',                                                                 field: 'confirm',  type: 'password', ph: '••••••••',                required: true },
     ];
+
+    const MAX_SERVICE_AREAS = 10;
 
     const iStyle = 'width:100%;padding:1rem 1.25rem;border:2px solid #e2e8f0;border-radius:12px;font-family:inherit;font-size:1.15rem;box-sizing:border-box;outline:none;transition:border-color 0.2s;background:#fff;text-align:center;';
     const focus  = `onfocus="this.style.borderColor='#1d6df2'" onblur="this.style.borderColor='#e2e8f0'"`;
@@ -175,16 +178,138 @@
         hint.style.display = s.hint ? 'block' : 'none';
 
         const area = document.getElementById('join-field');
-        area.innerHTML = `<input id="join-input" type="${s.type}" placeholder="${s.ph}" autocomplete="off"
-            style="${iStyle}" ${focus} value="${(_js.data[s.field] || '').toString().replace(/"/g, '&quot;')}">`;
-        const input = document.getElementById('join-input');
-        input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); joinNext(); } });
-        setTimeout(() => input?.focus(), 60);
+        if (s.type === 'tags') {
+            _renderTagsStep(area);
+        } else {
+            area.innerHTML = `<input id="join-input" type="${s.type}" placeholder="${s.ph}" autocomplete="off"
+                style="${iStyle}" ${focus} value="${(_js.data[s.field] || '').toString().replace(/"/g, '&quot;')}">`;
+            const input = document.getElementById('join-input');
+            input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); joinNext(); } });
+            setTimeout(() => input?.focus(), 60);
+        }
 
         const btn = document.getElementById('join-btn');
         btn.disabled = false;
         btn.style.background = '#1a202c';
         btn.textContent = _js.step === total - 1 ? 'Create My Account →' : 'Continue →';
+    }
+
+    // ── Tags-picker step (service areas) ─────────────────────────────────
+    let _tagsCatalog = null;
+    let _tagsCatalogPromise = null;
+
+    async function _loadTagsCatalog() {
+        if (_tagsCatalog) return _tagsCatalog;
+        if (_tagsCatalogPromise) return _tagsCatalogPromise;
+        _tagsCatalogPromise = fetch('/api/tags?active=true')
+            .then(r => r.ok ? r.json() : [])
+            .then(list => { _tagsCatalog = Array.isArray(list) ? list : []; return _tagsCatalog; })
+            .catch(() => { _tagsCatalog = []; return _tagsCatalog; });
+        return _tagsCatalogPromise;
+    }
+
+    function _escHtml(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    function _renderTagsStep(container) {
+        const selected = new Set(Array.isArray(_js.data.service_area_tag_ids) ? _js.data.service_area_tag_ids : []);
+
+        container.innerHTML = `
+            <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                <div id="tags-counter" style="font-size:0.8rem;font-weight:700;color:#718096;letter-spacing:0.5px;text-transform:uppercase;text-align:center;"></div>
+                <div id="tags-pills" style="display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:center;min-height:32px;"></div>
+                <div style="position:relative;">
+                    <svg style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:#a0aec0;pointer-events:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input id="tags-search" type="search" placeholder="Search cities or regions…" autocomplete="off"
+                        style="width:100%;padding:0.9rem 1rem 0.9rem 2.75rem;border:2px solid #e2e8f0;border-radius:12px;font-family:inherit;font-size:1rem;background:#fff;box-sizing:border-box;outline:none;transition:border-color 0.2s;"
+                        onfocus="this.style.borderColor='#1d6df2'" onblur="this.style.borderColor='#e2e8f0'">
+                </div>
+                <div id="tags-list" style="max-height:320px;overflow-y:auto;border:1px solid #edf2f7;border-radius:12px;background:#fff;padding:0.25rem;">
+                    <div style="padding:2rem;text-align:center;color:#a0aec0;font-size:0.9rem;">Loading areas…</div>
+                </div>
+            </div>
+        `;
+
+        const searchEl = document.getElementById('tags-search');
+        const listEl   = document.getElementById('tags-list');
+
+        const renderPills = () => {
+            const host = document.getElementById('tags-pills');
+            const counter = document.getElementById('tags-counter');
+            counter.textContent = `${selected.size} of ${MAX_SERVICE_AREAS} selected`;
+            counter.style.color = selected.size >= MAX_SERVICE_AREAS ? '#b45309' : '#718096';
+            if (!selected.size) {
+                host.innerHTML = '<span style="color:#a0aec0;font-size:0.88rem;">No areas picked yet.</span>';
+                return;
+            }
+            if (!_tagsCatalog) return;
+            const byId = new Map(_tagsCatalog.map(t => [t.id, t]));
+            host.innerHTML = [...selected].map(id => {
+                const t = byId.get(id);
+                if (!t) return '';
+                return `<span data-id="${t.id}" style="display:inline-flex;align-items:center;gap:0.35rem;background:#ebf4ff;color:#1d6df2;padding:0.35rem 0.65rem;border-radius:999px;font-size:0.82rem;font-weight:700;">
+                    ${_escHtml(t.name)}, ${_escHtml(t.state)}
+                    <button type="button" data-remove="${t.id}" aria-label="Remove" style="background:none;border:none;color:#1d6df2;cursor:pointer;padding:0;font-size:1rem;line-height:1;">×</button>
+                </span>`;
+            }).join('');
+            host.querySelectorAll('[data-remove]').forEach(b => {
+                b.addEventListener('click', () => {
+                    selected.delete(b.getAttribute('data-remove'));
+                    _js.data.service_area_tag_ids = [...selected];
+                    renderPills();
+                    renderList();
+                });
+            });
+        };
+
+        const renderList = () => {
+            if (!_tagsCatalog) return;
+            const q = (searchEl.value || '').toLowerCase().trim();
+            let rows = _tagsCatalog;
+            if (q) {
+                rows = rows.filter(t =>
+                    t.name.toLowerCase().includes(q) ||
+                    (t.region && t.region.toLowerCase().includes(q)) ||
+                    (t.state && t.state.toLowerCase() === q)
+                );
+            }
+            rows = rows.slice(0, 120);
+            if (!rows.length) {
+                listEl.innerHTML = '<div style="padding:2rem;text-align:center;color:#a0aec0;font-size:0.9rem;">No matches.</div>';
+                return;
+            }
+            listEl.innerHTML = rows.map(t => {
+                const on = selected.has(t.id);
+                const atCap = !on && selected.size >= MAX_SERVICE_AREAS;
+                return `<button type="button" data-id="${t.id}" ${atCap ? 'disabled' : ''}
+                    style="display:flex;justify-content:space-between;align-items:center;width:100%;padding:0.65rem 0.9rem;border:none;border-bottom:1px solid #f7f9fa;background:${on ? '#ebf4ff' : '#fff'};cursor:${atCap ? 'not-allowed' : 'pointer'};opacity:${atCap ? '0.45' : '1'};font-family:inherit;font-size:0.9rem;text-align:left;">
+                    <span>
+                        <strong style="color:#1a202c;font-weight:700;">${_escHtml(t.name)}</strong>
+                        <span style="color:#718096;font-size:0.78rem;margin-left:0.4rem;">${_escHtml(t.state)}${t.region ? ' · ' + _escHtml(t.region) : ''}</span>
+                    </span>
+                    <span style="color:${on ? '#1d6df2' : '#cbd5e0'};font-weight:800;font-size:1rem;">${on ? '✓' : '+'}</span>
+                </button>`;
+            }).join('');
+            listEl.querySelectorAll('[data-id]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.getAttribute('data-id');
+                    if (selected.has(id)) selected.delete(id);
+                    else if (selected.size < MAX_SERVICE_AREAS) selected.add(id);
+                    _js.data.service_area_tag_ids = [...selected];
+                    renderPills();
+                    renderList();
+                });
+            });
+        };
+
+        searchEl.addEventListener('input', renderList);
+
+        _loadTagsCatalog().then(() => {
+            renderPills();
+            renderList();
+            setTimeout(() => searchEl.focus(), 80);
+        });
     }
 
     function _joinSlide() {
@@ -195,8 +320,23 @@
 
     async function joinNext() {
         const s   = JOIN_STEPS[_js.step];
-        const val = (document.getElementById('join-input')?.value || '').trim();
         const err = document.getElementById('join-error');
+
+        // Tags step: already kept in _js.data.service_area_tag_ids as
+        // user clicks; just enforce the minimum-1 requirement.
+        if (s.type === 'tags') {
+            const picks = Array.isArray(_js.data.service_area_tag_ids) ? _js.data.service_area_tag_ids : [];
+            if (s.required && picks.length === 0) {
+                err.textContent = 'Pick at least one service area — leads route based on these.';
+                err.style.display = 'block';
+                return;
+            }
+            if (_js.step < JOIN_STEPS.length - 1) { _js.step++; _joinSlide(); }
+            else await _joinSubmit();
+            return;
+        }
+
+        const val = (document.getElementById('join-input')?.value || '').trim();
 
         if (s.required && !val) { err.textContent = 'This field is required.'; err.style.display = 'block'; return; }
         if (s.type === 'email' && val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { err.textContent = 'Please enter a valid email address.'; err.style.display = 'block'; return; }
@@ -222,7 +362,8 @@
                     password:       _js.data.password,
                     display_name:   `${_js.data.first} ${_js.data.last}`.trim(),
                     license_number: _js.data.license   || null,
-                    brokerage_name: _js.data.brokerage || null
+                    brokerage_name: _js.data.brokerage || null,
+                    service_area_tag_ids: Array.isArray(_js.data.service_area_tag_ids) ? _js.data.service_area_tag_ids : [],
                 })
             });
             const result = await res.json();

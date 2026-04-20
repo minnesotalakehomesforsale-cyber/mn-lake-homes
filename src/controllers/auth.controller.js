@@ -93,7 +93,7 @@ const setCookie = (res, token) => {
  * Creates a new user + linked agent record.
  */
 const register = async (req, res) => {
-    let { email, password, display_name, license_number, brokerage_name } = req.body;
+    let { email, password, display_name, license_number, brokerage_name, service_area_tag_ids } = req.body;
 
     email = (email || '').trim().toLowerCase();
     display_name = (display_name || '').trim();
@@ -106,6 +106,12 @@ const register = async (req, res) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return res.status(400).json({ error: 'Invalid email format.' });
     }
+
+    // Normalize incoming service-area tag ids: array of UUIDs, capped at 10.
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const tagIds = Array.isArray(service_area_tag_ids)
+        ? service_area_tag_ids.filter(id => typeof id === 'string' && UUID_RE.test(id)).slice(0, 10)
+        : [];
 
     const client = await pool.connect();
     try {
@@ -141,6 +147,19 @@ const register = async (req, res) => {
              VALUES ($1, $2, $3, $4, $5, $6, 'draft', false)`,
             [userId, basicId, slugStr, display_name, license_number || null, brokerage_name || null]
         );
+
+        // Attach initial service-area tags. Silently skips any id that
+        // doesn't match an active tag in the catalog.
+        if (tagIds.length) {
+            const values = tagIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+            await client.query(
+                `INSERT INTO user_tags (user_id, tag_id)
+                 SELECT uid, tid FROM (VALUES ${values}) AS v(uid, tid)
+                 WHERE EXISTS (SELECT 1 FROM tags WHERE id = v.tid::uuid AND active = TRUE)
+                 ON CONFLICT (user_id, tag_id) DO NOTHING`,
+                [userId, ...tagIds]
+            );
+        }
 
         await client.query('COMMIT');
 
