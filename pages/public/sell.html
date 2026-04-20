@@ -102,7 +102,15 @@
                 <div style="font-weight: 600; color: #2b6cb0; margin-bottom: 1rem; letter-spacing: 1px; text-transform: uppercase;">Minnesota's Top Marketing Platform</div>
                 <h2 class="sp-title" style="font-size: 3rem; margin-bottom: 2rem; line-height: 1.1;">Premium marketing<br>that drives massive<br><span>buyer interest.</span><br>Instantly.</h2>
                 <p style="color: #4a5568; line-height: 1.6; margin-bottom: 2rem;">Lake home owners and luxury property investors trust MN Lake Homes to deliver reliable, fully-managed real estate marketing with proven results.</p>
-                <button class="btn btn-primary" onclick="openForm('sell')" style="margin-top: 0;">Get Started &rarr;</button>
+
+                <label for="sell-hero-address" style="display:block;font-size:0.78rem;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.5rem;">Your property address</label>
+                <div style="position:relative;margin-bottom:0.75rem;">
+                    <svg style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:#a0aec0;pointer-events:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    <input id="sell-hero-address" type="text" placeholder="Start typing your address…" autocomplete="off"
+                        style="width:100%;padding:1rem 1rem 1rem 3rem;border:2px solid #e2e8f0;border-radius:12px;font-family:inherit;font-size:1rem;background:#fff;box-sizing:border-box;outline:none;transition:border-color 0.15s,box-shadow 0.15s;">
+                </div>
+                <p id="sell-hero-hint" style="color:#718096;font-size:0.82rem;margin:0 0 1.25rem;line-height:1.5;">Powered by Google. We'll tailor your free market report to this property.</p>
+                <button class="btn btn-primary" id="sell-hero-cta" style="margin-top:0;width:100%;" disabled>Get my free market report &rarr;</button>
             </div>
         </div>
     </section>
@@ -553,6 +561,87 @@
         if (window.location.hash === '#start') {
             document.addEventListener('DOMContentLoaded', () => openForm('sell'));
         }
+
+        // ── Sell hero: Google Places address capture ───────────────────────────
+        (function initSellHeroAddress() {
+            const input = document.getElementById('sell-hero-address');
+            const cta   = document.getElementById('sell-hero-cta');
+            const hint  = document.getElementById('sell-hero-hint');
+            if (!input || !cta) return;
+
+            const state = { formattedAddress: '', placeId: null };
+
+            const onFocus = () => { input.style.borderColor = '#1d6df2'; input.style.boxShadow = '0 0 0 3px rgba(29,109,242,0.1)'; };
+            const onBlur  = () => { input.style.borderColor = '#e2e8f0'; input.style.boxShadow = 'none'; };
+            input.addEventListener('focus', onFocus);
+            input.addEventListener('blur', onBlur);
+
+            function enableCta() { cta.disabled = false; }
+            function disableCta() { cta.disabled = true; }
+
+            function fallbackTypingMode() {
+                // No Google — accept any ≥5 char address so user can continue.
+                hint.textContent = 'Type your full address and continue — we\'ll confirm details shortly.';
+                input.addEventListener('input', () => {
+                    const v = input.value.trim();
+                    if (v.length >= 5) { state.formattedAddress = v; state.placeId = null; enableCta(); }
+                    else disableCta();
+                });
+            }
+
+            function initAutocomplete() {
+                if (!window.google || !google.maps || !google.maps.places) { fallbackTypingMode(); return; }
+                const ac = new google.maps.places.Autocomplete(input, {
+                    types: ['address'],
+                    componentRestrictions: { country: 'us' },
+                    fields: ['place_id', 'formatted_address', 'address_components', 'geometry'],
+                });
+                ac.addListener('place_changed', () => {
+                    const place = ac.getPlace();
+                    if (!place || !place.place_id) { disableCta(); return; }
+                    state.placeId = place.place_id;
+                    state.formattedAddress = place.formatted_address || input.value;
+                    hint.textContent = '✓ Address selected. Click to continue.';
+                    enableCta();
+                });
+                input.addEventListener('input', () => {
+                    if (!state.formattedAddress || input.value.trim() !== state.formattedAddress) {
+                        disableCta();
+                        state.placeId = null;
+                    }
+                });
+                // Suppress Enter-triggered form submit
+                input.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+            }
+
+            async function boot() {
+                try {
+                    const res = await fetch('/api/config/public');
+                    if (!res.ok) throw new Error('config load failed');
+                    const cfg = await res.json();
+                    const key = cfg.googlePlacesKey;
+                    if (!key) { fallbackTypingMode(); return; }
+                    if (window.google && google.maps && google.maps.places) { initAutocomplete(); return; }
+                    window._sellGoogleReady = initAutocomplete;
+                    const s = document.createElement('script');
+                    s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&loading=async&callback=_sellGoogleReady`;
+                    s.defer = true;
+                    s.onerror = fallbackTypingMode;
+                    document.head.appendChild(s);
+                } catch (err) {
+                    console.warn('[sell] Google Places disabled:', err);
+                    fallbackTypingMode();
+                }
+            }
+
+            cta.addEventListener('click', () => {
+                const addr = state.formattedAddress || input.value.trim();
+                if (!addr) return;
+                window.openForm('sell', { address: addr, placeId: state.placeId });
+            });
+
+            boot();
+        })();
     </script>
 </body>
 </html>

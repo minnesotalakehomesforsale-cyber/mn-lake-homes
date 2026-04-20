@@ -518,11 +518,11 @@ const _LF_CFG = {
     sell: {
         source: 'seller',
         steps: [
-            { q: 'Who are we speaking with today?',         hint: "Let's start with your first name.",                                          field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
+            { q: "What's the property address?",             hint: 'Full street address so we can pull accurate comps.',                        field: { id: 'address',  type: 'text',    ph: 'e.g. 123 Shoreline Dr, Wayzata, MN' } },
+            { q: 'Who are we speaking with today?',          hint: "Let's start with your first name.",                                         field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
             { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
-            { q: d => `${d.first}, where is the property located?`,         hint: 'City, lake name, or general area.',                           field: { id: 'city',     type: 'text',    ph: 'e.g. Lake Minnetonka, Brainerd, Nisswa…' } },
             { q: 'When are you looking to sell?',                                                                                                 field: { id: 'timeline', type: 'select',  ph: 'Select a timeline…',      opts: ['As soon as possible','Within 3 months','3–6 months out','Just exploring options'] } },
-            { q: d => `Great, ${d.first}. How can we reach you?`,           hint: "We'll send your free market analysis within one business day.", field: { id: 'contact', type: 'contact' } }
+            { q: d => `Great, ${d.first}. How can we reach you?`,            hint: "We'll send your free market analysis within one business day.", field: { id: 'contact', type: 'contact' } }
         ]
     },
     rent: {
@@ -567,10 +567,14 @@ const _LF_CFG = {
     }
 };
 
-let _lfs = { type: 'general', step: 0, data: {} }; // live state
+let _lfs = { type: 'general', step: 0, data: {}, steps: null }; // live state
+
+function _lfSteps() {
+    return _lfs.steps || _LF_CFG[_lfs.type].steps;
+}
 
 function _lfQ(step) {
-    const s = _LF_CFG[_lfs.type].steps[step];
+    const s = _lfSteps()[step];
     return typeof s.q === 'function' ? s.q(_lfs.data) : s.q;
 }
 
@@ -629,7 +633,7 @@ function _lfInit() {
 }
 
 function _lfRender() {
-    const steps = _LF_CFG[_lfs.type].steps;
+    const steps = _lfSteps();
     const s     = steps[_lfs.step];
     const total = steps.length;
 
@@ -683,9 +687,17 @@ function _lfSlide() {
     setTimeout(() => { _lfRender(); body.style.opacity = '1'; body.style.transform = 'translateY(0)'; }, 140);
 }
 
-window.openForm = function(type) {
+window.openForm = function(type, prefill) {
     _lfInit();
-    _lfs = { type: type || 'general', step: 0, data: {} };
+    const t = type || 'general';
+    const data = { ...(prefill && typeof prefill === 'object' ? prefill : {}) };
+    // Skip any step whose field id is already populated via prefill.
+    const filtered = _LF_CFG[t].steps.filter(s => {
+        if (s.field.type === 'contact') return true;
+        const v = data[s.field.id];
+        return v === undefined || v === null || v === '';
+    });
+    _lfs = { type: t, step: 0, data, steps: filtered };
     document.getElementById('lf-ok').style.display   = 'none';
     document.getElementById('lf-body').style.display = 'block';
     document.getElementById('lf-overlay').style.display = 'block';
@@ -704,7 +716,7 @@ window._lfBack = function() {
 };
 
 window._lfNext = function() {
-    const steps = _LF_CFG[_lfs.type].steps;
+    const steps = _lfSteps();
     const f     = steps[_lfs.step].field;
     const err   = document.getElementById('lf-err');
 
@@ -733,7 +745,7 @@ async function _lfDoSubmit() {
     const cfg  = _LF_CFG[_lfs.type];
     const d    = _lfs.data;
     const name = [d.first, d.last].filter(Boolean).join(' ');
-    const skip = new Set(['first','last','email','phone']);
+    const skip = new Set(['first','last','email','phone','placeId']);
     const notes = Object.entries(d).filter(([k,v]) => !skip.has(k) && v)
         .map(([k,v]) => `${k[0].toUpperCase()+k.slice(1).replace(/_/g,' ')}: ${v}`).join('\n');
 
