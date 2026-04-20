@@ -486,6 +486,384 @@
             .cr-feature h3 { font-size: 1.05rem; }
             .cr-feature p { font-size: 0.88rem; }
         }
+
+        /* =========================================================
+           AI-POWERED CASH OFFER HERO SECTION
+           ========================================================= */
+        .co-hero {
+            position: relative;
+            min-height: 100vh;
+            padding: 11rem 2rem 6rem;
+            background-image: url('/assets/images/mn-aerial-lake-homes.jpg');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .co-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg,
+                rgba(0,0,0,0.75) 0%,
+                rgba(0,0,0,0.55) 40%,
+                rgba(0,0,0,0.8) 100%);
+            pointer-events: none;
+        }
+        .co-hero-inner {
+            position: relative;
+            z-index: 2;
+            max-width: 880px;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+        }
+        .co-beta-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: #dc2626;
+            color: #fff;
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.38rem 0.85rem;
+            border-radius: 999px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 10px 30px rgba(220,38,38,0.35);
+        }
+        .co-beta-pill::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 8px rgba(255,255,255,0.8);
+        }
+        .co-hero h1 {
+            font-size: 4.5rem;
+            font-weight: 800;
+            letter-spacing: -2.5px;
+            line-height: 1.04;
+            margin: 0 0 1.5rem;
+            color: #fff;
+            text-shadow: 0 2px 18px rgba(0,0,0,0.4);
+        }
+        .co-hero p.co-sub {
+            font-size: 1.2rem;
+            color: #e2e8f0;
+            line-height: 1.6;
+            max-width: 720px;
+            margin: 0 auto 2rem;
+            text-shadow: 0 1px 8px rgba(0,0,0,0.35);
+        }
+        .co-trust-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 2.5rem;
+            font-size: 0.88rem;
+            color: #cbd5e0;
+            font-weight: 500;
+        }
+        .co-trust-row .co-trust-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .co-trust-row .co-trust-item::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 8px rgba(16,185,129,0.6);
+        }
+        .co-trust-sep {
+            color: rgba(255,255,255,0.25);
+            font-weight: 400;
+        }
+        .co-address-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 0.6rem 0.6rem 0.6rem 1.25rem;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            max-width: 640px;
+            margin: 0 auto;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .co-address-card svg.co-pin {
+            flex-shrink: 0;
+            color: #64748b;
+        }
+        .co-address-card input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-family: inherit;
+            font-size: 1.05rem;
+            padding: 0.85rem 0;
+            background: transparent;
+            color: #1a202c;
+            min-width: 0;
+        }
+        .co-address-card input::placeholder {
+            color: #94a3b8;
+        }
+        .co-start-btn {
+            flex-shrink: 0;
+            background: #dc2626;
+            color: #fff;
+            border: none;
+            padding: 0.95rem 1.75rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .co-start-btn:hover:not(:disabled) {
+            background: #b91c1c;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 25px rgba(220,38,38,0.4);
+        }
+        .co-start-btn:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+        }
+        .co-hint {
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #a0aec0;
+        }
+        @media (max-width: 900px) {
+            .co-hero { padding: 8rem 1.25rem 4rem; min-height: auto; }
+            .co-hero h1 { font-size: 2.5rem; letter-spacing: -1.25px; }
+            .co-hero p.co-sub { font-size: 1rem; margin-bottom: 1.5rem; }
+            .co-trust-row { font-size: 0.78rem; gap: 0.5rem; margin-bottom: 2rem; }
+            .co-address-card {
+                flex-direction: column;
+                padding: 1rem;
+                gap: 0.75rem;
+                max-width: 100%;
+            }
+            .co-address-card svg.co-pin { display: none; }
+            .co-address-card input {
+                width: 100%;
+                padding: 0.9rem 1rem;
+                background: #f7f9fa;
+                border-radius: 10px;
+                font-size: 1rem;
+            }
+            .co-start-btn {
+                width: 100%;
+                padding: 1rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .co-hero h1 { font-size: 2rem; letter-spacing: -1px; }
+            .co-trust-sep { display: none; }
+            .co-trust-row { flex-direction: column; gap: 0.55rem; }
+        }
+
+        /* =========================================================
+           CASH OFFER OVERLAY (full-screen multi-step)
+           ========================================================= */
+        #cash-offer-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9500;
+            background: #fff;
+            font-family: 'Inter', sans-serif;
+            overflow-y: auto;
+        }
+        #cash-offer-overlay.open { display: block; }
+        .coo-progress { position: sticky; top: 0; left: 0; right: 0; height: 4px; background: #f0f4f8; z-index: 5; }
+        .coo-progress-bar { height: 100%; background: #1d6df2; width: 0%; transition: width 0.4s ease; border-radius: 0 99px 99px 0; }
+        .coo-chrome {
+            position: absolute; top: 0; left: 0; right: 0;
+            padding: 1.25rem 1.75rem;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 10;
+        }
+        .coo-back-btn {
+            background: none; border: none; cursor: pointer;
+            font-size: 0.875rem; font-weight: 600; color: #a0aec0;
+            font-family: inherit; padding: 0.4rem 0;
+        }
+        .coo-back-btn:hover { color: #1a202c; }
+        .coo-brand { display: flex; align-items: center; gap: 0.45rem; }
+        .coo-brand-dot { width: 8px; height: 8px; border-radius: 50%; background: #dc2626; }
+        .coo-brand-name { font-weight: 700; font-size: 0.875rem; color: #1a202c; letter-spacing: -0.2px; }
+        .coo-close {
+            width: 36px; height: 36px; border-radius: 50%;
+            border: 1px solid #e2e8f0; background: #fff;
+            cursor: pointer; color: #718096;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s;
+        }
+        .coo-close:hover { background: #f7f9fa; color: #1a202c; }
+
+        .coo-body {
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            padding: 5rem 1.5rem 3rem;
+        }
+        .coo-step { width: 100%; max-width: 560px; transition: opacity 0.2s ease, transform 0.2s ease; }
+        .coo-step h2 {
+            font-size: clamp(1.6rem, 4vw, 2.4rem);
+            font-weight: 800; color: #1a202c;
+            letter-spacing: -1px; line-height: 1.2;
+            margin: 0 0 0.75rem; text-align: center;
+        }
+        .coo-step p.coo-hint {
+            color: #718096; font-size: 0.95rem;
+            margin: 0 0 2rem; text-align: center; line-height: 1.55;
+        }
+        .coo-spinner {
+            width: 52px; height: 52px; border-radius: 50%;
+            border: 4px solid #e2e8f0;
+            border-top-color: #1d6df2;
+            animation: coo-spin 0.9s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+        @keyframes coo-spin { to { transform: rotate(360deg); } }
+        .coo-calc-anim {
+            width: 84px; height: 84px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #1d6df2, #22d3ee);
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; margin: 0 auto 1.75rem;
+            box-shadow: 0 20px 40px rgba(29,109,242,0.3);
+            animation: coo-pulse 1.6s ease-in-out infinite;
+        }
+        @keyframes coo-pulse {
+            0%,100% { transform: scale(1); box-shadow: 0 20px 40px rgba(29,109,242,0.3); }
+            50%     { transform: scale(1.06); box-shadow: 0 25px 55px rgba(29,109,242,0.5); }
+        }
+
+        .coo-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .coo-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+        .coo-field { display: flex; flex-direction: column; gap: 0.4rem; }
+        .coo-label { font-size: 0.78rem; font-weight: 700; color: #4a5568; text-transform: uppercase; letter-spacing: 0.5px; }
+        .coo-input {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 1rem;
+            background: #fff;
+            color: #1a202c;
+            box-sizing: border-box;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .coo-input:focus {
+            outline: none; border-color: #1d6df2;
+            box-shadow: 0 0 0 3px rgba(29,109,242,0.1);
+        }
+        select.coo-input { appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>"); background-repeat: no-repeat; background-position: right 1rem center; padding-right: 2.5rem; cursor: pointer; }
+        .coo-consent {
+            display: flex; gap: 0.75rem;
+            align-items: flex-start;
+            padding: 1rem;
+            background: #f7f9fa;
+            border-radius: 10px;
+            margin: 1.25rem 0 1.5rem;
+            font-size: 0.82rem;
+            color: #4a5568;
+            line-height: 1.5;
+        }
+        .coo-consent input { margin-top: 0.2rem; flex-shrink: 0; width: 18px; height: 18px; cursor: pointer; }
+        .coo-err {
+            display: none; color: #c53030; font-size: 0.85rem;
+            margin-bottom: 1rem; padding: 0.75rem 1rem;
+            background: #fff5f5; border-radius: 10px;
+            border: 1px solid #fed7d7; text-align: center;
+        }
+        .coo-primary-btn {
+            width: 100%;
+            padding: 1.05rem 1.5rem;
+            background: #1a202c;
+            color: #fff; border: none;
+            border-radius: 12px;
+            font-weight: 700; font-size: 1rem;
+            cursor: pointer; font-family: inherit;
+            transition: background 0.2s;
+            margin-top: 0.5rem;
+        }
+        .coo-primary-btn:hover:not(:disabled) { background: #2d3748; }
+        .coo-primary-btn:disabled { background: #a0aec0; cursor: not-allowed; }
+        .coo-primary-btn.red { background: #dc2626; }
+        .coo-primary-btn.red:hover:not(:disabled) { background: #b91c1c; }
+        .coo-outline-btn {
+            width: 100%;
+            padding: 1.05rem 1.5rem;
+            background: #fff;
+            color: #1a202c;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-weight: 700; font-size: 1rem;
+            cursor: pointer; font-family: inherit;
+            transition: all 0.2s;
+            margin-top: 0.5rem;
+        }
+        .coo-outline-btn:hover:not(:disabled) { border-color: #1a202c; background: #f7f9fa; }
+
+        /* Offer reveal */
+        .coo-offer-amount {
+            font-size: clamp(3.5rem, 10vw, 6rem);
+            font-weight: 800;
+            letter-spacing: -3px;
+            line-height: 1;
+            text-align: center;
+            background: linear-gradient(135deg, #1d6df2 0%, #22d3ee 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin: 0.5rem 0 1rem;
+        }
+        .coo-offer-valid {
+            text-align: center;
+            color: #718096;
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+        .coo-summary-card {
+            background: #f7f9fa;
+            border: 1px solid #edf2f7;
+            border-radius: 14px;
+            padding: 1.5rem;
+            margin-bottom: 1.75rem;
+        }
+        .coo-summary-addr {
+            font-weight: 700; color: #1a202c;
+            font-size: 1rem; margin-bottom: 0.75rem;
+        }
+        .coo-summary-facts {
+            display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem;
+            color: #4a5568; font-size: 0.88rem;
+        }
+        .coo-summary-fact strong { color: #1a202c; }
+        .coo-action-grid {
+            display: grid; grid-template-columns: 1fr; gap: 0.7rem;
+        }
+
+        @media (max-width: 600px) {
+            .coo-grid-2, .coo-grid-3 { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body style="background-color: #fff;">
@@ -495,12 +873,37 @@
             CommonRealtor
         </a>
         <div class="cr-nav-links">
+            <a href="#cash-offer">Cash Offer</a>
             <a href="#platform">Platform</a>
             <a href="#brands">Brands</a>
             <a href="#contact">Contact</a>
         </div>
         <a href="#contact" class="btn btn-white btn-sm">Get in touch</a>
     </nav>
+
+    <!-- AI Cash Offer Hero — primary CTA, above the fold -->
+    <section class="co-hero" id="cash-offer">
+        <div class="co-hero-inner">
+            <span class="co-beta-pill">BETA</span>
+            <h1>Get an instant cash offer on your home</h1>
+            <p class="co-sub">Our AI pulls live property data, recent comps, and today's market conditions to generate a no-obligation cash offer &mdash; valid as of the moment you hit submit. No phone calls, no pressure.</p>
+            <div class="co-trust-row">
+                <span class="co-trust-item">Live MLS + public records</span>
+                <span class="co-trust-sep">&middot;</span>
+                <span class="co-trust-item">No obligation</span>
+                <span class="co-trust-sep">&middot;</span>
+                <span class="co-trust-item">Under 2 minutes</span>
+            </div>
+            <div class="co-address-card">
+                <svg class="co-pin" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                <input type="text" id="co-address-input" placeholder="Enter your street address" autocomplete="off">
+                <button type="button" class="co-start-btn" id="co-start-btn" disabled onclick="window.openCashOffer && window.openCashOffer()">Get started &rarr;</button>
+            </div>
+            <div class="co-hint" id="co-hint">Start typing to search addresses.</div>
+        </div>
+    </section>
 
     <!-- Hero -->
     <section class="cr-hero">
@@ -746,6 +1149,528 @@
             const status = document.getElementById('cr-newsletter-status');
             status.textContent = 'Subscribed. Welcome aboard.';
         }
+    </script>
+
+    <!-- ============================================
+         AI CASH OFFER — FULLSCREEN MULTI-STEP OVERLAY
+         ============================================ -->
+    <div id="cash-offer-overlay" role="dialog" aria-modal="true" aria-label="Get your cash offer">
+        <div class="coo-progress"><div class="coo-progress-bar" id="coo-bar"></div></div>
+        <div class="coo-chrome">
+            <button type="button" class="coo-back-btn" id="coo-back" style="visibility:hidden;" onclick="window._cooBack && window._cooBack()">&larr; Back</button>
+            <div class="coo-brand">
+                <div class="coo-brand-dot"></div>
+                <span class="coo-brand-name">CommonRealtor &middot; Cash Offer</span>
+            </div>
+            <button type="button" class="coo-close" aria-label="Close" onclick="window.closeCashOffer && window.closeCashOffer()">&times;</button>
+        </div>
+        <div class="coo-body">
+            <div class="coo-step" id="coo-step"></div>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        // ── State ────────────────────────────────────────────────────────────
+        const S = {
+            placeId: null,
+            formattedAddress: null,
+            propertyData: null,    // from /lookup
+            offerAmount: null,
+            offerFactors: null,
+            offerGeneratedAt: null,
+            leadId: null,
+            contact: { name: '', email: '', phone: '' },
+            step: 0,                // 1..5 (0 = closed)
+            autocomplete: null,
+            googleReady: false,
+        };
+
+        const TOTAL_STEPS = 5;
+        const $ = id => document.getElementById(id);
+
+        // ── Google Places loader ─────────────────────────────────────────────
+        async function loadGooglePlaces() {
+            if (window.google && window.google.maps && window.google.maps.places) {
+                initAutocomplete();
+                return;
+            }
+            try {
+                const res = await fetch('/api/config/public');
+                if (!res.ok) throw new Error('config load failed');
+                const cfg = await res.json();
+                const key = cfg.googlePlacesKey;
+                if (!key) {
+                    $('co-hint').textContent = 'Address search is temporarily unavailable. You can still proceed by typing an address.';
+                    enableFallback();
+                    return;
+                }
+                // Global callback
+                window._coGoogleReady = initAutocomplete;
+                const s = document.createElement('script');
+                s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&loading=async&callback=_coGoogleReady`;
+                s.defer = true;
+                s.onerror = () => {
+                    $('co-hint').textContent = 'Address search failed to load. Enter an address and continue.';
+                    enableFallback();
+                };
+                document.head.appendChild(s);
+            } catch (err) {
+                console.warn('[cash-offer] Google Places disabled:', err);
+                enableFallback();
+            }
+        }
+
+        function enableFallback() {
+            // Allow manual entry: enable button once ≥ 5 chars typed.
+            const input = $('co-address-input');
+            const btn = $('co-start-btn');
+            input.addEventListener('input', () => {
+                const v = input.value.trim();
+                if (v.length >= 5) {
+                    btn.disabled = false;
+                    S.placeId = null;
+                    S.formattedAddress = v;
+                } else {
+                    btn.disabled = true;
+                }
+            });
+        }
+
+        function initAutocomplete() {
+            const input = $('co-address-input');
+            if (!input || !window.google || !google.maps.places) return;
+            S.googleReady = true;
+            S.autocomplete = new google.maps.places.Autocomplete(input, {
+                types: ['address'],
+                componentRestrictions: { country: 'us' },
+                fields: ['place_id', 'formatted_address', 'address_components', 'geometry'],
+            });
+            S.autocomplete.addListener('place_changed', () => {
+                const place = S.autocomplete.getPlace();
+                if (!place || !place.place_id) {
+                    $('co-start-btn').disabled = true;
+                    return;
+                }
+                S.placeId = place.place_id;
+                S.formattedAddress = place.formatted_address || input.value;
+                $('co-start-btn').disabled = false;
+                $('co-hint').textContent = '✓ Address selected. Click "Get started" to continue.';
+            });
+            // If user edits after selecting, re-disable.
+            input.addEventListener('input', () => {
+                if (!S.formattedAddress || input.value.trim() !== S.formattedAddress) {
+                    $('co-start-btn').disabled = true;
+                    S.placeId = null;
+                }
+            });
+            // Suppress form submit on enter.
+            input.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+        }
+
+        // ── Overlay open/close ───────────────────────────────────────────────
+        window.openCashOffer = function() {
+            if (!S.formattedAddress) return;
+            $('cash-offer-overlay').classList.add('open');
+            document.body.style.overflow = 'hidden';
+            S.step = 1;
+            renderStep();
+            doLookup();
+        };
+        window.closeCashOffer = function() {
+            $('cash-offer-overlay').classList.remove('open');
+            document.body.style.overflow = '';
+            // Reset transient state (keep captured address though)
+            S.step = 0;
+        };
+        window._cooBack = function() {
+            if (S.step <= 1) return;
+            // Allowed back jumps: 2→1 (re-lookup), 4→2, 5→4
+            if (S.step === 2) { S.step = 1; renderStep(); doLookup(); return; }
+            if (S.step === 4) { S.step = 2; renderStep(); return; }
+            if (S.step === 5) { S.step = 4; renderStep(); return; }
+            S.step--; renderStep();
+        };
+
+        function setProgress() {
+            const pct = Math.min(100, Math.round((S.step / TOTAL_STEPS) * 100));
+            $('coo-bar').style.width = pct + '%';
+        }
+        function setBackVisible(visible) {
+            $('coo-back').style.visibility = visible ? 'visible' : 'hidden';
+        }
+
+        // ── Render step ──────────────────────────────────────────────────────
+        function renderStep() {
+            setProgress();
+            const el = $('coo-step');
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                if (S.step === 1) el.innerHTML = renderStep1();
+                else if (S.step === 2) el.innerHTML = renderStep2();
+                else if (S.step === 3) el.innerHTML = renderStep3();
+                else if (S.step === 4) el.innerHTML = renderStep4();
+                else if (S.step === 5) el.innerHTML = renderStep5();
+                setBackVisible(S.step > 1 && S.step !== 3);
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+                bindStepHandlers();
+            }, 120);
+        }
+
+        // STEP 1 — Loading / lookup
+        function renderStep1() {
+            return `
+                <div class="coo-spinner"></div>
+                <h2>Pulling property details</h2>
+                <p class="coo-hint">Fetching MLS, public records, and comps for<br><strong style="color:#1a202c;">${escapeHtml(S.formattedAddress || 'your address')}</strong>...</p>
+            `;
+        }
+
+        async function doLookup() {
+            try {
+                const res = await fetch('/api/cash-offer/lookup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ placeId: S.placeId, formattedAddress: S.formattedAddress })
+                });
+                if (!res.ok) throw new Error('Lookup failed');
+                const data = await res.json().catch(() => ({}));
+                S.propertyData = data.propertyData || null;
+                setTimeout(() => { S.step = 2; renderStep(); }, 600);
+            } catch (err) {
+                console.warn('[cash-offer] lookup error', err);
+                S.propertyData = null;
+                setTimeout(() => { S.step = 2; renderStep(); }, 600);
+            }
+        }
+
+        // STEP 2 — Confirm property details
+        function renderStep2() {
+            const p = S.propertyData || {};
+            return `
+                <h2>Confirm property details</h2>
+                <p class="coo-hint">We pre-filled what we found. Correct anything that's off.</p>
+                <div class="coo-grid-3" style="margin-bottom:1rem;">
+                    <div class="coo-field">
+                        <label class="coo-label">Beds</label>
+                        <input class="coo-input" type="number" min="0" id="coo-beds" value="${p.beds ?? ''}">
+                    </div>
+                    <div class="coo-field">
+                        <label class="coo-label">Baths</label>
+                        <input class="coo-input" type="number" min="0" step="0.5" id="coo-baths" value="${p.baths ?? ''}">
+                    </div>
+                    <div class="coo-field">
+                        <label class="coo-label">Year built</label>
+                        <input class="coo-input" type="number" min="1800" max="2030" id="coo-yearBuilt" value="${p.yearBuilt ?? ''}">
+                    </div>
+                </div>
+                <div class="coo-grid-2" style="margin-bottom:1rem;">
+                    <div class="coo-field">
+                        <label class="coo-label">Square feet</label>
+                        <input class="coo-input" type="number" min="0" id="coo-sqft" value="${p.sqft ?? ''}">
+                    </div>
+                    <div class="coo-field">
+                        <label class="coo-label">Lot size (acres)</label>
+                        <input class="coo-input" type="number" min="0" step="0.01" id="coo-lotSize" value="${p.lotSize ?? ''}">
+                    </div>
+                </div>
+                <div class="coo-field" style="margin-bottom:1rem;">
+                    <label class="coo-label">Condition</label>
+                    <select class="coo-input" id="coo-condition">
+                        <option value="Excellent">Excellent</option>
+                        <option value="Good" selected>Good</option>
+                        <option value="Fair">Fair</option>
+                        <option value="Needs Work">Needs Work</option>
+                    </select>
+                </div>
+                <div class="coo-err" id="coo-err"></div>
+                <button type="button" class="coo-primary-btn" id="coo-next-2">Next &rarr;</button>
+            `;
+        }
+
+        // STEP 3 — Generating offer
+        function renderStep3() {
+            return `
+                <div class="coo-calc-anim">
+                    <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                </div>
+                <h2>Calculating your cash offer</h2>
+                <p class="coo-hint">Analyzing today's market data, comps within 1 mile, and property condition...</p>
+            `;
+        }
+
+        async function doGenerate(propertyPayload) {
+            try {
+                const res = await fetch('/api/cash-offer/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(propertyPayload)
+                });
+                if (!res.ok) throw new Error('Generate failed');
+                const data = await res.json();
+                S.offerAmount = data.offerAmount;
+                S.offerFactors = data.offerFactors || null;
+                S.offerGeneratedAt = data.offerGeneratedAt || new Date().toISOString();
+                return true;
+            } catch (err) {
+                console.warn('[cash-offer] generate error', err);
+                return false;
+            }
+        }
+
+        // STEP 4 — Contact capture
+        function renderStep4() {
+            return `
+                <h2>Your cash offer is ready</h2>
+                <p class="coo-hint">Great! One more step &mdash; tell us where to send it.</p>
+                <div class="coo-field" style="margin-bottom:1rem;">
+                    <label class="coo-label">Full name</label>
+                    <input class="coo-input" type="text" id="coo-name" placeholder="First Last" value="${escapeAttr(S.contact.name || '')}" autocomplete="name">
+                </div>
+                <div class="coo-grid-2" style="margin-bottom:0.5rem;">
+                    <div class="coo-field">
+                        <label class="coo-label">Email</label>
+                        <input class="coo-input" type="email" id="coo-email" placeholder="you@email.com" value="${escapeAttr(S.contact.email || '')}" autocomplete="email">
+                    </div>
+                    <div class="coo-field">
+                        <label class="coo-label">Phone</label>
+                        <input class="coo-input" type="tel" id="coo-phone" placeholder="(555) 555-5555" value="${escapeAttr(S.contact.phone || '')}" autocomplete="tel">
+                    </div>
+                </div>
+                <label class="coo-consent">
+                    <input type="checkbox" id="coo-consent">
+                    <span>By submitting you agree to be contacted by our team about your offer. We never sell your information or share it outside our licensed network.</span>
+                </label>
+                <div class="coo-err" id="coo-err"></div>
+                <button type="button" class="coo-primary-btn red" id="coo-reveal">Reveal my offer</button>
+            `;
+        }
+
+        async function doSubmit() {
+            try {
+                const payload = {
+                    placeId: S.placeId,
+                    formattedAddress: S.formattedAddress,
+                    beds: toNum($('coo-beds')?.value ?? S.propertyData?.beds),
+                    baths: toNum($('coo-baths')?.value ?? S.propertyData?.baths),
+                    sqft: toNum($('coo-sqft')?.value ?? S.propertyData?.sqft),
+                    yearBuilt: toNum($('coo-yearBuilt')?.value ?? S.propertyData?.yearBuilt),
+                    lotSize: toNum($('coo-lotSize')?.value ?? S.propertyData?.lotSize),
+                    condition: $('coo-condition')?.value || 'Good',
+                    offerAmount: S.offerAmount,
+                    offerFactors: S.offerFactors,
+                    offerGeneratedAt: S.offerGeneratedAt,
+                    propertyData: S.propertyData,
+                    contact: S.contact,
+                    name: S.contact.name,
+                    email: S.contact.email,
+                    phone: S.contact.phone,
+                };
+                const res = await fetch('/api/cash-offer/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) {
+                    const r = await res.json().catch(() => ({}));
+                    throw new Error(r.error || 'Submission failed');
+                }
+                const data = await res.json();
+                S.leadId = data.leadId;
+                if (typeof data.offerAmount === 'number') S.offerAmount = data.offerAmount;
+                return true;
+            } catch (err) {
+                console.warn('[cash-offer] submit error', err);
+                return false;
+            }
+        }
+
+        // STEP 5 — Offer reveal
+        function renderStep5() {
+            const p = readConfirmedProperty();
+            const dateStr = new Date(S.offerGeneratedAt || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            return `
+                <div style="text-align:center; color:#718096; font-size:0.8rem; letter-spacing:2px; text-transform:uppercase; font-weight:700; margin-bottom:0.25rem;">Your cash offer</div>
+                <div class="coo-offer-amount">${formatMoney(S.offerAmount || 0)}</div>
+                <p class="coo-offer-valid">Your no-obligation cash offer, valid as of <strong>${dateStr}</strong>.</p>
+                <div class="coo-summary-card">
+                    <div class="coo-summary-addr">${escapeHtml(S.formattedAddress || '')}</div>
+                    <div class="coo-summary-facts">
+                        ${p.beds ? `<span class="coo-summary-fact"><strong>${p.beds}</strong> bd</span>` : ''}
+                        ${p.baths ? `<span class="coo-summary-fact"><strong>${p.baths}</strong> ba</span>` : ''}
+                        ${p.sqft ? `<span class="coo-summary-fact"><strong>${numberWithCommas(p.sqft)}</strong> sqft</span>` : ''}
+                        ${p.yearBuilt ? `<span class="coo-summary-fact">Built <strong>${p.yearBuilt}</strong></span>` : ''}
+                        <span class="coo-summary-fact">Condition: <strong>${escapeHtml(p.condition)}</strong></span>
+                    </div>
+                </div>
+                <div class="coo-action-grid">
+                    <button type="button" class="coo-outline-btn" id="coo-pdf">Download offer (PDF)</button>
+                    <button type="button" class="coo-primary-btn red" id="coo-cash">Proceed with cash offer</button>
+                    <button type="button" class="coo-outline-btn" id="coo-agent">I'd rather list with an agent</button>
+                </div>
+                <div class="coo-err" id="coo-err" style="margin-top:1rem;"></div>
+                <div id="coo-selection-confirm" style="display:none; margin-top:1.5rem; padding:1.25rem; background:#f0fff4; border:1px solid #9ae6b4; border-radius:12px; color:#276749; text-align:center; font-weight:600; line-height:1.5;"></div>
+            `;
+        }
+
+        function readConfirmedProperty() {
+            // Reads from most recent step-2 inputs if present, else from S.propertyData
+            return {
+                beds: $('coo-beds')?.value || S.propertyData?.beds || null,
+                baths: $('coo-baths')?.value || S.propertyData?.baths || null,
+                sqft: toNum($('coo-sqft')?.value ?? S.propertyData?.sqft),
+                yearBuilt: $('coo-yearBuilt')?.value || S.propertyData?.yearBuilt || null,
+                lotSize: $('coo-lotSize')?.value || S.propertyData?.lotSize || null,
+                condition: $('coo-condition')?.value || 'Good',
+            };
+        }
+
+        // ── Per-step event binding ───────────────────────────────────────────
+        function bindStepHandlers() {
+            if (S.step === 2) {
+                const btn = $('coo-next-2');
+                btn.addEventListener('click', async () => {
+                    const err = $('coo-err');
+                    err.style.display = 'none';
+                    const beds = toNum($('coo-beds').value);
+                    const baths = toNum($('coo-baths').value);
+                    const sqft = toNum($('coo-sqft').value);
+                    if (!beds || !baths || !sqft) {
+                        err.textContent = 'Please fill in beds, baths, and square footage.';
+                        err.style.display = 'block';
+                        return;
+                    }
+                    const property = {
+                        placeId: S.placeId,
+                        formattedAddress: S.formattedAddress,
+                        beds,
+                        baths,
+                        sqft,
+                        yearBuilt: toNum($('coo-yearBuilt').value),
+                        lotSize: toNum($('coo-lotSize').value),
+                        condition: $('coo-condition').value,
+                        propertyData: S.propertyData,
+                    };
+                    S.step = 3;
+                    renderStep();
+                    // artificial 2s minimum + real call in parallel
+                    const [ok] = await Promise.all([
+                        doGenerate(property),
+                        new Promise(r => setTimeout(r, 2000))
+                    ]);
+                    if (!ok) {
+                        // Still proceed with a fallback so user isn't stuck
+                        if (S.offerAmount == null) S.offerAmount = 0;
+                    }
+                    S.step = 4;
+                    renderStep();
+                });
+            }
+
+            if (S.step === 4) {
+                const btn = $('coo-reveal');
+                btn.addEventListener('click', async () => {
+                    const err = $('coo-err');
+                    err.style.display = 'none';
+                    const name = ($('coo-name').value || '').trim();
+                    const email = ($('coo-email').value || '').trim();
+                    const phone = ($('coo-phone').value || '').trim();
+                    const consent = $('coo-consent').checked;
+                    if (!name) { err.textContent = 'Please enter your full name.'; err.style.display = 'block'; return; }
+                    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { err.textContent = 'Please enter a valid email.'; err.style.display = 'block'; return; }
+                    if (!phone || phone.replace(/\D/g, '').length < 10) { err.textContent = 'Please enter a valid phone number.'; err.style.display = 'block'; return; }
+                    if (!consent) { err.textContent = 'Please accept the consent checkbox to continue.'; err.style.display = 'block'; return; }
+
+                    S.contact = { name, email, phone };
+                    btn.disabled = true;
+                    btn.textContent = 'Submitting…';
+                    const ok = await doSubmit();
+                    if (!ok) {
+                        btn.disabled = false;
+                        btn.textContent = 'Reveal my offer';
+                        err.textContent = 'Something went wrong. Please try again.';
+                        err.style.display = 'block';
+                        return;
+                    }
+                    S.step = 5;
+                    renderStep();
+                });
+            }
+
+            if (S.step === 5) {
+                $('coo-pdf').addEventListener('click', () => {
+                    if (!S.leadId) return;
+                    window.open(`/api/cash-offer/${encodeURIComponent(S.leadId)}/pdf`, '_blank');
+                });
+                $('coo-cash').addEventListener('click', () => handleSelection('cash'));
+                $('coo-agent').addEventListener('click', () => handleSelection('agent'));
+            }
+        }
+
+        async function handleSelection(choice) {
+            if (!S.leadId) return;
+            const err = $('coo-err');
+            const confirm = $('coo-selection-confirm');
+            err.style.display = 'none';
+            try {
+                await fetch(`/api/cash-offer/${encodeURIComponent(S.leadId)}/selection`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ selection: choice })
+                });
+                if (choice === 'cash') {
+                    confirm.textContent = 'Thanks! Our team will reach out within 24 hours to finalize your cash offer.';
+                    confirm.style.display = 'block';
+                } else {
+                    confirm.textContent = 'Great choice! Let\'s match you with a top local agent.';
+                    confirm.style.display = 'block';
+                    // Note: openForm('agent') is provided by components.js on other pages; not loaded here.
+                    // We keep the confirmation and let the team follow up.
+                    if (typeof window.openForm === 'function') {
+                        setTimeout(() => { try { window.openForm('agent'); } catch (_) {} }, 1200);
+                    }
+                }
+                // Disable action buttons after a choice has been made
+                ['coo-pdf','coo-cash','coo-agent'].forEach(id => { const b = $(id); if (b) b.disabled = true; });
+            } catch (e) {
+                err.textContent = 'Could not record your choice. Please try again.';
+                err.style.display = 'block';
+            }
+        }
+
+        // ── Utilities ────────────────────────────────────────────────────────
+        function toNum(v) {
+            if (v === null || v === undefined || v === '') return null;
+            const n = Number(v);
+            return isFinite(n) ? n : null;
+        }
+        function numberWithCommas(n) {
+            return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+        function formatMoney(n) {
+            if (!n || isNaN(n)) return '$0';
+            return '$' + numberWithCommas(Math.round(n));
+        }
+        function escapeHtml(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+        }
+        function escapeAttr(s) { return escapeHtml(s); }
+
+        // ── Keyboard: Escape to close ────────────────────────────────────────
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && $('cash-offer-overlay').classList.contains('open')) {
+                window.closeCashOffer();
+            }
+        });
+
+        // ── Boot ────────────────────────────────────────────────────────────
+        loadGooglePlaces();
+    })();
     </script>
 </body>
 </html>

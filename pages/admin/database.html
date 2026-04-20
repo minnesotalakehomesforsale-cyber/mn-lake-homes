@@ -19,6 +19,8 @@
         .side-link.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
         .side-signout { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #fc8181; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-top: 1rem; transition: all 0.15s; }
         .side-signout:hover { background: rgba(252,129,129,0.1); }
+        .cash-offer-badge { display: none; background: #dc2626; color: #fff; font-size: 0.68rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 99px; margin-left: auto; min-width: 18px; text-align: center; }
+        .cash-offer-badge.visible { display: inline-block; }
         .admin-main { padding: 3rem 3.5rem; background: #f7f9fa; overflow-y: auto; }
 
         /* Health */
@@ -111,6 +113,10 @@
                 <span id="nav-badge-inquiries" style="background:#ef4444;color:#fff;font-size:0.68rem;font-weight:800;padding:0.1rem 0.45rem;border-radius:99px;margin-left:auto;display:none;">0</span>
             </a>
             <a href="blog.html"       class="side-link">Blog & Content</a>
+            <a href="cash-offers.html" class="side-link" style="display:flex;align-items:center;justify-content:space-between;">
+                <span>Cash Offers</span>
+                <span class="cash-offer-badge">0</span>
+            </a>
             <a href="users.html"      class="side-link">Users Management</a>
             <a href="tasks.html" class="side-link" id="nav-link-tasks" style="display:flex;align-items:center;justify-content:space-between;">
                 <span>Tasks</span>

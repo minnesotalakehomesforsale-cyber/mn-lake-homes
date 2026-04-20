@@ -37,18 +37,40 @@
         } catch (_) { /* silent — not critical */ }
     }
 
+    async function refreshCashOfferBadge() {
+        const badges = document.querySelectorAll('.cash-offer-badge');
+        if (!badges.length) return;
+        try {
+            const res = await fetch('/api/admin/cash-offers/new-count');
+            if (!res.ok) return;
+            const { count } = await res.json();
+            badges.forEach(badge => {
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.classList.add('visible');
+                } else {
+                    badge.classList.remove('visible');
+                    badge.textContent = '';
+                }
+            });
+        } catch (_) { /* silent — not critical */ }
+    }
+
     function refreshAll() {
         refreshInquiriesBadge();
         refreshTasksBadge();
+        refreshCashOfferBadge();
     }
 
     // Expose so pages can trigger an immediate refresh after user actions
     window.refreshTaskBadge = refreshTasksBadge;
     window.refreshInquiriesBadge = refreshInquiriesBadge;
+    window.refreshCashOfferBadge = refreshCashOfferBadge;
 
-    // First fetch on load, then every 60 seconds
+    // First fetch on load, then every 60 seconds. Cash offers refresh every 30s.
     document.addEventListener('DOMContentLoaded', () => {
         refreshAll();
-        setInterval(refreshAll, 60_000);
+        setInterval(() => { refreshInquiriesBadge(); refreshTasksBadge(); }, 60_000);
+        setInterval(refreshCashOfferBadge, 30_000);
     });
 })();

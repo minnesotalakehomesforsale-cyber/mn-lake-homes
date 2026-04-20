@@ -38,6 +38,9 @@ app.use(cookieParser());
 // ==========================================
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/agents', require('./routes/agent.routes'));
+// More-specific /api/admin/cash-offers must mount BEFORE the general /api/admin
+// router, which has a catch-all /:id route that would otherwise shadow us.
+app.use('/api/admin/cash-offers', require('./routes/admin-cash-offer.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
 app.use('/api/leads', require('./routes/lead.routes'));
 app.use('/api/blog', require('./routes/blog.routes'));
@@ -46,6 +49,7 @@ app.use('/api/stripe', require('./routes/stripe.routes'));
 app.use('/api/inquiries', require('./routes/inquiry.routes'));
 app.use('/api/assistant', require('./routes/assistant.routes'));
 app.use('/api/activity', require('./routes/activity.routes'));
+app.use('/api/cash-offer', require('./routes/cash-offer.routes'));
 
 app.get('/api/health', (req, res) => {
     res.json({
@@ -117,6 +121,15 @@ app.use('/api', (err, req, res, next) => {
         error: err.message || 'Unexpected server error.',
         path: req.originalUrl,
         method: req.method
+    });
+});
+
+// ==========================================
+// PUBLIC CONFIG (safe-to-expose env values for the frontend)
+// ==========================================
+app.get('/api/config/public', (req, res) => {
+    res.json({
+        googlePlacesKey: process.env.GOOGLE_PLACES_API_KEY || ''
     });
 });
 
@@ -286,6 +299,56 @@ async function ensureTables() {
                     FOREIGN KEY (assigned_user_id) REFERENCES users(id) ON DELETE SET NULL;
                 END IF;
             END $$;
+        `);
+
+        // Cash Offer feature — lead table + single-row config table.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS cash_offer_leads (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW(),
+                status TEXT NOT NULL DEFAULT 'new',
+                full_name TEXT,
+                email TEXT,
+                phone TEXT,
+                address_raw TEXT,
+                place_id TEXT,
+                latitude DOUBLE PRECISION,
+                longitude DOUBLE PRECISION,
+                property_data_json JSONB,
+                beds NUMERIC,
+                baths NUMERIC,
+                sqft INTEGER,
+                year_built INTEGER,
+                lot_size NUMERIC,
+                condition TEXT,
+                last_sale_date DATE,
+                last_sale_price NUMERIC,
+                avm NUMERIC,
+                offer_amount NUMERIC,
+                offer_factors_json JSONB,
+                offer_generated_at TIMESTAMPTZ,
+                user_selection TEXT,
+                selection_made_at TIMESTAMPTZ,
+                admin_notes TEXT,
+                archived_at TIMESTAMPTZ
+            );
+            CREATE INDEX IF NOT EXISTS idx_cash_offer_leads_created ON cash_offer_leads(created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_cash_offer_leads_status  ON cash_offer_leads(status) WHERE archived_at IS NULL;
+        `);
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS cash_offer_config (
+                id INT PRIMARY KEY DEFAULT 1,
+                discount_factor NUMERIC DEFAULT 0.88,
+                holding_cost_pct NUMERIC DEFAULT 0.02,
+                target_margin_pct NUMERIC DEFAULT 0.05,
+                repair_cost_excellent NUMERIC DEFAULT 0,
+                repair_cost_good NUMERIC DEFAULT 5000,
+                repair_cost_fair NUMERIC DEFAULT 15000,
+                repair_cost_needs_work NUMERIC DEFAULT 35000,
+                CONSTRAINT single_row CHECK (id = 1)
+            );
+            INSERT INTO cash_offer_config (id) VALUES (1) ON CONFLICT DO NOTHING;
         `);
 
         console.log(' Tables verified.');

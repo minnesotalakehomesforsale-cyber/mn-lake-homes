@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Offers | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
+        .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        .admin-side { background: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+        .admin-side h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 2.5rem; padding-left: 0.5rem; color: #fff; margin-top: 0; }
+        .admin-side h1 span { color: #1d6df2; }
+        .side-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; margin-bottom: 0.75rem; padding-left: 0.5rem; font-weight: 700; margin-top: 0; }
+        .side-nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+        .side-link { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #a0aec0; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.15s; }
+        .side-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .side-link.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+        .side-signout { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #fc8181; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-top: 1rem; transition: all 0.15s; }
+        .side-signout:hover { background: rgba(252,129,129,0.1); }
+        .admin-main { padding: 3rem 3.5rem; overflow-y: auto; }
+
+        .cash-offer-badge { display: none; background: #dc2626; color: #fff; font-size: 0.68rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 99px; margin-left: auto; min-width: 18px; text-align: center; }
+        .cash-offer-badge.visible { display: inline-block; }
+
+        .filter-container { border-bottom: 1px solid #edf2f7; display: flex; gap: 0.5rem; margin-bottom: 2rem; overflow-x: auto; }
+        .filter-tab { padding: 0.75rem 1.25rem; border: none; background: transparent; font-weight: 600; color: #718096; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.2s; font-family: inherit; font-size: 0.9rem; white-space: nowrap; }
+        .filter-tab:hover { color: #1a202c; }
+        .filter-tab.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
+        .filter-tab .count-badge { background: #edf2f7; color: #4a5568; padding: 0.1rem 0.5rem; border-radius: 99px; font-size: 0.72rem; font-weight: 800; margin-left: 0.4rem; }
+        .filter-tab.active .count-badge { background: #1d6df2; color: #fff; }
+
+        .ledger-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid #edf2f7; }
+        .ledger-table th { background: #f7f9fa; padding: 1.1rem 1.25rem; text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; border-bottom: 1px solid #edf2f7; font-weight: 700; white-space: nowrap; }
+        .ledger-table td { padding: 1rem 1.25rem; border-bottom: 1px solid #edf2f7; vertical-align: middle; color: #2d3748; font-weight: 500; font-size: 0.88rem; }
+        .ledger-table tr:hover { background-color: #fcfcfc; cursor: pointer; }
+        .ledger-table tr.archived td { opacity: 0.5; }
+
+        .s-badge { padding: 0.3rem 0.55rem; border-radius: 6px; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; display: inline-block; letter-spacing: 0.3px; }
+        .status-new            { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .status-viewed         { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .status-contacted      { background: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff; }
+        .status-proceeding_cash { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .status-chose_agent    { background: #e5e7eb; color: #374151; border: 1px solid #d1d5db; }
+        .status-archived       { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+
+        .sel-cash { color: #059669; font-weight: 700; }
+        .sel-agent { color: #6366f1; font-weight: 700; }
+        .sel-none { color: #a0aec0; }
+
+        .row-btn { background: none; border: 1px solid #e2e8f0; border-radius: 7px; padding: 0.4rem 0.75rem; font-size: 0.78rem; font-weight: 600; cursor: pointer; color: #4a5568; font-family: inherit; transition: all 0.15s; }
+        .row-btn:hover { background: #f7f9fa; border-color: #cbd5e0; color: #1a202c; }
+        .row-btn.danger:hover { border-color: #fecaca; color: #b91c1c; background: #fff5f5; }
+
+        .empty-state { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; padding: 4rem 2rem; text-align: center; color: #718096; }
+        .empty-state-icon { width: 56px; height: 56px; border-radius: 50%; background: #f1f5f9; color: #94a3b8; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
+        .empty-state h3 { color: #1a202c; font-size: 1.15rem; font-weight: 700; margin: 0 0 0.5rem; }
+
+        /* Drawer */
+        .drawer-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; }
+        .drawer-backdrop.open { display: block; }
+        .drawer { position: fixed; right: -520px; top: 0; bottom: 0; width: 500px; max-width: 100%; background: #fff; box-shadow: -20px 0 40px rgba(0,0,0,0.1); z-index: 101; transition: right 0.25s ease; overflow-y: auto; display: flex; flex-direction: column; }
+        .drawer.open { right: 0; }
+        .drawer-header { padding: 1.5rem 1.75rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #fff; z-index: 1; }
+        .drawer-header h2 { font-size: 1.15rem; font-weight: 800; margin: 0; letter-spacing: -0.3px; }
+        .drawer-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #718096; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .drawer-close:hover { background: #f7f9fa; color: #1a202c; }
+        .drawer-body { padding: 1.5rem 1.75rem; flex: 1; }
+        .drawer-section { margin-bottom: 2rem; }
+        .drawer-section h3 { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #718096; font-weight: 700; margin: 0 0 0.75rem; }
+        .offer-display { background: linear-gradient(135deg, #1d6df2 0%, #22d3ee 100%); color: #fff; padding: 1.5rem; border-radius: 14px; text-align: center; margin-bottom: 1.5rem; }
+        .offer-display .offer-amt { font-size: 2.25rem; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+        .offer-display .offer-addr { font-size: 0.85rem; opacity: 0.9; margin-top: 0.4rem; }
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1rem; }
+        .detail-item { display: flex; flex-direction: column; gap: 0.2rem; }
+        .detail-label { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+        .detail-value { font-size: 0.92rem; color: #1a202c; font-weight: 600; }
+        .factor-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f1f5f9; font-size: 0.88rem; }
+        .factor-row:last-child { border-bottom: none; }
+        .factor-row .factor-label { color: #4a5568; }
+        .factor-row .factor-value { color: #1a202c; font-weight: 600; }
+        .contact-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0; font-size: 0.92rem; }
+        .contact-row a { color: #1d6df2; text-decoration: none; font-weight: 600; }
+        .contact-row a:hover { text-decoration: underline; }
+        .timeline-item { display: flex; gap: 0.75rem; padding: 0.5rem 0; font-size: 0.85rem; }
+        .timeline-dot { width: 8px; height: 8px; border-radius: 50%; background: #1d6df2; flex-shrink: 0; margin-top: 0.4rem; }
+        .timeline-text { color: #4a5568; }
+        .timeline-text strong { color: #1a202c; }
+        .timeline-text .ts { color: #94a3b8; font-size: 0.78rem; display: block; margin-top: 0.1rem; }
+        .dr-input, .dr-select, .dr-textarea {
+            width: 100%; padding: 0.65rem 0.8rem; border: 1px solid #e2e8f0; border-radius: 8px;
+            font-size: 0.9rem; font-family: inherit; color: #1a202c; background: #fff; box-sizing: border-box;
+        }
+        .dr-input:focus, .dr-select:focus, .dr-textarea:focus { outline: none; border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.08); }
+        .dr-textarea { min-height: 90px; resize: vertical; }
+        .dr-btn {
+            padding: 0.6rem 1.1rem; background: #1d6df2; color: #fff; border: none; border-radius: 8px;
+            font-weight: 700; font-size: 0.85rem; font-family: inherit; cursor: pointer; transition: opacity 0.15s;
+        }
+        .dr-btn:hover { opacity: 0.9; }
+        .dr-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .dr-btn.secondary { background: #fff; color: #4a5568; border: 1px solid #e2e8f0; }
+        .dr-btn.secondary:hover { background: #f7f9fa; }
+        .dr-btn.danger { background: #fff5f5; color: #c53030; border: 1px solid #fecaca; }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+    <script src="../../components/admin-assistant.js" defer></script>
+    <script src="../../components/admin-nav-badges.js" defer></script>
+</head>
+<body>
+
+<div class="admin-wrap">
+    <aside class="admin-side">
+        <h1>MNLH <span>ADMIN</span></h1>
+        <p class="side-label">Platform Operations</p>
+        <nav class="side-nav">
+            <a href="dashboard.html"  class="side-link">Dashboard</a>
+            <a href="agents.html"    class="side-link">Agents Directory</a>
+            <a href="leads.html"     class="side-link">Central Leads</a>
+            <a href="inquiries.html" class="side-link" id="nav-link-inquiries" style="display:flex;align-items:center;justify-content:space-between;">
+                <span>Inquiries</span>
+                <span id="nav-badge-inquiries" style="background:#ef4444;color:#fff;font-size:0.68rem;font-weight:800;padding:0.1rem 0.45rem;border-radius:99px;margin-left:auto;display:none;">0</span>
+            </a>
+            <a href="blog.html"      class="side-link">Blog & Content</a>
+            <a href="cash-offers.html" class="side-link active" style="display:flex;align-items:center;justify-content:space-between;">
+                <span>Cash Offers</span>
+                <span class="cash-offer-badge">0</span>
+            </a>
+            <a href="users.html"     class="side-link">Users Management</a>
+            <a href="tasks.html" class="side-link" id="nav-link-tasks" style="display:flex;align-items:center;justify-content:space-between;">
+                <span>Tasks</span>
+                <span id="nav-badge-tasks" style="background:#ef4444;color:#fff;font-size:0.68rem;font-weight:800;padding:0.1rem 0.45rem;border-radius:99px;margin-left:auto;display:none;">0</span>
+            </a>
+            <a href="database.html"  class="side-link">Database</a>
+        </nav>
+        <a href="/index.html" target="_blank" style="display:block;padding:0.75rem 1rem;border-radius:8px;color:#a0aec0;text-decoration:none;font-size:0.85rem;font-weight:500;margin-top:0.5rem;border:1px solid rgba(255,255,255,0.08);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">↗ View Live Site</a>
+        <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>{window.location.href='/index.html';})" class="side-signout">Sign Out</a>
+    </aside>
+
+    <main class="admin-main">
+        <header style="margin-bottom: 2rem;">
+            <h1 style="font-size: 2rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; margin: 0 0 0.5rem;">Cash Offers</h1>
+            <p style="color: #718096; font-size: 1rem; margin: 0;">Inbound AI-generated cash-offer leads. Review, update status, and track seller selections.</p>
+        </header>
+
+        <div class="filter-container" id="filter-container">
+            <button class="filter-tab active" data-filter="all" onclick="setFilter('all', this)">All <span class="count-badge" id="cnt-all">0</span></button>
+            <button class="filter-tab" data-filter="new" onclick="setFilter('new', this)">New <span class="count-badge" id="cnt-new">0</span></button>
+            <button class="filter-tab" data-filter="viewed" onclick="setFilter('viewed', this)">Viewed <span class="count-badge" id="cnt-viewed">0</span></button>
+            <button class="filter-tab" data-filter="contacted" onclick="setFilter('contacted', this)">Contacted <span class="count-badge" id="cnt-contacted">0</span></button>
+            <button class="filter-tab" data-filter="proceeding_cash" onclick="setFilter('proceeding_cash', this)">Proceeding Cash <span class="count-badge" id="cnt-proceeding_cash">0</span></button>
+            <button class="filter-tab" data-filter="chose_agent" onclick="setFilter('chose_agent', this)">Chose Agent <span class="count-badge" id="cnt-chose_agent">0</span></button>
+            <button class="filter-tab" data-filter="archived" onclick="setFilter('archived', this)">Archived <span class="count-badge" id="cnt-archived">0</span></button>
+        </div>
+
+        <div id="table-shell"></div>
+    </main>
+</div>
+
+<!-- Drawer -->
+<div class="drawer-backdrop" id="drawer-backdrop" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer">
+    <div class="drawer-header">
+        <h2 id="drawer-title">Cash Offer</h2>
+        <button type="button" class="drawer-close" onclick="closeDrawer()">&times;</button>
+    </div>
+    <div class="drawer-body" id="drawer-body">
+        <div style="padding: 3rem; text-align: center; color: #a0aec0;">Loading...</div>
+    </div>
+</aside>
+
+<script>
+    let ALL_OFFERS = [];
+    let ACTIVE_FILTER = 'all';
+    let OPEN_ID = null;
+
+    function money(n) {
+        if (n == null || isNaN(Number(n))) return '—';
+        return '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
+    }
+    function fmtDate(iso) {
+        if (!iso) return '—';
+        try { return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }); }
+        catch { return '—'; }
+    }
+    function fmtDateTime(iso) {
+        if (!iso) return '—';
+        try { return new Date(iso).toLocaleString('en-US', { year: 'numeric', month: 'short', day: '2-digit', hour: 'numeric', minute: '2-digit' }); }
+        catch { return '—'; }
+    }
+    function escHtml(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+    function statusBadge(s) {
+        const label = (s || 'new').replace(/_/g, ' ');
+        return `<span class="s-badge status-${s || 'new'}">${label}</span>`;
+    }
+    function selectionBadge(sel) {
+        if (sel === 'cash')  return `<span class="sel-cash">Cash</span>`;
+        if (sel === 'agent') return `<span class="sel-agent">Agent</span>`;
+        return `<span class="sel-none">—</span>`;
+    }
+    function propertyFacts(o) {
+        const p = o.property_data || o.propertyData || {};
+        const beds = o.beds ?? p.beds;
+        const baths = o.baths ?? p.baths;
+        const sqft = o.sqft ?? p.sqft;
+        const parts = [];
+        if (beds)  parts.push(`${beds}bd`);
+        if (baths) parts.push(`${baths}ba`);
+        if (sqft)  parts.push(`${Number(sqft).toLocaleString()} sqft`);
+        return parts.length ? parts.join(' / ') : '—';
+    }
+
+    async function loadOffers() {
+        const shell = document.getElementById('table-shell');
+        shell.innerHTML = `<div class="empty-state" style="padding:3rem;color:#a0aec0;">Loading cash offers…</div>`;
+        try {
+            const res = await fetch('/api/admin/cash-offers');
+            if (!res.ok) throw new Error('failed');
+            const data = await res.json();
+            ALL_OFFERS = Array.isArray(data) ? data : (data.offers || data.items || []);
+        } catch (err) {
+            console.error(err);
+            shell.innerHTML = `<div class="empty-state"><h3>Could not load cash offers</h3><p>Please refresh the page or check your connection.</p></div>`;
+            return;
+        }
+        renderCounts();
+        renderTable();
+    }
+
+    function renderCounts() {
+        const counts = { all: ALL_OFFERS.length, new: 0, viewed: 0, contacted: 0, proceeding_cash: 0, chose_agent: 0, archived: 0 };
+        ALL_OFFERS.forEach(o => {
+            const s = o.status || 'new';
+            if (counts[s] !== undefined) counts[s]++;
+        });
+        Object.keys(counts).forEach(k => {
+            const el = document.getElementById('cnt-' + k);
+            if (el) el.textContent = counts[k];
+        });
+    }
+
+    function filteredOffers() {
+        if (ACTIVE_FILTER === 'all') return ALL_OFFERS;
+        return ALL_OFFERS.filter(o => (o.status || 'new') === ACTIVE_FILTER);
+    }
+
+    function renderTable() {
+        const shell = document.getElementById('table-shell');
+        const rows = filteredOffers();
+        if (!rows.length) {
+            shell.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    </div>
+                    <h3>No cash offers ${ACTIVE_FILTER === 'all' ? 'yet' : 'in this status'}</h3>
+                    <p>${ACTIVE_FILTER === 'all'
+                        ? 'New seller submissions from the CommonRealtor cash-offer flow will appear here.'
+                        : 'Try switching to a different status filter.'}</p>
+                </div>`;
+            return;
+        }
+        shell.innerHTML = `
+            <table class="ledger-table">
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                        <th>Name</th>
+                        <th>Address</th>
+                        <th>Offer</th>
+                        <th>Property</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Selection</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+            </table>`;
+        const tb = document.getElementById('tbody');
+        rows.forEach(o => {
+            const tr = document.createElement('tr');
+            if ((o.status || '') === 'archived') tr.classList.add('archived');
+            tr.onclick = (e) => {
+                if (e.target.closest('button')) return;
+                openDrawer(o.id);
+            };
+            tr.innerHTML = `
+                <td>${statusBadge(o.status)}</td>
+                <td style="color:#4a5568; font-size:0.82rem;">${fmtDate(o.created_at || o.submitted_at)}</td>
+                <td><strong style="color:#1a202c;">${escHtml(o.full_name || o.name || '—')}</strong></td>
+                <td style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escHtml(o.formatted_address || o.address || '')}">${escHtml(o.formatted_address || o.address || '—')}</td>
+                <td style="font-weight:700; color:#1a202c;">${money(o.offer_amount)}</td>
+                <td style="color:#4a5568; font-size:0.82rem;">${propertyFacts(o)}</td>
+                <td style="color:#4a5568; font-size:0.82rem;">${escHtml(o.phone || '—')}</td>
+                <td style="color:#4a5568; font-size:0.82rem; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escHtml(o.email || '—')}</td>
+                <td>${selectionBadge(o.selection)}</td>
+                <td style="text-align:right; white-space:nowrap;">
+                    <button class="row-btn" onclick="event.stopPropagation(); openDrawer('${escHtml(o.id)}')">View</button>
+                    ${(o.status !== 'archived')
+                        ? `<button class="row-btn danger" onclick="event.stopPropagation(); archiveOffer('${escHtml(o.id)}')">Archive</button>`
+                        : `<button class="row-btn" onclick="event.stopPropagation(); restoreOffer('${escHtml(o.id)}')">Restore</button>`}
+                </td>
+            `;
+            tb.appendChild(tr);
+        });
+    }
+
+    function setFilter(f, el) {
+        ACTIVE_FILTER = f;
+        document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        renderTable();
+    }
+
+    async function archiveOffer(id) {
+        if (!confirm('Archive this cash offer?')) return;
+        try {
+            const res = await fetch(`/api/admin/cash-offers/${encodeURIComponent(id)}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'archived' })
+            });
+            if (!res.ok) throw new Error('failed');
+            await loadOffers();
+        } catch { alert('Could not archive offer.'); }
+    }
+    async function restoreOffer(id) {
+        try {
+            const res = await fetch(`/api/admin/cash-offers/${encodeURIComponent(id)}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'new' })
+            });
+            if (!res.ok) throw new Error('failed');
+            await loadOffers();
+        } catch { alert('Could not restore offer.'); }
+    }
+
+    async function openDrawer(id) {
+        OPEN_ID = id;
+        document.getElementById('drawer-backdrop').classList.add('open');
+        document.getElementById('drawer').classList.add('open');
+        const body = document.getElementById('drawer-body');
+        body.innerHTML = `<div style="padding:3rem; text-align:center; color:#a0aec0;">Loading...</div>`;
+        try {
+            const res = await fetch(`/api/admin/cash-offers/${encodeURIComponent(id)}`);
+            if (!res.ok) throw new Error('failed');
+            const o = await res.json();
+            renderDrawer(o);
+            // Refresh badge after viewing (marks as viewed server-side potentially)
+            if (typeof window.refreshCashOfferBadge === 'function') window.refreshCashOfferBadge();
+        } catch {
+            body.innerHTML = `<div style="padding:3rem; text-align:center; color:#c53030;">Could not load this offer.</div>`;
+        }
+    }
+
+    function closeDrawer() {
+        OPEN_ID = null;
+        document.getElementById('drawer-backdrop').classList.remove('open');
+        document.getElementById('drawer').classList.remove('open');
+    }
+
+    function renderDrawer(o) {
+        const body = document.getElementById('drawer-body');
+        document.getElementById('drawer-title').textContent = `Cash Offer · ${o.full_name || o.name || 'Lead'}`;
+        const p = o.property_data || o.propertyData || {};
+        const beds  = o.beds  ?? p.beds;
+        const baths = o.baths ?? p.baths;
+        const sqft  = o.sqft  ?? p.sqft;
+        const yearBuilt = o.year_built ?? o.yearBuilt ?? p.yearBuilt;
+        const lotSize   = o.lot_size   ?? o.lotSize   ?? p.lotSize;
+        const condition = o.condition  ?? p.condition ?? 'Good';
+        const lastSalePrice = p.lastSalePrice ?? o.last_sale_price;
+        const lastSaleDate  = p.lastSaleDate  ?? o.last_sale_date;
+        const avm           = p.avm            ?? o.avm;
+        const factors = o.offer_factors || o.offerFactors || {};
+
+        body.innerHTML = `
+            <div class="offer-display">
+                <div style="font-size:0.72rem; letter-spacing:2px; text-transform:uppercase; opacity:0.85; font-weight:700;">Generated Offer</div>
+                <div class="offer-amt">${money(o.offer_amount)}</div>
+                <div class="offer-addr">${escHtml(o.formatted_address || o.address || '')}</div>
+            </div>
+
+            <div class="drawer-section">
+                <h3>Property Details</h3>
+                <div class="detail-grid">
+                    <div class="detail-item"><span class="detail-label">Beds</span><span class="detail-value">${beds ?? '—'}</span></div>
+                    <div class="detail-item"><span class="detail-label">Baths</span><span class="detail-value">${baths ?? '—'}</span></div>
+                    <div class="detail-item"><span class="detail-label">Sqft</span><span class="detail-value">${sqft ? Number(sqft).toLocaleString() : '—'}</span></div>
+                    <div class="detail-item"><span class="detail-label">Year built</span><span class="detail-value">${yearBuilt ?? '—'}</span></div>
+                    <div class="detail-item"><span class="detail-label">Lot size</span><span class="detail-value">${lotSize ? lotSize + ' ac' : '—'}</span></div>
+                    <div class="detail-item"><span class="detail-label">Condition</span><span class="detail-value">${escHtml(condition)}</span></div>
+                    ${lastSalePrice ? `<div class="detail-item"><span class="detail-label">Last sale</span><span class="detail-value">${money(lastSalePrice)}${lastSaleDate ? ' · ' + fmtDate(lastSaleDate) : ''}</span></div>` : ''}
+                    ${avm ? `<div class="detail-item"><span class="detail-label">AVM</span><span class="detail-value">${money(avm)}</span></div>` : ''}
+                </div>
+            </div>
+
+            <div class="drawer-section">
+                <h3>Offer Calculation</h3>
+                ${factors && Object.keys(factors).length
+                    ? Object.entries(factors).map(([k, v]) => `
+                        <div class="factor-row">
+                            <span class="factor-label">${escHtml(k)}</span>
+                            <span class="factor-value">${typeof v === 'number' ? (v > 1000 ? money(v) : v) : escHtml(v)}</span>
+                        </div>`).join('')
+                    : '<p style="color:#a0aec0; font-size:0.85rem; margin:0;">No itemized breakdown stored for this offer.</p>'}
+            </div>
+
+            <div class="drawer-section">
+                <h3>Contact</h3>
+                <div class="contact-row">
+                    <span style="color:#94a3b8; width:50px; flex-shrink:0; font-size:0.78rem; font-weight:700;">NAME</span>
+                    <strong style="color:#1a202c;">${escHtml(o.full_name || o.name || '—')}</strong>
+                </div>
+                <div class="contact-row">
+                    <span style="color:#94a3b8; width:50px; flex-shrink:0; font-size:0.78rem; font-weight:700;">EMAIL</span>
+                    ${o.email ? `<a href="mailto:${escHtml(o.email)}">${escHtml(o.email)}</a> <button class="row-btn" onclick="copyText('${escHtml(o.email)}')" style="margin-left:auto;">Copy</button>` : '—'}
+                </div>
+                <div class="contact-row">
+                    <span style="color:#94a3b8; width:50px; flex-shrink:0; font-size:0.78rem; font-weight:700;">PHONE</span>
+                    ${o.phone ? `<a href="tel:${escHtml(o.phone)}">${escHtml(o.phone)}</a> <button class="row-btn" onclick="copyText('${escHtml(o.phone)}')" style="margin-left:auto;">Copy</button>` : '—'}
+                </div>
+            </div>
+
+            <div class="drawer-section">
+                <h3>Timeline</h3>
+                <div class="timeline-item">
+                    <span class="timeline-dot"></span>
+                    <div class="timeline-text"><strong>Submitted</strong><span class="ts">${fmtDateTime(o.created_at || o.submitted_at)}</span></div>
+                </div>
+                ${o.updated_at && o.updated_at !== o.created_at ? `
+                    <div class="timeline-item">
+                        <span class="timeline-dot" style="background:#a0aec0;"></span>
+                        <div class="timeline-text"><strong>Last updated</strong><span class="ts">${fmtDateTime(o.updated_at)}</span></div>
+                    </div>` : ''}
+                ${o.selection ? `
+                    <div class="timeline-item">
+                        <span class="timeline-dot" style="background:${o.selection === 'cash' ? '#10b981' : '#6366f1'};"></span>
+                        <div class="timeline-text"><strong>Seller chose: ${o.selection === 'cash' ? 'Cash offer' : 'List with agent'}</strong>${o.selection_at ? `<span class="ts">${fmtDateTime(o.selection_at)}</span>` : ''}</div>
+                    </div>` : ''}
+            </div>
+
+            <div class="drawer-section">
+                <h3>Status</h3>
+                <select class="dr-select" id="dr-status">
+                    ${['new','viewed','contacted','proceeding_cash','chose_agent','archived']
+                        .map(s => `<option value="${s}" ${(o.status || 'new') === s ? 'selected' : ''}>${s.replace(/_/g, ' ')}</option>`).join('')}
+                </select>
+            </div>
+
+            <div class="drawer-section">
+                <h3>Admin Notes</h3>
+                <textarea class="dr-textarea" id="dr-notes" placeholder="Internal notes about this lead...">${escHtml(o.admin_notes || '')}</textarea>
+            </div>
+
+            <div style="display:flex; flex-wrap:wrap; gap:0.5rem; padding-top:0.5rem;">
+                <button class="dr-btn" id="dr-save">Save changes</button>
+                <button class="dr-btn secondary" onclick="window.open('/api/cash-offer/${encodeURIComponent(o.id)}/pdf','_blank')">Download PDF</button>
+            </div>
+            <div id="dr-save-msg" style="margin-top:0.75rem; font-size:0.82rem; color:#2f855a; display:none;"></div>
+        `;
+        document.getElementById('dr-save').onclick = () => saveDrawer(o.id);
+    }
+
+    async function saveDrawer(id) {
+        const btn = document.getElementById('dr-save');
+        const msg = document.getElementById('dr-save-msg');
+        const status = document.getElementById('dr-status').value;
+        const notes  = document.getElementById('dr-notes').value;
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+        msg.style.display = 'none';
+        try {
+            const res = await fetch(`/api/admin/cash-offers/${encodeURIComponent(id)}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status, admin_notes: notes })
+            });
+            if (!res.ok) throw new Error('failed');
+            msg.textContent = '✓ Changes saved.';
+            msg.style.display = 'block';
+            await loadOffers();
+        } catch {
+            msg.textContent = 'Save failed. Please try again.';
+            msg.style.color = '#c53030';
+            msg.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Save changes';
+        }
+    }
+
+    function copyText(t) {
+        try {
+            navigator.clipboard.writeText(t);
+        } catch { /* ignore */ }
+    }
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && OPEN_ID) closeDrawer();
+    });
+
+    document.addEventListener('DOMContentLoaded', loadOffers);
+</script>
+</body>
+</html>
