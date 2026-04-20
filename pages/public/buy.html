@@ -364,21 +364,18 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const promo = document.querySelector('.floating-promo');
-            const footer = document.querySelector('.site-footer');
             if (!promo) return;
-
-            if (footer) {
-                new IntersectionObserver(entries => {
-                    entries.forEach(e => promo.classList.toggle('hide-promo', e.isIntersecting));
-                }, { threshold: 0.05 }).observe(footer);
-            }
-
-            const toggleReveal = () => {
+            const FOOTER_BUFFER = 320;
+            const update = () => {
                 if (promo.classList.contains('dismissed')) return;
-                promo.classList.toggle('revealed', window.scrollY > window.innerHeight * 0.8);
+                const nearFooter = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - FOOTER_BUFFER;
+                const pastHero   = window.scrollY > window.innerHeight * 0.8;
+                promo.classList.toggle('hide-promo', nearFooter);
+                promo.classList.toggle('revealed',  pastHero && !nearFooter);
             };
-            toggleReveal();
-            window.addEventListener('scroll', toggleReveal, { passive: true });
+            update();
+            window.addEventListener('scroll', update, { passive: true });
+            window.addEventListener('resize', update, { passive: true });
         });
 
         const testimonials = [

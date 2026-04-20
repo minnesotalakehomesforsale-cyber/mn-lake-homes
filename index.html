@@ -472,25 +472,28 @@
 
         document.addEventListener('DOMContentLoaded', loadFeaturedAgents);
 
-        // Reveal floating promo only after scrolling past the 2nd/3rd section boundary.
-        // Hide again when the footer comes into view.
+        // Reveal floating promo after scrolling past the 2nd/3rd section boundary.
+        // Hide it when the user nears the footer so it doesn't overlap.
         document.addEventListener('DOMContentLoaded', () => {
             const promo = document.querySelector('.floating-promo');
-            const footer = document.querySelector('.site-footer');
             if (!promo) return;
 
-            if (footer) {
-                new IntersectionObserver(entries => {
-                    entries.forEach(e => promo.classList.toggle('hide-promo', e.isIntersecting));
-                }, { threshold: 0.05 }).observe(footer);
-            }
+            const FOOTER_BUFFER = 320; // hide this many px before absolute page bottom
 
-            const toggleReveal = () => {
+            const update = () => {
                 if (promo.classList.contains('dismissed')) return;
-                promo.classList.toggle('revealed', window.scrollY > window.innerHeight * 0.8);
+                const scrollY     = window.scrollY;
+                const viewport    = window.innerHeight;
+                const docHeight   = document.documentElement.scrollHeight;
+                const nearFooter  = scrollY + viewport >= docHeight - FOOTER_BUFFER;
+                const pastHero    = scrollY > viewport * 0.8;
+
+                promo.classList.toggle('hide-promo', nearFooter);
+                promo.classList.toggle('revealed',  pastHero && !nearFooter);
             };
-            toggleReveal();
-            window.addEventListener('scroll', toggleReveal, { passive: true });
+            update();
+            window.addEventListener('scroll', update, { passive: true });
+            window.addEventListener('resize', update, { passive: true });
         });
     </script>
 </body>
