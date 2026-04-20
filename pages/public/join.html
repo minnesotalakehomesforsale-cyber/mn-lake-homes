@@ -550,13 +550,6 @@
                 <h3 class="testimonial-brand">Jessica & Co.</h3>
                 <p class="testimonial-quote">"Since joining MN Lake Homes, my luxury listing appointments have tripled. The centralized marketing is an absolute game-changer."</p>
             </div>
-            
-            <div class="testimonial-media">
-                <div class="media-vertical-tab">Jessica & Co.</div>
-                <div class="media-image-wrapper">
-                    <img src="/assets/images/mn-minneapolis-park-aerial.jpg" alt="Minneapolis aerial view — successful Minnesota agent territory" loading="lazy" width="1200" height="800">
-                </div>
-            </div>
         </div>
     </section>
 
@@ -809,8 +802,6 @@
             document.querySelector('.testimonial-category').textContent = t.category;
             document.querySelector('.testimonial-brand').textContent = t.brand;
             document.querySelector('.testimonial-quote').textContent = t.quote;
-            document.querySelector('.media-image-wrapper img').src = t.image;
-            document.querySelector('.media-vertical-tab').textContent = t.brand;
             document.querySelector('.slide-count').textContent = `0${currentTestimonial + 1} / 04`;
         }
 
