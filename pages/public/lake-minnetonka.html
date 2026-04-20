@@ -56,30 +56,47 @@
         .lm-hero-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .lm-hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
 
-        .lm-stats { background-color: var(--bg-dark); border-top: 1px solid rgba(255,255,255,0.08); color: #fff; padding: 2.5rem 2rem; }
-        .lm-stats-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; text-align: center; }
-        .lm-stat h3 { font-size: 2.5rem; font-weight: 700; color: var(--accent-blue); margin-bottom: 0.25rem; }
-        .lm-stat p { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; }
-
         .lm-expert { background-color: #f7f9fa; padding: 6rem 2rem; }
         .lm-expert-inner { max-width: 1200px; margin: 0 auto; text-align: center; }
         .lm-expert h2 { font-size: 2.5rem; font-weight: 700; color: #1a202c; margin-bottom: 1rem; letter-spacing: -1px; }
 
         @media (max-width: 900px) {
-            .lm-hero { padding: 8rem 1.25rem 3.5rem; }
+            .lm-hero { padding: 7rem 1.25rem 3rem; }
             .lm-hero-inner { grid-template-columns: 1fr; gap: 2rem; }
-            .lm-hero h1 { font-size: 3rem; letter-spacing: -1.25px; }
+            .lm-hero h1 { font-size: 2.75rem; letter-spacing: -1.25px; }
             .lm-hero p { font-size: 1.05rem; }
-            .lm-hero-img { height: 300px; }
+            .lm-hero-img { height: 260px; }
             .lm-hero-actions { flex-direction: column; }
             .lm-hero-actions .btn { width: 100%; text-align: center; }
-            .lm-stats-inner { grid-template-columns: 1fr; gap: 1.5rem; }
-            .lm-stat h3 { font-size: 2rem; }
             .lm-expert { padding: 4rem 1.25rem; }
-            .lm-expert h2 { font-size: 2rem; }
+            .lm-expert h2 { font-size: 1.85rem; }
+            .lm-expert p { font-size: 1rem !important; }
+
+            /* Content sections — stack + drop direction:rtl trick */
+            section.sp-section { padding: 3rem 1.25rem !important; }
+            section.sp-section:last-of-type { padding-bottom: 3rem !important; }
+            .sp-grid { grid-template-columns: 1fr !important; gap: 1.5rem !important; direction: ltr !important; }
+            .sp-grid > * { direction: ltr !important; }
+            .sp-media-wrapper { height: 240px !important; }
+            .sp-title { font-size: 1.75rem !important; }
+            section.sp-section p { font-size: 0.98rem !important; line-height: 1.6 !important; }
+            section.sp-section p br, .sp-title br { display: none; }
+
+            /* Final CTA dark section */
+            section.sp-dark-section { padding: 4rem 1.25rem !important; }
+            section.sp-dark-section h2 { font-size: 2rem !important; }
+
+            /* Shrink the generic primary CTA on phones */
+            .lm-hero-actions .btn,
+            section .btn.btn-primary {
+                padding: 0.95rem 1.5rem !important;
+                font-size: 0.98rem !important;
+            }
         }
         @media (max-width: 480px) {
             .lm-hero h1 { font-size: 2.25rem; }
+            .sp-title { font-size: 1.5rem !important; }
+            section.sp-dark-section h2 { font-size: 1.7rem !important; }
         }
     </style>
 </head>
@@ -102,15 +119,6 @@
             </div>
         </div>
     </section>
-
-    <!-- Stats Bar -->
-    <div class="lm-stats">
-        <div class="lm-stats-inner">
-            <div class="lm-stat"><h3>14,528</h3><p>Acres of water</p></div>
-            <div class="lm-stat"><h3>110 mi</h3><p>Miles of shoreline</p></div>
-            <div class="lm-stat"><h3>$4.2M+</h3><p>Avg luxury listing</p></div>
-        </div>
-    </div>
 
     <!-- SEO Content: Boating Lifestyle -->
     <section class="sp-section" style="padding: 6rem 2rem;">
@@ -163,7 +171,6 @@
             <p style="font-size: 1.15rem; color: #a0aec0; margin-bottom: 2.5rem; line-height: 1.6;">Let's get you on the water. View private inventory or get a pricing analysis for your current waterfront estate.</p>
             <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
                 <button class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none;" onclick="openForm('buy')">Start your journey</button>
-                <a href="tel:+12188501115" class="btn btn-outline" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; color: #fff; border-color: rgba(255,255,255,0.25); text-decoration: none;">(218) 850-1115</a>
             </div>
         </div>
     </section>
