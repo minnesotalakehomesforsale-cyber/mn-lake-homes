@@ -24,9 +24,31 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        .rx-hero { padding: 12rem 2rem 5rem; text-align: center; background-color: var(--bg-dark); color: #fff; }
-        .rx-hero h1 { font-size: 4.5rem; font-weight: 700; letter-spacing: -2px; margin: 0 0 1.25rem; line-height: 1.05; }
-        .rx-hero p  { font-size: 1.2rem; color: var(--text-secondary); max-width: 680px; margin: 0 auto 2.25rem; line-height: 1.6; }
+        .rx-hero {
+            position: relative;
+            padding: 12rem 2rem 5rem;
+            text-align: center;
+            color: #fff;
+            background-color: var(--bg-dark);
+            background-image: url('/assets/images/mn-aerial-lake-homes.jpg');
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
+            isolation: isolate;
+        }
+        .rx-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg,
+                rgba(10, 14, 22, 0.72) 0%,
+                rgba(10, 14, 22, 0.55) 45%,
+                rgba(10, 14, 22, 0.88) 100%);
+            z-index: 0;
+        }
+        .rx-hero > * { position: relative; z-index: 1; }
+        .rx-hero h1 { font-size: 4.5rem; font-weight: 700; letter-spacing: -2px; margin: 0 0 1.25rem; line-height: 1.05; text-shadow: 0 2px 20px rgba(0,0,0,0.4); }
+        .rx-hero p  { font-size: 1.2rem; color: #e2e8f0; max-width: 680px; margin: 0 auto 2.25rem; line-height: 1.6; text-shadow: 0 1px 10px rgba(0,0,0,0.35); }
         .rx-search-wrap { position: relative; max-width: 640px; margin: 0 auto; }
         .rx-search-wrap svg { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #a0aec0; pointer-events: none; }
         .rx-search-wrap input {
