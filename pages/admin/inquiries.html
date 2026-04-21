@@ -9,19 +9,9 @@
     <style>
         html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
         .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
-        .admin-side { background: #1a202c; color: #fff; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
-        .admin-side h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 2.5rem; padding-left: 0.5rem; color: #fff; margin-top: 0; }
-        .admin-side h1 span { color: #1d6df2; }
-        .side-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; margin-bottom: 0.75rem; padding-left: 0.5rem; font-weight: 700; margin-top: 0; }
-        .side-nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
-        .side-link { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 8px; color: #a0aec0; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.15s; }
-        .side-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
-        .side-link.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+
         .side-badge { background: #ef4444; color: #fff; font-size: 0.68rem; font-weight: 800; padding: 0.1rem 0.45rem; border-radius: 99px; min-width: 18px; text-align: center; line-height: 1.3; }
-        .side-signout { display: block; padding: 0.75rem 1rem; border-radius: 8px; color: #fc8181; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-top: 1rem; transition: all 0.15s; }
-        .side-signout:hover { background: rgba(252,129,129,0.1); }
-        .cash-offer-badge { display: none; background: #dc2626; color: #fff; font-size: 0.68rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 99px; margin-left: auto; min-width: 18px; text-align: center; }
-        .cash-offer-badge.visible { display: inline-block; }
+
         .admin-main { padding: 3rem 3.5rem; overflow-y: auto; }
 
         /* Filter pills */
@@ -93,38 +83,13 @@
     </style>
     <script src="../../components/admin-guard.js"></script>
     <script src="../../components/admin-responsive.js" defer></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
     <script src="../../components/admin-assistant.js" defer></script>
     <script src="../../components/admin-nav-badges.js" defer></script>
 </head>
 <body>
 <div class="admin-wrap">
-    <aside class="admin-side">
-        <h1>MNLH <span>ADMIN</span></h1>
-        <p class="side-label">Platform Operations</p>
-        <nav class="side-nav">
-            <a href="dashboard.html"  class="side-link">Dashboard</a>
-            <a href="agents.html"     class="side-link">Agents Directory</a>
-            <a href="leads.html"      class="side-link">Central Leads</a>
-            <a href="inquiries.html"  class="side-link active">
-                <span>Inquiries</span>
-                <span class="side-badge" id="nav-badge-inquiries" style="display:none;">0</span>
-            </a>
-            <a href="blog.html"       class="side-link">Blog & Content</a>
-            <a href="cash-offers.html" class="side-link" style="display:flex;align-items:center;justify-content:space-between;">
-                <span>Cash Offers</span>
-                <span class="cash-offer-badge">0</span>
-            </a>
-            <a href="users.html"      class="side-link">Users Management</a>
-            <a href="tasks.html" class="side-link" id="nav-link-tasks" style="display:flex;align-items:center;justify-content:space-between;">
-                <span>Tasks</span>
-                <span id="nav-badge-tasks" style="background:#ef4444;color:#fff;font-size:0.68rem;font-weight:800;padding:0.1rem 0.45rem;border-radius:99px;margin-left:auto;display:none;">0</span>
-            </a>
-            <a href="tags.html"     class="side-link">Geo Tags</a>
-            <a href="database.html"  class="side-link">Database</a>
-        </nav>
-        <a href="/index.html" target="_blank" style="display:block;padding:0.75rem 1rem;border-radius:8px;color:#a0aec0;text-decoration:none;font-size:0.85rem;font-weight:500;margin-top:0.5rem;border:1px solid rgba(255,255,255,0.08);">↗ View Live Site</a>
-        <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>{window.location.href='/index.html';})" class="side-signout">Sign Out</a>
-    </aside>
+    <admin-sidebar active="inquiries"></admin-sidebar>
 
     <main class="admin-main">
         <header style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:2rem;">
