@@ -117,20 +117,25 @@
     <style>
         /* ─── Sell hero — immersive image w/ overlaid content ───────────── */
         .sell-hero-wrap {
+            /* The whole hero section (gutters + image) fills 80vh. */
+            min-height: 80vh;
             /* Header takes the top band; add it so the visible gutter
                below the fixed navbar matches the side/bottom gutter. */
-            padding: calc(72px + 10rem) 10rem 10rem;
+            padding: calc(72px + 8rem) 13rem 8rem;
             margin: 0 auto;
             box-sizing: border-box;
             /* body is display:flex;flex-direction:column — force this
                section to span the full viewport width instead of
-               shrinking to content. */
+               shrinking to content, and use flex to make the inner
+               .sell-hero card fill the remaining height after padding. */
             width: 100%;
             align-self: stretch;
+            display: flex;
         }
         .sell-hero {
             position: relative;
-            min-height: 80vh;
+            flex: 1;
+            min-height: 0;
             border-radius: 24px;
             overflow: hidden;
             background-image: url('/assets/images/mn-white-farmhouse.jpg');
