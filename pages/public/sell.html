@@ -117,8 +117,9 @@
     <style>
         /* ─── Sell hero — immersive image w/ overlaid content ───────────── */
         .sell-hero-wrap {
-            padding: 6rem 1rem 3rem;
-            max-width: 1560px;
+            /* Header takes the top band; add it to keep visible gutters
+               equal on all four sides of the hero card. */
+            padding: calc(72px + 1.5rem) 1.5rem 1.5rem;
             margin: 0 auto;
             box-sizing: border-box;
         }
