@@ -192,8 +192,17 @@
 
         @media (max-width: 900px) {
             .signup-split { grid-template-columns: 1fr; }
-            .signup-right { min-height: 260px; }
-            .signup-left  { padding: 2rem 1.5rem; }
+            .signup-right { min-height: 220px; }
+            .signup-left  { padding: 2rem 1.25rem; }
+            .signup-form-wrap { max-width: 100%; }
+            .signup-headline { font-size: 1.6rem !important; }
+            .signup-subhead  { font-size: 0.95rem !important; }
+            .signup-input { font-size: 1rem; padding: 0.85rem 1rem; }
+            .signup-submit { padding: 0.95rem 1.1rem; font-size: 0.98rem; }
+        }
+        @media (max-width: 400px) {
+            .signup-left { padding: 1.5rem 1rem; }
+            .signup-headline { font-size: 1.4rem !important; }
         }
     </style>
 </head>

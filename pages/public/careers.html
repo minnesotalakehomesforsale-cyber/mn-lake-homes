@@ -194,16 +194,29 @@
         }
 
         @media (max-width: 780px) {
-            .careers-hero { padding: 8rem 1.25rem 4rem; }
-            .careers-hero h1 { font-size: 2.75rem; letter-spacing: -1px; }
+            .careers-hero { padding: 7rem 1.25rem 3rem; }
+            .careers-hero h1 { font-size: 2.5rem; letter-spacing: -1px; line-height: 1.1; }
             .careers-hero p { font-size: 1rem; }
-            .careers-values { padding: 4rem 1.25rem; }
+            .careers-values { padding: 3.5rem 1.25rem; }
             .values-grid { grid-template-columns: 1fr; gap: 1rem; }
-            .careers-values-title { font-size: 2rem; }
+            .careers-values-title { font-size: 1.85rem; }
+            .value-card h3 { font-size: 1.1rem; }
+            .value-card p  { font-size: 0.95rem; }
             .roles-banner { padding: 3rem 1.25rem; }
-            .careers-form-section { padding: 4rem 1rem; }
-            .careers-form-inner { padding: 2rem 1.25rem; }
+            .roles-banner h2 { font-size: 1.6rem !important; }
+            .roles-banner-inner { grid-template-columns: 1fr !important; gap: 0.75rem !important; }
+            .careers-form-section { padding: 3.5rem 1rem; }
+            .careers-form-section > h2 { font-size: 1.85rem !important; }
+            .careers-form-inner { padding: 1.75rem 1.25rem; }
             .c-form-row { grid-template-columns: 1fr; gap: 0; }
+            .careers-form-inner input,
+            .careers-form-inner select,
+            .careers-form-inner textarea { font-size: 1rem; }
+            .careers-form-inner select { padding-right: 2rem; }
+        }
+        @media (max-width: 400px) {
+            .careers-hero h1 { font-size: 2.1rem; }
+            .careers-values-title { font-size: 1.6rem; }
         }
     </style>
     <script src="../../components/components.js" defer></script>
