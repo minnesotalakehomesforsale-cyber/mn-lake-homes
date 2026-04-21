@@ -239,7 +239,10 @@
             if (_map) return _map;
             _map = L.map('lx-map', {
                 zoomControl: true,
-                scrollWheelZoom: false,
+                // Leaflet only grabs the wheel while the cursor is actually
+                // over the map element, so page scroll stays unaffected when
+                // the user is above/below the map.
+                scrollWheelZoom: true,
                 // Minnesota-bounded initial view. Fits on most screens and
                 // gives context of the whole state without zooming in so
                 // tight that pins overlap.
@@ -247,6 +250,7 @@
                 zoom: 7,
                 minZoom: 5,
                 zoomSnap: 0.25,
+                wheelPxPerZoomLevel: 110,
             });
             // Positron — ultra-clean light basemap. Minimal labels, pin-
             // friendly, more modern than Voyager.
@@ -277,6 +281,31 @@
                         <a href="/lakes/${encodeURIComponent(l.slug)}">Open page →</a>
                     </div>
                 `);
+
+                // Hover to preview: open on mouseenter, close on mouseleave
+                // (with a small delay so the user can move the cursor into
+                // the popup without it vanishing). Click navigates straight
+                // to the lake page — the popup's button is redundant for
+                // mouse users but helps keyboard/touch.
+                let hoverTimer = null;
+                marker.on('mouseover', () => {
+                    clearTimeout(hoverTimer);
+                    marker.openPopup();
+                });
+                marker.on('mouseout', () => {
+                    hoverTimer = setTimeout(() => marker.closePopup(), 180);
+                });
+                marker.on('click', () => {
+                    window.location.href = `/lakes/${encodeURIComponent(l.slug)}`;
+                });
+                // Keep the popup open while the cursor is over it.
+                marker.on('popupopen', (e) => {
+                    const el = e.popup.getElement();
+                    if (!el) return;
+                    el.addEventListener('mouseenter', () => clearTimeout(hoverTimer));
+                    el.addEventListener('mouseleave', () => { hoverTimer = setTimeout(() => marker.closePopup(), 180); });
+                });
+
                 _markers.push(marker);
                 bounds.push([l.latitude, l.longitude]);
             });

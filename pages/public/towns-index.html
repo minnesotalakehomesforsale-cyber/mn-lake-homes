@@ -196,9 +196,11 @@
         function ensureMap() {
             if (_map) return _map;
             _map = L.map('tx-map', {
-                zoomControl: true, scrollWheelZoom: false,
+                zoomControl: true,
+                scrollWheelZoom: true,
                 center: [46.5, -94.3], zoom: 7,
                 minZoom: 5, zoomSnap: 0.25,
+                wheelPxPerZoomLevel: 110,
             });
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 subdomains: 'abcd',
@@ -224,6 +226,19 @@
                         <a href="/towns/${encodeURIComponent(t.slug)}">Open page →</a>
                     </div>
                 `);
+
+                // Hover to preview, click to navigate.
+                let hoverTimer = null;
+                marker.on('mouseover', () => { clearTimeout(hoverTimer); marker.openPopup(); });
+                marker.on('mouseout',  () => { hoverTimer = setTimeout(() => marker.closePopup(), 180); });
+                marker.on('click',     () => { window.location.href = `/towns/${encodeURIComponent(t.slug)}`; });
+                marker.on('popupopen', (e) => {
+                    const el = e.popup.getElement();
+                    if (!el) return;
+                    el.addEventListener('mouseenter', () => clearTimeout(hoverTimer));
+                    el.addEventListener('mouseleave', () => { hoverTimer = setTimeout(() => marker.closePopup(), 180); });
+                });
+
                 _markers.push(marker);
                 bounds.push([t.latitude, t.longitude]);
             });

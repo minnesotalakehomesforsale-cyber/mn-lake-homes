@@ -56,7 +56,8 @@
         .lm-hero p.lead { font-size: 1.25rem; color: #a0aec0; line-height: 1.6; margin-bottom: 2.5rem; max-width: 520px; }
         .lm-hero-img { height: 500px; border-radius: 20px; overflow: hidden; }
         .lm-hero-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .lm-hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .lm-hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+        .btn-back:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.4); }
 
         /* Alternating SEO content — image + title + body */
         .sp-section { padding: 6rem 2rem; }
@@ -142,6 +143,9 @@
                 <p class="lead" id="ld-intro">{{LAKE_INTRO_TEXT}}</p>
                 <div class="lm-hero-actions">
                     <button onclick="openForm('buy')" class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none; cursor: pointer;">Contact an expert</button>
+                    <a href="/lakes" class="btn-back" style="display:inline-flex; align-items:center; gap:0.5rem; padding: 1.1rem 1.75rem; font-size: 1rem; text-decoration:none; border:1px solid rgba(255,255,255,0.22); color:#fff; border-radius: 10px; transition: background 0.15s, border-color 0.15s;">
+                        <span aria-hidden="true">←</span> All lakes
+                    </a>
                 </div>
             </div>
             <div class="lm-hero-img">
