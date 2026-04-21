@@ -390,10 +390,6 @@ class GlobalHeader extends HTMLElement {
                         <polyline points="72,28 72,16 84,16 84,42"/>
                         <polyline points="17,52 17,82 83,82 83,52"/>
                     </svg>
-                    <span class="brand-text">
-                        <span class="brand-top">Minnesota</span>
-                        <span class="brand-bot">LakeHomesForSale.com</span>
-                    </span>
                 </a>
             </div>
             <nav class="nav-links">
