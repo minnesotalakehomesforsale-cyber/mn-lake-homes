@@ -50,25 +50,36 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // ─── list/search ────────────────────────────────────────────────────────────
 exports.list = async (req, res) => {
     try {
-        const { state, region, search, active } = req.query;
+        const { state, region, search, active, with_lakes } = req.query;
         const where = [];
         const params = [];
 
-        if (state)  { params.push(state);  where.push(`state = $${params.length}`); }
-        if (region) { params.push(region); where.push(`region = $${params.length}`); }
+        if (state)  { params.push(state);  where.push(`t.state = $${params.length}`); }
+        if (region) { params.push(region); where.push(`t.region = $${params.length}`); }
         if (search) {
             params.push(`%${String(search).toLowerCase()}%`);
-            where.push(`lower(name) LIKE $${params.length}`);
+            where.push(`lower(t.name) LIKE $${params.length}`);
         }
-        if (active === 'true')  where.push(`active = TRUE`);
-        if (active === 'false') where.push(`active = FALSE`);
-        if (active !== 'true' && active !== 'false' && active !== 'all') where.push(`active = TRUE`);
+        if (active === 'true')  where.push(`t.active = TRUE`);
+        if (active === 'false') where.push(`t.active = FALSE`);
+        if (active !== 'true' && active !== 'false' && active !== 'all') where.push(`t.active = TRUE`);
+        // When ?with_lakes=true, restrict to towns that have at least one
+        // published lake attached — powers the public /towns browse page.
+        if (with_lakes === 'true') {
+            where.push(`EXISTS (
+                SELECT 1 FROM lake_tags lt
+                JOIN lakes l ON l.id = lt.lake_id
+                WHERE lt.tag_id = t.id AND l.status = 'published'
+            )`);
+        }
 
         const sql = `
-            SELECT id, slug, name, state, region, latitude, longitude, active, created_at, updated_at
-            FROM tags
+            SELECT t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude,
+                   t.active, t.created_at, t.updated_at,
+                   (SELECT COUNT(*) FROM lake_tags lt WHERE lt.tag_id = t.id)::int AS lake_count
+            FROM tags t
             ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
-            ORDER BY state ASC, region ASC, name ASC
+            ORDER BY t.state ASC, t.region ASC, t.name ASC
             LIMIT 500
         `;
         const { rows } = await pool.query(sql, params);

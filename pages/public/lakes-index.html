@@ -210,6 +210,12 @@
             const regions = [...new Set(_lakes.map(l => l.region).filter(Boolean))].sort();
             sel.innerHTML = '<option value="">All regions</option>' +
                 regions.map(r => `<option value="${escHtml(r)}">${escHtml(r)}</option>`).join('');
+            // Deep link: ?region=X pre-selects the filter so header links like
+            // "Brainerd Lakes" land on a pre-filtered view.
+            const qp = new URLSearchParams(location.search).get('region');
+            if (qp && regions.includes(qp)) sel.value = qp;
+            const qs = new URLSearchParams(location.search).get('search');
+            if (qs) document.getElementById('lx-search').value = qs;
         }
 
         function filtered() {

@@ -219,7 +219,7 @@ class GlobalHeader extends HTMLElement {
                 columns: [
                     { heading: 'Browse Properties', links: [
                         { label: 'All Listings', href: `${bp}buy.html` },
-                        { label: 'Lake Minnetonka Homes', href: `${bp}lake-minnetonka.html` },
+                        { label: 'Lake Minnetonka Homes', href: '/lakes/lake-minnetonka' },
                         { label: 'Rent a Home', href: `${bp}rent.html` },
                     ]},
                     { heading: 'Tools', links: [
@@ -251,6 +251,28 @@ class GlobalHeader extends HTMLElement {
                         { label: 'Pricing & Valuation',   href: `${bp}resources.html?search=valuation` },
                         { label: 'Market Reports',        href: `${bp}resources.html?category=Market%20Reports` },
                         { label: 'Blog',                  href: `${bp}blog.html` },
+                    ]},
+                ]
+            },
+            {
+                id: 'lakes', label: 'Lakes', href: '/lakes',
+                columns: [
+                    { heading: 'Browse', links: [
+                        { label: 'All Lakes',       href: '/lakes' },
+                        { label: 'All Lake Towns',  href: '/towns' },
+                        { label: 'Featured Agents', href: `${bp}agents.html?featured=1` },
+                    ]},
+                    { heading: 'Featured Lakes', links: [
+                        { label: 'Lake Minnetonka', href: '/lakes/lake-minnetonka' },
+                        { label: 'Gull Lake',       href: '/lakes/gull-lake' },
+                        { label: 'Mille Lacs Lake', href: '/lakes/mille-lacs-lake' },
+                        { label: 'Lake Vermilion',  href: '/lakes/lake-vermilion' },
+                    ]},
+                    { heading: 'By Region', links: [
+                        { label: 'Twin Cities Metro', href: '/lakes?region=Twin%20Cities%20Metro' },
+                        { label: 'Brainerd Lakes',    href: '/lakes?region=Brainerd%20Lakes' },
+                        { label: 'Northern Lakes',    href: '/lakes?region=Northern%20Lakes' },
+                        { label: 'Lakes Country',     href: '/lakes?region=Lakes%20Country' },
                     ]},
                 ]
             },

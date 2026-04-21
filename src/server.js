@@ -230,6 +230,11 @@ app.get('/lakes/:slug', async (req, res, next) => {
     }
 });
 
+// ─── Towns: public browse-all page ─────────────────────────────────────
+app.get('/towns', (req, res) => {
+    res.sendFile(path.join(PROJECT_ROOT, 'pages/public/towns-index.html'));
+});
+
 // ─── Towns: public dynamic page per geo-tag ────────────────────────────
 // Server-renders SEO tokens into the initial HTML (matches the /lakes/:slug
 // pattern). The page itself fetches lakes/agents/businesses client-side.
