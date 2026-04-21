@@ -110,6 +110,7 @@
         { key: 'leads',       href: 'leads.html',      label: 'Central Leads' },
         { key: 'inquiries',   href: 'inquiries.html',  label: 'Inquiries', badgeId: 'nav-badge-inquiries' },
         { key: 'blog',        href: 'blog.html',       label: 'Blog & Content' },
+        { key: 'resources',   href: 'resources.html',  label: 'Resources' },
         { key: 'cash-offers', href: 'cash-offers.html',label: 'Cash Offers', cashBadge: true },
         { key: 'users',       href: 'users.html',      label: 'Users Management' },
         { key: 'tasks',       href: 'tasks.html',      label: 'Tasks', badgeId: 'nav-badge-tasks' },

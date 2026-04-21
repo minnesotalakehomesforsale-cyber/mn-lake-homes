@@ -51,6 +51,7 @@ app.use('/api/assistant', require('./routes/assistant.routes'));
 app.use('/api/activity', require('./routes/activity.routes'));
 app.use('/api/cash-offer', require('./routes/cash-offer.routes'));
 app.use('/api/tags', require('./routes/tag.routes'));
+app.use('/api/resources', require('./routes/resource.routes'));
 
 app.get('/api/health', (req, res) => {
     res.json({
@@ -428,6 +429,60 @@ async function ensureTables() {
                 ('signup_max_service_areas',  '10'::jsonb, 'Max service-area tags an agent can pick during self-signup. Admins are not capped.')
             ON CONFLICT (key) DO NOTHING;
         `);
+
+        // Resources catalog — curated guides, tools, calculators, etc.
+        // The public /pages/public/resources.html page and the admin
+        // read-only view both read from this table. Indexes chosen for
+        // the common list queries (filter by active+category, sort by
+        // created_at, feature-pin sort).
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS resources (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                slug VARCHAR(120) UNIQUE NOT NULL,
+                title VARCHAR(300) NOT NULL,
+                description TEXT,
+                category VARCHAR(80) NOT NULL,
+                resource_type VARCHAR(40) NOT NULL,
+                url TEXT NOT NULL,
+                thumbnail_url TEXT,
+                tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+                featured BOOLEAN NOT NULL DEFAULT FALSE,
+                active BOOLEAN NOT NULL DEFAULT TRUE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_resources_active_category
+                ON resources(active, category) WHERE active = TRUE;
+            CREATE INDEX IF NOT EXISTS idx_resources_active_created
+                ON resources(created_at DESC) WHERE active = TRUE;
+            CREATE INDEX IF NOT EXISTS idx_resources_featured
+                ON resources(featured, created_at DESC)
+                WHERE active = TRUE AND featured = TRUE;
+            CREATE INDEX IF NOT EXISTS idx_resources_title_lower
+                ON resources(lower(title));
+        `);
+
+        // Seed resources catalog — same idempotent pattern as tags.
+        const RESOURCES_SEED = require('./database/resources-seed');
+        if (Array.isArray(RESOURCES_SEED) && RESOURCES_SEED.length) {
+            const values = [];
+            const params = [];
+            RESOURCES_SEED.forEach((r, i) => {
+                const base = i * 9;
+                values.push(`($${base+1}, $${base+2}, $${base+3}, $${base+4}, $${base+5}, $${base+6}, $${base+7}, $${base+8}::jsonb, $${base+9})`);
+                params.push(
+                    r.slug, r.title, r.description || null, r.category,
+                    r.resource_type, r.url, r.thumbnail_url || null,
+                    JSON.stringify(r.tags || []), !!r.featured,
+                );
+            });
+            await pool.query(
+                `INSERT INTO resources (slug, title, description, category, resource_type, url, thumbnail_url, tags, featured)
+                 VALUES ${values.join(', ')}
+                 ON CONFLICT (slug) DO NOTHING`,
+                params
+            );
+        }
 
         // Seed the geographic tags catalog. ON CONFLICT (slug) DO NOTHING
         // makes this safe to run on every boot — existing tags are left

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resources | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
+
+        .toolbar { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.5rem; }
+        .toolbar input, .toolbar select { font-family: inherit; font-size: 0.9rem; padding: 0.55rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; outline: none; }
+        .toolbar input:focus, .toolbar select:focus { border-color: #1d6df2; }
+        .toolbar input[type="search"] { flex: 1; min-width: 240px; }
+
+        .stat-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { background: #fff; border: 1px solid #edf2f7; border-radius: 10px; padding: 1.25rem 1.5rem; }
+        .stat-card .lbl { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 0.35rem; }
+        .stat-card .val { font-size: 2rem; font-weight: 800; letter-spacing: -1px; line-height: 1; color: #1a202c; }
+
+        .ledger-table { width: 100%; background: #fff; border: 1px solid #edf2f7; border-radius: 12px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+        .ledger-table th { text-align: left; padding: 0.9rem 1rem; font-size: 0.72rem; font-weight: 800; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; background: #f7f9fa; border-bottom: 1px solid #edf2f7; white-space: nowrap; }
+        .ledger-table td { padding: 0.85rem 1rem; font-size: 0.9rem; color: #2d3748; border-bottom: 1px solid #f7f9fa; vertical-align: middle; }
+        .ledger-table tr:last-child td { border-bottom: none; }
+        .ledger-table tr.inactive td { opacity: 0.55; }
+        .pill { display: inline-block; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.55rem; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .pill.cat   { background: #ebf4ff; color: #1d6df2; }
+        .pill.type  { background: #f3e8ff; color: #6b21a8; }
+        .pill.live  { background: #d1fae5; color: #065f46; }
+        .pill.off   { background: #fee2e2; color: #991b1b; }
+        .pill.feat  { background: #fef3c7; color: #b45309; }
+        .thumb { width: 56px; height: 40px; border-radius: 6px; object-fit: cover; background: #edf2f7; display: block; }
+        .thumb-ph { width: 56px; height: 40px; border-radius: 6px; background: #edf2f7; display: inline-block; }
+        .muted { color: #a0aec0; font-size: 0.82rem; }
+        .url-cell { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; color: #1d6df2; text-decoration: none; font-family: monospace; font-size: 0.8rem; }
+        .url-cell:hover { text-decoration: underline; }
+        .empty { background:#fff; border:1px solid #edf2f7; border-radius:12px; padding:4rem 2rem; text-align:center; color:#a0aec0; }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-nav-badges.js" defer></script>
+</head>
+<body>
+    <div class="admin-wrap">
+        <admin-sidebar active="resources"></admin-sidebar>
+
+        <main class="admin-main">
+            <header style="margin-bottom: 2rem; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:1rem;">
+                <div>
+                    <h1 style="font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.75px; margin: 0 0 0.25rem;">Resources</h1>
+                    <p style="color: #718096; font-size: 0.95rem; margin: 0;">Guides, tools, calculators, and market reports shown on <a href="/pages/public/resources.html" style="color:#1d6df2;" target="_blank">the public resources page</a>.</p>
+                </div>
+                <a href="/pages/public/resources.html" target="_blank" class="row-btn" style="padding:0.55rem 1rem;background:#fff;border:1px solid #e2e8f0;border-radius:8px;text-decoration:none;color:#4a5568;font-weight:600;font-size:0.85rem;">↗ View public page</a>
+            </header>
+
+            <div class="stat-strip" id="stat-strip">
+                <div class="stat-card"><div class="lbl">Total</div><div class="val" id="stat-total">—</div></div>
+                <div class="stat-card"><div class="lbl">Active</div><div class="val" id="stat-active" style="color:#059669;">—</div></div>
+                <div class="stat-card"><div class="lbl">Featured</div><div class="val" id="stat-featured" style="color:#b45309;">—</div></div>
+                <div class="stat-card"><div class="lbl">Categories</div><div class="val" id="stat-categories">—</div></div>
+            </div>
+
+            <div class="toolbar">
+                <input type="search" id="search" placeholder="Search by title or description…" oninput="applyFilters()">
+                <select id="filter-category" onchange="applyFilters()">
+                    <option value="">All categories</option>
+                </select>
+                <select id="filter-type" onchange="applyFilters()">
+                    <option value="">All types</option>
+                </select>
+                <select id="filter-active" onchange="load()">
+                    <option value="all" selected>Active + inactive</option>
+                    <option value="true">Active only</option>
+                    <option value="false">Inactive only</option>
+                </select>
+                <span id="count" class="muted" style="margin-left:auto;"></span>
+            </div>
+
+            <div id="table-wrap">
+                <div class="empty">Loading resources…</div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let _all = [];
+
+        function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+        async function load() {
+            const wrap = document.getElementById('table-wrap');
+            wrap.innerHTML = '<div class="empty">Loading…</div>';
+            const activeFilter = document.getElementById('filter-active').value;
+            const qs = new URLSearchParams();
+            if (activeFilter === 'true' || activeFilter === 'false') {
+                // public endpoint only serves active:true by default; admin
+                // sessions unlock ?active=all
+            }
+            // always pull the full set for client-side filtering; the admin
+            // list is small by design. At true scale, push the filters to
+            // the server via ?category=&search=&featured= instead.
+            qs.set('active', 'all');
+            qs.set('limit', '500');
+            try {
+                const res = await fetch(`/api/resources?${qs}`);
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                _all = Array.isArray(data.rows) ? data.rows : [];
+                if (activeFilter === 'true')  _all = _all.filter(r => r.active);
+                if (activeFilter === 'false') _all = _all.filter(r => !r.active);
+                populateFilters();
+                renderStats();
+                applyFilters();
+            } catch (err) {
+                wrap.innerHTML = '<div class="empty" style="color:#c53030;">Failed to load resources.</div>';
+            }
+        }
+
+        function populateFilters() {
+            const catSel  = document.getElementById('filter-category');
+            const typeSel = document.getElementById('filter-type');
+            const prevCat  = catSel.value;
+            const prevType = typeSel.value;
+            const cats  = [...new Set(_all.map(r => r.category))].sort();
+            const types = [...new Set(_all.map(r => r.resource_type))].sort();
+            catSel.innerHTML  = '<option value="">All categories</option>' +
+                cats.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('');
+            typeSel.innerHTML = '<option value="">All types</option>' +
+                types.map(t => `<option value="${escHtml(t)}">${escHtml(t)}</option>`).join('');
+            if (cats.includes(prevCat))   catSel.value  = prevCat;
+            if (types.includes(prevType)) typeSel.value = prevType;
+        }
+
+        function renderStats() {
+            const total    = _all.length;
+            const active   = _all.filter(r => r.active).length;
+            const featured = _all.filter(r => r.featured && r.active).length;
+            const categories = new Set(_all.map(r => r.category)).size;
+            document.getElementById('stat-total').textContent      = total;
+            document.getElementById('stat-active').textContent     = active;
+            document.getElementById('stat-featured').textContent   = featured;
+            document.getElementById('stat-categories').textContent = categories;
+        }
+
+        function applyFilters() {
+            const search   = (document.getElementById('search').value || '').toLowerCase().trim();
+            const category = document.getElementById('filter-category').value;
+            const type     = document.getElementById('filter-type').value;
+
+            const filtered = _all.filter(r => {
+                if (category && r.category !== category) return false;
+                if (type && r.resource_type !== type)    return false;
+                if (search) {
+                    const hay = (r.title + ' ' + (r.description || '')).toLowerCase();
+                    if (!hay.includes(search)) return false;
+                }
+                return true;
+            });
+
+            render(filtered);
+            document.getElementById('count').textContent = `${filtered.length} of ${_all.length}`;
+        }
+
+        function render(rows) {
+            const wrap = document.getElementById('table-wrap');
+            if (!rows.length) { wrap.innerHTML = '<div class="empty">No matching resources.</div>'; return; }
+
+            wrap.innerHTML = `
+                <table class="ledger-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 72px;"></th>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>URL</th>
+                            <th style="white-space:nowrap;">Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows.map(r => `
+                            <tr class="${r.active ? '' : 'inactive'}">
+                                <td>${r.thumbnail_url
+                                    ? `<img class="thumb" src="${escHtml(r.thumbnail_url)}" alt="">`
+                                    : '<span class="thumb-ph"></span>'}</td>
+                                <td>
+                                    <strong>${escHtml(r.title)}</strong>
+                                    ${r.featured ? '<span class="pill feat" style="margin-left:0.4rem;">★ Featured</span>' : ''}
+                                    <div class="muted" style="font-family:monospace;font-size:0.72rem;">${escHtml(r.slug)}</div>
+                                </td>
+                                <td><span class="pill cat">${escHtml(r.category)}</span></td>
+                                <td><span class="pill type">${escHtml(r.resource_type)}</span></td>
+                                <td>${r.active ? '<span class="pill live">Active</span>' : '<span class="pill off">Inactive</span>'}</td>
+                                <td>${r.url && r.url !== '#'
+                                    ? `<a class="url-cell" href="${escHtml(r.url)}" target="_blank" rel="noopener" title="${escHtml(r.url)}">${escHtml(r.url)}</a>`
+                                    : '<span class="muted">—</span>'}</td>
+                                <td class="muted" style="white-space:nowrap;">${new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        document.addEventListener('DOMContentLoaded', load);
+    </script>
+</body>
+</html>

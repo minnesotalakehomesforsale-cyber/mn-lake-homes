@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+
+    <title>Resources &amp; Tools | MN Lake Homes</title>
+    <meta name="description" content="Guides, tools, calculators, market reports, and templates for Minnesota lake-home buyers, sellers, and renters — the complete resource library.">
+    <meta name="keywords" content="minnesota lake home resources, waterfront buyer guide, lake home calculator, dock permit guide, minnesota lake market report">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/pages/public/resources.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MinnesotaLakeHomesForSale.com">
+    <meta property="og:url" content="https://minnesotalakehomesforsale.com/pages/public/resources.html">
+    <meta property="og:title" content="Resources &amp; Tools | MN Lake Homes">
+    <meta property="og:description" content="Guides, tools, calculators, market reports, and templates for Minnesota lake-home buyers and sellers.">
+    <meta property="og:image" content="https://minnesotalakehomesforsale.com/assets/images/mn-chateau-aerial.jpg">
+
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        .rx-hero { padding: 12rem 2rem 5rem; text-align: center; background-color: var(--bg-dark); color: #fff; }
+        .rx-hero h1 { font-size: 4.5rem; font-weight: 700; letter-spacing: -2px; margin: 0 0 1.25rem; line-height: 1.05; }
+        .rx-hero p  { font-size: 1.2rem; color: var(--text-secondary); max-width: 680px; margin: 0 auto 2.25rem; line-height: 1.6; }
+        .rx-search-wrap { position: relative; max-width: 640px; margin: 0 auto; }
+        .rx-search-wrap svg { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #a0aec0; pointer-events: none; }
+        .rx-search-wrap input {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3rem;
+            border: none;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-family: inherit;
+            background: #fff;
+            color: #1a202c;
+            outline: none;
+            box-sizing: border-box;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+
+        /* Category filter bar */
+        .rx-filter-wrap { position: sticky; top: 72px; z-index: 40; background: #fff; border-bottom: 1px solid #edf2f7; padding: 1rem 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+        .rx-filter-inner { max-width: 1200px; margin: 0 auto; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .rx-filter-pill { padding: 0.5rem 1rem; border-radius: 999px; border: 1px solid #e2e8f0; background: #fff; font-size: 0.85rem; font-weight: 600; color: #4a5568; cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap; }
+        .rx-filter-pill:hover { border-color: #1d6df2; color: #1d6df2; }
+        .rx-filter-pill.active { background: #1d6df2; border-color: #1d6df2; color: #fff; }
+        .rx-filter-pill .c { background: rgba(255,255,255,0.18); padding: 0.1rem 0.45rem; border-radius: 999px; font-size: 0.72rem; margin-left: 0.35rem; font-weight: 800; }
+        .rx-filter-pill:not(.active) .c { background: #edf2f7; color: #4a5568; }
+
+        /* Section wrapper */
+        .rx-section { padding: 4rem 2rem; max-width: 1200px; margin: 0 auto; }
+        .rx-section-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap; }
+        .rx-section-head h2 { font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.75px; margin: 0; }
+        .rx-section-head p  { color: #718096; margin: 0.35rem 0 0; font-size: 0.95rem; }
+        .rx-section-head .link { color: #1d6df2; font-weight: 600; font-size: 0.9rem; text-decoration: none; }
+        .rx-section-head .link:hover { text-decoration: underline; }
+
+        /* Card grid */
+        .rx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.75rem; }
+        .rx-card {
+            display: flex; flex-direction: column;
+            background: #fff; border: 1px solid #edf2f7; border-radius: 14px;
+            overflow: hidden; text-decoration: none; color: inherit;
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+        }
+        .rx-card:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(0,0,0,0.07); border-color: #cbd5e0; }
+        .rx-card-image { position: relative; aspect-ratio: 16/10; background: #f7f9fa; overflow: hidden; }
+        .rx-card-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .rx-card-image .rx-type-badge { position: absolute; top: 0.75rem; left: 0.75rem; background: rgba(26,32,44,0.88); color: #fff; padding: 0.3rem 0.65rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+        .rx-card-image .rx-featured-badge { position: absolute; top: 0.75rem; right: 0.75rem; background: #fef3c7; color: #b45309; padding: 0.3rem 0.65rem; border-radius: 6px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .rx-card-body { padding: 1.25rem 1.25rem 1.5rem; flex: 1; display: flex; flex-direction: column; }
+        .rx-card-category { font-size: 0.72rem; font-weight: 700; color: #1d6df2; text-transform: uppercase; letter-spacing: 0.75px; margin-bottom: 0.5rem; }
+        .rx-card-title { font-size: 1.1rem; font-weight: 700; color: #1a202c; line-height: 1.35; margin-bottom: 0.5rem; }
+        .rx-card-desc { color: #718096; font-size: 0.88rem; line-height: 1.55; margin-bottom: 1rem; flex: 1; }
+        .rx-card-cta { color: #1d6df2; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem; }
+
+        /* Newest blog strip */
+        .rx-blog-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; }
+        .rx-blog-card { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; overflow: hidden; text-decoration: none; color: inherit; transition: transform 0.15s, box-shadow 0.15s; }
+        .rx-blog-card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,0.06); }
+        .rx-blog-img { aspect-ratio: 16/10; background: #f7f9fa; overflow: hidden; }
+        .rx-blog-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .rx-blog-body { padding: 1rem 1.1rem 1.25rem; }
+        .rx-blog-tag  { font-size: 0.68rem; font-weight: 700; color: #1d6df2; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.4rem; display: inline-block; background: #ebf4ff; padding: 0.15rem 0.5rem; border-radius: 4px; }
+        .rx-blog-title { font-size: 0.92rem; font-weight: 700; color: #1a202c; line-height: 1.35; margin: 0; }
+
+        .rx-loadmore-wrap { text-align: center; margin-top: 3rem; }
+        .rx-loadmore { padding: 0.85rem 1.75rem; border: 1px solid #e2e8f0; background: #fff; color: #1a202c; font-weight: 700; font-size: 0.9rem; border-radius: 10px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+        .rx-loadmore:hover { border-color: #1d6df2; color: #1d6df2; }
+        .rx-loadmore:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .rx-empty { text-align: center; padding: 4rem 2rem; color: #a0aec0; font-size: 0.95rem; }
+
+        /* Mobile */
+        @media (max-width: 900px) {
+            .rx-hero { padding: 7rem 1.25rem 3rem; }
+            .rx-hero h1 { font-size: 2.5rem; letter-spacing: -1px; }
+            .rx-hero p  { font-size: 1rem; }
+            .rx-filter-wrap { padding: 0.75rem 1rem; top: 60px; }
+            .rx-section { padding: 2.5rem 1.25rem; }
+            .rx-section-head h2 { font-size: 1.5rem; }
+            .rx-grid { gap: 1.25rem; grid-template-columns: 1fr; }
+            .rx-blog-strip { grid-template-columns: 1fr 1fr; }
+            .rx-card-image { aspect-ratio: 16/9; }
+        }
+        @media (max-width: 480px) {
+            .rx-hero h1 { font-size: 2rem; }
+            .rx-blog-strip { grid-template-columns: 1fr; }
+        }
+    </style>
+    <script src="../../components/components.js" defer></script>
+</head>
+<body style="background-color: #fff;">
+    <global-header></global-header>
+
+    <section class="rx-hero">
+        <h1>The Minnesota lake home<br>resource library</h1>
+        <p>Guides, calculators, market reports, permit references, and templates &mdash; every tool you need to buy, sell, rent, or invest on the water.</p>
+        <div class="rx-search-wrap">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input id="rx-search" type="search" placeholder="Search guides, tools, and market reports…" autocomplete="off">
+        </div>
+    </section>
+
+    <!-- Sticky category filter -->
+    <div class="rx-filter-wrap">
+        <div class="rx-filter-inner" id="rx-filters">
+            <button class="rx-filter-pill active" data-category="">All <span class="c" id="rx-count-all">—</span></button>
+            <!-- Dynamic category pills inject here -->
+        </div>
+    </div>
+
+    <!-- Featured strip (optional; hidden if empty) -->
+    <section class="rx-section" id="rx-featured-section" style="display:none;">
+        <div class="rx-section-head">
+            <div>
+                <h2>Featured</h2>
+                <p>Hand-picked by our team for this month.</p>
+            </div>
+        </div>
+        <div class="rx-grid" id="rx-featured"></div>
+    </section>
+
+    <!-- Latest from the blog -->
+    <section class="rx-section">
+        <div class="rx-section-head">
+            <div>
+                <h2>Latest from the blog</h2>
+                <p>Our editors cover market trends, buyer stories, and lake-life tips.</p>
+            </div>
+            <a href="/pages/public/blog.html" class="link">Browse all posts &rarr;</a>
+        </div>
+        <div class="rx-blog-strip" id="rx-blog-strip">
+            <div class="rx-empty" style="grid-column: 1 / -1;">Loading posts…</div>
+        </div>
+    </section>
+
+    <!-- Full resource grid -->
+    <section class="rx-section">
+        <div class="rx-section-head">
+            <div>
+                <h2 id="rx-main-title">All resources</h2>
+                <p id="rx-main-sub">—</p>
+            </div>
+        </div>
+        <div class="rx-grid" id="rx-grid">
+            <div class="rx-empty" style="grid-column: 1 / -1;">Loading resources…</div>
+        </div>
+        <div class="rx-loadmore-wrap" id="rx-loadmore-wrap" style="display:none;">
+            <button class="rx-loadmore" id="rx-loadmore">Load more</button>
+        </div>
+    </section>
+
+    <global-footer></global-footer>
+    <lead-modal></lead-modal>
+
+    <script>
+        const state = {
+            category: '',
+            search:   '',
+            offset:   0,
+            limit:    24,
+            total:    0,
+            rows:     [],
+        };
+        let _searchTimer = null;
+
+        // ── Type badge label ─────────────────────────────────────────────
+        const TYPE_LABEL = { pdf: 'PDF', article: 'Article', calculator: 'Tool', checklist: 'Checklist', template: 'Template', video: 'Video', tool: 'Tool' };
+
+        // ── Utilities ────────────────────────────────────────────────────
+        function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+        function escAttr(s) { return escHtml(s); }
+
+        function cardHtml(r) {
+            const hasImg = !!r.thumbnail_url;
+            const typeLabel = TYPE_LABEL[r.resource_type] || r.resource_type;
+            const linkOut = r.url && r.url !== '#' ? r.url : '#';
+            const target  = /^https?:\/\//.test(r.url || '') ? ' target="_blank" rel="noopener"' : '';
+            return `
+                <a class="rx-card" href="${escAttr(linkOut)}"${target}>
+                    <div class="rx-card-image">
+                        ${hasImg ? `<img src="${escAttr(r.thumbnail_url)}" alt="${escAttr(r.title)}" loading="lazy">` : ''}
+                        <span class="rx-type-badge">${escHtml(typeLabel)}</span>
+                        ${r.featured ? '<span class="rx-featured-badge">★ Featured</span>' : ''}
+                    </div>
+                    <div class="rx-card-body">
+                        <div class="rx-card-category">${escHtml(r.category)}</div>
+                        <div class="rx-card-title">${escHtml(r.title)}</div>
+                        ${r.description ? `<div class="rx-card-desc">${escHtml(r.description)}</div>` : ''}
+                        <div class="rx-card-cta">Open &rarr;</div>
+                    </div>
+                </a>
+            `;
+        }
+
+        // ── Category pills ───────────────────────────────────────────────
+        async function loadCategories() {
+            try {
+                const res = await fetch('/api/resources/categories');
+                if (!res.ok) return;
+                const cats = await res.json();
+                const host = document.getElementById('rx-filters');
+                const total = cats.reduce((s, c) => s + c.count, 0);
+                document.getElementById('rx-count-all').textContent = total;
+                cats.forEach(c => {
+                    const pill = document.createElement('button');
+                    pill.className = 'rx-filter-pill';
+                    pill.dataset.category = c.category;
+                    pill.innerHTML = `${escHtml(c.category)} <span class="c">${c.count}</span>`;
+                    host.appendChild(pill);
+                });
+                host.addEventListener('click', e => {
+                    const b = e.target.closest('.rx-filter-pill');
+                    if (!b) return;
+                    host.querySelectorAll('.rx-filter-pill').forEach(x => x.classList.remove('active'));
+                    b.classList.add('active');
+                    state.category = b.dataset.category || '';
+                    reloadResources();
+                });
+            } catch (_) { /* degrade silently */ }
+        }
+
+        // ── Main resource grid ───────────────────────────────────────────
+        async function loadResources(append = false) {
+            const qs = new URLSearchParams();
+            if (state.category) qs.set('category', state.category);
+            if (state.search)   qs.set('search',   state.search);
+            qs.set('limit',  state.limit);
+            qs.set('offset', state.offset);
+
+            try {
+                const res = await fetch(`/api/resources?${qs.toString()}`);
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                state.total = data.total;
+
+                if (!append) state.rows = [];
+                state.rows.push(...data.rows);
+
+                renderGrid();
+                renderHeader();
+                toggleLoadMore();
+            } catch (_) {
+                document.getElementById('rx-grid').innerHTML =
+                    '<div class="rx-empty" style="grid-column: 1 / -1;">Could not load resources. Try again in a moment.</div>';
+            }
+        }
+
+        function reloadResources() {
+            state.offset = 0;
+            loadResources(false);
+        }
+
+        function renderGrid() {
+            const host = document.getElementById('rx-grid');
+            if (!state.rows.length) {
+                host.innerHTML = '<div class="rx-empty" style="grid-column: 1 / -1;">Nothing matched your filters.</div>';
+                return;
+            }
+            host.innerHTML = state.rows.map(cardHtml).join('');
+        }
+
+        function renderHeader() {
+            const title = state.category ? state.category : (state.search ? 'Search results' : 'All resources');
+            const sub   = `Showing ${state.rows.length} of ${state.total}`
+                + (state.search ? ` for "${escHtml(state.search)}"` : '');
+            document.getElementById('rx-main-title').textContent = title;
+            document.getElementById('rx-main-sub').textContent   = sub;
+        }
+
+        function toggleLoadMore() {
+            const wrap = document.getElementById('rx-loadmore-wrap');
+            const btn  = document.getElementById('rx-loadmore');
+            if (state.rows.length < state.total) {
+                wrap.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Load more';
+            } else {
+                wrap.style.display = 'none';
+            }
+        }
+
+        document.getElementById('rx-loadmore').addEventListener('click', () => {
+            state.offset += state.limit;
+            const btn = document.getElementById('rx-loadmore');
+            btn.disabled = true;
+            btn.textContent = 'Loading…';
+            loadResources(true);
+        });
+
+        // ── Featured row ─────────────────────────────────────────────────
+        async function loadFeatured() {
+            try {
+                const res = await fetch('/api/resources?featured=true&limit=6');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data.rows.length) return;
+                document.getElementById('rx-featured-section').style.display = 'block';
+                document.getElementById('rx-featured').innerHTML = data.rows.map(cardHtml).join('');
+            } catch (_) {}
+        }
+
+        // ── Latest blog strip ────────────────────────────────────────────
+        async function loadBlog() {
+            const host = document.getElementById('rx-blog-strip');
+            try {
+                const res = await fetch('/api/blog');
+                if (!res.ok) throw new Error();
+                const posts = await res.json();
+                if (!posts.length) { host.innerHTML = '<div class="rx-empty" style="grid-column: 1 / -1;">No posts yet.</div>'; return; }
+                host.innerHTML = posts.slice(0, 4).map(p => `
+                    <a class="rx-blog-card" href="/pages/public/blog-post.html?slug=${encodeURIComponent(p.slug)}">
+                        <div class="rx-blog-img">
+                            ${p.cover_image_url ? `<img src="${escAttr(p.cover_image_url)}" alt="${escAttr(p.title)}" loading="lazy">` : ''}
+                        </div>
+                        <div class="rx-blog-body">
+                            <span class="rx-blog-tag">${escHtml(p.tag || 'General')}</span>
+                            <h3 class="rx-blog-title">${escHtml(p.title)}</h3>
+                        </div>
+                    </a>
+                `).join('');
+            } catch (_) {
+                host.innerHTML = '<div class="rx-empty" style="grid-column: 1 / -1;">Could not load latest posts.</div>';
+            }
+        }
+
+        // ── Search wiring ────────────────────────────────────────────────
+        document.getElementById('rx-search').addEventListener('input', e => {
+            clearTimeout(_searchTimer);
+            _searchTimer = setTimeout(() => {
+                state.search = e.target.value.trim();
+                reloadResources();
+            }, 220);
+        });
+
+        // ── Boot ─────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCategories();
+            loadFeatured();
+            loadBlog();
+            loadResources(false);
+        });
+    </script>
+</body>
+</html>
