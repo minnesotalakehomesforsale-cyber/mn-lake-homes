@@ -227,7 +227,8 @@ class GlobalHeader extends HTMLElement {
                         { label: 'How It Works', href: `${bp}buy.html` },
                     ]},
                     { heading: 'Resources', links: [
-                        { label: 'Buyer Guides', href: `${bp}blog.html` },
+                        { label: 'Buyer Guides & Tools', href: `${bp}resources.html` },
+                        { label: 'Blog', href: `${bp}blog.html` },
                         { label: 'FAQ', href: `${bp}faq.html` },
                     ]},
                 ]
@@ -245,7 +246,8 @@ class GlobalHeader extends HTMLElement {
                         { label: 'How Cash Offers Work', href: `${bp}cash-offer.html` },
                     ]},
                     { heading: 'Resources', links: [
-                        { label: 'Seller Guides', href: `${bp}blog.html` },
+                        { label: 'Seller Guides & Tools', href: `${bp}resources.html` },
+                        { label: 'Blog', href: `${bp}blog.html` },
                         { label: 'FAQ', href: `${bp}faq.html` },
                     ]},
                 ]
@@ -263,7 +265,8 @@ class GlobalHeader extends HTMLElement {
                         { label: 'Contact Us', href: `${bp}contact.html` },
                     ]},
                     { heading: 'Resources', links: [
-                        { label: 'Blog &amp; Resources', href: `${bp}blog.html` },
+                        { label: 'Resources Library', href: `${bp}resources.html` },
+                        { label: 'Blog', href: `${bp}blog.html` },
                         { label: 'Lake Minnetonka Guide', href: `${bp}lake-minnetonka.html` },
                         { label: 'About MNLH', href: `${bp}about.html` },
                     ]},
@@ -277,7 +280,8 @@ class GlobalHeader extends HTMLElement {
                         { label: 'Part of CommonRealtor', href: `${bp}commonrealtor.html` },
                     ]},
                     { heading: 'Content', links: [
-                        { label: 'Blog &amp; Resources', href: `${bp}blog.html` },
+                        { label: 'Resources Library', href: `${bp}resources.html` },
+                        { label: 'Blog', href: `${bp}blog.html` },
                         { label: 'Lake Minnetonka Guide', href: `${bp}lake-minnetonka.html` },
                     ]},
                     { heading: 'Get in Touch', links: [
@@ -483,7 +487,8 @@ class GlobalFooter extends HTMLElement {
                 </div>
                 <div class="link-column">
                     <h4>Explore</h4>
-                    <a href="${bp}blog.html">Blog &amp; Resources</a>
+                    <a href="${bp}resources.html">Resources Library</a>
+                    <a href="${bp}blog.html">Blog</a>
                     <a href="${bp}lake-minnetonka.html">Lake Minnetonka</a>
                     <a href="${bp}about.html">About Us</a>
                     <a href="${bp}faq.html">FAQs</a>
