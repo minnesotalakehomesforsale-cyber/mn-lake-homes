@@ -122,6 +122,11 @@
             padding: calc(72px + 1.5rem) 1.5rem 1.5rem;
             margin: 0 auto;
             box-sizing: border-box;
+            /* body is display:flex;flex-direction:column — force this
+               section to span the full viewport width instead of
+               shrinking to content. */
+            width: 100%;
+            align-self: stretch;
         }
         .sell-hero {
             position: relative;
