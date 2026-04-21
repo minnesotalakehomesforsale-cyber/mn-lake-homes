@@ -26,6 +26,12 @@ router.put   ('/users/:userId',         verifyToken, c.replaceForUser);
 router.post  ('/users/:userId',         verifyToken, c.attachToUser);
 router.delete('/users/:userId/:tagId',  verifyToken, c.detachFromUser);
 router.post  ('/match',                 verifyToken, c.match);
+
+// Public single-tag + reverse-lookup. Placed after the more-specific
+// /users/* and /match routes so they take precedence over :slugOrId.
+router.get   ('/:slugOrId/lakes',                    c.listLakesForTag);
+router.get   ('/:slugOrId',                          c.getOne);
+
 router.patch ('/:id',                   verifyToken, c.patch);
 router.delete('/:id',                   verifyToken, c.softDelete);
 

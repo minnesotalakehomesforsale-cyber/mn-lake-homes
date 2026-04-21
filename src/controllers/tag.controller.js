@@ -45,6 +45,8 @@ function numOrNull(v) {
     return Number.isFinite(n) ? n : null;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // ─── list/search ────────────────────────────────────────────────────────────
 exports.list = async (req, res) => {
     try {
@@ -74,6 +76,59 @@ exports.list = async (req, res) => {
     } catch (err) {
         console.error('[tags.list]', err.message);
         res.status(500).json({ error: 'Failed to load tags.' });
+    }
+};
+
+// ─── get one (by slug or id) ────────────────────────────────────────────────
+// Powers the public /towns/<slug> page. Returns the tag row + counts for
+// linked lakes / agents so the page can render summary numbers without
+// waterfall fetches.
+exports.getOne = async (req, res) => {
+    try {
+        const key = req.params.slugOrId;
+        const byUuid = UUID_RE.test(key);
+        const { rows } = await pool.query(
+            `SELECT t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude, t.active,
+                    (SELECT COUNT(*) FROM lake_tags lt WHERE lt.tag_id = t.id) AS lake_count,
+                    (SELECT COUNT(*) FROM user_tags ut WHERE ut.tag_id = t.id) AS agent_count
+             FROM tags t
+             WHERE ${byUuid ? 't.id' : 't.slug'} = $1
+             LIMIT 1`,
+            [key]
+        );
+        const tag = rows[0];
+        if (!tag || !tag.active) return res.status(404).json({ error: 'Tag not found.' });
+        tag.lake_count  = Number(tag.lake_count)  || 0;
+        tag.agent_count = Number(tag.agent_count) || 0;
+        res.json(tag);
+    } catch (err) {
+        console.error('[tags.getOne]', err.message);
+        res.status(500).json({ error: 'Failed to load tag.' });
+    }
+};
+
+// ─── lakes connected to a tag (reverse lake_tags lookup) ───────────────────
+// Only returns published lakes for the public /towns/<slug> page.
+exports.listLakesForTag = async (req, res) => {
+    try {
+        const key = req.params.slugOrId;
+        const byUuid = UUID_RE.test(key);
+        const { rows } = await pool.query(
+            `SELECT l.id, l.slug, l.name, l.state, l.region, l.county,
+                    l.latitude, l.longitude, l.intro_text, l.seo_description,
+                    l.featured_image_url, l.hero_image_url
+             FROM lake_tags lt
+             JOIN tags  t ON t.id = lt.tag_id
+             JOIN lakes l ON l.id = lt.lake_id
+             WHERE ${byUuid ? 't.id' : 't.slug'} = $1
+               AND l.status = 'published'
+             ORDER BY l.name ASC`,
+            [key]
+        );
+        res.json(rows);
+    } catch (err) {
+        console.error('[tags.listLakesForTag]', err.message);
+        res.status(500).json({ error: 'Failed to load lakes for tag.' });
     }
 };
 

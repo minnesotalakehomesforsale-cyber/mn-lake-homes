@@ -156,6 +156,14 @@ app.get('/api/config/public', async (req, res) => {
 // Serve the existing HTML/CSS UI layer exactly as it was.
 const PROJECT_ROOT = path.join(__dirname, '..');
 
+// Permanent redirect from the hand-authored Lake Minnetonka page to its
+// dynamic /lakes/<slug> replacement. Preserves SEO juice and any bookmarks
+// that pointed at the old pages/public/... URL (which was the canonical
+// before the Lakes system existed).
+app.get('/pages/public/lake-minnetonka.html', (req, res) => {
+    res.redirect(301, '/lakes/lake-minnetonka');
+});
+
 // ─── Lakes: public browse + dynamic lake pages ─────────────────────────
 // These sit in front of express.static so /lakes and /lakes/:slug resolve
 // to the lake templates, not to any same-named static file. The detail
@@ -193,6 +201,8 @@ app.get('/lakes/:slug', async (req, res, next) => {
             const title = lake.seo_title || `${lake.name} Homes for Sale | ${lake.state} Waterfront Real Estate`;
             const desc  = lake.seo_description || lake.intro_text || `${lake.name} real estate — waterfront homes and cabins on ${lake.name}, ${lake.state}.`;
             const canonical = `/lakes/${lake.slug}`;
+            const hero     = lake.hero_image_url     || '/assets/images/mn-winter-birch-chalet.jpg';
+            const featured = lake.featured_image_url || lake.hero_image_url || '/assets/images/mn-canoe-shore.webp';
             const replacements = {
                 '{{LAKE_SEO_TITLE}}':       escapeHtml(title),
                 '{{LAKE_SEO_DESCRIPTION}}': escapeHtml(desc),
@@ -200,12 +210,62 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 '{{LAKE_SLUG}}':            escapeHtml(lake.slug),
                 '{{LAKE_CANONICAL_PATH}}':  escapeHtml(canonical),
                 '{{LAKE_ID}}':              escapeHtml(lake.id),
-                '{{LAKE_HERO_IMAGE}}':      escapeHtml(lake.hero_image_url || '/assets/images/mn-winter-birch-chalet.jpg'),
+                '{{LAKE_HERO_IMAGE}}':      escapeHtml(hero),
+                '{{LAKE_FEATURED_IMAGE}}':  escapeHtml(featured),
+                '{{LAKE_INTRO_TEXT}}':      escapeHtml(lake.intro_text || desc),
                 '{{LAKE_LATITUDE}}':        escapeHtml(lake.latitude ?? ''),
                 '{{LAKE_LONGITUDE}}':       escapeHtml(lake.longitude ?? ''),
                 '{{LAKE_REGION}}':          escapeHtml(lake.region || ''),
                 '{{LAKE_COUNTY}}':          escapeHtml(lake.county || ''),
                 '{{LAKE_STATE}}':           escapeHtml(lake.state || ''),
+            };
+            let out = html;
+            for (const [k, v] of Object.entries(replacements)) {
+                out = out.split(k).join(v);
+            }
+            res.type('html').send(out);
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ─── Towns: public dynamic page per geo-tag ────────────────────────────
+// Server-renders SEO tokens into the initial HTML (matches the /lakes/:slug
+// pattern). The page itself fetches lakes/agents/businesses client-side.
+app.get('/towns/:slug', async (req, res, next) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude
+             FROM tags t
+             WHERE t.slug = $1 AND t.active = TRUE
+             LIMIT 1`,
+            [req.params.slug]
+        );
+        const tag = rows[0];
+        if (!tag) {
+            res.status(404).sendFile(path.join(PROJECT_ROOT, 'pages/public/404.html'), (err) => {
+                if (err) res.status(404).send('Town not found');
+            });
+            return;
+        }
+        const templatePath = path.join(PROJECT_ROOT, 'pages/public/town-detail.html');
+        fs.readFile(templatePath, 'utf8', (err, html) => {
+            if (err) return next(err);
+            const title = `${tag.name}, ${tag.state} — Lake Homes, Agents & Local Businesses`;
+            const desc  = `Browse lake homes for sale, top local agents, and trusted businesses serving ${tag.name}, ${tag.state}.`;
+            const canonical = `/towns/${tag.slug}`;
+            const replacements = {
+                '{{TOWN_SEO_TITLE}}':       escapeHtml(title),
+                '{{TOWN_SEO_DESCRIPTION}}': escapeHtml(desc),
+                '{{TOWN_NAME}}':            escapeHtml(tag.name),
+                '{{TOWN_SLUG}}':            escapeHtml(tag.slug),
+                '{{TOWN_ID}}':              escapeHtml(tag.id),
+                '{{TOWN_STATE}}':           escapeHtml(tag.state || ''),
+                '{{TOWN_REGION}}':          escapeHtml(tag.region || ''),
+                '{{TOWN_CANONICAL_PATH}}':  escapeHtml(canonical),
+                '{{TOWN_LATITUDE}}':        escapeHtml(tag.latitude ?? ''),
+                '{{TOWN_LONGITUDE}}':       escapeHtml(tag.longitude ?? ''),
             };
             let out = html;
             for (const [k, v] of Object.entries(replacements)) {
@@ -708,6 +768,59 @@ async function ensureTables() {
                 params
             );
         }
+
+        // Sensible default lake ↔ town (geo tag) links. Each entry maps a
+        // lake slug to the town slugs that live on or border that lake.
+        // The seed only fires for lakes that have ZERO tags attached
+        // (pristine defaults) — once an admin touches a lake's town set
+        // in the admin UI, this seed stops touching that lake entirely.
+        // So detachments stick, and new seeded lakes get populated.
+        const LAKE_TOWN_SEED = {
+            'lake-minnetonka':   ['wayzata','orono','excelsior','minnetonka-beach','minnetonka','shorewood','spring-park','tonka-bay','greenwood','deephaven','mound'],
+            'gull-lake':         ['nisswa','brainerd','baxter'],
+            'leech-lake':        ['walker','hackensack','cass-lake'],
+            'lake-vermilion':    ['ely'],
+            'lake-of-the-woods': ['baudette','roseau'],
+            'detroit-lake':      ['detroit-lakes'],
+            'pelican-lake':      ['pelican-rapids','detroit-lakes'],
+            'cass-lake':         ['cass-lake','bemidji'],
+            'white-bear-lake':   ['white-bear-lake','mahtomedi','lino-lakes'],
+        };
+        const seedPairs = [];
+        Object.entries(LAKE_TOWN_SEED).forEach(([lakeSlug, townSlugs]) => {
+            townSlugs.forEach(townSlug => seedPairs.push([lakeSlug, townSlug]));
+        });
+        if (seedPairs.length) {
+            const values = seedPairs.map((_, i) => `($${i*2+1}, $${i*2+2})`).join(', ');
+            const params = seedPairs.flat();
+            await pool.query(
+                `INSERT INTO lake_tags (lake_id, tag_id)
+                 SELECT l.id, t.id
+                 FROM (VALUES ${values}) AS v(lake_slug, tag_slug)
+                 JOIN lakes l ON l.slug = v.lake_slug
+                 JOIN tags  t ON t.slug = v.tag_slug
+                 WHERE NOT EXISTS (SELECT 1 FROM lake_tags lt WHERE lt.lake_id = l.id)
+                 ON CONFLICT (lake_id, tag_id) DO NOTHING`,
+                params
+            );
+        }
+
+        // One-shot backfill of richer Lake Minnetonka copy. Only fills in
+        // NULL fields so admin edits are never overwritten, and only
+        // replaces the short original seeded intro_text if nobody has
+        // touched it since the first deploy.
+        await pool.query(`
+            UPDATE lakes SET
+                intro_text         = 'Discover the pinnacle of Minnesota luxury. Unmatched waterfront estates, private yacht clubs, and elite dining — just 30 minutes from the Twin Cities.',
+                description        = COALESCE(description, $1),
+                hero_image_url     = COALESCE(hero_image_url, '/assets/images/mn-winter-birch-chalet.jpg'),
+                featured_image_url = COALESCE(featured_image_url, '/assets/images/mn-aerial-small-town.jpg')
+            WHERE slug = 'lake-minnetonka'
+              AND (intro_text IS NULL
+                   OR intro_text = 'Minnesota''s premier luxury lake — 14,528 acres of waterfront living across Wayzata, Orono, Excelsior, and Minnetonka Beach.')
+        `, [
+            "Lake Minnetonka isn't just a body of water — it's Minnesota's premier social and recreational playground. 14,528 acres of waterfront living stretch across Wayzata, Orono, Excelsior, and Minnetonka Beach, with a sprawling network of deep-water access, private docks, and transient slips at local institutions like Lord Fletcher's.\n\nOwn a lake home here and you get front-row VIP access to spectacular 4th of July fireworks, quiet morning paddle-boarding coves, and world-class walleye fishing 30 feet from your back patio. From historic generational estates overlooking Gray's Bay to ultra-modern glass marvels along Orono's shoreline, Lake Minnetonka's housing inventory represents the pinnacle of Midwestern architecture.",
+        ]);
 
         console.log(' Tables verified.');
 

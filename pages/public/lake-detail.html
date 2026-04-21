@@ -19,6 +19,8 @@
     <meta property="og:title" content="{{LAKE_SEO_TITLE}}">
     <meta property="og:description" content="{{LAKE_SEO_DESCRIPTION}}">
     <meta property="og:image" content="{{LAKE_HERO_IMAGE}}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <meta property="og:locale" content="en_US">
 
     <meta name="twitter:card" content="summary_large_image">
@@ -46,40 +48,85 @@
     </script>
 
     <style>
-        .ld-hero { padding: 12rem 2rem 5rem; background-color: var(--bg-dark); color: #fff; }
-        .ld-hero-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
-        .ld-hero h1 { font-size: 4.5rem; font-weight: 700; letter-spacing: -2px; line-height: 1.05; margin-bottom: 1.5rem; }
-        .ld-hero h1 span { color: var(--accent-blue); }
-        .ld-hero p { font-size: 1.25rem; color: #a0aec0; line-height: 1.6; margin-bottom: 2.5rem; max-width: 520px; }
-        .ld-hero-img { height: 500px; border-radius: 20px; overflow: hidden; }
-        .ld-hero-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .ld-hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
-        .ld-meta-row { display: flex; gap: 1.25rem; flex-wrap: wrap; color: #a0aec0; font-size: 0.9rem; margin-bottom: 2rem; }
-        .ld-meta-row span strong { color: #fff; font-weight: 700; margin-right: 0.25rem; }
+        /* Hero (mirrors the original Lake Minnetonka hand-authored look) */
+        .lm-hero { padding: 12rem 2rem 5rem; background-color: var(--bg-dark); color: #fff; }
+        .lm-hero-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+        .lm-hero h1 { font-size: 4.5rem; font-weight: 700; letter-spacing: -2px; line-height: 1.05; margin-bottom: 1.5rem; }
+        .lm-hero h1 span { color: var(--accent-blue); }
+        .lm-hero p.lead { font-size: 1.25rem; color: #a0aec0; line-height: 1.6; margin-bottom: 2.5rem; max-width: 520px; }
+        .lm-hero-img { height: 500px; border-radius: 20px; overflow: hidden; }
+        .lm-hero-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .lm-hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
 
-        .ld-about { background-color: #f7f9fa; padding: 6rem 2rem; }
-        .ld-about-inner { max-width: 900px; margin: 0 auto; }
-        .ld-about h2 { font-size: 2.25rem; font-weight: 700; color: #1a202c; margin: 0 0 1.25rem; letter-spacing: -1px; }
-        .ld-about p { font-size: 1.1rem; line-height: 1.7; color: #4a5568; white-space: pre-line; }
+        /* Alternating SEO content — image + title + body */
+        .sp-section { padding: 6rem 2rem; }
+        .sp-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+        .sp-grid.reverse { direction: rtl; }
+        .sp-grid.reverse > * { direction: ltr; }
+        .sp-media-wrapper { height: 500px; border-radius: 20px; overflow: hidden; }
+        .sp-media-wrapper img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .sp-title { font-size: 2.5rem; font-weight: 700; letter-spacing: -1px; color: #1a202c; margin: 0 0 1.5rem; line-height: 1.1; }
+        .sp-body p { color: #4a5568; line-height: 1.7; font-size: 1.1rem; margin-bottom: 1.25rem; }
+        .sp-body p:last-child { margin-bottom: 0; }
 
-        .ld-experts { padding: 6rem 2rem; text-align: center; }
-        .ld-experts h2 { font-size: 2.5rem; font-weight: 700; color: #1a202c; margin-bottom: 1rem; letter-spacing: -1px; }
-        .ld-experts > p { color: #718096; font-size: 1.1rem; max-width: 700px; margin: 0 auto 3rem; line-height: 1.6; }
+        /* Experts (agents) */
+        .lm-expert { background-color: #f7f9fa; padding: 6rem 2rem; }
+        .lm-expert-inner { max-width: 1200px; margin: 0 auto; text-align: center; }
+        .lm-expert h2 { font-size: 2.5rem; font-weight: 700; color: #1a202c; margin-bottom: 1rem; letter-spacing: -1px; }
+        .lm-expert p.lead { color: #718096; font-size: 1.1rem; max-width: 700px; margin: 0 auto 3rem; line-height: 1.6; }
 
-        .ld-section-stub { background: #fff; border: 1px dashed #e2e8f0; border-radius: 14px; padding: 3rem 2rem; text-align: center; max-width: 900px; margin: 0 auto; }
-        .ld-section-stub h3 { font-size: 1.3rem; color: #1a202c; margin: 0 0 0.5rem; }
-        .ld-section-stub p { color: #718096; margin: 0; font-size: 0.95rem; }
+        /* Blog posts, businesses, towns */
+        .lm-blog { padding: 6rem 2rem; background: #fff; }
+        .lm-blog-inner { max-width: 1200px; margin: 0 auto; }
+        .lm-blog h2, .lm-biz h2 { font-size: 2.5rem; font-weight: 700; color: #1a202c; margin: 0 0 1rem; letter-spacing: -1px; text-align: center; }
+        .lm-blog p.lead, .lm-biz p.lead { color:#718096; font-size: 1.05rem; max-width: 640px; margin: 0 auto 2.5rem; line-height: 1.6; text-align: center; }
+
+        .lm-biz { padding: 4rem 2rem 6rem; background: #f7f9fa; }
+        .lm-biz-inner { max-width: 1200px; margin: 0 auto; }
+        .lm-biz-section { margin-bottom: 4rem; }
+        .lm-biz-section:last-child { margin-bottom: 0; }
+        .lm-biz-section h3 { font-size: 1.75rem; font-weight: 700; color: #1a202c; margin: 0 0 0.5rem; letter-spacing: -0.5px; }
+        .lm-biz-section p.sub { color: #718096; margin: 0 0 1.75rem; line-height: 1.6; }
+
+        .lm-towns { padding: 5rem 2rem; background: #fff; text-align: center; }
+        .lm-towns h2 { font-size: 2rem; font-weight: 700; color: #1a202c; margin: 0 0 1rem; letter-spacing: -0.75px; }
+        .lm-towns p.lead { color:#718096; margin: 0 auto 2rem; max-width: 640px; line-height: 1.6; }
+        .lm-towns-grid { display:flex; flex-wrap:wrap; gap:0.6rem; justify-content:center; }
+        .lm-town-chip { display:inline-flex; align-items:center; gap:0.45rem; background:#fff; border:1px solid #edf2f7; border-radius:99px; padding:0.55rem 1.1rem; font-size:0.92rem; font-weight:600; color:#1a202c; text-decoration:none; transition: border-color 0.15s, color 0.15s; }
+        .lm-town-chip:hover { border-color:#1d6df2; color:#1d6df2; }
+
+        .sp-dark-section { background: var(--bg-dark); color: #fff; padding: 6rem 2rem; text-align: center; }
+        .sp-dark-section h2 { font-size: 3rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -1px; color: #fff; }
+        .sp-dark-section p { font-size: 1.15rem; color: #a0aec0; margin-bottom: 2.5rem; line-height: 1.6; }
 
         @media (max-width: 900px) {
-            .ld-hero { padding: 7rem 1.25rem 3rem; }
-            .ld-hero-inner { grid-template-columns: 1fr; gap: 2rem; }
-            .ld-hero h1 { font-size: 2.75rem; letter-spacing: -1.25px; }
-            .ld-hero p { font-size: 1.05rem; }
-            .ld-hero-img { height: 260px; }
-            .ld-hero-actions { flex-direction: column; }
-            .ld-hero-actions .btn { width: 100%; text-align: center; }
-            .ld-about, .ld-experts { padding: 3.5rem 1.25rem; }
-            .ld-about h2, .ld-experts h2 { font-size: 1.85rem; }
+            .lm-hero { padding: 7rem 1.25rem 3rem; }
+            .lm-hero-inner { grid-template-columns: 1fr; gap: 2rem; }
+            .lm-hero h1 { font-size: 2.75rem; letter-spacing: -1.25px; }
+            .lm-hero p.lead { font-size: 1.05rem; }
+            .lm-hero-img { height: 260px; }
+            .lm-hero-actions { flex-direction: column; }
+            .lm-hero-actions .btn { width: 100%; text-align: center; }
+            .lm-expert { padding: 4rem 1.25rem; }
+            .lm-expert h2 { font-size: 1.85rem; }
+            .lm-expert p.lead { font-size: 1rem; }
+            .sp-section { padding: 3rem 1.25rem; }
+            .sp-grid { grid-template-columns: 1fr; gap: 1.5rem; direction: ltr; }
+            .sp-grid.reverse { direction: ltr; }
+            .sp-media-wrapper { height: 240px; }
+            .sp-title { font-size: 1.75rem; }
+            .sp-body p { font-size: 0.98rem; line-height: 1.6; }
+            .sp-body p br, .sp-title br { display: none; }
+            .lm-blog, .lm-biz, .lm-towns { padding: 3rem 1.25rem; }
+            .lm-blog h2, .lm-biz h2 { font-size: 1.85rem; }
+            .sp-dark-section { padding: 4rem 1.25rem; }
+            .sp-dark-section h2 { font-size: 2rem; }
+            .lm-hero-actions .btn, section .btn.btn-primary { padding: 0.95rem 1.5rem; font-size: 0.98rem; }
+        }
+        @media (max-width: 480px) {
+            .lm-hero h1 { font-size: 2.25rem; }
+            .sp-title { font-size: 1.5rem; }
+            .sp-dark-section h2 { font-size: 1.7rem; }
         }
     </style>
 </head>
@@ -88,72 +135,76 @@
     <global-header></global-header>
 
     <!-- Hero -->
-    <section class="ld-hero">
-        <div class="ld-hero-inner">
+    <section class="lm-hero">
+        <div class="lm-hero-inner">
             <div>
-                <h1><span>{{LAKE_NAME}}</span></h1>
-                <div class="ld-meta-row" id="ld-meta"></div>
-                <p id="ld-intro"></p>
-                <div class="ld-hero-actions">
-                    <button onclick="openForm('buy')" class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none; cursor: pointer;">Contact a specialist</button>
-                    <a href="/lakes" class="btn btn-ghost" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; text-decoration:none; border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius: 8px;">← All lakes</a>
+                <h1>Your new view on<br><span>{{LAKE_NAME}}</span></h1>
+                <p class="lead" id="ld-intro">{{LAKE_INTRO_TEXT}}</p>
+                <div class="lm-hero-actions">
+                    <button onclick="openForm('buy')" class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none; cursor: pointer;">Contact an expert</button>
                 </div>
             </div>
-            <div class="ld-hero-img">
-                <img src="{{LAKE_HERO_IMAGE}}" alt="{{LAKE_NAME}} waterfront real estate" width="1200" height="800" fetchpriority="high">
+            <div class="lm-hero-img">
+                <img src="{{LAKE_HERO_IMAGE}}" alt="{{LAKE_NAME}} waterfront real estate in {{LAKE_STATE}}" width="1200" height="800" fetchpriority="high">
             </div>
         </div>
     </section>
 
-    <!-- About -->
-    <section class="ld-about" id="about">
-        <div class="ld-about-inner">
-            <h2>About {{LAKE_NAME}}</h2>
-            <p id="ld-description">Overview coming soon.</p>
+    <!-- About the lake (image left, text right). Hidden at render if no
+         description/intro_text is set so we don't show an empty block. -->
+    <section class="sp-section" id="ld-about-section">
+        <div class="sp-grid">
+            <div class="sp-media-wrapper">
+                <img src="{{LAKE_FEATURED_IMAGE}}" alt="On the water at {{LAKE_NAME}}" loading="lazy" width="1200" height="800">
+            </div>
+            <div class="sp-body">
+                <h2 class="sp-title">About<br>{{LAKE_NAME}}</h2>
+                <div id="ld-description"></div>
+            </div>
         </div>
     </section>
 
-    <!-- Agents -->
-    <section class="ld-experts">
-        <h2>Your {{LAKE_NAME}} experts</h2>
-        <p>Agents who know this lake — local listings, off-market inventory, and the neighborhoods that fit your lifestyle.</p>
-        <div id="lake-agents-grid" class="agents-grid">
-            <div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">Loading featured agents…</div>
+    <!-- Experts (agents connected to this lake) -->
+    <section id="expert" class="lm-expert">
+        <div class="lm-expert-inner">
+            <h2>Your {{LAKE_NAME}} experts</h2>
+            <p class="lead">Agents who know this lake — local listings, off-market inventory, and the neighborhoods that fit your lifestyle.</p>
+            <div id="lake-agents-grid" class="agents-grid">
+                <div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">Loading featured agents…</div>
+            </div>
         </div>
     </section>
 
     <!-- From the blog -->
-    <section id="lake-blog" class="ld-about" style="padding: 5rem 2rem; background: #fff;">
-        <div style="max-width: 1100px; margin: 0 auto;">
-            <h2 style="font-size: 2.25rem; font-weight: 700; color: #1a202c; margin: 0 0 1rem; letter-spacing: -1px; text-align:center;">From the blog — {{LAKE_NAME}}</h2>
-            <p style="color:#718096;font-size:1rem;max-width:640px;margin:0 auto 2.5rem;text-align:center;line-height:1.6;">Guides, market takes, and local stories covering this lake.</p>
-            <div id="lake-blog-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;">
-                <div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">Loading posts…</div>
-            </div>
+    <section id="lake-blog" class="lm-blog" style="display:none;">
+        <div class="lm-blog-inner">
+            <h2>From the blog — {{LAKE_NAME}}</h2>
+            <p class="lead">Guides, market takes, and local stories covering this lake.</p>
+            <div id="lake-blog-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;"></div>
         </div>
     </section>
 
     <!-- Local directory: restaurants, marinas, services, photographers -->
-    <section id="lake-biz" style="padding: 3rem 2rem 4rem;">
-        <div style="max-width: 1100px; margin: 0 auto;">
+    <section id="lake-biz" class="lm-biz" style="display:none;">
+        <div class="lm-biz-inner">
+            <h2>Life around {{LAKE_NAME}}</h2>
+            <p class="lead">Restaurants, marinas, services, and photographers trusted by the people who live here.</p>
             <div id="biz-sections"></div>
         </div>
     </section>
 
-    <!-- Nearby towns (reuses the geo-tags catalog) -->
-    <section id="lake-towns" style="padding: 0 2rem 5rem; display:none;">
-        <div style="max-width: 1100px; margin: 0 auto;">
-            <h2 style="font-size: 2rem; font-weight: 700; color: #1a202c; margin: 0 0 1rem; letter-spacing: -0.75px; text-align:center;">Near {{LAKE_NAME}}</h2>
-            <p style="color:#718096;font-size:1rem;text-align:center;margin:0 auto 2rem;max-width:640px;line-height:1.6;">Communities that border or share the lake's waterfront.</p>
-            <div id="lake-towns-grid" style="display:flex;flex-wrap:wrap;gap:0.6rem;justify-content:center;"></div>
-        </div>
+    <!-- Nearby towns -->
+    <section id="lake-towns" class="lm-towns" style="display:none;">
+        <h2>Near {{LAKE_NAME}}</h2>
+        <p class="lead">Communities that border or share the lake's waterfront.</p>
+        <div id="lake-towns-grid" class="lm-towns-grid"></div>
     </section>
 
     <!-- Final CTA -->
-    <section class="sp-dark-section" style="padding: 6rem 2rem; text-align: center;">
+    <section class="sp-dark-section">
         <div style="max-width: 800px; margin: 0 auto;">
-            <h2 style="font-size: 3rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -1px; color:#fff;">Ready to explore {{LAKE_NAME}}?</h2>
-            <p style="font-size: 1.15rem; color: #a0aec0; margin-bottom: 2.5rem; line-height: 1.6;">Connect with a specialist who knows this lake — listings, market trends, and the right neighborhoods for you.</p>
+            <h2>Ready to explore {{LAKE_NAME}}?</h2>
+            <p>Let's get you on the water. View private inventory or get a pricing analysis for your current waterfront estate.</p>
             <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
                 <button class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none;" onclick="openForm('buy')">Start your journey</button>
             </div>
@@ -168,23 +219,27 @@
         const LAKE_SLUG = '{{LAKE_SLUG}}';
         const LAKE_NAME = '{{LAKE_NAME}}';
 
+        // ── About section: populate from description (preferred) or intro_text ──
         async function loadLake() {
             try {
                 const res = await fetch(`/api/lakes/${encodeURIComponent(LAKE_SLUG)}`);
                 if (!res.ok) return;
                 const lake = await res.json();
-                const meta = [];
-                if (lake.region) meta.push(`<span><strong>Region:</strong> ${escHtml(lake.region)}</span>`);
-                if (lake.county) meta.push(`<span><strong>County:</strong> ${escHtml(lake.county)}</span>`);
-                if (lake.state)  meta.push(`<span><strong>State:</strong> ${escHtml(lake.state)}</span>`);
-                document.getElementById('ld-meta').innerHTML = meta.join('');
-                document.getElementById('ld-intro').textContent = lake.intro_text || lake.seo_description || '';
-                if (lake.description) {
-                    document.getElementById('ld-description').textContent = lake.description;
-                } else if (lake.intro_text) {
-                    document.getElementById('ld-description').textContent = lake.intro_text;
+                // Intro was server-rendered already; overwrite only if we got
+                // a richer value from the API (intro_text can be longer than
+                // seo_description).
+                if (lake.intro_text) document.getElementById('ld-intro').textContent = lake.intro_text;
+                const body = lake.description || lake.intro_text;
+                const aboutSection = document.getElementById('ld-about-section');
+                if (body && body.trim()) {
+                    // Split on blank lines so multi-paragraph descriptions keep their breaks.
+                    const paragraphs = body.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+                    document.getElementById('ld-description').innerHTML =
+                        paragraphs.map(p => `<p>${escHtml(p)}</p>`).join('');
+                } else {
+                    aboutSection.style.display = 'none';
                 }
-            } catch (_) { /* degrade silently — server-rendered content already shown */ }
+            } catch (_) { /* server-rendered hero content is already visible — degrade silently */ }
         }
 
         async function loadLakeAgents() {
@@ -209,9 +264,16 @@
                     const photo = a.profile_photo_url || '/assets/images/mn-stillwater-aerial.webp';
                     const bio   = a.bio || '';
                     const shortBio = bio.length > 180 ? bio.slice(0, 180).trimEnd() + '…' : bio;
+                    const topBadge = a.agent_is_featured
+                        ? `<div style="position:absolute;top:12px;left:12px;z-index:2;display:inline-flex;align-items:center;gap:0.35rem;background:linear-gradient(135deg,#1d6df2 0%,#155bc8 100%);color:#fff;font-size:0.72rem;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;padding:0.35rem 0.7rem;border-radius:99px;box-shadow:0 4px 12px rgba(29,109,242,0.35);">
+                               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                               Top Agent
+                           </div>`
+                        : '';
                     return `
                         <a href="/agent-profile?slug=${encodeURIComponent(a.slug)}" style="text-decoration:none;color:inherit;display:block;" class="agent-link-wrapper">
-                            <div class="agent-card">
+                            <div class="agent-card" style="position:relative;">
+                                ${topBadge}
                                 <img src="${escHtml(photo)}" alt="${escHtml(a.display_name)} — ${escHtml(LAKE_NAME)} specialist" class="agent-image" loading="lazy">
                                 <div class="agent-info">
                                     <h3 class="agent-name">${escHtml(a.display_name)}</h3>
@@ -226,21 +288,16 @@
             }
         }
 
-        function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
         async function loadLakeBlog() {
+            const section = document.getElementById('lake-blog');
             const grid = document.getElementById('lake-blog-grid');
-            if (!grid) return;
+            if (!grid || !section) return;
             try {
                 const res = await fetch(`/api/lakes/${encodeURIComponent(LAKE_ID)}/blog-posts`);
                 if (!res.ok) throw new Error();
                 const posts = await res.json();
-                if (!posts.length) {
-                    // Hide the whole section rather than show an awkward empty state.
-                    const section = document.getElementById('lake-blog');
-                    if (section) section.style.display = 'none';
-                    return;
-                }
+                if (!posts.length) return; // stays hidden
+                section.style.display = '';
                 grid.innerHTML = posts.slice(0, 6).map(p => {
                     const thumb = p.cover_image_url || '/assets/images/mn-canoe-shore.webp';
                     const date = p.published_at
@@ -259,23 +316,21 @@
                             </div>
                         </a>`;
                 }).join('');
-            } catch (_) {
-                const section = document.getElementById('lake-blog');
-                if (section) section.style.display = 'none';
-            }
+            } catch (_) { /* stays hidden */ }
         }
 
-        // ── Local directory (restaurants/marinas/services/photographers) ──
+        // ── Local directory ────────────────────────────────────────────
         const BIZ_SECTIONS = [
-            { type: 'restaurant',   heading: 'Restaurants',          icon: '🍽️', blurb: "Where locals eat, when they're on the water." },
-            { type: 'marina',       heading: 'Marinas & access',     icon: '⛵', blurb: 'Slip rentals, fuel, and public lake access.' },
-            { type: 'service',      heading: 'Services',             icon: '🔧', blurb: 'Dock installation, lawn care, snow removal, and more.' },
-            { type: 'photographer', heading: 'Photographers',        icon: '📷', blurb: 'Listing, drone, and family photography specialists.' },
+            { type: 'restaurant',   heading: 'Restaurants',      icon: '🍽️', blurb: "Where locals eat, when they're on the water." },
+            { type: 'marina',       heading: 'Marinas & access', icon: '⛵', blurb: 'Slip rentals, fuel, and public lake access.' },
+            { type: 'service',      heading: 'Services',         icon: '🔧', blurb: 'Dock installation, lawn care, snow removal, and more.' },
+            { type: 'photographer', heading: 'Photographers',    icon: '📷', blurb: 'Listing, drone, and family photography specialists.' },
         ];
 
         async function loadLakeBiz() {
+            const section = document.getElementById('lake-biz');
             const container = document.getElementById('biz-sections');
-            if (!container) return;
+            if (!container || !section) return;
             try {
                 const results = await Promise.all(
                     BIZ_SECTIONS.map(s =>
@@ -284,7 +339,7 @@
                             .catch(() => [])
                     )
                 );
-                const html = BIZ_SECTIONS.map((section, i) => {
+                const html = BIZ_SECTIONS.map((s, i) => {
                     const rows = results[i];
                     if (!rows.length) return '';
                     const cards = rows.map(b => {
@@ -295,7 +350,7 @@
                                 <div style="height:160px;background:#f7f9fa;overflow:hidden;">
                                     ${thumb
                                         ? `<img src="${escHtml(thumb)}" alt="${escHtml(b.name)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">`
-                                        : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#cbd5e0;">${section.icon}</div>`}
+                                        : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#cbd5e0;">${s.icon}</div>`}
                                 </div>
                                 <div style="padding:1.1rem 1.25rem 1.25rem;flex:1;display:flex;flex-direction:column;">
                                     <div style="font-size:1.05rem;font-weight:700;color:#1a202c;line-height:1.35;margin-bottom:0.3rem;">${escHtml(b.name)}</div>
@@ -309,44 +364,38 @@
                             </div>`;
                     }).join('');
                     return `
-                        <div style="margin-bottom:3rem;">
-                            <h2 style="font-size:2rem;font-weight:700;color:#1a202c;margin:0 0 0.5rem;letter-spacing:-0.75px;">${section.icon} ${escHtml(section.heading)} on ${escHtml(LAKE_NAME)}</h2>
-                            <p style="color:#718096;font-size:1rem;margin:0 0 1.75rem;line-height:1.6;">${escHtml(section.blurb)}</p>
+                        <div class="lm-biz-section">
+                            <h3>${s.icon} ${escHtml(s.heading)}</h3>
+                            <p class="sub">${escHtml(s.blurb)}</p>
                             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;">${cards}</div>
                         </div>`;
                 }).join('');
                 if (html.trim()) {
                     container.innerHTML = html;
-                } else {
-                    // No businesses in any category → hide the whole wrapper.
-                    const wrap = document.getElementById('lake-biz');
-                    if (wrap) wrap.style.display = 'none';
+                    section.style.display = '';
                 }
-            } catch (_) {
-                const wrap = document.getElementById('lake-biz');
-                if (wrap) wrap.style.display = 'none';
-            }
+            } catch (_) { /* stays hidden */ }
         }
 
-        // ── Nearby towns ─────────────────────────────────────────────────
         async function loadLakeTowns() {
-            const grid = document.getElementById('lake-towns-grid');
             const section = document.getElementById('lake-towns');
+            const grid = document.getElementById('lake-towns-grid');
             if (!grid || !section) return;
             try {
                 const res = await fetch(`/api/lakes/${encodeURIComponent(LAKE_ID)}/tags`);
                 if (!res.ok) throw new Error();
                 const towns = await res.json();
-                if (!towns.length) return; // section stays hidden
+                if (!towns.length) return;
                 section.style.display = '';
                 grid.innerHTML = towns.map(t => `
-                    <span style="display:inline-flex;align-items:center;gap:0.45rem;background:#fff;border:1px solid #edf2f7;border-radius:99px;padding:0.55rem 1.1rem;font-size:0.92rem;font-weight:600;color:#1a202c;">
+                    <a href="/towns/${encodeURIComponent(t.slug)}" class="lm-town-chip">
                         <span style="color:#1d6df2;">📍</span>
                         ${escHtml(t.name)}
-                    </span>
-                `).join('');
-            } catch (_) { /* section stays hidden */ }
+                    </a>`).join('');
+            } catch (_) { /* stays hidden */ }
         }
+
+        function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
         document.addEventListener('DOMContentLoaded', () => {
             loadLake();
