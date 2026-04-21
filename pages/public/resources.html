@@ -383,7 +383,27 @@
 
         // ── Boot ─────────────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
-            loadCategories();
+            // Deep-link filters: support ?category=Guides or ?search=buyer
+            // from the header megamenu / elsewhere.
+            const qp = new URLSearchParams(window.location.search);
+            const startCat = (qp.get('category') || '').trim();
+            const startSearch = (qp.get('search') || '').trim();
+            if (startCat) state.category = startCat;
+            if (startSearch) {
+                state.search = startSearch;
+                document.getElementById('rx-search').value = startSearch;
+            }
+            loadCategories().then(() => {
+                // After pills are rendered, flip the active state on the
+                // one that matches ?category= so the UI reflects the URL.
+                if (startCat) {
+                    const host = document.getElementById('rx-filters');
+                    host.querySelectorAll('.rx-filter-pill').forEach(p => {
+                        const on = (p.dataset.category || '') === startCat;
+                        p.classList.toggle('active', on);
+                    });
+                }
+            });
             loadFeatured();
             loadBlog();
             loadResources(false);

@@ -273,21 +273,28 @@ class GlobalHeader extends HTMLElement {
                 ]
             },
             {
-                id: 'company', label: 'Company', href: `${bp}about.html`,
+                id: 'resources', label: 'Resources', href: `${bp}resources.html`,
                 columns: [
-                    { heading: 'About', links: [
-                        { label: 'Our Story', href: `${bp}about.html` },
-                        { label: 'Part of CommonRealtor', href: `${bp}commonrealtor.html` },
+                    { heading: 'For you', links: [
+                        { label: 'Buyer Resources',   href: `${bp}resources.html?search=buyer` },
+                        { label: 'Seller Resources',  href: `${bp}resources.html?search=seller` },
+                        { label: 'Renter Resources',  href: `${bp}resources.html?search=rental` },
+                        { label: 'Cabin Owner Tools', href: `${bp}resources.html?search=cabin` },
                     ]},
-                    { heading: 'Content', links: [
-                        { label: 'Resources Library', href: `${bp}resources.html` },
-                        { label: 'Blog', href: `${bp}blog.html` },
-                        { label: 'Lake Minnetonka Guide', href: `${bp}lake-minnetonka.html` },
+                    { heading: 'By topic', links: [
+                        { label: 'Summertime Buying',   href: `${bp}resources.html?search=summer` },
+                        { label: 'Selling a Cabin',     href: `${bp}resources.html?search=cabin` },
+                        { label: 'Valuation & Pricing', href: `${bp}resources.html?search=valuation` },
+                        { label: 'Dock & Permits',      href: `${bp}resources.html?search=permit` },
+                        { label: 'Financing',           href: `${bp}resources.html?search=financing` },
                     ]},
-                    { heading: 'Get in Touch', links: [
-                        { label: 'Contact Us', href: `${bp}contact.html` },
-                        { label: 'FAQ', href: `${bp}faq.html` },
-                        { label: 'Careers', href: `${bp}careers.html` },
+                    { heading: 'Library', links: [
+                        { label: 'All Resources',     href: `${bp}resources.html` },
+                        { label: 'Guides',            href: `${bp}resources.html?category=Guides` },
+                        { label: 'Tools & Calculators', href: `${bp}resources.html?category=Tools` },
+                        { label: 'Market Reports',    href: `${bp}resources.html?category=Market%20Reports` },
+                        { label: 'Blog',              href: `${bp}blog.html` },
+                        { label: 'FAQ',               href: `${bp}faq.html` },
                     ]},
                 ]
             },
