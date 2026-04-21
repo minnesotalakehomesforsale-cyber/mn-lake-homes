@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lake | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
+        .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        .admin-main { padding: 2.5rem 3rem 4rem; overflow-y: auto; }
+
+        /* Header */
+        .lake-head { display: flex; justify-content: space-between; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap; margin-bottom: 1.5rem; }
+        .lake-head h1 { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.75px; margin: 0 0 0.25rem; }
+        .lake-head .sub { color: #718096; font-size: 0.92rem; margin: 0; font-family: monospace; }
+        .lake-head .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .crumbs { font-size: 0.78rem; color: #a0aec0; margin-bottom: 0.6rem; }
+        .crumbs a { color: #4a5568; text-decoration: none; }
+        .crumbs a:hover { color: #1d6df2; }
+
+        /* Buttons */
+        .btn-primary { background: #1d6df2; color: #fff; border: none; padding: 0.6rem 1rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; font-family: inherit; text-decoration: none; display: inline-block; }
+        .btn-primary:hover { background: #155bc9; }
+        .btn-ghost { background: #fff; color: #4a5568; border: 1px solid #e2e8f0; padding: 0.55rem 0.85rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; font-family: inherit; text-decoration: none; display: inline-block; }
+        .btn-ghost:hover { border-color: #1d6df2; color: #1d6df2; }
+        .btn-ghost.danger { color: #c53030; border-color: #feb2b2; }
+        .btn-ghost.danger:hover { background: #fff5f5; border-color: #fc8181; }
+
+        /* Status chip */
+        .pill { display: inline-block; font-size: 0.72rem; font-weight: 800; padding: 0.25rem 0.6rem; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .pill.published { background: #f0fff4; color: #2f855a; }
+        .pill.draft { background: #fffbea; color: #b45309; }
+        .pill.archived { background: #fff5f5; color: #c53030; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid #edf2f7; margin-bottom: 2rem; overflow-x: auto; }
+        .tab { padding: 0.75rem 1.1rem; border: none; background: none; color: #718096; font-size: 0.88rem; font-weight: 600; cursor: pointer; font-family: inherit; border-bottom: 2px solid transparent; white-space: nowrap; }
+        .tab:hover { color: #2d3748; }
+        .tab.on { color: #1a202c; border-bottom-color: #1d6df2; }
+        .tab .badge-count { display: inline-block; margin-left: 0.4rem; font-size: 0.7rem; font-weight: 700; color: #a0aec0; background: #edf2f7; padding: 0.05rem 0.45rem; border-radius: 99px; }
+        .tab.on .badge-count { color: #1d6df2; background: #ebf4ff; }
+        .tab.stub { color: #cbd5e0; cursor: not-allowed; }
+        .tab.stub:hover { color: #cbd5e0; }
+
+        /* Panels */
+        .panel { display: none; }
+        .panel.on { display: block; }
+        .card { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; padding: 1.75rem; margin-bottom: 1.25rem; }
+        .card h2 { font-size: 1rem; font-weight: 800; color: #1a202c; margin: 0 0 1.25rem; letter-spacing: -0.25px; text-transform: uppercase; letter-spacing: 0.75px; font-size: 0.75rem; }
+
+        /* Form fields */
+        .field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1rem; }
+        .field label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #4a5568; }
+        .field input, .field textarea, .field select { font-family: inherit; font-size: 0.95rem; padding: 0.65rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; outline: none; }
+        .field textarea { min-height: 90px; resize: vertical; }
+        .field input:focus, .field textarea:focus, .field select:focus { border-color: #1d6df2; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
+        .hint { font-size: 0.75rem; color: #718096; }
+        .save-row { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.75rem; }
+        .save-row .status-text { margin-right: auto; font-size: 0.82rem; color: #718096; align-self: center; }
+        .save-row .status-text.ok { color: #2f855a; }
+        .save-row .status-text.err { color: #c53030; }
+
+        /* Media */
+        .media-row { display: grid; grid-template-columns: 200px 1fr; gap: 1.25rem; align-items: start; margin-bottom: 1.25rem; }
+        .media-thumb { width: 200px; height: 120px; background: #f7f9fa; border: 1px dashed #e2e8f0; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; color: #a0aec0; font-size: 0.8rem; }
+        .media-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .upload-btn { display: inline-block; padding: 0.55rem 0.9rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #f7f9fa; color: #1a202c; font-size: 0.82rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .upload-btn:hover { border-color: #1d6df2; color: #1d6df2; }
+
+        /* Picker list (agents / blog posts) */
+        .picker-toolbar { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+        .picker-toolbar input { flex: 1; min-width: 220px; font-family: inherit; font-size: 0.9rem; padding: 0.55rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; outline: none; }
+        .picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.6rem; }
+        .pick-card { display: flex; gap: 0.75rem; align-items: center; padding: 0.65rem 0.8rem; border: 1px solid #edf2f7; border-radius: 10px; background: #fff; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+        .pick-card:hover { border-color: #cbd5e0; }
+        .pick-card.on { border-color: #1d6df2; background: #ebf4ff; }
+        .pick-card img.avatar { width: 40px; height: 40px; border-radius: 99px; object-fit: cover; flex-shrink: 0; background: #f7f9fa; }
+        .pick-card .meta { flex: 1; min-width: 0; }
+        .pick-card .name { font-weight: 700; font-size: 0.88rem; color: #1a202c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pick-card .sub  { font-size: 0.76rem; color: #718096; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pick-card input[type="checkbox"] { accent-color: #1d6df2; }
+        .pick-empty { padding: 3rem; text-align: center; color: #a0aec0; border: 1px dashed #edf2f7; border-radius: 12px; }
+
+        /* Stub tab body */
+        .stub-panel { padding: 3rem 2rem; text-align: center; background: #fff; border: 1px dashed #e2e8f0; border-radius: 12px; color: #718096; }
+        .stub-panel h3 { font-size: 1.1rem; font-weight: 700; color: #4a5568; margin: 0 0 0.35rem; }
+        .stub-panel p { margin: 0; font-size: 0.9rem; }
+
+        .err-banner { display: none; color: #c53030; font-size: 0.85rem; padding: 0.6rem 0.85rem; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; margin-bottom: 1rem; }
+
+        @media (max-width: 900px) {
+            .admin-wrap { grid-template-columns: 1fr; }
+            .admin-main { padding: 1.75rem 1.25rem; }
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .media-row { grid-template-columns: 1fr; }
+            .media-thumb { width: 100%; height: 180px; }
+        }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-nav-badges.js" defer></script>
+</head>
+<body>
+    <div class="admin-wrap">
+        <admin-sidebar active="lakes"></admin-sidebar>
+
+        <main class="admin-main">
+            <div class="crumbs">
+                <a href="/pages/admin/lakes.html">← All lakes</a>
+            </div>
+
+            <header class="lake-head">
+                <div>
+                    <h1 id="h-name">Loading…</h1>
+                    <p class="sub" id="h-slug"></p>
+                </div>
+                <div class="actions">
+                    <span id="h-status-pill"></span>
+                    <a id="h-view-public" href="#" target="_blank" class="btn-ghost" style="display:none;">↗ View public page</a>
+                </div>
+            </header>
+
+            <div id="err" class="err-banner"></div>
+
+            <!-- Tabs -->
+            <nav class="tabs" role="tablist">
+                <button class="tab on" data-tab="overview" onclick="setTab(event, 'overview')">Overview</button>
+                <button class="tab"     data-tab="seo"      onclick="setTab(event, 'seo')">SEO</button>
+                <button class="tab"     data-tab="media"    onclick="setTab(event, 'media')">Media</button>
+                <button class="tab"     data-tab="agents"   onclick="setTab(event, 'agents')">Agents <span class="badge-count" id="cnt-agents">0</span></button>
+                <button class="tab"     data-tab="blog"     onclick="setTab(event, 'blog')">Blog Posts <span class="badge-count" id="cnt-blog">0</span></button>
+                <button class="tab"     data-tab="restaurant"   onclick="setTab(event, 'restaurant')">Restaurants <span class="badge-count" id="cnt-restaurant">0</span></button>
+                <button class="tab"     data-tab="marina"       onclick="setTab(event, 'marina')">Marinas <span class="badge-count" id="cnt-marina">0</span></button>
+                <button class="tab"     data-tab="service"      onclick="setTab(event, 'service')">Services <span class="badge-count" id="cnt-service">0</span></button>
+                <button class="tab"     data-tab="photographer" onclick="setTab(event, 'photographer')">Photographers <span class="badge-count" id="cnt-photographer">0</span></button>
+                <button class="tab"     data-tab="towns"        onclick="setTab(event, 'towns')">Nearby Towns <span class="badge-count" id="cnt-towns">0</span></button>
+                <button class="tab stub" title="Coming soon">Listings</button>
+            </nav>
+
+            <!-- Overview -->
+            <section id="panel-overview" class="panel on">
+                <div class="card">
+                    <h2>Identity</h2>
+                    <div class="field">
+                        <label>Name *</label>
+                        <input id="f-name">
+                    </div>
+                    <div class="grid-3">
+                        <div class="field">
+                            <label>State</label>
+                            <input id="f-state" maxlength="2">
+                        </div>
+                        <div class="field">
+                            <label>Region</label>
+                            <input id="f-region">
+                        </div>
+                        <div class="field">
+                            <label>County</label>
+                            <input id="f-county">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>Slug</label>
+                        <input id="f-slug">
+                        <span class="hint">Public URL: /lakes/&lt;slug&gt;. Changing this breaks existing links — use with caution.</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Coordinates</h2>
+                    <div class="grid-2">
+                        <div class="field">
+                            <label>Latitude</label>
+                            <input id="f-lat" type="number" step="0.000001">
+                        </div>
+                        <div class="field">
+                            <label>Longitude</label>
+                            <input id="f-lng" type="number" step="0.000001">
+                        </div>
+                    </div>
+                    <p class="hint">Drag the pin on the map view to fine-tune these values.</p>
+                </div>
+
+                <div class="card">
+                    <h2>Content</h2>
+                    <div class="field">
+                        <label>Intro text</label>
+                        <textarea id="f-intro" placeholder="Short blurb shown below the hero on the public lake page."></textarea>
+                    </div>
+                    <div class="field">
+                        <label>Description</label>
+                        <textarea id="f-desc" placeholder="Longer description for the about section." rows="5"></textarea>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Status</h2>
+                    <div class="field">
+                        <label>Publish status</label>
+                        <select id="f-status">
+                            <option value="draft">Draft (hidden from public)</option>
+                            <option value="published">Published (live at /lakes/&lt;slug&gt;)</option>
+                            <option value="archived">Archived</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="save-row">
+                    <span id="overview-status" class="status-text"></span>
+                    <a href="/pages/admin/lakes.html" class="btn-ghost">Back</a>
+                    <button class="btn-primary" onclick="saveOverview()">Save changes</button>
+                </div>
+            </section>
+
+            <!-- SEO -->
+            <section id="panel-seo" class="panel">
+                <div class="card">
+                    <h2>Search engine optimization</h2>
+                    <div class="field">
+                        <label>SEO title</label>
+                        <input id="f-seo-title" placeholder="e.g. Gull Lake Homes for Sale | Brainerd Lakes Waterfront">
+                        <span class="hint">Shown in the browser tab and Google results. ~60 characters is ideal.</span>
+                    </div>
+                    <div class="field">
+                        <label>SEO description</label>
+                        <textarea id="f-seo-desc" rows="3" placeholder="One- to two-sentence meta description for search snippets. ~155 characters is ideal."></textarea>
+                    </div>
+                    <div class="field">
+                        <label>Public URL (read-only)</label>
+                        <input id="f-canonical" readonly style="background:#f7f9fa;color:#718096;font-family:monospace;">
+                    </div>
+                </div>
+                <div class="save-row">
+                    <span id="seo-status" class="status-text"></span>
+                    <button class="btn-primary" onclick="saveSeo()">Save changes</button>
+                </div>
+            </section>
+
+            <!-- Media -->
+            <section id="panel-media" class="panel">
+                <div class="card">
+                    <h2>Hero image</h2>
+                    <div class="media-row">
+                        <div class="media-thumb" id="thumb-hero"><span>No image</span></div>
+                        <div>
+                            <div class="field">
+                                <label>Hero image URL</label>
+                                <input id="f-hero" oninput="updateThumb('hero')" placeholder="Paste a URL or upload →">
+                            </div>
+                            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                                <label class="upload-btn" for="upload-hero">📤 Upload image</label>
+                                <input type="file" id="upload-hero" accept="image/*" style="display:none;" onchange="uploadImage(this.files[0], 'hero')">
+                                <span id="upload-hero-status" class="hint"></span>
+                            </div>
+                            <p class="hint" style="margin-top:0.6rem;">Used on the public lake page hero and as the Open Graph preview image (1200x630 recommended).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Featured image</h2>
+                    <div class="media-row">
+                        <div class="media-thumb" id="thumb-feat"><span>No image</span></div>
+                        <div>
+                            <div class="field">
+                                <label>Featured image URL</label>
+                                <input id="f-feat" oninput="updateThumb('feat')" placeholder="Paste a URL or upload →">
+                            </div>
+                            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                                <label class="upload-btn" for="upload-feat">📤 Upload image</label>
+                                <input type="file" id="upload-feat" accept="image/*" style="display:none;" onchange="uploadImage(this.files[0], 'feat')">
+                                <span id="upload-feat-status" class="hint"></span>
+                            </div>
+                            <p class="hint" style="margin-top:0.6rem;">Used on lake cards in the public browse directory.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="save-row">
+                    <span id="media-status" class="status-text"></span>
+                    <button class="btn-primary" onclick="saveMedia()">Save changes</button>
+                </div>
+            </section>
+
+            <!-- Agents -->
+            <section id="panel-agents" class="panel">
+                <div class="card">
+                    <h2>Connected agents</h2>
+                    <p class="hint" style="margin:-0.75rem 0 1rem;">Agents selected here appear in the "Your &lt;lake&gt; experts" section of the public lake page.</p>
+                    <div class="picker-toolbar">
+                        <input type="search" id="agent-search" placeholder="Search agents by name, city, or brokerage…" oninput="renderAgentPicker()">
+                        <span id="agent-count-hint" class="hint" style="margin-left:auto;"></span>
+                    </div>
+                    <div id="agent-picker" class="picker-grid"></div>
+                </div>
+                <div class="save-row">
+                    <span id="agents-status" class="status-text"></span>
+                    <button class="btn-primary" onclick="saveAgents()">Save agent connections</button>
+                </div>
+            </section>
+
+            <!-- Blog Posts -->
+            <section id="panel-blog" class="panel">
+                <div class="card">
+                    <h2>Connected blog posts</h2>
+                    <p class="hint" style="margin:-0.75rem 0 1rem;">Posts selected here appear in the "From the blog" section of the public lake page.</p>
+                    <div class="picker-toolbar">
+                        <input type="search" id="blog-search" placeholder="Search posts by title or tag…" oninput="renderBlogPicker()">
+                        <select id="blog-filter" onchange="renderBlogPicker()" style="font-family:inherit;padding:0.55rem 0.85rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;">
+                            <option value="all">All posts</option>
+                            <option value="published">Published only</option>
+                            <option value="selected">Currently selected</option>
+                        </select>
+                        <span id="blog-count-hint" class="hint" style="margin-left:auto;"></span>
+                    </div>
+                    <div id="blog-picker" class="picker-grid"></div>
+                </div>
+                <div class="save-row">
+                    <span id="blog-status" class="status-text"></span>
+                    <button class="btn-primary" onclick="saveBlog()">Save blog connections</button>
+                </div>
+            </section>
+
+            <!-- Business tabs: Restaurants / Marinas / Services / Photographers
+                 All four share the same implementation, scoped by `type`. -->
+            <section id="panel-restaurant" class="panel">
+                <div class="card">
+                    <h2>Restaurants on this lake</h2>
+                    <p class="hint" style="margin:-0.75rem 0 1rem;">
+                        Restaurants selected here appear in the "Restaurants" section of the public lake page.
+                        Need to add one? <a href="/pages/admin/businesses.html" target="_blank" style="color:#1d6df2;">Manage all businesses →</a>
+                    </p>
+                    <div class="picker-toolbar">
+                        <input type="search" id="restaurant-search" placeholder="Search restaurants by name or city…" oninput="renderBizPicker('restaurant')">
+                        <span id="restaurant-hint" class="hint" style="margin-left:auto;"></span>
+                    </div>
+                    <div id="restaurant-picker" class="picker-grid"></div>
+                </div>
+                <div class="save-row">
+                    <span id="restaurant-status" class="status-text"></span>
+                    <button class="btn-primary" onclick="saveBiz('restaurant')">Save restaurant connections</button>
+                </div>
+            </section>
+
+            <section id="panel-marina" class="panel">
+                <div class="card">
+                    <h2>Marinas on this lake</h2>
+                    <p class="hint" style="margin:-0.75rem 0 1rem;">
+                        Marinas selected here appear in the "Marinas" section of the public lake page.
+                        <a href="/pages/admin/businesses.html" target="_blank" style="color:#1d6df2;">Manage all businesses →</a>
+                    </p>
+                    <div class="picker-toolbar">
+                        <input type="search" id="marina-search" placeholder="Search marinas by name or city…" oninput="renderBizPicker('marina')">
+                        <span id="marina-hint" class="hint" style="margin-left:auto;"></span>
+                    </div>
+                    <div id="marina-picker" class="picker-grid"></div>
+                </div>
+                <div class="save-row">
+                    <span id="marina-status" class="status-text"></span>
+                    <button class="btn-primary" onclick="saveBiz('marina')">Save marina connections</button>
+                </div>
+            </section>
+
+            <section id="panel-service" class="panel">
+                <div class="card">
+                    <h2>Service providers on this lake</h2>
+                    <p class="hint" style="margin:-0.75rem 0 1rem;">
+                        Service providers (lawn care, dock installation, snow removal, etc.) selected here appear on the public lake page.
+                        <a href="/pages/admin/businesses.html" target="_blank" style="color:#1d6df2;">Manage all businesses →</a>
+                    </p>
+                    <div class="picker-toolbar">
+                        <input type="search" id="service-search" placeholder="Search services by name or city…" oninput="renderBizPicker('service')">
+                        <span id="service-hint" class="hint" style="margin-left:auto;"></span>
+                    </div>
+                    <div id="service-picker" class="picker-grid"></div>
+                </div>
+                <div class="save-row">
+                    <span id="service-status" class="status-text"></span>
+                    <button class="btn-primary" onclick="saveBiz('service')">Save service connections</button>
+                </div>
+            </section>
+
+            <section id="panel-photographer" class="panel">
+                <div class="card">
+                    <h2>Photographers on this lake</h2>
+                    <p class="hint" style="margin:-0.75rem 0 1rem;">
+                        Photographers selected here appear in the "Photographers" section of the public lake page.
+                        <a href="/pages/admin/businesses.html" target="_blank" style="color:#1d6df2;">Manage all businesses →</a>
+                    </p>
+                    <div class="picker-toolbar">
+                        <input type="search" id="photographer-search" placeholder="Search photographers by name or city…" oninput="renderBizPicker('photographer')">
+                        <span id="photographer-hint" class="hint" style="margin-left:auto;"></span>
+                    </div>
+                    <div id="photographer-picker" class="picker-grid"></div>
+                </div>
+                <div class="save-row">
+                    <span id="photographer-status" class="status-text"></span>
+                    <button class="btn-primary" onclick="saveBiz('photographer')">Save photographer connections</button>
+                </div>
+            </section>
+
+            <!-- Nearby Towns (reuses existing geo tags catalog) -->
+            <section id="panel-towns" class="panel">
+                <div class="card">
+                    <h2>Nearby towns</h2>
+                    <p class="hint" style="margin:-0.75rem 0 1rem;">
+                        Towns linked here appear in the "Nearby towns" section of the public lake page and help with lead routing.
+                        Towns are managed from the <a href="/pages/admin/tags.html" target="_blank" style="color:#1d6df2;">Geo Tags</a> page.
+                    </p>
+                    <div class="picker-toolbar">
+                        <input type="search" id="towns-search" placeholder="Search towns by name or region…" oninput="renderTownsPicker()">
+                        <span id="towns-hint" class="hint" style="margin-left:auto;"></span>
+                    </div>
+                    <div id="towns-picker" class="picker-grid"></div>
+                </div>
+                <div class="save-row">
+                    <span id="towns-status" class="status-text"></span>
+                    <button class="btn-primary" onclick="saveTowns()">Save nearby towns</button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        const LAKE_ID = new URLSearchParams(location.search).get('id');
+        let _lake = null;
+        let _allAgents = [];
+        let _selectedAgentIds = new Set();
+        let _allPosts = [];
+        let _selectedPostIds = new Set();
+
+        if (!LAKE_ID) {
+            document.getElementById('err').textContent = 'Missing lake id in URL. Expected ?id=<uuid>.';
+            document.getElementById('err').style.display = 'block';
+        }
+
+        // ── Boot ─────────────────────────────────────────────────────────
+        async function boot() {
+            if (!LAKE_ID) return;
+            try {
+                const res = await fetch(`/api/lakes/${LAKE_ID}`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Lake not found.');
+                _lake = await res.json();
+                hydrate();
+            } catch (err) {
+                document.getElementById('err').textContent = err.message || 'Failed to load lake.';
+                document.getElementById('err').style.display = 'block';
+            }
+        }
+
+        function hydrate() {
+            document.title = `${_lake.name} | MN Lake Homes Admin`;
+            document.getElementById('h-name').textContent = _lake.name;
+            document.getElementById('h-slug').textContent = `/lakes/${_lake.slug}`;
+            document.getElementById('h-status-pill').innerHTML =
+                `<span class="pill ${escHtml(_lake.status)}">${escHtml(_lake.status)}</span>`;
+            const viewLink = document.getElementById('h-view-public');
+            if (_lake.status === 'published') {
+                viewLink.href = `/lakes/${_lake.slug}`;
+                viewLink.style.display = '';
+            }
+
+            // Overview fields
+            document.getElementById('f-name').value   = _lake.name   || '';
+            document.getElementById('f-state').value  = _lake.state  || 'MN';
+            document.getElementById('f-region').value = _lake.region || '';
+            document.getElementById('f-county').value = _lake.county || '';
+            document.getElementById('f-slug').value   = _lake.slug   || '';
+            document.getElementById('f-lat').value    = _lake.latitude  ?? '';
+            document.getElementById('f-lng').value    = _lake.longitude ?? '';
+            document.getElementById('f-intro').value  = _lake.intro_text  || '';
+            document.getElementById('f-desc').value   = _lake.description || '';
+            document.getElementById('f-status').value = _lake.status || 'draft';
+
+            // SEO fields
+            document.getElementById('f-seo-title').value = _lake.seo_title || '';
+            document.getElementById('f-seo-desc').value  = _lake.seo_description || '';
+            document.getElementById('f-canonical').value = `${location.origin}/lakes/${_lake.slug}`;
+
+            // Media fields
+            document.getElementById('f-hero').value = _lake.hero_image_url || '';
+            document.getElementById('f-feat').value = _lake.featured_image_url || '';
+            updateThumb('hero');
+            updateThumb('feat');
+        }
+
+        // ── Tabs ─────────────────────────────────────────────────────────
+        const BIZ_TYPES = ['restaurant', 'marina', 'service', 'photographer'];
+        function setTab(e, key) {
+            if (e.currentTarget.classList.contains('stub')) return;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+            e.currentTarget.classList.add('on');
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+            document.getElementById(`panel-${key}`).classList.add('on');
+            if (key === 'agents' && !_allAgents.length) loadAgents();
+            if (key === 'blog'   && !_allPosts.length)  loadBlogPosts();
+            if (BIZ_TYPES.includes(key) && !_bizState[key].loaded) loadBiz(key);
+            if (key === 'towns' && !_townsState.loaded) loadTowns();
+        }
+
+        // ── Save helpers ─────────────────────────────────────────────────
+        async function patchLake(payload, statusEl, okMsg) {
+            const el = document.getElementById(statusEl);
+            el.textContent = 'Saving…'; el.className = 'status-text';
+            try {
+                const res = await fetch(`/api/lakes/${LAKE_ID}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                Object.assign(_lake, data);
+                hydrate();
+                el.textContent = okMsg; el.className = 'status-text ok';
+                setTimeout(() => { el.textContent = ''; }, 2500);
+            } catch (err) {
+                el.textContent = err.message || 'Save failed'; el.className = 'status-text err';
+            }
+        }
+
+        function saveOverview() {
+            patchLake({
+                name:        document.getElementById('f-name').value.trim(),
+                state:       document.getElementById('f-state').value.trim().toUpperCase() || 'MN',
+                region:      document.getElementById('f-region').value.trim() || null,
+                county:      document.getElementById('f-county').value.trim() || null,
+                slug:        document.getElementById('f-slug').value.trim(),
+                latitude:    document.getElementById('f-lat').value === '' ? null : Number(document.getElementById('f-lat').value),
+                longitude:   document.getElementById('f-lng').value === '' ? null : Number(document.getElementById('f-lng').value),
+                intro_text:  document.getElementById('f-intro').value.trim() || null,
+                description: document.getElementById('f-desc').value.trim() || null,
+                status:      document.getElementById('f-status').value,
+            }, 'overview-status', '✓ Saved');
+        }
+
+        function saveSeo() {
+            patchLake({
+                seo_title:       document.getElementById('f-seo-title').value.trim() || null,
+                seo_description: document.getElementById('f-seo-desc').value.trim() || null,
+            }, 'seo-status', '✓ Saved');
+        }
+
+        function saveMedia() {
+            patchLake({
+                hero_image_url:     document.getElementById('f-hero').value.trim() || null,
+                featured_image_url: document.getElementById('f-feat').value.trim() || null,
+            }, 'media-status', '✓ Saved');
+        }
+
+        // ── Media thumbs + upload ────────────────────────────────────────
+        function updateThumb(which) {
+            const url = document.getElementById(which === 'hero' ? 'f-hero' : 'f-feat').value.trim();
+            const el  = document.getElementById(which === 'hero' ? 'thumb-hero' : 'thumb-feat');
+            if (url) {
+                el.innerHTML = `<img src="${escHtml(url)}" onerror="this.outerHTML='<span>Broken image URL</span>';">`;
+            } else {
+                el.innerHTML = '<span>No image</span>';
+            }
+        }
+
+        async function uploadImage(file, which) {
+            if (!file) return;
+            const statusEl = document.getElementById(which === 'hero' ? 'upload-hero-status' : 'upload-feat-status');
+            const input    = document.getElementById(which === 'hero' ? 'f-hero' : 'f-feat');
+            statusEl.textContent = `Uploading ${file.name}…`;
+            statusEl.style.color = '#718096';
+            const fd = new FormData();
+            fd.append('image', file);
+            try {
+                const res = await fetch('/api/lakes/upload-image', { method: 'POST', body: fd, credentials: 'include' });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                input.value = data.url;
+                updateThumb(which);
+                statusEl.textContent = '✓ Uploaded — remember to Save';
+                statusEl.style.color = '#2f855a';
+            } catch (err) {
+                statusEl.textContent = `Error: ${err.message}`;
+                statusEl.style.color = '#c53030';
+            }
+        }
+
+        // ── Agents picker ────────────────────────────────────────────────
+        async function loadAgents() {
+            const el = document.getElementById('agent-picker');
+            el.innerHTML = '<div class="pick-empty">Loading agents…</div>';
+            try {
+                const [agentsRes, connectedRes] = await Promise.all([
+                    fetch('/api/admin', { credentials: 'include' }),
+                    fetch(`/api/lakes/${LAKE_ID}/agents`, { credentials: 'include' }),
+                ]);
+                if (!agentsRes.ok) throw new Error('Failed to load agents.');
+                _allAgents = await agentsRes.json();
+                const connected = connectedRes.ok ? await connectedRes.json() : [];
+                _selectedAgentIds = new Set(connected.map(a => a.id));
+                document.getElementById('cnt-agents').textContent = _selectedAgentIds.size;
+                renderAgentPicker();
+            } catch (err) {
+                el.innerHTML = `<div class="pick-empty">${err.message || 'Failed to load agents.'}</div>`;
+            }
+        }
+
+        function renderAgentPicker() {
+            const q = (document.getElementById('agent-search').value || '').toLowerCase().trim();
+            const list = _allAgents.filter(a => {
+                if (!q) return true;
+                return [a.display_name, a.city, a.brokerage_name, a.email]
+                    .filter(Boolean).some(v => String(v).toLowerCase().includes(q));
+            });
+            document.getElementById('agent-count-hint').textContent =
+                `${_selectedAgentIds.size} selected · ${list.length} shown`;
+            const el = document.getElementById('agent-picker');
+            if (!list.length) {
+                el.innerHTML = '<div class="pick-empty">No matching agents.</div>';
+                return;
+            }
+            el.innerHTML = list.map(a => {
+                const on = _selectedAgentIds.has(a.id);
+                const photo = a.profile_photo_url || '/assets/images/mn-stillwater-aerial.webp';
+                return `
+                    <label class="pick-card ${on ? 'on' : ''}" data-aid="${a.id}">
+                        <input type="checkbox" ${on ? 'checked' : ''} onchange="toggleAgent('${a.id}', this.checked)">
+                        <img class="avatar" src="${escHtml(photo)}" alt="">
+                        <div class="meta">
+                            <div class="name">${escHtml(a.display_name || '(no name)')}</div>
+                            <div class="sub">${escHtml(a.city || a.brokerage_name || a.email || '')}</div>
+                        </div>
+                    </label>`;
+            }).join('');
+        }
+
+        function toggleAgent(id, on) {
+            if (on) _selectedAgentIds.add(id);
+            else    _selectedAgentIds.delete(id);
+            document.getElementById('cnt-agents').textContent = _selectedAgentIds.size;
+            document.querySelectorAll('#agent-picker .pick-card').forEach(el => {
+                el.classList.toggle('on', _selectedAgentIds.has(el.dataset.aid));
+            });
+            document.getElementById('agent-count-hint').textContent =
+                `${_selectedAgentIds.size} selected · ${document.querySelectorAll('#agent-picker .pick-card').length} shown`;
+        }
+
+        async function saveAgents() {
+            const el = document.getElementById('agents-status');
+            el.textContent = 'Saving…'; el.className = 'status-text';
+            try {
+                const res = await fetch(`/api/lakes/${LAKE_ID}/agents`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ agentIds: [..._selectedAgentIds] }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                el.textContent = `✓ Saved (${_selectedAgentIds.size} agents)`; el.className = 'status-text ok';
+                setTimeout(() => { el.textContent = ''; }, 2500);
+            } catch (err) {
+                el.textContent = err.message || 'Save failed'; el.className = 'status-text err';
+            }
+        }
+
+        // ── Blog posts picker ────────────────────────────────────────────
+        async function loadBlogPosts() {
+            const el = document.getElementById('blog-picker');
+            el.innerHTML = '<div class="pick-empty">Loading blog posts…</div>';
+            try {
+                const [postsRes, connectedRes] = await Promise.all([
+                    fetch('/api/blog/admin/all', { credentials: 'include' }),
+                    fetch(`/api/lakes/${LAKE_ID}/blog-posts`, { credentials: 'include' }),
+                ]);
+                if (!postsRes.ok) throw new Error('Failed to load blog posts.');
+                _allPosts = await postsRes.json();
+                const connected = connectedRes.ok ? await connectedRes.json() : [];
+                _selectedPostIds = new Set(connected.map(p => p.id));
+                document.getElementById('cnt-blog').textContent = _selectedPostIds.size;
+                renderBlogPicker();
+            } catch (err) {
+                el.innerHTML = `<div class="pick-empty">${err.message || 'Failed to load posts.'}</div>`;
+            }
+        }
+
+        function renderBlogPicker() {
+            const q = (document.getElementById('blog-search').value || '').toLowerCase().trim();
+            const filter = document.getElementById('blog-filter').value;
+            const list = _allPosts.filter(p => {
+                if (filter === 'published' && !p.is_published) return false;
+                if (filter === 'selected'  && !_selectedPostIds.has(p.id)) return false;
+                if (q) {
+                    const hay = [p.title, p.tag, p.author_name].filter(Boolean).map(s => String(s).toLowerCase());
+                    if (!hay.some(v => v.includes(q))) return false;
+                }
+                return true;
+            });
+            document.getElementById('blog-count-hint').textContent =
+                `${_selectedPostIds.size} selected · ${list.length} shown`;
+            const el = document.getElementById('blog-picker');
+            if (!list.length) {
+                el.innerHTML = '<div class="pick-empty">No matching posts.</div>';
+                return;
+            }
+            el.innerHTML = list.map(p => {
+                const on = _selectedPostIds.has(p.id);
+                const thumb = p.cover_image_url || '';
+                const badge = p.is_published ? 'Published' : 'Draft';
+                return `
+                    <label class="pick-card ${on ? 'on' : ''}" data-pid="${p.id}">
+                        <input type="checkbox" ${on ? 'checked' : ''} onchange="togglePost('${p.id}', this.checked)">
+                        ${thumb
+                            ? `<img class="avatar" style="border-radius:8px;" src="${escHtml(thumb)}" alt="">`
+                            : `<div class="avatar" style="border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;">📝</div>`}
+                        <div class="meta">
+                            <div class="name">${escHtml(p.title || '(untitled)')}</div>
+                            <div class="sub">${escHtml(p.tag || 'General')} · ${badge}</div>
+                        </div>
+                    </label>`;
+            }).join('');
+        }
+
+        function togglePost(id, on) {
+            if (on) _selectedPostIds.add(id);
+            else    _selectedPostIds.delete(id);
+            document.getElementById('cnt-blog').textContent = _selectedPostIds.size;
+            document.querySelectorAll('#blog-picker .pick-card').forEach(el => {
+                el.classList.toggle('on', _selectedPostIds.has(el.dataset.pid));
+            });
+            document.getElementById('blog-count-hint').textContent =
+                `${_selectedPostIds.size} selected · ${document.querySelectorAll('#blog-picker .pick-card').length} shown`;
+        }
+
+        async function saveBlog() {
+            const el = document.getElementById('blog-status');
+            el.textContent = 'Saving…'; el.className = 'status-text';
+            try {
+                const res = await fetch(`/api/lakes/${LAKE_ID}/blog-posts`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ blogPostIds: [..._selectedPostIds] }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                el.textContent = `✓ Saved (${_selectedPostIds.size} posts)`; el.className = 'status-text ok';
+                setTimeout(() => { el.textContent = ''; }, 2500);
+            } catch (err) {
+                el.textContent = err.message || 'Save failed'; el.className = 'status-text err';
+            }
+        }
+
+        // ── Business pickers (restaurants / marinas / services / photographers) ──
+        // All four tabs share one implementation, scoped by `type`. State
+        // for each type lives in its own slot so tab switches don't clobber
+        // each other's selections.
+        const _bizState = {
+            restaurant:   { all: [], selected: new Set(), loaded: false },
+            marina:       { all: [], selected: new Set(), loaded: false },
+            service:      { all: [], selected: new Set(), loaded: false },
+            photographer: { all: [], selected: new Set(), loaded: false },
+        };
+
+        async function loadBiz(type) {
+            const el = document.getElementById(`${type}-picker`);
+            el.innerHTML = '<div class="pick-empty">Loading…</div>';
+            try {
+                const [allRes, linkedRes] = await Promise.all([
+                    fetch(`/api/businesses?type=${encodeURIComponent(type)}&status=all`, { credentials: 'include' }),
+                    fetch(`/api/lakes/${LAKE_ID}/businesses?type=${encodeURIComponent(type)}`, { credentials: 'include' }),
+                ]);
+                if (!allRes.ok) throw new Error('Failed to load businesses.');
+                _bizState[type].all = await allRes.json();
+                const linked = linkedRes.ok ? await linkedRes.json() : [];
+                _bizState[type].selected = new Set(linked.map(b => b.id));
+                _bizState[type].loaded = true;
+                document.getElementById(`cnt-${type}`).textContent = _bizState[type].selected.size;
+                renderBizPicker(type);
+            } catch (err) {
+                el.innerHTML = `<div class="pick-empty">${err.message || 'Failed to load businesses.'}</div>`;
+            }
+        }
+
+        function renderBizPicker(type) {
+            const q = (document.getElementById(`${type}-search`).value || '').toLowerCase().trim();
+            const list = _bizState[type].all.filter(b => {
+                if (!q) return true;
+                return [b.name, b.city, b.description].filter(Boolean).some(v => String(v).toLowerCase().includes(q));
+            });
+            document.getElementById(`${type}-hint`).textContent =
+                `${_bizState[type].selected.size} selected · ${list.length} shown`;
+            const el = document.getElementById(`${type}-picker`);
+            if (!_bizState[type].all.length) {
+                el.innerHTML = `<div class="pick-empty">No ${prettyTypeLabel(type)} yet. <a href="/pages/admin/businesses.html" target="_blank" style="color:#1d6df2;">Add one →</a></div>`;
+                return;
+            }
+            if (!list.length) {
+                el.innerHTML = '<div class="pick-empty">No matches.</div>';
+                return;
+            }
+            el.innerHTML = list.map(b => {
+                const on = _bizState[type].selected.has(b.id);
+                const thumb = b.featured_image_url || '';
+                const statusNote = b.status !== 'active' ? ` · ${b.status}` : '';
+                return `
+                    <label class="pick-card ${on ? 'on' : ''}" data-bid="${b.id}" data-type="${type}">
+                        <input type="checkbox" ${on ? 'checked' : ''} onchange="toggleBiz('${type}', '${b.id}', this.checked)">
+                        ${thumb
+                            ? `<img class="avatar" style="border-radius:8px;" src="${escHtml(thumb)}" alt="">`
+                            : `<div class="avatar" style="border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;">🏢</div>`}
+                        <div class="meta">
+                            <div class="name">${escHtml(b.name || '(no name)')}</div>
+                            <div class="sub">${escHtml(b.city || '')}${statusNote}</div>
+                        </div>
+                    </label>`;
+            }).join('');
+        }
+
+        function toggleBiz(type, id, on) {
+            const s = _bizState[type].selected;
+            if (on) s.add(id); else s.delete(id);
+            document.getElementById(`cnt-${type}`).textContent = s.size;
+            document.querySelectorAll(`#${type}-picker .pick-card`).forEach(el => {
+                el.classList.toggle('on', s.has(el.dataset.bid));
+            });
+            document.getElementById(`${type}-hint`).textContent =
+                `${s.size} selected · ${document.querySelectorAll(`#${type}-picker .pick-card`).length} shown`;
+        }
+
+        async function saveBiz(type) {
+            const el = document.getElementById(`${type}-status`);
+            el.textContent = 'Saving…'; el.className = 'status-text';
+            try {
+                const res = await fetch(`/api/lakes/${LAKE_ID}/businesses?type=${encodeURIComponent(type)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ businessIds: [..._bizState[type].selected] }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                el.textContent = `✓ Saved (${_bizState[type].selected.size})`; el.className = 'status-text ok';
+                setTimeout(() => { el.textContent = ''; }, 2500);
+            } catch (err) {
+                el.textContent = err.message || 'Save failed'; el.className = 'status-text err';
+            }
+        }
+
+        function prettyTypeLabel(t) {
+            return ({ restaurant: 'restaurants', marina: 'marinas', service: 'service providers', photographer: 'photographers' })[t] || t;
+        }
+
+        // ── Nearby Towns picker ──────────────────────────────────────────
+        const _townsState = { all: [], selected: new Set(), loaded: false };
+
+        async function loadTowns() {
+            const el = document.getElementById('towns-picker');
+            el.innerHTML = '<div class="pick-empty">Loading towns…</div>';
+            try {
+                const [tagsRes, linkedRes] = await Promise.all([
+                    fetch('/api/tags?active=true'),
+                    fetch(`/api/lakes/${LAKE_ID}/tags`, { credentials: 'include' }),
+                ]);
+                if (!tagsRes.ok) throw new Error('Failed to load towns.');
+                _townsState.all = await tagsRes.json();
+                const linked = linkedRes.ok ? await linkedRes.json() : [];
+                _townsState.selected = new Set(linked.map(t => t.id));
+                _townsState.loaded = true;
+                document.getElementById('cnt-towns').textContent = _townsState.selected.size;
+                renderTownsPicker();
+            } catch (err) {
+                el.innerHTML = `<div class="pick-empty">${err.message || 'Failed to load towns.'}</div>`;
+            }
+        }
+
+        function renderTownsPicker() {
+            const q = (document.getElementById('towns-search').value || '').toLowerCase().trim();
+            const list = _townsState.all.filter(t => {
+                if (!q) return true;
+                return [t.name, t.region, t.state].filter(Boolean).some(v => String(v).toLowerCase().includes(q));
+            });
+            document.getElementById('towns-hint').textContent =
+                `${_townsState.selected.size} selected · ${list.length} shown`;
+            const el = document.getElementById('towns-picker');
+            if (!list.length) {
+                el.innerHTML = '<div class="pick-empty">No matching towns.</div>';
+                return;
+            }
+            el.innerHTML = list.map(t => {
+                const on = _townsState.selected.has(t.id);
+                return `
+                    <label class="pick-card ${on ? 'on' : ''}" data-tid="${t.id}">
+                        <input type="checkbox" ${on ? 'checked' : ''} onchange="toggleTown('${t.id}', this.checked)">
+                        <div class="avatar" style="border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;">📍</div>
+                        <div class="meta">
+                            <div class="name">${escHtml(t.name)}</div>
+                            <div class="sub">${escHtml([t.region, t.state].filter(Boolean).join(' · '))}</div>
+                        </div>
+                    </label>`;
+            }).join('');
+        }
+
+        function toggleTown(id, on) {
+            if (on) _townsState.selected.add(id);
+            else    _townsState.selected.delete(id);
+            document.getElementById('cnt-towns').textContent = _townsState.selected.size;
+            document.querySelectorAll('#towns-picker .pick-card').forEach(el => {
+                el.classList.toggle('on', _townsState.selected.has(el.dataset.tid));
+            });
+            document.getElementById('towns-hint').textContent =
+                `${_townsState.selected.size} selected · ${document.querySelectorAll('#towns-picker .pick-card').length} shown`;
+        }
+
+        async function saveTowns() {
+            const el = document.getElementById('towns-status');
+            el.textContent = 'Saving…'; el.className = 'status-text';
+            try {
+                const res = await fetch(`/api/lakes/${LAKE_ID}/tags`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ tagIds: [..._townsState.selected] }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                el.textContent = `✓ Saved (${_townsState.selected.size})`; el.className = 'status-text ok';
+                setTimeout(() => { el.textContent = ''; }, 2500);
+            } catch (err) {
+                el.textContent = err.message || 'Save failed'; el.className = 'status-text err';
+            }
+        }
+
+        // ── Utilities ────────────────────────────────────────────────────
+        function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+        document.addEventListener('DOMContentLoaded', boot);
+    </script>
+</body>
+</html>

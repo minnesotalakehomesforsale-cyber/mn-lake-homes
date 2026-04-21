@@ -164,6 +164,18 @@
 
             <div class="field-row cols-1">
                 <div class="field-grp">
+                    <label class="field-lbl">Lakes this post covers <span style="font-weight:400;text-transform:none;letter-spacing:0;">(appears in each lake's "From the blog" section)</span></label>
+                    <div id="f-lakes-chips" style="display:flex;flex-wrap:wrap;gap:0.4rem;min-height:2.5rem;padding:0.55rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;align-items:center;">
+                        <span id="f-lakes-empty" style="color:#a0aec0;font-size:0.85rem;">None selected — click a lake below to attach it.</span>
+                    </div>
+                    <div id="f-lakes-options" style="margin-top:0.5rem;display:flex;flex-wrap:wrap;gap:0.35rem;max-height:180px;overflow:auto;padding:0.35rem;">
+                        <span style="color:#a0aec0;font-size:0.85rem;">Loading lakes…</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field-row cols-1">
+                <div class="field-grp">
                     <label class="field-lbl">Excerpt <span style="font-weight:400;text-transform:none;letter-spacing:0;">(shown in card previews)</span></label>
                     <textarea class="field-inp" id="f-excerpt" rows="3" placeholder="One or two sentences summarising the post…"></textarea>
                 </div>
@@ -429,6 +441,129 @@
             statusEl.style.color = '#c53030';
         }
     }
+
+    // ── Lakes picker (Phase 2) ─────────────────────────────────────────────────
+    // Lets an author tag each post with one or more lakes. Saved via a
+    // separate PUT to /api/lakes/by-blog-post/:postId after the post
+    // itself is created/updated (we need the post id first for new posts).
+    let _allLakes = [];
+    let _selectedLakeIds = new Set();
+
+    async function loadLakeCatalog() {
+        try {
+            const res = await fetch('/api/lakes?status=all');
+            if (!res.ok) throw new Error();
+            _allLakes = await res.json();
+        } catch (_) { _allLakes = []; }
+    }
+
+    function renderLakeOptions() {
+        const opts = document.getElementById('f-lakes-options');
+        if (!_allLakes.length) {
+            opts.innerHTML = '<span style="color:#a0aec0;font-size:0.85rem;">No lakes configured yet.</span>';
+            return;
+        }
+        opts.innerHTML = _allLakes.map(l => {
+            const on = _selectedLakeIds.has(l.id);
+            return `
+                <button type="button"
+                        onclick="toggleLakeTag('${l.id}')"
+                        style="
+                            font-family:inherit;font-size:0.78rem;font-weight:700;
+                            padding:0.3rem 0.7rem;border-radius:99px;cursor:pointer;
+                            border:1px solid ${on ? '#1d6df2' : '#e2e8f0'};
+                            background:${on ? '#1d6df2' : '#fff'};
+                            color:${on ? '#fff' : '#4a5568'};">
+                    ${on ? '✓ ' : '+ '}${escapeHtml(l.name)}
+                </button>`;
+        }).join('');
+    }
+
+    function renderLakeChips() {
+        const chips = document.getElementById('f-lakes-chips');
+        const empty = document.getElementById('f-lakes-empty');
+        const selected = _allLakes.filter(l => _selectedLakeIds.has(l.id));
+        if (!selected.length) {
+            empty.style.display = '';
+            // keep the empty span as the only child
+            chips.innerHTML = '<span id="f-lakes-empty" style="color:#a0aec0;font-size:0.85rem;">None selected — click a lake below to attach it.</span>';
+            return;
+        }
+        chips.innerHTML = selected.map(l => `
+            <span style="display:inline-flex;align-items:center;gap:0.35rem;background:#ebf4ff;color:#1d6df2;font-size:0.78rem;font-weight:700;padding:0.28rem 0.6rem;border-radius:99px;">
+                ${escapeHtml(l.name)}
+                <button type="button" onclick="toggleLakeTag('${l.id}')"
+                        style="border:0;background:transparent;color:#1d6df2;cursor:pointer;font-size:0.9rem;line-height:1;padding:0;">×</button>
+            </span>`).join('');
+    }
+
+    function toggleLakeTag(id) {
+        if (_selectedLakeIds.has(id)) _selectedLakeIds.delete(id);
+        else _selectedLakeIds.add(id);
+        renderLakeChips();
+        renderLakeOptions();
+    }
+
+    async function loadLakesForPost(postId) {
+        _selectedLakeIds = new Set();
+        if (!postId) {
+            renderLakeChips(); renderLakeOptions();
+            return;
+        }
+        try {
+            const res = await fetch(`/api/lakes/by-blog-post/${postId}`);
+            if (res.ok) {
+                const lakes = await res.json();
+                _selectedLakeIds = new Set(lakes.map(l => l.id));
+            }
+        } catch (_) { /* degrade silently */ }
+        renderLakeChips();
+        renderLakeOptions();
+    }
+
+    async function savePostLakes(postId) {
+        if (!postId) return;
+        try {
+            await fetch(`/api/lakes/by-blog-post/${postId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lakeIds: [..._selectedLakeIds] }),
+            });
+        } catch (_) { /* surface nothing — user already saw the post save succeed */ }
+    }
+
+    function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    // Wrap openEditor to also load the post's current lake tags.
+    const _origOpenEditor = window.openEditor;
+    window.openEditor = function(id) {
+        _origOpenEditor(id);
+        loadLakesForPost(id);
+    };
+
+    // Wrap savePost so that after the post write succeeds, we also PUT
+    // the lake associations. We key off the post id returned by the API
+    // (new posts) or the editingId (edits). We observe the post list
+    // reload as a proxy for "write succeeded".
+    const _origSavePost = window.savePost;
+    window.savePost = async function() {
+        // Capture editingId BEFORE the wrapped call clears it via closeEditor().
+        const wasEditing = editingId;
+        const prevCount = allPosts.length;
+        await _origSavePost();
+        let targetId = wasEditing;
+        if (!targetId) {
+            // New post — refresh the in-memory list and grab the newest one.
+            // allPosts is already reloaded by the wrapped call; pick the latest.
+            if (allPosts.length > prevCount) {
+                // loadPosts orders by created_at DESC, so index 0 is newest.
+                targetId = allPosts[0]?.id;
+            }
+        }
+        await savePostLakes(targetId);
+    };
+
+    document.addEventListener('DOMContentLoaded', loadLakeCatalog);
 
     // Close overlay on background click
     document.getElementById('editor-overlay').addEventListener('click', function(e) {

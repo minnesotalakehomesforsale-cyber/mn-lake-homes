@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lakes | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Leaflet: free OSM-based map library. Tiles are pulled from Stadia
+         Maps via the CDN (free tier covers our admin + public usage). -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
+        .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        .admin-main { padding: 3rem 3.5rem; overflow-y: auto; }
+
+        .toolbar { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.5rem; }
+        .toolbar input, .toolbar select { font-family: inherit; font-size: 0.9rem; padding: 0.55rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; outline: none; }
+        .toolbar input:focus, .toolbar select:focus { border-color: #1d6df2; }
+        .toolbar input[type="search"] { flex: 1; min-width: 240px; }
+        .btn-primary { background: #1d6df2; color: #fff; border: none; padding: 0.6rem 1rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; font-family: inherit; }
+        .btn-primary:hover { background: #155bc9; }
+        .btn-ghost { background: #fff; color: #4a5568; border: 1px solid #e2e8f0; padding: 0.55rem 0.85rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; font-family: inherit; }
+        .btn-ghost:hover { border-color: #1d6df2; color: #1d6df2; }
+
+        .view-toggle { display: inline-flex; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #fff; }
+        .view-toggle button { background: #fff; border: 0; padding: 0.55rem 1rem; font-size: 0.85rem; font-weight: 600; color: #4a5568; cursor: pointer; font-family: inherit; }
+        .view-toggle button.on { background: #1d6df2; color: #fff; }
+
+        .lakes-table { width: 100%; background: #fff; border: 1px solid #edf2f7; border-radius: 12px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+        .lakes-table th { text-align: left; padding: 0.9rem 1rem; font-size: 0.72rem; font-weight: 800; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; background: #f7f9fa; border-bottom: 1px solid #edf2f7; }
+        .lakes-table td { padding: 0.85rem 1rem; font-size: 0.9rem; color: #2d3748; border-bottom: 1px solid #f7f9fa; vertical-align: middle; }
+        .lakes-table tr:last-child td { border-bottom: none; }
+        .lakes-table td.muted { color: #a0aec0; font-size: 0.82rem; }
+        .pill { display: inline-block; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.55rem; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .pill.state { background: #ebf4ff; color: #2b6cb0; }
+        .pill.published { background: #f0fff4; color: #2f855a; }
+        .pill.draft { background: #fffbea; color: #b45309; }
+        .pill.archived { background: #fff5f5; color: #c53030; }
+        .pill.warn { background: #fffbea; color: #b45309; }
+        .row-actions { display: flex; gap: 0.35rem; }
+        .row-actions button { font-size: 0.78rem; padding: 0.35rem 0.7rem; }
+        .danger { color: #c53030; border-color: #feb2b2; }
+        .danger:hover { background: #fff5f5; border-color: #fc8181; }
+
+        #map { height: 620px; width: 100%; border-radius: 12px; border: 1px solid #edf2f7; background: #eef2f5; }
+
+        /* Modal */
+        .ovl { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 9000; align-items: flex-start; justify-content: center; padding: 3rem 1rem; overflow-y: auto; }
+        .ovl.open { display: flex; }
+        .modal { background: #fff; border-radius: 16px; width: 100%; max-width: 640px; box-shadow: 0 30px 60px rgba(0,0,0,0.25); overflow: hidden; margin: auto; }
+        .m-hdr { background: #1a202c; padding: 1.5rem 1.75rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+        .m-hdr h2 { color: #fff; font-size: 1.1rem; font-weight: 800; margin: 0; }
+        .m-close { background: none; border: none; color: rgba(255,255,255,0.6); font-size: 1.5rem; cursor: pointer; line-height: 1; padding: 0; }
+        .m-body { padding: 1.75rem; }
+        .field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1rem; }
+        .field label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #4a5568; }
+        .field input, .field textarea, .field select { font-family: inherit; font-size: 0.95rem; padding: 0.65rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; outline: none; }
+        .field textarea { min-height: 80px; resize: vertical; }
+        .field input:focus, .field textarea:focus, .field select:focus { border-color: #1d6df2; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
+        .hint { font-size: 0.75rem; color: #718096; }
+        .err { display: none; color: #c53030; font-size: 0.85rem; padding: 0.6rem 0.85rem; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; margin-bottom: 1rem; }
+        .section-label { font-size: 0.7rem; font-weight: 800; color: #a0aec0; letter-spacing: 1px; text-transform: uppercase; margin: 1.25rem 0 0.6rem; }
+
+        @media (max-width: 900px) {
+            .admin-wrap { grid-template-columns: 1fr; }
+            .admin-main { padding: 1.75rem 1.25rem; }
+            .lakes-table { display: block; overflow-x: auto; }
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            #map { height: 420px; }
+        }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-nav-badges.js" defer></script>
+</head>
+<body>
+    <div class="admin-wrap">
+        <admin-sidebar active="lakes"></admin-sidebar>
+
+        <main class="admin-main">
+            <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h1 style="font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.75px; margin: 0 0 0.25rem;">Lakes</h1>
+                    <p style="color: #718096; font-size: 0.95rem; margin: 0;">Each lake has its own public hub page, SEO fields, and connected agents/businesses.</p>
+                </div>
+                <button class="btn-primary" onclick="openCreate()">+ New lake</button>
+            </header>
+
+            <div class="toolbar">
+                <input type="search" id="search" placeholder="Search by lake name…" oninput="applyFilters()">
+                <select id="filter-region" onchange="applyFilters()">
+                    <option value="">All regions</option>
+                </select>
+                <select id="filter-status" onchange="load()">
+                    <option value="all">All statuses</option>
+                    <option value="published">Published</option>
+                    <option value="draft">Draft</option>
+                    <option value="archived">Archived</option>
+                </select>
+                <span class="view-toggle" role="tablist">
+                    <button id="btn-view-table" class="on" onclick="setView('table')">Table</button>
+                    <button id="btn-view-map"           onclick="setView('map')">Map</button>
+                </span>
+                <span id="count" class="hint" style="margin-left:auto;"></span>
+            </div>
+
+            <div id="view-table">
+                <div id="table-wrap">
+                    <div style="padding:3rem;text-align:center;color:#a0aec0;">Loading lakes…</div>
+                </div>
+            </div>
+            <div id="view-map" style="display:none;">
+                <div id="map"></div>
+                <p class="hint" style="margin-top:0.75rem;">Click a pin to edit. Drag a pin to update its coordinates (save the modal to persist).</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="modal" class="ovl" onclick="if(event.target===this) closeModal()">
+        <div class="modal">
+            <div class="m-hdr">
+                <h2 id="modal-title">New lake</h2>
+                <button class="m-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="m-body">
+                <div id="modal-err" class="err"></div>
+
+                <div class="section-label">Identity</div>
+                <div class="field">
+                    <label>Name *</label>
+                    <input id="f-name" placeholder="e.g. Gull Lake" oninput="onNameChange()">
+                </div>
+                <div class="grid-3">
+                    <div class="field">
+                        <label>State</label>
+                        <input id="f-state" placeholder="MN" maxlength="2" value="MN">
+                    </div>
+                    <div class="field">
+                        <label>Region</label>
+                        <input id="f-region" placeholder="e.g. Brainerd Lakes">
+                    </div>
+                    <div class="field">
+                        <label>County</label>
+                        <input id="f-county" placeholder="e.g. Cass">
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Slug</label>
+                    <input id="f-slug" placeholder="auto from name">
+                    <span class="hint">Public URL path: /lakes/&lt;slug&gt;. Auto-generated; safe to leave blank.</span>
+                </div>
+
+                <div class="section-label">Coordinates</div>
+                <div class="grid-2">
+                    <div class="field">
+                        <label>Latitude</label>
+                        <input id="f-lat" type="number" step="0.000001" placeholder="Auto-geocoded">
+                    </div>
+                    <div class="field">
+                        <label>Longitude</label>
+                        <input id="f-lng" type="number" step="0.000001" placeholder="Auto-geocoded">
+                    </div>
+                </div>
+                <p class="hint" style="margin:-0.25rem 0 0;">Leave blank on create to auto-geocode from name + state.</p>
+
+                <div class="section-label">Content</div>
+                <div class="field">
+                    <label>Intro text</label>
+                    <textarea id="f-intro" placeholder="Short blurb shown below the hero on the public lake page."></textarea>
+                </div>
+                <div class="field">
+                    <label>Description</label>
+                    <textarea id="f-desc" placeholder="Longer description for the about section." rows="4"></textarea>
+                </div>
+                <div class="grid-2">
+                    <div class="field">
+                        <label>Hero image URL</label>
+                        <input id="f-hero" placeholder="/assets/images/your-lake-hero.jpg">
+                    </div>
+                    <div class="field">
+                        <label>Featured image URL</label>
+                        <input id="f-feat" placeholder="/assets/images/your-lake-thumb.jpg">
+                    </div>
+                </div>
+
+                <div class="section-label">SEO</div>
+                <div class="field">
+                    <label>SEO title</label>
+                    <input id="f-seo-title" placeholder="Auto-generated from name + state if blank">
+                </div>
+                <div class="field">
+                    <label>SEO description</label>
+                    <textarea id="f-seo-desc" placeholder="Meta description shown in search results."></textarea>
+                </div>
+
+                <div class="section-label">Status</div>
+                <div class="field">
+                    <label>Status</label>
+                    <select id="f-status">
+                        <option value="draft">Draft (hidden from public)</option>
+                        <option value="published">Published (live at /lakes/&lt;slug&gt;)</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
+
+                <div style="display:flex;justify-content:space-between;gap:0.5rem;align-items:center;">
+                    <a id="view-public-link" href="#" target="_blank" class="hint" style="display:none;">↗ View public page</a>
+                    <div style="display:flex;gap:0.5rem;">
+                        <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+                        <button class="btn-primary" id="save-btn" onclick="saveLake()">Save lake</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let _all = [];
+        let _editingId = null;
+        let _map = null;
+        let _markers = [];
+        let _currentView = 'table';
+
+        // ── Load + render ────────────────────────────────────────────────
+        async function load() {
+            const status = document.getElementById('filter-status').value;
+            const wrap = document.getElementById('table-wrap');
+            wrap.innerHTML = '<div style="padding:3rem;text-align:center;color:#a0aec0;">Loading…</div>';
+            try {
+                const qs = status && status !== 'all' ? `?status=${encodeURIComponent(status)}` : '?status=all';
+                const res = await fetch(`/api/lakes${qs}`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to load');
+                _all = await res.json();
+                populateRegionFilter();
+                applyFilters();
+            } catch (err) {
+                wrap.innerHTML = '<div style="padding:3rem;text-align:center;color:#c53030;">Failed to load lakes.</div>';
+            }
+        }
+
+        function populateRegionFilter() {
+            const sel = document.getElementById('filter-region');
+            const current = sel.value;
+            const regions = [...new Set(_all.map(l => l.region).filter(Boolean))].sort();
+            sel.innerHTML = '<option value="">All regions</option>' +
+                regions.map(r => `<option value="${escHtml(r)}">${escHtml(r)}</option>`).join('');
+            if (regions.includes(current)) sel.value = current;
+        }
+
+        function filtered() {
+            const search = (document.getElementById('search').value || '').toLowerCase().trim();
+            const region = document.getElementById('filter-region').value;
+            return _all.filter(l => {
+                if (region && l.region !== region) return false;
+                if (search && !l.name.toLowerCase().includes(search)) return false;
+                return true;
+            });
+        }
+
+        function applyFilters() {
+            const rows = filtered();
+            renderTable(rows);
+            renderMap(rows);
+            document.getElementById('count').textContent = `${rows.length} of ${_all.length}`;
+        }
+
+        function renderTable(rows) {
+            const wrap = document.getElementById('table-wrap');
+            if (!rows.length) {
+                wrap.innerHTML = '<div style="padding:3rem;text-align:center;color:#a0aec0;">No matching lakes.</div>';
+                return;
+            }
+            wrap.innerHTML = `
+                <table class="lakes-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 22%;">Name</th>
+                            <th style="width: 14%;">Region</th>
+                            <th style="width: 10%;">County</th>
+                            <th style="width: 14%;">Coordinates</th>
+                            <th style="width: 8%;">Agents</th>
+                            <th style="width: 8%;">Businesses</th>
+                            <th style="width: 10%;">Status</th>
+                            <th style="width: 14%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows.map(l => `
+                            <tr>
+                                <td>
+                                    <strong>${escHtml(l.name)}</strong>
+                                    <div class="muted" style="font-size:0.72rem; font-family:monospace;">${escHtml(l.slug)}</div>
+                                </td>
+                                <td class="muted">${escHtml(l.region || '—')}</td>
+                                <td class="muted">${escHtml(l.county || '—')}</td>
+                                <td class="muted">
+                                    ${(l.latitude != null && l.longitude != null)
+                                        ? `${Number(l.latitude).toFixed(4)}, ${Number(l.longitude).toFixed(4)}`
+                                        : '<span class="pill warn">missing</span>'}
+                                </td>
+                                <td class="muted">${l.agent_count ?? 0}</td>
+                                <td class="muted">${l.business_count ?? 0}</td>
+                                <td>${statusPill(l.status)}</td>
+                                <td class="row-actions">
+                                    <a class="btn-ghost" href="/pages/admin/lake-detail.html?id=${l.id}">Edit</a>
+                                    ${l.status === 'published'
+                                        ? `<a class="btn-ghost" href="/lakes/${encodeURIComponent(l.slug)}" target="_blank">View</a>`
+                                        : `<button class="btn-ghost" onclick="publish('${l.id}')">Publish</button>`}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+        }
+
+        function statusPill(s) {
+            if (s === 'published') return '<span class="pill published">published</span>';
+            if (s === 'archived')  return '<span class="pill archived">archived</span>';
+            return '<span class="pill draft">draft</span>';
+        }
+
+        // ── Map ─────────────────────────────────────────────────────────
+        function ensureMap() {
+            if (_map) return _map;
+            // Minnesota-centered starting view; user can zoom/pan as needed.
+            _map = L.map('map', { zoomControl: true }).setView([46.3, -94.3], 6);
+            L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+            }).addTo(_map);
+            // Click anywhere empty on the map to open a "new lake" modal
+            // pre-filled with the clicked coordinates. Ignores clicks that
+            // land on markers (Leaflet stops propagation on those).
+            _map.on('click', (e) => {
+                if (!confirm(`Create a new lake at ${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}?`)) return;
+                openCreate();
+                document.getElementById('f-lat').value = e.latlng.lat.toFixed(6);
+                document.getElementById('f-lng').value = e.latlng.lng.toFixed(6);
+            });
+            return _map;
+        }
+
+        function renderMap(rows) {
+            if (!_map) return; // only render when map view has been shown at least once
+            _markers.forEach(m => _map.removeLayer(m));
+            _markers = [];
+            const bounds = [];
+            rows.forEach(l => {
+                if (l.latitude == null || l.longitude == null) return;
+                const marker = L.marker([l.latitude, l.longitude], { draggable: true })
+                    .addTo(_map)
+                    .bindTooltip(l.name, { permanent: false, direction: 'top' });
+                marker.on('click', () => { window.location.href = `/pages/admin/lake-detail.html?id=${l.id}`; });
+                marker.on('dragend', async (e) => {
+                    const p = e.target.getLatLng();
+                    try {
+                        await fetch(`/api/lakes/${l.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ latitude: p.lat, longitude: p.lng }),
+                        });
+                        l.latitude = p.lat; l.longitude = p.lng;
+                    } catch (_) {
+                        alert('Failed to save new coordinates. Reload to retry.');
+                    }
+                });
+                _markers.push(marker);
+                bounds.push([l.latitude, l.longitude]);
+            });
+            if (bounds.length) {
+                _map.fitBounds(bounds, { padding: [40, 40], maxZoom: 9 });
+            }
+        }
+
+        function setView(v) {
+            _currentView = v;
+            document.getElementById('btn-view-table').classList.toggle('on', v === 'table');
+            document.getElementById('btn-view-map').classList.toggle('on',   v === 'map');
+            document.getElementById('view-table').style.display = v === 'table' ? '' : 'none';
+            document.getElementById('view-map').style.display   = v === 'map'   ? '' : 'none';
+            if (v === 'map') {
+                ensureMap();
+                // Leaflet needs a size recalc when its container was hidden.
+                setTimeout(() => { _map.invalidateSize(); renderMap(filtered()); }, 50);
+            }
+        }
+
+        // ── Modal ────────────────────────────────────────────────────────
+        function openCreate() {
+            _editingId = null;
+            document.getElementById('modal-title').textContent = 'New lake';
+            ['f-name','f-region','f-county','f-slug','f-lat','f-lng','f-intro','f-desc','f-hero','f-feat','f-seo-title','f-seo-desc']
+                .forEach(id => document.getElementById(id).value = '');
+            document.getElementById('f-state').value = 'MN';
+            document.getElementById('f-status').value = 'draft';
+            document.getElementById('view-public-link').style.display = 'none';
+            document.getElementById('modal-err').style.display = 'none';
+            document.getElementById('modal').classList.add('open');
+            setTimeout(() => document.getElementById('f-name').focus(), 80);
+        }
+
+        function openEdit(id) {
+            const l = _all.find(x => x.id === id);
+            if (!l) return;
+            _editingId = id;
+            document.getElementById('modal-title').textContent = `Edit: ${l.name}`;
+            document.getElementById('f-name').value      = l.name      || '';
+            document.getElementById('f-state').value     = l.state     || 'MN';
+            document.getElementById('f-region').value    = l.region    || '';
+            document.getElementById('f-county').value    = l.county    || '';
+            document.getElementById('f-slug').value      = l.slug      || '';
+            document.getElementById('f-lat').value       = l.latitude  ?? '';
+            document.getElementById('f-lng').value       = l.longitude ?? '';
+            document.getElementById('f-intro').value     = l.intro_text  || '';
+            document.getElementById('f-desc').value      = l.description || '';
+            document.getElementById('f-hero').value      = l.hero_image_url     || '';
+            document.getElementById('f-feat').value      = l.featured_image_url || '';
+            document.getElementById('f-seo-title').value = l.seo_title       || '';
+            document.getElementById('f-seo-desc').value  = l.seo_description || '';
+            document.getElementById('f-status').value    = l.status || 'draft';
+            const link = document.getElementById('view-public-link');
+            if (l.status === 'published') {
+                link.href = `/lakes/${encodeURIComponent(l.slug)}`;
+                link.style.display = '';
+            } else {
+                link.style.display = 'none';
+            }
+            document.getElementById('modal-err').style.display = 'none';
+            document.getElementById('modal').classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('open');
+        }
+
+        function onNameChange() {
+            if (_editingId) return;
+            const name = document.getElementById('f-name').value.trim();
+            document.getElementById('f-slug').placeholder = name
+                ? name.toLowerCase().replace(/[^\w\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-')
+                : 'auto from name';
+        }
+
+        async function saveLake() {
+            const err = document.getElementById('modal-err');
+            err.style.display = 'none';
+            const name = document.getElementById('f-name').value.trim();
+            if (!name) { err.textContent = 'Name is required.'; err.style.display = 'block'; return; }
+
+            const body = {
+                name,
+                state:              document.getElementById('f-state').value.trim().toUpperCase() || 'MN',
+                region:             document.getElementById('f-region').value.trim() || null,
+                county:             document.getElementById('f-county').value.trim() || null,
+                slug:               document.getElementById('f-slug').value.trim() || undefined,
+                latitude:           document.getElementById('f-lat').value === '' ? null : Number(document.getElementById('f-lat').value),
+                longitude:          document.getElementById('f-lng').value === '' ? null : Number(document.getElementById('f-lng').value),
+                intro_text:         document.getElementById('f-intro').value.trim() || null,
+                description:        document.getElementById('f-desc').value.trim() || null,
+                hero_image_url:     document.getElementById('f-hero').value.trim() || null,
+                featured_image_url: document.getElementById('f-feat').value.trim() || null,
+                seo_title:          document.getElementById('f-seo-title').value.trim() || null,
+                seo_description:    document.getElementById('f-seo-desc').value.trim() || null,
+                status:             document.getElementById('f-status').value,
+            };
+
+            const btn = document.getElementById('save-btn');
+            btn.disabled = true; btn.textContent = 'Saving…';
+            try {
+                const url = _editingId ? `/api/lakes/${_editingId}` : '/api/lakes';
+                const method = _editingId ? 'PATCH' : 'POST';
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(body),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                closeModal();
+                await load();
+            } catch (e) {
+                err.textContent = e.message || 'Save failed.';
+                err.style.display = 'block';
+            } finally {
+                btn.disabled = false; btn.textContent = 'Save lake';
+            }
+        }
+
+        async function publish(id) {
+            try {
+                const res = await fetch(`/api/lakes/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ status: 'published' }),
+                });
+                if (!res.ok) throw new Error();
+                await load();
+            } catch (_) { alert('Failed to publish.'); }
+        }
+
+        // ── Utilities ────────────────────────────────────────────────────
+        function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && document.getElementById('modal').classList.contains('open')) closeModal();
+        });
+
+        document.addEventListener('DOMContentLoaded', load);
+    </script>
+</body>
+</html>

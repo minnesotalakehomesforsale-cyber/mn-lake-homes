@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+
+    <!-- Server-rendered SEO. Tokens below are replaced by the /lakes/:slug
+         Express handler so real SEO content lands in the initial HTML. -->
+    <title>{{LAKE_SEO_TITLE}}</title>
+    <meta name="description" content="{{LAKE_SEO_DESCRIPTION}}">
+    <meta name="author" content="MinnesotaLakeHomesForSale.com">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com{{LAKE_CANONICAL_PATH}}">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MinnesotaLakeHomesForSale.com">
+    <meta property="og:url" content="https://minnesotalakehomesforsale.com{{LAKE_CANONICAL_PATH}}">
+    <meta property="og:title" content="{{LAKE_SEO_TITLE}}">
+    <meta property="og:description" content="{{LAKE_SEO_DESCRIPTION}}">
+    <meta property="og:image" content="{{LAKE_HERO_IMAGE}}">
+    <meta property="og:locale" content="en_US">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{LAKE_SEO_TITLE}}">
+    <meta name="twitter:description" content="{{LAKE_SEO_DESCRIPTION}}">
+    <meta name="twitter:image" content="{{LAKE_HERO_IMAGE}}">
+
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preload" as="image" href="{{LAKE_HERO_IMAGE}}">
+    <script src="../../components/components.js" defer></script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Place",
+      "name": "{{LAKE_NAME}}",
+      "description": "{{LAKE_SEO_DESCRIPTION}}",
+      "geo": { "@type": "GeoCoordinates", "latitude": "{{LAKE_LATITUDE}}", "longitude": "{{LAKE_LONGITUDE}}" },
+      "address": { "@type": "PostalAddress", "addressRegion": "{{LAKE_STATE}}", "addressCountry": "US" },
+      "url": "https://minnesotalakehomesforsale.com{{LAKE_CANONICAL_PATH}}"
+    }
+    </script>
+
+    <style>
+        .ld-hero { padding: 12rem 2rem 5rem; background-color: var(--bg-dark); color: #fff; }
+        .ld-hero-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+        .ld-hero h1 { font-size: 4.5rem; font-weight: 700; letter-spacing: -2px; line-height: 1.05; margin-bottom: 1.5rem; }
+        .ld-hero h1 span { color: var(--accent-blue); }
+        .ld-hero p { font-size: 1.25rem; color: #a0aec0; line-height: 1.6; margin-bottom: 2.5rem; max-width: 520px; }
+        .ld-hero-img { height: 500px; border-radius: 20px; overflow: hidden; }
+        .ld-hero-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .ld-hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .ld-meta-row { display: flex; gap: 1.25rem; flex-wrap: wrap; color: #a0aec0; font-size: 0.9rem; margin-bottom: 2rem; }
+        .ld-meta-row span strong { color: #fff; font-weight: 700; margin-right: 0.25rem; }
+
+        .ld-about { background-color: #f7f9fa; padding: 6rem 2rem; }
+        .ld-about-inner { max-width: 900px; margin: 0 auto; }
+        .ld-about h2 { font-size: 2.25rem; font-weight: 700; color: #1a202c; margin: 0 0 1.25rem; letter-spacing: -1px; }
+        .ld-about p { font-size: 1.1rem; line-height: 1.7; color: #4a5568; white-space: pre-line; }
+
+        .ld-experts { padding: 6rem 2rem; text-align: center; }
+        .ld-experts h2 { font-size: 2.5rem; font-weight: 700; color: #1a202c; margin-bottom: 1rem; letter-spacing: -1px; }
+        .ld-experts > p { color: #718096; font-size: 1.1rem; max-width: 700px; margin: 0 auto 3rem; line-height: 1.6; }
+
+        .ld-section-stub { background: #fff; border: 1px dashed #e2e8f0; border-radius: 14px; padding: 3rem 2rem; text-align: center; max-width: 900px; margin: 0 auto; }
+        .ld-section-stub h3 { font-size: 1.3rem; color: #1a202c; margin: 0 0 0.5rem; }
+        .ld-section-stub p { color: #718096; margin: 0; font-size: 0.95rem; }
+
+        @media (max-width: 900px) {
+            .ld-hero { padding: 7rem 1.25rem 3rem; }
+            .ld-hero-inner { grid-template-columns: 1fr; gap: 2rem; }
+            .ld-hero h1 { font-size: 2.75rem; letter-spacing: -1.25px; }
+            .ld-hero p { font-size: 1.05rem; }
+            .ld-hero-img { height: 260px; }
+            .ld-hero-actions { flex-direction: column; }
+            .ld-hero-actions .btn { width: 100%; text-align: center; }
+            .ld-about, .ld-experts { padding: 3.5rem 1.25rem; }
+            .ld-about h2, .ld-experts h2 { font-size: 1.85rem; }
+        }
+    </style>
+</head>
+<body style="background-color: #fff;">
+
+    <global-header></global-header>
+
+    <!-- Hero -->
+    <section class="ld-hero">
+        <div class="ld-hero-inner">
+            <div>
+                <h1><span>{{LAKE_NAME}}</span></h1>
+                <div class="ld-meta-row" id="ld-meta"></div>
+                <p id="ld-intro"></p>
+                <div class="ld-hero-actions">
+                    <button onclick="openForm('buy')" class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none; cursor: pointer;">Contact a specialist</button>
+                    <a href="/lakes" class="btn btn-ghost" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; text-decoration:none; border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius: 8px;">← All lakes</a>
+                </div>
+            </div>
+            <div class="ld-hero-img">
+                <img src="{{LAKE_HERO_IMAGE}}" alt="{{LAKE_NAME}} waterfront real estate" width="1200" height="800" fetchpriority="high">
+            </div>
+        </div>
+    </section>
+
+    <!-- About -->
+    <section class="ld-about" id="about">
+        <div class="ld-about-inner">
+            <h2>About {{LAKE_NAME}}</h2>
+            <p id="ld-description">Overview coming soon.</p>
+        </div>
+    </section>
+
+    <!-- Agents -->
+    <section class="ld-experts">
+        <h2>Your {{LAKE_NAME}} experts</h2>
+        <p>Agents who know this lake — local listings, off-market inventory, and the neighborhoods that fit your lifestyle.</p>
+        <div id="lake-agents-grid" class="agents-grid">
+            <div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">Loading featured agents…</div>
+        </div>
+    </section>
+
+    <!-- From the blog -->
+    <section id="lake-blog" class="ld-about" style="padding: 5rem 2rem; background: #fff;">
+        <div style="max-width: 1100px; margin: 0 auto;">
+            <h2 style="font-size: 2.25rem; font-weight: 700; color: #1a202c; margin: 0 0 1rem; letter-spacing: -1px; text-align:center;">From the blog — {{LAKE_NAME}}</h2>
+            <p style="color:#718096;font-size:1rem;max-width:640px;margin:0 auto 2.5rem;text-align:center;line-height:1.6;">Guides, market takes, and local stories covering this lake.</p>
+            <div id="lake-blog-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;">
+                <div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">Loading posts…</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Local directory: restaurants, marinas, services, photographers -->
+    <section id="lake-biz" style="padding: 3rem 2rem 4rem;">
+        <div style="max-width: 1100px; margin: 0 auto;">
+            <div id="biz-sections"></div>
+        </div>
+    </section>
+
+    <!-- Nearby towns (reuses the geo-tags catalog) -->
+    <section id="lake-towns" style="padding: 0 2rem 5rem; display:none;">
+        <div style="max-width: 1100px; margin: 0 auto;">
+            <h2 style="font-size: 2rem; font-weight: 700; color: #1a202c; margin: 0 0 1rem; letter-spacing: -0.75px; text-align:center;">Near {{LAKE_NAME}}</h2>
+            <p style="color:#718096;font-size:1rem;text-align:center;margin:0 auto 2rem;max-width:640px;line-height:1.6;">Communities that border or share the lake's waterfront.</p>
+            <div id="lake-towns-grid" style="display:flex;flex-wrap:wrap;gap:0.6rem;justify-content:center;"></div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="sp-dark-section" style="padding: 6rem 2rem; text-align: center;">
+        <div style="max-width: 800px; margin: 0 auto;">
+            <h2 style="font-size: 3rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -1px; color:#fff;">Ready to explore {{LAKE_NAME}}?</h2>
+            <p style="font-size: 1.15rem; color: #a0aec0; margin-bottom: 2.5rem; line-height: 1.6;">Connect with a specialist who knows this lake — listings, market trends, and the right neighborhoods for you.</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <button class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none;" onclick="openForm('buy')">Start your journey</button>
+            </div>
+        </div>
+    </section>
+
+    <global-footer></global-footer>
+    <lead-modal></lead-modal>
+
+    <script>
+        const LAKE_ID   = '{{LAKE_ID}}';
+        const LAKE_SLUG = '{{LAKE_SLUG}}';
+        const LAKE_NAME = '{{LAKE_NAME}}';
+
+        async function loadLake() {
+            try {
+                const res = await fetch(`/api/lakes/${encodeURIComponent(LAKE_SLUG)}`);
+                if (!res.ok) return;
+                const lake = await res.json();
+                const meta = [];
+                if (lake.region) meta.push(`<span><strong>Region:</strong> ${escHtml(lake.region)}</span>`);
+                if (lake.county) meta.push(`<span><strong>County:</strong> ${escHtml(lake.county)}</span>`);
+                if (lake.state)  meta.push(`<span><strong>State:</strong> ${escHtml(lake.state)}</span>`);
+                document.getElementById('ld-meta').innerHTML = meta.join('');
+                document.getElementById('ld-intro').textContent = lake.intro_text || lake.seo_description || '';
+                if (lake.description) {
+                    document.getElementById('ld-description').textContent = lake.description;
+                } else if (lake.intro_text) {
+                    document.getElementById('ld-description').textContent = lake.intro_text;
+                }
+            } catch (_) { /* degrade silently — server-rendered content already shown */ }
+        }
+
+        async function loadLakeAgents() {
+            const grid = document.getElementById('lake-agents-grid');
+            if (!grid) return;
+            try {
+                const res = await fetch(`/api/lakes/${encodeURIComponent(LAKE_ID)}/agents`);
+                if (!res.ok) throw new Error();
+                const raw = await res.json();
+                const agents = raw.filter(a => a.is_published);
+                if (!agents.length) {
+                    grid.innerHTML = `
+                        <div style="grid-column:1/-1;background:#fff;border:1px solid #edf2f7;border-radius:14px;padding:3rem 2rem;text-align:center;max-width:680px;margin:0 auto;box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+                            <div style="display:inline-flex;align-items:center;gap:0.4rem;background:#ebf4ff;color:#1d6df2;font-size:0.72rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:0.35rem 0.75rem;border-radius:99px;margin-bottom:1rem;">Coming Soon</div>
+                            <h3 style="font-size:1.5rem;font-weight:700;color:#1a202c;margin:0 0 0.6rem;letter-spacing:-0.4px;">${escHtml(LAKE_NAME)} specialists coming soon</h3>
+                            <p style="color:#4a5568;line-height:1.65;margin:0 0 1.5rem;font-size:1rem;">We're onboarding agents who know this lake. Reach out and we'll connect you the moment the right specialist is ready.</p>
+                            <a href="/contact" style="display:inline-block;padding:0.8rem 1.5rem;background:#1d6df2;color:#fff;font-weight:700;border-radius:8px;text-decoration:none;font-size:0.9rem;">Contact us →</a>
+                        </div>`;
+                    return;
+                }
+                grid.innerHTML = agents.slice(0, 6).map(a => {
+                    const photo = a.profile_photo_url || '/assets/images/mn-stillwater-aerial.webp';
+                    const bio   = a.bio || '';
+                    const shortBio = bio.length > 180 ? bio.slice(0, 180).trimEnd() + '…' : bio;
+                    return `
+                        <a href="/agent-profile?slug=${encodeURIComponent(a.slug)}" style="text-decoration:none;color:inherit;display:block;" class="agent-link-wrapper">
+                            <div class="agent-card">
+                                <img src="${escHtml(photo)}" alt="${escHtml(a.display_name)} — ${escHtml(LAKE_NAME)} specialist" class="agent-image" loading="lazy">
+                                <div class="agent-info">
+                                    <h3 class="agent-name">${escHtml(a.display_name)}</h3>
+                                    <div class="agent-title">${escHtml(a.brokerage_name || 'Lake Specialist').toUpperCase()}</div>
+                                    <p class="agent-bio">${escHtml(shortBio)}</p>
+                                </div>
+                            </div>
+                        </a>`;
+                }).join('');
+            } catch (_) {
+                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">Could not load agents.</div>';
+            }
+        }
+
+        function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+        async function loadLakeBlog() {
+            const grid = document.getElementById('lake-blog-grid');
+            if (!grid) return;
+            try {
+                const res = await fetch(`/api/lakes/${encodeURIComponent(LAKE_ID)}/blog-posts`);
+                if (!res.ok) throw new Error();
+                const posts = await res.json();
+                if (!posts.length) {
+                    // Hide the whole section rather than show an awkward empty state.
+                    const section = document.getElementById('lake-blog');
+                    if (section) section.style.display = 'none';
+                    return;
+                }
+                grid.innerHTML = posts.slice(0, 6).map(p => {
+                    const thumb = p.cover_image_url || '/assets/images/mn-canoe-shore.webp';
+                    const date = p.published_at
+                        ? new Date(p.published_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+                        : '';
+                    return `
+                        <a href="/blog-post?slug=${encodeURIComponent(p.slug)}"
+                           style="display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid #edf2f7;border-radius:14px;overflow:hidden;transition:transform 0.15s,box-shadow 0.15s;">
+                            <div style="height:180px;background:#f7f9fa;overflow:hidden;">
+                                <img src="${escHtml(thumb)}" alt="${escHtml(p.title)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">
+                            </div>
+                            <div style="padding:1.1rem 1.25rem 1.25rem;">
+                                <div style="font-size:0.72rem;font-weight:800;color:#1d6df2;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.4rem;">${escHtml(p.tag || 'General')}${date ? ` · ${escHtml(date)}` : ''}</div>
+                                <div style="font-size:1.05rem;font-weight:700;color:#1a202c;line-height:1.35;margin-bottom:0.4rem;">${escHtml(p.title)}</div>
+                                ${p.excerpt ? `<div style="font-size:0.88rem;color:#4a5568;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${escHtml(p.excerpt)}</div>` : ''}
+                            </div>
+                        </a>`;
+                }).join('');
+            } catch (_) {
+                const section = document.getElementById('lake-blog');
+                if (section) section.style.display = 'none';
+            }
+        }
+
+        // ── Local directory (restaurants/marinas/services/photographers) ──
+        const BIZ_SECTIONS = [
+            { type: 'restaurant',   heading: 'Restaurants',          icon: '🍽️', blurb: "Where locals eat, when they're on the water." },
+            { type: 'marina',       heading: 'Marinas & access',     icon: '⛵', blurb: 'Slip rentals, fuel, and public lake access.' },
+            { type: 'service',      heading: 'Services',             icon: '🔧', blurb: 'Dock installation, lawn care, snow removal, and more.' },
+            { type: 'photographer', heading: 'Photographers',        icon: '📷', blurb: 'Listing, drone, and family photography specialists.' },
+        ];
+
+        async function loadLakeBiz() {
+            const container = document.getElementById('biz-sections');
+            if (!container) return;
+            try {
+                const results = await Promise.all(
+                    BIZ_SECTIONS.map(s =>
+                        fetch(`/api/lakes/${encodeURIComponent(LAKE_ID)}/businesses?type=${encodeURIComponent(s.type)}`)
+                            .then(r => r.ok ? r.json() : [])
+                            .catch(() => [])
+                    )
+                );
+                const html = BIZ_SECTIONS.map((section, i) => {
+                    const rows = results[i];
+                    if (!rows.length) return '';
+                    const cards = rows.map(b => {
+                        const thumb = b.featured_image_url || '';
+                        const priceOrCity = [b.city, b.price_range].filter(Boolean).join(' · ');
+                        return `
+                            <div style="background:#fff;border:1px solid #edf2f7;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;">
+                                <div style="height:160px;background:#f7f9fa;overflow:hidden;">
+                                    ${thumb
+                                        ? `<img src="${escHtml(thumb)}" alt="${escHtml(b.name)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">`
+                                        : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#cbd5e0;">${section.icon}</div>`}
+                                </div>
+                                <div style="padding:1.1rem 1.25rem 1.25rem;flex:1;display:flex;flex-direction:column;">
+                                    <div style="font-size:1.05rem;font-weight:700;color:#1a202c;line-height:1.35;margin-bottom:0.3rem;">${escHtml(b.name)}</div>
+                                    ${priceOrCity ? `<div style="font-size:0.78rem;color:#718096;margin-bottom:0.5rem;">${escHtml(priceOrCity)}</div>` : ''}
+                                    ${b.description ? `<div style="font-size:0.88rem;color:#4a5568;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;margin-bottom:0.9rem;">${escHtml(b.description)}</div>` : ''}
+                                    <div style="margin-top:auto;display:flex;gap:0.5rem;flex-wrap:wrap;">
+                                        ${b.website_url ? `<a href="${escHtml(b.website_url)}" target="_blank" rel="noopener" style="font-size:0.8rem;font-weight:700;color:#1d6df2;text-decoration:none;">Visit ↗</a>` : ''}
+                                        ${b.phone ? `<a href="tel:${escHtml(b.phone.replace(/[^\d+]/g,''))}" style="font-size:0.8rem;font-weight:700;color:#4a5568;text-decoration:none;">${escHtml(b.phone)}</a>` : ''}
+                                    </div>
+                                </div>
+                            </div>`;
+                    }).join('');
+                    return `
+                        <div style="margin-bottom:3rem;">
+                            <h2 style="font-size:2rem;font-weight:700;color:#1a202c;margin:0 0 0.5rem;letter-spacing:-0.75px;">${section.icon} ${escHtml(section.heading)} on ${escHtml(LAKE_NAME)}</h2>
+                            <p style="color:#718096;font-size:1rem;margin:0 0 1.75rem;line-height:1.6;">${escHtml(section.blurb)}</p>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;">${cards}</div>
+                        </div>`;
+                }).join('');
+                if (html.trim()) {
+                    container.innerHTML = html;
+                } else {
+                    // No businesses in any category → hide the whole wrapper.
+                    const wrap = document.getElementById('lake-biz');
+                    if (wrap) wrap.style.display = 'none';
+                }
+            } catch (_) {
+                const wrap = document.getElementById('lake-biz');
+                if (wrap) wrap.style.display = 'none';
+            }
+        }
+
+        // ── Nearby towns ─────────────────────────────────────────────────
+        async function loadLakeTowns() {
+            const grid = document.getElementById('lake-towns-grid');
+            const section = document.getElementById('lake-towns');
+            if (!grid || !section) return;
+            try {
+                const res = await fetch(`/api/lakes/${encodeURIComponent(LAKE_ID)}/tags`);
+                if (!res.ok) throw new Error();
+                const towns = await res.json();
+                if (!towns.length) return; // section stays hidden
+                section.style.display = '';
+                grid.innerHTML = towns.map(t => `
+                    <span style="display:inline-flex;align-items:center;gap:0.45rem;background:#fff;border:1px solid #edf2f7;border-radius:99px;padding:0.55rem 1.1rem;font-size:0.92rem;font-weight:600;color:#1a202c;">
+                        <span style="color:#1d6df2;">📍</span>
+                        ${escHtml(t.name)}
+                    </span>
+                `).join('');
+            } catch (_) { /* section stays hidden */ }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadLake();
+            loadLakeAgents();
+            loadLakeBlog();
+            loadLakeBiz();
+            loadLakeTowns();
+        });
+    </script>
+</body>
+</html>

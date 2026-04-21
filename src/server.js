@@ -51,6 +51,8 @@ app.use('/api/assistant', require('./routes/assistant.routes'));
 app.use('/api/activity', require('./routes/activity.routes'));
 app.use('/api/cash-offer', require('./routes/cash-offer.routes'));
 app.use('/api/tags', require('./routes/tag.routes'));
+app.use('/api/lakes', require('./routes/lake.routes'));
+app.use('/api/businesses', require('./routes/business.routes'));
 app.use('/api/resources', require('./routes/resource.routes'));
 
 app.get('/api/health', (req, res) => {
@@ -153,6 +155,69 @@ app.get('/api/config/public', async (req, res) => {
 // ==========================================
 // Serve the existing HTML/CSS UI layer exactly as it was.
 const PROJECT_ROOT = path.join(__dirname, '..');
+
+// ─── Lakes: public browse + dynamic lake pages ─────────────────────────
+// These sit in front of express.static so /lakes and /lakes/:slug resolve
+// to the lake templates, not to any same-named static file. The detail
+// page does a small server-side token replacement so SEO meta tags hit
+// the initial HTML (Google-indexable without needing JS execution).
+const fs = require('fs');
+function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
+}
+app.get('/lakes', (req, res) => {
+    res.sendFile(path.join(PROJECT_ROOT, 'pages/public/lakes-index.html'));
+});
+app.get('/lakes/:slug', async (req, res, next) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT id, slug, name, state, region, county, latitude, longitude,
+                    intro_text, description, hero_image_url, featured_image_url,
+                    seo_title, seo_description, status
+             FROM lakes WHERE slug = $1 LIMIT 1`,
+            [req.params.slug]
+        );
+        const lake = rows[0];
+        if (!lake || lake.status !== 'published') {
+            res.status(404).sendFile(path.join(PROJECT_ROOT, 'pages/public/404.html'), (err) => {
+                if (err) res.status(404).send('Lake not found');
+            });
+            return;
+        }
+
+        const templatePath = path.join(PROJECT_ROOT, 'pages/public/lake-detail.html');
+        fs.readFile(templatePath, 'utf8', (err, html) => {
+            if (err) return next(err);
+            const title = lake.seo_title || `${lake.name} Homes for Sale | ${lake.state} Waterfront Real Estate`;
+            const desc  = lake.seo_description || lake.intro_text || `${lake.name} real estate — waterfront homes and cabins on ${lake.name}, ${lake.state}.`;
+            const canonical = `/lakes/${lake.slug}`;
+            const replacements = {
+                '{{LAKE_SEO_TITLE}}':       escapeHtml(title),
+                '{{LAKE_SEO_DESCRIPTION}}': escapeHtml(desc),
+                '{{LAKE_NAME}}':            escapeHtml(lake.name),
+                '{{LAKE_SLUG}}':            escapeHtml(lake.slug),
+                '{{LAKE_CANONICAL_PATH}}':  escapeHtml(canonical),
+                '{{LAKE_ID}}':              escapeHtml(lake.id),
+                '{{LAKE_HERO_IMAGE}}':      escapeHtml(lake.hero_image_url || '/assets/images/mn-winter-birch-chalet.jpg'),
+                '{{LAKE_LATITUDE}}':        escapeHtml(lake.latitude ?? ''),
+                '{{LAKE_LONGITUDE}}':       escapeHtml(lake.longitude ?? ''),
+                '{{LAKE_REGION}}':          escapeHtml(lake.region || ''),
+                '{{LAKE_COUNTY}}':          escapeHtml(lake.county || ''),
+                '{{LAKE_STATE}}':           escapeHtml(lake.state || ''),
+            };
+            let out = html;
+            for (const [k, v] of Object.entries(replacements)) {
+                out = out.split(k).join(v);
+            }
+            res.type('html').send(out);
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
 app.use(express.static(PROJECT_ROOT));
 
 // Fallback for Next.js-style clean URL resolution (e.g. /buy maps to /buy.html)
@@ -415,6 +480,118 @@ async function ensureTables() {
             CREATE INDEX IF NOT EXISTS idx_lead_tags_tag  ON lead_tags(tag_id);
         `);
 
+        // Lakes catalog — each lake is its own public hub page
+        // (/lakes/<slug>) with its own SEO, imagery, and connected
+        // businesses/agents. Parallel to the geo tags system above, but
+        // richer (content + SEO + media + join tables).
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS lakes (
+                id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                slug               VARCHAR(120) UNIQUE NOT NULL,
+                name               VARCHAR(200) NOT NULL,
+                state              VARCHAR(2)   NOT NULL DEFAULT 'MN',
+                region             VARCHAR(100),
+                county             VARCHAR(100),
+                latitude           NUMERIC(9,6),
+                longitude          NUMERIC(9,6),
+                intro_text         TEXT,
+                description        TEXT,
+                hero_image_url     TEXT,
+                featured_image_url TEXT,
+                seo_title          VARCHAR(300),
+                seo_description    TEXT,
+                status             VARCHAR(20) NOT NULL DEFAULT 'draft',
+                created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_lakes_state_region ON lakes(state, region);
+            CREATE INDEX IF NOT EXISTS idx_lakes_status       ON lakes(status);
+            CREATE INDEX IF NOT EXISTS idx_lakes_coords       ON lakes(latitude, longitude)
+                WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
+            CREATE INDEX IF NOT EXISTS idx_lakes_name_lower   ON lakes(lower(name));
+
+            CREATE TABLE IF NOT EXISTS agent_lakes (
+                id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                agent_id    UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+                lake_id     UUID NOT NULL REFERENCES lakes(id)  ON DELETE CASCADE,
+                is_featured BOOLEAN NOT NULL DEFAULT FALSE,
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (agent_id, lake_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_agent_lakes_lake  ON agent_lakes(lake_id);
+            CREATE INDEX IF NOT EXISTS idx_agent_lakes_agent ON agent_lakes(agent_id);
+
+            CREATE TABLE IF NOT EXISTS blog_post_lakes (
+                id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                blog_post_id UUID NOT NULL REFERENCES blog_posts(id) ON DELETE CASCADE,
+                lake_id      UUID NOT NULL REFERENCES lakes(id)      ON DELETE CASCADE,
+                created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (blog_post_id, lake_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_blog_post_lakes_lake ON blog_post_lakes(lake_id);
+            CREATE INDEX IF NOT EXISTS idx_blog_post_lakes_post ON blog_post_lakes(blog_post_id);
+
+            -- Nearby-towns join: reuses the existing tags catalog (each tag
+            -- is a town). One lake can be near many towns and one town can
+            -- border many lakes.
+            CREATE TABLE IF NOT EXISTS lake_tags (
+                id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                lake_id    UUID NOT NULL REFERENCES lakes(id) ON DELETE CASCADE,
+                tag_id     UUID NOT NULL REFERENCES tags(id)  ON DELETE CASCADE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (lake_id, tag_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_lake_tags_lake ON lake_tags(lake_id);
+            CREATE INDEX IF NOT EXISTS idx_lake_tags_tag  ON lake_tags(tag_id);
+        `);
+
+        // Businesses catalog — unified table for restaurants, marinas,
+        // service providers, photographers, builders, boat rentals and
+        // other local categories. Each business can connect to multiple
+        // lakes via business_lakes. `type` is loose (VARCHAR) so new
+        // categories can be added without a migration; the admin UI
+        // defaults to a known set.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS businesses (
+                id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                slug                VARCHAR(160) UNIQUE NOT NULL,
+                name                VARCHAR(200) NOT NULL,
+                type                VARCHAR(40)  NOT NULL,
+                description         TEXT,
+                phone               VARCHAR(50),
+                email               VARCHAR(255),
+                website_url         TEXT,
+                address             TEXT,
+                city                VARCHAR(120),
+                state               VARCHAR(2)   NOT NULL DEFAULT 'MN',
+                zip                 VARCHAR(20),
+                latitude            NUMERIC(9,6),
+                longitude           NUMERIC(9,6),
+                hours               TEXT,
+                price_range         VARCHAR(20),
+                featured_image_url  TEXT,
+                gallery             JSONB NOT NULL DEFAULT '[]'::jsonb,
+                status              VARCHAR(20) NOT NULL DEFAULT 'active',
+                created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_businesses_type    ON businesses(type);
+            CREATE INDEX IF NOT EXISTS idx_businesses_status  ON businesses(status);
+            CREATE INDEX IF NOT EXISTS idx_businesses_name_lower ON businesses(lower(name));
+            CREATE INDEX IF NOT EXISTS idx_businesses_city_lower ON businesses(lower(city));
+
+            CREATE TABLE IF NOT EXISTS business_lakes (
+                id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                business_id UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+                lake_id     UUID NOT NULL REFERENCES lakes(id)      ON DELETE CASCADE,
+                is_featured BOOLEAN NOT NULL DEFAULT FALSE,
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (business_id, lake_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_business_lakes_lake     ON business_lakes(lake_id);
+            CREATE INDEX IF NOT EXISTS idx_business_lakes_business ON business_lakes(business_id);
+        `);
+
         // Generic key/value app config (match radius lives here; more knobs
         // will follow). JSON-typed so future values can be objects.
         await pool.query(`
@@ -498,6 +675,34 @@ async function ensureTables() {
             });
             await pool.query(
                 `INSERT INTO tags (slug, name, state, region, latitude, longitude)
+                 VALUES ${values.join(', ')}
+                 ON CONFLICT (slug) DO NOTHING`,
+                params
+            );
+        }
+
+        // Seed the lakes catalog. Same idempotent ON CONFLICT (slug) DO
+        // NOTHING pattern — admin edits to an existing lake are never
+        // overwritten by a redeploy.
+        const LAKES_SEED = require('./database/lakes-seed');
+        if (Array.isArray(LAKES_SEED) && LAKES_SEED.length) {
+            const values = [];
+            const params = [];
+            LAKES_SEED.forEach((l, i) => {
+                const base = i * 12;
+                values.push(`($${base+1}, $${base+2}, $${base+3}, $${base+4}, $${base+5}, $${base+6}, $${base+7}, $${base+8}, $${base+9}, $${base+10}, $${base+11}, $${base+12})`);
+                params.push(
+                    l.slug, l.name, l.state || 'MN', l.region || null, l.county || null,
+                    l.latitude ?? null, l.longitude ?? null,
+                    l.intro_text || null, l.seo_title || null, l.seo_description || null,
+                    l.status || 'draft',
+                    l.description || null,
+                );
+            });
+            await pool.query(
+                `INSERT INTO lakes
+                   (slug, name, state, region, county, latitude, longitude,
+                    intro_text, seo_title, seo_description, status, description)
                  VALUES ${values.join(', ')}
                  ON CONFLICT (slug) DO NOTHING`,
                 params

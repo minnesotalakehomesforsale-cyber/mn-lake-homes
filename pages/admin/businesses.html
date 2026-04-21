@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Businesses | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
+        .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        .admin-main { padding: 3rem 3.5rem; overflow-y: auto; }
+
+        .toolbar { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.5rem; }
+        .toolbar input, .toolbar select { font-family: inherit; font-size: 0.9rem; padding: 0.55rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; outline: none; }
+        .toolbar input:focus, .toolbar select:focus { border-color: #1d6df2; }
+        .toolbar input[type="search"] { flex: 1; min-width: 240px; }
+        .btn-primary { background: #1d6df2; color: #fff; border: none; padding: 0.6rem 1rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; font-family: inherit; }
+        .btn-primary:hover { background: #155bc9; }
+        .btn-ghost { background: #fff; color: #4a5568; border: 1px solid #e2e8f0; padding: 0.55rem 0.85rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; font-family: inherit; text-decoration: none; display: inline-block; }
+        .btn-ghost:hover { border-color: #1d6df2; color: #1d6df2; }
+
+        .biz-table { width: 100%; background: #fff; border: 1px solid #edf2f7; border-radius: 12px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+        .biz-table th { text-align: left; padding: 0.9rem 1rem; font-size: 0.72rem; font-weight: 800; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; background: #f7f9fa; border-bottom: 1px solid #edf2f7; }
+        .biz-table td { padding: 0.85rem 1rem; font-size: 0.9rem; color: #2d3748; border-bottom: 1px solid #f7f9fa; vertical-align: middle; }
+        .biz-table tr:last-child td { border-bottom: none; }
+        .biz-table td.muted { color: #a0aec0; font-size: 0.82rem; }
+        .pill { display: inline-block; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.55rem; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .pill.active { background: #f0fff4; color: #2f855a; }
+        .pill.draft { background: #fffbea; color: #b45309; }
+        .pill.archived { background: #fff5f5; color: #c53030; }
+        .pill.type { background: #ebf4ff; color: #2b6cb0; }
+        .row-actions { display: flex; gap: 0.35rem; }
+        .row-actions button, .row-actions a { font-size: 0.78rem; padding: 0.35rem 0.7rem; }
+        .danger { color: #c53030; border-color: #feb2b2; }
+        .danger:hover { background: #fff5f5; border-color: #fc8181; }
+
+        /* Modal */
+        .ovl { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 9000; align-items: flex-start; justify-content: center; padding: 3rem 1rem; overflow-y: auto; }
+        .ovl.open { display: flex; }
+        .modal { background: #fff; border-radius: 16px; width: 100%; max-width: 720px; box-shadow: 0 30px 60px rgba(0,0,0,0.25); overflow: hidden; margin: auto; }
+        .m-hdr { background: #1a202c; padding: 1.5rem 1.75rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+        .m-hdr h2 { color: #fff; font-size: 1.1rem; font-weight: 800; margin: 0; }
+        .m-close { background: none; border: none; color: rgba(255,255,255,0.6); font-size: 1.5rem; cursor: pointer; line-height: 1; padding: 0; }
+        .m-body { padding: 1.75rem; max-height: calc(100vh - 8rem); overflow-y: auto; }
+        .field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1rem; }
+        .field label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #4a5568; }
+        .field input, .field textarea, .field select { font-family: inherit; font-size: 0.95rem; padding: 0.65rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; outline: none; }
+        .field textarea { min-height: 80px; resize: vertical; }
+        .field input:focus, .field textarea:focus, .field select:focus { border-color: #1d6df2; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
+        .hint { font-size: 0.75rem; color: #718096; }
+        .err { display: none; color: #c53030; font-size: 0.85rem; padding: 0.6rem 0.85rem; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; margin-bottom: 1rem; }
+        .section-label { font-size: 0.7rem; font-weight: 800; color: #a0aec0; letter-spacing: 1px; text-transform: uppercase; margin: 1.25rem 0 0.6rem; }
+        .thumb { width: 100%; height: 160px; background: #f7f9fa; border: 1px dashed #e2e8f0; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; color: #a0aec0; font-size: 0.85rem; margin-bottom: 0.5rem; }
+        .thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .upload-btn { display: inline-block; padding: 0.5rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #f7f9fa; color: #1a202c; font-size: 0.8rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .upload-btn:hover { border-color: #1d6df2; color: #1d6df2; }
+
+        /* Lakes picker (chip-style) */
+        .lake-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; padding: 0.4rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; min-height: 2.4rem; }
+        .lake-chip { font-size: 0.78rem; font-weight: 700; padding: 0.28rem 0.7rem; border-radius: 99px; cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #4a5568; font-family: inherit; }
+        .lake-chip.on { border-color: #1d6df2; background: #1d6df2; color: #fff; }
+
+        @media (max-width: 900px) {
+            .admin-wrap { grid-template-columns: 1fr; }
+            .admin-main { padding: 1.75rem 1.25rem; }
+            .biz-table { display: block; overflow-x: auto; }
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-nav-badges.js" defer></script>
+</head>
+<body>
+    <div class="admin-wrap">
+        <admin-sidebar active="businesses"></admin-sidebar>
+
+        <main class="admin-main">
+            <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h1 style="font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.75px; margin: 0 0 0.25rem;">Businesses</h1>
+                    <p style="color: #718096; font-size: 0.95rem; margin: 0;">Local restaurants, marinas, services, and more. Connect each to the lakes they serve.</p>
+                </div>
+                <button class="btn-primary" onclick="openCreate()">+ New business</button>
+            </header>
+
+            <div class="toolbar">
+                <input type="search" id="search" placeholder="Search by name or city…" oninput="applyFilters()">
+                <select id="filter-type" onchange="applyFilters()">
+                    <option value="">All types</option>
+                    <option value="restaurant">Restaurant</option>
+                    <option value="marina">Marina</option>
+                    <option value="service">Service provider</option>
+                    <option value="photographer">Photographer</option>
+                    <option value="builder">Builder / contractor</option>
+                    <option value="boat_rental">Boat rental</option>
+                    <option value="outdoor_recreation">Outdoor recreation</option>
+                    <option value="other">Other</option>
+                </select>
+                <select id="filter-status" onchange="load()">
+                    <option value="all">All statuses</option>
+                    <option value="active">Active</option>
+                    <option value="draft">Draft</option>
+                    <option value="archived">Archived</option>
+                </select>
+                <span id="count" class="hint" style="margin-left:auto;"></span>
+            </div>
+
+            <div id="table-wrap">
+                <div style="padding:3rem;text-align:center;color:#a0aec0;">Loading businesses…</div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="modal" class="ovl" onclick="if(event.target===this) closeModal()">
+        <div class="modal">
+            <div class="m-hdr">
+                <h2 id="modal-title">New business</h2>
+                <button class="m-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="m-body">
+                <div id="modal-err" class="err"></div>
+
+                <div class="section-label">Identity</div>
+                <div class="field">
+                    <label>Name *</label>
+                    <input id="f-name" placeholder="e.g. Lord Fletcher's On The Lake" oninput="onNameChange()">
+                </div>
+                <div class="grid-2">
+                    <div class="field">
+                        <label>Type *</label>
+                        <select id="f-type">
+                            <option value="restaurant">Restaurant</option>
+                            <option value="marina">Marina</option>
+                            <option value="service">Service provider</option>
+                            <option value="photographer">Photographer</option>
+                            <option value="builder">Builder / contractor</option>
+                            <option value="boat_rental">Boat rental</option>
+                            <option value="outdoor_recreation">Outdoor recreation</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Slug</label>
+                        <input id="f-slug" placeholder="auto from type + name">
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Description</label>
+                    <textarea id="f-desc" placeholder="What this business offers and why it belongs on a lake page."></textarea>
+                </div>
+
+                <div class="section-label">Contact</div>
+                <div class="grid-3">
+                    <div class="field">
+                        <label>Phone</label>
+                        <input id="f-phone" placeholder="(555) 555-5555">
+                    </div>
+                    <div class="field">
+                        <label>Email</label>
+                        <input id="f-email" type="email" placeholder="hello@business.com">
+                    </div>
+                    <div class="field">
+                        <label>Website</label>
+                        <input id="f-website" placeholder="https://…">
+                    </div>
+                </div>
+
+                <div class="section-label">Location</div>
+                <div class="field">
+                    <label>Street address</label>
+                    <input id="f-address" placeholder="123 Main Street">
+                </div>
+                <div class="grid-3">
+                    <div class="field">
+                        <label>City</label>
+                        <input id="f-city" placeholder="Wayzata">
+                    </div>
+                    <div class="field">
+                        <label>State</label>
+                        <input id="f-state" maxlength="2" value="MN">
+                    </div>
+                    <div class="field">
+                        <label>Zip</label>
+                        <input id="f-zip" placeholder="55391">
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="field">
+                        <label>Latitude</label>
+                        <input id="f-lat" type="number" step="0.000001" placeholder="Auto-geocoded from address">
+                    </div>
+                    <div class="field">
+                        <label>Longitude</label>
+                        <input id="f-lng" type="number" step="0.000001" placeholder="Auto-geocoded from address">
+                    </div>
+                </div>
+
+                <div class="section-label">Details</div>
+                <div class="grid-2">
+                    <div class="field">
+                        <label>Hours</label>
+                        <input id="f-hours" placeholder="Mon–Sat 11am–10pm, Sun 10am–9pm">
+                    </div>
+                    <div class="field">
+                        <label>Price range</label>
+                        <select id="f-price">
+                            <option value="">—</option>
+                            <option value="$">$</option>
+                            <option value="$$">$$</option>
+                            <option value="$$$">$$$</option>
+                            <option value="$$$$">$$$$</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section-label">Featured image</div>
+                <div class="thumb" id="thumb"><span>No image</span></div>
+                <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                    <input id="f-image" placeholder="Paste an image URL or upload →" oninput="updateThumb()" style="flex:1;min-width:220px;font-family:inherit;font-size:0.95rem;padding:0.65rem 0.85rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;outline:none;">
+                    <label class="upload-btn" for="f-upload">📤 Upload</label>
+                    <input type="file" id="f-upload" accept="image/*" style="display:none;" onchange="uploadImage(this.files[0])">
+                    <span id="upload-status" class="hint"></span>
+                </div>
+
+                <div class="section-label">Lakes this business serves</div>
+                <div id="lake-chips" class="lake-chips">
+                    <span class="hint" style="padding:0.3rem 0.5rem;">Loading lakes…</span>
+                </div>
+                <p class="hint">Click any lake above to attach. The business will appear on those lakes' pages under the matching type section.</p>
+
+                <div class="section-label">Status</div>
+                <div class="field">
+                    <label>Status</label>
+                    <select id="f-status">
+                        <option value="active">Active (shown on public lake pages)</option>
+                        <option value="draft">Draft (hidden from public)</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
+
+                <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
+                    <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+                    <button class="btn-primary" id="save-btn" onclick="saveBusiness()">Save business</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let _all = [];
+        let _editingId = null;
+        let _allLakes = [];
+        let _selectedLakeIds = new Set();
+
+        async function load() {
+            const status = document.getElementById('filter-status').value;
+            const wrap = document.getElementById('table-wrap');
+            wrap.innerHTML = '<div style="padding:3rem;text-align:center;color:#a0aec0;">Loading…</div>';
+            try {
+                const qs = status && status !== 'all' ? `?status=${encodeURIComponent(status)}` : '?status=all';
+                const res = await fetch(`/api/businesses${qs}`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to load');
+                _all = await res.json();
+                applyFilters();
+            } catch (err) {
+                wrap.innerHTML = '<div style="padding:3rem;text-align:center;color:#c53030;">Failed to load businesses.</div>';
+            }
+        }
+
+        function applyFilters() {
+            const search = (document.getElementById('search').value || '').toLowerCase().trim();
+            const type   = document.getElementById('filter-type').value;
+            const rows = _all.filter(b => {
+                if (type && b.type !== type) return false;
+                if (search && !`${b.name} ${b.city || ''}`.toLowerCase().includes(search)) return false;
+                return true;
+            });
+            render(rows);
+            document.getElementById('count').textContent = `${rows.length} of ${_all.length}`;
+        }
+
+        function render(rows) {
+            const wrap = document.getElementById('table-wrap');
+            if (!rows.length) {
+                wrap.innerHTML = '<div style="padding:3rem;text-align:center;color:#a0aec0;">No matching businesses. Use "+ New business" to add one.</div>';
+                return;
+            }
+            wrap.innerHTML = `
+                <table class="biz-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 26%;">Name</th>
+                            <th style="width: 14%;">Type</th>
+                            <th style="width: 18%;">Location</th>
+                            <th style="width: 12%;">Lakes</th>
+                            <th style="width: 10%;">Status</th>
+                            <th style="width: 20%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows.map(b => `
+                            <tr>
+                                <td>
+                                    <strong>${escHtml(b.name)}</strong>
+                                    <div class="muted" style="font-size:0.72rem; font-family:monospace;">${escHtml(b.slug)}</div>
+                                </td>
+                                <td><span class="pill type">${escHtml(prettyType(b.type))}</span></td>
+                                <td class="muted">${escHtml([b.city, b.state].filter(Boolean).join(', ') || '—')}</td>
+                                <td class="muted">${b.lake_count ?? 0}</td>
+                                <td>${statusPill(b.status)}</td>
+                                <td class="row-actions">
+                                    <button class="btn-ghost" onclick="openEdit('${b.id}')">Edit</button>
+                                    <button class="btn-ghost danger" onclick="archive('${b.id}','${escAttr(b.name)}')">Archive</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+        }
+
+        function prettyType(t) {
+            return ({
+                restaurant: 'Restaurant',
+                marina: 'Marina',
+                service: 'Service',
+                photographer: 'Photographer',
+                builder: 'Builder',
+                boat_rental: 'Boat rental',
+                outdoor_recreation: 'Outdoor rec',
+                other: 'Other',
+            })[t] || t;
+        }
+
+        function statusPill(s) {
+            if (s === 'active')   return '<span class="pill active">active</span>';
+            if (s === 'archived') return '<span class="pill archived">archived</span>';
+            return '<span class="pill draft">draft</span>';
+        }
+
+        // ── Modal ────────────────────────────────────────────────────────
+        function openCreate() {
+            _editingId = null;
+            document.getElementById('modal-title').textContent = 'New business';
+            ['f-name','f-slug','f-desc','f-phone','f-email','f-website','f-address','f-city','f-zip','f-lat','f-lng','f-hours','f-image']
+                .forEach(id => document.getElementById(id).value = '');
+            document.getElementById('f-type').value   = 'restaurant';
+            document.getElementById('f-state').value  = 'MN';
+            document.getElementById('f-price').value  = '';
+            document.getElementById('f-status').value = 'active';
+            _selectedLakeIds = new Set();
+            renderLakeChips();
+            updateThumb();
+            document.getElementById('modal-err').style.display = 'none';
+            document.getElementById('upload-status').textContent = '';
+            document.getElementById('modal').classList.add('open');
+            setTimeout(() => document.getElementById('f-name').focus(), 80);
+        }
+
+        async function openEdit(id) {
+            const b = _all.find(x => x.id === id);
+            if (!b) return;
+            _editingId = id;
+            document.getElementById('modal-title').textContent = `Edit: ${b.name}`;
+            document.getElementById('f-name').value    = b.name || '';
+            document.getElementById('f-type').value    = b.type || 'restaurant';
+            document.getElementById('f-slug').value    = b.slug || '';
+            document.getElementById('f-desc').value    = b.description || '';
+            document.getElementById('f-phone').value   = b.phone || '';
+            document.getElementById('f-email').value   = b.email || '';
+            document.getElementById('f-website').value = b.website_url || '';
+            document.getElementById('f-address').value = b.address || '';
+            document.getElementById('f-city').value    = b.city || '';
+            document.getElementById('f-state').value   = b.state || 'MN';
+            document.getElementById('f-zip').value     = b.zip || '';
+            document.getElementById('f-lat').value     = b.latitude  ?? '';
+            document.getElementById('f-lng').value     = b.longitude ?? '';
+            document.getElementById('f-hours').value   = b.hours || '';
+            document.getElementById('f-price').value   = b.price_range || '';
+            document.getElementById('f-image').value   = b.featured_image_url || '';
+            document.getElementById('f-status').value  = b.status || 'active';
+            updateThumb();
+            document.getElementById('modal-err').style.display = 'none';
+            document.getElementById('upload-status').textContent = '';
+            document.getElementById('modal').classList.add('open');
+
+            // Load the lakes this business is currently connected to.
+            _selectedLakeIds = new Set();
+            try {
+                const r = await fetch(`/api/businesses/${id}/lakes`, { credentials: 'include' });
+                if (r.ok) {
+                    const lakes = await r.json();
+                    _selectedLakeIds = new Set(lakes.map(l => l.id));
+                }
+            } catch (_) {}
+            renderLakeChips();
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('open');
+        }
+
+        function onNameChange() {
+            if (_editingId) return;
+            const name = document.getElementById('f-name').value.trim();
+            const type = document.getElementById('f-type').value;
+            document.getElementById('f-slug').placeholder = name
+                ? `${type}-${name}`.toLowerCase().replace(/[^\w\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-')
+                : 'auto from type + name';
+        }
+
+        function updateThumb() {
+            const url = document.getElementById('f-image').value.trim();
+            const el  = document.getElementById('thumb');
+            el.innerHTML = url
+                ? `<img src="${escHtml(url)}" onerror="this.outerHTML='<span>Broken image URL</span>';">`
+                : '<span>No image</span>';
+        }
+
+        async function uploadImage(file) {
+            if (!file) return;
+            const statusEl = document.getElementById('upload-status');
+            statusEl.textContent = `Uploading ${file.name}…`;
+            statusEl.style.color = '#718096';
+            const fd = new FormData();
+            fd.append('image', file);
+            try {
+                const res = await fetch('/api/businesses/upload-image', { method: 'POST', body: fd, credentials: 'include' });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                document.getElementById('f-image').value = data.url;
+                updateThumb();
+                statusEl.textContent = '✓ Uploaded';
+                statusEl.style.color = '#2f855a';
+            } catch (err) {
+                statusEl.textContent = `Error: ${err.message}`;
+                statusEl.style.color = '#c53030';
+            }
+        }
+
+        // ── Lakes picker ─────────────────────────────────────────────────
+        async function loadLakeCatalog() {
+            try {
+                const r = await fetch('/api/lakes?status=all', { credentials: 'include' });
+                if (r.ok) _allLakes = await r.json();
+            } catch (_) { _allLakes = []; }
+            renderLakeChips();
+        }
+
+        function renderLakeChips() {
+            const el = document.getElementById('lake-chips');
+            if (!_allLakes.length) {
+                el.innerHTML = '<span class="hint" style="padding:0.3rem 0.5rem;">No lakes configured yet.</span>';
+                return;
+            }
+            el.innerHTML = _allLakes.map(l => {
+                const on = _selectedLakeIds.has(l.id);
+                return `<button type="button" class="lake-chip ${on ? 'on' : ''}" onclick="toggleLake('${l.id}')">${escHtml(l.name)}</button>`;
+            }).join('');
+        }
+
+        function toggleLake(id) {
+            if (_selectedLakeIds.has(id)) _selectedLakeIds.delete(id);
+            else _selectedLakeIds.add(id);
+            renderLakeChips();
+        }
+
+        // ── Save ─────────────────────────────────────────────────────────
+        async function saveBusiness() {
+            const err = document.getElementById('modal-err');
+            err.style.display = 'none';
+            const name = document.getElementById('f-name').value.trim();
+            const type = document.getElementById('f-type').value;
+            if (!name) { err.textContent = 'Name is required.'; err.style.display = 'block'; return; }
+            if (!type) { err.textContent = 'Type is required.'; err.style.display = 'block'; return; }
+
+            const body = {
+                name, type,
+                slug:        document.getElementById('f-slug').value.trim() || undefined,
+                description: document.getElementById('f-desc').value.trim() || null,
+                phone:       document.getElementById('f-phone').value.trim() || null,
+                email:       document.getElementById('f-email').value.trim() || null,
+                website_url: document.getElementById('f-website').value.trim() || null,
+                address:     document.getElementById('f-address').value.trim() || null,
+                city:        document.getElementById('f-city').value.trim() || null,
+                state:       document.getElementById('f-state').value.trim().toUpperCase() || 'MN',
+                zip:         document.getElementById('f-zip').value.trim() || null,
+                latitude:    document.getElementById('f-lat').value === '' ? null : Number(document.getElementById('f-lat').value),
+                longitude:   document.getElementById('f-lng').value === '' ? null : Number(document.getElementById('f-lng').value),
+                hours:       document.getElementById('f-hours').value.trim() || null,
+                price_range: document.getElementById('f-price').value || null,
+                featured_image_url: document.getElementById('f-image').value.trim() || null,
+                status:      document.getElementById('f-status').value,
+            };
+
+            const btn = document.getElementById('save-btn');
+            btn.disabled = true; btn.textContent = 'Saving…';
+            try {
+                const url = _editingId ? `/api/businesses/${_editingId}` : '/api/businesses';
+                const method = _editingId ? 'PATCH' : 'POST';
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(body),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                const savedId = data.id || _editingId;
+
+                // Push the lake set after the business write succeeds.
+                await fetch(`/api/businesses/${savedId}/lakes`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ lakeIds: [..._selectedLakeIds] }),
+                }).catch(() => {});
+
+                closeModal();
+                await load();
+            } catch (e) {
+                err.textContent = e.message || 'Save failed.';
+                err.style.display = 'block';
+            } finally {
+                btn.disabled = false; btn.textContent = 'Save business';
+            }
+        }
+
+        async function archive(id, name) {
+            if (!confirm(`Archive "${name}"? It will be hidden from public pages.`)) return;
+            try {
+                const res = await fetch(`/api/businesses/${id}`, { method: 'DELETE', credentials: 'include' });
+                if (!res.ok) throw new Error();
+                await load();
+            } catch (_) { alert('Failed to archive.'); }
+        }
+
+        // ── Utilities ────────────────────────────────────────────────────
+        function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+        function escAttr(s) { return escHtml(s).replace(/'/g, '&#39;'); }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && document.getElementById('modal').classList.contains('open')) closeModal();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadLakeCatalog();
+            load();
+        });
+    </script>
+</body>
+</html>
