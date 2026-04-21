@@ -226,10 +226,14 @@ class GlobalHeader extends HTMLElement {
                         { label: 'Get a Cash Offer', href: `${bp}cash-offer.html` },
                         { label: 'How It Works', href: `${bp}buy.html` },
                     ]},
-                    { heading: 'Resources', links: [
-                        { label: 'Buyer Guides & Tools', href: `${bp}resources.html` },
-                        { label: 'Blog', href: `${bp}blog.html` },
-                        { label: 'FAQ', href: `${bp}faq.html` },
+                    { heading: 'Buyer Resources', links: [
+                        { label: 'Buyer Guides & Tools',   href: `${bp}resources.html?search=buyer` },
+                        { label: 'Property Value Calculator', href: `${bp}resources.html?search=valuation` },
+                        { label: 'Mortgage Pre-Approval',  href: `${bp}resources.html?search=financing` },
+                        { label: 'Dock & Permits',         href: `${bp}resources.html?search=permit` },
+                        { label: 'Summertime Buying',      href: `${bp}resources.html?search=summer` },
+                        { label: 'Blog',                   href: `${bp}blog.html` },
+                        { label: 'FAQ',                    href: `${bp}faq.html` },
                     ]},
                 ]
             },
@@ -245,10 +249,14 @@ class GlobalHeader extends HTMLElement {
                         { label: 'Get a Cash Offer', href: `${bp}cash-offer.html` },
                         { label: 'How Cash Offers Work', href: `${bp}cash-offer.html` },
                     ]},
-                    { heading: 'Resources', links: [
-                        { label: 'Seller Guides & Tools', href: `${bp}resources.html` },
-                        { label: 'Blog', href: `${bp}blog.html` },
-                        { label: 'FAQ', href: `${bp}faq.html` },
+                    { heading: 'Seller Resources', links: [
+                        { label: 'Seller Guides & Tools', href: `${bp}resources.html?search=seller` },
+                        { label: 'Pricing & Valuation',   href: `${bp}resources.html?search=valuation` },
+                        { label: 'Selling a Cabin',       href: `${bp}resources.html?search=cabin` },
+                        { label: 'Closing Costs Calculator', href: `${bp}resources.html?search=closing` },
+                        { label: 'Market Reports',        href: `${bp}resources.html?category=Market%20Reports` },
+                        { label: 'Blog',                  href: `${bp}blog.html` },
+                        { label: 'FAQ',                   href: `${bp}faq.html` },
                     ]},
                 ]
             },
@@ -264,11 +272,14 @@ class GlobalHeader extends HTMLElement {
                         { label: 'Agent Login', href: `${bp}agent-login.html` },
                         { label: 'Contact Us', href: `${bp}contact.html` },
                     ]},
-                    { heading: 'Resources', links: [
-                        { label: 'Resources Library', href: `${bp}resources.html` },
-                        { label: 'Blog', href: `${bp}blog.html` },
-                        { label: 'Lake Minnetonka Guide', href: `${bp}lake-minnetonka.html` },
-                        { label: 'About MNLH', href: `${bp}about.html` },
+                    { heading: 'Agent Resources', links: [
+                        { label: 'Agent Resource Library', href: `${bp}resources.html?search=agent` },
+                        { label: 'Market Reports',         href: `${bp}resources.html?category=Market%20Reports` },
+                        { label: 'Listing Templates',      href: `${bp}resources.html?category=Templates` },
+                        { label: 'Training & Scripts',     href: `${bp}resources.html?search=training` },
+                        { label: 'Lake Minnetonka Guide',  href: `${bp}lake-minnetonka.html` },
+                        { label: 'Blog',                   href: `${bp}blog.html` },
+                        { label: 'About MNLH',             href: `${bp}about.html` },
                     ]},
                 ]
             },
