@@ -384,12 +384,16 @@ class GlobalHeader extends HTMLElement {
         <header class="navbar" style="background-color: var(--bg-dark); border-bottom: 1px solid rgba(255,255,255,0.08);
                 position: fixed; width: 100%; z-index: 1000; top: 0;">
             <div class="logo">
-                <a href="${rp}index.html" style="display:flex;align-items:center;">
-                    <svg width="34" height="32" viewBox="0 0 100 88" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+                <a href="${rp}index.html" class="brand-wordmark" aria-label="Minnesota Lake Homes For Sale">
+                    <svg class="brand-icon" width="32" height="30" viewBox="0 0 100 88" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <polyline points="4,52 50,10 96,52"/>
                         <polyline points="72,28 72,16 84,16 84,42"/>
                         <polyline points="17,52 17,82 83,82 83,52"/>
                     </svg>
+                    <span class="brand-text">
+                        <span class="brand-top">Minnesota</span>
+                        <span class="brand-bot">LakeHomesForSale.com</span>
+                    </span>
                 </a>
             </div>
             <nav class="nav-links">

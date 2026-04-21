@@ -61,6 +61,44 @@ body {
     letter-spacing: -0.5px;
 }
 
+/* Icon + stacked wordmark. The two text lines share the same white
+   and are tuned so the bottom line ("LakeHomesForSale.com") runs
+   roughly the same visual width as the top line ("Minnesota") — a
+   hair wider is intentional. */
+.brand-wordmark {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.6rem;
+    text-decoration: none;
+    color: #fff;
+    font-family: var(--font-family);
+    white-space: nowrap;
+    padding: 2px 0;
+}
+.brand-wordmark:hover { opacity: 0.92; }
+.brand-icon { flex-shrink: 0; color: #fff; }
+.brand-text {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1;
+}
+.brand-top {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.6px;
+    color: #fff;
+}
+.brand-bot {
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.35px;
+    text-transform: none;
+    color: #fff;
+    margin-top: 0.2rem;
+}
+
 .logo-icon {
     width: 24px;
     height: 24px;
@@ -348,6 +386,10 @@ body {
     /* Tighten the mobile header: less padding, smaller logo + buttons */
     .navbar { padding: 0.85rem 1rem; }
     .navbar .logo svg { width: 28px; height: 26px; }
+    .brand-wordmark { gap: 0.45rem; }
+    .brand-icon { width: 26px; height: 24px; }
+    .brand-top { font-size: 1.05rem; letter-spacing: -0.45px; }
+    .brand-bot { font-size: 0.54rem; letter-spacing: 0.25px; margin-top: 0.15rem; }
     .mobile-menu-toggle { padding: 0.4rem; margin-left: 0.25rem; }
     .mobile-menu-toggle svg { width: 20px; height: 20px; }
     .mobile-auth-inline { font-size: 0.85rem; padding: 0.4rem 0.6rem; }
