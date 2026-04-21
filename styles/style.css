@@ -43,7 +43,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.5rem 3rem;
+    padding: 1.25rem 1.5rem;
     background-color: var(--bg-dark);
     position: fixed;
     width: 100%;
@@ -85,13 +85,13 @@ body {
     line-height: 1;
 }
 .brand-top {
-    font-size: 1.35rem;
+    font-size: 1.3rem;
     font-weight: 800;
     letter-spacing: -0.6px;
     color: #fff;
 }
 .brand-bot {
-    font-size: 0.66rem;
+    font-size: 0.64rem;
     font-weight: 700;
     letter-spacing: 0.35px;
     text-transform: none;
@@ -386,10 +386,10 @@ body {
     /* Tighten the mobile header: less padding, smaller logo + buttons */
     .navbar { padding: 0.85rem 1rem; }
     .navbar .logo svg { width: 28px; height: 26px; }
-    .brand-wordmark { gap: 0.45rem; }
-    .brand-icon { width: 26px; height: 24px; }
-    .brand-top { font-size: 1.05rem; letter-spacing: -0.45px; }
-    .brand-bot { font-size: 0.54rem; letter-spacing: 0.25px; margin-top: 0.15rem; }
+    .brand-wordmark { gap: 0.5rem; }
+    .brand-icon { width: 32px; height: 28px; }
+    .brand-top { font-size: 1rem; letter-spacing: -0.45px; }
+    .brand-bot { font-size: 0.52rem; letter-spacing: 0.25px; margin-top: 0.15rem; }
     .mobile-menu-toggle { padding: 0.4rem; margin-left: 0.25rem; }
     .mobile-menu-toggle svg { width: 20px; height: 20px; }
     .mobile-auth-inline { font-size: 0.85rem; padding: 0.4rem 0.6rem; }

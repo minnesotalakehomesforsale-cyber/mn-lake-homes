@@ -385,7 +385,7 @@ class GlobalHeader extends HTMLElement {
                 position: fixed; width: 100%; z-index: 1000; top: 0;">
             <div class="logo">
                 <a href="${rp}index.html" class="brand-wordmark" aria-label="Minnesota Lake Homes For Sale">
-                    <svg class="brand-icon" width="32" height="30" viewBox="0 0 100 88" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <svg class="brand-icon" width="40" height="36" viewBox="0 0 100 88" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <polyline points="4,52 50,10 96,52"/>
                         <polyline points="72,28 72,16 84,16 84,42"/>
                         <polyline points="17,52 17,82 83,82 83,52"/>
