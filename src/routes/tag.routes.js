@@ -13,25 +13,20 @@ const router = express.Router();
 const { verifyToken } = require('../middleware/auth');
 const c = require('../controllers/tag.controller');
 
-// All /api/tags/* endpoints require a session. Role-level gates live
-// inside each controller (admin-only vs. self-or-admin for user tags).
-router.use(verifyToken);
+// PUBLIC — the tag catalog is a static list of cities/towns. The
+// signup overlay needs it before any auth exists, and there's no
+// reason to gate read-only metadata.
+router.get('/', c.list);
 
-// Tag catalog
-router.get('/',  c.list);
-router.post('/', c.create);
-
-// User↔tag association (more specific than /:id — register first)
-router.get   ('/users/:userId',         c.listForUser);
-router.put   ('/users/:userId',         c.replaceForUser);
-router.post  ('/users/:userId',         c.attachToUser);
-router.delete('/users/:userId/:tagId',  c.detachFromUser);
-
-// Proximity match
-router.post('/match', c.match);
-
-// Single-tag mutations (LAST, after specific paths)
-router.patch ('/:id', c.patch);
-router.delete('/:id', c.softDelete);
+// Everything below requires a valid session cookie. Role-level gates
+// (admin-only vs. self-or-admin) live inside each controller.
+router.post  ('/',                      verifyToken, c.create);
+router.get   ('/users/:userId',         verifyToken, c.listForUser);
+router.put   ('/users/:userId',         verifyToken, c.replaceForUser);
+router.post  ('/users/:userId',         verifyToken, c.attachToUser);
+router.delete('/users/:userId/:tagId',  verifyToken, c.detachFromUser);
+router.post  ('/match',                 verifyToken, c.match);
+router.patch ('/:id',                   verifyToken, c.patch);
+router.delete('/:id',                   verifyToken, c.softDelete);
 
 module.exports = router;
