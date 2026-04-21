@@ -143,6 +143,19 @@
         }
         @media (max-width: 900px) {
             .sell-float-sub { display: none; }
+            /* Image shrinks to 240px on phones (via shared style.css override) —
+               tighten badge size + reposition so they don't collide. */
+            .sell-float { padding: 0.45rem 0.65rem; border-radius: 9px; }
+            .sell-float-icon { width: 22px; height: 22px; }
+            .sell-float-icon svg { width: 11px; height: 11px; }
+            .sell-float-title { font-size: 0.72rem; }
+            .sell-float-offer   { top: 0.75rem;  left: 0.75rem; }
+            .sell-float-showing { top: 0.75rem;  right: 0.75rem; }
+            .sell-float-value   { bottom: 0.75rem; left: 0.75rem; }
+        }
+        @media (max-width: 480px) {
+            /* Only keep one badge on tight phones so they never overlap. */
+            .sell-float-offer, .sell-float-showing { display: none; }
         }
     </style>
 

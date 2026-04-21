@@ -265,18 +265,29 @@
             .ag-hero h1 { font-size: 2.5rem; letter-spacing: -1px; }
             .ag-hero p { font-size: 1rem; }
             .ag-filter-wrap { padding: 0.75rem 1rem; top: 60px; }
-            .ag-filter-inner select { min-width: 0; flex: 1 1 calc(50% - 0.4rem); }
-            .ag-result-count { flex-basis: 100%; text-align: right; }
+            .ag-filter-inner { gap: 0.5rem; }
+            /* Each control takes half a row by default (pairs stack cleanly) */
+            .ag-filter-inner .ag-control { flex: 1 1 calc(50% - 0.3rem); min-width: 0; }
+            .ag-filter-inner .ag-select select { min-width: 0; width: 100%; }
+            .ag-result-count { flex-basis: 100%; text-align: right; margin-left: 0; padding: 0; }
             .agents-bottom-cta { padding: 5rem 1.25rem; }
             .agents-bottom-cta h2 { font-size: 2.5rem; }
             .agents-bottom-cta h2 br { display: none; }
             .agents-bottom-cta p { font-size: 1rem; margin-bottom: 2rem; }
             .agents-bottom-cta .btn { width: 100%; padding: 1.1rem 1.5rem; font-size: 1rem; }
         }
+        @media (max-width: 600px) {
+            .ag-filter-wrap { top: 56px; padding: 0.65rem 0.85rem; }
+            /* Every control on its own row at tight phone widths */
+            .ag-filter-inner .ag-control { flex-basis: 100%; }
+            .ag-featured-toggle.ag-control { justify-content: center; }
+        }
         @media (max-width: 480px) {
             .ag-hero h1 { font-size: 2rem; letter-spacing: -1px; }
+            .ag-hero p  { font-size: 0.95rem; }
+            .ag-hero { padding: 6.25rem 1rem 2.5rem; }
             .agents-bottom-cta h2 { font-size: 2rem; }
-            .ag-filter-inner select { flex-basis: 100%; }
+            .ag-filter-wrap { top: 52px; }
         }
     </style>
     <script src="../../components/components.js" defer></script>
