@@ -227,13 +227,10 @@ class GlobalHeader extends HTMLElement {
                         { label: 'How It Works', href: `${bp}buy.html` },
                     ]},
                     { heading: 'Buyer Resources', links: [
-                        { label: 'Buyer Guides & Tools',   href: `${bp}resources.html?search=buyer` },
+                        { label: 'Buyer Guides & Tools',      href: `${bp}resources.html?search=buyer` },
                         { label: 'Property Value Calculator', href: `${bp}resources.html?search=valuation` },
-                        { label: 'Mortgage Pre-Approval',  href: `${bp}resources.html?search=financing` },
-                        { label: 'Dock & Permits',         href: `${bp}resources.html?search=permit` },
-                        { label: 'Summertime Buying',      href: `${bp}resources.html?search=summer` },
-                        { label: 'Blog',                   href: `${bp}blog.html` },
-                        { label: 'FAQ',                    href: `${bp}faq.html` },
+                        { label: 'Dock & Permits',            href: `${bp}resources.html?search=permit` },
+                        { label: 'Blog',                      href: `${bp}blog.html` },
                     ]},
                 ]
             },
@@ -252,11 +249,8 @@ class GlobalHeader extends HTMLElement {
                     { heading: 'Seller Resources', links: [
                         { label: 'Seller Guides & Tools', href: `${bp}resources.html?search=seller` },
                         { label: 'Pricing & Valuation',   href: `${bp}resources.html?search=valuation` },
-                        { label: 'Selling a Cabin',       href: `${bp}resources.html?search=cabin` },
-                        { label: 'Closing Costs Calculator', href: `${bp}resources.html?search=closing` },
                         { label: 'Market Reports',        href: `${bp}resources.html?category=Market%20Reports` },
                         { label: 'Blog',                  href: `${bp}blog.html` },
-                        { label: 'FAQ',                   href: `${bp}faq.html` },
                     ]},
                 ]
             },
@@ -275,11 +269,8 @@ class GlobalHeader extends HTMLElement {
                     { heading: 'Agent Resources', links: [
                         { label: 'Agent Resource Library', href: `${bp}resources.html?search=agent` },
                         { label: 'Market Reports',         href: `${bp}resources.html?category=Market%20Reports` },
-                        { label: 'Listing Templates',      href: `${bp}resources.html?category=Templates` },
                         { label: 'Training & Scripts',     href: `${bp}resources.html?search=training` },
-                        { label: 'Lake Minnetonka Guide',  href: `${bp}lake-minnetonka.html` },
                         { label: 'Blog',                   href: `${bp}blog.html` },
-                        { label: 'About MNLH',             href: `${bp}about.html` },
                     ]},
                 ]
             },
@@ -293,19 +284,24 @@ class GlobalHeader extends HTMLElement {
                         { label: 'Cabin Owner Tools', href: `${bp}resources.html?search=cabin` },
                     ]},
                     { heading: 'By topic', links: [
-                        { label: 'Summertime Buying',   href: `${bp}resources.html?search=summer` },
-                        { label: 'Selling a Cabin',     href: `${bp}resources.html?search=cabin` },
                         { label: 'Valuation & Pricing', href: `${bp}resources.html?search=valuation` },
                         { label: 'Dock & Permits',      href: `${bp}resources.html?search=permit` },
                         { label: 'Financing',           href: `${bp}resources.html?search=financing` },
+                        { label: 'Summertime Buying',   href: `${bp}resources.html?search=summer` },
                     ]},
                     { heading: 'Library', links: [
-                        { label: 'All Resources',     href: `${bp}resources.html` },
-                        { label: 'Guides',            href: `${bp}resources.html?category=Guides` },
+                        { label: 'All Resources',       href: `${bp}resources.html` },
+                        { label: 'Guides',              href: `${bp}resources.html?category=Guides` },
                         { label: 'Tools & Calculators', href: `${bp}resources.html?category=Tools` },
-                        { label: 'Market Reports',    href: `${bp}resources.html?category=Market%20Reports` },
-                        { label: 'Blog',              href: `${bp}blog.html` },
-                        { label: 'FAQ',               href: `${bp}faq.html` },
+                        { label: 'Market Reports',      href: `${bp}resources.html?category=Market%20Reports` },
+                        { label: 'Blog',                href: `${bp}blog.html` },
+                    ]},
+                    { heading: 'Company', links: [
+                        { label: 'About Us',      href: `${bp}about.html` },
+                        { label: 'CommonRealtor', href: `${bp}commonrealtor.html` },
+                        { label: 'FAQ',           href: `${bp}faq.html` },
+                        { label: 'Contact Us',    href: `${bp}contact.html` },
+                        { label: 'Careers',       href: `${bp}careers.html` },
                     ]},
                 ]
             },

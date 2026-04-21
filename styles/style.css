@@ -132,8 +132,10 @@ body {
     max-width: 1200px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 3rem;
+    /* auto-fit so menus with 3 or 4 columns both look balanced without
+       hard-coding the column count per nav item. */
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 2.5rem;
 }
 .nav-megamenu-col { display: flex; flex-direction: column; }
 .nav-megamenu-heading {
