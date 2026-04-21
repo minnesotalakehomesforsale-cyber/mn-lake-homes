@@ -172,6 +172,22 @@ body {
 }
 .mobile-menu-toggle:hover { background: rgba(255,255,255,0.08); }
 
+/* Inline "Sign in" / "Dashboard" link that sits next to the hamburger
+   on phones. Hidden on desktop; the full nav-actions block covers
+   authentication there. Toggled visible inside the ≤900px media
+   query below. */
+.mobile-auth-inline {
+    display: none;
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    transition: background 0.15s, opacity 0.15s;
+}
+.mobile-auth-inline:hover { background: rgba(255,255,255,0.08); opacity: 0.9; }
+
 .mobile-menu-backdrop {
     display: none;
     position: fixed;
@@ -326,6 +342,13 @@ body {
 /* Show hamburger + hide desktop nav/actions on small screens */
 @media (max-width: 900px) {
     .mobile-menu-toggle { display: inline-flex; }
+    .mobile-auth-inline { display: inline-flex; align-items: center; }
+    /* Tighten the mobile header: less padding, smaller logo + buttons */
+    .navbar { padding: 0.85rem 1rem; }
+    .navbar .logo svg { width: 28px; height: 26px; }
+    .mobile-menu-toggle { padding: 0.4rem; margin-left: 0.25rem; }
+    .mobile-menu-toggle svg { width: 20px; height: 20px; }
+    .mobile-auth-inline { font-size: 0.85rem; padding: 0.4rem 0.6rem; }
 }
 
 @media (max-width: 780px) {
@@ -795,7 +818,7 @@ body {
 }
 
 @media (max-width: 600px) {
-    .title { font-size: 5rem; line-height: 1; letter-spacing: -2px; }
+    .title { font-size: 4.2rem; line-height: 1; letter-spacing: -1.75px; }
     .subtitle { font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 1rem; }
     .hero-content { align-items: center; text-align: center; }
     .hero-section { padding: 3.5rem 0.75rem 3rem; }
@@ -836,7 +859,7 @@ body {
 }
 
 @media (max-width: 400px) {
-    .title { font-size: 4rem; letter-spacing: -2px; line-height: 1; }
+    .title { font-size: 3.4rem; letter-spacing: -1.5px; line-height: 1; }
 }
 
 /* Hero CTAs */

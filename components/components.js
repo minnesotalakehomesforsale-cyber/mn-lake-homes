@@ -380,6 +380,12 @@ class GlobalHeader extends HTMLElement {
             <div class="nav-actions">
                 ${authHtml}
             </div>
+            ${user ? `
+                <a href="${user.role === 'admin' || user.role === 'super_admin' ? rp + 'pages/admin/dashboard.html' : rp + 'pages/agent/dashboard.html'}"
+                   class="mobile-auth-inline" aria-label="Dashboard">Dashboard</a>
+            ` : `
+                <a href="${rp}pages/public/login.html" class="mobile-auth-inline">Sign in</a>
+            `}
             <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Open menu" aria-expanded="false">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="3" y1="6" x2="21" y2="6"></line>
