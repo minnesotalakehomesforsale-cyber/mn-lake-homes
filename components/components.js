@@ -657,12 +657,41 @@ function _lfInit() {
         </div>
 
         <!-- Success screen -->
-        <div id="lf-ok" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;">
+        <div id="lf-ok" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;overflow-y:auto;">
             <div style="width:72px;height:72px;border-radius:50%;background:#f0fff4;display:flex;align-items:center;justify-content:center;margin:0 0 1.5rem;border:2px solid #c6f6d5;">
                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </div>
             <h3 id="lf-ok-title" style="font-size:2rem;font-weight:800;color:#1a202c;letter-spacing:-1px;margin:0 0 0.75rem;"></h3>
             <p  id="lf-ok-msg"   style="color:#718096;line-height:1.6;max-width:380px;margin:0 auto 2rem;"></p>
+
+            <!-- Sell-only upsell: offer to also prepare a cash offer -->
+            <div id="lf-cash-upsell" style="display:none;width:100%;max-width:460px;margin:0 auto 1.5rem;padding:1.5rem;background:#f7f9fa;border:1px solid #edf2f7;border-radius:14px;text-align:left;">
+                <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
+                    <div style="width:34px;height:34px;border-radius:10px;background:#ebf4ff;color:#1d6df2;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    </div>
+                    <div>
+                        <div style="font-weight:800;color:#1a202c;font-size:1rem;line-height:1.25;">Also want a cash offer on this home?</div>
+                        <div style="font-size:0.82rem;color:#718096;margin-top:0.15rem;">No obligation &middot; no showings &middot; under 48 hours.</div>
+                    </div>
+                </div>
+                <div id="lf-cash-inline" style="display:none;margin:0.75rem 0 0.75rem;"></div>
+                <div id="lf-cash-err" style="display:none;color:#c53030;font-size:0.82rem;margin:0.25rem 0 0.75rem;"></div>
+                <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+                    <button id="lf-cash-yes" type="button"
+                        style="flex:1 1 auto;min-width:140px;padding:0.8rem 1rem;background:#1d6df2;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:0.92rem;cursor:pointer;font-family:inherit;transition:background 0.15s;"
+                        onmouseover="this.style.background='#155bc8'" onmouseout="this.style.background='#1d6df2'">Yes, send my cash offer</button>
+                    <button id="lf-cash-no" type="button"
+                        style="flex:0 0 auto;padding:0.8rem 1rem;background:#fff;color:#4a5568;border:1px solid #e2e8f0;border-radius:10px;font-weight:600;font-size:0.92rem;cursor:pointer;font-family:inherit;transition:border-color 0.15s;"
+                        onmouseover="this.style.borderColor='#cbd5e0'" onmouseout="this.style.borderColor='#e2e8f0'">No thanks</button>
+                </div>
+            </div>
+
+            <!-- Confirmation after the upsell is accepted -->
+            <div id="lf-cash-done" style="display:none;width:100%;max-width:460px;margin:0 auto 1.5rem;padding:1.25rem 1.5rem;background:#f0fff4;border:1px solid #c6f6d5;border-radius:14px;color:#276749;font-weight:600;text-align:left;line-height:1.5;">
+                ✓ Your cash offer request is in. We'll email a no-obligation offer within 48 hours.
+            </div>
+
             <button onclick="closeForm()"
                 style="padding:1rem 2.5rem;background:#1a202c;color:#fff;border:none;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer;font-family:inherit;transition:background 0.2s;"
                 onmouseover="this.style.background='#2d3748'" onmouseout="this.style.background='#1a202c'">Back to site</button>
@@ -849,11 +878,108 @@ async function _lfDoSubmit() {
         document.getElementById('lf-ok-title').textContent = `Thanks, ${d.first || 'you\'re all set'}!`;
         document.getElementById('lf-ok-msg').textContent   = 'Our team will review your request and reach out within one business day. We look forward to helping you.';
         ok.style.display = 'flex';
+
+        // Sell-path upsell: offer to also create a cash_offer_lead for
+        // the same property. The regular seller lead has already been
+        // written above — this just adds a second, hotter record on the
+        // admin-facing Cash Offers page.
+        _lfMaybeShowSellUpsell(d, name);
     } catch(err) {
         document.getElementById('lf-err').textContent = err.message;
         document.getElementById('lf-err').style.display = 'block';
         btn.disabled = false; btn.textContent = 'Submit →'; btn.style.background = '#1a202c';
     }
+}
+
+// ─── Sell success → cash-offer upsell ───────────────────────────────────────
+// After a /sell lead is written, show a single-click path to also file a
+// cash_offer_lead for the same property. If the sell form only collected
+// one of (email, phone), we prompt inline for the missing piece since
+// /api/cash-offer/submit requires both.
+function _lfMaybeShowSellUpsell(d, name) {
+    if (!d || !d.address) return;                       // no captured address → skip
+    if (_LF_CFG[_lfs.type]?.source !== 'seller') return; // only on the sell flow
+
+    const panel    = document.getElementById('lf-cash-upsell');
+    const yesBtn   = document.getElementById('lf-cash-yes');
+    const noBtn    = document.getElementById('lf-cash-no');
+    const errEl    = document.getElementById('lf-cash-err');
+    const inlineEl = document.getElementById('lf-cash-inline');
+    const doneEl   = document.getElementById('lf-cash-done');
+    if (!panel || !yesBtn || !noBtn) return;
+
+    // Reset from any prior render
+    panel.style.display = 'block';
+    doneEl.style.display = 'none';
+    inlineEl.style.display = 'none';
+    inlineEl.innerHTML = '';
+    errEl.style.display = 'none';
+    yesBtn.disabled = false;
+    yesBtn.textContent = 'Yes, send my cash offer';
+
+    // If either email or phone is missing, inject a quick capture field —
+    // /api/cash-offer/submit requires both.
+    const needsEmail = !d.email;
+    const needsPhone = !d.phone;
+    if (needsEmail || needsPhone) {
+        const iStyle = 'width:100%;padding:0.7rem 0.9rem;border:1px solid #e2e8f0;border-radius:10px;font-family:inherit;font-size:0.95rem;box-sizing:border-box;outline:none;margin-top:0.25rem;';
+        inlineEl.innerHTML = [
+            needsEmail ? `<label style="display:block;font-size:0.75rem;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:0.15rem;">Email</label><input id="lf-cash-email" type="email" placeholder="you@email.com" style="${iStyle}">` : '',
+            needsPhone ? `<label style="display:block;font-size:0.75rem;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:0.4px;margin:${needsEmail ? '0.6rem' : '0'} 0 0.15rem;">Phone</label><input id="lf-cash-phone" type="tel" placeholder="(555) 555-5555" style="${iStyle}">` : '',
+        ].join('');
+        inlineEl.style.display = 'block';
+    }
+
+    noBtn.onclick = () => {
+        panel.style.display = 'none';
+    };
+
+    yesBtn.onclick = async () => {
+        errEl.style.display = 'none';
+        let email = d.email || (document.getElementById('lf-cash-email')?.value || '').trim();
+        let phone = d.phone || (document.getElementById('lf-cash-phone')?.value || '').trim();
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            errEl.textContent = 'Please enter a valid email to receive your offer.';
+            errEl.style.display = 'block';
+            return;
+        }
+        if (!phone || phone.replace(/\D/g, '').length < 10) {
+            errEl.textContent = 'Please enter a valid phone number.';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        yesBtn.disabled = true;
+        yesBtn.textContent = 'Sending…';
+        try {
+            const res = await fetch('/api/cash-offer/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    full_name: name || [d.first, d.last].filter(Boolean).join(' '),
+                    email,
+                    phone,
+                    formattedAddress: d.address,
+                    placeId: d.placeId || null,
+                    source_site: 'mn_lake',
+                    // No property details / AVM yet — backend will persist
+                    // the lead with status='new' and our team will follow
+                    // up to complete the offer calc.
+                }),
+            });
+            if (!res.ok) {
+                const r = await res.json().catch(() => ({}));
+                throw new Error(r.error || 'Could not submit cash offer request.');
+            }
+            panel.style.display = 'none';
+            doneEl.style.display = 'block';
+        } catch (err) {
+            errEl.textContent = err.message || 'Something went wrong. Please try again.';
+            errEl.style.display = 'block';
+            yesBtn.disabled = false;
+            yesBtn.textContent = 'Yes, send my cash offer';
+        }
+    };
 }
 
 // Backward-compat aliases
