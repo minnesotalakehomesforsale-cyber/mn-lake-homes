@@ -101,53 +101,102 @@
             z-index: 40;
             background: #fff;
             border-bottom: 1px solid #edf2f7;
-            padding: 1rem 2rem;
+            padding: 0.9rem 2rem;
             box-shadow: 0 4px 12px rgba(0,0,0,0.04);
         }
         .ag-filter-inner {
             max-width: 1200px;
             margin: 0 auto;
             display: flex;
-            gap: 0.75rem;
+            gap: 0.6rem;
             align-items: center;
             flex-wrap: wrap;
         }
-        .ag-filter-inner select {
-            font-family: inherit;
-            font-size: 0.9rem;
-            padding: 0.55rem 0.85rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            background: #fff;
-            outline: none;
-            min-width: 200px;
-            cursor: pointer;
-        }
-        .ag-filter-inner select:focus { border-color: #1d6df2; }
-        .ag-featured-toggle {
+        /* Unified control height + shape for select + button */
+        .ag-control {
+            height: 42px;
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.55rem 1rem;
-            border: 1px solid #e2e8f0;
-            background: #fff;
+            gap: 0.55rem;
+            padding: 0 1rem;
+            background: #f7f9fa;
+            border: 1px solid #edf2f7;
             border-radius: 999px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #4a5568;
-            cursor: pointer;
             font-family: inherit;
-            transition: all 0.15s;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #2d3748;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, color 0.15s;
+            outline: none;
             user-select: none;
+            box-sizing: border-box;
         }
-        .ag-featured-toggle:hover { border-color: #1d6df2; color: #1d6df2; }
+        .ag-control svg.ag-ctrl-icon { color: #94a3b8; flex-shrink: 0; transition: color 0.15s; }
+        .ag-control:hover { background: #fff; border-color: #cbd5e0; }
+        .ag-control:hover svg.ag-ctrl-icon { color: #1d6df2; }
+        .ag-control:focus,
+        .ag-control:focus-within { border-color: #1d6df2; background: #fff; box-shadow: 0 0 0 3px rgba(29,109,242,0.12); }
+
+        /* Select wrapper — keeps the custom chevron + icon consistent across browsers */
+        .ag-select {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+        .ag-select select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background: transparent;
+            border: none;
+            padding: 0 2rem 0 2.25rem;
+            height: 100%;
+            font: inherit;
+            color: inherit;
+            cursor: pointer;
+            outline: none;
+            min-width: 190px;
+            line-height: 1;
+        }
+        .ag-select .ag-ctrl-icon {
+            position: absolute;
+            left: 0.9rem;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+        .ag-select .ag-chevron {
+            position: absolute;
+            right: 0.9rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            pointer-events: none;
+        }
+
+        /* Featured toggle — same shape; active state uses brand gradient */
+        .ag-featured-toggle.ag-control svg { color: #94a3b8; }
         .ag-featured-toggle.active {
             background: linear-gradient(135deg, #1d6df2 0%, #155bc8 100%);
             border-color: transparent;
             color: #fff;
+            box-shadow: 0 8px 18px rgba(29,109,242,0.28);
         }
-        .ag-featured-toggle svg { flex-shrink: 0; }
-        .ag-result-count { margin-left: auto; color: #718096; font-size: 0.88rem; font-weight: 500; }
+        .ag-featured-toggle.active svg,
+        .ag-featured-toggle.active:hover svg { color: #fef3c7; }
+        .ag-featured-toggle.active:hover { background: linear-gradient(135deg, #1d6df2 0%, #1148a5 100%); }
+
+        /* Result count */
+        .ag-result-count {
+            margin-left: auto;
+            color: #64748b;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.1px;
+            padding: 0 0.5rem;
+        }
+        .ag-result-count strong { color: #1a202c; font-weight: 800; }
 
         /* ─── Agents bottom CTA (unchanged visual, renamed classes) ─── */
         .agents-bottom-cta {
@@ -249,20 +298,31 @@
     <!-- Sticky filter bar -->
     <div class="ag-filter-wrap">
         <div class="ag-filter-inner">
-            <select id="ag-filter-area">
-                <option value="">All service areas</option>
-                <!-- Populated from /api/tags -->
-            </select>
-            <select id="ag-filter-state">
-                <option value="">All states</option>
-                <option value="MN">Minnesota</option>
-                <option value="ND">North Dakota</option>
-                <option value="WI">Wisconsin</option>
-            </select>
-            <button class="ag-featured-toggle" id="ag-filter-featured" type="button" aria-pressed="false">
+            <label class="ag-control ag-select" for="ag-filter-area">
+                <svg class="ag-ctrl-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                <select id="ag-filter-area">
+                    <option value="">All service areas</option>
+                    <!-- Populated from /api/tags -->
+                </select>
+                <svg class="ag-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </label>
+
+            <label class="ag-control ag-select" for="ag-filter-state">
+                <svg class="ag-ctrl-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                <select id="ag-filter-state">
+                    <option value="">All states</option>
+                    <option value="MN">Minnesota</option>
+                    <option value="ND">North Dakota</option>
+                    <option value="WI">Wisconsin</option>
+                </select>
+                <svg class="ag-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </label>
+
+            <button class="ag-control ag-featured-toggle" id="ag-filter-featured" type="button" aria-pressed="false">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                 <span>Featured only</span>
             </button>
+
             <span class="ag-result-count" id="ag-result-count">—</span>
         </div>
     </div>
@@ -371,8 +431,8 @@
                 return true;
             });
 
-            document.getElementById('ag-result-count').textContent =
-                `${filtered.length} of ${state.all.length}`;
+            document.getElementById('ag-result-count').innerHTML =
+                `<strong>${filtered.length}</strong> of ${state.all.length} agents`;
 
             if (!filtered.length) { renderEmpty(grid); return; }
             grid.innerHTML = '';
