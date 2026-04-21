@@ -55,27 +55,101 @@
     }
     </script>
     <style>
-        .blog-index-header {
+        /* ─── Hero: image background + dark overlay (mirrors resources) ─── */
+        .ag-hero {
+            position: relative;
             padding: 12rem 2rem 5rem;
             text-align: center;
+            color: #fff;
             background-color: var(--bg-dark);
+            background-image: url('/assets/images/mn-stillwater-aerial.webp');
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
+            isolation: isolate;
+        }
+        .ag-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(10,14,22,0.72) 0%, rgba(10,14,22,0.55) 45%, rgba(10,14,22,0.88) 100%);
+            z-index: 0;
+        }
+        .ag-hero > * { position: relative; z-index: 1; }
+        .ag-hero h1 { font-size: 4.5rem; font-weight: 700; letter-spacing: -2px; margin: 0 0 1.25rem; line-height: 1.05; text-shadow: 0 2px 20px rgba(0,0,0,0.4); }
+        .ag-hero p  { font-size: 1.2rem; color: #e2e8f0; max-width: 680px; margin: 0 auto 2.25rem; line-height: 1.6; text-shadow: 0 1px 10px rgba(0,0,0,0.35); }
+        .ag-search-wrap { position: relative; max-width: 640px; margin: 0 auto; }
+        .ag-search-wrap svg { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #a0aec0; pointer-events: none; }
+        .ag-search-wrap input {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3rem;
+            border: none;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-family: inherit;
+            background: #fff;
+            color: #1a202c;
+            outline: none;
+            box-sizing: border-box;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+
+        /* ─── Sticky filter bar ─── */
+        .ag-filter-wrap {
+            position: sticky;
+            top: 72px;
+            z-index: 40;
+            background: #fff;
+            border-bottom: 1px solid #edf2f7;
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+        .ag-filter-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .ag-filter-inner select {
+            font-family: inherit;
+            font-size: 0.9rem;
+            padding: 0.55rem 0.85rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #fff;
+            outline: none;
+            min-width: 200px;
+            cursor: pointer;
+        }
+        .ag-filter-inner select:focus { border-color: #1d6df2; }
+        .ag-featured-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.55rem 1rem;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4a5568;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s;
+            user-select: none;
+        }
+        .ag-featured-toggle:hover { border-color: #1d6df2; color: #1d6df2; }
+        .ag-featured-toggle.active {
+            background: linear-gradient(135deg, #1d6df2 0%, #155bc8 100%);
+            border-color: transparent;
             color: #fff;
         }
-        .blog-index-title {
-            font-size: 4.5rem;
-            font-weight: 700;
-            letter-spacing: -2px;
-            margin-bottom: 1.5rem;
-            line-height: 1.05;
-        }
-        .blog-index-subtitle {
-            font-size: 1.25rem;
-            color: var(--text-secondary);
-            font-weight: 400;
-            max-width: 650px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
+        .ag-featured-toggle svg { flex-shrink: 0; }
+        .ag-result-count { margin-left: auto; color: #718096; font-size: 0.88rem; font-weight: 500; }
+
+        /* ─── Agents bottom CTA (unchanged visual, renamed classes) ─── */
         .agents-bottom-cta {
             padding: 8rem 2rem;
             background-color: var(--bg-dark);
@@ -104,22 +178,7 @@
             box-shadow: 0 10px 25px rgba(66,153,225,0.3);
         }
 
-        @media (max-width: 900px) {
-            .blog-index-header { padding: 8rem 1.25rem 3.5rem; }
-            .blog-index-title { font-size: 3rem; letter-spacing: -1.25px; }
-            .blog-index-subtitle { font-size: 1.05rem; }
-            .agents-bottom-cta { padding: 5rem 1.25rem; }
-            .agents-bottom-cta h2 { font-size: 2.5rem; }
-            .agents-bottom-cta h2 br { display: none; }
-            .agents-bottom-cta p { font-size: 1rem; margin-bottom: 2rem; }
-            .agents-bottom-cta .btn { width: 100%; padding: 1.1rem 1.5rem; font-size: 1rem; }
-        }
-        @media (max-width: 480px) {
-            .blog-index-title { font-size: 2.25rem; letter-spacing: -1px; }
-            .agents-bottom-cta h2 { font-size: 2rem; }
-        }
-
-        /* Top Agent corner badge on cards */
+        /* ─── Top Agent corner badge on cards ─── */
         .top-agent-badge {
             position: absolute;
             top: 12px;
@@ -139,6 +198,37 @@
             box-shadow: 0 4px 12px rgba(29,109,242,0.35);
         }
         .top-agent-badge svg { display: block; }
+
+        .ag-empty {
+            grid-column: 1 / -1;
+            background: #fff;
+            border: 1px solid #edf2f7;
+            border-radius: 14px;
+            padding: 3rem 2rem;
+            text-align: center;
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        /* Mobile */
+        @media (max-width: 900px) {
+            .ag-hero { padding: 7rem 1.25rem 3rem; }
+            .ag-hero h1 { font-size: 2.5rem; letter-spacing: -1px; }
+            .ag-hero p { font-size: 1rem; }
+            .ag-filter-wrap { padding: 0.75rem 1rem; top: 60px; }
+            .ag-filter-inner select { min-width: 0; flex: 1 1 calc(50% - 0.4rem); }
+            .ag-result-count { flex-basis: 100%; text-align: right; }
+            .agents-bottom-cta { padding: 5rem 1.25rem; }
+            .agents-bottom-cta h2 { font-size: 2.5rem; }
+            .agents-bottom-cta h2 br { display: none; }
+            .agents-bottom-cta p { font-size: 1rem; margin-bottom: 2rem; }
+            .agents-bottom-cta .btn { width: 100%; padding: 1.1rem 1.5rem; font-size: 1rem; }
+        }
+        @media (max-width: 480px) {
+            .ag-hero h1 { font-size: 2rem; letter-spacing: -1px; }
+            .agents-bottom-cta h2 { font-size: 2rem; }
+            .ag-filter-inner select { flex-basis: 100%; }
+        }
     </style>
     <script src="../../components/components.js" defer></script>
 </head>
@@ -146,14 +236,39 @@
 
     <global-header></global-header>
 
-    <!-- Hero: exact copy of blog.html header -->
-    <div class="blog-index-header">
-        <h1 class="blog-index-title">Find an Agent</h1>
-        <p class="blog-index-subtitle">Meet the local experts who know Minnesota's lakes better than anyone else.</p>
+    <!-- Hero with image background + overlay -->
+    <section class="ag-hero">
+        <h1 id="ag-hero-title">Find an Agent</h1>
+        <p id="ag-hero-sub">Search Minnesota's verified lake specialists by name, brokerage, or service area.</p>
+        <div class="ag-search-wrap">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input id="ag-search" type="search" placeholder="Search by agent name, brokerage, or city…" autocomplete="off">
+        </div>
+    </section>
+
+    <!-- Sticky filter bar -->
+    <div class="ag-filter-wrap">
+        <div class="ag-filter-inner">
+            <select id="ag-filter-area">
+                <option value="">All service areas</option>
+                <!-- Populated from /api/tags -->
+            </select>
+            <select id="ag-filter-state">
+                <option value="">All states</option>
+                <option value="MN">Minnesota</option>
+                <option value="ND">North Dakota</option>
+                <option value="WI">Wisconsin</option>
+            </select>
+            <button class="ag-featured-toggle" id="ag-filter-featured" type="button" aria-pressed="false">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <span>Featured only</span>
+            </button>
+            <span class="ag-result-count" id="ag-result-count">—</span>
+        </div>
     </div>
 
     <!-- Agent Grid -->
-    <section style="background-color: #f7f9fa; padding: 5rem 0 6rem;">
+    <section style="background-color: #f7f9fa; padding: 3rem 0 5rem;">
         <div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem;">
             <div id="agent-directory-grid" class="agents-grid" style="padding-top: 0;">
                 <!-- JS injects .agent-card elements here -->
@@ -174,9 +289,19 @@
     <lead-modal></lead-modal>
 
     <script>
+        const state = {
+            all:        [],    // full agent list from API
+            search:     '',
+            area:       '',    // tag slug
+            stateCode:  '',
+            featured:   false,
+        };
+        let _searchTimer = null;
+
+        function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
         function buildCard(agent) {
-            const photoUrl = agent.profile_photo_url ||
-                '/assets/images/mn-stillwater-aerial.webp';
+            const photoUrl = agent.profile_photo_url || '/assets/images/mn-stillwater-aerial.webp';
             const title = agent.membership_badge || 'Lake Specialist';
             const fullBio = agent.bio || 'A dedicated Minnesota lake home specialist ready to help you find your perfect waterfront property.';
             const shortBio = fullBio.length > 120 ? fullBio.slice(0, 120).trimEnd() + '…' : fullBio;
@@ -193,63 +318,154 @@
                 : '';
 
             const card = document.createElement('a');
-            card.href = `agent-profile.html?slug=${agent.slug}`;
+            card.href = `agent-profile.html?slug=${encodeURIComponent(agent.slug)}`;
             card.style.cssText = 'text-decoration:none;color:inherit;display:block;';
             card.className = 'agent-link-wrapper';
             card.innerHTML = `
                 <div class="agent-card" style="position:relative;">
                     ${topBadge}
-                    <img src="${photoUrl}" alt="${agent.display_name} — Minnesota lake home specialist" class="agent-image" loading="lazy" width="600" height="600">
+                    <img src="${escHtml(photoUrl)}" alt="${escHtml(agent.display_name)} — Minnesota lake home specialist" class="agent-image" loading="lazy" width="600" height="600">
                     <div class="agent-info">
-                        <h3 class="agent-name">${agent.display_name}${inlineTopIcon}</h3>
-                        <div class="agent-title">${title.toUpperCase()}</div>
-                        <p class="agent-bio">${shortBio}</p>
+                        <h3 class="agent-name">${escHtml(agent.display_name)}${inlineTopIcon}</h3>
+                        <div class="agent-title">${escHtml(String(title).toUpperCase())}</div>
+                        <p class="agent-bio">${escHtml(shortBio)}</p>
                     </div>
                 </div>`;
             return card;
         }
 
-        async function renderDirectory() {
+        function renderEmpty(grid) {
+            const featuredOnly = state.featured;
+            grid.innerHTML = `
+                <div class="ag-empty">
+                    <div style="display:inline-flex;align-items:center;gap:0.4rem;background:#ebf4ff;color:#1d6df2;font-size:0.72rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:0.35rem 0.75rem;border-radius:99px;margin-bottom:1rem;">No matches</div>
+                    <h3 style="font-size:1.5rem;font-weight:700;color:#1a202c;margin:0 0 0.6rem;letter-spacing:-0.4px;">
+                        ${featuredOnly ? 'No featured agents for these filters' : 'No agents match these filters'}
+                    </h3>
+                    <p style="color:#4a5568;line-height:1.6;margin:0 0 1.5rem;font-size:1rem;">Try a different area or clear your filters. We're actively onboarding lake specialists across Minnesota &mdash; if your lake isn't covered yet, tell us which one and we'll reach out when a local is ready.</p>
+                    <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+                        <a href="#" onclick="event.preventDefault(); clearAllFilters();" style="display:inline-block;padding:0.8rem 1.5rem;background:#1d6df2;color:#fff;font-weight:700;border-radius:8px;text-decoration:none;font-size:0.9rem;">Clear filters</a>
+                        <a href="contact.html" style="display:inline-block;padding:0.8rem 1.5rem;background:#fff;color:#1a202c;font-weight:700;border:1px solid #e2e8f0;border-radius:8px;text-decoration:none;font-size:0.9rem;">Tell us which lake →</a>
+                    </div>
+                </div>`;
+        }
+
+        function applyFilters() {
             const grid = document.getElementById('agent-directory-grid');
-            const featuredOnly = new URLSearchParams(window.location.search).get('featured') === '1';
+            const q = state.search.toLowerCase();
 
-            // Update hero heading if we're in featured mode
-            if (featuredOnly) {
-                const headerTitle = document.querySelector('.blog-index-title, .agents-hero-title, h1');
-                if (headerTitle) headerTitle.textContent = 'Featured Agents';
-                const headerSub = document.querySelector('.blog-index-subtitle, .agents-hero-sub');
-                if (headerSub) headerSub.textContent = 'Our top-rated Minnesota lake home specialists, hand-picked and vetted.';
-            }
+            const filtered = state.all.filter(a => {
+                if (state.featured  && !a.is_featured) return false;
+                if (state.area) {
+                    const tags = Array.isArray(a.geo_tags) ? a.geo_tags : [];
+                    if (!tags.some(t => t && t.slug === state.area)) return false;
+                }
+                if (state.stateCode) {
+                    const tags = Array.isArray(a.geo_tags) ? a.geo_tags : [];
+                    if (!tags.some(t => t && t.state === state.stateCode)) return false;
+                }
+                if (q) {
+                    const hay = [a.display_name, a.brokerage_name, a.city, a.bio, a.service_areas].join(' ').toLowerCase();
+                    if (!hay.includes(q)) return false;
+                }
+                return true;
+            });
 
+            document.getElementById('ag-result-count').textContent =
+                `${filtered.length} of ${state.all.length}`;
+
+            if (!filtered.length) { renderEmpty(grid); return; }
+            grid.innerHTML = '';
+            filtered.forEach(a => grid.appendChild(buildCard(a)));
+        }
+
+        async function loadAreas() {
+            try {
+                const res = await fetch('/api/tags?active=true');
+                if (!res.ok) return;
+                const tags = await res.json();
+                const sel = document.getElementById('ag-filter-area');
+                // Group by state for easier scanning at 200+ options.
+                const byState = {};
+                tags.forEach(t => { (byState[t.state] ||= []).push(t); });
+                const states = Object.keys(byState).sort();
+                sel.innerHTML = '<option value="">All service areas</option>' +
+                    states.map(s => `
+                        <optgroup label="${escHtml(s)}">
+                            ${byState[s].sort((a,b) => a.name.localeCompare(b.name)).map(t =>
+                                `<option value="${escHtml(t.slug)}">${escHtml(t.name)}</option>`
+                            ).join('')}
+                        </optgroup>
+                    `).join('');
+            } catch (_) { /* degrade silently; state dropdown still works */ }
+        }
+
+        async function loadDirectory() {
+            const grid = document.getElementById('agent-directory-grid');
             try {
                 const res = await fetch('/api/agents/public');
-                if (!res.ok) { grid.innerHTML = '<p style="color:#c53030;padding:2rem;">Could not load agents. Please try again later.</p>'; return; }
-                let agents = await res.json();
-                if (featuredOnly) agents = agents.filter(a => a.is_featured);
-                if (agents.length === 0) {
-                    grid.innerHTML = `
-                        <div style="grid-column:1/-1;background:#f7f9fa;border:1px solid #edf2f7;border-radius:14px;padding:3rem 2rem;text-align:center;max-width:680px;margin:0 auto;">
-                            <div style="display:inline-flex;align-items:center;gap:0.4rem;background:#ebf4ff;color:#1d6df2;font-size:0.72rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:0.35rem 0.75rem;border-radius:99px;margin-bottom:1rem;">Beta Release</div>
-                            <h3 style="font-size:1.5rem;font-weight:700;color:#1a202c;margin:0 0 0.6rem;letter-spacing:-0.4px;">
-                                ${featuredOnly ? 'Featured agents coming soon' : 'Agents coming soon'}
-                            </h3>
-                            <p style="color:#4a5568;line-height:1.6;margin:0 0 1.5rem;font-size:1rem;">We're actively onboarding lake specialists across Minnesota. We're in beta — new agents join every week. Tell us which lake you're interested in and we'll reach out the moment a local specialist is ready for you.</p>
-                            <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
-                                <a href="contact.html" style="display:inline-block;padding:0.8rem 1.5rem;background:#1d6df2;color:#fff;font-weight:700;border-radius:8px;text-decoration:none;font-size:0.9rem;">Contact us →</a>
-                                ${featuredOnly ? '<a href="agents.html" style="display:inline-block;padding:0.8rem 1.5rem;background:#fff;color:#1a202c;font-weight:700;border:1px solid #e2e8f0;border-radius:8px;text-decoration:none;font-size:0.9rem;">See all agents</a>' : ''}
-                            </div>
-                        </div>`;
-                    return;
-                }
-                grid.innerHTML = '';
-                agents.forEach(a => grid.appendChild(buildCard(a)));
+                if (!res.ok) throw new Error('directory fetch failed');
+                state.all = await res.json();
+                applyFilters();
             } catch (err) {
                 console.error('Directory render error:', err);
                 grid.innerHTML = '<p style="color:#c53030;padding:2rem;">Failed to load agent directory.</p>';
             }
         }
 
-        document.addEventListener('DOMContentLoaded', renderDirectory);
+        function clearAllFilters() {
+            state.search    = '';
+            state.area      = '';
+            state.stateCode = '';
+            state.featured  = false;
+            document.getElementById('ag-search').value = '';
+            document.getElementById('ag-filter-area').value = '';
+            document.getElementById('ag-filter-state').value = '';
+            const fbtn = document.getElementById('ag-filter-featured');
+            fbtn.classList.remove('active');
+            fbtn.setAttribute('aria-pressed', 'false');
+            applyFilters();
+        }
+
+        // ── Wire controls ───────────────────────────────────────────────
+        document.getElementById('ag-search').addEventListener('input', e => {
+            clearTimeout(_searchTimer);
+            _searchTimer = setTimeout(() => {
+                state.search = e.target.value.trim();
+                applyFilters();
+            }, 180);
+        });
+        document.getElementById('ag-filter-area').addEventListener('change', e => {
+            state.area = e.target.value;
+            applyFilters();
+        });
+        document.getElementById('ag-filter-state').addEventListener('change', e => {
+            state.stateCode = e.target.value;
+            applyFilters();
+        });
+        document.getElementById('ag-filter-featured').addEventListener('click', () => {
+            state.featured = !state.featured;
+            const fbtn = document.getElementById('ag-filter-featured');
+            fbtn.classList.toggle('active', state.featured);
+            fbtn.setAttribute('aria-pressed', String(state.featured));
+            applyFilters();
+        });
+
+        // ── Boot ────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            // Preserve the legacy ?featured=1 deep-link from the header
+            // "Featured Agents" megamenu entry.
+            if (new URLSearchParams(window.location.search).get('featured') === '1') {
+                state.featured = true;
+                const fbtn = document.getElementById('ag-filter-featured');
+                fbtn.classList.add('active');
+                fbtn.setAttribute('aria-pressed', 'true');
+                document.getElementById('ag-hero-title').textContent = 'Featured Agents';
+                document.getElementById('ag-hero-sub').textContent = 'Our top-rated Minnesota lake home specialists, hand-picked and vetted.';
+            }
+            loadAreas();
+            loadDirectory();
+        });
     </script>
 
 </body>

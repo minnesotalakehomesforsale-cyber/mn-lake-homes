@@ -95,11 +95,20 @@ const uploadPhoto = (req, res) => {
  */
 const getPublicAgents = async (req, res) => {
     try {
+        // Subquery pulls the active geo-tag slugs + names for each agent
+        // via their user's user_tags rows. Used by the directory page to
+        // filter agents by service area.
         const query = `
             SELECT a.id, a.slug, a.display_name, a.brokerage_name, a.city, a.bio,
                    a.service_areas, a.specialties, a.is_featured,
                    a.phone_public, a.email_public, a.profile_photo_url,
-                   m.display_badge_label as membership_badge
+                   m.display_badge_label as membership_badge,
+                   COALESCE((
+                       SELECT json_agg(json_build_object('slug', t.slug, 'name', t.name, 'state', t.state) ORDER BY t.name)
+                       FROM user_tags ut
+                       JOIN tags t ON t.id = ut.tag_id
+                       WHERE ut.user_id = a.user_id AND t.active = TRUE
+                   ), '[]'::json) AS geo_tags
             FROM agents a
             JOIN memberships m ON a.membership_id = m.id
             WHERE a.profile_status = 'published' AND a.is_published = true
