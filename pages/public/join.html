@@ -175,142 +175,13 @@
             letter-spacing: 1px;
         }
 
-        /* Pricing Section */
-        .pricing-section {
-            padding: 5rem 2rem;
-            background-color: #f7f9fa;
-        }
 
-        .pricing-header {
-            text-align: center;
-            max-width: 800px;
-            margin: 0 auto 3rem;
-        }
-
-        .pricing-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            max-width: 1000px;
-            margin: 0 auto;
-            align-items: center;
-        }
-
-        .pricing-card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 2.5rem 2rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border: 1px solid #edf2f7;
-            position: relative;
-            transition: transform 0.3s, box-shadow 0.3s;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .pricing-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.08);
-        }
-
-        .pricing-card.popular {
-            border: 2px solid var(--accent-blue);
-            padding: 3rem 2rem;
-            z-index: 2;
-            box-shadow: 0 15px 40px rgba(66, 153, 225, 0.12);
-        }
-
-        .popular-badge {
-            position: absolute;
-            top: -16px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--accent-blue);
-            color: #fff;
-            padding: 0.5rem 1.5rem;
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            box-shadow: 0 4px 10px rgba(66, 153, 225, 0.3);
-        }
-
-        .plan-name {
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            color: #1a202c;
-        }
-
-        .plan-price {
-            font-size: 2.8rem;
-            font-weight: 800;
-            color: #1a202c;
-            display: flex;
-            align-items: baseline;
-            margin-bottom: 1rem;
-            letter-spacing: -1px;
-        }
-
-        .plan-period {
-            font-size: 1rem;
-            color: #718096;
-            font-weight: 500;
-            margin-left: 0.25rem;
-        }
-
-        .plan-desc {
-            color: #718096;
-            line-height: 1.5;
-            font-size: 0.95rem;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid #edf2f7;
-            padding-bottom: 1.5rem;
-        }
-
-        .feature-list {
-            list-style: none;
-            padding: 0;
-            margin: 0 0 2rem 0;
-            flex-grow: 1;
-        }
-
-        .feature-list li {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-            color: #4a5568;
-            line-height: 1.5;
-            font-size: 0.95rem;
-        }
-
-        .feature-icon {
-            color: var(--accent-blue);
-            flex-shrink: 0;
-            margin-top: 3px;
-        }
-
-        .pricing-btn {
-            width: 100%;
-            text-align: center;
-            font-size: 1.1rem;
-            font-weight: 600;
-            padding: 1.25rem;
-            border-radius: 12px;
-        }
 
         @media (max-width: 900px) {
             .stats-grid { grid-template-columns: 1fr; gap: 3rem; }
-            .pricing-card.popular { padding: 3.5rem 2.5rem; }
             .value-grid { grid-template-columns: 1fr !important; gap: 1.25rem !important; }
             .value-card { padding: 2rem 1.5rem !important; }
             .agent-hero-split { grid-template-columns: 1fr !important; gap: 2rem !important; }
-            .pricing-cards { flex-direction: column; align-items: stretch; gap: 1.5rem; }
-            .pricing-card { width: 100% !important; max-width: 500px; margin: 0 auto; }
-            .pricing-grid { grid-template-columns: 1fr !important; max-width: 500px; }
         }
         @media (max-width: 600px) {
             /* ── Hero ─────────────────────────────────────────────────────── */
@@ -333,8 +204,7 @@
             }
             /* ── Section headings across the page ─────────────────────────── */
             .value-section,
-            .analytics-section,
-            .pricing-section {
+            .analytics-section {
                 padding: 4rem 1.25rem !important;
             }
             .value-section h2 { font-size: 1.85rem !important; }
@@ -345,16 +215,6 @@
             /* ── Stats ────────────────────────────────────────────────────── */
             .stat-number { font-size: 2.8rem !important; }
             .stat-label { font-size: 0.85rem !important; letter-spacing: 0.75px !important; }
-            /* ── Pricing ──────────────────────────────────────────────────── */
-            .pricing-header h2 { font-size: 1.85rem !important; }
-            .pricing-header p  { font-size: 1rem !important; }
-            .pricing-card {
-                max-width: 100% !important;
-                padding: 2rem 1.5rem !important;
-            }
-            .pricing-card.popular { padding: 2.5rem 1.5rem !important; }
-            .plan-price { font-size: 2.2rem !important; }
-            .pricing-btn { font-size: 1rem !important; padding: 1.05rem !important; }
             /* ── Testimonials ─────────────────────────────────────────────── */
             .testimonial-quote { font-size: 1.15rem !important; line-height: 1.5 !important; }
             .testimonial-media,
@@ -403,7 +263,6 @@
         @media (max-width: 400px) {
             section[style*="padding: 12rem 2rem 5rem"] > h1 { font-size: 2.15rem !important; }
             .stat-number { font-size: 2.4rem !important; }
-            .plan-price  { font-size: 1.9rem !important; }
             #join-question { font-size: 1.5rem !important; }
         }
     </style>
@@ -601,120 +460,6 @@
         </div>
     </section>
 
-    <!-- Pricing Section -->
-    <section class="pricing-section" id="pricing">
-        <div class="pricing-container">
-            <div class="pricing-header">
-                <h2 style="font-size: 3rem; font-weight: 800; color: #1a202c; margin-bottom: 1.5rem; letter-spacing: -1px;">Partnership Plans</h2>
-                <p style="font-size: 1.25rem; color: #718096; line-height: 1.6;">Whether you're an independent agent breaking into the luxury market or a seasoned team needing massive volume, we have a network tier for you.</p>
-
-                <div class="billing-toggle" style="margin-top: 2rem;">
-                    <button id="toggle-monthly" class="billing-btn active" onclick="setBilling('monthly')">Monthly</button>
-                    <button id="toggle-annual" class="billing-btn" onclick="setBilling('annual')">
-                        Annual <span class="save-badge">Save 20%</span>
-                    </button>
-                </div>
-            </div>
-
-            <style>
-                .billing-toggle {
-                    display: inline-flex;
-                    background: #f7f9fa;
-                    border: 1px solid #edf2f7;
-                    border-radius: 10px;
-                    overflow: hidden;
-                    padding: 4px;
-                }
-                .billing-btn {
-                    padding: 0.6rem 1.5rem;
-                    font-size: 0.9rem;
-                    font-weight: 600;
-                    border: none;
-                    background: transparent;
-                    color: #718096;
-                    cursor: pointer;
-                    border-radius: 8px;
-                    font-family: inherit;
-                    transition: all 0.2s;
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 0.5rem;
-                }
-                .billing-btn.active {
-                    background: #1a202c;
-                    color: #fff;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                }
-                .save-badge {
-                    background: #dcfce7;
-                    color: #15803d;
-                    font-size: 0.7rem;
-                    font-weight: 700;
-                    padding: 0.2rem 0.5rem;
-                    border-radius: 20px;
-                    letter-spacing: 0.3px;
-                }
-                .billing-btn.active .save-badge {
-                    background: #22c55e;
-                    color: #fff;
-                }
-            </style>
-
-            <div class="pricing-grid">
-                
-                <!-- Standard Agent -->
-                <div class="pricing-card">
-                    <h3 class="plan-name">Standard Agent</h3>
-                    <div class="plan-price" data-monthly="$9" data-annual="$86">$9</div>
-                    <div class="plan-period" data-monthly="/month" data-annual="/year">/month</div>
-                    <p class="plan-desc">Perfect for independent agents looking to establish their presence on the waterfront market.</p>
-                    <ul class="feature-list">
-                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Professional profile on our Agent Directory</li>
-                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Standard incoming lead rotation</li>
-                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Access to our private agent community</li>
-                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Use of MN Lake Homes branding</li>
-                    </ul>
-                    <button class="btn pricing-btn" style="background-color: #edf2f7; color: #1a202c; border: none;" onclick="openJoinForm()">Get started</button>
-                </div>
-
-                <!-- Prime Agent -->
-                <div class="pricing-card popular">
-                    <div class="popular-badge">Most Popular</div>
-                    <h3 class="plan-name">Prime Agent</h3>
-                    <div class="plan-price" data-monthly="$19" data-annual="$179">$19</div>
-                    <div class="plan-period" data-monthly="/month" data-annual="/year">/month</div>
-                    <p class="plan-desc">Accelerate your luxury business with priority routing and market exclusivity.</p>
-                    <ul class="feature-list">
-                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <b>Everything in Standard, plus:</b></li>
-                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Featured placement in Agent Directory</li>
-                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Priority lead routing for your primary lake</li>
-                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> 1 Target Zip Code Lockout</li>
-                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Dedicated marketing support &amp; PR assets</li>
-                    </ul>
-                    <button class="btn btn-primary pricing-btn" style="border: none; box-shadow: 0 10px 20px rgba(66, 153, 225, 0.3);" onclick="openJoinForm()">Get started</button>
-                </div>
-
-                <!-- Founder Agent -->
-                <div class="pricing-card">
-                    <h3 class="plan-name">Founder Agent</h3>
-                    <div class="plan-price" data-monthly="$449" data-annual="$449">$449</div>
-                    <div class="plan-period" data-monthly="/month" data-annual="/month">/month</div>
-                    <div class="plan-founder-note" style="font-size: 0.78rem; color: #718096; margin-top: 0.25rem;">Month-to-month only</div>
-                    <p class="plan-desc">For top-performing agents and teams who want maximum volume and full market control.</p>
-                    <ul class="feature-list">
-                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <b>Everything in Prime, plus:</b></li>
-                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Profiles for up to 5 team members</li>
-                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> 5 Target Zip Code Lockouts</li>
-                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> First access to off-market network listings</li>
-                        <li><svg class="feature-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> 24/7 dedicated account manager</li>
-                    </ul>
-                    <button class="btn pricing-btn" style="background-color: #1a202c; color: #fff; border: none;" onclick="openJoinForm()">Get started</button>
-                </div>
-
-            </div>
-        </div>
-    </section>
-
     <!-- Sell section variant for Agents -->
     <section class="sp-section" style="background-color: #fff;">
         <div style="text-align: center; margin-bottom: 4rem;">
@@ -768,12 +513,12 @@
             <div>
                 <h4 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">High-Intent Leads</h4>
                 <p style="color: #4a5568; line-height: 1.6; margin-bottom: 1.5rem;">Qualified buyer and seller inquiries auto-route to you based on your tagged service areas &mdash; no shared pools, no cold lists.</p>
-                <a href="#pricing" class="sp-link-blue">See lead routing &rarr;</a>
+                <a href="#" onclick="event.preventDefault(); openJoinForm();" class="sp-link-blue">Apply to the network &rarr;</a>
             </div>
             <div>
                 <h4 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Marketing Engine</h4>
                 <p style="color: #4a5568; line-height: 1.6; margin-bottom: 1.5rem;">Professional photography, drone footage, custom listing sites, and paid ad campaigns &mdash; handled for every property you list.</p>
-                <a href="#pricing" class="sp-link-blue">Explore included assets &rarr;</a>
+                <a href="#" onclick="event.preventDefault(); openJoinForm();" class="sp-link-blue">Apply to the network &rarr;</a>
             </div>
             <div>
                 <h4 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Exclusive Territory</h4>
@@ -848,24 +593,6 @@
         function prevTestimonial() {
             currentTestimonial = (currentTestimonial - 1 + testimonials.length) % testimonials.length;
             updateTestimonialUI();
-        }
-    
-        // Pricing billing-period toggle (monthly <-> annual)
-        function setBilling(period) {
-            document.getElementById('toggle-monthly').classList.toggle('active', period === 'monthly');
-            document.getElementById('toggle-annual').classList.toggle('active', period === 'annual');
-
-            document.querySelectorAll('.plan-price[data-monthly]').forEach(el => {
-                el.textContent = el.getAttribute('data-' + period);
-            });
-            document.querySelectorAll('.plan-period[data-monthly]').forEach(el => {
-                el.textContent = el.getAttribute('data-' + period);
-            });
-
-            const founderNote = document.querySelector('.plan-founder-note');
-            if (founderNote) {
-                founderNote.style.display = period === 'annual' ? 'block' : 'none';
-            }
         }
     </script>
 </body>
