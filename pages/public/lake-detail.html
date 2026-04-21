@@ -49,7 +49,7 @@
 
     <style>
         /* Hero (mirrors the original Lake Minnetonka hand-authored look) */
-        .lm-hero { padding: 12rem 2rem 5rem; background-color: var(--bg-dark); color: #fff; }
+        .lm-hero { position: relative; padding: 12rem 2rem 5rem; background-color: var(--bg-dark); color: #fff; }
         .lm-hero-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
         .lm-hero h1 { font-size: 4.5rem; font-weight: 700; letter-spacing: -2px; line-height: 1.05; margin-bottom: 1.5rem; }
         .lm-hero h1 span { color: var(--accent-blue); }
@@ -57,7 +57,20 @@
         .lm-hero-img { height: 500px; border-radius: 20px; overflow: hidden; }
         .lm-hero-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .lm-hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
-        .btn-back:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.4); }
+
+        /* Small top-left back-link. Absolutely positioned so it sits
+           below the nav but above the hero content, and doesn't compete
+           with the primary CTA for visual weight. */
+        .lm-back-link {
+            position: absolute;
+            top: 6.5rem; left: 2rem;
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            font-size: 0.82rem; font-weight: 600;
+            color: #a0aec0; text-decoration: none;
+            padding: 0.35rem 0.65rem; border-radius: 6px;
+            transition: color 0.15s, background 0.15s;
+        }
+        .lm-back-link:hover { color: #fff; background: rgba(255,255,255,0.06); }
 
         /* Alternating SEO content — image + title + body */
         .sp-section { padding: 6rem 2rem; }
@@ -102,6 +115,7 @@
 
         @media (max-width: 900px) {
             .lm-hero { padding: 7rem 1.25rem 3rem; }
+            .lm-back-link { top: 4.5rem; left: 1.25rem; font-size: 0.78rem; padding: 0.3rem 0.55rem; }
             .lm-hero-inner { grid-template-columns: 1fr; gap: 2rem; }
             .lm-hero h1 { font-size: 2.75rem; letter-spacing: -1.25px; }
             .lm-hero p.lead { font-size: 1.05rem; }
@@ -137,15 +151,13 @@
 
     <!-- Hero -->
     <section class="lm-hero">
+        <a href="/lakes" class="lm-back-link"><span aria-hidden="true">←</span> All lakes</a>
         <div class="lm-hero-inner">
             <div>
                 <h1>Your new view on<br><span>{{LAKE_NAME}}</span></h1>
                 <p class="lead" id="ld-intro">{{LAKE_INTRO_TEXT}}</p>
                 <div class="lm-hero-actions">
                     <button onclick="openForm('buy')" class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none; cursor: pointer;">Contact an expert</button>
-                    <a href="/lakes" class="btn-back" style="display:inline-flex; align-items:center; gap:0.5rem; padding: 1.1rem 1.75rem; font-size: 1rem; text-decoration:none; border:1px solid rgba(255,255,255,0.22); color:#fff; border-radius: 10px; transition: background 0.15s, border-color 0.15s;">
-                        <span aria-hidden="true">←</span> All lakes
-                    </a>
                 </div>
             </div>
             <div class="lm-hero-img">
