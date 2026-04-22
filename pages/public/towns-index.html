@@ -51,6 +51,7 @@
             padding: 0.2rem 0.55rem !important;
         }
         .leaflet-control-attribution a { color: #4a5568 !important; }
+        /* Town pin — blue */
         .tx-pin {
             width: 22px; height: 22px;
             background: #1d6df2;
@@ -63,6 +64,36 @@
         .tx-pin::after { content: ''; display: block; width: 6px; height: 6px; background: #fff; border-radius: 50%; margin: 5px auto; }
         .tx-pin-wrap:hover .tx-pin { transform: rotate(-45deg) scale(1.15); }
 
+        /* Lake pin — teal, dropped on the lake's coordinates */
+        .lk-pin {
+            width: 22px; height: 22px;
+            background: #0d9488;
+            border: 3px solid #fff;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            box-shadow: 0 5px 12px rgba(13,148,136,0.4);
+            transition: transform 0.15s;
+        }
+        .lk-pin::after { content: ''; display: block; width: 6px; height: 6px; background: #fff; border-radius: 50%; margin: 5px auto; }
+        .lk-pin-wrap:hover .lk-pin { transform: rotate(-45deg) scale(1.15); }
+
+        .tx-map-legend {
+            position: absolute; top: 14px; right: 14px; z-index: 500;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            padding: 0.55rem 0.85rem; border-radius: 10px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+            display: flex; gap: 0.9rem; align-items: center;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem; font-weight: 600; color: #1a202c;
+        }
+        .tx-map-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.4rem; vertical-align: -1px; }
+        .tx-map-legend .dot.town { background: #1d6df2; }
+        .tx-map-legend .dot.lake { background: #0d9488; }
+        @media (max-width: 600px) {
+            .tx-map-legend { top: auto; bottom: 14px; right: 10px; left: 10px; justify-content: center; font-size: 0.72rem; }
+        }
+
         .leaflet-popup-content-wrapper { border-radius: 12px !important; box-shadow: 0 10px 28px rgba(0,0,0,0.14) !important; padding: 2px !important; }
         .leaflet-popup-content { margin: 0.9rem 1.1rem !important; font-family: 'Inter', sans-serif; }
         .tx-pop { min-width: 180px; }
@@ -70,6 +101,8 @@
         .tx-pop .meta { font-size: 0.75rem; color: #718096; margin: 0 0 0.75rem; }
         .tx-pop a { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.48rem 0.9rem; background: #1d6df2; color: #fff !important; font-weight: 700; border-radius: 8px; text-decoration: none; font-size: 0.82rem; }
         .tx-pop a:hover { background: #155bc8; }
+        .tx-pop.lake a { background: #0d9488; }
+        .tx-pop.lake a:hover { background: #0b7b70; }
 
         .tx-grid-wrap { max-width: 1320px; margin: 0 auto; padding: 4rem 2rem 6rem; }
         .tx-grid-title { font-size: 2rem; font-weight: 700; color: #1a202c; letter-spacing: -0.75px; margin: 0 0 0.5rem; text-align: center; }
@@ -146,6 +179,10 @@
 
     <section class="tx-map-section">
         <div id="tx-map"></div>
+        <div class="tx-map-legend" aria-hidden="true">
+            <span><span class="dot town"></span>Lake towns</span>
+            <span><span class="dot lake"></span>Lakes</span>
+        </div>
     </section>
 
     <section class="tx-grid-wrap">
@@ -161,6 +198,7 @@
 
     <script>
         let _towns = [];
+        let _lakes = [];
         let _map = null;
         let _markers = [];
 
@@ -171,12 +209,23 @@
             iconAnchor: [11, 28],
             popupAnchor: [0, -26],
         });
+        const LK_PIN_ICON = L.divIcon({
+            className: 'lk-pin-wrap',
+            html: '<div class="lk-pin"></div>',
+            iconSize: [22, 30],
+            iconAnchor: [11, 28],
+            popupAnchor: [0, -26],
+        });
 
         async function loadTowns() {
             try {
-                const res = await fetch('/api/tags?with_lakes=true&active=true');
-                if (!res.ok) throw new Error();
-                _towns = await res.json();
+                const [townRes, lakeRes] = await Promise.all([
+                    fetch('/api/tags?with_lakes=true&active=true'),
+                    fetch('/api/lakes'),
+                ]);
+                if (!townRes.ok) throw new Error();
+                _towns = await townRes.json();
+                _lakes = lakeRes.ok ? await lakeRes.json() : [];
                 populateRegions();
                 applyFilters();
             } catch (_) {
@@ -202,9 +251,16 @@
             });
         }
 
+        function filteredLakes() {
+            // Match the active region filter so lakes on the map stay in sync
+            // with the towns the visitor is actually looking at.
+            const region = document.getElementById('tx-region').value;
+            return _lakes.filter(l => !region || l.region === region);
+        }
+
         function applyFilters() {
             const rows = filtered();
-            renderMap(rows);
+            renderMap(rows, filteredLakes());
             renderGrid(rows);
             document.getElementById('tx-count').textContent = `${rows.length} of ${_towns.length} towns`;
         }
@@ -227,11 +283,42 @@
             return _map;
         }
 
-        function renderMap(rows) {
+        function attachHover(marker, hrefGetter) {
+            let hoverTimer = null;
+            marker.on('mouseover', () => { clearTimeout(hoverTimer); marker.openPopup(); });
+            marker.on('mouseout',  () => { hoverTimer = setTimeout(() => marker.closePopup(), 180); });
+            marker.on('click',     () => { window.location.href = hrefGetter(); });
+            marker.on('popupopen', (e) => {
+                const el = e.popup.getElement();
+                if (!el) return;
+                el.addEventListener('mouseenter', () => clearTimeout(hoverTimer));
+                el.addEventListener('mouseleave', () => { hoverTimer = setTimeout(() => marker.closePopup(), 180); });
+            });
+        }
+
+        function renderMap(rows, lakes) {
             const map = ensureMap();
             _markers.forEach(m => map.removeLayer(m));
             _markers = [];
             const bounds = [];
+
+            // Lake pins first so the page's primary focus (town pins) render on top.
+            (lakes || []).forEach(l => {
+                if (l.latitude == null || l.longitude == null) return;
+                const marker = L.marker([l.latitude, l.longitude], { icon: LK_PIN_ICON }).addTo(map);
+                const locLine = [l.county ? `${l.county} County` : null, l.state].filter(Boolean).join(' · ');
+                marker.bindPopup(`
+                    <div class="tx-pop lake">
+                        <h4>${escHtml(l.name)}</h4>
+                        ${locLine ? `<div class="meta">${escHtml(locLine)}</div>` : ''}
+                        <a href="/lakes/${encodeURIComponent(l.slug)}">Visit lake →</a>
+                    </div>
+                `);
+                attachHover(marker, () => `/lakes/${encodeURIComponent(l.slug)}`);
+                _markers.push(marker);
+                bounds.push([l.latitude, l.longitude]);
+            });
+
             rows.forEach(t => {
                 if (t.latitude == null || t.longitude == null) return;
                 const marker = L.marker([t.latitude, t.longitude], { icon: TX_PIN_ICON }).addTo(map);
@@ -239,25 +326,14 @@
                     <div class="tx-pop">
                         <h4>${escHtml(t.name)}</h4>
                         ${t.region ? `<div class="meta">${escHtml(t.region)}${t.lake_count ? ` · ${t.lake_count} lake${t.lake_count === 1 ? '' : 's'}` : ''}</div>` : ''}
-                        <a href="/towns/${encodeURIComponent(t.slug)}">Open page →</a>
+                        <a href="/towns/${encodeURIComponent(t.slug)}">Visit town →</a>
                     </div>
                 `);
-
-                // Hover to preview, click to navigate.
-                let hoverTimer = null;
-                marker.on('mouseover', () => { clearTimeout(hoverTimer); marker.openPopup(); });
-                marker.on('mouseout',  () => { hoverTimer = setTimeout(() => marker.closePopup(), 180); });
-                marker.on('click',     () => { window.location.href = `/towns/${encodeURIComponent(t.slug)}`; });
-                marker.on('popupopen', (e) => {
-                    const el = e.popup.getElement();
-                    if (!el) return;
-                    el.addEventListener('mouseenter', () => clearTimeout(hoverTimer));
-                    el.addEventListener('mouseleave', () => { hoverTimer = setTimeout(() => marker.closePopup(), 180); });
-                });
-
+                attachHover(marker, () => `/towns/${encodeURIComponent(t.slug)}`);
                 _markers.push(marker);
                 bounds.push([t.latitude, t.longitude]);
             });
+
             if (bounds.length) map.fitBounds(bounds, { padding: [60, 60], maxZoom: 9 });
         }
 
