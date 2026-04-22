@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Your Business | Minnesota Lake Homes</title>
+    <meta name="description" content="List your restaurant, marina, resort, or service on the Minnesota Lake Homes business directory. Free to submit — goes live after admin review.">
+    <meta name="robots" content="index, follow">
+
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="../../components/components.js" defer></script>
+
+    <style>
+        :root { --brand: #d97706; --brand-dark: #b45309; --ink: #1a202c; --ink-soft: #4a5568; --muted: #718096; --line: #e5eaf0; }
+        body { background: #f7f9fa; color: var(--ink); font-family: 'Inter', sans-serif; }
+
+        .sb-shell { max-width: 780px; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+        .sb-eyebrow {
+            display: inline-block;
+            font-size: 0.7rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase;
+            color: var(--brand); background: #fffbeb;
+            padding: 0.3rem 0.65rem; border-radius: 6px;
+            margin-bottom: 0.85rem;
+        }
+        .sb-shell h1 {
+            font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+            font-weight: 800; letter-spacing: -0.8px; line-height: 1.08;
+            margin: 0 0 0.6rem;
+        }
+        .sb-shell > p.intro { color: var(--ink-soft); font-size: 1.02rem; line-height: 1.55; margin: 0 0 2.25rem; max-width: 620px; }
+
+        form.sb-form {
+            background: #fff; border: 1px solid var(--line); border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(16,24,40,0.04);
+        }
+        .sb-section { margin-bottom: 1.75rem; }
+        .sb-section:last-of-type { margin-bottom: 0; }
+        .sb-section h2 {
+            font-size: 0.72rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase;
+            color: var(--muted);
+            margin: 0 0 0.85rem;
+        }
+
+        .sb-field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.95rem; }
+        .sb-field > label { font-size: 0.78rem; font-weight: 700; color: var(--ink); }
+        .sb-field > label .req { color: #d97706; font-weight: 800; margin-left: 2px; }
+        .sb-field input, .sb-field select, .sb-field textarea {
+            font-family: inherit; font-size: 0.96rem;
+            padding: 0.7rem 0.9rem;
+            border: 1px solid var(--line); border-radius: 10px;
+            background: #fff; color: var(--ink); outline: none;
+            transition: border-color 0.12s, box-shadow 0.12s;
+        }
+        .sb-field textarea { min-height: 110px; resize: vertical; }
+        .sb-field input:focus, .sb-field select:focus, .sb-field textarea:focus {
+            border-color: var(--brand);
+            box-shadow: 0 0 0 3px rgba(217,119,6,0.12);
+        }
+        .sb-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .sb-grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem; }
+        @media (max-width: 560px) {
+            .sb-grid-2, .sb-grid-3 { grid-template-columns: 1fr; }
+            form.sb-form { padding: 1.5rem 1.25rem; }
+        }
+
+        .sb-hint { font-size: 0.78rem; color: var(--muted); margin-top: -0.25rem; }
+
+        .sb-submit-row {
+            display: flex; align-items: center; justify-content: flex-end; gap: 1rem;
+            margin-top: 2rem; padding-top: 1.5rem;
+            border-top: 1px solid var(--line);
+        }
+        .sb-submit {
+            background: var(--brand); color: #fff; border: 0;
+            font-family: inherit; font-size: 0.95rem; font-weight: 800;
+            padding: 0.85rem 1.5rem; border-radius: 10px;
+            cursor: pointer; transition: background 0.12s, transform 0.12s;
+            box-shadow: 0 8px 18px rgba(217,119,6,0.25);
+        }
+        .sb-submit:hover { background: var(--brand-dark); transform: translateY(-1px); }
+        .sb-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .sb-err, .sb-ok {
+            padding: 0.85rem 1.1rem; border-radius: 10px; font-size: 0.92rem; margin-bottom: 1.2rem;
+            display: none;
+        }
+        .sb-err { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+        .sb-ok  { background: #f0fff4; color: #22543d; border: 1px solid #9ae6b4; }
+        .sb-err.show, .sb-ok.show { display: block; }
+
+        .sb-success-card {
+            background: #fff; border: 1px solid var(--line); border-radius: 16px;
+            padding: 2.5rem 2rem; text-align: center;
+            box-shadow: 0 10px 30px rgba(16,24,40,0.04);
+        }
+        .sb-success-card h2 { font-size: 1.5rem; font-weight: 800; margin: 0 0 0.5rem; }
+        .sb-success-card p { color: var(--ink-soft); line-height: 1.55; margin: 0 0 1.5rem; }
+        .sb-success-card .check {
+            width: 56px; height: 56px; border-radius: 50%;
+            background: #f0fff4; color: #38a169;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.75rem; font-weight: 800;
+        }
+    </style>
+</head>
+<body>
+    <global-header></global-header>
+
+    <main class="sb-shell">
+        <span class="sb-eyebrow">Free listing</span>
+        <h1>Submit your Minnesota lake-area business</h1>
+        <p class="intro">Tell us about your restaurant, marina, resort, or service. Listings go live on the public directory after a quick admin review — usually within a day or two.</p>
+
+        <div class="sb-err"  id="sb-err"></div>
+
+        <form class="sb-form" id="sb-form" onsubmit="submitBusiness(event)">
+            <div class="sb-section">
+                <h2>About the business</h2>
+                <div class="sb-field">
+                    <label>Business name <span class="req">*</span></label>
+                    <input id="f-name" type="text" required maxlength="200" placeholder="e.g. Gull Lake Marina">
+                </div>
+                <div class="sb-grid-2">
+                    <div class="sb-field">
+                        <label>Category <span class="req">*</span></label>
+                        <select id="f-type" required>
+                            <option value="">Choose a category…</option>
+                            <option value="restaurant">Restaurant</option>
+                            <option value="marina">Marina</option>
+                            <option value="outdoor_recreation">Resort / Outdoor rec</option>
+                            <option value="boat_rental">Boat rental</option>
+                            <option value="builder">Builder / contractor</option>
+                            <option value="photographer">Photographer</option>
+                            <option value="service">Service provider</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="sb-field">
+                        <label>Price range</label>
+                        <select id="f-price">
+                            <option value="">—</option>
+                            <option value="$">$</option>
+                            <option value="$$">$$</option>
+                            <option value="$$$">$$$</option>
+                            <option value="$$$$">$$$$</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="sb-field">
+                    <label>Short description</label>
+                    <textarea id="f-desc" maxlength="600" placeholder="One or two sentences about what you offer and what makes you great for lake visitors."></textarea>
+                    <span class="sb-hint">Keep it short — this is what shows in the preview card.</span>
+                </div>
+                <div class="sb-field">
+                    <label>Featured image URL</label>
+                    <input id="f-image" type="url" placeholder="https://… (optional)">
+                    <span class="sb-hint">Paste a link to a hero image. We'll let you upload directly in a future version.</span>
+                </div>
+            </div>
+
+            <div class="sb-section">
+                <h2>Contact</h2>
+                <div class="sb-grid-2">
+                    <div class="sb-field">
+                        <label>Phone</label>
+                        <input id="f-phone" type="tel" placeholder="(555) 555-5555">
+                    </div>
+                    <div class="sb-field">
+                        <label>Public email</label>
+                        <input id="f-email" type="email" placeholder="hello@yourbusiness.com">
+                    </div>
+                </div>
+                <div class="sb-field">
+                    <label>Website</label>
+                    <input id="f-website" type="url" placeholder="https://yourbusiness.com">
+                </div>
+                <div class="sb-grid-2">
+                    <div class="sb-field">
+                        <label>Instagram URL</label>
+                        <input id="f-instagram" type="url" placeholder="https://instagram.com/yourhandle">
+                    </div>
+                    <div class="sb-field">
+                        <label>Facebook URL</label>
+                        <input id="f-facebook" type="url" placeholder="https://facebook.com/yourpage">
+                    </div>
+                </div>
+            </div>
+
+            <div class="sb-section">
+                <h2>Location</h2>
+                <div class="sb-field">
+                    <label>Street address</label>
+                    <input id="f-address" type="text" placeholder="123 Lakeshore Dr">
+                </div>
+                <div class="sb-grid-3">
+                    <div class="sb-field">
+                        <label>City</label>
+                        <input id="f-city" type="text" placeholder="Nisswa">
+                    </div>
+                    <div class="sb-field">
+                        <label>State</label>
+                        <input id="f-state" type="text" maxlength="2" value="MN">
+                    </div>
+                    <div class="sb-field">
+                        <label>Zip</label>
+                        <input id="f-zip" type="text" maxlength="10" placeholder="56468">
+                    </div>
+                </div>
+                <span class="sb-hint">We'll auto-geocode to place your pin on the map.</span>
+            </div>
+
+            <div class="sb-submit-row">
+                <button type="submit" class="sb-submit" id="sb-submit-btn">Submit for review</button>
+            </div>
+        </form>
+
+        <div class="sb-success-card" id="sb-success" style="display:none;">
+            <div class="check">✓</div>
+            <h2>Thanks — we got it!</h2>
+            <p>Your business is in our admin queue. Once approved you'll see it on the <a href="/towns" style="color:var(--brand);font-weight:700;">lake directory</a> and at its own detail page.</p>
+            <a href="/towns" class="sb-submit" style="text-decoration:none;display:inline-block;">Back to the directory</a>
+        </div>
+    </main>
+
+    <lead-modal></lead-modal>
+
+    <script>
+        async function submitBusiness(e) {
+            e.preventDefault();
+            const err = document.getElementById('sb-err');
+            err.classList.remove('show');
+
+            const body = {
+                name:          val('f-name'),
+                type:          val('f-type'),
+                description:   val('f-desc'),
+                phone:         val('f-phone'),
+                email:         val('f-email'),
+                website_url:   val('f-website'),
+                instagram_url: val('f-instagram'),
+                facebook_url:  val('f-facebook'),
+                address:       val('f-address'),
+                city:          val('f-city'),
+                state:         (val('f-state') || 'MN').toUpperCase(),
+                zip:           val('f-zip'),
+                price_range:   val('f-price'),
+                featured_image_url: val('f-image'),
+            };
+            if (!body.name || !body.type) {
+                err.textContent = 'Business name and category are required.';
+                err.classList.add('show');
+                return;
+            }
+
+            const btn = document.getElementById('sb-submit-btn');
+            btn.disabled = true; btn.textContent = 'Submitting…';
+            try {
+                const res = await fetch('/api/businesses/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                document.getElementById('sb-form').style.display = 'none';
+                document.getElementById('sb-success').style.display = 'block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (ex) {
+                err.textContent = ex.message || 'Something went wrong. Try again.';
+                err.classList.add('show');
+                btn.disabled = false; btn.textContent = 'Submit for review';
+            }
+        }
+        function val(id) { return (document.getElementById(id).value || '').trim(); }
+    </script>
+</body>
+</html>

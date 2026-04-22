@@ -27,6 +27,10 @@ function softAuth(req, res, next) {
 // Public reads
 router.get('/',          softAuth, c.list);
 
+// Public self-submission (creates a 'pending' row). Sits before /:slugOrId
+// so the literal "submit" string isn't interpreted as a slug lookup.
+router.post('/submit', c.submit);
+
 // Admin-only upload — sits before /:slugOrId so it isn't swallowed.
 router.post('/upload-image', verifyToken, c.uploadImage);
 

@@ -32,18 +32,64 @@
 
         /* Navbar is position:fixed — we read its height at runtime into --hh
            so the split pane can fill exactly the remaining viewport. */
-        :root { --hh: 76px; --tb: 68px; }
+        :root { --hh: 76px; --tb: 68px; --sb: 76px; }
 
         .db-shell {
             position: fixed;
             inset: var(--hh) 0 0 0;
             display: grid;
+            grid-template-columns: var(--sb) minmax(0, 1fr);
             grid-template-rows: var(--tb) 1fr;
             background: #fff;
         }
 
+        /* Left rail — Zillow-style icon column */
+        .db-sidebar {
+            grid-row: 1 / -1;
+            grid-column: 1;
+            background: #fff;
+            border-right: 1px solid #e5eaf0;
+            z-index: 15;
+            display: flex;
+            flex-direction: column;
+            padding: 5rem 0.35rem 1.5rem;
+            gap: 2.5rem;
+        }
+        .db-side-btn {
+            display: flex; flex-direction: column; align-items: center;
+            gap: 0.35rem;
+            padding: 0.7rem 0.4rem;
+            background: transparent; border: 0; cursor: pointer;
+            color: #4a5568;
+            font-family: inherit; font-size: 0.66rem; font-weight: 700;
+            letter-spacing: 0.2px; line-height: 1.15; text-align: center;
+            text-decoration: none;
+            border-radius: 10px;
+            transition: background 0.15s, color 0.15s;
+        }
+        .db-side-btn:hover { background: #f4f6f9; color: #1a202c; }
+        .db-side-btn.is-active { background: #eef4ff; color: #1d6df2; }
+        .db-side-btn.is-active svg { stroke: #1d6df2; }
+        .db-side-foot {
+            margin-top: auto;
+            padding: 0.75rem 0.2rem;
+            text-align: center;
+            font-size: 0.62rem; font-weight: 800; letter-spacing: 0.3px;
+            color: #a0aec0;
+        }
+        .db-side-foot a { color: #a0aec0; text-decoration: none; line-height: 1.2; display: block; }
+        .db-side-foot a:hover { color: #1d6df2; }
+        .db-side-btn svg {
+            width: 22px; height: 22px;
+            stroke: #4a5568; fill: none;
+            stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+        }
+        .db-side-btn:hover svg { stroke: #1a202c; }
+        .db-side-label { display: block; }
+
         /* ── Toolbar ─────────────────────────────────────────────── */
         .db-toolbar {
+            grid-column: 2; grid-row: 1;
             display: flex; gap: 0.65rem; align-items: center;
             padding: 0.85rem 1.25rem;
             background: #fff;
@@ -98,6 +144,7 @@
 
         /* ── Split pane ──────────────────────────────────────────── */
         .db-main {
+            grid-column: 2; grid-row: 2;
             display: grid;
             grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
             min-height: 0;
@@ -123,6 +170,7 @@
         .db-map-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.4rem; vertical-align: -1px; }
         .db-map-legend .dot.town { background: #1d6df2; }
         .db-map-legend .dot.lake { background: #0d9488; }
+        .db-map-legend .dot.biz  { background: #d97706; }
 
         .leaflet-control-attribution {
             background: rgba(255,255,255,0.85) !important;
@@ -168,15 +216,67 @@
         .lk-pin-wrap:hover .lk-pin,
         .lk-pin-wrap.is-hot .lk-pin { transform: rotate(-45deg) scale(1.2); z-index: 900; }
 
-        .leaflet-popup-content-wrapper { border-radius: 12px !important; box-shadow: 0 10px 28px rgba(0,0,0,0.14) !important; padding: 2px !important; }
-        .leaflet-popup-content { margin: 0.9rem 1.1rem !important; font-family: 'Inter', sans-serif; }
-        .db-pop { min-width: 180px; }
-        .db-pop h4 { font-size: 1.02rem; font-weight: 800; color: #1a202c; margin: 0 0 0.2rem; letter-spacing: -0.2px; }
-        .db-pop .meta { font-size: 0.75rem; color: #718096; margin: 0 0 0.75rem; }
-        .db-pop a { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.48rem 0.9rem; background: #1d6df2; color: #fff !important; font-weight: 700; border-radius: 8px; text-decoration: none; font-size: 0.82rem; }
-        .db-pop a:hover { background: #155bc8; }
-        .db-pop.lake a { background: #0d9488; }
-        .db-pop.lake a:hover { background: #0b7b70; }
+        /* Business pin — color set per-type via inline --c custom property.
+           Falls back to amber for unknown types. */
+        .bz-pin {
+            width: 22px; height: 22px;
+            background: var(--c, #d97706);
+            border: 3px solid #fff;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            box-shadow: 0 5px 12px rgba(0,0,0,0.25);
+            transition: transform 0.15s;
+        }
+        .bz-pin::after { content: ''; display: block; width: 6px; height: 6px; background: #fff; border-radius: 50%; margin: 5px auto; }
+        .bz-pin-wrap:hover .bz-pin,
+        .bz-pin-wrap.is-hot .bz-pin { transform: rotate(-45deg) scale(1.2); z-index: 900; }
+
+        /* Hover tooltip — just the name, minimal */
+        .db-pin-tip {
+            background: #1a202c !important;
+            color: #fff !important;
+            border: 0 !important;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.78rem !important;
+            font-weight: 700 !important;
+            padding: 0.35rem 0.7rem !important;
+            border-radius: 6px !important;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.18);
+            white-space: nowrap;
+        }
+        .db-pin-tip::before { border-top-color: #1a202c !important; }
+
+        /* Click popup — rich preview card with thumb + button */
+        .leaflet-popup-content-wrapper { border-radius: 14px !important; box-shadow: 0 14px 34px rgba(16,24,40,0.22) !important; padding: 0 !important; overflow: hidden; }
+        .leaflet-popup-content { margin: 0 !important; width: 260px !important; font-family: 'Inter', sans-serif; }
+        .leaflet-popup-tip { box-shadow: 0 4px 10px rgba(16,24,40,0.12); }
+        .db-pop-card .thumb { position: relative; height: 145px; background: linear-gradient(135deg, #1d6df2 0%, #155bc8 100%); overflow: hidden; }
+        .db-pop-card.lake .thumb { background: linear-gradient(135deg, #0d9488 0%, #0b7b70 100%); }
+        .db-pop-card .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .db-pop-card .thumb .chip {
+            position: absolute; top: 10px; left: 10px;
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+            color: #1a202c; font-size: 0.64rem; font-weight: 800;
+            letter-spacing: 0.6px; text-transform: uppercase;
+            padding: 0.25rem 0.55rem; border-radius: 5px;
+        }
+        .db-pop-body { padding: 0.85rem 1rem 1rem; }
+        .db-pop-body h4 { font-size: 1.05rem; font-weight: 800; color: #1a202c; margin: 0 0 0.25rem; letter-spacing: -0.25px; }
+        .db-pop-body .meta { font-size: 0.74rem; color: #718096; margin: 0 0 0.85rem; font-weight: 600; }
+        .db-pop-btn { display: block; text-align: center; padding: 0.6rem 0.9rem; background: #1d6df2; color: #fff !important; font-weight: 800; font-size: 0.82rem; border-radius: 8px; text-decoration: none; transition: background 0.15s; }
+        .db-pop-btn:hover { background: #155bc8; }
+        .db-pop-card.lake .db-pop-btn { background: #0d9488; }
+        .db-pop-card.lake .db-pop-btn:hover { background: #0b7b70; }
+        .db-pop-card.biz  .thumb {
+            background: linear-gradient(135deg,
+                var(--biz-c, #d97706) 0%,
+                color-mix(in srgb, var(--biz-c, #d97706) 72%, #000) 100%);
+        }
+        .db-pop-card.biz  .db-pop-btn { background: var(--biz-c, #d97706); }
+        .db-pop-card.biz  .db-pop-btn:hover {
+            background: color-mix(in srgb, var(--biz-c, #d97706) 80%, #000);
+        }
 
         /* ── Cards column ────────────────────────────────────────── */
         .db-list-col {
@@ -223,6 +323,14 @@
         .db-card.lake .db-card-thumb {
             background: linear-gradient(135deg, #0d9488 0%, #0b7b70 100%);
         }
+        /* Business cards inherit their per-type color from inline --biz-c.
+           color-mix gives the darker stop for the gradient without us
+           having to pre-compute every type's shade. */
+        .db-card.biz .db-card-thumb {
+            background: linear-gradient(135deg,
+                var(--biz-c, #d97706) 0%,
+                color-mix(in srgb, var(--biz-c, #d97706) 72%, #000) 100%);
+        }
         .db-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s; }
         .db-card-thumb .chip {
             position: absolute; top: 12px; left: 12px; z-index: 2;
@@ -241,6 +349,7 @@
             padding: 0.28rem 0.55rem; border-radius: 6px;
         }
         .db-card.lake .db-card-thumb .type { background: rgba(13,148,136,0.95); }
+        .db-card.biz  .db-card-thumb .type { background: var(--biz-c, #d97706); }
         .db-card-thumb .type .dot { width: 6px; height: 6px; border-radius: 50%; background: #fff; }
         .db-card-body { padding: 1rem 1.1rem 1.15rem; flex: 1; display: flex; flex-direction: column; }
         .db-card-body h3 { font-size: 1.08rem; font-weight: 800; color: #1a202c; margin: 0 0 0.25rem; letter-spacing: -0.25px; }
@@ -252,7 +361,22 @@
             transition: gap 0.15s, color 0.15s;
         }
         .db-card.lake .db-card-cta { color: #0d9488; }
+        .db-card.biz  .db-card-cta { color: var(--biz-c, #d97706); }
         .db-card:hover .db-card-cta { gap: 0.6rem; }
+
+        /* Featured Partner badge — sits on the thumb, visually distinct
+           from the type chip so premium businesses stand out at a glance. */
+        .db-card.is-featured { border-color: #d4a84a; box-shadow: 0 10px 22px rgba(212,168,74,0.18); }
+        .db-card-thumb .featured {
+            position: absolute; bottom: 12px; left: 12px; z-index: 2;
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%);
+            color: #fff; font-size: 0.66rem; font-weight: 800;
+            letter-spacing: 0.6px; text-transform: uppercase;
+            padding: 0.3rem 0.65rem; border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(180,83,9,0.35);
+        }
+        .db-card-thumb .featured::before { content: '★'; font-size: 0.8rem; line-height: 1; }
 
         .db-empty, .db-loading {
             grid-column: 1/-1;
@@ -261,6 +385,9 @@
             color: #a0aec0;
             font-size: 0.9rem;
         }
+        /* Pan/zoom hides cards via a class toggle instead of re-rendering
+           the DOM — otherwise images re-decode and the grid flickers. */
+        .db-card.is-hidden { display: none; }
 
         /* ── Mobile: collapse into stacked map + list ───────────── */
         @media (max-width: 900px) {
@@ -271,6 +398,7 @@
                 display: block;
                 padding-top: var(--hh);
             }
+            .db-sidebar { display: none; }
             .db-toolbar { height: auto; flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem 1rem; }
             .db-toolbar input[type="search"] { flex: 1 1 100%; order: -1; min-width: 0; }
             .db-seg { order: 1; }
@@ -298,15 +426,36 @@
     <global-header></global-header>
 
     <div class="db-shell" id="db-shell">
+        <aside class="db-sidebar" aria-label="Primary actions">
+            <button type="button" class="db-side-btn is-active" data-view="geo" onclick="setView('geo')">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-7.58-7-12a7 7 0 0 1 14 0c0 4.42-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                <span class="db-side-label">MN Towns<br>&amp; Lakes</span>
+            </button>
+            <button type="button" class="db-side-btn" data-view="biz" onclick="setView('biz')">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l1.5-4h15L21 9"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/></svg>
+                <span class="db-side-label">Businesses<br>&amp; Services</span>
+            </button>
+            <a class="db-side-btn" href="/pages/public/agents.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.418 3.582-8 8-8s8 3.582 8 8"/></svg>
+                <span class="db-side-label">Find an<br>Agent</span>
+            </a>
+            <div class="db-side-foot">
+                <a href="/business-signup">+ List<br>your<br>business</a>
+            </div>
+        </aside>
         <div class="db-toolbar" role="toolbar" aria-label="Database filters">
-            <div class="db-seg" role="tablist" aria-label="Result type">
-                <button type="button" role="tab" data-type="all" class="is-active" onclick="setType('all')">All</button>
-                <button type="button" role="tab" data-type="town" onclick="setType('town')">Towns</button>
-                <button type="button" role="tab" data-type="lake" onclick="setType('lake')">Lakes</button>
+            <div class="db-seg" id="db-seg" role="tablist" aria-label="Result type">
+                <!-- Populated by renderSegmented() based on active view -->
             </div>
             <input type="search" id="db-search" placeholder="Search lakes or towns…" oninput="applyFilters()" aria-label="Search">
             <select id="db-region" onchange="applyFilters()" aria-label="Filter by region">
                 <option value="">All regions</option>
+            </select>
+            <!-- Premium vs basic tier filter — only visible in Businesses view. -->
+            <select id="db-tier" onchange="applyFilters()" aria-label="Filter by plan" style="display:none;">
+                <option value="">All plans</option>
+                <option value="premium">Featured Partners</option>
+                <option value="basic">Local Spotlight</option>
             </select>
             <span id="db-count" class="db-count"></span>
         </div>
@@ -314,7 +463,7 @@
         <div class="db-main">
             <div class="db-map-col">
                 <div id="db-map"></div>
-                <div class="db-map-legend" aria-hidden="true">
+                <div class="db-map-legend" id="db-legend" aria-hidden="true">
                     <span><span class="dot town"></span>Lake towns</span>
                     <span><span class="dot lake"></span>Lakes</span>
                 </div>
@@ -340,7 +489,50 @@
         // ── Data stores ───────────────────────────────────────────
         let _towns = [];
         let _lakes = [];
-        let _type = 'all';
+        let _businesses = [];
+        let _view = 'geo';     // 'geo' = towns+lakes | 'biz' = businesses
+        let _type = 'all';     // meaning depends on _view (see SEG_OPTIONS)
+        // Items after text/region/type filters, before viewport clipping.
+        // Cached so map pan/zoom can re-filter the right list cheaply.
+        let _filteredItems = [];
+
+        // Segmented toggle options per view. Keys match either the
+        // item.kind (geo) or the business.type column (biz).
+        const SEG_OPTIONS = {
+            geo: [
+                { key: 'all',  label: 'All' },
+                { key: 'town', label: 'Towns' },
+                { key: 'lake', label: 'Lakes' },
+            ],
+            biz: [
+                { key: 'all',                 label: 'All' },
+                { key: 'restaurant',          label: 'Restaurants' },
+                { key: 'marina',              label: 'Marinas' },
+                { key: 'outdoor_recreation',  label: 'Resorts' },
+                { key: 'service',             label: 'Services' },
+            ],
+        };
+
+        // Friendly labels for business types in card/popup UI.
+        const BIZ_TYPE_LABEL = {
+            restaurant: 'Restaurant',
+            marina: 'Marina',
+            outdoor_recreation: 'Resort',
+            boat_rental: 'Boat Rental',
+            service: 'Service',
+            builder: 'Builder',
+            photographer: 'Photographer',
+            other: 'Local Business',
+        };
+        // The "Services" segment bucket covers every non-obvious type —
+        // keeps the toolbar tight while still making every business
+        // reachable via a filter.
+        const BIZ_SEG_TYPES = {
+            restaurant:         ['restaurant'],
+            marina:             ['marina'],
+            outdoor_recreation: ['outdoor_recreation'],
+            service:            ['service', 'boat_rental', 'builder', 'photographer', 'other'],
+        };
 
         // Map + marker registry, keyed so hover-sync (card ⇄ pin) is cheap.
         let _map = null;
@@ -366,55 +558,162 @@
             html: '<div class="lk-pin"></div>',
             iconSize: [22, 30], iconAnchor: [11, 28], popupAnchor: [0, -26],
         });
+        // Type-specific pin colors for the Businesses view. Unknown types
+        // fall through to amber so nothing renders invisible.
+        const BIZ_COLORS = {
+            restaurant:         '#dc2626', // red
+            marina:             '#2563eb', // blue
+            outdoor_recreation: '#059669', // green (resorts)
+            boat_rental:        '#0891b2', // teal
+            builder:            '#92400e', // brown
+            photographer:       '#7c3aed', // purple
+            service:            '#475569', // slate
+            other:              '#d97706', // amber (default)
+        };
+        function bizPinIcon(type) {
+            const c = BIZ_COLORS[type] || BIZ_COLORS.other;
+            return L.divIcon({
+                className: 'bz-pin-wrap',
+                html: `<div class="bz-pin" style="--c:${c}"></div>`,
+                iconSize: [22, 30], iconAnchor: [11, 28], popupAnchor: [0, -26],
+            });
+        }
 
         // ── Load both feeds in parallel ───────────────────────────
         async function loadAll() {
+            // Fetch errors are user-facing ("the server is down"); render
+            // errors are developer bugs that shouldn't be masked by the
+            // generic "couldn't load" message — we let those surface to
+            // the console and swallow here only to keep the pins alive.
             try {
-                const [townRes, lakeRes] = await Promise.all([
+                const [townRes, lakeRes, bizRes] = await Promise.all([
                     fetch('/api/tags?with_lakes=true&active=true'),
                     fetch('/api/lakes'),
+                    fetch('/api/businesses'),
                 ]);
                 if (!townRes.ok) throw new Error('towns');
                 _towns = await townRes.json();
                 _lakes = lakeRes.ok ? await lakeRes.json() : [];
-                populateRegions();
-                applyFilters();
-            } catch (_) {
+                _businesses = bizRes.ok ? await bizRes.json() : [];
+            } catch (err) {
+                console.error('loadAll: fetch failed', err);
                 document.getElementById('db-grid').innerHTML =
                     '<div class="db-empty">Could not load the directory. Please try again.</div>';
+                return;
+            }
+            try {
+                populateRegions();
+                renderSegmented();
+                applyFilters();
+            } catch (err) {
+                console.error('loadAll: render failed', err);
             }
         }
 
         function populateRegions() {
+            // For the geo view, regions come from towns + lakes. For the
+            // biz view we use city instead since businesses don't live
+            // in regions.
             const sel = document.getElementById('db-region');
-            const regions = [...new Set(
-                [..._towns.map(t => t.region), ..._lakes.map(l => l.region)].filter(Boolean)
-            )].sort();
-            sel.innerHTML = '<option value="">All regions</option>' +
-                regions.map(r => `<option value="${escHtml(r)}">${escHtml(r)}</option>`).join('');
+            let opts;
+            if (_view === 'biz') {
+                const cities = [...new Set(_businesses.map(b => b.city).filter(Boolean))].sort();
+                sel.setAttribute('aria-label', 'Filter by city');
+                opts = [
+                    '<option value="">All cities</option>',
+                    ...cities.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`),
+                ];
+            } else {
+                const regions = [...new Set(
+                    [..._towns.map(t => t.region), ..._lakes.map(l => l.region)].filter(Boolean)
+                )].sort();
+                sel.setAttribute('aria-label', 'Filter by region');
+                opts = [
+                    '<option value="">All regions</option>',
+                    ...regions.map(r => `<option value="${escHtml(r)}">${escHtml(r)}</option>`),
+                ];
+            }
+            sel.innerHTML = opts.join('');
+        }
+
+        // Rebuild the segmented toggle based on the active view.
+        function renderSegmented() {
+            const seg = document.getElementById('db-seg');
+            const opts = SEG_OPTIONS[_view];
+            seg.innerHTML = opts.map(o =>
+                `<button type="button" role="tab" data-type="${o.key}"${o.key === _type ? ' class="is-active"' : ''} onclick="setType('${o.key}')">${escHtml(o.label)}</button>`
+            ).join('');
         }
 
         function setType(t) {
             _type = t;
-            document.querySelectorAll('.db-seg button').forEach(b => {
+            document.querySelectorAll('#db-seg button').forEach(b => {
                 b.classList.toggle('is-active', b.dataset.type === t);
             });
+            applyFilters();
+        }
+
+        // Swap between geo and biz views. Resets the type filter, rebuilds
+        // the toolbar, and re-renders everything.
+        function setView(v) {
+            if (v === _view) return;
+            _view = v;
+            _type = 'all';
+            document.querySelectorAll('.db-sidebar .db-side-btn[data-view]').forEach(b => {
+                b.classList.toggle('is-active', b.dataset.view === v);
+            });
+            // Clear search between views — different datasets, different context.
+            document.getElementById('db-search').value = '';
+            document.getElementById('db-search').placeholder = v === 'biz'
+                ? 'Search businesses…'
+                : 'Search lakes or towns…';
+            // Tier filter only applies to businesses — hide + reset elsewhere.
+            const tierSel = document.getElementById('db-tier');
+            tierSel.style.display = v === 'biz' ? '' : 'none';
+            if (v !== 'biz') tierSel.value = '';
+            populateRegions();
+            renderSegmented();
             applyFilters();
         }
 
         // ── Filter + render ───────────────────────────────────────
         function getFilteredItems() {
             const search = (document.getElementById('db-search').value || '').toLowerCase().trim();
-            const region = document.getElementById('db-region').value;
+            const regionOrCity = document.getElementById('db-region').value;
+
+            if (_view === 'biz') {
+                const tier = document.getElementById('db-tier').value;
+                const filtered = _businesses.filter(b => {
+                    if (_type !== 'all') {
+                        const allowed = BIZ_SEG_TYPES[_type] || [_type];
+                        if (!allowed.includes(b.type)) return false;
+                    }
+                    if (tier && b.tier !== tier) return false;
+                    if (regionOrCity && b.city !== regionOrCity) return false;
+                    if (search) {
+                        const hay = `${b.name} ${b.city || ''} ${b.type || ''}`.toLowerCase();
+                        if (!hay.includes(search)) return false;
+                    }
+                    return true;
+                });
+                // Featured Partners always sort to the top so their pin
+                // and card get noticed first.
+                filtered.sort((a, b) => {
+                    const ap = a.tier === 'premium' ? 0 : 1;
+                    const bp = b.tier === 'premium' ? 0 : 1;
+                    return ap - bp;
+                });
+                return filtered.map(b => ({ kind: 'biz', data: b }));
+            }
 
             const towns = (_type === 'lake') ? [] : _towns.filter(t => {
-                if (region && t.region !== region) return false;
+                if (regionOrCity && t.region !== regionOrCity) return false;
                 if (search && !t.name.toLowerCase().includes(search)) return false;
                 return true;
             }).map(t => ({ kind: 'town', data: t }));
 
             const lakes = (_type === 'town') ? [] : _lakes.filter(l => {
-                if (region && l.region !== region) return false;
+                if (regionOrCity && l.region !== regionOrCity) return false;
                 if (search && !l.name.toLowerCase().includes(search)) return false;
                 return true;
             }).map(l => ({ kind: 'lake', data: l }));
@@ -424,23 +723,106 @@
         }
 
         function applyFilters() {
-            const items = getFilteredItems();
-            renderMap(items);
-            renderGrid(items);
-
-            const nT = items.filter(i => i.kind === 'town').length;
-            const nL = items.filter(i => i.kind === 'lake').length;
-            const count = document.getElementById('db-count');
-            count.textContent =
-                _type === 'town' ? `${nT} town${nT === 1 ? '' : 's'}`
-              : _type === 'lake' ? `${nL} lake${nL === 1 ? '' : 's'}`
-              : `${nT} town${nT === 1 ? '' : 's'} · ${nL} lake${nL === 1 ? '' : 's'}`;
+            _filteredItems = getFilteredItems();
+            // renderGrid builds the full card DOM once per filter change.
+            // Pan/zoom only toggles visibility via renderInView — it never
+            // rebuilds innerHTML, so images don't re-decode and flicker.
+            renderGrid(_filteredItems);
+            renderMap(_filteredItems);
+            renderInView();
 
             const title = document.getElementById('db-list-title');
-            title.textContent =
-                _type === 'town' ? 'Lake Towns'
-              : _type === 'lake' ? 'Lakes'
-              : 'Lakes & Lake Towns';
+            const sub   = document.getElementById('db-list-sub');
+            const legend = document.getElementById('db-legend');
+            // Legend + titles follow the active segment so the top-right
+            // chip always reflects what's actually on the map. "All" keeps
+            // the multi-category label; anything else narrows to one.
+            if (_view === 'biz') {
+                const segLabel = SEG_OPTIONS.biz.find(o => o.key === _type)?.label || 'Businesses';
+                title.textContent = _type === 'all' ? 'Businesses & Services' : segLabel;
+                sub.textContent = 'Local restaurants, marinas, resorts, and services around Minnesota lakes.';
+                if (_type === 'all') {
+                    legend.innerHTML = '<span>All businesses</span>';
+                } else {
+                    const c = BIZ_COLORS[_type] || BIZ_COLORS.other;
+                    legend.innerHTML = `<span><span class="dot" style="background:${c};"></span>${escHtml(segLabel)}</span>`;
+                }
+            } else {
+                title.textContent =
+                    _type === 'town' ? 'Lake Towns'
+                  : _type === 'lake' ? 'Lakes'
+                  : 'Lakes & Lake Towns';
+                sub.textContent = 'Every lake and lake-adjacent community in our Minnesota network.';
+                if (_type === 'town') {
+                    legend.innerHTML = '<span><span class="dot town"></span>Lake towns</span>';
+                } else if (_type === 'lake') {
+                    legend.innerHTML = '<span><span class="dot lake"></span>Lakes</span>';
+                } else {
+                    legend.innerHTML =
+                        '<span><span class="dot town"></span>Lake towns</span>' +
+                        '<span><span class="dot lake"></span>Lakes</span>';
+                }
+            }
+        }
+
+        // Toggle .is-hidden on existing cards based on the map viewport.
+        // No DOM teardown — that's the whole point.
+        function renderInView() {
+            let visible = _filteredItems;
+            try {
+                if (_map && _map._loaded && _map.getSize().x > 0) {
+                    const b = _map.getBounds();
+                    visible = _filteredItems.filter(i => {
+                        const d = i.data;
+                        if (d.latitude == null || d.longitude == null) return false;
+                        return b.contains([+d.latitude, +d.longitude]);
+                    });
+                }
+            } catch (err) {
+                console.error('renderInView: bounds filter failed', err);
+                visible = _filteredItems;
+            }
+
+            const visibleKeys = new Set(visible.map(keyFor));
+            const grid = document.getElementById('db-grid');
+            grid.querySelectorAll('.db-card').forEach(el => {
+                el.classList.toggle('is-hidden', !visibleKeys.has(el.dataset.key));
+            });
+
+            // "No pins in view" banner lives outside the card stream so we
+            // can add/remove it without touching the cards themselves.
+            let empty = grid.querySelector('.db-empty-inview');
+            if (visible.length === 0 && _filteredItems.length > 0) {
+                if (!empty) {
+                    empty = document.createElement('div');
+                    empty.className = 'db-empty db-empty-inview';
+                    empty.textContent = 'No pins in view — try zooming out or panning.';
+                    grid.insertBefore(empty, grid.firstChild);
+                }
+            } else if (empty) {
+                empty.remove();
+            }
+
+            updateCount(visible);
+        }
+
+        function updateCount(visible) {
+            const el = document.getElementById('db-count');
+            if (_view === 'biz') {
+                el.textContent = `${visible.length} of ${_filteredItems.length} in view`;
+                return;
+            }
+            const nT = visible.filter(i => i.kind === 'town').length;
+            const nL = visible.filter(i => i.kind === 'lake').length;
+            const tT = _filteredItems.filter(i => i.kind === 'town').length;
+            const tL = _filteredItems.filter(i => i.kind === 'lake').length;
+            if (_type === 'town') {
+                el.textContent = `${nT} of ${tT} town${tT === 1 ? '' : 's'} in view`;
+            } else if (_type === 'lake') {
+                el.textContent = `${nL} of ${tL} lake${tL === 1 ? '' : 's'} in view`;
+            } else {
+                el.textContent = `${nT + nL} of ${tT + tL} in view`;
+            }
         }
 
         // ── Map ───────────────────────────────────────────────────
@@ -453,41 +835,77 @@
                 wheelPxPerZoomLevel: 110,
                 zoomAnimation: true,
             });
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/voyager/{z}/{x}/{y}{r}.png', {
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
                 subdomains: 'abcd',
                 maxZoom: 19,
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
             }).addTo(_map);
             _map.attributionControl.setPrefix('<a href="https://leafletjs.com/" title="A JavaScript library for interactive maps">Leaflet</a>');
             _markerLayer = L.layerGroup().addTo(_map);
+            // Pan/zoom reshapes the right list — but only the list.
+            // Markers stay put, so no re-render on the map itself.
+            _map.on('moveend', renderInView);
             return _map;
         }
 
-        function attachHover(marker, key, hrefGetter) {
-            let hoverTimer = null;
-            marker.on('mouseover', () => {
-                clearTimeout(hoverTimer);
-                marker.openPopup();
-                highlightCard(key, true);
-            });
-            marker.on('mouseout', () => {
-                hoverTimer = setTimeout(() => {
-                    marker.closePopup();
-                    highlightCard(key, false);
-                }, 180);
-            });
-            marker.on('click', () => { window.location.href = hrefGetter(); });
-            marker.on('popupopen', (e) => {
-                const el = e.popup.getElement();
-                if (!el) return;
-                el.addEventListener('mouseenter', () => clearTimeout(hoverTimer));
-                el.addEventListener('mouseleave', () => {
-                    hoverTimer = setTimeout(() => {
-                        marker.closePopup();
-                        highlightCard(key, false);
-                    }, 180);
-                });
-            });
+        // Hover = name-only tooltip. Click = rich preview card popup.
+        // The right-side list is intentionally never driven by map events —
+        // pins are for scanning, cards are for scrolling.
+        function buildPreviewCard(item) {
+            if (item.kind === 'biz') {
+                const b = item.data;
+                const thumb = b.featured_image_url || DEFAULT_BIZ_IMG;
+                const loc = [b.city, b.state].filter(Boolean).join(', ');
+                const typeLabel = BIZ_TYPE_LABEL[b.type] || 'Local Business';
+                const bizColor = BIZ_COLORS[b.type] || BIZ_COLORS.other;
+                return `
+                    <div class="db-pop-card biz" style="--biz-c:${bizColor};">
+                        <div class="thumb">
+                            <span class="chip">${escHtml(typeLabel)}</span>
+                            <img src="${escHtml(thumb)}" alt="${escHtml(b.name)}" loading="lazy">
+                        </div>
+                        <div class="db-pop-body">
+                            <h4>${escHtml(b.name)}</h4>
+                            <div class="meta">${escHtml(loc)}</div>
+                            <a class="db-pop-btn" href="/businesses/${encodeURIComponent(b.slug)}">Visit business page →</a>
+                        </div>
+                    </div>
+                `;
+            }
+            if (item.kind === 'town') {
+                const t = item.data;
+                const thumb = t.hero_image_url || REGION_IMG[t.region] || DEFAULT_TOWN_IMG;
+                const loc = [t.state, t.lake_count ? `${t.lake_count} lake${t.lake_count === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ');
+                return `
+                    <div class="db-pop-card town">
+                        <div class="thumb">
+                            ${t.region ? `<span class="chip">${escHtml(t.region)}</span>` : ''}
+                            <img src="${escHtml(thumb)}" alt="${escHtml(t.name)}" loading="lazy">
+                        </div>
+                        <div class="db-pop-body">
+                            <h4>${escHtml(t.name)}</h4>
+                            <div class="meta">${escHtml(loc)}</div>
+                            <a class="db-pop-btn" href="/towns/${encodeURIComponent(t.slug)}">Visit town page →</a>
+                        </div>
+                    </div>
+                `;
+            }
+            const l = item.data;
+            const thumb = l.featured_image_url || l.hero_image_url || REGION_IMG[l.region] || DEFAULT_LAKE_IMG;
+            const loc = [l.county ? `${l.county} County` : null, l.state].filter(Boolean).join(' · ');
+            return `
+                <div class="db-pop-card lake">
+                    <div class="thumb">
+                        ${l.region ? `<span class="chip">${escHtml(l.region)}</span>` : ''}
+                        <img src="${escHtml(thumb)}" alt="${escHtml(l.name)}" loading="lazy">
+                    </div>
+                    <div class="db-pop-body">
+                        <h4>${escHtml(l.name)}</h4>
+                        <div class="meta">${escHtml(loc)}</div>
+                        <a class="db-pop-btn" href="/lakes/${encodeURIComponent(l.slug)}">Visit lake page →</a>
+                    </div>
+                </div>
+            `;
         }
 
         function renderMap(items) {
@@ -497,38 +915,35 @@
             const bounds = [];
 
             items.forEach(item => {
-                if (item.kind === 'lake') {
-                    const l = item.data;
-                    if (l.latitude == null || l.longitude == null) return;
-                    const key = `l:${l.slug}`;
-                    const marker = L.marker([l.latitude, l.longitude], { icon: LK_PIN_ICON }).addTo(_markerLayer);
-                    const locLine = [l.county ? `${l.county} County` : null, l.state].filter(Boolean).join(' · ');
-                    marker.bindPopup(`
-                        <div class="db-pop lake">
-                            <h4>${escHtml(l.name)}</h4>
-                            ${locLine ? `<div class="meta">${escHtml(locLine)}</div>` : ''}
-                            <a href="/lakes/${encodeURIComponent(l.slug)}">Visit lake →</a>
-                        </div>
-                    `);
-                    attachHover(marker, key, () => `/lakes/${encodeURIComponent(l.slug)}`);
-                    _markers.set(key, marker);
-                    bounds.push([l.latitude, l.longitude]);
-                } else {
-                    const t = item.data;
-                    if (t.latitude == null || t.longitude == null) return;
-                    const key = `t:${t.slug}`;
-                    const marker = L.marker([t.latitude, t.longitude], { icon: TX_PIN_ICON }).addTo(_markerLayer);
-                    marker.bindPopup(`
-                        <div class="db-pop">
-                            <h4>${escHtml(t.name)}</h4>
-                            ${t.region ? `<div class="meta">${escHtml(t.region)}${t.lake_count ? ` · ${t.lake_count} lake${t.lake_count === 1 ? '' : 's'}` : ''}</div>` : ''}
-                            <a href="/towns/${encodeURIComponent(t.slug)}">Visit town →</a>
-                        </div>
-                    `);
-                    attachHover(marker, key, () => `/towns/${encodeURIComponent(t.slug)}`);
-                    _markers.set(key, marker);
-                    bounds.push([t.latitude, t.longitude]);
-                }
+                const d = item.data;
+                if (d.latitude == null || d.longitude == null) return;
+                const key = keyFor(item);
+                const icon =
+                    item.kind === 'biz'  ? bizPinIcon(item.data.type)
+                  : item.kind === 'lake' ? LK_PIN_ICON
+                  :                        TX_PIN_ICON;
+                const marker = L.marker([d.latitude, d.longitude], { icon })
+                    .addTo(_markerLayer);
+
+                marker.bindTooltip(escHtml(d.name), {
+                    direction: 'top',
+                    offset: [0, -28],
+                    className: 'db-pin-tip',
+                    opacity: 1,
+                });
+                marker.bindPopup(buildPreviewCard(item), {
+                    maxWidth: 260, minWidth: 260,
+                    closeButton: true,
+                    autoPan: true,
+                    autoPanPadding: [30, 30],
+                });
+                // Close the hover tooltip while the rich popup is open —
+                // otherwise they stack and look messy.
+                marker.on('popupopen', () => marker.closeTooltip());
+                marker.on('popupclose', () => {/* tooltip re-binds itself */});
+
+                _markers.set(key, marker);
+                bounds.push([d.latitude, d.longitude]);
             });
 
             if (bounds.length) {
@@ -554,6 +969,14 @@
         };
         const DEFAULT_TOWN_IMG = '/assets/images/mn-canoe-shore.webp';
         const DEFAULT_LAKE_IMG = '/assets/images/mn-aerial-lake-homes.jpg';
+        const DEFAULT_BIZ_IMG  = '/assets/images/mn-dining-wicker-open.jpg';
+
+        // Single place that converts an item to its DOM key.
+        function keyFor(item) {
+            const prefix = item.kind === 'biz' ? 'b'
+                         : item.kind === 'lake' ? 'l' : 't';
+            return `${prefix}:${item.data.slug}`;
+        }
 
         function townBlurb(t) {
             const lakeBit = t.lake_count
@@ -569,6 +992,12 @@
                 : `Waterfront homes, cabins, and lake life on ${l.name} in ${where}.`;
             return intro;
         }
+        function bizBlurb(b) {
+            if (b.description && b.description.length > 20) return b.description;
+            const typeLabel = (BIZ_TYPE_LABEL[b.type] || 'local business').toLowerCase();
+            const where = b.city ? `in ${b.city}` : 'in Minnesota';
+            return `A ${typeLabel} ${where}. Tap to get in touch.`;
+        }
 
         function renderGrid(items) {
             const grid = document.getElementById('db-grid');
@@ -577,12 +1006,35 @@
                 return;
             }
             grid.innerHTML = items.map(item => {
+                if (item.kind === 'biz') {
+                    const b = item.data;
+                    const thumb = b.featured_image_url || DEFAULT_BIZ_IMG;
+                    const typeLabel = BIZ_TYPE_LABEL[b.type] || 'Local Business';
+                    const loc = [b.city, b.state].filter(Boolean).join(', ');
+                    const bizColor = BIZ_COLORS[b.type] || BIZ_COLORS.other;
+                    const isFeatured = b.tier === 'premium';
+                    return `
+                        <a class="db-card biz ${isFeatured ? 'is-featured' : ''}" style="--biz-c:${bizColor};" href="/businesses/${encodeURIComponent(b.slug)}" data-key="${escHtml(keyFor(item))}">
+                            <div class="db-card-thumb">
+                                <span class="chip">${escHtml(typeLabel)}</span>
+                                <span class="type"><span class="dot"></span>${escHtml(typeLabel)}</span>
+                                ${isFeatured ? '<span class="featured">Featured Partner</span>' : ''}
+                                <img src="${escHtml(thumb)}" alt="${escHtml(b.name)}" loading="lazy">
+                            </div>
+                            <div class="db-card-body">
+                                <h3>${escHtml(b.name)}</h3>
+                                <div class="loc">${escHtml(loc)}</div>
+                                <p>${escHtml(bizBlurb(b))}</p>
+                                <span class="db-card-cta">View profile <span aria-hidden="true">→</span></span>
+                            </div>
+                        </a>`;
+                }
                 if (item.kind === 'town') {
                     const t = item.data;
                     const thumb = t.hero_image_url || REGION_IMG[t.region] || DEFAULT_TOWN_IMG;
                     const loc = [t.state, t.lake_count ? `${t.lake_count} lake${t.lake_count === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ');
                     return `
-                        <a class="db-card town" href="/towns/${encodeURIComponent(t.slug)}" data-key="t:${escHtml(t.slug)}">
+                        <a class="db-card town" href="/towns/${encodeURIComponent(t.slug)}" data-key="${escHtml(keyFor(item))}">
                             <div class="db-card-thumb">
                                 ${t.region ? `<span class="chip">${escHtml(t.region)}</span>` : ''}
                                 <span class="type"><span class="dot"></span>Town</span>
@@ -600,7 +1052,7 @@
                 const thumb = l.featured_image_url || l.hero_image_url || REGION_IMG[l.region] || DEFAULT_LAKE_IMG;
                 const loc = [l.county ? `${l.county} County` : null, l.state].filter(Boolean).join(' · ');
                 return `
-                    <a class="db-card lake" href="/lakes/${encodeURIComponent(l.slug)}" data-key="l:${escHtml(l.slug)}">
+                    <a class="db-card lake" href="/lakes/${encodeURIComponent(l.slug)}" data-key="${escHtml(keyFor(item))}">
                         <div class="db-card-thumb">
                             ${l.region ? `<span class="chip">${escHtml(l.region)}</span>` : ''}
                             <span class="type"><span class="dot"></span>Lake</span>
@@ -623,40 +1075,43 @@
             });
         }
 
-        // ── Hover sync map ⇄ cards ───────────────────────────────
+        // Card hover pulses the pin — never opens the popup or touches the
+        // map viewport. Pins never touch the right list. One-way highlight,
+        // card → pin only.
         function highlightMarker(key, on) {
             const marker = _markers.get(key);
             if (!marker) return;
             const el = marker.getElement();
             if (el) el.classList.toggle('is-hot', !!on);
-            if (on) marker.openPopup(); else marker.closePopup();
-        }
-        function highlightCard(key, on) {
-            const card = document.querySelector(`.db-card[data-key="${cssEscape(key)}"]`);
-            if (!card) return;
-            card.classList.toggle('is-hot', !!on);
-            if (on) {
-                // Scroll into view only when the card is completely off-screen
-                // inside its column — avoids yanking the list on casual hover.
-                const col = document.getElementById('db-list-col');
-                const cr = card.getBoundingClientRect();
-                const lr = col.getBoundingClientRect();
-                if (cr.bottom < lr.top || cr.top > lr.bottom) {
-                    card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-                }
-            }
         }
 
         // ── Utils ─────────────────────────────────────────────────
         function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-        function cssEscape(s) {
-            if (window.CSS && CSS.escape) return CSS.escape(s);
-            return String(s).replace(/["\\]/g, '\\$&');
+
+        // Restore view + type from URL params so deep-links (e.g. the
+        // "Back to all services" button on a business detail page) drop
+        // you into the right segment.
+        function hydrateFromUrl() {
+            const p = new URLSearchParams(location.search);
+            const v = p.get('view');
+            const t = p.get('type');
+            if (v === 'biz' || v === 'geo') _view = v;
+            if (t && SEG_OPTIONS[_view]?.some(o => o.key === t)) _type = t;
+
+            // Sync the sidebar + search placeholder + tier filter.
+            document.querySelectorAll('.db-sidebar .db-side-btn[data-view]').forEach(b => {
+                b.classList.toggle('is-active', b.dataset.view === _view);
+            });
+            document.getElementById('db-search').placeholder = _view === 'biz'
+                ? 'Search businesses…'
+                : 'Search lakes or towns…';
+            document.getElementById('db-tier').style.display = _view === 'biz' ? '' : 'none';
         }
 
         // ── Boot ──────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
             syncHeaderHeight();
+            hydrateFromUrl();
             loadAll();
             window.addEventListener('resize', () => {
                 syncHeaderHeight();

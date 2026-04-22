@@ -114,7 +114,7 @@
         { key: 'cash-offers', href: 'cash-offers.html',label: 'Cash Offers', cashBadge: true },
         { key: 'users',       href: 'users.html',      label: 'Users Management' },
         { key: 'tasks',       href: 'tasks.html',      label: 'Tasks', badgeId: 'nav-badge-tasks' },
-        { key: 'tags',        href: 'tags.html',       label: 'Geo Tags' },
+        { key: 'tags',        href: 'tags.html',       label: 'Towns' },
         { key: 'lakes',       href: 'lakes.html',      label: 'Lakes' },
         { key: 'businesses',  href: 'businesses.html', label: 'Businesses' },
         { key: 'database',    href: 'database.html',   label: 'Database' },

@@ -26,10 +26,36 @@
         .biz-table tr:last-child td { border-bottom: none; }
         .biz-table td.muted { color: #a0aec0; font-size: 0.82rem; }
         .pill { display: inline-block; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.55rem; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .pill.active { background: #f0fff4; color: #2f855a; }
-        .pill.draft { background: #fffbea; color: #b45309; }
+        .pill.active   { background: #f0fff4; color: #2f855a; }
+        .pill.pending  { background: #fef3c7; color: #92400e; }
+        .pill.draft    { background: #fffbea; color: #b45309; }
         .pill.archived { background: #fff5f5; color: #c53030; }
-        .pill.type { background: #ebf4ff; color: #2b6cb0; }
+        .pill.type     { background: #ebf4ff; color: #2b6cb0; }
+        .pill.paid     { background: #ecfdf5; color: #065f46; }
+        .pill.unpaid   { background: #fef2f2; color: #991b1b; }
+        .pill.admin    { background: #f1f5f9; color: #475569; }
+        .pill.premium  { background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%); color: #fff; }
+        .pill.basic    { background: #e2e8f0; color: #334155; }
+        .row-actions .approve { background: #10b981; color: #fff; border: 0; font-weight: 800; }
+        .row-actions .approve:hover { background: #059669; }
+        .status-badge-bar { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+        .status-tab {
+            padding: 0.5rem 0.95rem;
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 999px;
+            font-size: 0.85rem; font-weight: 700; color: #4a5568;
+            cursor: pointer; font-family: inherit;
+            transition: all 0.15s;
+        }
+        .status-tab:hover { border-color: #1d6df2; color: #1d6df2; }
+        .status-tab.on { background: #1d6df2; color: #fff; border-color: #1d6df2; }
+        .status-tab .ct {
+            display: inline-block;
+            margin-left: 0.45rem;
+            padding: 0.1rem 0.45rem;
+            background: rgba(0,0,0,0.08); color: inherit;
+            border-radius: 99px; font-size: 0.72rem; font-weight: 800;
+        }
+        .status-tab.on .ct { background: rgba(255,255,255,0.25); }
         .row-actions { display: flex; gap: 0.35rem; }
         .row-actions button, .row-actions a { font-size: 0.78rem; padding: 0.35rem 0.7rem; }
         .danger { color: #c53030; border-color: #feb2b2; }
@@ -88,6 +114,10 @@
                 <button class="btn-primary" onclick="openCreate()">+ New business</button>
             </header>
 
+            <div class="status-badge-bar" id="status-tabs">
+                <!-- Populated by renderStatusTabs() — each tab shows its count -->
+            </div>
+
             <div class="toolbar">
                 <input type="search" id="search" placeholder="Search by name or city…" oninput="applyFilters()">
                 <select id="filter-type" onchange="applyFilters()">
@@ -100,12 +130,6 @@
                     <option value="boat_rental">Boat rental</option>
                     <option value="outdoor_recreation">Outdoor recreation</option>
                     <option value="other">Other</option>
-                </select>
-                <select id="filter-status" onchange="load()">
-                    <option value="all">All statuses</option>
-                    <option value="active">Active</option>
-                    <option value="draft">Draft</option>
-                    <option value="archived">Archived</option>
                 </select>
                 <span id="count" class="hint" style="margin-left:auto;"></span>
             </div>
@@ -168,6 +192,18 @@
                     <div class="field">
                         <label>Website</label>
                         <input id="f-website" placeholder="https://…">
+                    </div>
+                </div>
+
+                <div class="section-label">Social media</div>
+                <div class="grid-2">
+                    <div class="field">
+                        <label>Instagram URL</label>
+                        <input id="f-instagram" placeholder="https://instagram.com/handle">
+                    </div>
+                    <div class="field">
+                        <label>Facebook URL</label>
+                        <input id="f-facebook" placeholder="https://facebook.com/page">
                     </div>
                 </div>
 
@@ -234,14 +270,24 @@
                 </div>
                 <p class="hint">Click any lake above to attach. The business will appear on those lakes' pages under the matching type section.</p>
 
-                <div class="section-label">Status</div>
-                <div class="field">
-                    <label>Status</label>
-                    <select id="f-status">
-                        <option value="active">Active (shown on public lake pages)</option>
-                        <option value="draft">Draft (hidden from public)</option>
-                        <option value="archived">Archived</option>
-                    </select>
+                <div class="section-label">Status &amp; Plan</div>
+                <div class="grid-2">
+                    <div class="field">
+                        <label>Status</label>
+                        <select id="f-status">
+                            <option value="pending">Pending review (waiting for admin)</option>
+                            <option value="active">Active (shown on public directory)</option>
+                            <option value="draft">Draft (hidden from public)</option>
+                            <option value="archived">Archived</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Tier</label>
+                        <select id="f-tier">
+                            <option value="basic">Local Spotlight (basic)</option>
+                            <option value="premium">★ Featured Partner (premium)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
@@ -253,36 +299,67 @@
     </div>
 
     <script>
-        let _all = [];
+        let _all = [];            // Everything — every status. Loaded once.
+        let _statusFilter = 'pending';  // Default to the inbox so approval is top-of-mind.
         let _editingId = null;
         let _allLakes = [];
         let _selectedLakeIds = new Set();
 
+        const STATUS_TABS = [
+            { key: 'pending',  label: 'Pending' },
+            { key: 'active',   label: 'Active' },
+            { key: 'draft',    label: 'Draft' },
+            { key: 'archived', label: 'Archived' },
+            { key: 'all',      label: 'All' },
+        ];
+
         async function load() {
-            const status = document.getElementById('filter-status').value;
             const wrap = document.getElementById('table-wrap');
             wrap.innerHTML = '<div style="padding:3rem;text-align:center;color:#a0aec0;">Loading…</div>';
             try {
-                const qs = status && status !== 'all' ? `?status=${encodeURIComponent(status)}` : '?status=all';
-                const res = await fetch(`/api/businesses${qs}`, { credentials: 'include' });
+                // Admin sees everything in one call — we filter client-side
+                // so the status tab counts are always correct.
+                const res = await fetch(`/api/businesses?status=all`, { credentials: 'include' });
                 if (!res.ok) throw new Error('Failed to load');
                 _all = await res.json();
+                renderStatusTabs();
                 applyFilters();
             } catch (err) {
                 wrap.innerHTML = '<div style="padding:3rem;text-align:center;color:#c53030;">Failed to load businesses.</div>';
             }
         }
 
+        function renderStatusTabs() {
+            const counts = _all.reduce((acc, b) => {
+                acc[b.status] = (acc[b.status] || 0) + 1;
+                acc.all = (acc.all || 0) + 1;
+                return acc;
+            }, {});
+            const el = document.getElementById('status-tabs');
+            el.innerHTML = STATUS_TABS.map(t =>
+                `<button type="button" class="status-tab ${t.key === _statusFilter ? 'on' : ''}" onclick="setStatusFilter('${t.key}')">
+                    ${t.label}<span class="ct">${counts[t.key] || 0}</span>
+                </button>`
+            ).join('');
+        }
+
+        function setStatusFilter(s) {
+            _statusFilter = s;
+            renderStatusTabs();
+            applyFilters();
+        }
+
         function applyFilters() {
             const search = (document.getElementById('search').value || '').toLowerCase().trim();
             const type   = document.getElementById('filter-type').value;
             const rows = _all.filter(b => {
+                if (_statusFilter !== 'all' && b.status !== _statusFilter) return false;
                 if (type && b.type !== type) return false;
                 if (search && !`${b.name} ${b.city || ''}`.toLowerCase().includes(search)) return false;
                 return true;
             });
             render(rows);
-            document.getElementById('count').textContent = `${rows.length} of ${_all.length}`;
+            document.getElementById('count').textContent = `${rows.length} shown · ${_all.length} total`;
         }
 
         function render(rows) {
@@ -313,10 +390,12 @@
                                 <td><span class="pill type">${escHtml(prettyType(b.type))}</span></td>
                                 <td class="muted">${escHtml([b.city, b.state].filter(Boolean).join(', ') || '—')}</td>
                                 <td class="muted">${b.lake_count ?? 0}</td>
-                                <td>${statusPill(b.status)}</td>
+                                <td>${statusPill(b.status)} ${ownerPill(b)} ${tierPill(b)}</td>
                                 <td class="row-actions">
+                                    ${b.status === 'pending' ? `<button class="btn-ghost approve" onclick="approve('${b.id}','${escAttr(b.name)}')">Approve</button>` : ''}
                                     <button class="btn-ghost" onclick="openEdit('${b.id}')">Edit</button>
-                                    <button class="btn-ghost danger" onclick="archive('${b.id}','${escAttr(b.name)}')">Archive</button>
+                                    ${b.status === 'active' ? `<a class="btn-ghost" href="/businesses/${encodeURIComponent(b.slug)}" target="_blank" rel="noopener">View</a>` : ''}
+                                    ${b.status !== 'archived' ? `<button class="btn-ghost danger" onclick="archive('${b.id}','${escAttr(b.name)}')">${b.status === 'pending' ? 'Reject' : 'Archive'}</button>` : ''}
                                 </td>
                             </tr>
                         `).join('')}
@@ -339,20 +418,52 @@
 
         function statusPill(s) {
             if (s === 'active')   return '<span class="pill active">active</span>';
+            if (s === 'pending')  return '<span class="pill pending">pending</span>';
             if (s === 'archived') return '<span class="pill archived">archived</span>';
             return '<span class="pill draft">draft</span>';
+        }
+        // Owner vs admin-managed, plus paid-state for owner rows.
+        // Admin-managed rows have no user and don't need a subscription —
+        // distinguish them so "unpaid" never shows on your own seeded data.
+        function ownerPill(b) {
+            if (!b.user_id) return '<span class="pill admin" title="Admin-managed">admin</span>';
+            const s = b.subscription_status;
+            if (s === 'active' || s === 'trialing') return '<span class="pill paid">paid</span>';
+            return `<span class="pill unpaid" title="${escHtml(s || 'unpaid')}">unpaid</span>`;
+        }
+        function tierPill(b) {
+            if (b.tier === 'premium') return '<span class="pill premium">★ Featured</span>';
+            if (b.tier === 'basic')   return '<span class="pill basic">basic</span>';
+            return '';
+        }
+
+        // One-click approve: flip pending → active. Shows immediately on
+        // /towns the next time a visitor loads.
+        async function approve(id, name) {
+            if (!confirm(`Approve "${name}"? It will go live on the public directory immediately.`)) return;
+            try {
+                const res = await fetch(`/api/businesses/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ status: 'active' }),
+                });
+                if (!res.ok) throw new Error();
+                await load();
+            } catch (_) { alert('Failed to approve.'); }
         }
 
         // ── Modal ────────────────────────────────────────────────────────
         function openCreate() {
             _editingId = null;
             document.getElementById('modal-title').textContent = 'New business';
-            ['f-name','f-slug','f-desc','f-phone','f-email','f-website','f-address','f-city','f-zip','f-lat','f-lng','f-hours','f-image']
+            ['f-name','f-slug','f-desc','f-phone','f-email','f-website','f-instagram','f-facebook','f-address','f-city','f-zip','f-lat','f-lng','f-hours','f-image']
                 .forEach(id => document.getElementById(id).value = '');
             document.getElementById('f-type').value   = 'restaurant';
             document.getElementById('f-state').value  = 'MN';
             document.getElementById('f-price').value  = '';
             document.getElementById('f-status').value = 'active';
+            document.getElementById('f-tier').value   = 'basic';
             _selectedLakeIds = new Set();
             renderLakeChips();
             updateThumb();
@@ -373,7 +484,9 @@
             document.getElementById('f-desc').value    = b.description || '';
             document.getElementById('f-phone').value   = b.phone || '';
             document.getElementById('f-email').value   = b.email || '';
-            document.getElementById('f-website').value = b.website_url || '';
+            document.getElementById('f-website').value   = b.website_url   || '';
+            document.getElementById('f-instagram').value = b.instagram_url || '';
+            document.getElementById('f-facebook').value  = b.facebook_url  || '';
             document.getElementById('f-address').value = b.address || '';
             document.getElementById('f-city').value    = b.city || '';
             document.getElementById('f-state').value   = b.state || 'MN';
@@ -384,6 +497,7 @@
             document.getElementById('f-price').value   = b.price_range || '';
             document.getElementById('f-image').value   = b.featured_image_url || '';
             document.getElementById('f-status').value  = b.status || 'active';
+            document.getElementById('f-tier').value    = b.tier === 'premium' ? 'premium' : 'basic';
             updateThumb();
             document.getElementById('modal-err').style.display = 'none';
             document.getElementById('upload-status').textContent = '';
@@ -485,7 +599,9 @@
                 description: document.getElementById('f-desc').value.trim() || null,
                 phone:       document.getElementById('f-phone').value.trim() || null,
                 email:       document.getElementById('f-email').value.trim() || null,
-                website_url: document.getElementById('f-website').value.trim() || null,
+                website_url:   document.getElementById('f-website').value.trim()   || null,
+                instagram_url: document.getElementById('f-instagram').value.trim() || null,
+                facebook_url:  document.getElementById('f-facebook').value.trim()  || null,
                 address:     document.getElementById('f-address').value.trim() || null,
                 city:        document.getElementById('f-city').value.trim() || null,
                 state:       document.getElementById('f-state').value.trim().toUpperCase() || 'MN',
@@ -496,6 +612,7 @@
                 price_range: document.getElementById('f-price').value || null,
                 featured_image_url: document.getElementById('f-image').value.trim() || null,
                 status:      document.getElementById('f-status').value,
+                tier:        document.getElementById('f-tier').value,
             };
 
             const btn = document.getElementById('save-btn');

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>List Your Business | Minnesota Lake Homes</title>
+    <meta name="description" content="Claim your spot on the Minnesota Lake Homes business directory. $29/mo gets you a pin on the map, a full profile page, and tools to manage it yourself.">
+    <meta name="robots" content="index, follow">
+
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="../../components/components.js" defer></script>
+
+    <style>
+        :root { --brand: #d97706; --brand-dark: #b45309; --ink: #1a202c; --ink-soft: #4a5568; --muted: #718096; --line: #e5eaf0; }
+        body { background: #f7f9fa; font-family: 'Inter', sans-serif; color: var(--ink); }
+        .bs-shell { max-width: 520px; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+        .bs-eyebrow {
+            display: inline-block;
+            font-size: 0.7rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase;
+            color: var(--brand); background: #fffbeb;
+            padding: 0.3rem 0.65rem; border-radius: 6px;
+            margin-bottom: 0.85rem;
+        }
+        h1 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; letter-spacing: -0.6px; line-height: 1.1; margin: 0 0 0.5rem; }
+        .intro { color: var(--ink-soft); line-height: 1.55; margin: 0 0 1.75rem; }
+        .card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 2rem; box-shadow: 0 10px 30px rgba(16,24,40,0.04); }
+        .field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
+        .field label { font-size: 0.78rem; font-weight: 700; }
+        .field input, .field select {
+            font-family: inherit; font-size: 0.96rem;
+            padding: 0.7rem 0.9rem;
+            border: 1px solid var(--line); border-radius: 10px;
+            background: #fff; outline: none;
+            transition: border-color 0.12s, box-shadow 0.12s;
+        }
+        .field input:focus, .field select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(217,119,6,0.12); }
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
+        .submit {
+            width: 100%;
+            background: var(--brand); color: #fff; border: 0;
+            font-family: inherit; font-size: 0.95rem; font-weight: 800;
+            padding: 0.95rem 1rem; border-radius: 10px;
+            cursor: pointer; margin-top: 0.5rem;
+            transition: background 0.12s, transform 0.12s;
+            box-shadow: 0 8px 18px rgba(217,119,6,0.25);
+        }
+        .submit:hover { background: var(--brand-dark); transform: translateY(-1px); }
+        .submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .err { padding: 0.75rem 1rem; background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; border-radius: 10px; font-size: 0.9rem; margin-bottom: 1rem; display: none; }
+        .err.show { display: block; }
+        .foot { text-align: center; margin-top: 1.25rem; color: var(--muted); font-size: 0.88rem; }
+        .foot a { color: var(--brand); font-weight: 700; }
+        .hint { font-size: 0.78rem; color: var(--muted); }
+    </style>
+</head>
+<body>
+    <global-header></global-header>
+    <main class="bs-shell">
+        <span class="bs-eyebrow">Business listing</span>
+        <h1>Claim your spot on the lake-country map</h1>
+        <p class="intro">Create your account, complete a quick Stripe checkout, then finish your profile. Your listing goes live once we approve it — usually within a day.</p>
+
+        <div class="card">
+            <div class="err" id="err"></div>
+            <form id="form" onsubmit="submitSignup(event)">
+                <div class="field">
+                    <label>Business name <span style="color:var(--brand)">*</span></label>
+                    <input id="f-biz" type="text" required maxlength="200" placeholder="Gull Lake Marina">
+                </div>
+                <div class="field">
+                    <label>Category <span style="color:var(--brand)">*</span></label>
+                    <select id="f-type" required>
+                        <option value="">Choose a category…</option>
+                        <option value="restaurant">Restaurant</option>
+                        <option value="marina">Marina</option>
+                        <option value="outdoor_recreation">Resort / Outdoor rec</option>
+                        <option value="boat_rental">Boat rental</option>
+                        <option value="builder">Builder / contractor</option>
+                        <option value="photographer">Photographer</option>
+                        <option value="service">Service provider</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Your email <span style="color:var(--brand)">*</span></label>
+                    <input id="f-email" type="email" required placeholder="you@yourbusiness.com">
+                    <span class="hint">You'll use this to sign in and manage the listing.</span>
+                </div>
+                <div class="field">
+                    <label>Password <span style="color:var(--brand)">*</span></label>
+                    <input id="f-password" type="password" required minlength="8" placeholder="At least 8 characters">
+                </div>
+
+                <button type="submit" class="submit" id="submit-btn">Create account &amp; continue to payment →</button>
+            </form>
+            <div class="foot">Already have an account? <a href="/business-login">Sign in</a></div>
+        </div>
+    </main>
+
+    <script>
+        async function submitSignup(e) {
+            e.preventDefault();
+            const err = document.getElementById('err');
+            err.classList.remove('show');
+            const payload = {
+                business_name: val('f-biz'),
+                business_type: val('f-type'),
+                email:         val('f-email'),
+                password:      val('f-password'),
+            };
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true; btn.textContent = 'Creating account…';
+            try {
+                const res = await fetch('/api/business-auth/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+                // If Stripe is configured, bounce straight to Checkout.
+                // If not, go to the dashboard — owner will finish there.
+                if (data.checkout_url) {
+                    window.location.href = data.checkout_url;
+                } else {
+                    window.location.href = '/business/dashboard';
+                }
+            } catch (ex) {
+                err.textContent = ex.message || 'Something went wrong.';
+                err.classList.add('show');
+                btn.disabled = false; btn.textContent = 'Create account & continue to payment →';
+            }
+        }
+        function val(id) { return (document.getElementById(id).value || '').trim(); }
+    </script>
+</body>
+</html>

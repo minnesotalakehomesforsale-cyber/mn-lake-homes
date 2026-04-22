@@ -93,9 +93,17 @@ const KNOWN_TYPES = new Set([
 
 const BUSINESS_COLS = `
     id, slug, name, type, description, phone, email, website_url,
+    instagram_url, facebook_url,
     address, city, state, zip, latitude, longitude, hours, price_range,
-    featured_image_url, gallery, status, created_at, updated_at
+    featured_image_url, gallery, status,
+    user_id, subscription_status, tier,
+    created_at, updated_at
 `;
+
+// Keep in sync with the admin + submit UIs. 'pending' is the inbox:
+// rows created via POST /submit land here and only show publicly once
+// an admin flips them to 'active'.
+const ALLOWED_STATUSES = ['pending', 'active', 'draft', 'archived'];
 
 // ─── list ───────────────────────────────────────────────────────────────────
 exports.list = async (req, res) => {
@@ -117,7 +125,12 @@ exports.list = async (req, res) => {
                 where.push(`status = $${params.length}`);
             }
         } else {
+            // Public visibility rule: admin-managed rows (user_id IS NULL)
+            // show on status='active' alone. Owner-managed rows additionally
+            // require an active Stripe subscription — if the owner stops
+            // paying, the listing auto-hides without any admin action.
             where.push(`status = 'active'`);
+            where.push(`(user_id IS NULL OR subscription_status = 'active')`);
         }
 
         const sql = `
@@ -150,8 +163,11 @@ exports.getOne = async (req, res) => {
         );
         const b = rows[0];
         if (!b) return res.status(404).json({ error: 'Business not found.' });
-        if (b.status !== 'active' && !isAdmin(req)) {
-            return res.status(404).json({ error: 'Business not found.' });
+        if (!isAdmin(req)) {
+            const visible =
+                b.status === 'active' &&
+                (b.user_id == null || b.subscription_status === 'active');
+            if (!visible) return res.status(404).json({ error: 'Business not found.' });
         }
         res.json(b);
     } catch (err) {
@@ -185,15 +201,16 @@ exports.create = async (req, res) => {
             if (g) { lat = g.lat; lng = g.lng; geocoded = true; }
         }
 
-        const status = ['active', 'draft', 'archived'].includes(b.status) ? b.status : 'active';
+        const status = ALLOWED_STATUSES.includes(b.status) ? b.status : 'active';
         const gallery = Array.isArray(b.gallery) ? b.gallery : [];
 
         const { rows } = await pool.query(
             `INSERT INTO businesses
                (slug, name, type, description, phone, email, website_url,
+                instagram_url, facebook_url,
                 address, city, state, zip, latitude, longitude, hours,
                 price_range, featured_image_url, gallery, status)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17::jsonb,$18)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19::jsonb,$20)
              RETURNING ${BUSINESS_COLS}`,
             [
                 slug, name, type,
@@ -201,6 +218,8 @@ exports.create = async (req, res) => {
                 b.phone || null,
                 b.email || null,
                 b.website_url || null,
+                b.instagram_url || null,
+                b.facebook_url || null,
                 b.address || null,
                 b.city || null,
                 state,
@@ -256,6 +275,8 @@ exports.patch = async (req, res) => {
         if ('phone'              in b) push('phone',              b.phone || null);
         if ('email'              in b) push('email',              b.email || null);
         if ('website_url'        in b) push('website_url',        b.website_url || null);
+        if ('instagram_url'      in b) push('instagram_url',      b.instagram_url || null);
+        if ('facebook_url'       in b) push('facebook_url',       b.facebook_url || null);
         if ('address'            in b) push('address',            b.address || null);
         if ('city'               in b) push('city',               b.city || null);
         if ('state'              in b) push('state',              String(b.state || 'MN').trim().slice(0, 2).toUpperCase());
@@ -271,10 +292,18 @@ exports.patch = async (req, res) => {
             vals.push(JSON.stringify(g));
         }
         if ('status'             in b) {
-            if (!['active', 'draft', 'archived'].includes(b.status)) {
+            if (!ALLOWED_STATUSES.includes(b.status)) {
                 return res.status(400).json({ error: 'Invalid status.' });
             }
             push('status', b.status);
+        }
+        if ('tier'               in b) {
+            // Admin can manually mark admin-seeded rows as premium/basic
+            // since those don't flow through Stripe.
+            if (b.tier !== null && !['premium', 'basic'].includes(b.tier)) {
+                return res.status(400).json({ error: 'Invalid tier.' });
+            }
+            push('tier', b.tier);
         }
 
         if (!fields.length) return res.json({ success: true, noop: true });
@@ -303,6 +332,77 @@ exports.patch = async (req, res) => {
         }
         console.error('[businesses.patch]', err.message);
         res.status(500).json({ error: 'Failed to update business.' });
+    }
+};
+
+// ─── public self-submission ─────────────────────────────────────────────────
+// Anyone can POST a business here; it lands as 'pending' and never appears
+// publicly until an admin approves it. Geocoding still runs so the pin is
+// map-ready the moment it's approved.
+exports.submit = async (req, res) => {
+    try {
+        const b = req.body || {};
+        const name  = String(b.name || '').trim().slice(0, 200);
+        const type  = String(b.type || '').trim().toLowerCase().slice(0, 40);
+        const state = String(b.state || 'MN').trim().slice(0, 2).toUpperCase();
+        if (!name) return res.status(400).json({ error: 'Business name is required.' });
+        if (!type) return res.status(400).json({ error: 'Business type is required.' });
+        if (!KNOWN_TYPES.has(type)) {
+            return res.status(400).json({ error: `Type must be one of: ${[...KNOWN_TYPES].join(', ')}.` });
+        }
+
+        // Slug uniqueness — if the derived slug collides, append a short
+        // random suffix rather than 409'ing the submitter.
+        let slug = slugify(`${type}-${name}`);
+        if (!slug) return res.status(400).json({ error: 'Invalid business name.' });
+        const exists = await pool.query('SELECT 1 FROM businesses WHERE slug = $1 LIMIT 1', [slug]);
+        if (exists.rowCount) slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
+
+        let lat = numOrNull(b.latitude);
+        let lng = numOrNull(b.longitude);
+        if ((lat == null || lng == null) && (b.address || b.city)) {
+            const addr = [b.address, b.city, state, b.zip].filter(Boolean).join(', ');
+            const g = await geocodeAddress(addr).catch(() => null);
+            if (g) { lat = g.lat; lng = g.lng; }
+        }
+
+        const { rows } = await pool.query(
+            `INSERT INTO businesses
+               (slug, name, type, description, phone, email, website_url,
+                instagram_url, facebook_url,
+                address, city, state, zip, latitude, longitude,
+                featured_image_url, status)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,'pending')
+             RETURNING id, slug, name, status`,
+            [
+                slug, name, type,
+                b.description || null,
+                b.phone || null,
+                b.email || null,
+                b.website_url || null,
+                b.instagram_url || null,
+                b.facebook_url || null,
+                b.address || null,
+                b.city || null,
+                state,
+                b.zip || null,
+                lat, lng,
+                b.featured_image_url || null,
+            ]
+        );
+        const biz = rows[0];
+        logActivity({
+            event_type: 'business.submit',
+            event_scope: 'business',
+            actor: { type: 'guest', label: b.email || 'anonymous submitter' },
+            target: { type: 'business', id: biz.id, label: `${biz.name} (${type})` },
+            details: { slug, type },
+            req,
+        });
+        res.status(201).json({ success: true, id: biz.id, slug: biz.slug });
+    } catch (err) {
+        console.error('[businesses.submit]', err.message);
+        res.status(500).json({ error: 'Could not submit your business. Please try again.' });
     }
 };
 

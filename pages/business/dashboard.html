@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Dashboard | Minnesota Lake Homes</title>
+    <meta name="robots" content="noindex, nofollow">
+
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="../../components/components.js" defer></script>
+
+    <style>
+        :root { --brand: #d97706; --brand-dark: #b45309; --ink: #1a202c; --ink-soft: #4a5568; --muted: #718096; --line: #e5eaf0; }
+        body { background: #f7f9fa; font-family: 'Inter', sans-serif; color: var(--ink); }
+
+        .bd-shell { max-width: 960px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+
+        .bd-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 2rem; }
+        .bd-head h1 { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.6px; margin: 0 0 0.25rem; }
+        .bd-head p { color: var(--muted); font-size: 0.95rem; margin: 0; }
+        .bd-head .signout { font-size: 0.85rem; font-weight: 700; color: var(--muted); background: none; border: 0; cursor: pointer; }
+        .bd-head .signout:hover { color: var(--brand); }
+
+        /* Status banner — explains live vs waiting vs paid gates */
+        .bd-banner {
+            padding: 1rem 1.25rem; border-radius: 12px;
+            display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+            font-size: 0.92rem; font-weight: 600;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .bd-banner.warn { background: #fef3c7; border: 1px solid #fde68a; color: #92400e; }
+        .bd-banner.ok   { background: #f0fff4; border: 1px solid #9ae6b4; color: #22543d; }
+        .bd-banner.err  { background: #fff5f5; border: 1px solid #fed7d7; color: #c53030; }
+        .bd-banner a, .bd-banner button {
+            display: inline-block;
+            font-size: 0.85rem; font-weight: 800;
+            padding: 0.55rem 0.95rem; border-radius: 8px;
+            background: #1a202c; color: #fff; text-decoration: none;
+            border: 0; cursor: pointer; font-family: inherit;
+        }
+        .bd-banner a:hover, .bd-banner button:hover { background: #000; }
+
+        /* Tabs */
+        .bd-tabs { display: flex; gap: 0.4rem; border-bottom: 1px solid var(--line); margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .bd-tab {
+            background: none; border: 0; padding: 0.85rem 1.1rem;
+            font-family: inherit; font-weight: 700; font-size: 0.92rem;
+            color: var(--muted); cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+        .bd-tab:hover { color: var(--ink); }
+        .bd-tab.on { color: var(--brand); border-bottom-color: var(--brand); }
+
+        .bd-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 1.75rem; box-shadow: 0 10px 30px rgba(16,24,40,0.04); }
+        .section-label { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: var(--muted); margin: 1.25rem 0 0.6rem; }
+        .section-label:first-child { margin-top: 0; }
+
+        .field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.9rem; }
+        .field label { font-size: 0.78rem; font-weight: 700; }
+        .field input, .field select, .field textarea {
+            font-family: inherit; font-size: 0.95rem;
+            padding: 0.65rem 0.85rem;
+            border: 1px solid var(--line); border-radius: 10px;
+            background: #fff; color: var(--ink); outline: none;
+            transition: border-color 0.12s, box-shadow 0.12s;
+        }
+        .field textarea { min-height: 100px; resize: vertical; }
+        .field input:focus, .field select:focus, .field textarea:focus {
+            border-color: var(--brand); box-shadow: 0 0 0 3px rgba(217,119,6,0.12);
+        }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem; }
+        @media (max-width: 620px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } .bd-card { padding: 1.25rem; } }
+
+        .save-row { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
+        .btn { font-family: inherit; font-size: 0.9rem; font-weight: 800; padding: 0.7rem 1.1rem; border-radius: 10px; cursor: pointer; border: 1px solid var(--line); background: #fff; color: var(--ink); text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; }
+        .btn:hover { border-color: var(--brand); color: var(--brand); }
+        .btn.primary { background: var(--brand); color: #fff; border-color: var(--brand); box-shadow: 0 6px 14px rgba(217,119,6,0.2); }
+        .btn.primary:hover { background: var(--brand-dark); color: #fff; border-color: var(--brand-dark); transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .alert { display: none; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.9rem; margin-bottom: 1rem; }
+        .alert.show { display: block; }
+        .alert.err { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+        .alert.ok  { background: #f0fff4; color: #22543d; border: 1px solid #9ae6b4; }
+
+        /* Subscription tab */
+        .sub-status {
+            display: flex; align-items: center; gap: 0.6rem;
+            font-size: 1.02rem; font-weight: 700; margin-bottom: 1rem;
+        }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .dot.on  { background: #38a169; box-shadow: 0 0 0 4px rgba(56,161,105,0.18); }
+        .dot.off { background: #d97706; box-shadow: 0 0 0 4px rgba(217,119,6,0.18); }
+        .dot.dead{ background: #c53030; box-shadow: 0 0 0 4px rgba(197,48,48,0.18); }
+
+        .hint { color: var(--muted); font-size: 0.82rem; margin-top: 0.35rem; }
+
+        .thumb { width: 100%; height: 150px; background: #f7f9fa; border: 1px dashed var(--line); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; }
+        .thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+        .loading { padding: 4rem 1rem; text-align: center; color: var(--muted); }
+    </style>
+</head>
+<body>
+    <global-header></global-header>
+    <main class="bd-shell">
+        <div class="bd-head">
+            <div>
+                <h1 id="bd-name">Your dashboard</h1>
+                <p id="bd-sub">Manage your listing, payment, and account.</p>
+            </div>
+            <button class="signout" onclick="signOut()">Sign out</button>
+        </div>
+
+        <div id="bd-banner" class="bd-banner" style="display:none;"></div>
+
+        <div class="bd-tabs" role="tablist">
+            <button class="bd-tab on" data-tab="profile"      role="tab" onclick="showTab('profile')">Profile</button>
+            <button class="bd-tab"    data-tab="subscription" role="tab" onclick="showTab('subscription')">Subscription</button>
+            <button class="bd-tab"    data-tab="account"      role="tab" onclick="showTab('account')">Account</button>
+        </div>
+
+        <div id="loading" class="loading">Loading your dashboard…</div>
+
+        <!-- Profile tab ────────────────────────────────────────────── -->
+        <section class="bd-card" id="tab-profile" style="display:none;">
+            <div class="alert err" id="profile-err"></div>
+            <div class="alert ok"  id="profile-ok"></div>
+
+            <div class="section-label">Business details</div>
+            <div class="field">
+                <label>Business name</label>
+                <input id="f-name" type="text" maxlength="200">
+            </div>
+            <div class="field">
+                <label>Description / bio</label>
+                <textarea id="f-desc" maxlength="600" placeholder="What your business offers and why visitors should stop by."></textarea>
+            </div>
+            <div class="field">
+                <label>Featured image URL</label>
+                <input id="f-image" type="url" placeholder="https://…">
+                <div class="thumb" id="f-thumb" style="margin-top:0.5rem;"><span>No image</span></div>
+            </div>
+            <div class="grid-2">
+                <div class="field"><label>Hours</label><input id="f-hours" type="text" placeholder="Mon–Sat 11am–10pm"></div>
+                <div class="field">
+                    <label>Price range</label>
+                    <select id="f-price"><option value="">—</option><option value="$">$</option><option value="$$">$$</option><option value="$$$">$$$</option><option value="$$$$">$$$$</option></select>
+                </div>
+            </div>
+
+            <div class="section-label">Contact</div>
+            <div class="grid-2">
+                <div class="field"><label>Phone</label><input id="f-phone" type="tel"></div>
+                <div class="field"><label>Public email</label><input id="f-email-pub" type="email"></div>
+            </div>
+            <div class="field"><label>Website</label><input id="f-website" type="url" placeholder="https://"></div>
+            <div class="grid-2">
+                <div class="field"><label>Instagram URL</label><input id="f-instagram" type="url"></div>
+                <div class="field"><label>Facebook URL</label><input id="f-facebook" type="url"></div>
+            </div>
+
+            <div class="section-label">Location</div>
+            <div class="field"><label>Street address</label><input id="f-address" type="text"></div>
+            <div class="grid-3">
+                <div class="field"><label>City</label><input id="f-city" type="text"></div>
+                <div class="field"><label>State</label><input id="f-state" type="text" maxlength="2"></div>
+                <div class="field"><label>Zip</label><input id="f-zip" type="text" maxlength="10"></div>
+            </div>
+
+            <div class="save-row">
+                <a class="btn" id="btn-preview" href="#" target="_blank" rel="noopener">Preview listing</a>
+                <button class="btn primary" id="btn-save" type="button" onclick="saveProfile()">Save changes</button>
+            </div>
+        </section>
+
+        <!-- Subscription tab ───────────────────────────────────────── -->
+        <section class="bd-card" id="tab-subscription" style="display:none;">
+            <div class="sub-status">
+                <span class="dot" id="sub-dot"></span>
+                <span id="sub-label">—</span>
+            </div>
+            <p id="sub-copy" class="hint" style="font-size:0.95rem;color:var(--ink-soft);line-height:1.55;"></p>
+            <div style="margin-top:1.25rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+                <button class="btn primary" id="btn-checkout"  onclick="startCheckout()"  style="display:none;">Start subscription →</button>
+                <button class="btn"         id="btn-portal"    onclick="openPortal()"     style="display:none;">Manage billing in Stripe →</button>
+            </div>
+            <p class="hint" style="margin-top:1.25rem;">Your listing only shows on the public directory while your subscription is active and an admin has approved it.</p>
+        </section>
+
+        <!-- Account tab ───────────────────────────────────────────── -->
+        <section class="bd-card" id="tab-account" style="display:none;">
+            <div class="alert err" id="account-err"></div>
+            <div class="alert ok"  id="account-ok"></div>
+
+            <div class="section-label">Login email</div>
+            <div class="field"><label>Email</label><input id="f-account-email" type="email" disabled></div>
+
+            <div class="section-label">Change password</div>
+            <div class="grid-2">
+                <div class="field"><label>Current password</label><input id="f-cur-pw" type="password" autocomplete="current-password"></div>
+                <div class="field"><label>New password</label><input id="f-new-pw" type="password" autocomplete="new-password" minlength="8"></div>
+            </div>
+            <div class="save-row">
+                <button class="btn primary" type="button" onclick="changePassword()">Update password</button>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let _biz = null;
+
+        // Boot ────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', async () => {
+            // A paid=1 query param means the user just came back from Stripe
+            // Checkout. The webhook will flip subscription_status shortly;
+            // stay on the profile tab and show a celebratory banner.
+            const params = new URLSearchParams(location.search);
+            const justPaid = params.get('paid') === '1';
+            const cancelled = params.get('paid') === '0';
+
+            try {
+                const [meRes, userRes] = await Promise.all([
+                    fetch('/api/business-auth/me', { credentials: 'include' }),
+                    fetch('/api/auth/session',     { credentials: 'include' }),
+                ]);
+                if (meRes.status === 401 || meRes.status === 403) {
+                    window.location.href = '/business-login';
+                    return;
+                }
+                if (!meRes.ok) throw new Error('Could not load your business.');
+                _biz = await meRes.json();
+                const user = userRes.ok ? await userRes.json() : null;
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('tab-profile').style.display = '';
+
+                fillProfile(_biz);
+                fillAccount(user);
+                renderBanner(justPaid, cancelled);
+                renderSubscription();
+            } catch (err) {
+                document.getElementById('loading').textContent = 'Could not load your dashboard. Try refreshing.';
+            }
+        });
+
+        function showTab(tab) {
+            document.querySelectorAll('.bd-tab').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+            ['profile','subscription','account'].forEach(t => {
+                document.getElementById(`tab-${t}`).style.display = t === tab ? '' : 'none';
+            });
+            if (tab === 'subscription') renderSubscription();
+        }
+
+        // Profile ─────────────────────────────────────────────────────
+        function fillProfile(b) {
+            document.getElementById('bd-name').textContent = b.name || 'Your dashboard';
+            document.getElementById('bd-sub').textContent  = `Slug: ${b.slug} · Status: ${b.status}`;
+            val('f-name',      b.name);
+            val('f-desc',      b.description);
+            val('f-image',     b.featured_image_url);
+            val('f-hours',     b.hours);
+            val('f-price',     b.price_range);
+            val('f-phone',     b.phone);
+            val('f-email-pub', b.email);
+            val('f-website',   b.website_url);
+            val('f-instagram', b.instagram_url);
+            val('f-facebook',  b.facebook_url);
+            val('f-address',   b.address);
+            val('f-city',      b.city);
+            val('f-state',     b.state || 'MN');
+            val('f-zip',       b.zip);
+            document.getElementById('btn-preview').href = `/businesses/${encodeURIComponent(b.slug)}`;
+            updateThumb();
+            document.getElementById('f-image').addEventListener('input', updateThumb);
+        }
+        function updateThumb() {
+            const url = document.getElementById('f-image').value.trim();
+            const el  = document.getElementById('f-thumb');
+            el.innerHTML = url
+                ? `<img src="${esc(url)}" onerror="this.outerHTML='<span>Broken image URL</span>';">`
+                : '<span>No image</span>';
+        }
+        async function saveProfile() {
+            hide('profile-err'); hide('profile-ok');
+            const body = {
+                name:          valOf('f-name'),
+                description:   valOf('f-desc'),
+                featured_image_url: valOf('f-image'),
+                hours:         valOf('f-hours'),
+                price_range:   valOf('f-price'),
+                phone:         valOf('f-phone'),
+                email:         valOf('f-email-pub'),
+                website_url:   valOf('f-website'),
+                instagram_url: valOf('f-instagram'),
+                facebook_url:  valOf('f-facebook'),
+                address:       valOf('f-address'),
+                city:          valOf('f-city'),
+                state:        (valOf('f-state') || 'MN').toUpperCase(),
+                zip:           valOf('f-zip'),
+            };
+            if (!body.name) { show('profile-err', 'Name cannot be empty.'); return; }
+            const btn = document.getElementById('btn-save');
+            btn.disabled = true; btn.textContent = 'Saving…';
+            try {
+                const res = await fetch('/api/business-auth/me', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(body),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                show('profile-ok', 'Saved. Changes show immediately once your listing is live.');
+            } catch (ex) {
+                show('profile-err', ex.message || 'Save failed.');
+            } finally {
+                btn.disabled = false; btn.textContent = 'Save changes';
+            }
+        }
+
+        // Account ─────────────────────────────────────────────────────
+        function fillAccount(user) {
+            if (user && user.email) val('f-account-email', user.email);
+        }
+        async function changePassword() {
+            hide('account-err'); hide('account-ok');
+            const cur = valOf('f-cur-pw');
+            const nw  = valOf('f-new-pw');
+            if (!cur || !nw) { show('account-err', 'Both password fields are required.'); return; }
+            try {
+                const res = await fetch('/api/business-auth/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ current_password: cur, new_password: nw }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                show('account-ok', 'Password updated.');
+                val('f-cur-pw', ''); val('f-new-pw', '');
+            } catch (ex) {
+                show('account-err', ex.message || 'Could not change password.');
+            }
+        }
+
+        // Subscription ────────────────────────────────────────────────
+        function renderSubscription() {
+            if (!_biz) return;
+            const s = _biz.subscription_status;
+            const labelMap = {
+                active:   'Subscription active',
+                trialing: 'Trial active',
+                past_due: 'Payment past due',
+                unpaid:   'Not started yet',
+                canceled: 'Cancelled',
+                incomplete: 'Incomplete — finish checkout',
+            };
+            const copyMap = {
+                active:   'Your listing can go live as soon as an admin approves it.',
+                trialing: 'Your trial is running — you\'re billed when it ends.',
+                past_due: 'Your last invoice failed. Update your card to keep your listing live.',
+                unpaid:   'Finish Stripe checkout to start your subscription. Your listing stays hidden until payment + approval.',
+                canceled: 'Your listing is hidden. Start a new subscription to re-list.',
+                incomplete: 'Checkout was cancelled. Restart it below.',
+            };
+            const state = s || 'unpaid';
+            const label = labelMap[state] || state;
+            const copy  = copyMap[state]  || '';
+            const dotEl = document.getElementById('sub-dot');
+            dotEl.className = 'dot ' + (state === 'active' || state === 'trialing' ? 'on' : state === 'canceled' ? 'dead' : 'off');
+            document.getElementById('sub-label').textContent = label;
+            document.getElementById('sub-copy').textContent  = copy;
+
+            // Show checkout if they never started OR subscription is canceled/incomplete.
+            const showCheckout = !_biz.stripe_subscription_id || state === 'canceled' || state === 'incomplete' || state === 'unpaid';
+            document.getElementById('btn-checkout').style.display = showCheckout ? '' : 'none';
+            document.getElementById('btn-portal').style.display   = _biz.stripe_customer_id ? '' : 'none';
+        }
+        async function startCheckout() {
+            try {
+                const res = await fetch('/api/business-auth/checkout', { method: 'POST', credentials: 'include' });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.url) throw new Error(data.error || 'Checkout not available.');
+                window.location.href = data.url;
+            } catch (ex) {
+                alert(ex.message);
+            }
+        }
+        async function openPortal() {
+            try {
+                const res = await fetch('/api/business-auth/portal', { method: 'POST', credentials: 'include' });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.url) throw new Error(data.error || 'Portal not available.');
+                window.location.href = data.url;
+            } catch (ex) {
+                alert(ex.message);
+            }
+        }
+
+        // Top banner ──────────────────────────────────────────────────
+        function renderBanner(justPaid, cancelled) {
+            const b = document.getElementById('bd-banner');
+            const s = _biz.subscription_status;
+            const approved = _biz.status === 'active';
+
+            // Just came back from successful Stripe checkout.
+            if (justPaid) {
+                b.className = 'bd-banner ok';
+                b.innerHTML = `<span>🎉 Thanks — payment received. Stripe confirmation may take a moment. We'll take it from here and approve your listing shortly.</span>`;
+                b.style.display = '';
+                return;
+            }
+            if (cancelled) {
+                b.className = 'bd-banner warn';
+                b.innerHTML = `<span>Checkout was cancelled. Your listing won't be visible until the subscription is active.</span><button onclick="startCheckout()">Resume checkout</button>`;
+                b.style.display = '';
+                return;
+            }
+            // Live
+            if (approved && s === 'active') {
+                b.className = 'bd-banner ok';
+                b.innerHTML = `<span>✓ Your listing is live.</span><a href="/businesses/${encodeURIComponent(_biz.slug)}" target="_blank" rel="noopener">View it</a>`;
+                b.style.display = '';
+                return;
+            }
+            // Paid but awaiting admin approval
+            if (!approved && s === 'active') {
+                b.className = 'bd-banner warn';
+                b.innerHTML = `<span>⏳ Subscription active — waiting on admin approval. We'll reach out if we need anything.</span>`;
+                b.style.display = '';
+                return;
+            }
+            // Approved but not paying (legacy)
+            if (approved && s !== 'active') {
+                b.className = 'bd-banner warn';
+                b.innerHTML = `<span>Your listing is approved but your subscription isn't active.</span><button onclick="showTab('subscription')">Fix billing</button>`;
+                b.style.display = '';
+                return;
+            }
+            // Neither paid nor approved
+            b.className = 'bd-banner warn';
+            b.innerHTML = `<span>Your listing is hidden. Finish Stripe checkout and we'll review your profile.</span><button onclick="showTab('subscription')">Go to subscription</button>`;
+            b.style.display = '';
+        }
+
+        async function signOut() {
+            try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch (_) {}
+            window.location.href = '/business-login';
+        }
+
+        // Helpers ─────────────────────────────────────────────────────
+        function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+        function val(id, v)  { const el = document.getElementById(id); if (el) el.value = v ?? ''; }
+        function valOf(id)   { return (document.getElementById(id).value || '').trim(); }
+        function show(id, msg){ const el = document.getElementById(id); el.textContent = msg; el.classList.add('show'); }
+        function hide(id)    { document.getElementById(id).classList.remove('show'); }
+    </script>
+</body>
+</html>

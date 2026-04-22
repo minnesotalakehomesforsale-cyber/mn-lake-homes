@@ -52,7 +52,8 @@ app.use('/api/activity', require('./routes/activity.routes'));
 app.use('/api/cash-offer', require('./routes/cash-offer.routes'));
 app.use('/api/tags', require('./routes/tag.routes'));
 app.use('/api/lakes', require('./routes/lake.routes'));
-app.use('/api/businesses', require('./routes/business.routes'));
+app.use('/api/businesses',     require('./routes/business.routes'));
+app.use('/api/business-auth',  require('./routes/business-auth.routes'));
 app.use('/api/resources', require('./routes/resource.routes'));
 
 app.get('/api/health', (req, res) => {
@@ -232,6 +233,92 @@ app.get('/lakes/:slug', async (req, res, next) => {
     }
 });
 
+// ─── Businesses: per-business public detail page ───────────────────────
+// Mirror of /lakes/:slug — static template with {{BUSINESS_*}} tokens
+// replaced server-side so SEO meta tags are in the initial HTML.
+app.get('/businesses/:slug', async (req, res, next) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT id, slug, name, type, description, phone, email, website_url,
+                    instagram_url, facebook_url,
+                    address, city, state, zip, latitude, longitude,
+                    featured_image_url, status
+             FROM businesses WHERE slug = $1 LIMIT 1`,
+            [req.params.slug]
+        );
+        const biz = rows[0];
+        if (!biz || biz.status !== 'active') {
+            res.status(404).sendFile(path.join(PROJECT_ROOT, 'pages/public/404.html'), (err) => {
+                if (err) res.status(404).send('Business not found');
+            });
+            return;
+        }
+
+        const templatePath = path.join(PROJECT_ROOT, 'pages/public/business-detail.html');
+        fs.readFile(templatePath, 'utf8', (err, html) => {
+            if (err) return next(err);
+            const prettyType = ({
+                restaurant: 'Restaurant', marina: 'Marina', service: 'Service',
+                photographer: 'Photographer', builder: 'Builder',
+                boat_rental: 'Boat Rental', outdoor_recreation: 'Resort',
+                other: 'Local Business',
+            })[biz.type] || 'Local Business';
+            // "Back to all services" link — drops the visitor back on
+            // /towns in Businesses view with "All" selected.
+            const backUrl = `/towns?view=biz`;
+            const locLine = [biz.city, biz.state].filter(Boolean).join(', ');
+            const title = `${biz.name} | ${prettyType}${locLine ? ' in ' + locLine : ''}`;
+            const desc  = (biz.description && biz.description.slice(0, 160))
+                || `${prettyType}${locLine ? ' in ' + locLine : ''} — contact ${biz.name} for hours, info, and bookings.`;
+            const replacements = {
+                '{{BUSINESS_SEO_TITLE}}':       escapeHtml(title),
+                '{{BUSINESS_SEO_DESCRIPTION}}': escapeHtml(desc),
+                '{{BUSINESS_NAME}}':            escapeHtml(biz.name),
+                '{{BUSINESS_SLUG}}':            escapeHtml(biz.slug),
+                '{{BUSINESS_TYPE}}':            escapeHtml(biz.type || ''),
+                '{{BUSINESS_TYPE_LABEL}}':      escapeHtml(prettyType),
+                '{{BUSINESS_BACK_URL}}':        escapeHtml(backUrl),
+                '{{BUSINESS_DESCRIPTION}}':     escapeHtml(biz.description || ''),
+                '{{BUSINESS_PHONE}}':           escapeHtml(biz.phone || ''),
+                '{{BUSINESS_EMAIL}}':           escapeHtml(biz.email || ''),
+                '{{BUSINESS_WEBSITE}}':         escapeHtml(biz.website_url || ''),
+                '{{BUSINESS_INSTAGRAM}}':       escapeHtml(biz.instagram_url || ''),
+                '{{BUSINESS_FACEBOOK}}':        escapeHtml(biz.facebook_url || ''),
+                '{{BUSINESS_ADDRESS}}':         escapeHtml(biz.address || ''),
+                '{{BUSINESS_CITY}}':            escapeHtml(biz.city || ''),
+                '{{BUSINESS_STATE}}':           escapeHtml(biz.state || ''),
+                '{{BUSINESS_ZIP}}':             escapeHtml(biz.zip || ''),
+                '{{BUSINESS_IMAGE}}':           escapeHtml(biz.featured_image_url || ''),
+                '{{BUSINESS_LATITUDE}}':        escapeHtml(biz.latitude ?? ''),
+                '{{BUSINESS_LONGITUDE}}':       escapeHtml(biz.longitude ?? ''),
+            };
+            let out = html;
+            for (const [k, v] of Object.entries(replacements)) {
+                out = out.split(k).join(v);
+            }
+            res.type('html').send(out);
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// Public submission form page (vendor self-serve).
+app.get('/submit-business', (req, res) => {
+    res.sendFile(path.join(PROJECT_ROOT, 'pages/public/submit-business.html'));
+});
+
+// Business-owner self-service flow (signup → Stripe → dashboard).
+app.get('/business-signup', (req, res) => {
+    res.sendFile(path.join(PROJECT_ROOT, 'pages/public/business-signup.html'));
+});
+app.get('/business-login', (req, res) => {
+    res.sendFile(path.join(PROJECT_ROOT, 'pages/public/business-login.html'));
+});
+app.get('/business/dashboard', (req, res) => {
+    res.sendFile(path.join(PROJECT_ROOT, 'pages/business/dashboard.html'));
+});
+
 // ─── Towns: public browse-all page ─────────────────────────────────────
 app.get('/towns', (req, res) => {
     res.sendFile(path.join(PROJECT_ROOT, 'pages/public/towns-index.html'));
@@ -393,6 +480,35 @@ async function ensureTables() {
         await pool.query(`
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT;
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
+        `);
+
+        // Businesses: social links + 'pending' status for the public
+        // self-submission → admin-approve flow. Columns are nullable
+        // since most legacy rows won't have them.
+        await pool.query(`
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS instagram_url TEXT;
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS facebook_url  TEXT;
+        `);
+
+        // Business-owner self-service: one user can own one business,
+        // listing visibility gated on both admin approval (status='active')
+        // AND an active Stripe subscription (subscription_status='active').
+        // Legacy admin-seeded rows keep user_id NULL and bypass the
+        // subscription check — they're admin-managed, always visible.
+        await pool.query(`DO $$ BEGIN
+            ALTER TYPE role_type ADD VALUE IF NOT EXISTS 'business_owner';
+        EXCEPTION WHEN undefined_object THEN NULL;
+        END $$;`);
+        await pool.query(`
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS user_id UUID;
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS stripe_customer_id     TEXT;
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS subscription_status    VARCHAR(24);
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS tier                   VARCHAR(16);
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_businesses_user_id
+                ON businesses(user_id) WHERE user_id IS NOT NULL;
+            CREATE INDEX IF NOT EXISTS idx_businesses_stripe_sub
+                ON businesses(stripe_subscription_id) WHERE stripe_subscription_id IS NOT NULL;
         `);
 
         // Reminders-style columns on admin_tasks (details + due date)

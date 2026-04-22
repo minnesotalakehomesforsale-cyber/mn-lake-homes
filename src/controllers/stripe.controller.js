@@ -30,6 +30,16 @@ function membershipCodeFromPriceId(priceId) {
     return null;
 }
 
+// Reverse lookup for business subscriptions: price ID → tier. Premium
+// maps to "Featured Partner"; basic maps to "Local Spotlight". Anything
+// else falls back to basic so a misconfigured price doesn't lock the
+// subscriber out of the directory.
+function businessTierFromPriceId(priceId) {
+    if (priceId === process.env.STRIPE_PRICE_BUSINESS_PREMIUM_MONTHLY
+     || priceId === process.env.STRIPE_PRICE_BUSINESS_PREMIUM_ANNUAL) return 'premium';
+    return 'basic';
+}
+
 // ─── POST /api/stripe/checkout ───────────────────────────────────────────────
 // Authenticated agent creates a Stripe Checkout Session
 exports.createCheckoutSession = async (req, res) => {
@@ -102,6 +112,36 @@ exports.handleWebhook = async (req, res) => {
             // ── Checkout completed — activate subscription ──
             case 'checkout.session.completed': {
                 const session = event.data.object;
+
+                // Business-owner checkouts carry kind='business' in metadata
+                // and map to a row in `businesses`, not `agents`. Handled
+                // before the agent path so we don't fall through.
+                if (session.metadata?.kind === 'business') {
+                    const businessId = session.metadata.business_id;
+                    if (!businessId) {
+                        console.error('[Stripe Webhook] business checkout missing business_id');
+                        break;
+                    }
+                    // Pull the subscription so we can map price → tier
+                    // (premium vs basic). Tier drives the "Featured
+                    // Partner" badge + sort on /towns.
+                    const sub = await stripe.subscriptions.retrieve(session.subscription);
+                    const priceId = sub.items.data[0]?.price?.id;
+                    const tier    = businessTierFromPriceId(priceId);
+                    await pool.query(
+                        `UPDATE businesses
+                            SET stripe_customer_id     = $1,
+                                stripe_subscription_id = $2,
+                                subscription_status    = 'active',
+                                tier                   = $3,
+                                updated_at             = NOW()
+                          WHERE id = $4`,
+                        [session.customer, session.subscription, tier, businessId]
+                    );
+                    console.log(`[Stripe Webhook] Business ${businessId} activated (${tier})`);
+                    break;
+                }
+
                 const userId  = session.metadata?.user_id;
 
                 if (!userId) {
@@ -153,6 +193,20 @@ exports.handleWebhook = async (req, res) => {
                 const subscription = event.data.object;
                 const subscriptionId = subscription.id;
 
+                // Businesses first — they share the subscription_id space
+                // with agents, so we dispatch by table.
+                const bizHit = await pool.query(
+                    `UPDATE businesses
+                        SET subscription_status = 'canceled', updated_at = NOW()
+                      WHERE stripe_subscription_id = $1
+                      RETURNING id`,
+                    [subscriptionId]
+                );
+                if (bizHit.rowCount) {
+                    console.log(`[Stripe Webhook] Business ${bizHit.rows[0].id} subscription canceled`);
+                    break;
+                }
+
                 // Find the agent by their stored subscription ID
                 const { rows: agentRows } = await pool.query(
                     `SELECT user_id FROM agents WHERE stripe_subscription_id = $1`,
@@ -173,6 +227,51 @@ exports.handleWebhook = async (req, res) => {
                 );
 
                 console.log(`[Stripe Webhook] Agent ${agentRows[0].user_id} unpublished (subscription cancelled)`);
+                break;
+            }
+
+            // ── Subscription state changed (past_due, unpaid, paused) ──
+            // Also re-reads the price so tier stays in sync if the owner
+            // upgrades/downgrades between Featured Partner and Local
+            // Spotlight via the Stripe portal.
+            case 'customer.subscription.updated': {
+                const sub = event.data.object;
+                const priceId = sub.items?.data?.[0]?.price?.id;
+                const tier    = businessTierFromPriceId(priceId);
+                await pool.query(
+                    `UPDATE businesses
+                        SET subscription_status = $1,
+                            tier                = $2,
+                            updated_at          = NOW()
+                      WHERE stripe_subscription_id = $3`,
+                    [sub.status, tier, sub.id]
+                );
+                break;
+            }
+
+            case 'invoice.payment_failed': {
+                const invoice = event.data.object;
+                if (invoice.subscription) {
+                    await pool.query(
+                        `UPDATE businesses
+                            SET subscription_status = 'past_due', updated_at = NOW()
+                          WHERE stripe_subscription_id = $1`,
+                        [invoice.subscription]
+                    );
+                }
+                break;
+            }
+
+            case 'invoice.payment_succeeded': {
+                const invoice = event.data.object;
+                if (invoice.subscription) {
+                    await pool.query(
+                        `UPDATE businesses
+                            SET subscription_status = 'active', updated_at = NOW()
+                          WHERE stripe_subscription_id = $1`,
+                        [invoice.subscription]
+                    );
+                }
                 break;
             }
 

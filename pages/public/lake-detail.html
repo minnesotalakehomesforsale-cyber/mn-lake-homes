@@ -194,14 +194,35 @@
         </div>
     </section>
 
-    <!-- Experts (agents connected to this lake) -->
-    <section id="expert" class="lm-expert">
+    <!-- Featured Agents near this lake (hidden when none tagged) -->
+    <section id="expert" class="lm-expert" style="display:none;">
         <div class="lm-expert-inner">
-            <h2>Your {{LAKE_NAME}} experts</h2>
+            <h2>Featured agents near {{LAKE_NAME}}</h2>
             <p class="lead">Agents who know this lake — local listings, off-market inventory, and the neighborhoods that fit your lifestyle.</p>
-            <div id="lake-agents-grid" class="agents-grid">
-                <div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">Loading featured agents…</div>
-            </div>
+            <div id="lake-agents-grid" class="agents-grid"></div>
+            <div id="lake-agents-cta" style="text-align:center;margin-top:1.75rem;"></div>
+        </div>
+    </section>
+    <style>
+        /* Prevent a lone featured-agent card from stretching to the full
+           container width — stock .agents-grid uses minmax(280px, 1fr). */
+        #lake-agents-grid, #lake-nearby-biz-grid {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 360px)) !important;
+            justify-content: center !important;
+            gap: 1.5rem !important;
+            padding: 1.5rem 1rem 0 !important;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+    </style>
+
+    <!-- Businesses near this lake (hidden when fewer than 3 tagged) -->
+    <section id="lake-nearby-biz-section" class="lm-expert" style="display:none;">
+        <div class="lm-expert-inner">
+            <h2 id="lake-nearby-biz-heading">Businesses near {{LAKE_NAME}}</h2>
+            <p class="lead" id="lake-nearby-biz-lead">Restaurants, marinas, services, and more around {{LAKE_NAME}} — Featured Partners lead the list.</p>
+            <div id="lake-nearby-biz-grid" class="agents-grid"></div>
+            <div id="lake-nearby-biz-cta" style="text-align:center;margin-top:1.75rem;"></div>
         </div>
     </section>
 
@@ -241,6 +262,8 @@
         const LAKE_ID   = '{{LAKE_ID}}';
         const LAKE_SLUG = '{{LAKE_SLUG}}';
         const LAKE_NAME = '{{LAKE_NAME}}';
+        const LAKE_LAT  = parseFloat('{{LAKE_LATITUDE}}');
+        const LAKE_LNG  = parseFloat('{{LAKE_LONGITUDE}}');
 
         // ── About section: populate from description (preferred) or intro_text ──
         async function loadLake() {
@@ -267,22 +290,18 @@
 
         async function loadLakeAgents() {
             const grid = document.getElementById('lake-agents-grid');
+            const section = document.getElementById('expert');
             if (!grid) return;
             try {
                 const res = await fetch(`/api/lakes/${encodeURIComponent(LAKE_ID)}/agents`);
                 if (!res.ok) throw new Error();
                 const raw = await res.json();
                 const agents = raw.filter(a => a.is_published);
-                if (!agents.length) {
-                    grid.innerHTML = `
-                        <div style="grid-column:1/-1;background:#fff;border:1px solid #edf2f7;border-radius:14px;padding:3rem 2rem;text-align:center;max-width:680px;margin:0 auto;box-shadow:0 2px 6px rgba(0,0,0,0.03);">
-                            <div style="display:inline-flex;align-items:center;gap:0.4rem;background:#ebf4ff;color:#1d6df2;font-size:0.72rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:0.35rem 0.75rem;border-radius:99px;margin-bottom:1rem;">Coming Soon</div>
-                            <h3 style="font-size:1.5rem;font-weight:700;color:#1a202c;margin:0 0 0.6rem;letter-spacing:-0.4px;">${escHtml(LAKE_NAME)} specialists coming soon</h3>
-                            <p style="color:#4a5568;line-height:1.65;margin:0 0 1.5rem;font-size:1rem;">We're onboarding agents who know this lake. Reach out and we'll connect you the moment the right specialist is ready.</p>
-                            <a href="/contact" style="display:inline-block;padding:0.8rem 1.5rem;background:#1d6df2;color:#fff;font-weight:700;border-radius:8px;text-decoration:none;font-size:0.9rem;">Contact us →</a>
-                        </div>`;
-                    return;
-                }
+                // Geo tag is required (endpoint enforces it). No match → hide.
+                if (!agents.length) { section.style.display = 'none'; return; }
+                section.style.display = '';
+                document.getElementById('lake-agents-cta').innerHTML =
+                    '<a href="/pages/public/agents.html" class="nb-cta">View all agents →</a>';
                 grid.innerHTML = agents.slice(0, 6).map(a => {
                     const photo = a.profile_photo_url || '/assets/images/mn-stillwater-aerial.webp';
                     const bio   = a.bio || '';
@@ -420,12 +439,126 @@
 
         function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+        // ── Shared "businesses nearby" fallback ──────────────────────────
+        // Geo is a hard filter (25 km radius). Within that set, Featured
+        // Partners go first, then by distance. Matches the town page.
+        const NEAR_RADIUS_KM = 25;
+        const BIZ_COLORS = {
+            restaurant: '#dc2626', marina: '#2563eb',
+            outdoor_recreation: '#059669', boat_rental: '#0891b2',
+            builder: '#92400e', photographer: '#7c3aed',
+            service: '#475569', other: '#d97706',
+        };
+        const BIZ_TYPE_LABEL = {
+            restaurant: 'Restaurant', marina: 'Marina',
+            outdoor_recreation: 'Resort', boat_rental: 'Boat Rental',
+            service: 'Service', builder: 'Builder',
+            photographer: 'Photographer', other: 'Local Business',
+        };
+
+        // Hard geo rule: only businesses tagged to this lake (via
+        // business_lakes). Need ≥3 — else the whole section is hidden.
+        const MIN_TAGGED_BUSINESSES = 3;
+        async function renderTaggedBusinesses({ endpoint, anchorName, sectionEl, headingEl, leadEl, gridEl, ctaEl }) {
+            injectBizStyles();
+            try {
+                const r = await fetch(endpoint);
+                if (!r.ok) throw new Error();
+                const all = await r.json();
+                if (all.length < MIN_TAGGED_BUSINESSES) {
+                    if (sectionEl) sectionEl.style.display = 'none';
+                    return;
+                }
+                const picks = all.slice(0, 3);
+                if (headingEl) headingEl.textContent = `Businesses near ${anchorName}`;
+                if (leadEl) leadEl.textContent =
+                    `Restaurants, marinas, services, and more around ${anchorName} — Featured Partners lead the list.`;
+                gridEl.innerHTML = picks.map(renderBizCard).join('');
+                if (ctaEl) ctaEl.innerHTML = '<a href="/towns?view=biz" class="nb-cta">View all businesses →</a>';
+                if (sectionEl) sectionEl.style.display = '';
+            } catch (_) {
+                if (sectionEl) sectionEl.style.display = 'none';
+            }
+        }
+
+        function renderBizCard(b) {
+            const color = BIZ_COLORS[b.type] || BIZ_COLORS.other;
+            const label = BIZ_TYPE_LABEL[b.type] || 'Local Business';
+            const loc   = [b.city, b.state].filter(Boolean).join(', ');
+            const thumb = b.featured_image_url || '/assets/images/mn-canoe-shore.webp';
+            const blurb = (b.description && b.description.length > 20)
+                ? b.description
+                : `${label}${b.city ? ' in ' + b.city : ''}.`;
+            const featured = b.tier === 'premium';
+            return `
+                <a class="nb-card ${featured ? 'is-featured' : ''}" style="--biz-c:${color};" href="/businesses/${encodeURIComponent(b.slug)}">
+                    <div class="nb-thumb">
+                        <span class="chip">${escHtml(label)}</span>
+                        ${featured ? '<span class="featured">★ Featured Partner</span>' : ''}
+                        <img src="${escHtml(thumb)}" alt="${escHtml(b.name)}" loading="lazy">
+                    </div>
+                    <div class="nb-body">
+                        <h3>${escHtml(b.name)}</h3>
+                        <div class="loc">${escHtml(loc)}</div>
+                        <p>${escHtml(blurb)}</p>
+                        <span class="nb-cta-inline">View profile <span aria-hidden="true">→</span></span>
+                    </div>
+                </a>`;
+        }
+
+        function haversineKm(lat1, lng1, lat2, lng2) {
+            const toRad = x => x * Math.PI / 180;
+            const R = 6371;
+            const dLat = toRad(lat2 - lat1);
+            const dLng = toRad(lng2 - lng1);
+            const s = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+            return 2 * R * Math.asin(Math.sqrt(s));
+        }
+
+        let _bizStylesInjected = false;
+        function injectBizStyles() {
+            if (_bizStylesInjected) return;
+            _bizStylesInjected = true;
+            const css = `
+                #lake-agents-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important; gap: 1rem; }
+                .nb-card { display: flex; flex-direction: column; background: #fff; border: 1px solid #e5eaf0; border-radius: 14px; overflow: hidden; text-decoration: none; color: inherit; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s; }
+                .nb-card:hover { transform: translateY(-3px); border-color: #cbd5e0; box-shadow: 0 14px 30px rgba(16,24,40,0.10); }
+                .nb-card:hover .nb-thumb img { transform: scale(1.05); }
+                .nb-card.is-featured { border-color: #d4a84a; box-shadow: 0 10px 22px rgba(212,168,74,0.18); }
+                .nb-thumb { height: 165px; overflow: hidden; position: relative; background: linear-gradient(135deg, var(--biz-c, #d97706) 0%, color-mix(in srgb, var(--biz-c, #d97706) 72%, #000) 100%); }
+                .nb-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s; }
+                .nb-thumb .chip { position: absolute; top: 12px; left: 12px; z-index: 2; background: rgba(255,255,255,0.96); color: #1a202c; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 0.28rem 0.6rem; border-radius: 6px; }
+                .nb-thumb .featured { position: absolute; bottom: 12px; left: 12px; z-index: 2; background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%); color: #fff; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 0.3rem 0.65rem; border-radius: 6px; box-shadow: 0 4px 10px rgba(180,83,9,0.35); }
+                .nb-body { padding: 1rem 1.1rem 1.15rem; flex: 1; display: flex; flex-direction: column; }
+                .nb-body h3 { font-size: 1.08rem; font-weight: 800; color: #1a202c; margin: 0 0 0.25rem; letter-spacing: -0.25px; }
+                .nb-body .loc { font-size: 0.78rem; color: #a0aec0; margin: 0 0 0.7rem; font-weight: 600; }
+                .nb-body p { color: #4a5568; font-size: 0.87rem; line-height: 1.5; margin: 0 0 0.9rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+                .nb-cta-inline { margin-top: auto; display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; font-weight: 800; color: var(--biz-c, #d97706); transition: gap 0.15s; }
+                .nb-card:hover .nb-cta-inline { gap: 0.6rem; }
+                .nb-cta { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.75rem 1.25rem; background: #1a202c; color: #fff; font-weight: 800; font-size: 0.88rem; border-radius: 10px; text-decoration: none; transition: background 0.12s; }
+                .nb-cta:hover { background: #000; }
+            `;
+            const el = document.createElement('style');
+            el.textContent = css;
+            document.head.appendChild(el);
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             loadLake();
             loadLakeAgents();
             loadLakeBlog();
             loadLakeBiz();
             loadLakeTowns();
+            // Standalone "Businesses near {lake}" row — ≥3 geo-tagged required.
+            renderTaggedBusinesses({
+                endpoint:  `/api/lakes/${encodeURIComponent(LAKE_ID)}/businesses`,
+                anchorName: LAKE_NAME,
+                sectionEl: document.getElementById('lake-nearby-biz-section'),
+                headingEl: document.getElementById('lake-nearby-biz-heading'),
+                leadEl:    document.getElementById('lake-nearby-biz-lead'),
+                gridEl:    document.getElementById('lake-nearby-biz-grid'),
+                ctaEl:     document.getElementById('lake-nearby-biz-cta'),
+            });
         });
     </script>
 </body>

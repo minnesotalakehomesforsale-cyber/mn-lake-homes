@@ -565,18 +565,24 @@ exports.listBusinesses = async (req, res) => {
             params.push(String(req.query.type).toLowerCase().slice(0, 40));
             where.push(`b.type = $${params.length}`);
         }
-        if (!adminCaller) where.push(`b.status = 'active'`);
+        if (!adminCaller) {
+            // Public visibility mirrors /api/businesses: active status +
+            // (admin-managed OR active subscription). Keeps unpaid owner
+            // rows out of the lake page even when they're still linked.
+            where.push(`b.status = 'active'`);
+            where.push(`(b.user_id IS NULL OR b.subscription_status = 'active')`);
+        }
 
         const { rows } = await pool.query(
             `SELECT b.id, b.slug, b.name, b.type, b.description, b.phone, b.email,
                     b.website_url, b.address, b.city, b.state, b.zip,
                     b.latitude, b.longitude, b.hours, b.price_range,
-                    b.featured_image_url, b.status,
+                    b.featured_image_url, b.status, b.tier,
                     bl.is_featured
              FROM business_lakes bl
              JOIN businesses b ON b.id = bl.business_id
              WHERE ${where.join(' AND ')}
-             ORDER BY bl.is_featured DESC, b.name ASC`,
+             ORDER BY (b.tier = 'premium') DESC, bl.is_featured DESC, b.name ASC`,
             params
         );
         res.json(rows);

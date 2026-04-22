@@ -251,6 +251,28 @@ async function seed() {
             console.log(`   Profile: /pages/public/agent-profile.html?slug=${a.slug}\n`);
         }
 
+        // Tag David Chen with every active geo tag so he surfaces as the
+        // featured agent on every single lake + town page. Idempotent —
+        // safe to re-run.
+        const { rows: davidRow } = await client.query(
+            `SELECT u.id FROM users u WHERE u.email = 'david.chen@mnlakehomes.com' LIMIT 1`
+        );
+        if (davidRow.length) {
+            const davidId = davidRow[0].id;
+            await client.query(`DELETE FROM user_tags WHERE user_id = $1`, [davidId]);
+            const { rows: activeTags } = await client.query(
+                `SELECT id FROM tags WHERE active = TRUE`
+            );
+            for (const t of activeTags) {
+                await client.query(
+                    `INSERT INTO user_tags (user_id, tag_id) VALUES ($1, $2)
+                     ON CONFLICT DO NOTHING`,
+                    [davidId, t.id]
+                );
+            }
+            console.log(`🌍 David Chen tagged with ${activeTags.length} geo tags (everywhere-agent)`);
+        }
+
         await client.query('COMMIT');
 
         console.log('=======================================================');

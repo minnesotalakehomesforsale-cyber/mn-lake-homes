@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+
+    <title>{{BUSINESS_SEO_TITLE}}</title>
+    <meta name="description" content="{{BUSINESS_SEO_DESCRIPTION}}">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/businesses/{{BUSINESS_SLUG}}">
+    <meta name="robots" content="index, follow">
+
+    <meta property="og:type" content="business.business">
+    <meta property="og:title" content="{{BUSINESS_SEO_TITLE}}">
+    <meta property="og:description" content="{{BUSINESS_SEO_DESCRIPTION}}">
+    <meta property="og:image" content="{{BUSINESS_IMAGE}}">
+
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="../../components/components.js" defer></script>
+
+    <style>
+        :root {
+            /* --brand defaults to amber but JS overrides it per business
+               type on page load, so every accent (chip, button, CTA,
+               shadow, hover, address link, related card hover) matches
+               the pin color used on /towns. */
+            --brand: #d97706;
+            --brand-dark: color-mix(in srgb, var(--brand) 72%, #000);
+            --brand-tint: color-mix(in srgb, var(--brand) 12%, #fff);
+            --ink: #1a202c;
+            --ink-soft: #4a5568;
+            --muted: #718096;
+            --line: #e5eaf0;
+        }
+
+        body { background: #f7f9fa; color: var(--ink); font-family: 'Inter', sans-serif; }
+
+        /* Shell width is tuned so the related-services row (three ~300px
+           cards + gaps) lines up exactly under the main card. Natural
+           document flow — no vertical centering trickery. */
+        .bz-shell {
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: 6rem 1.5rem 4rem;
+        }
+
+        /* Back button — pill-style, parked in the top-left above the card. */
+        .bz-back {
+            display: inline-flex; align-items: center; gap: 0.45rem;
+            color: var(--ink); font-size: 0.82rem; font-weight: 700;
+            text-decoration: none;
+            padding: 0.6rem 1rem;
+            background: #fff;
+            border: 1px solid #cbd5e0;
+            border-radius: 999px;
+            align-self: flex-start;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 4px 10px rgba(16,24,40,0.06);
+            transition: border-color 0.12s, color 0.12s, box-shadow 0.12s;
+        }
+        .bz-back:hover { border-color: var(--brand); color: var(--brand); box-shadow: 0 6px 14px rgba(16,24,40,0.1); }
+        .bz-back .chev { font-weight: 800; }
+
+        /* Single card that holds everything — hero strip + details grid
+           separated by a thin divider rather than nested sub-cards. */
+        .bz-card {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 22px rgba(16,24,40,0.05);
+        }
+
+        /* ── Hero strip ─────────────────────────────────────────── */
+        .bz-hero {
+            display: grid;
+            grid-template-columns: 240px minmax(0, 1fr);
+            gap: 2rem;
+            padding: 2rem;
+            align-items: center;
+        }
+        .bz-hero.no-image { grid-template-columns: minmax(0, 1fr); }
+        .bz-thumb {
+            width: 240px; height: 240px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+            overflow: hidden;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .bz-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .bz-hero.no-image .bz-thumb { display: none; }
+
+        .bz-hero-body { min-width: 0; }
+        .bz-type-chip {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            font-size: 0.66rem; font-weight: 800; letter-spacing: 0.7px;
+            text-transform: uppercase;
+            background: var(--brand-tint); color: var(--brand);
+            padding: 0.25rem 0.6rem; border-radius: 5px;
+            margin-bottom: 0.65rem;
+        }
+        .bz-type-chip::before {
+            content: ''; width: 6px; height: 6px; border-radius: 50%;
+            background: var(--brand);
+        }
+        .bz-hero h1 {
+            font-size: clamp(1.7rem, 3vw, 2.25rem);
+            font-weight: 800; letter-spacing: -0.6px; line-height: 1.12;
+            margin: 0 0 0.4rem;
+        }
+        .bz-hero .loc { color: var(--muted); font-weight: 700; font-size: 0.95rem; }
+        .bz-hero .bio {
+            color: var(--ink-soft); margin-top: 1rem; line-height: 1.55;
+            font-size: 1rem;
+        }
+        .bz-hero .bio:empty { display: none; }
+
+        /* CTA row + socials — both sit inside the hero body, socials
+           below the buttons so they read as secondary links. */
+        .bz-cta-row { margin-top: 1.15rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .bz-socials-row { margin-top: 0.75rem; display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .bz-socials-row:empty { display: none; }
+        .bz-btn {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.55rem 0.95rem;
+            font-weight: 800; font-size: 0.84rem;
+            border-radius: 8px; text-decoration: none;
+            transition: transform 0.12s, background 0.12s, color 0.12s, border-color 0.12s;
+        }
+        .bz-btn.primary {
+            background: var(--brand); color: #fff;
+            box-shadow: 0 4px 10px color-mix(in srgb, var(--brand) 30%, transparent);
+        }
+        .bz-btn.primary:hover { background: var(--brand-dark); transform: translateY(-1px); }
+        .bz-btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+        .bz-btn.ghost:hover { border-color: var(--brand); color: var(--brand); }
+
+        /* ── Details grid — two columns: Contact (left), Address (right). */
+        .bz-details {
+            border-top: 1px solid var(--line);
+            padding: 1.25rem 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem 2.5rem;
+        }
+        @media (max-width: 620px) { .bz-details { grid-template-columns: 1fr; } }
+        .bz-section h3 {
+            font-size: 0.65rem; font-weight: 800;
+            letter-spacing: 0.8px; text-transform: uppercase;
+            color: var(--muted);
+            margin: 0 0 0.55rem;
+        }
+        .bz-row {
+            display: flex; justify-content: space-between; gap: 0.75rem;
+            padding: 0.3rem 0;
+            font-size: 0.88rem; color: var(--ink);
+        }
+        .bz-row .label { color: var(--muted); font-weight: 700; font-size: 0.78rem; }
+        .bz-row .value { font-weight: 600; text-align: right; min-width: 0; }
+        .bz-row .value a { color: inherit; text-decoration: none; word-break: break-word; }
+        .bz-row .value a:hover { color: var(--brand); }
+
+        .bz-address-line { font-size: 0.9rem; line-height: 1.45; color: var(--ink); }
+        .bz-address-link {
+            display: inline-block;
+            margin-top: 0.4rem;
+            font-size: 0.8rem; font-weight: 700;
+            color: var(--brand); text-decoration: none;
+        }
+        .bz-address-link:hover { text-decoration: underline; }
+
+        .bz-socials { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .bz-social {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            padding: 0.45rem 0.7rem;
+            border: 1px solid var(--line); border-radius: 8px;
+            background: #fff; color: var(--ink);
+            font-size: 0.8rem; font-weight: 700;
+            text-decoration: none;
+        }
+        .bz-social:hover { border-color: var(--brand); color: var(--brand); }
+        .bz-social svg { width: 14px; height: 14px; }
+
+        .bz-section.is-empty { display: none; }
+
+        /* ── Related services row ──────────────────────────────────
+           Matches the .db-card styling used on /towns so the visual
+           language is consistent across the site. */
+        .bz-related { margin-top: 3rem; }
+        .bz-related-head {
+            display: flex; align-items: baseline; justify-content: space-between;
+            gap: 1rem; margin: 0 0 1rem;
+        }
+        .bz-related-head h2 {
+            font-size: 1.1rem; font-weight: 800; letter-spacing: -0.3px;
+            color: var(--ink); margin: 0;
+        }
+        .bz-related-head .sub { color: var(--muted); font-size: 0.85rem; font-weight: 600; }
+        .bz-related-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+        }
+        .bz-related-grid:empty { display: none; }
+
+        /* Card styles — a copy of .db-card from towns-index.html so the
+           related row looks identical to the directory cards. */
+        .db-card {
+            display: flex; flex-direction: column;
+            background: #fff; border: 1px solid #e5eaf0; border-radius: 14px;
+            overflow: hidden; text-decoration: none; color: inherit;
+            transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+        }
+        .db-card:hover { transform: translateY(-3px); border-color: #cbd5e0; box-shadow: 0 14px 30px rgba(16,24,40,0.10); }
+        .db-card:hover .db-card-thumb img { transform: scale(1.05); }
+        .db-card-thumb { height: 165px; overflow: hidden; position: relative; }
+        .db-card.biz .db-card-thumb {
+            background: linear-gradient(135deg,
+                var(--biz-c, var(--brand)) 0%,
+                color-mix(in srgb, var(--biz-c, var(--brand)) 72%, #000) 100%);
+        }
+        .db-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s; }
+        .db-card-thumb .chip {
+            position: absolute; top: 12px; left: 12px; z-index: 2;
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+            color: var(--ink); font-size: 0.68rem; font-weight: 800;
+            letter-spacing: 0.6px; text-transform: uppercase;
+            padding: 0.28rem 0.6rem; border-radius: 6px;
+        }
+        .db-card-thumb .type {
+            position: absolute; top: 12px; right: 12px; z-index: 2;
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            color: #fff; font-size: 0.66rem; font-weight: 800;
+            letter-spacing: 0.6px; text-transform: uppercase;
+            padding: 0.28rem 0.55rem; border-radius: 6px;
+        }
+        .db-card.biz .db-card-thumb .type { background: var(--biz-c, var(--brand)); }
+        .db-card-thumb .type .dot { width: 6px; height: 6px; border-radius: 50%; background: #fff; }
+        .db-card-body { padding: 1rem 1.1rem 1.15rem; flex: 1; display: flex; flex-direction: column; }
+        .db-card-body h3 { font-size: 1.08rem; font-weight: 800; color: var(--ink); margin: 0 0 0.25rem; letter-spacing: -0.25px; }
+        .db-card-body .loc { font-size: 0.78rem; color: #a0aec0; margin: 0 0 0.7rem; font-weight: 600; }
+        .db-card-body p { color: var(--ink-soft); font-size: 0.87rem; line-height: 1.5; margin: 0 0 0.9rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+        .db-card-cta {
+            margin-top: auto; display: inline-flex; align-items: center; gap: 0.4rem;
+            font-size: 0.82rem; font-weight: 800; color: var(--biz-c, var(--brand));
+            transition: gap 0.15s;
+        }
+        .db-card:hover .db-card-cta { gap: 0.6rem; }
+
+        /* Featured Partner treatment — matches /towns. */
+        .db-card.is-featured { border-color: #d4a84a; box-shadow: 0 10px 22px rgba(212,168,74,0.18); }
+        .db-card-thumb .featured {
+            position: absolute; bottom: 12px; left: 12px; z-index: 2;
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%);
+            color: #fff; font-size: 0.66rem; font-weight: 800;
+            letter-spacing: 0.6px; text-transform: uppercase;
+            padding: 0.3rem 0.65rem; border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(180,83,9,0.35);
+        }
+        .db-card-thumb .featured::before { content: '★'; font-size: 0.8rem; line-height: 1; }
+
+        @media (max-width: 860px) {
+            .bz-related-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 620px) {
+            .bz-shell { padding: 5rem 1rem 3rem; }
+            .bz-hero { grid-template-columns: minmax(0, 1fr); padding: 1.25rem; }
+            .bz-thumb { width: 100%; height: 200px; }
+            .bz-details { padding: 1rem 1.25rem; gap: 1rem; }
+            .bz-related-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <global-header></global-header>
+
+    <main class="bz-shell">
+        <a class="bz-back" href="{{BUSINESS_BACK_URL}}"><span class="chev" aria-hidden="true">←</span> Back to all services</a>
+
+        <article class="bz-card">
+            <header class="bz-hero no-image" id="bz-hero">
+                <div class="bz-thumb" id="bz-thumb">
+                    <img src="{{BUSINESS_IMAGE}}" alt="{{BUSINESS_NAME}}" onerror="document.getElementById('bz-hero').classList.add('no-image');">
+                </div>
+                <div class="bz-hero-body">
+                    <span class="bz-type-chip">{{BUSINESS_TYPE_LABEL}}</span>
+                    <h1>{{BUSINESS_NAME}}</h1>
+                    <div class="loc" id="bz-loc"></div>
+                    <p class="bio" id="bz-bio">{{BUSINESS_DESCRIPTION}}</p>
+                    <div class="bz-cta-row"     id="bz-cta-row"></div>
+                    <div class="bz-socials-row" id="bz-socials-row"></div>
+                </div>
+            </header>
+
+            <div class="bz-details">
+                <div class="bz-section" id="section-contact">
+                    <h3>Contact</h3>
+                    <div id="contact-rows"></div>
+                </div>
+                <div class="bz-section" id="section-address">
+                    <h3>Address</h3>
+                    <div id="address-body" class="bz-address-line"></div>
+                </div>
+            </div>
+        </article>
+
+        <section class="bz-related" id="bz-related" style="display:none;">
+            <div class="bz-related-head">
+                <h2 id="bz-related-title">Related services</h2>
+                <span class="sub" id="bz-related-sub"></span>
+            </div>
+            <div class="bz-related-grid" id="bz-related-grid"></div>
+        </section>
+    </main>
+
+    <lead-modal></lead-modal>
+
+    <script>
+        // Server renders {{BUSINESS_*}} tokens into this bootstrap object
+        // so the page's JS can decide what sections to show without
+        // parsing DOM text back out.
+        const BZ = {
+            slug:      "{{BUSINESS_SLUG}}",
+            type:      "{{BUSINESS_TYPE}}",
+            typeLabel: "{{BUSINESS_TYPE_LABEL}}",
+            name:      "{{BUSINESS_NAME}}",
+            phone:     "{{BUSINESS_PHONE}}",
+            email:     "{{BUSINESS_EMAIL}}",
+            website:   "{{BUSINESS_WEBSITE}}",
+            instagram: "{{BUSINESS_INSTAGRAM}}",
+            facebook:  "{{BUSINESS_FACEBOOK}}",
+            address:   "{{BUSINESS_ADDRESS}}",
+            city:      "{{BUSINESS_CITY}}",
+            state:     "{{BUSINESS_STATE}}",
+            zip:       "{{BUSINESS_ZIP}}",
+            image:     "{{BUSINESS_IMAGE}}",
+            latitude:  "{{BUSINESS_LATITUDE}}",
+            longitude: "{{BUSINESS_LONGITUDE}}",
+        };
+
+        // Type color + label maps — kept in sync with towns-index.html
+        // so the related cards match the directory exactly.
+        const BIZ_COLORS = {
+            restaurant: '#dc2626', marina: '#2563eb',
+            outdoor_recreation: '#059669', boat_rental: '#0891b2',
+            builder: '#92400e', photographer: '#7c3aed',
+            service: '#475569', other: '#d97706',
+        };
+        const BIZ_TYPE_LABEL = {
+            restaurant: 'Restaurant', marina: 'Marina',
+            outdoor_recreation: 'Resort', boat_rental: 'Boat Rental',
+            service: 'Service', builder: 'Builder',
+            photographer: 'Photographer', other: 'Local Business',
+        };
+        const DEFAULT_BIZ_IMG = '/assets/images/mn-dining-wicker-open.jpg';
+
+        function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Repaint the whole page in the business's type color so the
+            // detail page stays consistent with the card/pin on /towns.
+            // --brand-dark + --brand-tint are derived via color-mix in CSS.
+            const typeColor = BIZ_COLORS[BZ.type] || BIZ_COLORS.other;
+            document.documentElement.style.setProperty('--brand', typeColor);
+
+            // Hero thumb — show only when there's actually an image.
+            if (BZ.image) {
+                document.getElementById('bz-hero').classList.remove('no-image');
+            }
+            document.getElementById('bz-loc').textContent =
+                [BZ.city, BZ.state].filter(Boolean).join(', ');
+            if (!document.getElementById('bz-bio').textContent.trim()) {
+                document.getElementById('bz-bio').style.display = 'none';
+            }
+
+            // CTA row — website is the star; phone/email are fallbacks.
+            const cta = document.getElementById('bz-cta-row');
+            const buttons = [];
+            if (BZ.website) buttons.push(`<a class="bz-btn primary" href="${escHtml(BZ.website)}" target="_blank" rel="noopener">Visit website →</a>`);
+            if (BZ.phone)   buttons.push(`<a class="bz-btn ghost" href="tel:${escHtml(BZ.phone)}">📞 Call</a>`);
+            if (BZ.email)   buttons.push(`<a class="bz-btn ghost" href="mailto:${escHtml(BZ.email)}">✉️ Email</a>`);
+            cta.innerHTML = buttons.join('');
+            if (!buttons.length) cta.style.display = 'none';
+
+            // Contact rows
+            const contactRows = [];
+            if (BZ.phone)   contactRows.push(row('Phone',   `<a href="tel:${escHtml(BZ.phone)}">${escHtml(BZ.phone)}</a>`));
+            if (BZ.email)   contactRows.push(row('Email',   `<a href="mailto:${escHtml(BZ.email)}">${escHtml(BZ.email)}</a>`));
+            if (BZ.website) contactRows.push(row('Website', `<a href="${escHtml(BZ.website)}" target="_blank" rel="noopener">${escHtml(trimUrl(BZ.website))}</a>`));
+            if (contactRows.length) document.getElementById('contact-rows').innerHTML = contactRows.join('');
+            else document.getElementById('section-contact').classList.add('is-empty');
+
+            // Address — stack the address lines with a line break before
+            // the Maps link so it doesn't glue onto the zip.
+            const addrLine = [BZ.address, [BZ.city, BZ.state].filter(Boolean).join(', '), BZ.zip].filter(Boolean).join('\n');
+            if (addrLine) {
+                const mapsQ = encodeURIComponent([BZ.address, BZ.city, BZ.state, BZ.zip].filter(Boolean).join(', '));
+                document.getElementById('address-body').innerHTML =
+                    escHtml(addrLine).replace(/\n/g, '<br>') +
+                    `<br><a class="bz-address-link" href="https://www.google.com/maps/search/?api=1&query=${mapsQ}" target="_blank" rel="noopener">Open in Google Maps →</a>`;
+            } else {
+                document.getElementById('section-address').classList.add('is-empty');
+            }
+
+            // Socials live in the hero row now. Section is empty-hidden
+            // automatically because :empty is applied to the wrapper.
+            const socials = [];
+            if (BZ.instagram) socials.push(`<a class="bz-social" href="${escHtml(BZ.instagram)}" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+                Instagram</a>`);
+            if (BZ.facebook) socials.push(`<a class="bz-social" href="${escHtml(BZ.facebook)}" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7H8v-3h2.5V9.5a3.5 3.5 0 0 1 3.7-3.8c1 0 2.1.2 2.1.2v2.3h-1.2c-1.2 0-1.6.7-1.6 1.5V12H16l-.4 3h-2.1v7A10 10 0 0 0 22 12z"/></svg>
+                Facebook</a>`);
+            document.getElementById('bz-socials-row').innerHTML = socials.join('');
+
+            // Related services — same type first, then nearest by distance.
+            loadRelated();
+        });
+
+        function row(label, valueHtml) {
+            return `<div class="bz-row"><span class="label">${label}</span><span class="value">${valueHtml}</span></div>`;
+        }
+        function trimUrl(u) {
+            return String(u || '').replace(/^https?:\/\//, '').replace(/\/$/, '');
+        }
+
+        // ── Related services ─────────────────────────────────────
+        // Pulls the public directory, excludes the current business,
+        // sorts by (same type first, then nearest) and renders up to 3
+        // cards in the same style as the /towns directory.
+        async function loadRelated() {
+            try {
+                const res = await fetch('/api/businesses');
+                if (!res.ok) return;
+                const all = await res.json();
+                const myLat = parseFloat(BZ.latitude);
+                const myLng = parseFloat(BZ.longitude);
+                const haveCoords = Number.isFinite(myLat) && Number.isFinite(myLng);
+
+                const others = all
+                    .filter(b => b.slug !== BZ.slug)
+                    .map(b => {
+                        const bLat = parseFloat(b.latitude);
+                        const bLng = parseFloat(b.longitude);
+                        const dist = (haveCoords && Number.isFinite(bLat) && Number.isFinite(bLng))
+                            ? haversineKm(myLat, myLng, bLat, bLng)
+                            : Infinity;
+                        return {
+                            ...b,
+                            _premium:  b.tier === 'premium' ? 0 : 1,
+                            _sameType: b.type === BZ.type ? 0 : 1,
+                            _dist:     dist,
+                        };
+                    })
+                    // Sort priority: Featured Partners first, then same-type,
+                    // then nearest by distance. Matches the user-facing
+                    // promise that premium listings always surface first.
+                    .sort((a, b) =>
+                        (a._premium - b._premium) ||
+                        (a._sameType - b._sameType) ||
+                        (a._dist - b._dist))
+                    .slice(0, 3);
+
+                if (!others.length) return;
+                renderRelated(others);
+            } catch (_) { /* silent — this is supplementary content */ }
+        }
+
+        function renderRelated(items) {
+            const grid = document.getElementById('bz-related-grid');
+            const section = document.getElementById('bz-related');
+            const sub = document.getElementById('bz-related-sub');
+            grid.innerHTML = items.map(b => {
+                const color = BIZ_COLORS[b.type] || BIZ_COLORS.other;
+                const label = BIZ_TYPE_LABEL[b.type] || 'Local Business';
+                const loc = [b.city, b.state].filter(Boolean).join(', ');
+                const thumb = b.featured_image_url || DEFAULT_BIZ_IMG;
+                const featured = b.tier === 'premium';
+                const blurb = (b.description && b.description.length > 20)
+                    ? b.description
+                    : `${label}${b.city ? ' in ' + b.city : ''}.`;
+                return `
+                    <a class="db-card biz ${featured ? 'is-featured' : ''}" style="--biz-c:${color};" href="/businesses/${encodeURIComponent(b.slug)}">
+                        <div class="db-card-thumb">
+                            <span class="chip">${escHtml(label)}</span>
+                            <span class="type"><span class="dot"></span>${escHtml(label)}</span>
+                            ${featured ? '<span class="featured">Featured Partner</span>' : ''}
+                            <img src="${escHtml(thumb)}" alt="${escHtml(b.name)}" loading="lazy">
+                        </div>
+                        <div class="db-card-body">
+                            <h3>${escHtml(b.name)}</h3>
+                            <div class="loc">${escHtml(loc)}</div>
+                            <p>${escHtml(blurb)}</p>
+                            <span class="db-card-cta">View profile <span aria-hidden="true">→</span></span>
+                        </div>
+                    </a>`;
+            }).join('');
+            // Subtitle hints at the matching logic — "More marinas" vs
+            // "Nearby on the lake" depending on what we actually found.
+            const anySame = items.some(b => b._sameType === 0);
+            sub.textContent = anySame
+                ? `More ${BIZ_TYPE_LABEL[BZ.type]?.toLowerCase() || 'services'}${items.some(b => b._sameType === 1) ? ' & nearby' : ''}`
+                : 'Nearby around Minnesota lakes';
+            section.style.display = '';
+        }
+
+        function haversineKm(lat1, lng1, lat2, lng2) {
+            const toRad = x => x * Math.PI / 180;
+            const R = 6371;
+            const dLat = toRad(lat2 - lat1);
+            const dLng = toRad(lng2 - lng1);
+            const s = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+            return 2 * R * Math.asin(Math.sqrt(s));
+        }
+    </script>
+</body>
+</html>

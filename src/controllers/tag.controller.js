@@ -175,18 +175,25 @@ exports.listBusinessesForTag = async (req, res) => {
                     b.id, b.slug, b.name, b.type, b.description, b.phone, b.email,
                     b.website_url, b.address, b.city, b.state, b.zip,
                     b.latitude, b.longitude, b.hours, b.price_range,
-                    b.featured_image_url, b.status
+                    b.featured_image_url, b.status, b.tier
              FROM lake_tags lt
              JOIN tags t ON t.id = lt.tag_id
              JOIN business_lakes bl ON bl.lake_id = lt.lake_id
              JOIN businesses b ON b.id = bl.business_id
              WHERE ${byUuid ? 't.id' : 't.slug'} = $1
                AND b.status = 'active'
+               AND (b.user_id IS NULL OR b.subscription_status = 'active')
                ${typeClause}
              ORDER BY b.id, b.name ASC`,
             params
         );
-        rows.sort((a, b) => a.name.localeCompare(b.name));
+        // Premium first, then alphabetical. Matches the ordering promise
+        // on /towns and the business detail page's Related row.
+        rows.sort((a, b) => {
+            const ap = a.tier === 'premium' ? 0 : 1;
+            const bp = b.tier === 'premium' ? 0 : 1;
+            return (ap - bp) || a.name.localeCompare(b.name);
+        });
         res.json(rows);
     } catch (err) {
         console.error('[tags.listBusinessesForTag]', err.message);

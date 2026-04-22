@@ -7,8 +7,12 @@
  *   No localStorage is used for auth state.
  */
 
-const getDepth = () => window.location.pathname.includes('/pages/') ? '' : 'pages/public/';
-const getRoot  = () => window.location.pathname.includes('/pages/') ? '../../' : '';
+// Absolute paths so the header works from every URL shape the server
+// routes to — /, /pages/public/*.html, /towns/:slug, /lakes/:slug,
+// /businesses/:slug, /business/dashboard, etc. Relative paths were
+// resolving to nonsense like /towns/pages/public/sell.html.
+const getDepth = () => window.location.pathname.startsWith('/pages/') ? '' : '/pages/public/';
+const getRoot  = () => window.location.pathname.startsWith('/pages/') ? '../../' : '/';
 
 // ─── Global Header ────────────────────────────────────────────────────────────
 
@@ -260,6 +264,7 @@ class GlobalHeader extends HTMLElement {
                     { heading: 'Browse', links: [
                         { label: 'Lakes & Towns map',    href: '/towns' },
                         { label: 'Featured Agents',      href: `${bp}agents.html?featured=1` },
+                        { label: 'List your Business',   href: '/business-signup' },
                     ]},
                     { heading: 'Featured Towns', links: [
                         { label: 'Wayzata',        href: '/towns/wayzata' },

@@ -160,25 +160,39 @@
         </div>
     </section>
 
-    <!-- Agents serving this town -->
-    <section class="tn-section centered" id="tn-agents-section">
+    <!-- Featured Agents serving this town (hidden when none tagged) -->
+    <section class="tn-section centered" id="tn-agents-section" style="display:none;">
         <div class="inner">
-            <h2>Your {{TOWN_NAME}} experts</h2>
+            <h2>Featured agents near {{TOWN_NAME}}</h2>
             <p class="lead">Agents who know this market — listings, off-market inventory, and the neighborhoods that fit your lifestyle.</p>
-            <div id="tn-agents" class="agents-grid">
-                <div class="tn-empty">Loading agents…</div>
-            </div>
+            <div id="tn-agents" class="agents-grid"></div>
+            <div id="tn-agents-cta" style="text-align:center;margin-top:1.75rem;"></div>
+        </div>
+    </section>
+    <style>
+        /* Keep featured-agent cards at a normal size even when only one
+           agent is tagged — stock .agents-grid uses minmax(280px, 1fr)
+           which stretches a single card across the full container. */
+        #tn-agents, #tn-nearby-biz {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 360px)) !important;
+            justify-content: center !important;
+            gap: 1.5rem !important;
+            padding: 1.5rem 1rem 0 !important;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+    </style>
+
+    <!-- Businesses near this town (hidden when fewer than 3 tagged) -->
+    <section class="tn-section centered" id="tn-nearby-biz-section" style="display:none;">
+        <div class="inner">
+            <h2 id="tn-nearby-biz-heading">Businesses near {{TOWN_NAME}}</h2>
+            <p class="lead" id="tn-nearby-biz-lead">Restaurants, marinas, services, and more around {{TOWN_NAME}} — Featured Partners lead the list.</p>
+            <div id="tn-nearby-biz" class="agents-grid"></div>
+            <div id="tn-nearby-biz-cta" style="text-align:center;margin-top:1.75rem;"></div>
         </div>
     </section>
 
-    <!-- Local businesses (by type) -->
-    <section class="tn-section gray" id="tn-biz-section" style="display:none;">
-        <div class="inner">
-            <h2>Life around {{TOWN_NAME}}</h2>
-            <p class="lead">Restaurants, marinas, services, and photographers local owners trust.</p>
-            <div id="tn-biz-body"></div>
-        </div>
-    </section>
 
     <!-- From the blog (transitive) -->
     <section class="tn-section" id="tn-blog-section" style="display:none;">
@@ -208,6 +222,8 @@
         const TOWN_ID   = '{{TOWN_ID}}';
         const TOWN_SLUG = '{{TOWN_SLUG}}';
         const TOWN_NAME = '{{TOWN_NAME}}';
+        const TOWN_LAT  = parseFloat('{{TOWN_LATITUDE}}');
+        const TOWN_LNG  = parseFloat('{{TOWN_LONGITUDE}}');
 
         // ── Lakes in this town (primary section) ─────────────────────────
         async function loadLakes() {
@@ -241,22 +257,21 @@
             }
         }
 
-        // ── Agents (via user_tags → tags) ────────────────────────────────
+        // ── Featured Agents (via user_tags → tags) ───────────────────────
+        // Geo tag is a hard gate: only agents tagged to this town show.
+        // Premium (is_featured) sorts first. No agents with a matching
+        // tag → the section is hidden completely.
         async function loadAgents() {
             const el = document.getElementById('tn-agents');
+            const section = document.getElementById('tn-agents-section');
             try {
                 const res = await fetch(`/api/tags/${encodeURIComponent(TOWN_SLUG)}/agents`);
                 if (!res.ok) throw new Error();
                 const agents = await res.json();
-                if (!agents.length) {
-                    el.innerHTML = `
-                        <div class="tn-empty" style="background:#fff;">
-                            <div style="display:inline-flex;align-items:center;gap:0.4rem;background:#ebf4ff;color:#1d6df2;font-size:0.72rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:0.35rem 0.75rem;border-radius:99px;margin-bottom:0.75rem;">Coming soon</div>
-                            <h3 style="font-size:1.25rem;font-weight:700;color:#1a202c;margin:0 0 0.5rem;">${escHtml(TOWN_NAME)} specialists coming soon</h3>
-                            <p style="color:#4a5568;margin:0;font-size:0.95rem;">We're onboarding agents who work this market. Reach out and we'll connect you when the right one is ready.</p>
-                        </div>`;
-                    return;
-                }
+                if (!agents.length) { section.style.display = 'none'; return; }
+                section.style.display = '';
+                document.getElementById('tn-agents-cta').innerHTML =
+                    '<a href="/pages/public/agents.html" class="nb-cta">View all agents →</a>';
                 el.innerHTML = agents.slice(0, 6).map(a => {
                     const photo = a.profile_photo_url || '/assets/images/mn-stillwater-aerial.webp';
                     const bio   = a.bio || '';
@@ -284,63 +299,6 @@
             } catch (_) {
                 el.innerHTML = `<div class="tn-empty">Could not load agents.</div>`;
             }
-        }
-
-        // ── Businesses (transitive via lake_tags → business_lakes) ──────
-        const BIZ_TYPES = [
-            { type: 'restaurant',   heading: 'Restaurants',      icon: '🍽️', blurb: "Where locals eat, when they're on the water." },
-            { type: 'marina',       heading: 'Marinas & access', icon: '⛵', blurb: 'Slip rentals, fuel, and public lake access.' },
-            { type: 'service',      heading: 'Services',         icon: '🔧', blurb: 'Dock installation, lawn care, snow removal, and more.' },
-            { type: 'photographer', heading: 'Photographers',    icon: '📷', blurb: 'Listing, drone, and family photography specialists.' },
-        ];
-
-        async function loadBusinesses() {
-            const section = document.getElementById('tn-biz-section');
-            const body = document.getElementById('tn-biz-body');
-            try {
-                const results = await Promise.all(
-                    BIZ_TYPES.map(t =>
-                        fetch(`/api/tags/${encodeURIComponent(TOWN_SLUG)}/businesses?type=${encodeURIComponent(t.type)}`)
-                            .then(r => r.ok ? r.json() : [])
-                            .catch(() => [])
-                    )
-                );
-                const html = BIZ_TYPES.map((t, i) => {
-                    const rows = results[i];
-                    if (!rows.length) return '';
-                    const cards = rows.map(b => {
-                        const thumb = b.featured_image_url || '';
-                        const priceOrCity = [b.city, b.price_range].filter(Boolean).join(' · ');
-                        return `
-                            <div style="background:#fff;border:1px solid #edf2f7;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;">
-                                <div style="height:160px;background:#f7f9fa;overflow:hidden;">
-                                    ${thumb
-                                        ? `<img src="${escHtml(thumb)}" alt="${escHtml(b.name)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">`
-                                        : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#cbd5e0;">${t.icon}</div>`}
-                                </div>
-                                <div style="padding:1.1rem 1.25rem 1.25rem;flex:1;display:flex;flex-direction:column;">
-                                    <div style="font-size:1.05rem;font-weight:700;color:#1a202c;line-height:1.35;margin-bottom:0.3rem;">${escHtml(b.name)}</div>
-                                    ${priceOrCity ? `<div style="font-size:0.78rem;color:#718096;margin-bottom:0.5rem;">${escHtml(priceOrCity)}</div>` : ''}
-                                    ${b.description ? `<div style="font-size:0.88rem;color:#4a5568;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;margin-bottom:0.9rem;">${escHtml(b.description)}</div>` : ''}
-                                    <div style="margin-top:auto;display:flex;gap:0.5rem;flex-wrap:wrap;">
-                                        ${b.website_url ? `<a href="${escHtml(b.website_url)}" target="_blank" rel="noopener" style="font-size:0.8rem;font-weight:700;color:#1d6df2;text-decoration:none;">Visit ↗</a>` : ''}
-                                        ${b.phone ? `<a href="tel:${escHtml(b.phone.replace(/[^\d+]/g,''))}" style="font-size:0.8rem;font-weight:700;color:#4a5568;text-decoration:none;">${escHtml(b.phone)}</a>` : ''}
-                                    </div>
-                                </div>
-                            </div>`;
-                    }).join('');
-                    return `
-                        <div class="tn-biz-section">
-                            <h3>${t.icon} ${escHtml(t.heading)}</h3>
-                            <p class="sub">${escHtml(t.blurb)}</p>
-                            <div class="tn-biz-grid">${cards}</div>
-                        </div>`;
-                }).join('');
-                if (html.trim()) {
-                    body.innerHTML = html;
-                    section.style.display = '';
-                }
-            } catch (_) { /* section stays hidden */ }
         }
 
         // ── Blog (transitive via lake_tags → blog_post_lakes) ───────────
@@ -374,11 +332,129 @@
 
         function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+        // ── Shared "businesses nearby" fallback ──────────────────────────
+        // Geo is a hard filter (25 km radius). Within that set, Featured
+        // Partners go first, then by distance. Used by lake + town pages
+        // when no agents are available for that location.
+        const NEAR_RADIUS_KM = 25;
+        const BIZ_COLORS = {
+            restaurant: '#dc2626', marina: '#2563eb',
+            outdoor_recreation: '#059669', boat_rental: '#0891b2',
+            builder: '#92400e', photographer: '#7c3aed',
+            service: '#475569', other: '#d97706',
+        };
+        const BIZ_TYPE_LABEL = {
+            restaurant: 'Restaurant', marina: 'Marina',
+            outdoor_recreation: 'Resort', boat_rental: 'Boat Rental',
+            service: 'Service', builder: 'Builder',
+            photographer: 'Photographer', other: 'Local Business',
+        };
+
+        // Hard geo rule: only businesses tagged to this lake/town via
+        // business_lakes (directly or transitively). Need ≥3 — else the
+        // whole section is hidden since a half-filled row looks bad.
+        const MIN_TAGGED_BUSINESSES = 3;
+        async function renderTaggedBusinesses({ endpoint, anchorName, sectionEl, headingEl, leadEl, gridEl, ctaEl }) {
+            injectBizStyles();
+            try {
+                const r = await fetch(endpoint);
+                if (!r.ok) throw new Error();
+                const all = await r.json();
+                if (all.length < MIN_TAGGED_BUSINESSES) {
+                    if (sectionEl) sectionEl.style.display = 'none';
+                    return;
+                }
+                const picks = all.slice(0, 3);
+                if (headingEl) headingEl.textContent = `Businesses near ${anchorName}`;
+                if (leadEl) leadEl.textContent =
+                    `Restaurants, marinas, services, and more around ${anchorName} — Featured Partners lead the list.`;
+                gridEl.innerHTML = picks.map(renderBizCard).join('');
+                if (ctaEl) ctaEl.innerHTML = '<a href="/towns?view=biz" class="nb-cta">View all businesses →</a>';
+                if (sectionEl) sectionEl.style.display = '';
+            } catch (_) {
+                if (sectionEl) sectionEl.style.display = 'none';
+            }
+        }
+
+        function renderBizCard(b) {
+            const color = BIZ_COLORS[b.type] || BIZ_COLORS.other;
+            const label = BIZ_TYPE_LABEL[b.type] || 'Local Business';
+            const loc   = [b.city, b.state].filter(Boolean).join(', ');
+            const thumb = b.featured_image_url || '/assets/images/mn-canoe-shore.webp';
+            const blurb = (b.description && b.description.length > 20)
+                ? b.description
+                : `${label}${b.city ? ' in ' + b.city : ''}.`;
+            const featured = b.tier === 'premium';
+            return `
+                <a class="nb-card ${featured ? 'is-featured' : ''}" style="--biz-c:${color};" href="/businesses/${encodeURIComponent(b.slug)}">
+                    <div class="nb-thumb">
+                        <span class="chip">${escHtml(label)}</span>
+                        ${featured ? '<span class="featured">★ Featured Partner</span>' : ''}
+                        <img src="${escHtml(thumb)}" alt="${escHtml(b.name)}" loading="lazy">
+                    </div>
+                    <div class="nb-body">
+                        <h3>${escHtml(b.name)}</h3>
+                        <div class="loc">${escHtml(loc)}</div>
+                        <p>${escHtml(blurb)}</p>
+                        <span class="nb-cta-inline">View profile <span aria-hidden="true">→</span></span>
+                    </div>
+                </a>`;
+        }
+
+        function haversineKm(lat1, lng1, lat2, lng2) {
+            const toRad = x => x * Math.PI / 180;
+            const R = 6371;
+            const dLat = toRad(lat2 - lat1);
+            const dLng = toRad(lng2 - lng1);
+            const s = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+            return 2 * R * Math.asin(Math.sqrt(s));
+        }
+
+        // Inject the nearby-business card + CTA styles once, lazily.
+        // Kept here rather than in style.css so the town page stays
+        // self-contained.
+        let _bizStylesInjected = false;
+        function injectBizStyles() {
+            if (_bizStylesInjected) return;
+            _bizStylesInjected = true;
+            const css = `
+                #tn-agents { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+                .nb-card { display: flex; flex-direction: column; background: #fff; border: 1px solid #e5eaf0; border-radius: 14px; overflow: hidden; text-decoration: none; color: inherit; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s; }
+                .nb-card:hover { transform: translateY(-3px); border-color: #cbd5e0; box-shadow: 0 14px 30px rgba(16,24,40,0.10); }
+                .nb-card:hover .nb-thumb img { transform: scale(1.05); }
+                .nb-card.is-featured { border-color: #d4a84a; box-shadow: 0 10px 22px rgba(212,168,74,0.18); }
+                .nb-thumb { height: 165px; overflow: hidden; position: relative; background: linear-gradient(135deg, var(--biz-c, #d97706) 0%, color-mix(in srgb, var(--biz-c, #d97706) 72%, #000) 100%); }
+                .nb-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s; }
+                .nb-thumb .chip { position: absolute; top: 12px; left: 12px; z-index: 2; background: rgba(255,255,255,0.96); color: #1a202c; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 0.28rem 0.6rem; border-radius: 6px; }
+                .nb-thumb .featured { position: absolute; bottom: 12px; left: 12px; z-index: 2; background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%); color: #fff; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 0.3rem 0.65rem; border-radius: 6px; box-shadow: 0 4px 10px rgba(180,83,9,0.35); }
+                .nb-body { padding: 1rem 1.1rem 1.15rem; flex: 1; display: flex; flex-direction: column; }
+                .nb-body h3 { font-size: 1.08rem; font-weight: 800; color: #1a202c; margin: 0 0 0.25rem; letter-spacing: -0.25px; }
+                .nb-body .loc { font-size: 0.78rem; color: #a0aec0; margin: 0 0 0.7rem; font-weight: 600; }
+                .nb-body p { color: #4a5568; font-size: 0.87rem; line-height: 1.5; margin: 0 0 0.9rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+                .nb-cta-inline { margin-top: auto; display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; font-weight: 800; color: var(--biz-c, #d97706); transition: gap 0.15s; }
+                .nb-card:hover .nb-cta-inline { gap: 0.6rem; }
+                .nb-cta { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.75rem 1.25rem; background: #1a202c; color: #fff; font-weight: 800; font-size: 0.88rem; border-radius: 10px; text-decoration: none; transition: background 0.12s; }
+                .nb-cta:hover { background: #000; }
+            `;
+            const el = document.createElement('style');
+            el.textContent = css;
+            document.head.appendChild(el);
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             loadLakes();
             loadAgents();
-            loadBusinesses();
             loadBlog();
+            // Standalone "Businesses near {town}" row — premium first, ≥3 required.
+            renderTaggedBusinesses({
+                endpoint:  `/api/tags/${encodeURIComponent(TOWN_SLUG)}/businesses`,
+                anchorName: TOWN_NAME,
+                sectionEl: document.getElementById('tn-nearby-biz-section'),
+                headingEl: document.getElementById('tn-nearby-biz-heading'),
+                leadEl:    document.getElementById('tn-nearby-biz-lead'),
+                gridEl:    document.getElementById('tn-nearby-biz'),
+                ctaEl:     document.getElementById('tn-nearby-biz-cta'),
+            });
         });
     </script>
 </body>
