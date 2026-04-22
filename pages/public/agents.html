@@ -264,19 +264,39 @@
             .ag-hero { padding: 7rem 1.25rem 3rem; }
             .ag-hero h1 { font-size: 2.5rem; letter-spacing: -1px; }
             .ag-hero p { font-size: 1rem; }
-            /* Sticky filter bar — sits flush under the fixed global header.
-               76px matches the nav height so chips don't tuck beneath it. */
-            .ag-filter-wrap { padding: 0.6rem 0.85rem; top: 76px; }
-            .ag-filter-inner { gap: 0.4rem; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-            .ag-filter-inner::-webkit-scrollbar { display: none; }
-            /* Chips stay in a row — compact height, tighter padding, smaller font. */
-            .ag-filter-inner .ag-control {
-                flex: 0 0 auto; min-width: 0; height: 36px;
-                padding: 0 0.85rem; font-size: 0.82rem; gap: 0.4rem;
+            /* Sticky filter bar — pinned 76px below the top to clear the
+               fixed navbar. Don't let any ancestor clip it. */
+            body.agents-body { overflow-x: hidden; }
+            .ag-filter-wrap {
+                position: sticky !important;
+                top: 76px !important;
+                z-index: 50;
+                padding: 0.6rem 0.85rem !important;
+                background: #fff;
+                box-shadow: 0 4px 12px rgba(16,24,40,0.08);
             }
-            .ag-filter-inner .ag-control svg.ag-ctrl-icon { width: 14px; height: 14px; }
-            .ag-filter-inner .ag-select select { font-size: 0.82rem; padding-right: 1.5rem; }
-            .ag-result-count { flex-basis: 100%; text-align: right; margin-left: 0; padding: 0.35rem 0 0; font-size: 0.76rem; }
+            /* Chips stay in one row (horizontal scroll if they overflow). */
+            .ag-filter-wrap .ag-filter-inner {
+                flex-wrap: nowrap !important;
+                overflow-x: auto !important;
+                gap: 0.4rem !important;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+            }
+            .ag-filter-wrap .ag-filter-inner::-webkit-scrollbar { display: none; }
+            .ag-filter-wrap .ag-filter-inner .ag-control {
+                flex: 0 0 auto !important;
+                flex-basis: auto !important;
+                width: auto !important;
+                min-width: 0 !important;
+                height: 34px !important;
+                padding: 0 0.8rem !important;
+                font-size: 0.78rem !important;
+                gap: 0.35rem !important;
+            }
+            .ag-filter-wrap .ag-filter-inner .ag-control svg.ag-ctrl-icon { width: 13px !important; height: 13px !important; }
+            .ag-filter-wrap .ag-filter-inner .ag-select select { font-size: 0.78rem !important; padding-right: 1.25rem !important; }
+            .ag-result-count { flex-basis: 100% !important; text-align: right; margin-left: 0 !important; padding: 0.3rem 0 0 !important; font-size: 0.72rem; }
 
             .agents-bottom-cta { padding: 5rem 1.25rem; }
             .agents-bottom-cta h2 { font-size: 2.5rem; }

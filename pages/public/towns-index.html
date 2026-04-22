@@ -188,15 +188,10 @@
         .db-map-legend .dot.lake { background: #0d9488; }
         .db-map-legend .dot.biz  { background: #d97706; }
 
-        .leaflet-control-attribution {
-            background: rgba(255,255,255,0.85) !important;
-            backdrop-filter: blur(6px);
-            font-family: 'Inter', sans-serif !important;
-            font-size: 0.7rem !important;
-            color: #718096 !important;
-            padding: 0.2rem 0.55rem !important;
-        }
-        .leaflet-control-attribution a { color: #4a5568 !important; }
+        /* Hide the "Leaflet · OpenStreetMap · CARTO" credit strip
+           everywhere — it visually competes with our legend and on
+           mobile it steals a chunk of the bottom-right corner. */
+        .leaflet-control-attribution { display: none !important; }
         .leaflet-control-zoom {
             border: 0 !important;
             border-radius: 12px !important;
@@ -521,10 +516,6 @@
                 border-radius: 8px;
             }
             .db-map-legend .dot { width: 8px; height: 8px; margin-right: 0.3rem; }
-
-            /* Hide Leaflet's attribution on mobile — it eats valuable
-               viewport and the CARTO/OSM credits live on desktop anyway. */
-            .leaflet-control-attribution { display: none !important; }
 
             /* Zoom controls sit above the sticky Map/List pill + safe area. */
             .leaflet-top.leaflet-left { top: 10px; left: 10px; }
