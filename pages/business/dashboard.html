@@ -75,7 +75,30 @@
         }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
         .grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem; }
-        @media (max-width: 620px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } .bd-card { padding: 1.25rem; } }
+        @media (max-width: 760px) {
+            .bd-shell { padding: 5.5rem 1rem 4rem; }
+            .bd-head { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+            .bd-head h1 { font-size: 1.5rem; }
+            /* Tabs scroll horizontally if they overflow rather than wrapping
+               to an awkward second line. */
+            .bd-tabs {
+                overflow-x: auto; flex-wrap: nowrap;
+                scrollbar-width: none;
+                padding-bottom: 0;
+                margin-left: -1rem; margin-right: -1rem;
+                padding-left: 1rem; padding-right: 1rem;
+            }
+            .bd-tabs::-webkit-scrollbar { display: none; }
+            .bd-tab { white-space: nowrap; padding: 0.75rem 0.9rem; font-size: 0.88rem; }
+            .bd-card { padding: 1.25rem; }
+            .bd-banner { flex-direction: column; align-items: flex-start; }
+            .bd-banner a, .bd-banner button { width: 100%; text-align: center; }
+            .save-row { flex-direction: column; gap: 0.5rem; }
+            .save-row .btn { width: 100%; justify-content: center; }
+        }
+        @media (max-width: 620px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        }
 
         .save-row { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
         .btn { font-family: inherit; font-size: 0.9rem; font-weight: 800; padding: 0.7rem 1.1rem; border-radius: 10px; cursor: pointer; border: 1px solid var(--line); background: #fff; color: var(--ink); text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; }

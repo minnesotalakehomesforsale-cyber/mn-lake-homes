@@ -110,6 +110,22 @@
             border-color: #1d6df2;
             box-shadow: 0 0 0 3px rgba(29,109,242,0.12);
         }
+        /* Custom select chevron — kills the clunky native OS arrow so the
+           dropdowns sit flush with the inputs and segmented pills. */
+        .db-toolbar select {
+            appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            padding-right: 2.25rem;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.7rem center;
+            background-size: 14px 14px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .db-toolbar select:hover { border-color: #cbd5e0; }
+        .db-toolbar select:focus {
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d6df2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+        }
         .db-toolbar input[type="search"] {
             flex: 1; min-width: 260px;
             background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='7'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>");
@@ -389,7 +405,13 @@
            the DOM — otherwise images re-decode and the grid flickers. */
         .db-card.is-hidden { display: none; }
 
-        /* ── Mobile: collapse into stacked map + list ───────────── */
+        /* Mobile-only UI chrome — view tabs replace the sidebar,
+           Map/List toggle swaps between full-screen map and scrollable
+           cards. Hidden on desktop where the sidebar does this job. */
+        .db-mobile-tabs,
+        .db-mobile-mode { display: none; }
+
+        /* ── Mobile: map-or-list, not both at once ────────────────── */
         @media (max-width: 900px) {
             body { overflow: auto; }
             .db-shell {
@@ -399,21 +421,87 @@
                 padding-top: var(--hh);
             }
             .db-sidebar { display: none; }
-            .db-toolbar { height: auto; flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem 1rem; }
+
+            /* View tabs (Lakes & Towns ⇄ Businesses) + optional
+               "Find an Agent" pill, replacing the hidden sidebar. */
+            .db-mobile-tabs {
+                display: flex; gap: 0.4rem;
+                padding: 0.65rem 1rem 0.55rem;
+                background: #fff;
+                border-bottom: 1px solid #e5eaf0;
+            }
+            .db-mobile-tabs button,
+            .db-mobile-tabs a {
+                flex: 1;
+                padding: 0.7rem 0.5rem;
+                border: 1px solid #e5eaf0;
+                background: #fff;
+                font-family: inherit; font-size: 0.82rem; font-weight: 800;
+                color: #4a5568;
+                border-radius: 10px;
+                cursor: pointer;
+                text-decoration: none;
+                text-align: center;
+                display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem;
+            }
+            .db-mobile-tabs a { flex: 0 0 auto; padding: 0.7rem 0.85rem; }
+            .db-mobile-tabs button.is-active {
+                background: #1d6df2; color: #fff; border-color: #1d6df2;
+                box-shadow: 0 4px 10px rgba(29,109,242,0.25);
+            }
+
+            .db-toolbar {
+                height: auto; flex-wrap: wrap; gap: 0.5rem;
+                padding: 0.65rem 1rem;
+            }
             .db-toolbar input[type="search"] { flex: 1 1 100%; order: -1; min-width: 0; }
             .db-seg { order: 1; }
-            .db-toolbar select { order: 2; }
-            .db-count { order: 3; margin-left: auto; }
+            .db-toolbar select { order: 2; flex: 1 1 auto; min-width: 0; }
+            .db-count { order: 3; margin-left: auto; font-size: 0.75rem; }
 
-            .db-main {
-                display: block;
+            /* Map/List segmented toggle — sticky so it stays reachable
+               whether the user is deep in the map or scrolled into cards. */
+            .db-mobile-mode {
+                display: inline-flex;
+                position: fixed; left: 50%; bottom: 16px;
+                transform: translateX(-50%);
+                z-index: 900;
+                background: #1a202c;
+                border-radius: 999px;
+                padding: 4px;
+                box-shadow: 0 10px 25px rgba(16,24,40,0.28);
             }
-            .db-map-col { height: 340px; border-right: 0; border-bottom: 1px solid #e5eaf0; }
+            .db-mobile-mode button {
+                border: 0; background: transparent;
+                padding: 0.55rem 1.1rem;
+                font-family: inherit; font-size: 0.85rem; font-weight: 800;
+                color: #fff; opacity: 0.65;
+                border-radius: 999px;
+                display: inline-flex; align-items: center; gap: 0.35rem;
+                cursor: pointer;
+            }
+            .db-mobile-mode button svg { width: 14px; height: 14px; }
+            .db-mobile-mode button.is-active {
+                background: #fff; color: #1a202c; opacity: 1;
+            }
+
+            .db-main { display: block; }
+            /* Map col takes full remaining viewport when in Map mode;
+               list col takes natural flow when in List mode. Each hides
+               the other via body.is-map / body.is-list. */
+            .db-map-col {
+                height: calc(100vh - var(--hh) - 54px - 64px);
+                border-right: 0; border-bottom: 1px solid #e5eaf0;
+                min-height: 340px;
+            }
+            body.is-map .db-list-col { display: none; }
+            body.is-list .db-map-col { display: none; }
+
             .db-list-col { overflow: visible; }
-            .db-list-inner { padding: 1.25rem 1rem 3rem; }
+            .db-list-inner { padding: 1.25rem 1rem 7rem; }
             .db-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.85rem; }
             .db-card-thumb { height: 150px; }
-            .db-map-legend { top: auto; bottom: 14px; right: 10px; left: 10px; justify-content: center; }
+            .db-map-legend { top: auto; bottom: 70px; right: 10px; left: 10px; justify-content: center; }
         }
         @media (max-width: 480px) {
             .db-grid { grid-template-columns: 1fr; }
@@ -421,7 +509,7 @@
         }
     </style>
 </head>
-<body style="background-color: #fff;">
+<body class="is-list" style="background-color: #fff;">
 
     <global-header></global-header>
 
@@ -443,6 +531,16 @@
                 <a href="/business-signup">+ List<br>your<br>business</a>
             </div>
         </aside>
+
+        <!-- Mobile-only view tabs (hidden on desktop where the sidebar does this) -->
+        <div class="db-mobile-tabs" role="tablist" aria-label="View">
+            <button type="button" class="is-active" data-view="geo" onclick="setView('geo')">Lakes &amp; Towns</button>
+            <button type="button" data-view="biz" onclick="setView('biz')">Businesses</button>
+            <a href="/pages/public/agents.html" aria-label="Find an agent">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.418 3.582-8 8-8s8 3.582 8 8"/></svg>
+            </a>
+        </div>
+
         <div class="db-toolbar" role="toolbar" aria-label="Database filters">
             <div class="db-seg" id="db-seg" role="tablist" aria-label="Result type">
                 <!-- Populated by renderSegmented() based on active view -->
@@ -481,6 +579,18 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Mobile Map/List toggle (hidden on desktop) -->
+    <div class="db-mobile-mode" role="tablist" aria-label="Map or list view">
+        <button type="button" class="is-active" data-mode="list" onclick="setMobileMode('list')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            List
+        </button>
+        <button type="button" data-mode="map" onclick="setMobileMode('map')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+            Map
+        </button>
     </div>
 
     <lead-modal></lead-modal>
@@ -662,6 +772,7 @@
             document.querySelectorAll('.db-sidebar .db-side-btn[data-view]').forEach(b => {
                 b.classList.toggle('is-active', b.dataset.view === v);
             });
+            syncMobileViewTabs();
             // Clear search between views — different datasets, different context.
             document.getElementById('db-search').value = '';
             document.getElementById('db-search').placeholder = v === 'biz'
@@ -1088,6 +1199,26 @@
         // ── Utils ─────────────────────────────────────────────────
         function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+        // Mobile-only: swap between full-viewport map and the cards
+        // list. Toggles a body class that the CSS keys off — keeps the
+        // chrome (tabs, search, filters) mounted across both modes.
+        function setMobileMode(mode) {
+            document.body.classList.toggle('is-map',  mode === 'map');
+            document.body.classList.toggle('is-list', mode === 'list');
+            document.querySelectorAll('.db-mobile-mode button').forEach(b => {
+                b.classList.toggle('is-active', b.dataset.mode === mode);
+            });
+            // Leaflet needs a nudge when its container goes from display:none
+            // back to visible — otherwise tiles render at the wrong size.
+            if (mode === 'map' && _map) setTimeout(() => _map.invalidateSize(), 50);
+        }
+        // Keep the mobile view tabs in sync with setView/hydrateFromUrl.
+        function syncMobileViewTabs() {
+            document.querySelectorAll('.db-mobile-tabs button[data-view]').forEach(b => {
+                b.classList.toggle('is-active', b.dataset.view === _view);
+            });
+        }
+
         // Restore view + type from URL params so deep-links (e.g. the
         // "Back to all services" button on a business detail page) drop
         // you into the right segment.
@@ -1098,10 +1229,11 @@
             if (v === 'biz' || v === 'geo') _view = v;
             if (t && SEG_OPTIONS[_view]?.some(o => o.key === t)) _type = t;
 
-            // Sync the sidebar + search placeholder + tier filter.
+            // Sync the sidebar + mobile tabs + search placeholder + tier filter.
             document.querySelectorAll('.db-sidebar .db-side-btn[data-view]').forEach(b => {
                 b.classList.toggle('is-active', b.dataset.view === _view);
             });
+            syncMobileViewTabs();
             document.getElementById('db-search').placeholder = _view === 'biz'
                 ? 'Search businesses…'
                 : 'Search lakes or towns…';

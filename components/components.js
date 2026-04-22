@@ -329,6 +329,7 @@ class GlobalHeader extends HTMLElement {
                         { label: 'FAQ',           href: `${bp}faq.html` },
                         { label: 'Contact Us',    href: `${bp}contact.html` },
                         { label: 'Careers',       href: `${bp}careers.html` },
+                        { label: 'Advertise',     href: '/business-signup' },
                     ]},
                 ]
             },
