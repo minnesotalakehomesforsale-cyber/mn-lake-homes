@@ -114,6 +114,45 @@ app.get('/api/_diagnostic', async (req, res) => {
         out.status = 'degraded';
     }
 
+    // Stripe health check — reports which env vars the running process
+    // actually sees, plus a live API ping. Makes "Stripe is not configured"
+    // debuggable without tailing logs.
+    const stripeKey = process.env.STRIPE_SECRET_KEY || '';
+    out.checks.stripe_env = {
+        STRIPE_SECRET_KEY:              stripeKey ? `set (${stripeKey.slice(0, 8)}…, ${stripeKey.length} chars)` : 'MISSING',
+        STRIPE_WEBHOOK_SECRET:          process.env.STRIPE_WEBHOOK_SECRET ? 'set' : 'MISSING',
+        STRIPE_PRICE_BUSINESS_MONTHLY:  process.env.STRIPE_PRICE_BUSINESS_MONTHLY ? 'set' : 'MISSING',
+        STRIPE_PRICE_BUSINESS_PREMIUM_MONTHLY: process.env.STRIPE_PRICE_BUSINESS_PREMIUM_MONTHLY ? 'set' : 'MISSING',
+        STRIPE_PRICE_BUSINESS_PREMIUM_ANNUAL:  process.env.STRIPE_PRICE_BUSINESS_PREMIUM_ANNUAL ? 'set' : 'MISSING',
+        STRIPE_PRICE_STANDARD_MONTHLY:  process.env.STRIPE_PRICE_STANDARD_MONTHLY ? 'set' : 'MISSING',
+        STRIPE_PRICE_STANDARD_ANNUAL:   process.env.STRIPE_PRICE_STANDARD_ANNUAL ? 'set' : 'MISSING',
+        STRIPE_PRICE_PRIME_MONTHLY:     process.env.STRIPE_PRICE_PRIME_MONTHLY ? 'set' : 'MISSING',
+        STRIPE_PRICE_PRIME_ANNUAL:      process.env.STRIPE_PRICE_PRIME_ANNUAL ? 'set' : 'MISSING',
+        STRIPE_PRICE_FOUNDER_MONTHLY:   process.env.STRIPE_PRICE_FOUNDER_MONTHLY ? 'set' : 'MISSING',
+        STRIPE_PRICE_FOUNDER_ANNUAL:    process.env.STRIPE_PRICE_FOUNDER_ANNUAL ? 'set' : 'MISSING',
+        BASE_URL:                       process.env.BASE_URL || 'MISSING (falls back to localhost:3000)',
+    };
+    try {
+        if (!stripeKey) {
+            out.checks.stripe_ping = 'skipped — STRIPE_SECRET_KEY is MISSING';
+            out.status = 'degraded';
+        } else {
+            const stripe = require('stripe')(stripeKey);
+            // Cheap call: list 1 product to confirm the key is valid + authorized.
+            await stripe.products.list({ limit: 1 });
+            out.checks.stripe_ping = `pass (mode: ${stripeKey.startsWith('sk_live_') ? 'live' : 'test'})`;
+        }
+    } catch (e) {
+        out.checks.stripe_ping = `fail: ${e.message || e}`;
+        out.status = 'degraded';
+    }
+
+    // Email transport — matches the selection logic in services/email.js
+    out.checks.email_transport =
+        (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) ? `gmail-smtp (${process.env.GMAIL_USER})` :
+        process.env.RESEND_API_KEY ? 'resend' :
+        'NONE — set GMAIL_USER+GMAIL_APP_PASSWORD or RESEND_API_KEY';
+
     res.json(out);
 });
 
