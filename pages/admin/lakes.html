@@ -20,9 +20,38 @@
         .admin-main { padding: 3rem 3.5rem; overflow-y: auto; }
 
         .toolbar { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.5rem; }
-        .toolbar input, .toolbar select { font-family: inherit; font-size: 0.9rem; padding: 0.55rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; outline: none; }
-        .toolbar input:focus, .toolbar select:focus { border-color: #1d6df2; }
-        .toolbar input[type="search"] { flex: 1; min-width: 240px; }
+        .toolbar input, .toolbar select {
+            font-family: inherit; font-size: 0.9rem; font-weight: 500;
+            padding: 0.6rem 0.9rem;
+            border: 1px solid #e2e8f0; border-radius: 10px;
+            background: #fff; color: #1a202c; outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+        }
+        .toolbar input:focus, .toolbar select:focus {
+            border-color: #1d6df2;
+            box-shadow: 0 0 0 3px rgba(29,109,242,0.12);
+        }
+        .toolbar input[type="search"] {
+            flex: 1; min-width: 240px;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='7'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>");
+            background-repeat: no-repeat;
+            background-position: 0.75rem center;
+            background-size: 16px 16px;
+            padding-left: 2.3rem;
+        }
+        .toolbar select {
+            appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            padding-right: 2.25rem;
+            cursor: pointer; font-weight: 600;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 14px 14px;
+        }
+        .toolbar select:hover { border-color: #cbd5e0; }
+        .toolbar select:focus {
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d6df2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+        }
         .btn-primary { background: #1d6df2; color: #fff; border: none; padding: 0.6rem 1rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; font-family: inherit; }
         .btn-primary:hover { background: #155bc9; }
         .btn-ghost { background: #fff; color: #4a5568; border: 1px solid #e2e8f0; padding: 0.55rem 0.85rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; font-family: inherit; }
