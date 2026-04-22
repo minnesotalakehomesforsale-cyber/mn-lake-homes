@@ -25,7 +25,48 @@
 const pool     = require('../database/pool');
 const bcrypt   = require('bcrypt');
 const jwt      = require('jsonwebtoken');
+const multer   = require('multer');
+const cloudinary = require('cloudinary').v2;
+const { geocodeAddress } = require('../services/geocoder');
 const { logActivity } = require('../services/activity-log');
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key:    process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure:     true,
+});
+
+const ownerImageUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 8 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (/^image\//.test(file.mimetype)) cb(null, true);
+        else cb(new Error('Please upload an image file.'));
+    },
+}).single('image');
+
+function uploadBufferToCloudinary(buffer, publicId) {
+    return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+            {
+                folder: 'mnlakehomes/businesses',
+                public_id: publicId,
+                resource_type: 'image',
+                overwrite: true,
+                transformation: [
+                    { width: 1600, height: 1600, crop: 'limit' },
+                    { quality: 'auto:good' },
+                ],
+            },
+            (err, result) => (err ? reject(err) : resolve(result))
+        );
+        stream.end(buffer);
+    });
+}
+
+// Mirror the agent cap — owners pick up to 10 towns they serve.
+const OWNER_TAGS_MAX = 10;
 
 let _stripe = null;
 function getStripe() {
@@ -307,6 +348,29 @@ exports.updateMe = async (req, res) => {
             }
         }
         if (!fields.length) return res.json({ success: true, noop: true });
+
+        // Re-geocode on address changes so the map pin stays current.
+        // Uses the merged address (incoming + existing values) so an
+        // owner editing just the zip doesn't zero out their coords.
+        // Silent on geocode failure — the row still saves.
+        const touchedAddress = ['address','city','state','zip'].some(k => k in req.body);
+        if (touchedAddress) {
+            const merged = {
+                address: 'address' in req.body ? (String(req.body.address || '').trim() || null) : biz.address,
+                city:    'city'    in req.body ? (String(req.body.city    || '').trim() || null) : biz.city,
+                state:   'state'   in req.body ? (String(req.body.state   || 'MN').trim().slice(0,2).toUpperCase()) : biz.state,
+                zip:     'zip'     in req.body ? (String(req.body.zip     || '').trim() || null) : biz.zip,
+            };
+            if (merged.address || merged.city) {
+                const addr = [merged.address, merged.city, merged.state, merged.zip].filter(Boolean).join(', ');
+                const g = await geocodeAddress(addr).catch(() => null);
+                if (g) {
+                    fields.push(`latitude  = $${i++}`); vals.push(g.lat);
+                    fields.push(`longitude = $${i++}`); vals.push(g.lng);
+                }
+            }
+        }
+
         fields.push(`updated_at = NOW()`);
         vals.push(biz.id);
         const { rows } = await pool.query(
@@ -325,5 +389,111 @@ exports.updateMe = async (req, res) => {
     } catch (err) {
         console.error('[business-auth.updateMe]', err.message);
         res.status(500).json({ error: 'Could not save changes.' });
+    }
+};
+
+// ─── POST /upload-image — owner-scoped Cloudinary upload ──────────────────
+// Mirrors the admin upload endpoint but only allows business_owner role.
+// Owner still has to PATCH /me with featured_image_url to persist.
+exports.uploadImage = (req, res) => {
+    ownerImageUpload(req, res, async (err) => {
+        if (err) {
+            console.error('[business-auth.uploadImage multer]', err.message);
+            return res.status(400).json({ error: err.message });
+        }
+        if (!req.user || req.user.role !== 'business_owner') {
+            return res.status(403).json({ error: 'Business-owner access only.' });
+        }
+        if (!req.file || !req.file.buffer) {
+            return res.status(400).json({ error: 'No file uploaded.' });
+        }
+        try {
+            const publicId = `biz-owner-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            const result   = await uploadBufferToCloudinary(req.file.buffer, publicId);
+            logActivity({
+                event_type: 'business.owner_image_upload',
+                event_scope: 'business',
+                actor: { type: 'user', id: req.user.userId, label: req.user.role },
+                details: { url: result.secure_url, size: req.file.size },
+                req,
+            });
+            res.json({ url: result.secure_url, filename: req.file.originalname, size: req.file.size });
+        } catch (cloudErr) {
+            const msg = cloudErr && (cloudErr.message || cloudErr.error?.message || String(cloudErr));
+            console.error('[business-auth.uploadImage cloudinary]', msg, cloudErr);
+            res.status(500).json({ error: `Upload failed: ${msg || 'unknown Cloudinary error'}` });
+        }
+    });
+};
+
+// ─── GET/PUT /tags — towns the owner's business serves ─────────────────
+// Same shape as the admin endpoint but auto-scoped to the caller's business
+// so owners can only ever change their own geographic footprint.
+exports.listMyTags = async (req, res) => {
+    if (!req.user || req.user.role !== 'business_owner') {
+        return res.status(403).json({ error: 'Business-owner access only.' });
+    }
+    try {
+        const biz = await fetchOwnerBusiness(req.user.userId);
+        if (!biz) return res.status(404).json({ error: 'No business found for your account.' });
+        const { rows } = await pool.query(
+            `SELECT t.id, t.slug, t.name, t.state, t.region
+             FROM business_tags bt
+             JOIN tags t ON t.id = bt.tag_id
+             WHERE bt.business_id = $1 AND t.active = TRUE
+             ORDER BY t.name ASC`,
+            [biz.id]
+        );
+        res.json(rows);
+    } catch (err) {
+        console.error('[business-auth.listMyTags]', err.message);
+        res.status(500).json({ error: 'Failed to load towns.' });
+    }
+};
+
+exports.replaceMyTags = async (req, res) => {
+    if (!req.user || req.user.role !== 'business_owner') {
+        return res.status(403).json({ error: 'Business-owner access only.' });
+    }
+    const tagIds = Array.isArray(req.body?.tagIds) ? req.body.tagIds.filter(Boolean) : null;
+    if (!tagIds) return res.status(400).json({ error: 'tagIds array is required.' });
+    if (tagIds.length > OWNER_TAGS_MAX) {
+        return res.status(400).json({ error: `You can serve at most ${OWNER_TAGS_MAX} towns.` });
+    }
+    const client = await pool.connect();
+    try {
+        const biz = await fetchOwnerBusiness(req.user.userId);
+        if (!biz) return res.status(404).json({ error: 'No business found for your account.' });
+
+        await client.query('BEGIN');
+        await client.query(`DELETE FROM business_tags WHERE business_id = $1`, [biz.id]);
+        if (tagIds.length) {
+            const values = tagIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+            await client.query(
+                `INSERT INTO business_tags (business_id, tag_id)
+                 SELECT bid::uuid, tid::uuid FROM (VALUES ${values}) AS v(bid, tid)
+                 WHERE EXISTS (SELECT 1 FROM tags WHERE id = v.tid::uuid AND active = TRUE)
+                 ON CONFLICT (business_id, tag_id) DO NOTHING`,
+                [biz.id, ...tagIds]
+            );
+        }
+        await client.query('COMMIT');
+
+        logActivity({
+            event_type: 'business.owner_tags_replace',
+            event_scope: 'business',
+            actor: { type: 'user', id: req.user.userId, label: req.user.role },
+            target: { type: 'business', id: biz.id, label: biz.name },
+            details: { count: tagIds.length },
+            req,
+        });
+
+        res.json({ success: true, count: tagIds.length });
+    } catch (err) {
+        await client.query('ROLLBACK').catch(() => {});
+        console.error('[business-auth.replaceMyTags]', err.message);
+        res.status(500).json({ error: 'Failed to save towns.' });
+    } finally {
+        client.release();
     }
 };

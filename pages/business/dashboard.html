@@ -127,7 +127,36 @@
         .thumb { width: 100%; height: 150px; background: #f7f9fa; border: 1px dashed var(--line); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; }
         .thumb img { width: 100%; height: 100%; object-fit: cover; }
 
+        .upload-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-top: 0.35rem; }
+        .upload-btn { font-family: inherit; font-size: 0.82rem; font-weight: 700; padding: 0.55rem 0.9rem; border: 1px solid var(--line); background: #f7f9fa; color: var(--ink); border-radius: 8px; cursor: pointer; }
+        .upload-btn:hover { border-color: var(--brand); color: var(--brand); }
+        .upload-status { font-size: 0.78rem; color: var(--muted); }
+        .upload-status.ok { color: #22543d; }
+        .upload-status.err { color: #c53030; }
+
+        /* Towns picker — chip-style, matches admin look */
+        .town-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.55rem; border: 1px solid var(--line); border-radius: 10px; background: #fff; min-height: 3rem; }
+        .town-chip { font-size: 0.82rem; font-weight: 700; padding: 0.35rem 0.8rem; border-radius: 99px; cursor: pointer; border: 1px solid var(--line); background: #fff; color: var(--ink-soft); font-family: inherit; }
+        .town-chip.on { border-color: var(--brand); background: var(--brand); color: #fff; }
+        .town-chip:disabled { opacity: 0.4; cursor: not-allowed; }
+        .town-counter { float: right; font-weight: 600; color: var(--muted); letter-spacing: 0; text-transform: none; font-size: 0.72rem; }
+
         .loading { padding: 4rem 1rem; text-align: center; color: var(--muted); }
+
+        /* Header "View live →" button when active + approved */
+        .bd-view-live {
+            display: none;
+            align-items: center; gap: 0.35rem;
+            font-size: 0.82rem; font-weight: 800;
+            padding: 0.5rem 0.85rem;
+            border-radius: 8px;
+            background: #f0fff4; color: #22543d;
+            border: 1px solid #9ae6b4;
+            text-decoration: none;
+        }
+        .bd-view-live:hover { background: #9ae6b4; color: #1a202c; }
+        .bd-view-live.show { display: inline-flex; }
+        .bd-head-actions { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
     </style>
 </head>
 <body>
@@ -138,13 +167,19 @@
                 <h1 id="bd-name">Your dashboard</h1>
                 <p id="bd-sub">Manage your listing, payment, and account.</p>
             </div>
-            <button class="signout" onclick="signOut()">Sign out</button>
+            <div class="bd-head-actions">
+                <a id="bd-view-live" class="bd-view-live" href="#" target="_blank" rel="noopener">
+                    <span aria-hidden="true">↗</span> View live listing
+                </a>
+                <button class="signout" onclick="signOut()">Sign out</button>
+            </div>
         </div>
 
         <div id="bd-banner" class="bd-banner" style="display:none;"></div>
 
         <div class="bd-tabs" role="tablist">
             <button class="bd-tab on" data-tab="profile"      role="tab" onclick="showTab('profile')">Profile</button>
+            <button class="bd-tab"    data-tab="towns"        role="tab" onclick="showTab('towns')">Towns served</button>
             <button class="bd-tab"    data-tab="subscription" role="tab" onclick="showTab('subscription')">Subscription</button>
             <button class="bd-tab"    data-tab="account"      role="tab" onclick="showTab('account')">Account</button>
         </div>
@@ -166,9 +201,15 @@
                 <textarea id="f-desc" maxlength="600" placeholder="What your business offers and why visitors should stop by."></textarea>
             </div>
             <div class="field">
-                <label>Featured image URL</label>
-                <input id="f-image" type="url" placeholder="https://…">
-                <div class="thumb" id="f-thumb" style="margin-top:0.5rem;"><span>No image</span></div>
+                <label>Featured image</label>
+                <div class="thumb" id="f-thumb"><span>No image</span></div>
+                <input id="f-image" type="url" placeholder="Paste an image URL or upload →">
+                <div class="upload-row">
+                    <label class="upload-btn" for="f-upload">📤 Upload from your device</label>
+                    <input type="file" id="f-upload" accept="image/*" style="display:none;" onchange="uploadBizImage(this.files[0])">
+                    <span id="upload-status" class="upload-status"></span>
+                </div>
+                <span class="hint">JPG or PNG, up to 8 MB. Remember to click <strong>Save changes</strong> below after uploading.</span>
             </div>
             <div class="grid-2">
                 <div class="field"><label>Hours</label><input id="f-hours" type="text" placeholder="Mon–Sat 11am–10pm"></div>
@@ -200,6 +241,27 @@
             <div class="save-row">
                 <a class="btn" id="btn-preview" href="#" target="_blank" rel="noopener">Preview listing</a>
                 <button class="btn primary" id="btn-save" type="button" onclick="saveProfile()">Save changes</button>
+            </div>
+        </section>
+
+        <!-- Towns tab ─────────────────────────────────────────────── -->
+        <section class="bd-card" id="tab-towns" style="display:none;">
+            <div class="alert err" id="towns-err"></div>
+            <div class="alert ok"  id="towns-ok"></div>
+
+            <div class="section-label">
+                Towns your business serves
+                <span id="tag-counter" class="town-counter">0 / 10</span>
+            </div>
+            <p class="hint" style="margin: -0.25rem 0 0.75rem;">
+                Pick up to 10 Minnesota towns that your business serves — you'll appear on each town's page under the matching category.
+            </p>
+            <div id="tag-chips" class="town-chips">
+                <span class="hint" style="padding:0.3rem 0.5rem;">Loading towns…</span>
+            </div>
+
+            <div class="save-row">
+                <button class="btn primary" type="button" onclick="saveTowns()">Save towns</button>
             </div>
         </section>
 
@@ -238,6 +300,9 @@
 
     <script>
         let _biz = null;
+        let _allTowns = [];
+        let _selectedTagIds = new Set();
+        const TOWNS_MAX = 10;
 
         // Boot ────────────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', async () => {
@@ -268,6 +333,8 @@
                 fillAccount(user);
                 renderBanner(justPaid, cancelled);
                 renderSubscription();
+                renderHeaderViewLive();
+                loadTowns();
             } catch (err) {
                 document.getElementById('loading').textContent = 'Could not load your dashboard. Try refreshing.';
             }
@@ -275,7 +342,7 @@
 
         function showTab(tab) {
             document.querySelectorAll('.bd-tab').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
-            ['profile','subscription','account'].forEach(t => {
+            ['profile','towns','subscription','account'].forEach(t => {
                 document.getElementById(`tab-${t}`).style.display = t === tab ? '' : 'none';
             });
             if (tab === 'subscription') renderSubscription();
@@ -424,6 +491,104 @@
                 window.location.href = data.url;
             } catch (ex) {
                 alert(ex.message);
+            }
+        }
+
+        // Image upload ───────────────────────────────────────────────
+        async function uploadBizImage(file) {
+            if (!file) return;
+            const statusEl = document.getElementById('upload-status');
+            statusEl.textContent = `Uploading ${file.name}…`;
+            statusEl.className = 'upload-status';
+            const fd = new FormData();
+            fd.append('image', file);
+            try {
+                const res = await fetch('/api/business-auth/upload-image', {
+                    method: 'POST', body: fd, credentials: 'include',
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                document.getElementById('f-image').value = data.url;
+                updateThumb();
+                statusEl.textContent = '✓ Uploaded — remember to click Save changes';
+                statusEl.className = 'upload-status ok';
+            } catch (ex) {
+                statusEl.textContent = `Error: ${ex.message || 'Upload failed'}`;
+                statusEl.className = 'upload-status err';
+            }
+        }
+
+        // Towns picker ───────────────────────────────────────────────
+        async function loadTowns() {
+            try {
+                const [catalogRes, mineRes] = await Promise.all([
+                    fetch('/api/tags?active=true'),
+                    fetch('/api/business-auth/tags', { credentials: 'include' }),
+                ]);
+                _allTowns = catalogRes.ok ? await catalogRes.json() : [];
+                const mine = mineRes.ok ? await mineRes.json() : [];
+                _selectedTagIds = new Set(mine.map(t => t.id));
+            } catch (_) { _allTowns = []; _selectedTagIds = new Set(); }
+            renderTownChips();
+        }
+        function renderTownChips() {
+            const el = document.getElementById('tag-chips');
+            const counter = document.getElementById('tag-counter');
+            if (counter) counter.textContent = `${_selectedTagIds.size} / ${TOWNS_MAX}`;
+            if (!_allTowns.length) {
+                el.innerHTML = '<span class="hint" style="padding:0.3rem 0.5rem;">No towns available.</span>';
+                return;
+            }
+            const atCap = _selectedTagIds.size >= TOWNS_MAX;
+            // Selected first, then alphabetical — so picked towns are
+            // always visible without scrolling.
+            const ordered = [..._allTowns].sort((a, b) => {
+                const as = _selectedTagIds.has(a.id) ? 0 : 1;
+                const bs = _selectedTagIds.has(b.id) ? 0 : 1;
+                return (as - bs) || a.name.localeCompare(b.name);
+            });
+            el.innerHTML = ordered.map(t => {
+                const on = _selectedTagIds.has(t.id);
+                const disabled = !on && atCap;
+                return `<button type="button" class="town-chip ${on ? 'on' : ''}" ${disabled ? 'disabled' : ''} onclick="toggleTown('${t.id}')">${esc(t.name)}</button>`;
+            }).join('');
+        }
+        function toggleTown(id) {
+            if (_selectedTagIds.has(id)) {
+                _selectedTagIds.delete(id);
+            } else {
+                if (_selectedTagIds.size >= TOWNS_MAX) return;
+                _selectedTagIds.add(id);
+            }
+            renderTownChips();
+        }
+        async function saveTowns() {
+            hide('towns-err'); hide('towns-ok');
+            try {
+                const res = await fetch('/api/business-auth/tags', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ tagIds: [..._selectedTagIds] }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                show('towns-ok', `Saved — your listing now serves ${_selectedTagIds.size} town${_selectedTagIds.size === 1 ? '' : 's'}.`);
+            } catch (ex) {
+                show('towns-err', ex.message || 'Save failed.');
+            }
+        }
+
+        // View-live link in header — only visible when both gates pass
+        function renderHeaderViewLive() {
+            const el = document.getElementById('bd-view-live');
+            if (!el || !_biz) return;
+            const live = _biz.status === 'active' && (_biz.subscription_status === 'active' || _biz.subscription_status === 'trialing');
+            if (live) {
+                el.href = `/businesses/${encodeURIComponent(_biz.slug)}`;
+                el.classList.add('show');
+            } else {
+                el.classList.remove('show');
             }
         }
 
