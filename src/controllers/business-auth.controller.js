@@ -29,6 +29,9 @@ const multer   = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { geocodeAddress } = require('../services/geocoder');
 const { logActivity } = require('../services/activity-log');
+// Aliased to emailService because this file uses `email` as a local
+// variable name (req.body.email).
+const emailService = require('./../services/email');
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -195,6 +198,23 @@ exports.signup = async (req, res) => {
             actor: { type: 'user', id: userId, label: email },
             target: { type: 'business', id: biz.id, label: `${business_name} (${business_type})` },
             req,
+        });
+
+        // Fire-and-forget lifecycle emails. Welcome to the owner, admin
+        // notification so the pending-review queue doesn't get ignored.
+        emailService.sendBusinessWelcome({
+            to: email,
+            name: display_name,
+            businessName: business_name,
+            businessType: business_type,
+        });
+        emailService.sendBusinessAdminNotification({
+            businessName: business_name,
+            businessType: business_type,
+            ownerEmail: email,
+            ownerName: display_name,
+            slug: biz.slug,
+            businessId: biz.id,
         });
 
         // Try to produce a Checkout URL. If Stripe isn't set up yet, we

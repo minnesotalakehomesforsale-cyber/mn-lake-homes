@@ -1,4 +1,32 @@
 const pool = require('../database/pool');
+const emailService = require('../services/email');
+
+// Fetch owner email + display name for business lifecycle emails. Bundled
+// here because every webhook branch that emails the owner needs the same
+// lookup. Returns null silently on miss — email sends degrade gracefully.
+async function fetchBusinessOwnerContact(businessId) {
+    try {
+        const { rows } = await pool.query(
+            `SELECT u.email, u.full_name, b.name AS business_name, b.slug
+             FROM businesses b JOIN users u ON u.id = b.user_id
+             WHERE b.id = $1 LIMIT 1`,
+            [businessId]
+        );
+        return rows[0] || null;
+    } catch (_) { return null; }
+}
+
+async function fetchBusinessOwnerBySubscriptionId(subscriptionId) {
+    try {
+        const { rows } = await pool.query(
+            `SELECT u.email, u.full_name, b.id AS business_id, b.name AS business_name, b.slug
+             FROM businesses b JOIN users u ON u.id = b.user_id
+             WHERE b.stripe_subscription_id = $1 LIMIT 1`,
+            [subscriptionId]
+        );
+        return rows[0] || null;
+    } catch (_) { return null; }
+}
 
 // Lazy-init Stripe so a missing STRIPE_SECRET_KEY doesn't crash the whole
 // server at boot — Stripe only gets constructed when an endpoint is actually
@@ -139,6 +167,17 @@ exports.handleWebhook = async (req, res) => {
                         [session.customer, session.subscription, tier, businessId]
                     );
                     console.log(`[Stripe Webhook] Business ${businessId} activated (${tier})`);
+
+                    // Confirm to the owner that payment went through and
+                    // their listing is now in the admin review queue.
+                    const contact = await fetchBusinessOwnerContact(businessId);
+                    if (contact) {
+                        emailService.sendBusinessPaymentReceived({
+                            to: contact.email,
+                            name: contact.full_name,
+                            businessName: contact.business_name,
+                        });
+                    }
                     break;
                 }
 
@@ -204,6 +243,14 @@ exports.handleWebhook = async (req, res) => {
                 );
                 if (bizHit.rowCount) {
                     console.log(`[Stripe Webhook] Business ${bizHit.rows[0].id} subscription canceled`);
+                    const contact = await fetchBusinessOwnerBySubscriptionId(subscriptionId);
+                    if (contact) {
+                        emailService.sendBusinessSubscriptionCancelled({
+                            to: contact.email,
+                            name: contact.full_name,
+                            businessName: contact.business_name,
+                        });
+                    }
                     break;
                 }
 
@@ -238,6 +285,14 @@ exports.handleWebhook = async (req, res) => {
                 const sub = event.data.object;
                 const priceId = sub.items?.data?.[0]?.price?.id;
                 const tier    = businessTierFromPriceId(priceId);
+                // Capture the previous state BEFORE the UPDATE so we can
+                // detect the active→past_due transition and only send a
+                // warning once per drop (not on every subsequent event).
+                const prior = await pool.query(
+                    `SELECT subscription_status FROM businesses WHERE stripe_subscription_id = $1 LIMIT 1`,
+                    [sub.id]
+                );
+                const priorStatus = prior.rows[0]?.subscription_status;
                 await pool.query(
                     `UPDATE businesses
                         SET subscription_status = $1,
@@ -246,18 +301,45 @@ exports.handleWebhook = async (req, res) => {
                       WHERE stripe_subscription_id = $3`,
                     [sub.status, tier, sub.id]
                 );
+                if (sub.status === 'past_due' && priorStatus !== 'past_due') {
+                    const contact = await fetchBusinessOwnerBySubscriptionId(sub.id);
+                    if (contact) {
+                        emailService.sendBusinessPaymentFailed({
+                            to: contact.email,
+                            name: contact.full_name,
+                            businessName: contact.business_name,
+                        });
+                    }
+                }
                 break;
             }
 
             case 'invoice.payment_failed': {
                 const invoice = event.data.object;
                 if (invoice.subscription) {
+                    // Same dedupe trick: only email on the first drop, not
+                    // every subsequent Stripe retry attempt.
+                    const prior = await pool.query(
+                        `SELECT subscription_status FROM businesses WHERE stripe_subscription_id = $1 LIMIT 1`,
+                        [invoice.subscription]
+                    );
+                    const priorStatus = prior.rows[0]?.subscription_status;
                     await pool.query(
                         `UPDATE businesses
                             SET subscription_status = 'past_due', updated_at = NOW()
                           WHERE stripe_subscription_id = $1`,
                         [invoice.subscription]
                     );
+                    if (priorStatus !== 'past_due') {
+                        const contact = await fetchBusinessOwnerBySubscriptionId(invoice.subscription);
+                        if (contact) {
+                            emailService.sendBusinessPaymentFailed({
+                                to: contact.email,
+                                name: contact.full_name,
+                                businessName: contact.business_name,
+                            });
+                        }
+                    }
                 }
                 break;
             }

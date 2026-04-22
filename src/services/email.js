@@ -381,6 +381,209 @@ function sendCustom({ to, subject, html, replyTo }) {
     return sendEmail({ to, subject, html, replyTo });
 }
 
+// ─── Business-owner lifecycle ────────────────────────────────────────────────
+// Six templates covering the arc from first signup through cancellation.
+// Each one mirrors the visual language of sendLeadConfirmation /
+// sendAgentWelcome so owners get a consistent brand experience.
+
+function prettyType(type) {
+    return ({
+        restaurant: 'Restaurant',
+        marina: 'Marina',
+        service: 'Service provider',
+        photographer: 'Photographer',
+        builder: 'Builder / contractor',
+        boat_rental: 'Boat rental',
+        outdoor_recreation: 'Outdoor recreation',
+        other: 'Local business',
+    })[type] || 'Local business';
+}
+
+/**
+ * Sent the moment an owner submits /business-signup, before Stripe Checkout
+ * has redirected back. Sets expectations for the three-step process.
+ */
+function sendBusinessWelcome({ to, name, businessName, businessType }) {
+    if (!to) return { skipped: true };
+    const first = (name || '').split(' ')[0] || 'there';
+    return sendEmail({
+        to,
+        subject: `Welcome to MN Lake Homes — let's get ${businessName || 'your listing'} live`,
+        html: layout({
+            title: `Welcome aboard, ${first}.`,
+            preheader: `Here's what happens next for ${businessName || 'your business'}.`,
+            body: `
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Thanks for signing up <strong>${businessName || 'your business'}</strong>${businessType ? ` as a ${prettyType(businessType).toLowerCase()}` : ''}. You're on the shortlist to appear on Minnesota's most-visited lake-town directory.
+                </p>
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  <strong>What's next:</strong>
+                </p>
+                <ol style="margin:0 0 14px;padding-left:22px;font-size:15px;line-height:1.75;color:#2d3748;">
+                  <li>Finish Stripe checkout if you haven't already — that unlocks your profile.</li>
+                  <li>We'll review your listing for accuracy (usually within 24 hours).</li>
+                  <li>Once approved, your pin goes live on the map and you can edit your profile anytime from the dashboard.</li>
+                </ol>
+                <p style="margin:0;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Questions? Just reply to this email.
+                </p>`,
+            ctaText: 'Open your dashboard',
+            ctaUrl: `${SITE_URL}/business/dashboard`,
+        })
+    });
+}
+
+/**
+ * Sent to the admin inbox the moment a new owner signs up — so the
+ * approval queue never goes stale.
+ */
+function sendBusinessAdminNotification({ businessName, businessType, ownerEmail, ownerName, slug, businessId }) {
+    const typeLabel = prettyType(businessType);
+    const row = (k, v) => v ? `<tr><td style="padding:8px 12px;font-size:13px;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.5px;vertical-align:top;white-space:nowrap;">${k}</td><td style="padding:8px 12px;font-size:15px;color:#1a202c;">${v}</td></tr>` : '';
+    return sendEmail({
+        to: REPLY_TO,
+        replyTo: ownerEmail,
+        subject: `🆕 New business signup — ${businessName} (${typeLabel})`,
+        html: layout({
+            title: `A new business just signed up`,
+            preheader: `${businessName} · ${typeLabel} · pending your review`,
+            body: `
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  <strong>${businessName}</strong> just signed up for a listing and is now waiting for admin approval.
+                </p>
+                <table style="width:100%;border-collapse:collapse;margin:0 0 8px;">
+                  ${row('Business', businessName)}
+                  ${row('Type', typeLabel)}
+                  ${row('Owner', ownerName || '—')}
+                  ${row('Email', `<a href="mailto:${ownerEmail}" style="color:#1d6df2;text-decoration:none;">${ownerEmail}</a>`)}
+                  ${row('Slug', slug ? `<code style="background:#f7f9fa;padding:2px 6px;border-radius:4px;">${slug}</code>` : '—')}
+                </table>
+                <p style="margin:18px 0 0;font-size:13px;color:#718096;line-height:1.5;">
+                  Review the listing, verify the details, then flip status → <strong>active</strong> in the admin to publish.
+                </p>`,
+            ctaText: 'Open admin businesses',
+            ctaUrl: `${SITE_URL}/pages/admin/businesses.html${businessId ? `?focus=${businessId}` : ''}`,
+        })
+    });
+}
+
+/**
+ * Stripe confirms payment → tell the owner we got it. Not live yet; admin
+ * review still pending. This bridges the awkward "paid but not visible" gap.
+ */
+function sendBusinessPaymentReceived({ to, name, businessName }) {
+    if (!to) return { skipped: true };
+    const first = (name || '').split(' ')[0] || 'there';
+    return sendEmail({
+        to,
+        subject: `Payment received — ${businessName || 'your listing'}`,
+        html: layout({
+            title: `Thanks, ${first} — payment received.`,
+            preheader: `Your listing is in the review queue. We'll have you live shortly.`,
+            body: `
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Stripe confirmed your subscription for <strong>${businessName || 'your listing'}</strong>. You're all set on the billing side.
+                </p>
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Your listing is now in our admin review queue. Most approvals happen within 24 hours. You'll get another email the moment your pin goes live.
+                </p>
+                <p style="margin:0;font-size:15px;line-height:1.65;color:#2d3748;">
+                  In the meantime, head to your dashboard to polish your profile — add a photo, flesh out your description, pick the towns you serve.
+                </p>`,
+            ctaText: 'Polish your profile',
+            ctaUrl: `${SITE_URL}/business/dashboard`,
+        })
+    });
+}
+
+/**
+ * Admin flipped status → active. The business is LIVE on the map.
+ */
+function sendBusinessApproved({ to, name, businessName, slug }) {
+    if (!to) return { skipped: true };
+    const first = (name || '').split(' ')[0] || 'there';
+    const publicUrl = slug ? `${SITE_URL}/businesses/${slug}` : `${SITE_URL}/towns`;
+    return sendEmail({
+        to,
+        subject: `🎉 You're live — ${businessName || 'your listing'} is now on the map`,
+        html: layout({
+            title: `You're live, ${first}.`,
+            preheader: `${businessName || 'Your listing'} is now visible on minnesotalakehomesforsale.com.`,
+            body: `
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Good news — <strong>${businessName || 'your listing'}</strong> is now approved and live on the MN Lake Homes directory. Your pin appears on every town page where you serve, on the main businesses map, and at your own profile URL.
+                </p>
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Want more visibility? Upgrade to <strong>Featured Partner</strong> from your dashboard — premium pins sort first on every map and carry a gold badge.
+                </p>
+                <p style="margin:0;font-size:15px;line-height:1.65;color:#2d3748;">
+                  You can edit your profile, photo, socials, and towns anytime. Reply to this email if you need help.
+                </p>`,
+            ctaText: 'View your live listing',
+            ctaUrl: publicUrl,
+        })
+    });
+}
+
+/**
+ * Sent when a subscription flips to past_due after a failed charge. Gives
+ * the owner a heads-up before their listing gets auto-hidden if Stripe
+ * gives up retrying (transitions past_due → unpaid/canceled).
+ */
+function sendBusinessPaymentFailed({ to, name, businessName }) {
+    if (!to) return { skipped: true };
+    const first = (name || '').split(' ')[0] || 'there';
+    return sendEmail({
+        to,
+        subject: `⚠ Payment failed — update your card for ${businessName || 'your listing'}`,
+        html: layout({
+            title: `Your last payment didn't go through, ${first}.`,
+            preheader: `Update your billing info so your listing stays visible.`,
+            body: `
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Stripe tried to renew your MN Lake Homes subscription for <strong>${businessName || 'your listing'}</strong> and the charge was declined. Your listing is still live for now, but will auto-hide if Stripe can't complete the renewal after a few retries.
+                </p>
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  <strong>Fix it in under a minute</strong> — open your dashboard, click "Manage billing in Stripe", and update your payment method there.
+                </p>
+                <p style="margin:0;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Replying to this email also reaches us if Stripe's flow is giving you trouble.
+                </p>`,
+            ctaText: 'Update payment method',
+            ctaUrl: `${SITE_URL}/business/dashboard`,
+        })
+    });
+}
+
+/**
+ * Subscription canceled → the listing is hidden. We still keep all
+ * profile data so a re-subscribe restores everything instantly.
+ */
+function sendBusinessSubscriptionCancelled({ to, name, businessName }) {
+    if (!to) return { skipped: true };
+    const first = (name || '').split(' ')[0] || 'there';
+    return sendEmail({
+        to,
+        subject: `Your MN Lake Homes listing has been paused`,
+        html: layout({
+            title: `Your listing is paused, ${first}.`,
+            preheader: `Resubscribe anytime — your profile, photos, and town tags are saved.`,
+            body: `
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Your MN Lake Homes subscription for <strong>${businessName || 'your listing'}</strong> has ended, so the listing is no longer visible on the directory.
+                </p>
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  <strong>Your profile data is preserved</strong> — photo, description, socials, town tags, all of it. Resubscribing from your dashboard brings the listing back instantly, no re-entry needed.
+                </p>
+                <p style="margin:0;font-size:15px;line-height:1.65;color:#2d3748;">
+                  If this cancellation wasn't intentional — maybe a card expiration Stripe gave up on — just reply and we'll help.
+                </p>`,
+            ctaText: 'Reactivate your listing',
+            ctaUrl: `${SITE_URL}/business/dashboard`,
+        })
+    });
+}
+
 module.exports = {
     sendEmail,
     sendWelcome,
@@ -392,6 +595,12 @@ module.exports = {
     sendInquiryNotification,
     sendInquiryConfirmation,
     sendMatchedAgentNotification,
+    sendBusinessWelcome,
+    sendBusinessAdminNotification,
+    sendBusinessPaymentReceived,
+    sendBusinessApproved,
+    sendBusinessPaymentFailed,
+    sendBusinessSubscriptionCancelled,
     sendCustom,
     layout,
 };

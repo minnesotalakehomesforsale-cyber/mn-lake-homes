@@ -23,6 +23,7 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { geocodeAddress } = require('../services/geocoder');
 const { logActivity } = require('../services/activity-log');
+const emailService = require('../services/email');
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -317,6 +318,31 @@ exports.patch = async (req, res) => {
 
         if (!fields.length) return res.json({ success: true, noop: true });
 
+        // Detect status transition → 'active' so we can email the owner
+        // their "you're live" confirmation after the UPDATE lands. We
+        // snapshot the prior status + owner contact here (pre-UPDATE)
+        // rather than hitting the DB again afterward.
+        let transitionToActive = null;
+        if ('status' in b && b.status === 'active') {
+            const { rows: pre } = await pool.query(
+                `SELECT b.status AS prev_status, b.slug, b.name AS business_name,
+                        u.email AS owner_email, u.full_name AS owner_name
+                 FROM businesses b
+                 LEFT JOIN users u ON u.id = b.user_id
+                 WHERE b.id = $1 LIMIT 1`,
+                [req.params.id]
+            );
+            const row = pre[0];
+            if (row && row.prev_status !== 'active' && row.owner_email) {
+                transitionToActive = {
+                    ownerEmail:   row.owner_email,
+                    ownerName:    row.owner_name,
+                    businessName: row.business_name,
+                    slug:         row.slug,
+                };
+            }
+        }
+
         // Re-geocode on edit when the caller is changing an address field
         // but NOT explicitly setting coords. Matches the create() behavior
         // so a business created empty + later filled in via Edit ends up
@@ -364,6 +390,19 @@ exports.patch = async (req, res) => {
             details: { changed: Object.keys(b) },
             req,
         });
+
+        // Fire the "you're live" email exactly once per transition → active.
+        // Owner-email is the gate — admin-seeded businesses (no user_id)
+        // don't have an owner to notify.
+        if (transitionToActive) {
+            emailService.sendBusinessApproved({
+                to:           transitionToActive.ownerEmail,
+                name:         transitionToActive.ownerName,
+                businessName: transitionToActive.businessName,
+                slug:         transitionToActive.slug,
+            });
+        }
+
         res.json(biz);
     } catch (err) {
         if (err.code === '23505') {
