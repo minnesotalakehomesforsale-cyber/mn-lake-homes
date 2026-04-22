@@ -322,23 +322,50 @@ exports.softDelete = async (req, res) => {
 };
 
 // ─── agents on a lake ───────────────────────────────────────────────────────
+// Returns any agent who either:
+//   (a) is tagged (via user_tags) with any geo-tag this lake is tied to
+//       via lake_tags — the "it's all about the geo tags" path, so an
+//       agent who tags themselves with a town automatically appears on
+//       every lake inside that town, AND
+//   (b) is directly linked via agent_lakes — admin override for
+//       featuring specific agents per lake.
+// Results are deduped and ordered by lake-featured first, then agent-
+// featured, then name.
 exports.listAgents = async (req, res) => {
     try {
         const { rows } = await pool.query(
-            `SELECT a.id, a.slug, a.user_id,
+            `SELECT DISTINCT ON (a.id)
+                    a.id, a.slug, a.user_id,
                     a.display_name, a.brokerage_name,
                     a.phone_public, a.email_public,
-                    a.profile_photo_url, a.bio, a.city, a.is_featured AS agent_is_featured,
+                    a.profile_photo_url, a.bio, a.city,
+                    a.is_featured AS agent_is_featured,
                     a.is_published,
                     u.full_name, u.email,
-                    al.is_featured AS lake_is_featured
-             FROM agent_lakes al
-             JOIN agents a ON a.id = al.agent_id
-             JOIN users  u ON u.id = a.user_id
-             WHERE al.lake_id = $1
-             ORDER BY al.is_featured DESC, a.display_name ASC`,
+                    COALESCE(al.is_featured, FALSE) AS lake_is_featured
+             FROM agents a
+             JOIN users u ON u.id = a.user_id
+             LEFT JOIN agent_lakes al ON al.agent_id = a.id AND al.lake_id = $1
+             WHERE (
+                 al.lake_id IS NOT NULL
+                 OR EXISTS (
+                     SELECT 1 FROM lake_tags lt
+                     JOIN user_tags ut ON ut.tag_id = lt.tag_id
+                     WHERE lt.lake_id = $1 AND ut.user_id = a.user_id
+                 )
+             )
+               AND a.is_published = TRUE
+               AND a.profile_status = 'published'
+               AND a.deleted_at IS NULL
+             ORDER BY a.id, lake_is_featured DESC, a.is_featured DESC, a.display_name ASC`,
             [req.params.id]
         );
+        // Re-sort after DISTINCT ON (which forces a.id leading order).
+        rows.sort((x, y) => {
+            if (x.lake_is_featured !== y.lake_is_featured) return y.lake_is_featured ? 1 : -1;
+            if (x.agent_is_featured !== y.agent_is_featured) return y.agent_is_featured ? 1 : -1;
+            return (x.display_name || '').localeCompare(y.display_name || '');
+        });
         res.json(rows);
     } catch (err) {
         console.error('[lakes.listAgents]', err.message);
