@@ -5,36 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
 
-    <title>Minnesota Lakes Directory | Lake Homes Real Estate</title>
-    <meta name="description" content="Explore every Minnesota lake on our interactive map. Find homes, agents, and local businesses on Lake Minnetonka, Gull Lake, Mille Lacs, Lake Vermilion, and more.">
+    <title>Minnesota Lakes — Alphabetical Directory | Lake Homes Real Estate</title>
+    <meta name="description" content="Every Minnesota lake in our directory, listed alphabetically. Tap any lake to see agents, service providers, and the towns it's part of.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://minnesotalakehomesforsale.com/lakes">
 
     <meta property="og:type" content="website">
     <meta property="og:title" content="Minnesota Lakes Directory">
-    <meta property="og:description" content="Interactive map of every Minnesota lake in our directory — homes for sale, agents, marinas, and more.">
+    <meta property="og:description" content="Alphabetical index of every Minnesota lake in our network.">
 
     <link rel="stylesheet" href="../../styles/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Leaflet core -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-
     <script src="../../components/components.js" defer></script>
 
     <style>
-        /* Hero */
         .lx-hero { padding: 9rem 2rem 3rem; background-color: var(--bg-dark); color: #fff; text-align: center; }
-        .lx-hero h1 { font-size: 3.5rem; font-weight: 700; letter-spacing: -1.5px; line-height: 1.1; margin: 0 0 1rem; }
+        .lx-hero h1 { font-size: 3.25rem; font-weight: 700; letter-spacing: -1.5px; line-height: 1.1; margin: 0 0 1rem; }
         .lx-hero h1 span { color: var(--accent-blue); }
-        .lx-hero p { font-size: 1.15rem; color: #a0aec0; max-width: 700px; margin: 0 auto 2rem; line-height: 1.6; }
+        .lx-hero p { font-size: 1.1rem; color: #a0aec0; max-width: 640px; margin: 0 auto 1.5rem; line-height: 1.6; }
+        .lx-hero .pillrow { display: inline-flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 0.5rem; }
+        .lx-hero .pillrow a { display: inline-flex; align-items: center; gap: 0.35rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); color: #fff; font-size: 0.82rem; font-weight: 600; padding: 0.5rem 1rem; border-radius: 99px; text-decoration: none; transition: background 0.15s, border-color 0.15s; }
+        .lx-hero .pillrow a:hover { background: rgba(29,109,242,0.18); border-color: #1d6df2; }
 
-        /* Toolbar (centered, same max width as hero copy) */
         .lx-toolbar-wrap { background: #f7f9fa; border-bottom: 1px solid #edf2f7; }
         .lx-toolbar { max-width: 1200px; margin: 0 auto; padding: 1.25rem 2rem; display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
         .lx-toolbar input, .lx-toolbar select { font-family: inherit; font-size: 0.95rem; padding: 0.7rem 1rem; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
@@ -42,103 +37,42 @@
         .lx-toolbar input[type="search"] { flex: 1; min-width: 260px; }
         .lx-toolbar-count { margin-left: auto; font-size: 0.85rem; color: #718096; font-weight: 600; }
 
-        /* Map — full-bleed, edge to edge */
-        .lx-map-section { position: relative; width: 100%; }
-        #lx-map {
-            height: 640px; width: 100%;
-            background: #eef2f5;
-            border-top: 1px solid #edf2f7;
-            border-bottom: 1px solid #edf2f7;
-        }
-        /* Leaflet attribution: restyled (no Ukrainian flag, compact, branded) */
-        .leaflet-control-attribution {
-            background: rgba(255,255,255,0.85) !important;
-            backdrop-filter: blur(6px);
-            font-family: 'Inter', sans-serif !important;
-            font-size: 0.7rem !important;
-            color: #718096 !important;
-            padding: 0.2rem 0.55rem !important;
-        }
-        .leaflet-control-attribution a { color: #4a5568 !important; }
-        /* Custom teardrop pins — drawn with CSS so no extra requests. */
-        .lx-pin {
-            width: 24px; height: 24px;
-            background: #1d6df2;
-            border: 3px solid #fff;
-            border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg);
-            box-shadow: 0 6px 14px rgba(29,109,242,0.45), 0 0 0 1px rgba(0,0,0,0.04);
-            transition: transform 0.15s;
-        }
-        .lx-pin::after {
-            content: ''; display: block;
-            width: 8px; height: 8px;
-            background: #fff; border-radius: 50%;
-            margin: 5px auto;
-        }
-        .lx-pin-wrap:hover .lx-pin { transform: rotate(-45deg) scale(1.12); }
-        /* Popup (branded, modern) */
-        .leaflet-popup-content-wrapper { border-radius: 12px !important; box-shadow: 0 10px 28px rgba(0,0,0,0.14) !important; padding: 2px !important; }
-        .leaflet-popup-content { margin: 0.9rem 1.1rem !important; font-family: 'Inter', sans-serif; }
-        .leaflet-popup-tip { box-shadow: 0 10px 28px rgba(0,0,0,0.14) !important; }
-        .lx-pop { min-width: 200px; }
-        .lx-pop h4 { font-size: 1.02rem; font-weight: 700; color: #1a202c; margin: 0 0 0.2rem; letter-spacing: -0.2px; }
-        .lx-pop .meta { font-size: 0.75rem; color: #718096; margin: 0 0 0.75rem; }
-        .lx-pop a { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.48rem 0.9rem; background: #1d6df2; color: #fff !important; font-weight: 700; border-radius: 8px; text-decoration: none; font-size: 0.82rem; transition: background 0.15s; }
-        .lx-pop a:hover { background: #155bc8; }
+        .lx-wrap { max-width: 1200px; margin: 0 auto; padding: 3rem 2rem 6rem; }
 
-        /* Grid */
-        .lx-grid-wrap { max-width: 1320px; margin: 0 auto; padding: 4rem 2rem 6rem; }
-        .lx-grid-title { font-size: 2rem; font-weight: 700; color: #1a202c; letter-spacing: -0.75px; margin: 0 0 0.5rem; text-align: center; }
-        .lx-grid-sub   { color: #718096; font-size: 1rem; max-width: 620px; margin: 0 auto 2.5rem; line-height: 1.6; text-align: center; }
-        .lx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+        /* Alphabetical letter groups */
+        .lx-letter { margin-bottom: 2.5rem; }
+        .lx-letter-head {
+            display: flex; align-items: baseline; gap: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #edf2f7;
+            margin-bottom: 1rem;
+        }
+        .lx-letter-head h2 { font-size: 2rem; font-weight: 800; color: #1a202c; margin: 0; letter-spacing: -0.5px; }
+        .lx-letter-head .count { font-size: 0.78rem; color: #a0aec0; font-weight: 600; }
 
-        /* Card */
-        .lx-card {
-            position: relative; display: flex; flex-direction: column;
-            background: #fff; border: 1px solid #edf2f7; border-radius: 16px;
+        .lx-row-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.35rem 1rem; }
+        .lx-row {
+            display: flex; align-items: center; gap: 0.65rem;
+            padding: 0.65rem 0.75rem; border-radius: 8px;
             text-decoration: none; color: inherit;
-            overflow: hidden; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            transition: background 0.12s;
         }
-        .lx-card:hover { transform: translateY(-4px); border-color: #cbd5e0; box-shadow: 0 16px 36px rgba(0,0,0,0.08); }
-        .lx-card:hover .lx-card-cta { color: #155bc8; gap: 0.7rem; }
-        .lx-card-img {
-            position: relative;
-            height: 200px; background: linear-gradient(135deg, #1d6df2 0%, #155bc8 100%);
-            overflow: hidden;
-        }
-        .lx-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s; }
-        .lx-card:hover .lx-card-img img { transform: scale(1.05); }
-        .lx-card-img .region-chip {
-            position: absolute; top: 14px; left: 14px; z-index: 2;
-            background: rgba(255,255,255,0.95); backdrop-filter: blur(4px);
-            color: #1a202c; font-size: 0.7rem; font-weight: 800;
-            letter-spacing: 0.6px; text-transform: uppercase;
-            padding: 0.3rem 0.65rem; border-radius: 6px;
-        }
-        .lx-card-body { padding: 1.3rem 1.5rem 1.5rem; flex: 1; display: flex; flex-direction: column; }
-        .lx-card-body h3 { font-size: 1.3rem; font-weight: 700; color: #1a202c; margin: 0 0 0.35rem; letter-spacing: -0.3px; }
-        .lx-card-body .loc { font-size: 0.82rem; color: #a0aec0; margin: 0 0 0.85rem; }
-        .lx-card-body p { color: #4a5568; font-size: 0.92rem; line-height: 1.55; margin: 0 0 1.1rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
-        .lx-card-cta {
-            margin-top: auto;
-            display: inline-flex; align-items: center; gap: 0.45rem;
-            font-size: 0.88rem; font-weight: 800; color: #1d6df2;
-            transition: gap 0.15s, color 0.15s;
-        }
+        .lx-row:hover { background: #f7f9fa; }
+        .lx-row .dot { flex-shrink: 0; width: 6px; height: 6px; background: #1d6df2; border-radius: 50%; opacity: 0.7; }
+        .lx-row .name { font-weight: 600; color: #1a202c; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .lx-row .sub { font-size: 0.78rem; color: #a0aec0; font-weight: 500; margin-left: auto; white-space: nowrap; }
 
-        /* Mobile */
+        .lx-empty { text-align: center; padding: 3rem; color: #a0aec0; }
+
         @media (max-width: 900px) {
             .lx-hero { padding: 7rem 1.25rem 2rem; }
-            .lx-hero h1 { font-size: 2.25rem; letter-spacing: -1px; }
+            .lx-hero h1 { font-size: 2rem; letter-spacing: -1px; }
             .lx-toolbar { padding: 1rem 1.25rem; }
             .lx-toolbar input[type="search"] { min-width: 100%; flex: 1 0 100%; }
             .lx-toolbar-count { margin-left: 0; }
-            #lx-map { height: 420px; }
-            .lx-grid-wrap { padding: 2.5rem 1.25rem 4rem; }
-            .lx-grid-title { font-size: 1.6rem; }
-            .lx-grid { grid-template-columns: 1fr; }
-            .lx-card-img { height: 180px; }
+            .lx-wrap { padding: 2rem 1.25rem 4rem; }
+            .lx-letter-head h2 { font-size: 1.5rem; }
+            .lx-row-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -147,8 +81,11 @@
     <global-header></global-header>
 
     <section class="lx-hero">
-        <h1>Every Minnesota <span>lake</span> — one map.</h1>
-        <p>Click a pin to dive into that lake's real estate, local agents, and everything that makes living on it special.</p>
+        <h1>All Minnesota <span>lakes</span>.</h1>
+        <p>Alphabetical index of every lake in our directory. Looking for a place to live instead? Browse by lake town — it's where agents and local businesses aggregate.</p>
+        <div class="pillrow">
+            <a href="/towns"><span aria-hidden="true">🗺️</span> Browse lake towns (map)</a>
+        </div>
     </section>
 
     <div class="lx-toolbar-wrap">
@@ -161,17 +98,9 @@
         </div>
     </div>
 
-    <!-- Full-width map -->
-    <section class="lx-map-section">
-        <div id="lx-map"></div>
-    </section>
-
-    <!-- Cards -->
-    <section class="lx-grid-wrap">
-        <h2 class="lx-grid-title">Browse the directory</h2>
-        <p class="lx-grid-sub">Every lake in our network gets its own page — homes for sale, local experts, and what makes the lake worth spending a weekend on.</p>
-        <div id="lx-grid" class="lx-grid">
-            <div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">Loading lakes…</div>
+    <section class="lx-wrap">
+        <div id="lx-content">
+            <div class="lx-empty">Loading lakes…</div>
         </div>
     </section>
 
@@ -180,28 +109,16 @@
 
     <script>
         let _lakes = [];
-        let _map = null;
-        let _markers = [];
-
-        // Branded teardrop pin — rendered once and reused for every marker.
-        const LX_PIN_ICON = L.divIcon({
-            className: 'lx-pin-wrap',
-            html: '<div class="lx-pin"></div>',
-            iconSize: [24, 32],
-            iconAnchor: [12, 30],
-            popupAnchor: [0, -28],
-        });
 
         async function loadLakes() {
             try {
                 const res = await fetch('/api/lakes');
-                if (!res.ok) throw new Error('fetch failed');
+                if (!res.ok) throw new Error();
                 _lakes = await res.json();
                 populateRegions();
                 applyFilters();
             } catch (_) {
-                document.getElementById('lx-grid').innerHTML =
-                    '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">Could not load lakes.</div>';
+                document.getElementById('lx-content').innerHTML = '<div class="lx-empty">Could not load lakes.</div>';
             }
         }
 
@@ -210,8 +127,7 @@
             const regions = [...new Set(_lakes.map(l => l.region).filter(Boolean))].sort();
             sel.innerHTML = '<option value="">All regions</option>' +
                 regions.map(r => `<option value="${escHtml(r)}">${escHtml(r)}</option>`).join('');
-            // Deep link: ?region=X pre-selects the filter so header links like
-            // "Brainerd Lakes" land on a pre-filtered view.
+            // Honor ?region= and ?search= deep-link params
             const qp = new URLSearchParams(location.search).get('region');
             if (qp && regions.includes(qp)) sel.value = qp;
             const qs = new URLSearchParams(location.search).get('search');
@@ -230,115 +146,54 @@
 
         function applyFilters() {
             const rows = filtered();
-            renderMap(rows);
-            renderGrid(rows);
+            render(rows);
             document.getElementById('lx-count').textContent = `${rows.length} of ${_lakes.length} lakes`;
         }
 
-        function ensureMap() {
-            if (_map) return _map;
-            _map = L.map('lx-map', {
-                zoomControl: true,
-                // Leaflet only grabs the wheel while the cursor is actually
-                // over the map element, so page scroll stays unaffected when
-                // the user is above/below the map.
-                scrollWheelZoom: true,
-                // Minnesota-bounded initial view. Fits on most screens and
-                // gives context of the whole state without zooming in so
-                // tight that pins overlap.
-                center: [46.5, -94.3],
-                zoom: 7,
-                minZoom: 5,
-                zoomSnap: 0.25,
-                wheelPxPerZoomLevel: 110,
-            });
-            // Positron — ultra-clean light basemap. Minimal labels, pin-
-            // friendly, more modern than Voyager.
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                subdomains: 'abcd',
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            }).addTo(_map);
-            // Remove Leaflet's default prefix (which includes the Ukrainian
-            // flag emoji as a solidarity symbol). Swap in a plain text
-            // attribution that still credits Leaflet per their license.
-            _map.attributionControl.setPrefix('<a href="https://leafletjs.com/" title="A JavaScript library for interactive maps">Leaflet</a>');
-            return _map;
+        function firstAlphaChar(name) {
+            // Group "Lake Minnetonka" under M, "Gull Lake" under G — i.e. use the
+            // first non-"Lake" word, or fall back to the first char otherwise.
+            const stripped = String(name || '').replace(/^\s*Lake\s+/i, '').trim();
+            const c = (stripped || name || '').trim().charAt(0).toUpperCase();
+            return /[A-Z]/.test(c) ? c : '#';
         }
 
-        function renderMap(rows) {
-            const map = ensureMap();
-            _markers.forEach(m => map.removeLayer(m));
-            _markers = [];
-            const bounds = [];
-            rows.forEach(l => {
-                if (l.latitude == null || l.longitude == null) return;
-                const marker = L.marker([l.latitude, l.longitude], { icon: LX_PIN_ICON }).addTo(map);
-                marker.bindPopup(`
-                    <div class="lx-pop">
-                        <h4>${escHtml(l.name)}</h4>
-                        ${l.region ? `<div class="meta">${escHtml(l.region)}${l.county ? ` · ${escHtml(l.county)} County` : ''}</div>` : ''}
-                        <a href="/lakes/${encodeURIComponent(l.slug)}">Open page →</a>
-                    </div>
-                `);
-
-                // Hover to preview: open on mouseenter, close on mouseleave
-                // (with a small delay so the user can move the cursor into
-                // the popup without it vanishing). Click navigates straight
-                // to the lake page — the popup's button is redundant for
-                // mouse users but helps keyboard/touch.
-                let hoverTimer = null;
-                marker.on('mouseover', () => {
-                    clearTimeout(hoverTimer);
-                    marker.openPopup();
-                });
-                marker.on('mouseout', () => {
-                    hoverTimer = setTimeout(() => marker.closePopup(), 180);
-                });
-                marker.on('click', () => {
-                    window.location.href = `/lakes/${encodeURIComponent(l.slug)}`;
-                });
-                // Keep the popup open while the cursor is over it.
-                marker.on('popupopen', (e) => {
-                    const el = e.popup.getElement();
-                    if (!el) return;
-                    el.addEventListener('mouseenter', () => clearTimeout(hoverTimer));
-                    el.addEventListener('mouseleave', () => { hoverTimer = setTimeout(() => marker.closePopup(), 180); });
-                });
-
-                _markers.push(marker);
-                bounds.push([l.latitude, l.longitude]);
-            });
-            if (bounds.length) {
-                // Fit to markers but keep the view tight to MN. Capped at
-                // zoom 8 so a single result doesn't over-zoom to street level.
-                map.fitBounds(bounds, { padding: [60, 60], maxZoom: 8 });
-            }
-        }
-
-        function renderGrid(rows) {
-            const grid = document.getElementById('lx-grid');
+        function render(rows) {
+            const container = document.getElementById('lx-content');
             if (!rows.length) {
-                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">No lakes match your filters.</div>';
+                container.innerHTML = '<div class="lx-empty">No lakes match your filters.</div>';
                 return;
             }
-            grid.innerHTML = rows.map(l => {
-                const img = l.featured_image_url || l.hero_image_url || '/assets/images/mn-canoe-shore.webp';
-                const loc = [l.county ? `${l.county} County` : null, l.state].filter(Boolean).join(' · ');
-                return `
-                    <a class="lx-card" href="/lakes/${encodeURIComponent(l.slug)}">
-                        <div class="lx-card-img">
-                            ${l.region ? `<span class="region-chip">${escHtml(l.region)}</span>` : ''}
-                            <img src="${escHtml(img)}" alt="${escHtml(l.name)} waterfront scenery" loading="lazy">
-                        </div>
-                        <div class="lx-card-body">
-                            <h3>${escHtml(l.name)}</h3>
-                            ${loc ? `<div class="loc">${escHtml(loc)}</div>` : ''}
-                            <p>${escHtml(l.intro_text || l.seo_description || '')}</p>
-                            <span class="lx-card-cta">Explore <span aria-hidden="true">→</span></span>
-                        </div>
-                    </a>`;
-            }).join('');
+            // Sort by the alphabetization key (first non-Lake word), then group by letter
+            const sorted = [...rows].sort((a, b) => {
+                const an = String(a.name).replace(/^\s*Lake\s+/i, '').toLowerCase();
+                const bn = String(b.name).replace(/^\s*Lake\s+/i, '').toLowerCase();
+                return an.localeCompare(bn);
+            });
+            const groups = {};
+            sorted.forEach(l => {
+                const key = firstAlphaChar(l.name);
+                (groups[key] ||= []).push(l);
+            });
+            const letters = Object.keys(groups).sort();
+
+            container.innerHTML = letters.map(letter => `
+                <div class="lx-letter">
+                    <div class="lx-letter-head">
+                        <h2>${escHtml(letter)}</h2>
+                        <span class="count">${groups[letter].length} lake${groups[letter].length === 1 ? '' : 's'}</span>
+                    </div>
+                    <div class="lx-row-grid">
+                        ${groups[letter].map(l => `
+                            <a class="lx-row" href="/lakes/${encodeURIComponent(l.slug)}">
+                                <span class="dot" aria-hidden="true"></span>
+                                <span class="name">${escHtml(l.name)}</span>
+                                <span class="sub">${escHtml(l.region || l.county || '')}</span>
+                            </a>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
         }
 
         function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }

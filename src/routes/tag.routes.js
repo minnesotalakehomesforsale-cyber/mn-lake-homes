@@ -30,6 +30,9 @@ router.post  ('/match',                 verifyToken, c.match);
 // Public single-tag + reverse-lookup. Placed after the more-specific
 // /users/* and /match routes so they take precedence over :slugOrId.
 router.get   ('/:slugOrId/lakes',                    c.listLakesForTag);
+router.get   ('/:slugOrId/blog-posts',               c.listBlogPostsForTag);
+router.get   ('/:slugOrId/agents',                   c.listAgentsForTag);
+router.get   ('/:slugOrId/businesses',               c.listBusinessesForTag);
 router.get   ('/:slugOrId',                          c.getOne);
 
 router.patch ('/:id',                   verifyToken, c.patch);

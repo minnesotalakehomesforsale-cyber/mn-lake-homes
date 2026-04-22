@@ -102,12 +102,16 @@
         .lm-biz-section h3 { font-size: 1.75rem; font-weight: 700; color: #1a202c; margin: 0 0 0.5rem; letter-spacing: -0.5px; }
         .lm-biz-section p.sub { color: #718096; margin: 0 0 1.75rem; line-height: 1.6; }
 
-        .lm-towns { padding: 5rem 2rem; background: #fff; text-align: center; }
-        .lm-towns h2 { font-size: 2rem; font-weight: 700; color: #1a202c; margin: 0 0 1rem; letter-spacing: -0.75px; }
-        .lm-towns p.lead { color:#718096; margin: 0 auto 2rem; max-width: 640px; line-height: 1.6; }
-        .lm-towns-grid { display:flex; flex-wrap:wrap; gap:0.6rem; justify-content:center; }
-        .lm-town-chip { display:inline-flex; align-items:center; gap:0.45rem; background:#fff; border:1px solid #edf2f7; border-radius:99px; padding:0.55rem 1.1rem; font-size:0.92rem; font-weight:600; color:#1a202c; text-decoration:none; transition: border-color 0.15s, color 0.15s; }
-        .lm-town-chip:hover { border-color:#1d6df2; color:#1d6df2; }
+        /* "Part of these towns" — prominent callout band right below the hero.
+           This is the primary wayfinding moment on the lake page now that
+           towns are the hub: we nudge the reader toward the town-level
+           directory where agents/businesses/blog posts aggregate. */
+        .lm-towns-band { background: #fff; border-bottom: 1px solid #edf2f7; padding: 2rem; }
+        .lm-towns-inner { max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem; }
+        .lm-towns-label { font-size: 0.72rem; font-weight: 800; color: #a0aec0; letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; }
+        .lm-towns-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; flex: 1; }
+        .lm-town-chip { display:inline-flex; align-items:center; gap:0.4rem; background:#f7f9fa; border:1px solid #edf2f7; border-radius:99px; padding:0.5rem 1rem; font-size:0.88rem; font-weight:600; color:#1a202c; text-decoration:none; transition: border-color 0.15s, background 0.15s, color 0.15s; }
+        .lm-town-chip:hover { border-color:#1d6df2; color:#1d6df2; background:#fff; }
 
         .sp-dark-section { background: var(--bg-dark); color: #fff; padding: 6rem 2rem; text-align: center; }
         .sp-dark-section h2 { font-size: 3rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -1px; color: #fff; }
@@ -166,6 +170,16 @@
         </div>
     </section>
 
+    <!-- Part of these towns — primary nav signal back to the town hubs
+         where agents/businesses/blog aggregate. Hidden if the lake has
+         no towns linked. -->
+    <section id="lm-towns-band" class="lm-towns-band" style="display:none;">
+        <div class="lm-towns-inner">
+            <span class="lm-towns-label">Part of</span>
+            <div id="lm-towns-grid" class="lm-towns-grid"></div>
+        </div>
+    </section>
+
     <!-- About the lake (image left, text right). Hidden at render if no
          description/intro_text is set so we don't show an empty block. -->
     <section class="sp-section" id="ld-about-section">
@@ -207,13 +221,6 @@
             <p class="lead">Restaurants, marinas, services, and photographers trusted by the people who live here.</p>
             <div id="biz-sections"></div>
         </div>
-    </section>
-
-    <!-- Nearby towns -->
-    <section id="lake-towns" class="lm-towns" style="display:none;">
-        <h2>Near {{LAKE_NAME}}</h2>
-        <p class="lead">Communities that border or share the lake's waterfront.</p>
-        <div id="lake-towns-grid" class="lm-towns-grid"></div>
     </section>
 
     <!-- Final CTA -->
@@ -394,8 +401,8 @@
         }
 
         async function loadLakeTowns() {
-            const section = document.getElementById('lake-towns');
-            const grid = document.getElementById('lake-towns-grid');
+            const section = document.getElementById('lm-towns-band');
+            const grid = document.getElementById('lm-towns-grid');
             if (!grid || !section) return;
             try {
                 const res = await fetch(`/api/lakes/${encodeURIComponent(LAKE_ID)}/tags`);

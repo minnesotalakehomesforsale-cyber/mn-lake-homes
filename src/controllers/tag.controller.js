@@ -118,6 +118,113 @@ exports.getOne = async (req, res) => {
     }
 };
 
+// ─── blog posts connected to a town (transitive via lakes) ────────────────
+// Returns any published blog post linked to a lake that's linked to this
+// town. Lets town pages show topical content without needing a direct
+// blog_post_tags join table — coverage comes for free through the
+// lake_tags ↔ blog_post_lakes graph.
+exports.listBlogPostsForTag = async (req, res) => {
+    try {
+        const key = req.params.slugOrId;
+        const byUuid = UUID_RE.test(key);
+        const { rows } = await pool.query(
+            `SELECT DISTINCT ON (bp.id)
+                    bp.id, bp.slug, bp.title, bp.excerpt, bp.cover_image_url,
+                    bp.tag, bp.read_time_minutes, bp.author_name,
+                    bp.is_published, bp.published_at, bp.created_at
+             FROM lake_tags lt
+             JOIN tags t ON t.id = lt.tag_id
+             JOIN blog_post_lakes bpl ON bpl.lake_id = lt.lake_id
+             JOIN blog_posts bp ON bp.id = bpl.blog_post_id
+             WHERE ${byUuid ? 't.id' : 't.slug'} = $1
+               AND bp.is_published = TRUE
+               AND bp.deleted_at IS NULL
+             ORDER BY bp.id, bp.published_at DESC NULLS LAST
+             LIMIT 50`,
+            [key]
+        );
+        // Re-sort by published_at since DISTINCT ON forces id ordering first.
+        rows.sort((a, b) => {
+            const da = a.published_at ? new Date(a.published_at).getTime() : 0;
+            const db = b.published_at ? new Date(b.published_at).getTime() : 0;
+            return db - da;
+        });
+        res.json(rows);
+    } catch (err) {
+        console.error('[tags.listBlogPostsForTag]', err.message);
+        res.status(500).json({ error: 'Failed to load blog posts for town.' });
+    }
+};
+
+// ─── businesses connected to a town (transitive via lakes) ───────────────
+// Returns active businesses linked to any lake in this town, deduped.
+// Optional ?type filter scopes to a single category for the per-section
+// rendering on the town page.
+exports.listBusinessesForTag = async (req, res) => {
+    try {
+        const key = req.params.slugOrId;
+        const byUuid = UUID_RE.test(key);
+        const params = [key];
+        let typeClause = '';
+        if (req.query.type) {
+            params.push(String(req.query.type).toLowerCase().slice(0, 40));
+            typeClause = `AND b.type = $${params.length}`;
+        }
+        const { rows } = await pool.query(
+            `SELECT DISTINCT ON (b.id)
+                    b.id, b.slug, b.name, b.type, b.description, b.phone, b.email,
+                    b.website_url, b.address, b.city, b.state, b.zip,
+                    b.latitude, b.longitude, b.hours, b.price_range,
+                    b.featured_image_url, b.status
+             FROM lake_tags lt
+             JOIN tags t ON t.id = lt.tag_id
+             JOIN business_lakes bl ON bl.lake_id = lt.lake_id
+             JOIN businesses b ON b.id = bl.business_id
+             WHERE ${byUuid ? 't.id' : 't.slug'} = $1
+               AND b.status = 'active'
+               ${typeClause}
+             ORDER BY b.id, b.name ASC`,
+            params
+        );
+        rows.sort((a, b) => a.name.localeCompare(b.name));
+        res.json(rows);
+    } catch (err) {
+        console.error('[tags.listBusinessesForTag]', err.message);
+        res.status(500).json({ error: 'Failed to load businesses for town.' });
+    }
+};
+
+// ─── agents connected to a tag (via user_tags) ────────────────────────────
+// Returns published agents serving this town. Town pages use this to
+// render their "Agents serving [Town]" section without the client having
+// to fetch the full agents directory and filter.
+exports.listAgentsForTag = async (req, res) => {
+    try {
+        const key = req.params.slugOrId;
+        const byUuid = UUID_RE.test(key);
+        const { rows } = await pool.query(
+            `SELECT a.id, a.slug, a.display_name, a.brokerage_name, a.city,
+                    a.profile_photo_url, a.bio, a.is_featured,
+                    m.display_badge_label AS membership_badge
+             FROM user_tags ut
+             JOIN tags t ON t.id = ut.tag_id
+             JOIN agents a ON a.user_id = ut.user_id
+             JOIN memberships m ON m.id = a.membership_id
+             WHERE ${byUuid ? 't.id' : 't.slug'} = $1
+               AND a.is_published = TRUE
+               AND a.profile_status = 'published'
+               AND a.deleted_at IS NULL
+             ORDER BY a.is_featured DESC, a.display_name ASC
+             LIMIT 24`,
+            [key]
+        );
+        res.json(rows);
+    } catch (err) {
+        console.error('[tags.listAgentsForTag]', err.message);
+        res.status(500).json({ error: 'Failed to load agents for town.' });
+    }
+};
+
 // ─── lakes connected to a tag (reverse lake_tags lookup) ───────────────────
 // Only returns published lakes for the public /towns/<slug> page.
 exports.listLakesForTag = async (req, res) => {

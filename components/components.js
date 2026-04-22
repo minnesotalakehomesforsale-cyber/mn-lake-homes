@@ -255,24 +255,25 @@ class GlobalHeader extends HTMLElement {
                 ]
             },
             {
-                id: 'lakes', label: 'Lakes', href: '/lakes',
+                id: 'lakes', label: 'Lake Towns', href: '/towns',
                 columns: [
                     { heading: 'Browse', links: [
-                        { label: 'All Lakes',       href: '/lakes' },
-                        { label: 'All Lake Towns',  href: '/towns' },
-                        { label: 'Featured Agents', href: `${bp}agents.html?featured=1` },
+                        { label: 'All Lake Towns (map)', href: '/towns' },
+                        { label: 'All Lakes (A–Z)',      href: '/lakes' },
+                        { label: 'Featured Agents',      href: `${bp}agents.html?featured=1` },
+                    ]},
+                    { heading: 'Featured Towns', links: [
+                        { label: 'Wayzata',        href: '/towns/wayzata' },
+                        { label: 'Excelsior',      href: '/towns/excelsior' },
+                        { label: 'Nisswa',         href: '/towns/nisswa' },
+                        { label: 'Walker',         href: '/towns/walker' },
+                        { label: 'Detroit Lakes',  href: '/towns/detroit-lakes' },
                     ]},
                     { heading: 'Featured Lakes', links: [
                         { label: 'Lake Minnetonka', href: '/lakes/lake-minnetonka' },
                         { label: 'Gull Lake',       href: '/lakes/gull-lake' },
                         { label: 'Mille Lacs Lake', href: '/lakes/mille-lacs-lake' },
                         { label: 'Lake Vermilion',  href: '/lakes/lake-vermilion' },
-                    ]},
-                    { heading: 'By Region', links: [
-                        { label: 'Twin Cities Metro', href: '/lakes?region=Twin%20Cities%20Metro' },
-                        { label: 'Brainerd Lakes',    href: '/lakes?region=Brainerd%20Lakes' },
-                        { label: 'Northern Lakes',    href: '/lakes?region=Northern%20Lakes' },
-                        { label: 'Lakes Country',     href: '/lakes?region=Lakes%20Country' },
                     ]},
                 ]
             },

@@ -7,6 +7,7 @@
 
     <title>{{TOWN_SEO_TITLE}}</title>
     <meta name="description" content="{{TOWN_SEO_DESCRIPTION}}">
+    <meta name="author" content="MinnesotaLakeHomesForSale.com">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
     <link rel="canonical" href="https://minnesotalakehomesforsale.com{{TOWN_CANONICAL_PATH}}">
 
@@ -15,11 +16,21 @@
     <meta property="og:url" content="https://minnesotalakehomesforsale.com{{TOWN_CANONICAL_PATH}}">
     <meta property="og:title" content="{{TOWN_SEO_TITLE}}">
     <meta property="og:description" content="{{TOWN_SEO_DESCRIPTION}}">
+    <meta property="og:image" content="{{TOWN_HERO_IMAGE}}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="en_US">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{TOWN_SEO_TITLE}}">
+    <meta name="twitter:description" content="{{TOWN_SEO_DESCRIPTION}}">
+    <meta name="twitter:image" content="{{TOWN_HERO_IMAGE}}">
 
     <link rel="stylesheet" href="../../styles/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preload" as="image" href="{{TOWN_HERO_IMAGE}}">
     <script src="../../components/components.js" defer></script>
 
     <script type="application/ld+json">
@@ -35,38 +46,84 @@
     </script>
 
     <style>
-        .tn-hero { padding: 10rem 2rem 4rem; background-color: var(--bg-dark); color: #fff; text-align: center; }
-        .tn-hero .eyebrow { display: inline-block; font-size: 0.78rem; font-weight: 800; color: #1d6df2; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 1rem; }
-        .tn-hero h1 { font-size: 4rem; font-weight: 700; letter-spacing: -1.5px; line-height: 1.05; margin: 0 0 1rem; }
+        /* Hero — dark split, mirrors lake-detail */
+        .tn-hero { position: relative; padding: 12rem 2rem 5rem; background-color: var(--bg-dark); color: #fff; }
+        .tn-hero-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+        .tn-hero h1 { font-size: 4rem; font-weight: 700; letter-spacing: -1.75px; line-height: 1.05; margin-bottom: 1.5rem; }
         .tn-hero h1 span { color: var(--accent-blue); }
-        .tn-hero p.sub { font-size: 1.15rem; color: #a0aec0; max-width: 640px; margin: 0 auto 2rem; line-height: 1.6; }
+        .tn-hero .eyebrow { display: inline-block; font-size: 0.78rem; font-weight: 800; color: #1d6df2; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 1rem; }
+        .tn-hero p.lead { font-size: 1.2rem; color: #a0aec0; line-height: 1.6; margin-bottom: 2.5rem; max-width: 520px; }
+        .tn-hero-img { height: 500px; border-radius: 20px; overflow: hidden; }
+        .tn-hero-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .tn-hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
 
+        .tn-back-link {
+            position: absolute;
+            top: 6.5rem; left: 2rem;
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            font-size: 0.82rem; font-weight: 600;
+            color: #a0aec0; text-decoration: none;
+            padding: 0.35rem 0.65rem; border-radius: 6px;
+            transition: color 0.15s, background 0.15s;
+        }
+        .tn-back-link:hover { color: #fff; background: rgba(255,255,255,0.06); }
+
+        /* Shared section frame */
         .tn-section { padding: 5rem 2rem; }
-        .tn-section .inner { max-width: 1100px; margin: 0 auto; }
-        .tn-section h2 { font-size: 2.25rem; font-weight: 700; color: #1a202c; margin: 0 0 0.5rem; letter-spacing: -0.75px; text-align: center; }
-        .tn-section p.lead { color: #718096; font-size: 1.05rem; max-width: 640px; margin: 0 auto 2.5rem; line-height: 1.6; text-align: center; }
-        .tn-section.dark { background: var(--bg-dark); color: #fff; }
-        .tn-section.dark h2 { color: #fff; }
-        .tn-section.dark p.lead { color: #a0aec0; }
+        .tn-section .inner { max-width: 1200px; margin: 0 auto; }
+        .tn-section h2 { font-size: 2.25rem; font-weight: 700; color: #1a202c; margin: 0 0 0.5rem; letter-spacing: -0.75px; }
+        .tn-section p.lead { color: #718096; font-size: 1.02rem; max-width: 720px; margin: 0 0 2.5rem; line-height: 1.6; }
+        .tn-section.centered h2, .tn-section.centered p.lead { text-align: center; margin-left: auto; margin-right: auto; }
+        .tn-section.gray { background: #f7f9fa; }
 
-        /* Lake cards */
-        .tn-lake-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
-        .tn-lake-card { display: block; text-decoration: none; color: inherit; background: #fff; border: 1px solid #edf2f7; border-radius: 14px; overflow: hidden; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s; }
-        .tn-lake-card:hover { transform: translateY(-2px); border-color: #1d6df2; box-shadow: 0 10px 24px rgba(0,0,0,0.08); }
-        .tn-lake-card .thumb { height: 180px; background: #f7f9fa; overflow: hidden; }
-        .tn-lake-card .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .tn-lake-card .body { padding: 1.1rem 1.25rem 1.3rem; }
-        .tn-lake-card .tag { font-size: 0.72rem; font-weight: 800; color: #1d6df2; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.4rem; }
-        .tn-lake-card h3 { font-size: 1.2rem; font-weight: 700; color: #1a202c; margin: 0 0 0.4rem; letter-spacing: -0.25px; }
-        .tn-lake-card p { font-size: 0.9rem; color: #4a5568; line-height: 1.5; margin: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+        /* Lake cards (primary content on town page) */
+        .tn-lake-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+        .tn-lake-card {
+            display: flex; flex-direction: column;
+            background: #fff; border: 1px solid #edf2f7; border-radius: 16px;
+            overflow: hidden; text-decoration: none; color: inherit;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+        }
+        .tn-lake-card:hover { transform: translateY(-4px); border-color: #cbd5e0; box-shadow: 0 16px 36px rgba(0,0,0,0.08); }
+        .tn-lake-card:hover .tn-lake-cta { color: #155bc8; gap: 0.7rem; }
+        .tn-lake-card:hover .tn-lake-thumb img { transform: scale(1.05); }
+        .tn-lake-thumb { height: 200px; background: linear-gradient(135deg, #1d6df2 0%, #155bc8 100%); overflow: hidden; position: relative; }
+        .tn-lake-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s; }
+        .tn-lake-thumb .chip { position: absolute; top: 14px; left: 14px; z-index: 2; background: rgba(255,255,255,0.95); backdrop-filter: blur(4px); color: #1a202c; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 0.3rem 0.65rem; border-radius: 6px; }
+        .tn-lake-body { padding: 1.3rem 1.5rem 1.5rem; flex: 1; display: flex; flex-direction: column; }
+        .tn-lake-body h3 { font-size: 1.3rem; font-weight: 700; color: #1a202c; margin: 0 0 0.35rem; letter-spacing: -0.3px; }
+        .tn-lake-body .loc { font-size: 0.82rem; color: #a0aec0; margin: 0 0 0.85rem; }
+        .tn-lake-body p { color: #4a5568; font-size: 0.92rem; line-height: 1.55; margin: 0 0 1.1rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+        .tn-lake-cta { margin-top: auto; display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.88rem; font-weight: 800; color: #1d6df2; transition: gap 0.15s, color 0.15s; }
 
-        .tn-empty { text-align: center; padding: 3rem 2rem; color: #a0aec0; background: #fff; border: 1px dashed #edf2f7; border-radius: 14px; max-width: 680px; margin: 0 auto; }
+        /* Businesses (reusable with 4 type sections) */
+        .tn-biz-section { margin-bottom: 3rem; }
+        .tn-biz-section:last-child { margin-bottom: 0; }
+        .tn-biz-section h3 { font-size: 1.6rem; font-weight: 700; color: #1a202c; margin: 0 0 0.4rem; letter-spacing: -0.4px; }
+        .tn-biz-section p.sub { color: #718096; margin: 0 0 1.5rem; line-height: 1.6; }
+        .tn-biz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
+
+        /* Blog card grid */
+        .tn-blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
+
+        /* Dark CTA */
+        .tn-dark { background: var(--bg-dark); color: #fff; padding: 6rem 2rem; text-align: center; }
+        .tn-dark h2 { font-size: 3rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -1px; color: #fff; }
+        .tn-dark p { font-size: 1.15rem; color: #a0aec0; margin-bottom: 2.5rem; line-height: 1.6; }
+
+        .tn-empty { grid-column: 1/-1; text-align: center; padding: 3rem 2rem; color: #a0aec0; background: #fff; border: 1px dashed #edf2f7; border-radius: 14px; }
 
         @media (max-width: 900px) {
             .tn-hero { padding: 7rem 1.25rem 3rem; }
+            .tn-hero-inner { grid-template-columns: 1fr; gap: 2rem; }
             .tn-hero h1 { font-size: 2.5rem; letter-spacing: -1px; }
+            .tn-hero p.lead { font-size: 1.05rem; }
+            .tn-hero-img { height: 240px; }
+            .tn-back-link { top: 4.5rem; left: 1.25rem; font-size: 0.78rem; padding: 0.3rem 0.55rem; }
             .tn-section { padding: 3rem 1.25rem; }
             .tn-section h2 { font-size: 1.75rem; }
+            .tn-dark { padding: 4rem 1.25rem; }
+            .tn-dark h2 { font-size: 2rem; }
         }
     </style>
 </head>
@@ -76,52 +133,70 @@
 
     <!-- Hero -->
     <section class="tn-hero">
-        <div class="eyebrow">Local guide · {{TOWN_REGION}}</div>
-        <h1><span>{{TOWN_NAME}}</span>, {{TOWN_STATE}}</h1>
-        <p class="sub">Lake homes, local agents, and trusted businesses serving {{TOWN_NAME}}.</p>
+        <a href="/towns" class="tn-back-link"><span aria-hidden="true">←</span> All lake towns</a>
+        <div class="tn-hero-inner">
+            <div>
+                <div class="eyebrow">Minnesota lake town · {{TOWN_REGION}}</div>
+                <h1><span>{{TOWN_NAME}}</span>, {{TOWN_STATE}}</h1>
+                <p class="lead" id="tn-intro">Lake homes, local agents, and trusted businesses serving {{TOWN_NAME}}.</p>
+                <div class="tn-hero-actions">
+                    <button onclick="openForm('buy')" class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none; cursor: pointer;">Contact a specialist</button>
+                </div>
+            </div>
+            <div class="tn-hero-img">
+                <img src="{{TOWN_HERO_IMAGE}}" alt="{{TOWN_NAME}}, {{TOWN_STATE}}" width="1200" height="800" fetchpriority="high">
+            </div>
+        </div>
     </section>
 
-    <!-- Lakes in/near this town -->
-    <section class="tn-section" style="background:#f7f9fa;">
+    <!-- Lakes in this town (primary) -->
+    <section class="tn-section gray" id="tn-lakes-section">
         <div class="inner">
             <h2>Lakes in {{TOWN_NAME}}</h2>
-            <p class="lead">Every lake connected to {{TOWN_NAME}} — click into any one for homes, agents, and local businesses.</p>
+            <p class="lead">Every lake connected to {{TOWN_NAME}} — click into any one for agents, service providers, and what makes that lake worth owning on.</p>
             <div id="tn-lakes" class="tn-lake-grid">
-                <div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">Loading lakes…</div>
+                <div class="tn-empty">Loading lakes…</div>
             </div>
         </div>
     </section>
 
     <!-- Agents serving this town -->
-    <section class="tn-section">
+    <section class="tn-section centered" id="tn-agents-section">
         <div class="inner">
-            <h2>Agents serving {{TOWN_NAME}}</h2>
-            <p class="lead">Realtors who know this market — your first call for listings and off-market inventory.</p>
+            <h2>Your {{TOWN_NAME}} experts</h2>
+            <p class="lead">Agents who know this market — listings, off-market inventory, and the neighborhoods that fit your lifestyle.</p>
             <div id="tn-agents" class="agents-grid">
-                <div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">Loading agents…</div>
+                <div class="tn-empty">Loading agents…</div>
             </div>
         </div>
     </section>
 
-    <!-- Businesses in this town -->
-    <section class="tn-section" style="background:#f7f9fa;">
+    <!-- Local businesses (by type) -->
+    <section class="tn-section gray" id="tn-biz-section" style="display:none;">
         <div class="inner">
-            <h2>Local businesses in {{TOWN_NAME}}</h2>
-            <p class="lead">Restaurants, marinas, services, and photographers based in town.</p>
-            <div id="tn-biz" class="tn-lake-grid">
-                <div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">Loading businesses…</div>
-            </div>
+            <h2>Life around {{TOWN_NAME}}</h2>
+            <p class="lead">Restaurants, marinas, services, and photographers local owners trust.</p>
+            <div id="tn-biz-body"></div>
         </div>
     </section>
 
-    <!-- CTA -->
-    <section class="tn-section dark" style="text-align:center;">
+    <!-- From the blog (transitive) -->
+    <section class="tn-section" id="tn-blog-section" style="display:none;">
         <div class="inner">
+            <h2>From the blog — {{TOWN_NAME}}</h2>
+            <p class="lead">Guides, market takes, and local stories covering {{TOWN_NAME}} and its lakes.</p>
+            <div id="tn-blog" class="tn-blog-grid"></div>
+        </div>
+    </section>
+
+    <!-- Dark CTA -->
+    <section class="tn-dark">
+        <div style="max-width: 800px; margin: 0 auto;">
             <h2>Ready to explore {{TOWN_NAME}}?</h2>
-            <p class="lead">Get connected with a local specialist who knows this market inside and out.</p>
+            <p>Get connected with a local specialist who knows this market inside and out.</p>
             <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-                <button class="btn btn-primary" style="padding:1.1rem 2.25rem;font-size:1.05rem;border:none;" onclick="openForm('buy')">Contact a specialist</button>
-                <a href="/lakes" class="btn btn-ghost" style="padding:1.1rem 2.25rem;font-size:1.05rem;text-decoration:none;border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:8px;">Browse all lakes</a>
+                <button class="btn btn-primary" style="padding:1.1rem 2.25rem;font-size:1.05rem;border:none;" onclick="openForm('buy')">Start your journey</button>
+                <a href="/towns" class="btn btn-ghost" style="padding:1.1rem 2.25rem;font-size:1.05rem;text-decoration:none;border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:8px;">Browse all towns</a>
             </div>
         </div>
     </section>
@@ -130,9 +205,11 @@
     <lead-modal></lead-modal>
 
     <script>
+        const TOWN_ID   = '{{TOWN_ID}}';
         const TOWN_SLUG = '{{TOWN_SLUG}}';
         const TOWN_NAME = '{{TOWN_NAME}}';
 
+        // ── Lakes in this town (primary section) ─────────────────────────
         async function loadLakes() {
             const el = document.getElementById('tn-lakes');
             try {
@@ -140,53 +217,61 @@
                 if (!res.ok) throw new Error();
                 const lakes = await res.json();
                 if (!lakes.length) {
-                    el.innerHTML = `<div class="tn-empty" style="grid-column:1/-1;">No lakes connected to ${escHtml(TOWN_NAME)} yet.</div>`;
+                    el.innerHTML = `<div class="tn-empty">No lakes connected to ${escHtml(TOWN_NAME)} yet.</div>`;
                     return;
                 }
                 el.innerHTML = lakes.map(l => {
                     const img = l.featured_image_url || l.hero_image_url || '/assets/images/mn-canoe-shore.webp';
                     return `
                         <a class="tn-lake-card" href="/lakes/${encodeURIComponent(l.slug)}">
-                            <div class="thumb"><img src="${escHtml(img)}" alt="${escHtml(l.name)}" loading="lazy"></div>
-                            <div class="body">
-                                <div class="tag">${escHtml(l.region || l.county || l.state || 'Lake')}</div>
+                            <div class="tn-lake-thumb">
+                                ${l.region ? `<span class="chip">${escHtml(l.region)}</span>` : ''}
+                                <img src="${escHtml(img)}" alt="${escHtml(l.name)}" loading="lazy">
+                            </div>
+                            <div class="tn-lake-body">
                                 <h3>${escHtml(l.name)}</h3>
+                                ${l.county ? `<div class="loc">${escHtml(l.county)} County · ${escHtml(l.state || '')}</div>` : ''}
                                 <p>${escHtml(l.intro_text || l.seo_description || '')}</p>
+                                <span class="tn-lake-cta">Visit lake page <span aria-hidden="true">→</span></span>
                             </div>
                         </a>`;
                 }).join('');
             } catch (_) {
-                el.innerHTML = `<div class="tn-empty" style="grid-column:1/-1;">Could not load lakes.</div>`;
+                el.innerHTML = `<div class="tn-empty">Could not load lakes.</div>`;
             }
         }
 
+        // ── Agents (via user_tags → tags) ────────────────────────────────
         async function loadAgents() {
             const el = document.getElementById('tn-agents');
             try {
-                const res = await fetch('/api/agents/public');
+                const res = await fetch(`/api/tags/${encodeURIComponent(TOWN_SLUG)}/agents`);
                 if (!res.ok) throw new Error();
-                const all = await res.json();
-                // An agent is "serving this town" if the town slug appears in
-                // their geo_tags array (populated by the user_tags join in
-                // the public agents controller).
-                const matches = all.filter(a => Array.isArray(a.geo_tags) && a.geo_tags.some(t => t.slug === TOWN_SLUG));
-                if (!matches.length) {
+                const agents = await res.json();
+                if (!agents.length) {
                     el.innerHTML = `
-                        <div class="tn-empty" style="grid-column:1/-1;">
+                        <div class="tn-empty" style="background:#fff;">
                             <div style="display:inline-flex;align-items:center;gap:0.4rem;background:#ebf4ff;color:#1d6df2;font-size:0.72rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:0.35rem 0.75rem;border-radius:99px;margin-bottom:0.75rem;">Coming soon</div>
                             <h3 style="font-size:1.25rem;font-weight:700;color:#1a202c;margin:0 0 0.5rem;">${escHtml(TOWN_NAME)} specialists coming soon</h3>
                             <p style="color:#4a5568;margin:0;font-size:0.95rem;">We're onboarding agents who work this market. Reach out and we'll connect you when the right one is ready.</p>
                         </div>`;
                     return;
                 }
-                el.innerHTML = matches.slice(0, 6).map(a => {
+                el.innerHTML = agents.slice(0, 6).map(a => {
                     const photo = a.profile_photo_url || '/assets/images/mn-stillwater-aerial.webp';
                     const bio   = a.bio || '';
                     const shortBio = bio.length > 180 ? bio.slice(0, 180).trimEnd() + '…' : bio;
                     const title = (a.membership_badge || 'Lake Specialist').toUpperCase();
+                    const topBadge = a.is_featured
+                        ? `<div style="position:absolute;top:12px;left:12px;z-index:2;display:inline-flex;align-items:center;gap:0.35rem;background:linear-gradient(135deg,#1d6df2 0%,#155bc8 100%);color:#fff;font-size:0.72rem;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;padding:0.35rem 0.7rem;border-radius:99px;box-shadow:0 4px 12px rgba(29,109,242,0.35);">
+                               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                               Top Agent
+                           </div>`
+                        : '';
                     return `
                         <a href="/agent-profile?slug=${encodeURIComponent(a.slug)}" style="text-decoration:none;color:inherit;display:block;" class="agent-link-wrapper">
-                            <div class="agent-card">
+                            <div class="agent-card" style="position:relative;">
+                                ${topBadge}
                                 <img src="${escHtml(photo)}" alt="${escHtml(a.display_name)} — ${escHtml(TOWN_NAME)} specialist" class="agent-image" loading="lazy">
                                 <div class="agent-info">
                                     <h3 class="agent-name">${escHtml(a.display_name)}</h3>
@@ -197,44 +282,94 @@
                         </a>`;
                 }).join('');
             } catch (_) {
-                el.innerHTML = `<div class="tn-empty" style="grid-column:1/-1;">Could not load agents.</div>`;
+                el.innerHTML = `<div class="tn-empty">Could not load agents.</div>`;
             }
         }
 
+        // ── Businesses (transitive via lake_tags → business_lakes) ──────
+        const BIZ_TYPES = [
+            { type: 'restaurant',   heading: 'Restaurants',      icon: '🍽️', blurb: "Where locals eat, when they're on the water." },
+            { type: 'marina',       heading: 'Marinas & access', icon: '⛵', blurb: 'Slip rentals, fuel, and public lake access.' },
+            { type: 'service',      heading: 'Services',         icon: '🔧', blurb: 'Dock installation, lawn care, snow removal, and more.' },
+            { type: 'photographer', heading: 'Photographers',    icon: '📷', blurb: 'Listing, drone, and family photography specialists.' },
+        ];
+
         async function loadBusinesses() {
-            const el = document.getElementById('tn-biz');
+            const section = document.getElementById('tn-biz-section');
+            const body = document.getElementById('tn-biz-body');
             try {
-                // Simple city-name match for now — a proper town ↔ business
-                // join can come later if needed.
-                const res = await fetch(`/api/businesses?city=${encodeURIComponent(TOWN_NAME)}`);
-                if (!res.ok) throw new Error();
-                const rows = await res.json();
-                if (!rows.length) {
-                    el.innerHTML = `<div class="tn-empty" style="grid-column:1/-1;">No businesses listed in ${escHtml(TOWN_NAME)} yet.</div>`;
-                    return;
-                }
-                el.innerHTML = rows.slice(0, 12).map(b => {
-                    const img = b.featured_image_url || '/assets/images/mn-stillwater-aerial.webp';
-                    const typeLabel = ({ restaurant:'Restaurant', marina:'Marina', service:'Service', photographer:'Photographer', builder:'Builder', boat_rental:'Boat rental', outdoor_recreation:'Outdoor rec' })[b.type] || 'Local business';
-                    return `
-                        <div style="background:#fff;border:1px solid #edf2f7;border-radius:14px;overflow:hidden;">
-                            <div class="thumb" style="height:160px;background:#f7f9fa;overflow:hidden;">
-                                <img src="${escHtml(img)}" alt="${escHtml(b.name)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">
-                            </div>
-                            <div class="body" style="padding:1.1rem 1.25rem 1.25rem;">
-                                <div class="tag" style="font-size:0.72rem;font-weight:800;color:#1d6df2;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.4rem;">${escHtml(typeLabel)}</div>
-                                <h3 style="font-size:1.1rem;font-weight:700;color:#1a202c;margin:0 0 0.3rem;">${escHtml(b.name)}</h3>
-                                ${b.description ? `<p style="font-size:0.88rem;color:#4a5568;line-height:1.5;margin:0 0 0.75rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${escHtml(b.description)}</p>` : ''}
-                                <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
-                                    ${b.website_url ? `<a href="${escHtml(b.website_url)}" target="_blank" rel="noopener" style="font-size:0.8rem;font-weight:700;color:#1d6df2;text-decoration:none;">Visit ↗</a>` : ''}
-                                    ${b.phone ? `<a href="tel:${escHtml(b.phone.replace(/[^\d+]/g,''))}" style="font-size:0.8rem;font-weight:700;color:#4a5568;text-decoration:none;">${escHtml(b.phone)}</a>` : ''}
+                const results = await Promise.all(
+                    BIZ_TYPES.map(t =>
+                        fetch(`/api/tags/${encodeURIComponent(TOWN_SLUG)}/businesses?type=${encodeURIComponent(t.type)}`)
+                            .then(r => r.ok ? r.json() : [])
+                            .catch(() => [])
+                    )
+                );
+                const html = BIZ_TYPES.map((t, i) => {
+                    const rows = results[i];
+                    if (!rows.length) return '';
+                    const cards = rows.map(b => {
+                        const thumb = b.featured_image_url || '';
+                        const priceOrCity = [b.city, b.price_range].filter(Boolean).join(' · ');
+                        return `
+                            <div style="background:#fff;border:1px solid #edf2f7;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;">
+                                <div style="height:160px;background:#f7f9fa;overflow:hidden;">
+                                    ${thumb
+                                        ? `<img src="${escHtml(thumb)}" alt="${escHtml(b.name)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">`
+                                        : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#cbd5e0;">${t.icon}</div>`}
                                 </div>
-                            </div>
+                                <div style="padding:1.1rem 1.25rem 1.25rem;flex:1;display:flex;flex-direction:column;">
+                                    <div style="font-size:1.05rem;font-weight:700;color:#1a202c;line-height:1.35;margin-bottom:0.3rem;">${escHtml(b.name)}</div>
+                                    ${priceOrCity ? `<div style="font-size:0.78rem;color:#718096;margin-bottom:0.5rem;">${escHtml(priceOrCity)}</div>` : ''}
+                                    ${b.description ? `<div style="font-size:0.88rem;color:#4a5568;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;margin-bottom:0.9rem;">${escHtml(b.description)}</div>` : ''}
+                                    <div style="margin-top:auto;display:flex;gap:0.5rem;flex-wrap:wrap;">
+                                        ${b.website_url ? `<a href="${escHtml(b.website_url)}" target="_blank" rel="noopener" style="font-size:0.8rem;font-weight:700;color:#1d6df2;text-decoration:none;">Visit ↗</a>` : ''}
+                                        ${b.phone ? `<a href="tel:${escHtml(b.phone.replace(/[^\d+]/g,''))}" style="font-size:0.8rem;font-weight:700;color:#4a5568;text-decoration:none;">${escHtml(b.phone)}</a>` : ''}
+                                    </div>
+                                </div>
+                            </div>`;
+                    }).join('');
+                    return `
+                        <div class="tn-biz-section">
+                            <h3>${t.icon} ${escHtml(t.heading)}</h3>
+                            <p class="sub">${escHtml(t.blurb)}</p>
+                            <div class="tn-biz-grid">${cards}</div>
                         </div>`;
                 }).join('');
-            } catch (_) {
-                el.innerHTML = `<div class="tn-empty" style="grid-column:1/-1;">Could not load businesses.</div>`;
-            }
+                if (html.trim()) {
+                    body.innerHTML = html;
+                    section.style.display = '';
+                }
+            } catch (_) { /* section stays hidden */ }
+        }
+
+        // ── Blog (transitive via lake_tags → blog_post_lakes) ───────────
+        async function loadBlog() {
+            const section = document.getElementById('tn-blog-section');
+            const grid = document.getElementById('tn-blog');
+            try {
+                const res = await fetch(`/api/tags/${encodeURIComponent(TOWN_SLUG)}/blog-posts`);
+                if (!res.ok) throw new Error();
+                const posts = await res.json();
+                if (!posts.length) return;
+                section.style.display = '';
+                grid.innerHTML = posts.slice(0, 6).map(p => {
+                    const thumb = p.cover_image_url || '/assets/images/mn-canoe-shore.webp';
+                    const date = p.published_at ? new Date(p.published_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '';
+                    return `
+                        <a href="/blog-post?slug=${encodeURIComponent(p.slug)}"
+                           style="display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid #edf2f7;border-radius:14px;overflow:hidden;transition:transform 0.15s,box-shadow 0.15s;">
+                            <div style="height:180px;background:#f7f9fa;overflow:hidden;">
+                                <img src="${escHtml(thumb)}" alt="${escHtml(p.title)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">
+                            </div>
+                            <div style="padding:1.1rem 1.25rem 1.25rem;">
+                                <div style="font-size:0.72rem;font-weight:800;color:#1d6df2;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.4rem;">${escHtml(p.tag || 'General')}${date ? ` · ${escHtml(date)}` : ''}</div>
+                                <div style="font-size:1.05rem;font-weight:700;color:#1a202c;line-height:1.35;margin-bottom:0.4rem;">${escHtml(p.title)}</div>
+                                ${p.excerpt ? `<div style="font-size:0.88rem;color:#4a5568;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${escHtml(p.excerpt)}</div>` : ''}
+                            </div>
+                        </a>`;
+                }).join('');
+            } catch (_) { /* stays hidden */ }
         }
 
         function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -243,6 +378,7 @@
             loadLakes();
             loadAgents();
             loadBusinesses();
+            loadBlog();
         });
     </script>
 </body>

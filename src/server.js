@@ -260,6 +260,9 @@ app.get('/towns/:slug', async (req, res, next) => {
             const title = `${tag.name}, ${tag.state} — Lake Homes, Agents & Local Businesses`;
             const desc  = `Browse lake homes for sale, top local agents, and trusted businesses serving ${tag.name}, ${tag.state}.`;
             const canonical = `/towns/${tag.slug}`;
+            // Towns don't carry their own hero image yet — fall back to a
+            // generic Minnesota waterfront shot until per-town imagery is added.
+            const heroImage = '/assets/images/mn-aerial-small-town.jpg';
             const replacements = {
                 '{{TOWN_SEO_TITLE}}':       escapeHtml(title),
                 '{{TOWN_SEO_DESCRIPTION}}': escapeHtml(desc),
@@ -267,10 +270,11 @@ app.get('/towns/:slug', async (req, res, next) => {
                 '{{TOWN_SLUG}}':            escapeHtml(tag.slug),
                 '{{TOWN_ID}}':              escapeHtml(tag.id),
                 '{{TOWN_STATE}}':           escapeHtml(tag.state || ''),
-                '{{TOWN_REGION}}':          escapeHtml(tag.region || ''),
+                '{{TOWN_REGION}}':          escapeHtml(tag.region || 'Minnesota'),
                 '{{TOWN_CANONICAL_PATH}}':  escapeHtml(canonical),
                 '{{TOWN_LATITUDE}}':        escapeHtml(tag.latitude ?? ''),
                 '{{TOWN_LONGITUDE}}':       escapeHtml(tag.longitude ?? ''),
+                '{{TOWN_HERO_IMAGE}}':      escapeHtml(heroImage),
             };
             let out = html;
             for (const [k, v] of Object.entries(replacements)) {
