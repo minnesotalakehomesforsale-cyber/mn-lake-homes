@@ -484,15 +484,20 @@
     }
 
     async function saveAgentTags() {
-        if (!agentData?.user_id_ref) return;
+        if (!agentData?.user_id_ref) {
+            alert('No user record linked to this agent — refresh the page and try again.');
+            return;
+        }
         const msg = document.getElementById('tags-save-msg');
         try {
             const res = await fetch(`/api/tags/users/${agentData.user_id_ref}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ tagIds: [..._attachedTagIds] }),
             });
-            if (!res.ok) throw new Error('Save failed');
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `Save failed (${res.status}).`);
             msg.classList.add('visible');
             setTimeout(() => msg.classList.remove('visible'), 1800);
         } catch (e) {
