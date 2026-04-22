@@ -41,8 +41,14 @@ router.post  ('/',    verifyToken, c.create);
 router.patch ('/:id', verifyToken, c.patch);
 router.delete('/:id', verifyToken, c.softDelete);
 
-// Business ↔ lake connections (the reverse lookup — admin uses this
-// when editing a business and picking which lakes it serves)
+// Business ↔ town (geo tag) connections — primary geographic
+// association. Admin picks up to 10 towns the business serves.
+router.get('/:id/tags', softAuth,    c.listTags);
+router.put('/:id/tags', verifyToken, c.replaceTags);
+
+// Business ↔ lake connections (legacy "pin to a specific lake page"
+// option, kept so lake-detail admin tabs keep working alongside the
+// new town-primary model)
 router.get('/:id/lakes', softAuth,    c.listLakes);
 router.put('/:id/lakes', verifyToken, c.replaceLakes);
 

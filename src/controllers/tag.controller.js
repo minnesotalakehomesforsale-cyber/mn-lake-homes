@@ -156,10 +156,11 @@ exports.listBlogPostsForTag = async (req, res) => {
     }
 };
 
-// ─── businesses connected to a town (transitive via lakes) ───────────────
-// Returns active businesses linked to any lake in this town, deduped.
-// Optional ?type filter scopes to a single category for the per-section
-// rendering on the town page.
+// ─── businesses connected to a town (direct via business_tags) ──────────
+// Returns active businesses that admin explicitly picked for this town
+// in the business edit modal (capped at 10 per business). Optional
+// ?type filter scopes to a single category for the per-section
+// rendering on the town page. Premium rows float to the top.
 exports.listBusinessesForTag = async (req, res) => {
     try {
         const key = req.params.slugOrId;
@@ -171,24 +172,20 @@ exports.listBusinessesForTag = async (req, res) => {
             typeClause = `AND b.type = $${params.length}`;
         }
         const { rows } = await pool.query(
-            `SELECT DISTINCT ON (b.id)
-                    b.id, b.slug, b.name, b.type, b.description, b.phone, b.email,
+            `SELECT b.id, b.slug, b.name, b.type, b.description, b.phone, b.email,
                     b.website_url, b.address, b.city, b.state, b.zip,
                     b.latitude, b.longitude, b.hours, b.price_range,
                     b.featured_image_url, b.status, b.tier
-             FROM lake_tags lt
-             JOIN tags t ON t.id = lt.tag_id
-             JOIN business_lakes bl ON bl.lake_id = lt.lake_id
-             JOIN businesses b ON b.id = bl.business_id
+             FROM business_tags bt
+             JOIN tags t       ON t.id = bt.tag_id
+             JOIN businesses b ON b.id = bt.business_id
              WHERE ${byUuid ? 't.id' : 't.slug'} = $1
                AND b.status = 'active'
                AND (b.user_id IS NULL OR b.subscription_status = 'active')
                ${typeClause}
-             ORDER BY b.id, b.name ASC`,
+             ORDER BY b.name ASC`,
             params
         );
-        // Premium first, then alphabetical. Matches the ordering promise
-        // on /towns and the business detail page's Related row.
         rows.sort((a, b) => {
             const ap = a.tier === 'premium' ? 0 : 1;
             const bp = b.tier === 'premium' ? 0 : 1;

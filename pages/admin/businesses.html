@@ -295,11 +295,14 @@
                     <span id="upload-status" class="hint"></span>
                 </div>
 
-                <div class="section-label">Lakes this business serves</div>
-                <div id="lake-chips" class="lake-chips">
-                    <span class="hint" style="padding:0.3rem 0.5rem;">Loading lakes…</span>
+                <div class="section-label">
+                    Towns this business serves
+                    <span id="tag-counter" style="float:right;font-weight:600;color:#718096;letter-spacing:0;text-transform:none;font-size:0.72rem;">0 / 10</span>
                 </div>
-                <p class="hint">Click any lake above to attach. The business will appear on those lakes' pages under the matching type section.</p>
+                <div id="tag-chips" class="lake-chips">
+                    <span class="hint" style="padding:0.3rem 0.5rem;">Loading towns…</span>
+                </div>
+                <p class="hint">Pick up to 10 towns this business serves. It will appear on each town's page under the matching type section.</p>
 
                 <div class="section-label">Status &amp; Plan</div>
                 <div class="grid-2">
@@ -333,8 +336,9 @@
         let _all = [];            // Everything — every status. Loaded once.
         let _statusFilter = 'all';  // Default to everything — the Pending count tab stays visible so approvals are still obvious.
         let _editingId = null;
-        let _allLakes = [];
-        let _selectedLakeIds = new Set();
+        let _allTowns = [];
+        let _selectedTagIds = new Set();
+        const TOWNS_MAX = 10;
 
         const STATUS_TABS = [
             { key: 'all',      label: 'All' },
@@ -495,8 +499,8 @@
             document.getElementById('f-price').value  = '';
             document.getElementById('f-status').value = 'active';
             document.getElementById('f-tier').value   = 'basic';
-            _selectedLakeIds = new Set();
-            renderLakeChips();
+            _selectedTagIds = new Set();
+            renderTownChips();
             updateThumb();
             document.getElementById('modal-err').style.display = 'none';
             document.getElementById('upload-status').textContent = '';
@@ -534,16 +538,16 @@
             document.getElementById('upload-status').textContent = '';
             document.getElementById('modal').classList.add('open');
 
-            // Load the lakes this business is currently connected to.
-            _selectedLakeIds = new Set();
+            // Load the towns this business is currently serving.
+            _selectedTagIds = new Set();
             try {
-                const r = await fetch(`/api/businesses/${id}/lakes`, { credentials: 'include' });
+                const r = await fetch(`/api/businesses/${id}/tags`, { credentials: 'include' });
                 if (r.ok) {
-                    const lakes = await r.json();
-                    _selectedLakeIds = new Set(lakes.map(l => l.id));
+                    const tags = await r.json();
+                    _selectedTagIds = new Set(tags.map(t => t.id));
                 }
             } catch (_) {}
-            renderLakeChips();
+            renderTownChips();
         }
 
         function closeModal() {
@@ -588,31 +592,51 @@
             }
         }
 
-        // ── Lakes picker ─────────────────────────────────────────────────
-        async function loadLakeCatalog() {
+        // ── Towns picker (capped at TOWNS_MAX) ───────────────────────────
+        async function loadTownCatalog() {
             try {
-                const r = await fetch('/api/lakes?status=all', { credentials: 'include' });
-                if (r.ok) _allLakes = await r.json();
-            } catch (_) { _allLakes = []; }
-            renderLakeChips();
+                // ?with_lakes=true would shrink the list to towns that have
+                // lakes attached, but businesses may serve towns that aren't
+                // on a lake (inland cabin contractors, etc.), so we show all
+                // active towns instead.
+                const r = await fetch('/api/tags?active=true');
+                if (r.ok) _allTowns = await r.json();
+            } catch (_) { _allTowns = []; }
+            renderTownChips();
         }
 
-        function renderLakeChips() {
-            const el = document.getElementById('lake-chips');
-            if (!_allLakes.length) {
-                el.innerHTML = '<span class="hint" style="padding:0.3rem 0.5rem;">No lakes configured yet.</span>';
+        function renderTownChips() {
+            const el = document.getElementById('tag-chips');
+            const counter = document.getElementById('tag-counter');
+            if (counter) counter.textContent = `${_selectedTagIds.size} / ${TOWNS_MAX}`;
+            if (!_allTowns.length) {
+                el.innerHTML = '<span class="hint" style="padding:0.3rem 0.5rem;">No towns configured yet.</span>';
                 return;
             }
-            el.innerHTML = _allLakes.map(l => {
-                const on = _selectedLakeIds.has(l.id);
-                return `<button type="button" class="lake-chip ${on ? 'on' : ''}" onclick="toggleLake('${l.id}')">${escHtml(l.name)}</button>`;
+            const atCap = _selectedTagIds.size >= TOWNS_MAX;
+            // Selected first, then the rest alphabetically — keeps the
+            // picked towns visible without scrolling even in long lists.
+            const ordered = [..._allTowns].sort((a, b) => {
+                const as = _selectedTagIds.has(a.id) ? 0 : 1;
+                const bs = _selectedTagIds.has(b.id) ? 0 : 1;
+                return (as - bs) || a.name.localeCompare(b.name);
+            });
+            el.innerHTML = ordered.map(t => {
+                const on = _selectedTagIds.has(t.id);
+                const disabled = !on && atCap;
+                const style = disabled ? 'opacity:0.4;cursor:not-allowed;' : '';
+                return `<button type="button" class="lake-chip ${on ? 'on' : ''}" ${disabled ? 'disabled' : ''} style="${style}" onclick="toggleTown('${t.id}')">${escHtml(t.name)}</button>`;
             }).join('');
         }
 
-        function toggleLake(id) {
-            if (_selectedLakeIds.has(id)) _selectedLakeIds.delete(id);
-            else _selectedLakeIds.add(id);
-            renderLakeChips();
+        function toggleTown(id) {
+            if (_selectedTagIds.has(id)) {
+                _selectedTagIds.delete(id);
+            } else {
+                if (_selectedTagIds.size >= TOWNS_MAX) return; // hit the cap
+                _selectedTagIds.add(id);
+            }
+            renderTownChips();
         }
 
         // ── Save ─────────────────────────────────────────────────────────
@@ -661,12 +685,13 @@
                 if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
                 const savedId = data.id || _editingId;
 
-                // Push the lake set after the business write succeeds.
-                await fetch(`/api/businesses/${savedId}/lakes`, {
+                // Push the towns set after the business write succeeds.
+                // Server-side cap mirrors the UI cap (10).
+                await fetch(`/api/businesses/${savedId}/tags`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({ lakeIds: [..._selectedLakeIds] }),
+                    body: JSON.stringify({ tagIds: [..._selectedTagIds] }),
                 }).catch(() => {});
 
                 closeModal();
@@ -697,7 +722,7 @@
         });
 
         document.addEventListener('DOMContentLoaded', () => {
-            loadLakeCatalog();
+            loadTownCatalog();
             load();
         });
     </script>

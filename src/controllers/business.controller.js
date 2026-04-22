@@ -550,4 +550,72 @@ exports.replaceLakes = async (req, res) => {
     }
 };
 
+// ─── towns (geo tags) a business serves ────────────────────────────────────
+// Primary geographic association for businesses post-pivot. Admin UI
+// treats these as the "towns this business serves" picker, capped at 10
+// to mirror the agent signup limit.
+const BUSINESS_TAGS_MAX = 10;
+
+exports.listTags = async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude
+             FROM business_tags bt
+             JOIN tags t ON t.id = bt.tag_id
+             WHERE bt.business_id = $1 AND t.active = TRUE
+             ORDER BY t.name ASC`,
+            [req.params.id]
+        );
+        res.json(rows);
+    } catch (err) {
+        console.error('[businesses.listTags]', err.message);
+        res.status(500).json({ error: 'Failed to load business towns.' });
+    }
+};
+
+exports.replaceTags = async (req, res) => {
+    if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
+    const businessId = req.params.id;
+    const tagIds = Array.isArray(req.body?.tagIds) ? req.body.tagIds.filter(Boolean) : null;
+    if (!tagIds) return res.status(400).json({ error: 'tagIds array is required.' });
+    if (tagIds.length > BUSINESS_TAGS_MAX) {
+        return res.status(400).json({ error: `A business can serve at most ${BUSINESS_TAGS_MAX} towns.` });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        await client.query(`DELETE FROM business_tags WHERE business_id = $1`, [businessId]);
+        if (tagIds.length) {
+            const values = tagIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+            await client.query(
+                `INSERT INTO business_tags (business_id, tag_id)
+                 SELECT bid::uuid, tid::uuid FROM (VALUES ${values}) AS v(bid, tid)
+                 WHERE EXISTS (SELECT 1 FROM tags WHERE id = v.tid::uuid AND active = TRUE)
+                 ON CONFLICT (business_id, tag_id) DO NOTHING`,
+                [businessId, ...tagIds]
+            );
+        }
+        await client.query('COMMIT');
+
+        logActivity({
+            event_type: 'business.tags.replace',
+            event_scope: 'business',
+            actor: { type: 'user', id: req.user?.userId, label: req.user?.email || req.user?.role },
+            target: { type: 'business', id: businessId },
+            details: { count: tagIds.length },
+            req,
+        });
+
+        res.json({ success: true, count: tagIds.length });
+    } catch (err) {
+        await client.query('ROLLBACK').catch(() => {});
+        console.error('[businesses.replaceTags]', err.message);
+        res.status(500).json({ error: 'Failed to save business towns.' });
+    } finally {
+        client.release();
+    }
+};
+
 exports.KNOWN_TYPES = KNOWN_TYPES;
+exports.BUSINESS_TAGS_MAX = BUSINESS_TAGS_MAX;

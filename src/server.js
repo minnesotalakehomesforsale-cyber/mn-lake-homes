@@ -777,6 +777,32 @@ async function ensureTables() {
             );
             CREATE INDEX IF NOT EXISTS idx_business_lakes_lake     ON business_lakes(lake_id);
             CREATE INDEX IF NOT EXISTS idx_business_lakes_business ON business_lakes(business_id);
+
+            -- Businesses ↔ towns (geo tags). Primary geographic association
+            -- post-pivot — the admin picks which towns a business serves,
+            -- capped at 10. Town pages render their "Local businesses"
+            -- section directly from this join so they don't have to go
+            -- lake → business_lakes transitively. business_lakes stays
+            -- as a separate "pin to a specific lake page" admin tool.
+            CREATE TABLE IF NOT EXISTS business_tags (
+                id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                business_id UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+                tag_id      UUID NOT NULL REFERENCES tags(id)       ON DELETE CASCADE,
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (business_id, tag_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_business_tags_tag      ON business_tags(tag_id);
+            CREATE INDEX IF NOT EXISTS idx_business_tags_business ON business_tags(business_id);
+
+            -- One-shot backfill: existing admin-linked businesses (via
+            -- business_lakes) inherit town links from their lakes'
+            -- lake_tags rows. ON CONFLICT makes this safe on every boot;
+            -- admin edits to business_tags are never overwritten.
+            INSERT INTO business_tags (business_id, tag_id)
+            SELECT DISTINCT bl.business_id, lt.tag_id
+            FROM business_lakes bl
+            JOIN lake_tags lt ON lt.lake_id = bl.lake_id
+            ON CONFLICT (business_id, tag_id) DO NOTHING;
         `);
 
         // Generic key/value app config (match radius lives here; more knobs
