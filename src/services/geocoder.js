@@ -1,11 +1,18 @@
 /**
  * geocoder.js — Thin wrapper around Google's Geocoding API.
  *
- * We reuse GOOGLE_PLACES_API_KEY (the key already in use for front-end
- * Places Autocomplete). Results are cached in-process so repeat
- * geocodes of the same address don't burn quota — especially useful
- * during tag admin work where a single admin may save the same city
- * several times.
+ * Key selection: prefers GOOGLE_SERVER_KEY (a backend-only key that is
+ * either IP-restricted to Render or unrestricted, and scoped to just
+ * the Geocoding API). Falls back to GOOGLE_PLACES_API_KEY for
+ * backwards compat with single-key setups. The two-key split matters
+ * because the *frontend* key usually has HTTP-referrer restrictions
+ * that Google rejects on server-to-server calls:
+ *
+ *     "API keys with referer restrictions cannot be used with this API."
+ *
+ * Results are cached in-process so repeat geocodes of the same address
+ * don't burn quota — especially useful during tag admin work where a
+ * single admin may save the same city several times.
  *
  * Philosophy: NEVER throw. If the API fails, return null — callers are
  * expected to degrade gracefully (tag saves with null coords and an
@@ -44,9 +51,13 @@ async function geocodeAddress(address) {
         return { lat: cached.lat, lng: cached.lng, placeId: cached.placeId, formattedAddress: cached.formattedAddress };
     }
 
-    const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+    // Prefer the server-only key if present; fall back to the shared
+    // frontend key for backwards compat. Setting GOOGLE_SERVER_KEY in
+    // Render lets you keep the frontend key referer-locked without
+    // breaking server-side geocoding.
+    const apiKey = process.env.GOOGLE_SERVER_KEY || process.env.GOOGLE_PLACES_API_KEY;
     if (!apiKey) {
-        console.warn('[geocoder] GOOGLE_PLACES_API_KEY missing — geocoding disabled');
+        console.warn('[geocoder] GOOGLE_SERVER_KEY and GOOGLE_PLACES_API_KEY both missing — geocoding disabled');
         return null;
     }
 
