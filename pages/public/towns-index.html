@@ -74,24 +74,37 @@
         .tx-grid-wrap { max-width: 1320px; margin: 0 auto; padding: 4rem 2rem 6rem; }
         .tx-grid-title { font-size: 2rem; font-weight: 700; color: #1a202c; letter-spacing: -0.75px; margin: 0 0 0.5rem; text-align: center; }
         .tx-grid-sub   { color: #718096; font-size: 1rem; max-width: 620px; margin: 0 auto 2.5rem; line-height: 1.6; text-align: center; }
-        .tx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+        .tx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
 
+        /* Rich town card — mirrors the lake card on town-detail.html */
         .tx-card {
-            display: flex; align-items: center; gap: 0.9rem;
-            padding: 1.1rem 1.25rem;
-            background: #fff; border: 1px solid #edf2f7; border-radius: 14px;
-            text-decoration: none; color: inherit;
-            transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+            display: flex; flex-direction: column;
+            background: #fff; border: 1px solid #edf2f7; border-radius: 16px;
+            overflow: hidden; text-decoration: none; color: inherit;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
         }
-        .tx-card:hover { border-color: #1d6df2; transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,0.06); }
-        .tx-card .pin {
-            flex-shrink: 0; width: 40px; height: 40px; border-radius: 10px;
+        .tx-card:hover { transform: translateY(-4px); border-color: #cbd5e0; box-shadow: 0 16px 36px rgba(0,0,0,0.08); }
+        .tx-card:hover .tx-card-cta { color: #155bc8; gap: 0.7rem; }
+        .tx-card:hover .tx-card-thumb img { transform: scale(1.05); }
+        .tx-card-thumb {
+            height: 200px;
             background: linear-gradient(135deg, #1d6df2 0%, #155bc8 100%);
-            display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+            overflow: hidden; position: relative;
         }
-        .tx-card .body { flex: 1; min-width: 0; }
-        .tx-card h3 { font-size: 1rem; font-weight: 700; color: #1a202c; margin: 0 0 0.2rem; letter-spacing: -0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .tx-card .sub { font-size: 0.78rem; color: #718096; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .tx-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s; }
+        .tx-card-thumb .chip {
+            position: absolute; top: 14px; left: 14px; z-index: 2;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+            color: #1a202c; font-size: 0.7rem; font-weight: 800;
+            letter-spacing: 0.6px; text-transform: uppercase;
+            padding: 0.3rem 0.65rem; border-radius: 6px;
+        }
+        .tx-card-body { padding: 1.3rem 1.5rem 1.5rem; flex: 1; display: flex; flex-direction: column; }
+        .tx-card-body h3 { font-size: 1.3rem; font-weight: 700; color: #1a202c; margin: 0 0 0.35rem; letter-spacing: -0.3px; }
+        .tx-card-body .loc { font-size: 0.82rem; color: #a0aec0; margin: 0 0 0.85rem; }
+        .tx-card-body p { color: #4a5568; font-size: 0.92rem; line-height: 1.55; margin: 0 0 1.1rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+        .tx-card-cta { margin-top: auto; display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.88rem; font-weight: 800; color: #1d6df2; transition: gap 0.15s, color 0.15s; }
 
         @media (max-width: 900px) {
             .tx-hero { padding: 7rem 1.25rem 2rem; }
@@ -102,7 +115,10 @@
             #tx-map { height: 380px; }
             .tx-grid-wrap { padding: 2.5rem 1.25rem 4rem; }
             .tx-grid-title { font-size: 1.6rem; }
-            .tx-grid { grid-template-columns: 1fr 1fr; }
+            .tx-grid { gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+            .tx-card-thumb { height: 170px; }
+            .tx-card-body { padding: 1.1rem 1.25rem 1.25rem; }
+            .tx-card-body h3 { font-size: 1.15rem; }
         }
         @media (max-width: 480px) {
             .tx-grid { grid-template-columns: 1fr; }
@@ -245,6 +261,31 @@
             if (bounds.length) map.fitBounds(bounds, { padding: [60, 60], maxZoom: 9 });
         }
 
+        // Fallback image per region so cards vary instead of looking identical.
+        const REGION_IMG = {
+            'Twin Cities Metro': '/assets/images/mn-minneapolis-park-aerial.jpg',
+            'Brainerd Lakes':    '/assets/images/mn-maple-lake-aerial.jpg',
+            'Lakes Country':     '/assets/images/mn-chateau-aerial.jpg',
+            'Iron Range':        '/assets/images/mn-stone-home-fall-maple.jpg',
+            'Northern MN':       '/assets/images/mn-canoe-shore.webp',
+            'Duluth Area':       '/assets/images/mn-adirondack-rocky-shore.jpg',
+            'Southeast MN':      '/assets/images/mn-stucco-home-path.jpg',
+            'Central MN':        '/assets/images/mn-aerial-small-town.jpg',
+            'Fargo-Moorhead':    '/assets/images/mn-blue-farmhouse-country.jpg',
+            'Red River Valley':  '/assets/images/mn-aerial-lake-homes.jpg',
+        };
+        const DEFAULT_IMG = '/assets/images/mn-canoe-shore.webp';
+
+        function townBlurb(t) {
+            const lakeBit = t.lake_count
+                ? `Home to ${t.lake_count} lake${t.lake_count === 1 ? '' : 's'} in our directory.`
+                : 'A Minnesota lake-adjacent community.';
+            const regionBit = t.region
+                ? ` Part of the ${t.region} region.`
+                : '';
+            return `${lakeBit}${regionBit} Connect with local agents, browse homes, and find trusted businesses serving ${t.name}.`;
+        }
+
         function renderGrid(rows) {
             const grid = document.getElementById('tx-grid');
             if (!rows.length) {
@@ -252,13 +293,19 @@
                 return;
             }
             grid.innerHTML = rows.map(t => {
-                const sub = [t.region, t.lake_count ? `${t.lake_count} lake${t.lake_count === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ');
+                const thumb = REGION_IMG[t.region] || DEFAULT_IMG;
+                const loc = [t.state, t.lake_count ? `${t.lake_count} lake${t.lake_count === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ');
                 return `
                     <a class="tx-card" href="/towns/${encodeURIComponent(t.slug)}">
-                        <div class="pin" aria-hidden="true">📍</div>
-                        <div class="body">
+                        <div class="tx-card-thumb">
+                            ${t.region ? `<span class="chip">${escHtml(t.region)}</span>` : ''}
+                            <img src="${escHtml(thumb)}" alt="${escHtml(t.name)}, ${escHtml(t.state || '')}" loading="lazy">
+                        </div>
+                        <div class="tx-card-body">
                             <h3>${escHtml(t.name)}</h3>
-                            <div class="sub">${escHtml(sub)}</div>
+                            <div class="loc">${escHtml(loc)}</div>
+                            <p>${escHtml(townBlurb(t))}</p>
+                            <span class="tx-card-cta">Visit town page <span aria-hidden="true">→</span></span>
                         </div>
                     </a>`;
             }).join('');
