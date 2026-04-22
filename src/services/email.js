@@ -1,54 +1,112 @@
 /**
- * email.js — Transactional email service (Resend)
+ * email.js — Transactional email service
  *
- * Usage:
- *   const email = require('./services/email');
- *   await email.sendWelcome(user);
- *   await email.sendPasswordReset(user, newPassword);
+ * Transports, tried in order:
+ *   1. Gmail SMTP (Nodemailer) if GMAIL_USER + GMAIL_APP_PASSWORD are set
+ *   2. Resend                   if RESEND_API_KEY is set
+ *   3. No-op                    if neither is set — logs only
+ *
+ * Gmail path is preferred because it requires zero DNS work (no SPF/DKIM
+ * verification dance — Gmail's own infra signs outbound). ~500 emails/day
+ * limit on a free Gmail account is plenty for current volume. Resend stays
+ * as a fallback so we can flip transports by swapping env vars alone.
  *
  * Env:
- *   RESEND_API_KEY   — required, from resend.com dashboard
- *   EMAIL_FROM       — optional, default 'onboarding@resend.dev'
- *                      (switch to 'noreply@yourdomain.com' once you
- *                       verify a domain in Resend)
- *   EMAIL_REPLY_TO   — optional, default 'minnesotalakehomesforsale@gmail.com'
+ *   GMAIL_USER          — e.g. minnesotalakehomesforsale@gmail.com
+ *   GMAIL_APP_PASSWORD  — 16-char App Password from the Google account;
+ *                         spaces optional (Nodemailer tolerates either)
+ *   RESEND_API_KEY      — from resend.com dashboard (fallback transport)
+ *   EMAIL_FROM          — display-name + address, e.g.
+ *                         'MN Lake Homes <minnesotalakehomesforsale@gmail.com>'
+ *                         When using Gmail SMTP, the address MUST match
+ *                         GMAIL_USER or Gmail will rewrite it silently.
+ *   EMAIL_REPLY_TO      — default 'minnesotalakehomesforsale@gmail.com'
+ *   SITE_URL            — used inside templates for CTAs
  *
- * Designed to be fire-and-forget: failures are logged but never throw,
- * so a Resend outage doesn't break signups, leads, or password resets.
+ * Usage (unchanged):
+ *   const email = require('./services/email');
+ *   await email.sendWelcome(user);
+ *
+ * Fire-and-forget: failures are logged but never throw.
  */
 
-const { Resend } = require('resend');
+const { Resend }    = require('resend');
+const nodemailer    = require('nodemailer');
 
-const API_KEY  = process.env.RESEND_API_KEY;
-const FROM     = process.env.EMAIL_FROM     || 'MN Lake Homes <onboarding@resend.dev>';
+const GMAIL_USER     = process.env.GMAIL_USER;
+const GMAIL_PASSWORD = (process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '');
+const RESEND_KEY     = process.env.RESEND_API_KEY;
+
+const FROM     = process.env.EMAIL_FROM     || (GMAIL_USER
+                    ? `MN Lake Homes <${GMAIL_USER}>`
+                    : 'MN Lake Homes <onboarding@resend.dev>');
 const REPLY_TO = process.env.EMAIL_REPLY_TO || 'minnesotalakehomesforsale@gmail.com';
 const SITE_URL = process.env.SITE_URL       || 'https://minnesotalakehomesforsale.com';
 
-const resend = API_KEY ? new Resend(API_KEY) : null;
+// Initialize transports lazily. Build them once and reuse.
+let _gmailTransport = null;
+if (GMAIL_USER && GMAIL_PASSWORD) {
+    _gmailTransport = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user: GMAIL_USER, pass: GMAIL_PASSWORD },
+    });
+    console.log('[email] transport = gmail-smtp (', GMAIL_USER, ')');
+}
+
+const _resend = RESEND_KEY ? new Resend(RESEND_KEY) : null;
+if (_resend && !_gmailTransport) {
+    console.log('[email] transport = resend');
+}
+if (!_gmailTransport && !_resend) {
+    console.warn('[email] transport = NONE (set GMAIL_USER+GMAIL_APP_PASSWORD or RESEND_API_KEY)');
+}
 
 function logSkip(reason) {
     console.log(`[email] skipped — ${reason}`);
 }
 
 // ─── Low-level sender ────────────────────────────────────────────────────────
+// Same signature as before — templates don't need to know the transport.
 async function sendEmail({ to, subject, html, replyTo }) {
-    if (!resend) { logSkip('RESEND_API_KEY not set'); return { skipped: true }; }
-    if (!to)     { logSkip('no recipient');           return { skipped: true }; }
+    if (!to) { logSkip('no recipient'); return { skipped: true }; }
 
-    try {
-        const res = await resend.emails.send({
-            from: FROM,
-            to:   Array.isArray(to) ? to : [to],
-            subject,
-            html,
-            replyTo: replyTo || REPLY_TO,
-        });
-        console.log(`[email] sent → ${to} · ${subject} · id=${res.data?.id || 'n/a'}`);
-        return res;
-    } catch (err) {
-        console.error(`[email] FAILED → ${to} · ${subject}:`, err.message);
-        return { error: err.message };
+    // Prefer Gmail SMTP if configured.
+    if (_gmailTransport) {
+        try {
+            const info = await _gmailTransport.sendMail({
+                from: FROM,
+                to:   Array.isArray(to) ? to.join(', ') : to,
+                subject,
+                html,
+                replyTo: replyTo || REPLY_TO,
+            });
+            console.log(`[email] sent → ${to} · ${subject} · id=${info.messageId || 'n/a'}`);
+            return { data: { id: info.messageId } };
+        } catch (err) {
+            console.error(`[email] FAILED (gmail) → ${to} · ${subject}:`, err.message);
+            return { error: err.message };
+        }
     }
+
+    if (_resend) {
+        try {
+            const res = await _resend.emails.send({
+                from: FROM,
+                to:   Array.isArray(to) ? to : [to],
+                subject,
+                html,
+                replyTo: replyTo || REPLY_TO,
+            });
+            console.log(`[email] sent → ${to} · ${subject} · id=${res.data?.id || 'n/a'}`);
+            return res;
+        } catch (err) {
+            console.error(`[email] FAILED (resend) → ${to} · ${subject}:`, err.message);
+            return { error: err.message };
+        }
+    }
+
+    logSkip('no transport configured');
+    return { skipped: true };
 }
 
 // ─── Shared layout ───────────────────────────────────────────────────────────
