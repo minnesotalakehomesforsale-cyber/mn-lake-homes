@@ -5,19 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
 
-    <title>Minnesota Lake Towns Directory | Lake Homes Real Estate</title>
-    <meta name="description" content="Every town in our Minnesota lake network — find homes, agents, and local businesses in Wayzata, Excelsior, Brainerd, Detroit Lakes, Walker, and more.">
+    <title>Minnesota Lakes &amp; Lake Towns Directory | Map + Listings</title>
+    <meta name="description" content="The complete Minnesota lake + lake-town database. Browse every lake and lake town on one map with agents, businesses, and homes for sale.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://minnesotalakehomesforsale.com/towns">
 
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Minnesota Lake Towns Directory">
-    <meta property="og:description" content="Every town connected to a Minnesota lake in our directory — homes for sale, agents, and local businesses.">
+    <meta property="og:title" content="Minnesota Lakes &amp; Lake Towns Directory">
+    <meta property="og:description" content="Every Minnesota lake and lake town on one interactive map. Filter, search, and jump into agents, businesses, and listings.">
 
     <link rel="stylesheet" href="../../styles/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
@@ -27,21 +27,103 @@
     <script src="../../components/components.js" defer></script>
 
     <style>
-        .tx-hero { padding: 9rem 2rem 3rem; background-color: var(--bg-dark); color: #fff; text-align: center; }
-        .tx-hero h1 { font-size: 3.5rem; font-weight: 700; letter-spacing: -1.5px; line-height: 1.1; margin: 0 0 1rem; }
-        .tx-hero h1 span { color: var(--accent-blue); }
-        .tx-hero p { font-size: 1.15rem; color: #a0aec0; max-width: 700px; margin: 0 auto 2rem; line-height: 1.6; }
+        html, body { height: 100%; }
+        body { background: #f7f9fa; overflow: hidden; }
 
-        .tx-toolbar-wrap { background: #f7f9fa; border-bottom: 1px solid #edf2f7; }
-        .tx-toolbar { max-width: 1200px; margin: 0 auto; padding: 1.25rem 2rem; display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
-        .tx-toolbar input, .tx-toolbar select { font-family: inherit; font-size: 0.95rem; padding: 0.7rem 1rem; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
-        .tx-toolbar input:focus, .tx-toolbar select:focus { border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.12); }
-        .tx-toolbar input[type="search"] { flex: 1; min-width: 260px; }
-        .tx-toolbar-count { margin-left: auto; font-size: 0.85rem; color: #718096; font-weight: 600; }
+        /* Navbar is position:fixed — we read its height at runtime into --hh
+           so the split pane can fill exactly the remaining viewport. */
+        :root { --hh: 76px; --tb: 68px; }
 
-        /* Map — full bleed */
-        .tx-map-section { position: relative; width: 100%; }
-        #tx-map { height: 560px; width: 100%; background: #eef2f5; border-top: 1px solid #edf2f7; border-bottom: 1px solid #edf2f7; }
+        .db-shell {
+            position: fixed;
+            inset: var(--hh) 0 0 0;
+            display: grid;
+            grid-template-rows: var(--tb) 1fr;
+            background: #fff;
+        }
+
+        /* ── Toolbar ─────────────────────────────────────────────── */
+        .db-toolbar {
+            display: flex; gap: 0.65rem; align-items: center;
+            padding: 0.85rem 1.25rem;
+            background: #fff;
+            border-bottom: 1px solid #e5eaf0;
+            box-shadow: 0 1px 0 rgba(16,24,40,0.02);
+            z-index: 10;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .db-toolbar input, .db-toolbar select, .db-seg button {
+            font-family: inherit; font-size: 0.92rem;
+            padding: 0.6rem 0.9rem;
+            border: 1px solid #e2e8f0; border-radius: 10px;
+            background: #fff; color: #1a202c; outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s, background 0.15s, color 0.15s;
+        }
+        .db-toolbar input:focus, .db-toolbar select:focus {
+            border-color: #1d6df2;
+            box-shadow: 0 0 0 3px rgba(29,109,242,0.12);
+        }
+        .db-toolbar input[type="search"] {
+            flex: 1; min-width: 260px;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='7'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>");
+            background-repeat: no-repeat;
+            background-position: 0.75rem center;
+            background-size: 16px 16px;
+            padding-left: 2.3rem;
+        }
+
+        /* Segmented toggle — All | Towns | Lakes */
+        .db-seg {
+            display: inline-flex; padding: 3px;
+            background: #f0f3f7; border: 1px solid #e5eaf0;
+            border-radius: 11px;
+        }
+        .db-seg button {
+            border: 0; padding: 0.5rem 0.9rem;
+            background: transparent; border-radius: 8px;
+            font-weight: 700; font-size: 0.85rem; color: #4a5568;
+            cursor: pointer;
+        }
+        .db-seg button.is-active {
+            background: #1d6df2; color: #fff;
+            box-shadow: 0 1px 2px rgba(29,109,242,0.25);
+        }
+        .db-seg button:not(.is-active):hover { color: #1a202c; background: rgba(255,255,255,0.7); }
+
+        .db-count {
+            margin-left: auto; font-size: 0.82rem; color: #4a5568; font-weight: 700;
+            padding-left: 0.5rem;
+        }
+
+        /* ── Split pane ──────────────────────────────────────────── */
+        .db-main {
+            display: grid;
+            grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+            min-height: 0;
+        }
+
+        .db-map-col {
+            position: relative;
+            background: #eef2f5;
+            border-right: 1px solid #e5eaf0;
+            min-width: 0;
+        }
+        #db-map { position: absolute; inset: 0; }
+        .db-map-legend {
+            position: absolute; top: 14px; right: 14px; z-index: 500;
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            padding: 0.55rem 0.85rem; border-radius: 10px;
+            box-shadow: 0 6px 18px rgba(16,24,40,0.12);
+            display: flex; gap: 0.9rem; align-items: center;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem; font-weight: 700; color: #1a202c;
+        }
+        .db-map-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.4rem; vertical-align: -1px; }
+        .db-map-legend .dot.town { background: #1d6df2; }
+        .db-map-legend .dot.lake { background: #0d9488; }
+
         .leaflet-control-attribution {
             background: rgba(255,255,255,0.85) !important;
             backdrop-filter: blur(6px);
@@ -51,6 +133,13 @@
             padding: 0.2rem 0.55rem !important;
         }
         .leaflet-control-attribution a { color: #4a5568 !important; }
+        .leaflet-control-zoom a {
+            background: #fff !important; color: #1a202c !important;
+            border: 1px solid #e5eaf0 !important;
+            box-shadow: 0 4px 10px rgba(16,24,40,0.06);
+        }
+        .leaflet-control-zoom a:hover { background: #f7f9fa !important; }
+
         /* Town pin — blue */
         .tx-pin {
             width: 22px; height: 22px;
@@ -58,103 +147,149 @@
             border: 3px solid #fff;
             border-radius: 50% 50% 50% 0;
             transform: rotate(-45deg);
-            box-shadow: 0 5px 12px rgba(29,109,242,0.4);
+            box-shadow: 0 5px 12px rgba(29,109,242,0.45);
             transition: transform 0.15s;
         }
         .tx-pin::after { content: ''; display: block; width: 6px; height: 6px; background: #fff; border-radius: 50%; margin: 5px auto; }
-        .tx-pin-wrap:hover .tx-pin { transform: rotate(-45deg) scale(1.15); }
+        .tx-pin-wrap:hover .tx-pin,
+        .tx-pin-wrap.is-hot .tx-pin { transform: rotate(-45deg) scale(1.2); z-index: 900; }
 
-        /* Lake pin — teal, dropped on the lake's coordinates */
+        /* Lake pin — teal */
         .lk-pin {
             width: 22px; height: 22px;
             background: #0d9488;
             border: 3px solid #fff;
             border-radius: 50% 50% 50% 0;
             transform: rotate(-45deg);
-            box-shadow: 0 5px 12px rgba(13,148,136,0.4);
+            box-shadow: 0 5px 12px rgba(13,148,136,0.45);
             transition: transform 0.15s;
         }
         .lk-pin::after { content: ''; display: block; width: 6px; height: 6px; background: #fff; border-radius: 50%; margin: 5px auto; }
-        .lk-pin-wrap:hover .lk-pin { transform: rotate(-45deg) scale(1.15); }
-
-        .tx-map-legend {
-            position: absolute; top: 14px; right: 14px; z-index: 500;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-            padding: 0.55rem 0.85rem; border-radius: 10px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
-            display: flex; gap: 0.9rem; align-items: center;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.75rem; font-weight: 600; color: #1a202c;
-        }
-        .tx-map-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.4rem; vertical-align: -1px; }
-        .tx-map-legend .dot.town { background: #1d6df2; }
-        .tx-map-legend .dot.lake { background: #0d9488; }
-        @media (max-width: 600px) {
-            .tx-map-legend { top: auto; bottom: 14px; right: 10px; left: 10px; justify-content: center; font-size: 0.72rem; }
-        }
+        .lk-pin-wrap:hover .lk-pin,
+        .lk-pin-wrap.is-hot .lk-pin { transform: rotate(-45deg) scale(1.2); z-index: 900; }
 
         .leaflet-popup-content-wrapper { border-radius: 12px !important; box-shadow: 0 10px 28px rgba(0,0,0,0.14) !important; padding: 2px !important; }
         .leaflet-popup-content { margin: 0.9rem 1.1rem !important; font-family: 'Inter', sans-serif; }
-        .tx-pop { min-width: 180px; }
-        .tx-pop h4 { font-size: 1.02rem; font-weight: 700; color: #1a202c; margin: 0 0 0.2rem; letter-spacing: -0.2px; }
-        .tx-pop .meta { font-size: 0.75rem; color: #718096; margin: 0 0 0.75rem; }
-        .tx-pop a { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.48rem 0.9rem; background: #1d6df2; color: #fff !important; font-weight: 700; border-radius: 8px; text-decoration: none; font-size: 0.82rem; }
-        .tx-pop a:hover { background: #155bc8; }
-        .tx-pop.lake a { background: #0d9488; }
-        .tx-pop.lake a:hover { background: #0b7b70; }
+        .db-pop { min-width: 180px; }
+        .db-pop h4 { font-size: 1.02rem; font-weight: 800; color: #1a202c; margin: 0 0 0.2rem; letter-spacing: -0.2px; }
+        .db-pop .meta { font-size: 0.75rem; color: #718096; margin: 0 0 0.75rem; }
+        .db-pop a { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.48rem 0.9rem; background: #1d6df2; color: #fff !important; font-weight: 700; border-radius: 8px; text-decoration: none; font-size: 0.82rem; }
+        .db-pop a:hover { background: #155bc8; }
+        .db-pop.lake a { background: #0d9488; }
+        .db-pop.lake a:hover { background: #0b7b70; }
 
-        .tx-grid-wrap { max-width: 1320px; margin: 0 auto; padding: 4rem 2rem 6rem; }
-        .tx-grid-title { font-size: 2rem; font-weight: 700; color: #1a202c; letter-spacing: -0.75px; margin: 0 0 0.5rem; text-align: center; }
-        .tx-grid-sub   { color: #718096; font-size: 1rem; max-width: 620px; margin: 0 auto 2.5rem; line-height: 1.6; text-align: center; }
-        .tx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
-
-        /* Rich town card — mirrors the lake card on town-detail.html */
-        .tx-card {
-            display: flex; flex-direction: column;
-            background: #fff; border: 1px solid #edf2f7; border-radius: 16px;
-            overflow: hidden; text-decoration: none; color: inherit;
-            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+        /* ── Cards column ────────────────────────────────────────── */
+        .db-list-col {
+            min-width: 0; min-height: 0;
+            overflow-y: auto;
+            background: #f7f9fa;
+            scroll-behavior: smooth;
         }
-        .tx-card:hover { transform: translateY(-4px); border-color: #cbd5e0; box-shadow: 0 16px 36px rgba(0,0,0,0.08); }
-        .tx-card:hover .tx-card-cta { color: #155bc8; gap: 0.7rem; }
-        .tx-card:hover .tx-card-thumb img { transform: scale(1.05); }
-        .tx-card-thumb {
-            height: 200px;
+        .db-list-inner { padding: 1.25rem 1.25rem 3rem; }
+        .db-list-head {
+            display: flex; align-items: baseline; justify-content: space-between;
+            margin: 0 0 1rem; gap: 1rem;
+        }
+        .db-list-head h2 {
+            font-size: 1.25rem; font-weight: 800; letter-spacing: -0.4px;
+            color: #1a202c; margin: 0;
+        }
+        .db-list-head .sub { color: #718096; font-size: 0.85rem; font-weight: 600; }
+        .db-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1rem;
+        }
+
+        .db-card {
+            display: flex; flex-direction: column;
+            background: #fff; border: 1px solid #e5eaf0; border-radius: 14px;
+            overflow: hidden; text-decoration: none; color: inherit;
+            transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+        }
+        .db-card:hover,
+        .db-card.is-hot {
+            transform: translateY(-3px);
+            border-color: #cbd5e0;
+            box-shadow: 0 14px 30px rgba(16,24,40,0.10);
+        }
+        .db-card:hover .db-card-thumb img,
+        .db-card.is-hot .db-card-thumb img { transform: scale(1.05); }
+        .db-card-thumb {
+            height: 165px;
             background: linear-gradient(135deg, #1d6df2 0%, #155bc8 100%);
             overflow: hidden; position: relative;
         }
-        .tx-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s; }
-        .tx-card-thumb .chip {
-            position: absolute; top: 14px; left: 14px; z-index: 2;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
-            color: #1a202c; font-size: 0.7rem; font-weight: 800;
-            letter-spacing: 0.6px; text-transform: uppercase;
-            padding: 0.3rem 0.65rem; border-radius: 6px;
+        .db-card.lake .db-card-thumb {
+            background: linear-gradient(135deg, #0d9488 0%, #0b7b70 100%);
         }
-        .tx-card-body { padding: 1.3rem 1.5rem 1.5rem; flex: 1; display: flex; flex-direction: column; }
-        .tx-card-body h3 { font-size: 1.3rem; font-weight: 700; color: #1a202c; margin: 0 0 0.35rem; letter-spacing: -0.3px; }
-        .tx-card-body .loc { font-size: 0.82rem; color: #a0aec0; margin: 0 0 0.85rem; }
-        .tx-card-body p { color: #4a5568; font-size: 0.92rem; line-height: 1.55; margin: 0 0 1.1rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
-        .tx-card-cta { margin-top: auto; display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.88rem; font-weight: 800; color: #1d6df2; transition: gap 0.15s, color 0.15s; }
+        .db-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s; }
+        .db-card-thumb .chip {
+            position: absolute; top: 12px; left: 12px; z-index: 2;
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+            color: #1a202c; font-size: 0.68rem; font-weight: 800;
+            letter-spacing: 0.6px; text-transform: uppercase;
+            padding: 0.28rem 0.6rem; border-radius: 6px;
+        }
+        .db-card-thumb .type {
+            position: absolute; top: 12px; right: 12px; z-index: 2;
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            background: rgba(29,109,242,0.95);
+            color: #fff; font-size: 0.66rem; font-weight: 800;
+            letter-spacing: 0.6px; text-transform: uppercase;
+            padding: 0.28rem 0.55rem; border-radius: 6px;
+        }
+        .db-card.lake .db-card-thumb .type { background: rgba(13,148,136,0.95); }
+        .db-card-thumb .type .dot { width: 6px; height: 6px; border-radius: 50%; background: #fff; }
+        .db-card-body { padding: 1rem 1.1rem 1.15rem; flex: 1; display: flex; flex-direction: column; }
+        .db-card-body h3 { font-size: 1.08rem; font-weight: 800; color: #1a202c; margin: 0 0 0.25rem; letter-spacing: -0.25px; }
+        .db-card-body .loc { font-size: 0.78rem; color: #a0aec0; margin: 0 0 0.7rem; font-weight: 600; }
+        .db-card-body p { color: #4a5568; font-size: 0.87rem; line-height: 1.5; margin: 0 0 0.9rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+        .db-card-cta {
+            margin-top: auto; display: inline-flex; align-items: center; gap: 0.4rem;
+            font-size: 0.82rem; font-weight: 800; color: #1d6df2;
+            transition: gap 0.15s, color 0.15s;
+        }
+        .db-card.lake .db-card-cta { color: #0d9488; }
+        .db-card:hover .db-card-cta { gap: 0.6rem; }
 
+        .db-empty, .db-loading {
+            grid-column: 1/-1;
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #a0aec0;
+            font-size: 0.9rem;
+        }
+
+        /* ── Mobile: collapse into stacked map + list ───────────── */
         @media (max-width: 900px) {
-            .tx-hero { padding: 7rem 1.25rem 2rem; }
-            .tx-hero h1 { font-size: 2.25rem; letter-spacing: -1px; }
-            .tx-toolbar { padding: 1rem 1.25rem; }
-            .tx-toolbar input[type="search"] { min-width: 100%; flex: 1 0 100%; }
-            .tx-toolbar-count { margin-left: 0; }
-            #tx-map { height: 380px; }
-            .tx-grid-wrap { padding: 2.5rem 1.25rem 4rem; }
-            .tx-grid-title { font-size: 1.6rem; }
-            .tx-grid { gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
-            .tx-card-thumb { height: 170px; }
-            .tx-card-body { padding: 1.1rem 1.25rem 1.25rem; }
-            .tx-card-body h3 { font-size: 1.15rem; }
+            body { overflow: auto; }
+            .db-shell {
+                position: static;
+                inset: auto;
+                display: block;
+                padding-top: var(--hh);
+            }
+            .db-toolbar { height: auto; flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem 1rem; }
+            .db-toolbar input[type="search"] { flex: 1 1 100%; order: -1; min-width: 0; }
+            .db-seg { order: 1; }
+            .db-toolbar select { order: 2; }
+            .db-count { order: 3; margin-left: auto; }
+
+            .db-main {
+                display: block;
+            }
+            .db-map-col { height: 340px; border-right: 0; border-bottom: 1px solid #e5eaf0; }
+            .db-list-col { overflow: visible; }
+            .db-list-inner { padding: 1.25rem 1rem 3rem; }
+            .db-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.85rem; }
+            .db-card-thumb { height: 150px; }
+            .db-map-legend { top: auto; bottom: 14px; right: 10px; left: 10px; justify-content: center; }
         }
         @media (max-width: 480px) {
-            .tx-grid { grid-template-columns: 1fr; }
+            .db-grid { grid-template-columns: 1fr; }
+            .db-card-thumb { height: 170px; }
         }
     </style>
 </head>
@@ -162,182 +297,249 @@
 
     <global-header></global-header>
 
-    <section class="tx-hero">
-        <h1>Every Minnesota lake <span>town</span>.</h1>
-        <p>Browse communities by lake, find local agents and businesses, and plan your move into Minnesota's most desirable waterfront neighborhoods.</p>
-    </section>
-
-    <div class="tx-toolbar-wrap">
-        <div class="tx-toolbar">
-            <input type="search" id="tx-search" placeholder="Search by town name…" oninput="applyFilters()">
-            <select id="tx-region" onchange="applyFilters()">
+    <div class="db-shell" id="db-shell">
+        <div class="db-toolbar" role="toolbar" aria-label="Database filters">
+            <div class="db-seg" role="tablist" aria-label="Result type">
+                <button type="button" role="tab" data-type="all" class="is-active" onclick="setType('all')">All</button>
+                <button type="button" role="tab" data-type="town" onclick="setType('town')">Towns</button>
+                <button type="button" role="tab" data-type="lake" onclick="setType('lake')">Lakes</button>
+            </div>
+            <input type="search" id="db-search" placeholder="Search lakes or towns…" oninput="applyFilters()" aria-label="Search">
+            <select id="db-region" onchange="applyFilters()" aria-label="Filter by region">
                 <option value="">All regions</option>
             </select>
-            <span id="tx-count" class="tx-toolbar-count"></span>
+            <span id="db-count" class="db-count"></span>
+        </div>
+
+        <div class="db-main">
+            <div class="db-map-col">
+                <div id="db-map"></div>
+                <div class="db-map-legend" aria-hidden="true">
+                    <span><span class="dot town"></span>Lake towns</span>
+                    <span><span class="dot lake"></span>Lakes</span>
+                </div>
+            </div>
+
+            <div class="db-list-col" id="db-list-col">
+                <div class="db-list-inner">
+                    <div class="db-list-head">
+                        <h2 id="db-list-title">Lakes &amp; Lake Towns</h2>
+                        <span class="sub" id="db-list-sub">Every lake and lake-adjacent community in our Minnesota network.</span>
+                    </div>
+                    <div id="db-grid" class="db-grid">
+                        <div class="db-loading">Loading directory…</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <section class="tx-map-section">
-        <div id="tx-map"></div>
-        <div class="tx-map-legend" aria-hidden="true">
-            <span><span class="dot town"></span>Lake towns</span>
-            <span><span class="dot lake"></span>Lakes</span>
-        </div>
-    </section>
-
-    <section class="tx-grid-wrap">
-        <h2 class="tx-grid-title">Browse lake towns</h2>
-        <p class="tx-grid-sub">Each town links to its own page with connected lakes, local agents, and businesses.</p>
-        <div id="tx-grid" class="tx-grid">
-            <div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">Loading towns…</div>
-        </div>
-    </section>
-
-    <global-footer></global-footer>
     <lead-modal></lead-modal>
 
     <script>
+        // ── Data stores ───────────────────────────────────────────
         let _towns = [];
         let _lakes = [];
-        let _map = null;
-        let _markers = [];
+        let _type = 'all';
 
+        // Map + marker registry, keyed so hover-sync (card ⇄ pin) is cheap.
+        let _map = null;
+        const _markers = new Map(); // key: "t:<slug>" | "l:<slug>"
+        let _markerLayer = null;
+
+        // ── Header-height sync (navbar is position:fixed) ─────────
+        function syncHeaderHeight() {
+            const nav = document.querySelector('global-header .navbar');
+            if (!nav) return;
+            const h = nav.getBoundingClientRect().height;
+            if (h > 0) document.documentElement.style.setProperty('--hh', `${Math.round(h)}px`);
+        }
+
+        // ── Icons ─────────────────────────────────────────────────
         const TX_PIN_ICON = L.divIcon({
             className: 'tx-pin-wrap',
             html: '<div class="tx-pin"></div>',
-            iconSize: [22, 30],
-            iconAnchor: [11, 28],
-            popupAnchor: [0, -26],
+            iconSize: [22, 30], iconAnchor: [11, 28], popupAnchor: [0, -26],
         });
         const LK_PIN_ICON = L.divIcon({
             className: 'lk-pin-wrap',
             html: '<div class="lk-pin"></div>',
-            iconSize: [22, 30],
-            iconAnchor: [11, 28],
-            popupAnchor: [0, -26],
+            iconSize: [22, 30], iconAnchor: [11, 28], popupAnchor: [0, -26],
         });
 
-        async function loadTowns() {
+        // ── Load both feeds in parallel ───────────────────────────
+        async function loadAll() {
             try {
                 const [townRes, lakeRes] = await Promise.all([
                     fetch('/api/tags?with_lakes=true&active=true'),
                     fetch('/api/lakes'),
                 ]);
-                if (!townRes.ok) throw new Error();
+                if (!townRes.ok) throw new Error('towns');
                 _towns = await townRes.json();
                 _lakes = lakeRes.ok ? await lakeRes.json() : [];
                 populateRegions();
                 applyFilters();
             } catch (_) {
-                document.getElementById('tx-grid').innerHTML =
-                    '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">Could not load towns.</div>';
+                document.getElementById('db-grid').innerHTML =
+                    '<div class="db-empty">Could not load the directory. Please try again.</div>';
             }
         }
 
         function populateRegions() {
-            const sel = document.getElementById('tx-region');
-            const regions = [...new Set(_towns.map(t => t.region).filter(Boolean))].sort();
+            const sel = document.getElementById('db-region');
+            const regions = [...new Set(
+                [..._towns.map(t => t.region), ..._lakes.map(l => l.region)].filter(Boolean)
+            )].sort();
             sel.innerHTML = '<option value="">All regions</option>' +
                 regions.map(r => `<option value="${escHtml(r)}">${escHtml(r)}</option>`).join('');
         }
 
-        function filtered() {
-            const search = (document.getElementById('tx-search').value || '').toLowerCase().trim();
-            const region = document.getElementById('tx-region').value;
-            return _towns.filter(t => {
+        function setType(t) {
+            _type = t;
+            document.querySelectorAll('.db-seg button').forEach(b => {
+                b.classList.toggle('is-active', b.dataset.type === t);
+            });
+            applyFilters();
+        }
+
+        // ── Filter + render ───────────────────────────────────────
+        function getFilteredItems() {
+            const search = (document.getElementById('db-search').value || '').toLowerCase().trim();
+            const region = document.getElementById('db-region').value;
+
+            const towns = (_type === 'lake') ? [] : _towns.filter(t => {
                 if (region && t.region !== region) return false;
                 if (search && !t.name.toLowerCase().includes(search)) return false;
                 return true;
-            });
-        }
+            }).map(t => ({ kind: 'town', data: t }));
 
-        function filteredLakes() {
-            // Match the active region filter so lakes on the map stay in sync
-            // with the towns the visitor is actually looking at.
-            const region = document.getElementById('tx-region').value;
-            return _lakes.filter(l => !region || l.region === region);
+            const lakes = (_type === 'town') ? [] : _lakes.filter(l => {
+                if (region && l.region !== region) return false;
+                if (search && !l.name.toLowerCase().includes(search)) return false;
+                return true;
+            }).map(l => ({ kind: 'lake', data: l }));
+
+            // Towns first, then lakes — towns are more common entry points.
+            return [...towns, ...lakes];
         }
 
         function applyFilters() {
-            const rows = filtered();
-            renderMap(rows, filteredLakes());
-            renderGrid(rows);
-            document.getElementById('tx-count').textContent = `${rows.length} of ${_towns.length} towns`;
+            const items = getFilteredItems();
+            renderMap(items);
+            renderGrid(items);
+
+            const nT = items.filter(i => i.kind === 'town').length;
+            const nL = items.filter(i => i.kind === 'lake').length;
+            const count = document.getElementById('db-count');
+            count.textContent =
+                _type === 'town' ? `${nT} town${nT === 1 ? '' : 's'}`
+              : _type === 'lake' ? `${nL} lake${nL === 1 ? '' : 's'}`
+              : `${nT} town${nT === 1 ? '' : 's'} · ${nL} lake${nL === 1 ? '' : 's'}`;
+
+            const title = document.getElementById('db-list-title');
+            title.textContent =
+                _type === 'town' ? 'Lake Towns'
+              : _type === 'lake' ? 'Lakes'
+              : 'Lakes & Lake Towns';
         }
 
+        // ── Map ───────────────────────────────────────────────────
         function ensureMap() {
             if (_map) return _map;
-            _map = L.map('tx-map', {
-                zoomControl: true,
-                scrollWheelZoom: true,
+            _map = L.map('db-map', {
+                zoomControl: true, scrollWheelZoom: true,
                 center: [46.5, -94.3], zoom: 7,
                 minZoom: 5, zoomSnap: 0.25,
                 wheelPxPerZoomLevel: 110,
+                zoomAnimation: true,
             });
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/voyager/{z}/{x}/{y}{r}.png', {
                 subdomains: 'abcd',
                 maxZoom: 19,
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
             }).addTo(_map);
             _map.attributionControl.setPrefix('<a href="https://leafletjs.com/" title="A JavaScript library for interactive maps">Leaflet</a>');
+            _markerLayer = L.layerGroup().addTo(_map);
             return _map;
         }
 
-        function attachHover(marker, hrefGetter) {
+        function attachHover(marker, key, hrefGetter) {
             let hoverTimer = null;
-            marker.on('mouseover', () => { clearTimeout(hoverTimer); marker.openPopup(); });
-            marker.on('mouseout',  () => { hoverTimer = setTimeout(() => marker.closePopup(), 180); });
-            marker.on('click',     () => { window.location.href = hrefGetter(); });
+            marker.on('mouseover', () => {
+                clearTimeout(hoverTimer);
+                marker.openPopup();
+                highlightCard(key, true);
+            });
+            marker.on('mouseout', () => {
+                hoverTimer = setTimeout(() => {
+                    marker.closePopup();
+                    highlightCard(key, false);
+                }, 180);
+            });
+            marker.on('click', () => { window.location.href = hrefGetter(); });
             marker.on('popupopen', (e) => {
                 const el = e.popup.getElement();
                 if (!el) return;
                 el.addEventListener('mouseenter', () => clearTimeout(hoverTimer));
-                el.addEventListener('mouseleave', () => { hoverTimer = setTimeout(() => marker.closePopup(), 180); });
+                el.addEventListener('mouseleave', () => {
+                    hoverTimer = setTimeout(() => {
+                        marker.closePopup();
+                        highlightCard(key, false);
+                    }, 180);
+                });
             });
         }
 
-        function renderMap(rows, lakes) {
+        function renderMap(items) {
             const map = ensureMap();
-            _markers.forEach(m => map.removeLayer(m));
-            _markers = [];
+            _markerLayer.clearLayers();
+            _markers.clear();
             const bounds = [];
 
-            // Lake pins first so the page's primary focus (town pins) render on top.
-            (lakes || []).forEach(l => {
-                if (l.latitude == null || l.longitude == null) return;
-                const marker = L.marker([l.latitude, l.longitude], { icon: LK_PIN_ICON }).addTo(map);
-                const locLine = [l.county ? `${l.county} County` : null, l.state].filter(Boolean).join(' · ');
-                marker.bindPopup(`
-                    <div class="tx-pop lake">
-                        <h4>${escHtml(l.name)}</h4>
-                        ${locLine ? `<div class="meta">${escHtml(locLine)}</div>` : ''}
-                        <a href="/lakes/${encodeURIComponent(l.slug)}">Visit lake →</a>
-                    </div>
-                `);
-                attachHover(marker, () => `/lakes/${encodeURIComponent(l.slug)}`);
-                _markers.push(marker);
-                bounds.push([l.latitude, l.longitude]);
+            items.forEach(item => {
+                if (item.kind === 'lake') {
+                    const l = item.data;
+                    if (l.latitude == null || l.longitude == null) return;
+                    const key = `l:${l.slug}`;
+                    const marker = L.marker([l.latitude, l.longitude], { icon: LK_PIN_ICON }).addTo(_markerLayer);
+                    const locLine = [l.county ? `${l.county} County` : null, l.state].filter(Boolean).join(' · ');
+                    marker.bindPopup(`
+                        <div class="db-pop lake">
+                            <h4>${escHtml(l.name)}</h4>
+                            ${locLine ? `<div class="meta">${escHtml(locLine)}</div>` : ''}
+                            <a href="/lakes/${encodeURIComponent(l.slug)}">Visit lake →</a>
+                        </div>
+                    `);
+                    attachHover(marker, key, () => `/lakes/${encodeURIComponent(l.slug)}`);
+                    _markers.set(key, marker);
+                    bounds.push([l.latitude, l.longitude]);
+                } else {
+                    const t = item.data;
+                    if (t.latitude == null || t.longitude == null) return;
+                    const key = `t:${t.slug}`;
+                    const marker = L.marker([t.latitude, t.longitude], { icon: TX_PIN_ICON }).addTo(_markerLayer);
+                    marker.bindPopup(`
+                        <div class="db-pop">
+                            <h4>${escHtml(t.name)}</h4>
+                            ${t.region ? `<div class="meta">${escHtml(t.region)}${t.lake_count ? ` · ${t.lake_count} lake${t.lake_count === 1 ? '' : 's'}` : ''}</div>` : ''}
+                            <a href="/towns/${encodeURIComponent(t.slug)}">Visit town →</a>
+                        </div>
+                    `);
+                    attachHover(marker, key, () => `/towns/${encodeURIComponent(t.slug)}`);
+                    _markers.set(key, marker);
+                    bounds.push([t.latitude, t.longitude]);
+                }
             });
 
-            rows.forEach(t => {
-                if (t.latitude == null || t.longitude == null) return;
-                const marker = L.marker([t.latitude, t.longitude], { icon: TX_PIN_ICON }).addTo(map);
-                marker.bindPopup(`
-                    <div class="tx-pop">
-                        <h4>${escHtml(t.name)}</h4>
-                        ${t.region ? `<div class="meta">${escHtml(t.region)}${t.lake_count ? ` · ${t.lake_count} lake${t.lake_count === 1 ? '' : 's'}` : ''}</div>` : ''}
-                        <a href="/towns/${encodeURIComponent(t.slug)}">Visit town →</a>
-                    </div>
-                `);
-                attachHover(marker, () => `/towns/${encodeURIComponent(t.slug)}`);
-                _markers.push(marker);
-                bounds.push([t.latitude, t.longitude]);
-            });
-
-            if (bounds.length) map.fitBounds(bounds, { padding: [60, 60], maxZoom: 9 });
+            if (bounds.length) {
+                map.fitBounds(bounds, { padding: [50, 50], maxZoom: 9, animate: true });
+            }
+            // Leaflet sometimes miscalculates when rendered inside a freshly
+            // revealed flex/grid pane — nudge it after the DOM paints.
+            setTimeout(() => map.invalidateSize(), 60);
         }
 
-        // Fallback image per region so cards vary instead of looking identical.
+        // ── Grid / cards ──────────────────────────────────────────
         const REGION_IMG = {
             'Twin Cities Metro': '/assets/images/mn-minneapolis-park-aerial.jpg',
             'Brainerd Lakes':    '/assets/images/mn-maple-lake-aerial.jpg',
@@ -350,46 +552,120 @@
             'Fargo-Moorhead':    '/assets/images/mn-blue-farmhouse-country.jpg',
             'Red River Valley':  '/assets/images/mn-aerial-lake-homes.jpg',
         };
-        const DEFAULT_IMG = '/assets/images/mn-canoe-shore.webp';
+        const DEFAULT_TOWN_IMG = '/assets/images/mn-canoe-shore.webp';
+        const DEFAULT_LAKE_IMG = '/assets/images/mn-aerial-lake-homes.jpg';
 
         function townBlurb(t) {
             const lakeBit = t.lake_count
                 ? `Home to ${t.lake_count} lake${t.lake_count === 1 ? '' : 's'} in our directory.`
                 : 'A Minnesota lake-adjacent community.';
-            const regionBit = t.region
-                ? ` Part of the ${t.region} region.`
-                : '';
+            const regionBit = t.region ? ` Part of the ${t.region} region.` : '';
             return `${lakeBit}${regionBit} Connect with local agents, browse homes, and find trusted businesses serving ${t.name}.`;
         }
+        function lakeBlurb(l) {
+            const where = l.county ? `${l.county} County` : (l.region || 'Minnesota');
+            const intro = l.intro_text && l.intro_text.length > 20
+                ? l.intro_text
+                : `Waterfront homes, cabins, and lake life on ${l.name} in ${where}.`;
+            return intro;
+        }
 
-        function renderGrid(rows) {
-            const grid = document.getElementById('tx-grid');
-            if (!rows.length) {
-                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#a0aec0;">No towns match your filters.</div>';
+        function renderGrid(items) {
+            const grid = document.getElementById('db-grid');
+            if (!items.length) {
+                grid.innerHTML = '<div class="db-empty">Nothing matches those filters yet. Try a different region or clear your search.</div>';
                 return;
             }
-            grid.innerHTML = rows.map(t => {
-                const thumb = REGION_IMG[t.region] || DEFAULT_IMG;
-                const loc = [t.state, t.lake_count ? `${t.lake_count} lake${t.lake_count === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ');
+            grid.innerHTML = items.map(item => {
+                if (item.kind === 'town') {
+                    const t = item.data;
+                    const thumb = t.hero_image_url || REGION_IMG[t.region] || DEFAULT_TOWN_IMG;
+                    const loc = [t.state, t.lake_count ? `${t.lake_count} lake${t.lake_count === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ');
+                    return `
+                        <a class="db-card town" href="/towns/${encodeURIComponent(t.slug)}" data-key="t:${escHtml(t.slug)}">
+                            <div class="db-card-thumb">
+                                ${t.region ? `<span class="chip">${escHtml(t.region)}</span>` : ''}
+                                <span class="type"><span class="dot"></span>Town</span>
+                                <img src="${escHtml(thumb)}" alt="${escHtml(t.name)}, ${escHtml(t.state || '')}" loading="lazy">
+                            </div>
+                            <div class="db-card-body">
+                                <h3>${escHtml(t.name)}</h3>
+                                <div class="loc">${escHtml(loc)}</div>
+                                <p>${escHtml(townBlurb(t))}</p>
+                                <span class="db-card-cta">Visit town page <span aria-hidden="true">→</span></span>
+                            </div>
+                        </a>`;
+                }
+                const l = item.data;
+                const thumb = l.featured_image_url || l.hero_image_url || REGION_IMG[l.region] || DEFAULT_LAKE_IMG;
+                const loc = [l.county ? `${l.county} County` : null, l.state].filter(Boolean).join(' · ');
                 return `
-                    <a class="tx-card" href="/towns/${encodeURIComponent(t.slug)}">
-                        <div class="tx-card-thumb">
-                            ${t.region ? `<span class="chip">${escHtml(t.region)}</span>` : ''}
-                            <img src="${escHtml(thumb)}" alt="${escHtml(t.name)}, ${escHtml(t.state || '')}" loading="lazy">
+                    <a class="db-card lake" href="/lakes/${encodeURIComponent(l.slug)}" data-key="l:${escHtml(l.slug)}">
+                        <div class="db-card-thumb">
+                            ${l.region ? `<span class="chip">${escHtml(l.region)}</span>` : ''}
+                            <span class="type"><span class="dot"></span>Lake</span>
+                            <img src="${escHtml(thumb)}" alt="${escHtml(l.name)}, ${escHtml(l.state || '')}" loading="lazy">
                         </div>
-                        <div class="tx-card-body">
-                            <h3>${escHtml(t.name)}</h3>
+                        <div class="db-card-body">
+                            <h3>${escHtml(l.name)}</h3>
                             <div class="loc">${escHtml(loc)}</div>
-                            <p>${escHtml(townBlurb(t))}</p>
-                            <span class="tx-card-cta">Visit town page <span aria-hidden="true">→</span></span>
+                            <p>${escHtml(lakeBlurb(l))}</p>
+                            <span class="db-card-cta">Visit lake page <span aria-hidden="true">→</span></span>
                         </div>
                     </a>`;
             }).join('');
+
+            // Hover card → highlight pin + popup.
+            grid.querySelectorAll('.db-card').forEach(el => {
+                const key = el.getAttribute('data-key');
+                el.addEventListener('mouseenter', () => highlightMarker(key, true));
+                el.addEventListener('mouseleave', () => highlightMarker(key, false));
+            });
         }
 
-        function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+        // ── Hover sync map ⇄ cards ───────────────────────────────
+        function highlightMarker(key, on) {
+            const marker = _markers.get(key);
+            if (!marker) return;
+            const el = marker.getElement();
+            if (el) el.classList.toggle('is-hot', !!on);
+            if (on) marker.openPopup(); else marker.closePopup();
+        }
+        function highlightCard(key, on) {
+            const card = document.querySelector(`.db-card[data-key="${cssEscape(key)}"]`);
+            if (!card) return;
+            card.classList.toggle('is-hot', !!on);
+            if (on) {
+                // Scroll into view only when the card is completely off-screen
+                // inside its column — avoids yanking the list on casual hover.
+                const col = document.getElementById('db-list-col');
+                const cr = card.getBoundingClientRect();
+                const lr = col.getBoundingClientRect();
+                if (cr.bottom < lr.top || cr.top > lr.bottom) {
+                    card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                }
+            }
+        }
 
-        document.addEventListener('DOMContentLoaded', loadTowns);
+        // ── Utils ─────────────────────────────────────────────────
+        function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+        function cssEscape(s) {
+            if (window.CSS && CSS.escape) return CSS.escape(s);
+            return String(s).replace(/["\\]/g, '\\$&');
+        }
+
+        // ── Boot ──────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            syncHeaderHeight();
+            loadAll();
+            window.addEventListener('resize', () => {
+                syncHeaderHeight();
+                if (_map) _map.invalidateSize();
+            });
+            // Header web component may paint after DOMContentLoaded — catch that.
+            setTimeout(syncHeaderHeight, 120);
+            setTimeout(syncHeaderHeight, 400);
+        });
     </script>
 </body>
 </html>

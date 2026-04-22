@@ -255,11 +255,10 @@ class GlobalHeader extends HTMLElement {
                 ]
             },
             {
-                id: 'lakes', label: 'Lake Towns', href: '/towns',
+                id: 'lakes', label: 'Lakes & Towns', href: '/towns',
                 columns: [
                     { heading: 'Browse', links: [
-                        { label: 'All Lake Towns (map)', href: '/towns' },
-                        { label: 'All Lakes (A–Z)',      href: '/lakes' },
+                        { label: 'Lakes & Towns map',    href: '/towns' },
                         { label: 'Featured Agents',      href: `${bp}agents.html?featured=1` },
                     ]},
                     { heading: 'Featured Towns', links: [

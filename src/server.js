@@ -175,8 +175,10 @@ function escapeHtml(s) {
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
     }[c]));
 }
+// /lakes was consolidated into /towns — that page is now the unified
+// lake + town database, so send any inbound traffic there permanently.
 app.get('/lakes', (req, res) => {
-    res.sendFile(path.join(PROJECT_ROOT, 'pages/public/lakes-index.html'));
+    res.redirect(301, '/towns');
 });
 app.get('/lakes/:slug', async (req, res, next) => {
     try {
