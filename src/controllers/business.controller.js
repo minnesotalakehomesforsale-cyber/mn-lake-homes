@@ -119,16 +119,25 @@ exports.list = async (req, res) => {
             where.push(`(lower(name) LIKE $${params.length} OR lower(city) LIKE $${params.length})`);
         }
 
-        if (isAdmin(req)) {
-            if (status && status !== 'all') {
-                params.push(status);
-                where.push(`status = $${params.length}`);
-            }
+        // Visibility rules:
+        //   No ?status (or ?status=active) — public filter: status='active'
+        //     AND (admin-managed OR paying). Applies to BOTH admins and
+        //     anonymous callers so that an admin logged in to the same
+        //     browser visiting the public /towns map can't accidentally see
+        //     their own drafts.
+        //   Admin-only escape hatches (need admin auth):
+        //     ?status=all                → no filter
+        //     ?status=draft/pending/archived → exact match, no subscription gate
+        //   Public callers asking for non-active statuses are silently
+        //   downgraded to the public filter.
+        const adminCaller = isAdmin(req);
+        const adminEscape = adminCaller && status && status !== 'active';
+        if (adminEscape && status === 'all') {
+            // Admin wants everything — no status filter, no subscription gate.
+        } else if (adminEscape) {
+            params.push(status);
+            where.push(`status = $${params.length}`);
         } else {
-            // Public visibility rule: admin-managed rows (user_id IS NULL)
-            // show on status='active' alone. Owner-managed rows additionally
-            // require an active Stripe subscription — if the owner stops
-            // paying, the listing auto-hides without any admin action.
             where.push(`status = 'active'`);
             where.push(`(user_id IS NULL OR subscription_status = 'active')`);
         }

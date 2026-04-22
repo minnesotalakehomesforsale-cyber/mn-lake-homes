@@ -717,7 +717,9 @@
                 const [townRes, lakeRes, bizRes] = await Promise.all([
                     fetch('/api/tags?with_lakes=true&active=true'),
                     fetch('/api/lakes'),
-                    fetch('/api/businesses'),
+                    // Explicit status=active so admins visiting this public
+                    // page in the same browser don't accidentally leak drafts.
+                    fetch('/api/businesses?status=active'),
                 ]);
                 if (!townRes.ok) throw new Error('towns');
                 _towns = await townRes.json();
@@ -962,7 +964,11 @@
             _map = L.map('db-map', {
                 zoomControl: true, scrollWheelZoom: true,
                 attributionControl: false,
-                center: [46.5, -94.3], zoom: 7,
+                // Slightly tighter first-frame view so the MN silhouette
+                // fills the pane instead of showing a huge margin of
+                // surrounding states. fitBounds() after pin render still
+                // wins if data concentrates elsewhere.
+                center: [46.4, -94.0], zoom: 7.75,
                 minZoom: 5, zoomSnap: 0.25,
                 wheelPxPerZoomLevel: 110,
                 zoomAnimation: true,
