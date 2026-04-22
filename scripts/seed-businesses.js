@@ -2,13 +2,22 @@
  * seed-businesses.js — sample local businesses for the Businesses view
  * on the /towns directory. Run from project root:
  *
+ *   # local (loads .env.local)
  *   node scripts/seed-businesses.js
+ *
+ *   # production — pass DATABASE_URL inline or export it first
+ *   DATABASE_URL=postgres://… node scripts/seed-businesses.js
  *
  * Idempotent: ON CONFLICT (slug) DO UPDATE so re-runs refresh fields.
  */
 
-require('dotenv').config({ path: '.env.local' });
+// If DATABASE_URL is already set (production run), skip loading the
+// local env file so we never accidentally overwrite it with dev creds.
+if (!process.env.DATABASE_URL) {
+    require('dotenv').config({ path: '.env.local' });
+}
 const pool = require('../src/database/pool');
+console.log('→ Connecting to:', (process.env.DATABASE_URL || '').replace(/:[^:@]+@/, ':****@'));
 
 const BUSINESSES = [
     {

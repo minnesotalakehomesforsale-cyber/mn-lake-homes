@@ -264,30 +264,49 @@
             .ag-hero { padding: 7rem 1.25rem 3rem; }
             .ag-hero h1 { font-size: 2.5rem; letter-spacing: -1px; }
             .ag-hero p { font-size: 1rem; }
-            .ag-filter-wrap { padding: 0.75rem 1rem; top: 60px; }
-            .ag-filter-inner { gap: 0.5rem; }
-            /* Each control takes half a row by default (pairs stack cleanly) */
-            .ag-filter-inner .ag-control { flex: 1 1 calc(50% - 0.3rem); min-width: 0; }
-            .ag-filter-inner .ag-select select { min-width: 0; width: 100%; }
-            .ag-result-count { flex-basis: 100%; text-align: right; margin-left: 0; padding: 0; }
+            /* Sticky filter bar — sits flush under the fixed global header.
+               76px matches the nav height so chips don't tuck beneath it. */
+            .ag-filter-wrap { padding: 0.6rem 0.85rem; top: 76px; }
+            .ag-filter-inner { gap: 0.4rem; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+            .ag-filter-inner::-webkit-scrollbar { display: none; }
+            /* Chips stay in a row — compact height, tighter padding, smaller font. */
+            .ag-filter-inner .ag-control {
+                flex: 0 0 auto; min-width: 0; height: 36px;
+                padding: 0 0.85rem; font-size: 0.82rem; gap: 0.4rem;
+            }
+            .ag-filter-inner .ag-control svg.ag-ctrl-icon { width: 14px; height: 14px; }
+            .ag-filter-inner .ag-select select { font-size: 0.82rem; padding-right: 1.5rem; }
+            .ag-result-count { flex-basis: 100%; text-align: right; margin-left: 0; padding: 0.35rem 0 0; font-size: 0.76rem; }
+
             .agents-bottom-cta { padding: 5rem 1.25rem; }
             .agents-bottom-cta h2 { font-size: 2.5rem; }
             .agents-bottom-cta h2 br { display: none; }
             .agents-bottom-cta p { font-size: 1rem; margin-bottom: 2rem; }
             .agents-bottom-cta .btn { width: 100%; padding: 1.1rem 1.5rem; font-size: 1rem; }
+
+            /* Smaller agent card — image + text + padding all dialed down
+               so a single card doesn't eat the whole viewport. */
+            .agents-grid { gap: 1.25rem !important; padding: 1.25rem 1.25rem 3rem !important; }
+            .agent-image { height: 220px !important; }
+            .agent-info { padding: 1rem 1.1rem 1.1rem !important; }
+            .agent-name { font-size: 1.1rem !important; }
+            .agent-title { font-size: 0.78rem !important; margin-bottom: 0.75rem !important; }
+            .agent-bio { font-size: 0.88rem !important; line-height: 1.5 !important; }
+            .top-agent-badge {
+                top: 10px !important; left: 10px !important;
+                padding: 0.3rem 0.6rem !important; font-size: 0.65rem !important;
+            }
         }
         @media (max-width: 600px) {
-            .ag-filter-wrap { top: 56px; padding: 0.65rem 0.85rem; }
-            /* Every control on its own row at tight phone widths */
-            .ag-filter-inner .ag-control { flex-basis: 100%; }
-            .ag-featured-toggle.ag-control { justify-content: center; }
+            .ag-filter-wrap { top: 76px; padding: 0.55rem 0.75rem; }
+            .agent-image { height: 200px !important; }
         }
         @media (max-width: 480px) {
             .ag-hero h1 { font-size: 2rem; letter-spacing: -1px; }
             .ag-hero p  { font-size: 0.95rem; }
             .ag-hero { padding: 6.25rem 1rem 2.5rem; }
             .agents-bottom-cta h2 { font-size: 2rem; }
-            .ag-filter-wrap { top: 52px; }
+            .agent-image { height: 190px !important; }
         }
     </style>
     <script src="../../components/components.js" defer></script>

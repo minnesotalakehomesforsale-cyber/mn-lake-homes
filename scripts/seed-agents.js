@@ -15,10 +15,15 @@
  *   Marcus W.     → marcus.washington@mnlakehomes.com / LakeExpert2024!
  */
 
-require('dotenv').config({ path: '.env.local' });
+// Accept DATABASE_URL from the real environment when present (prod run);
+// fall back to .env.local otherwise so local development stays zero-config.
+if (!process.env.DATABASE_URL) {
+    require('dotenv').config({ path: '.env.local' });
+}
 
 const bcrypt = require('bcrypt');
 const pool   = require('../src/database/pool');
+console.log('→ Connecting to:', (process.env.DATABASE_URL || '').replace(/:[^:@]+@/, ':****@'));
 
 const AGENT_PASSWORD = 'LakeExpert2024!';
 
