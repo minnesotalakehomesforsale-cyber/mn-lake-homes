@@ -46,6 +46,13 @@
         .toolbar select:focus {
             background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d6df2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
         }
+        /* Hide the browser's native number-input stepper arrows on our
+           lat/lng inputs — they crowd the right edge and aren't useful
+           for coordinate entry (admins paste values or let auto-geocode
+           fill them). */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
         .btn-primary { background: #1d6df2; color: #fff; border: none; padding: 0.6rem 1rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; font-family: inherit; }
         .btn-primary:hover { background: #155bc9; }
         .btn-ghost { background: #fff; color: #4a5568; border: 1px solid #e2e8f0; padding: 0.55rem 0.85rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; font-family: inherit; text-decoration: none; display: inline-block; }
@@ -131,6 +138,7 @@
     <script src="../../components/admin-responsive.js" defer></script>
     <script src="../../components/admin-sidebar.js" defer></script>
     <script src="../../components/admin-nav-badges.js" defer></script>
+    <script src="../../components/places-autocomplete.js" defer></script>
 </head>
 <body>
     <div class="admin-wrap">
@@ -241,7 +249,8 @@
                 <div class="section-label">Location</div>
                 <div class="field">
                     <label>Street address</label>
-                    <input id="f-address" placeholder="123 Main Street">
+                    <input id="f-address" placeholder="Start typing to search…" autocomplete="off">
+                    <span class="hint">Pick an address from the dropdown — city, state, zip, and coordinates auto-fill.</span>
                 </div>
                 <div class="grid-3">
                     <div class="field">
@@ -721,9 +730,31 @@
             if (e.key === 'Escape' && document.getElementById('modal').classList.contains('open')) closeModal();
         });
 
+        // Places Autocomplete — attaches once; picking a suggestion fills
+        // city/state/zip/lat/lng so admins don't have to type every piece.
+        // Manually-typed addresses still save fine (server side falls back
+        // to geocodeAddress on the PATCH).
+        function wirePlacesAutocomplete() {
+            if (!window.attachPlacesAutocomplete) return;
+            const addrInput = document.getElementById('f-address');
+            if (!addrInput) return;
+            window.attachPlacesAutocomplete(addrInput, {
+                onPlace: (p) => {
+                    if (p.address) document.getElementById('f-address').value = p.address;
+                    if (p.city)    document.getElementById('f-city').value    = p.city;
+                    if (p.state)   document.getElementById('f-state').value   = p.state;
+                    if (p.zip)     document.getElementById('f-zip').value     = p.zip;
+                    if (p.lat != null) document.getElementById('f-lat').value = p.lat.toFixed(6);
+                    if (p.lng != null) document.getElementById('f-lng').value = p.lng.toFixed(6);
+                    updateThumb(); // no-op visually but keeps state coherent
+                },
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             loadTownCatalog();
             load();
+            wirePlacesAutocomplete();
         });
     </script>
 </body>

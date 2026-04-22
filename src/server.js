@@ -1005,6 +1005,40 @@ async function ensureTables() {
     }
 }
 
+// ─── Backfill missing business coordinates ──────────────────────────────
+// One-shot pass on every boot. Picks up any business that has an address
+// or city but no lat/lng (most commonly: admin-created rows from before
+// the PATCH auto-geocode fix landed) and geocodes them. Silent-per-row
+// on geocode failure so a flaky Google response doesn't block startup.
+async function backfillBusinessCoords() {
+    try {
+        const { rows } = await pool.query(`
+            SELECT id, address, city, state, zip
+            FROM businesses
+            WHERE status = 'active'
+              AND (latitude IS NULL OR longitude IS NULL)
+              AND (address IS NOT NULL OR city IS NOT NULL)
+            LIMIT 100
+        `);
+        if (!rows.length) return;
+        const { geocodeAddress } = require('./services/geocoder');
+        let filled = 0;
+        for (const b of rows) {
+            const addr = [b.address, b.city, b.state || 'MN', b.zip].filter(Boolean).join(', ');
+            const g = await geocodeAddress(addr).catch(() => null);
+            if (!g) continue;
+            await pool.query(
+                `UPDATE businesses SET latitude = $1, longitude = $2, updated_at = NOW() WHERE id = $3`,
+                [g.lat, g.lng, b.id]
+            );
+            filled++;
+        }
+        if (filled) console.log(` Backfilled coordinates for ${filled}/${rows.length} active business(es).`);
+    } catch (err) {
+        console.warn(' Coord backfill skipped:', err.message);
+    }
+}
+
 async function seedBlogIfEmpty() {
     const { rows } = await pool.query('SELECT COUNT(*) FROM blog_posts');
     if (parseInt(rows[0].count) > 0) return;
@@ -1032,4 +1066,5 @@ app.listen(PORT, async () => {
     console.log(` Connected to : PostgreSQL Database`);
     console.log(`=======================================`);
     await ensureTables();
+    await backfillBusinessCoords();
 });

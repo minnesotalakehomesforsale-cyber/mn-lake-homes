@@ -11,6 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="../../components/components.js" defer></script>
+    <script src="../../components/places-autocomplete.js" defer></script>
 
     <style>
         :root { --brand: #d97706; --brand-dark: #b45309; --ink: #1a202c; --ink-soft: #4a5568; --muted: #718096; --line: #e5eaf0; }
@@ -231,7 +232,11 @@
             </div>
 
             <div class="section-label">Location</div>
-            <div class="field"><label>Street address</label><input id="f-address" type="text"></div>
+            <div class="field">
+                <label>Street address</label>
+                <input id="f-address" type="text" autocomplete="off" placeholder="Start typing to search…">
+                <span class="hint">Pick an address from the dropdown — city, state, and zip auto-fill.</span>
+            </div>
             <div class="grid-3">
                 <div class="field"><label>City</label><input id="f-city" type="text"></div>
                 <div class="field"><label>State</label><input id="f-state" type="text" maxlength="2"></div>
@@ -335,6 +340,7 @@
                 renderSubscription();
                 renderHeaderViewLive();
                 loadTowns();
+                wirePlacesAutocomplete();
             } catch (err) {
                 document.getElementById('loading').textContent = 'Could not load your dashboard. Try refreshing.';
             }
@@ -492,6 +498,24 @@
             } catch (ex) {
                 alert(ex.message);
             }
+        }
+
+        // Places Autocomplete on the street-address field. Owners pick
+        // from the dropdown and city/state/zip auto-fill. Server runs
+        // its own geocode fallback on PATCH so manually-typed addresses
+        // still work.
+        function wirePlacesAutocomplete() {
+            if (!window.attachPlacesAutocomplete) return;
+            const addrInput = document.getElementById('f-address');
+            if (!addrInput) return;
+            window.attachPlacesAutocomplete(addrInput, {
+                onPlace: (p) => {
+                    if (p.address) document.getElementById('f-address').value = p.address;
+                    if (p.city)    document.getElementById('f-city').value    = p.city;
+                    if (p.state)   document.getElementById('f-state').value   = p.state;
+                    if (p.zip)     document.getElementById('f-zip').value     = p.zip;
+                },
+            });
         }
 
         // Image upload ───────────────────────────────────────────────
