@@ -308,6 +308,36 @@ exports.patch = async (req, res) => {
 
         if (!fields.length) return res.json({ success: true, noop: true });
 
+        // Re-geocode on edit when the caller is changing an address field
+        // but NOT explicitly setting coords. Matches the create() behavior
+        // so a business created empty + later filled in via Edit ends up
+        // with a map pin automatically. Skipped silently on geocode failure
+        // so existing rows aren't blocked by transient Google API errors.
+        const touchedAddress = ('address' in b) || ('city' in b) || ('state' in b) || ('zip' in b);
+        const explicitCoords = ('latitude' in b) || ('longitude' in b);
+        if (touchedAddress && !explicitCoords) {
+            const current = (await pool.query(
+                `SELECT address, city, state, zip, latitude, longitude FROM businesses WHERE id = $1`,
+                [req.params.id]
+            )).rows[0];
+            if (current) {
+                const merged = {
+                    address: 'address' in b ? (b.address || null) : current.address,
+                    city:    'city'    in b ? (b.city    || null) : current.city,
+                    state:   'state'   in b ? (String(b.state || 'MN').trim().slice(0, 2).toUpperCase()) : current.state,
+                    zip:     'zip'     in b ? (b.zip     || null) : current.zip,
+                };
+                if (merged.address || merged.city) {
+                    const addr = [merged.address, merged.city, merged.state, merged.zip].filter(Boolean).join(', ');
+                    const g = await geocodeAddress(addr).catch(() => null);
+                    if (g) {
+                        fields.push(`latitude  = $${i++}`); vals.push(g.lat);
+                        fields.push(`longitude = $${i++}`); vals.push(g.lng);
+                    }
+                }
+            }
+        }
+
         fields.push(`updated_at = NOW()`);
         vals.push(req.params.id);
         const { rows, rowCount } = await pool.query(
