@@ -383,6 +383,8 @@ app.get('/sitemap.xml', async (req, res) => {
             { url: '/contact',         priority: 0.5, changefreq: 'yearly'  },
             { url: '/faq',             priority: 0.4, changefreq: 'yearly'  },
             { url: '/careers',         priority: 0.3, changefreq: 'monthly' },
+            { url: '/privacy',         priority: 0.3, changefreq: 'yearly'  },
+            { url: '/terms',           priority: 0.3, changefreq: 'yearly'  },
         ];
         for (const p of staticPages) push(base + p.url, { priority: p.priority, changefreq: p.changefreq });
 
@@ -696,15 +698,21 @@ app.get('/towns/:slug', async (req, res, next) => {
 
 app.use(express.static(PROJECT_ROOT));
 
-// Fallback for Next.js-style clean URL resolution (e.g. /buy maps to /buy.html)
+// Fallback for Next.js-style clean URL resolution. Most public pages
+// live under /pages/public/ — try that first so /buy, /about, /privacy
+// etc. all resolve to their respective files. Falls back to PROJECT_ROOT
+// for the few pages (index.html) that sit at the repo root, then 404.
 app.get('/:page', (req, res, next) => {
-    if (!req.params.page.includes('.')) {
-        res.sendFile(path.join(PROJECT_ROOT, `${req.params.page}.html`), (err) => {
-            if (err) next();
+    const { page } = req.params;
+    if (page.includes('.')) return next();
+    const publicPath = path.join(PROJECT_ROOT, 'pages/public', `${page}.html`);
+    res.sendFile(publicPath, (err) => {
+        if (!err) return;
+        const rootPath = path.join(PROJECT_ROOT, `${page}.html`);
+        res.sendFile(rootPath, (err2) => {
+            if (err2) next();
         });
-    } else {
-        next();
-    }
+    });
 });
 
 // ==========================================

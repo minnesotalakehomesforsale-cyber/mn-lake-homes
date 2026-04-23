@@ -543,7 +543,7 @@ class GlobalFooter extends HTMLElement {
 
         </div>
         <div class="footer-bottom">
-            <p class="footer-copyright">&copy; 2026 MinnesotaLakeHomesForSale.com &mdash; Part of the <a href="/pages/public/commonrealtor.html" style="color:inherit;text-decoration:underline;">CommonRealtor</a> portfolio. All rights reserved.</p>
+            <p class="footer-copyright">&copy; 2026 MinnesotaLakeHomesForSale.com &mdash; Part of the <a href="/commonrealtor" style="color:inherit;text-decoration:underline;">CommonRealtor</a> portfolio. All rights reserved. <span style="margin:0 0.4rem;opacity:0.5;">·</span> <a href="/privacy" style="color:inherit;text-decoration:underline;">Privacy</a> <span style="margin:0 0.4rem;opacity:0.5;">·</span> <a href="/terms" style="color:inherit;text-decoration:underline;">Terms</a></p>
             <p class="footer-disclaimer">MinnesotaLakeHomesForSale.com is a real estate network and lead generation platform, not a licensed brokerage. We do not represent buyers or sellers directly. All transactions are facilitated by independently licensed real estate professionals. This platform is currently in beta &mdash; we are testing an agent match experience designed to enhance the real estate journey and Minnesota lake life. Results and agent availability may vary.</p>
         </div>
     </footer>`;

@@ -117,6 +117,12 @@
                         style="width:100%;padding:1rem 1.5rem;background:#1a202c;color:#fff;border:none;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer;font-family:inherit;transition:background 0.2s;"
                         onmouseover="if(!this.disabled)this.style.background='#2d3748'" onmouseout="if(!this.disabled)this.style.background='#1a202c'">Continue &#8594;</button>
                     <p style="text-align:center;color:#cbd5e0;font-size:0.75rem;margin-top:0.9rem;">We respect your privacy. No spam, ever.</p>
+                    <p style="text-align:center;color:#a0aec0;font-size:0.72rem;margin-top:0.35rem;line-height:1.5;">
+                        By continuing you agree to our
+                        <a href="/terms" target="_blank" style="color:#4a5568;text-decoration:underline;">Terms</a>
+                        and
+                        <a href="/privacy" target="_blank" style="color:#4a5568;text-decoration:underline;">Privacy Policy</a>.
+                    </p>
                 </div>
             </div>
             <!-- Success screen -->
