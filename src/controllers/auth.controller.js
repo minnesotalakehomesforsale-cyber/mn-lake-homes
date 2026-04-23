@@ -173,7 +173,7 @@ const register = async (req, res) => {
             const values = tagIds.map((_, i) => `($1, $${i + 2})`).join(', ');
             await client.query(
                 `INSERT INTO user_tags (user_id, tag_id)
-                 SELECT uid, tid FROM (VALUES ${values}) AS v(uid, tid)
+                 SELECT uid::uuid, tid::uuid FROM (VALUES ${values}) AS v(uid, tid)
                  WHERE EXISTS (SELECT 1 FROM tags WHERE id = v.tid::uuid AND active = TRUE)
                  ON CONFLICT (user_id, tag_id) DO NOTHING`,
                 [userId, ...tagIds]
