@@ -199,14 +199,15 @@ class GlobalHeader extends HTMLElement {
                 </div>
             </div>`;
         } else {
-            authHtml = `<div style="display: flex; gap: 1.25rem; align-items: center;">
+            authHtml = `<div style="display: flex; gap: 0.6rem; align-items: center;">
                 <a href="${rp}pages/public/login.html" style="color: #fff; font-weight: 600;
                     font-size: 0.9rem; font-family: inherit; text-decoration: none;
-                    transition: opacity 0.2s;"
-                    onmouseover="this.style.opacity='0.7'"
-                    onmouseout="this.style.opacity='1'">Log In</a>
+                    padding: 0.55rem 1.4rem; border: 1px solid rgba(255,255,255,0.35);
+                    border-radius: 999px; transition: background 0.2s, border-color 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.08)'; this.style.borderColor='rgba(255,255,255,0.6)'"
+                    onmouseout="this.style.background='transparent'; this.style.borderColor='rgba(255,255,255,0.35)'">Log In</a>
                 <button onclick="window.openForm('agent')" style="background: #1d6df2; color: #fff; font-weight: 600;
-                    border: none; padding: 0.55rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+                    border: none; padding: 0.6rem 1.5rem; border-radius: 999px; cursor: pointer; font-size: 0.9rem;
                     font-family: inherit; transition: background 0.2s;"
                     onmouseover="this.style.background='#1558c7'"
                     onmouseout="this.style.background='#1d6df2'">Get Started</button>
@@ -335,12 +336,9 @@ class GlobalHeader extends HTMLElement {
             },
         ];
 
-        const caret = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
-
         const navLinksHtml = navItems.map(item => `
-            <a href="${item.href}" id="nav-${item.id}-trigger" data-nav-id="${item.id}" style="display:inline-flex; align-items:center; gap:0.3rem;">
+            <a href="${item.href}" id="nav-${item.id}-trigger" data-nav-id="${item.id}" style="display:inline-flex; align-items:center;">
                 ${item.label}
-                ${caret}
             </a>
         `).join('');
 
@@ -1063,3 +1061,4 @@ document.addEventListener('keydown', e => {
         }
     } catch (_) { /* analytics must never break a page */ }
 })();
+
