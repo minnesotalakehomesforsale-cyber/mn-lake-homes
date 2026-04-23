@@ -572,6 +572,41 @@ const deleteUser = async (req, res) => {
 // ─── LEADS ────────────────────────────────────────────────────────────────────
 
 /**
+ * GET /api/admin/metrics/agent-coverage
+ * Returns one row per active tag with per-tier agent counts. Drives the
+ * "Agent coverage" heat map in /pages/admin/metrics.html — lets admins
+ * see at a glance where coverage is strong, thin, or missing.
+ *
+ * Only counts agents that are route-eligible (active user, published profile).
+ */
+const getAgentCoverage = async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT
+                t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude,
+                COUNT(a.id) FILTER (WHERE m.code = 'founder')::int  AS founders,
+                COUNT(a.id) FILTER (WHERE m.code IN ('premium','top_agent'))::int AS premiums,
+                COUNT(a.id) FILTER (WHERE m.code IN ('basic','mn_lake_specialist'))::int AS basics,
+                COUNT(a.id)::int AS total
+              FROM tags t
+         LEFT JOIN user_tags ut ON ut.tag_id = t.id
+         LEFT JOIN users u      ON u.id       = ut.user_id AND u.account_status = 'active'
+         LEFT JOIN agents a     ON a.user_id  = u.id
+                                AND a.profile_status = 'published'
+                                AND a.is_published    = TRUE
+         LEFT JOIN memberships m ON m.id = a.membership_id
+             WHERE t.active = TRUE
+          GROUP BY t.id
+          ORDER BY t.state, t.name
+        `);
+        res.json(rows);
+    } catch (err) {
+        console.error('[getAgentCoverage]', err.message);
+        res.status(500).json({ error: 'Server error.' });
+    }
+};
+
+/**
  * GET /api/admin/leads/unassigned-count
  * Returns { count } of leads that still need assignment (no agent_id and no
  * assigned_user_id), excluding soft-deleted rows. Powers the admin nav red dot.
@@ -737,5 +772,6 @@ module.exports = {
     assignLead,
     addLeadNote,
     getAgentLeads,
-    getUnassignedLeadCount
+    getUnassignedLeadCount,
+    getAgentCoverage
 };

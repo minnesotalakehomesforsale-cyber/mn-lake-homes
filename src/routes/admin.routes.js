@@ -14,6 +14,9 @@ router.patch('/users/:id/status', adminController.updateUserStatus);       // PA
 router.patch('/users/:id/password', adminController.resetUserPassword);    // PATCH password reset
 router.delete('/users/:id', adminController.deleteUser);                   // DELETE user
 
+// ─── METRICS ─────────────────────────────────────────────────────────────────
+router.get('/metrics/agent-coverage', adminController.getAgentCoverage);
+
 // ─── LEADS (must come before /:id to avoid shadowing) ────────────────────────
 router.get('/leads/unassigned-count', adminController.getUnassignedLeadCount);
 router.get('/leads/:id', adminController.getLeadDetail);

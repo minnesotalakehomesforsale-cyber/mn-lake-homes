@@ -39,6 +39,64 @@
 
         .empty { text-align: center; color: #a0aec0; padding: 2rem 1rem; font-size: 0.9rem; }
 
+        /* ─── Tabs ─── */
+        .m-tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid #e2e8f0; margin: 0 0 2rem; }
+        .m-tab  { background: none; border: none; padding: 0.85rem 1.1rem; font: inherit; font-size: 0.92rem; font-weight: 600; color: #4a5568; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s; }
+        .m-tab:hover { color: #1a202c; }
+        .m-tab.active { color: #1d6df2; border-bottom-color: #1d6df2; }
+        .m-panel { display: none; }
+        .m-panel.active { display: block; }
+
+        /* ─── Agent coverage heat map ─── */
+        .cov-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; }
+        .cov-stat { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; padding: 1rem 1.15rem; }
+        .cov-stat .label { font-size: 0.68rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #a0aec0; margin: 0 0 0.3rem; }
+        .cov-stat .big   { font-size: 1.6rem; font-weight: 800; color: #1a202c; letter-spacing: -0.4px; line-height: 1.1; }
+        .cov-stat .sub   { font-size: 0.75rem; color: #718096; margin-top: 0.25rem; }
+
+        .cov-controls { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+        .cov-pill { padding: 0.4rem 0.85rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 999px; font: inherit; font-size: 0.82rem; font-weight: 600; color: #4a5568; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+        .cov-pill:hover { border-color: #cbd5e0; }
+        .cov-pill.active { background: #1d6df2; border-color: #1d6df2; color: #fff; }
+        .cov-search { flex: 1; min-width: 220px; max-width: 320px; padding: 0.5rem 0.9rem; border: 1px solid #e2e8f0; border-radius: 999px; font: inherit; font-size: 0.85rem; outline: none; }
+        .cov-search:focus { border-color: #1d6df2; }
+
+        .cov-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 0.6rem;
+        }
+        .cov-cell {
+            position: relative;
+            background: #fff;
+            border: 1px solid #edf2f7;
+            border-radius: 10px;
+            padding: 0.75rem 0.85rem;
+            transition: transform 0.15s, box-shadow 0.15s;
+            cursor: default;
+        }
+        .cov-cell:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+        .cov-cell .name  { font-size: 0.82rem; font-weight: 700; color: #1a202c; margin: 0 0 0.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cov-cell .state { font-size: 0.7rem; color: #718096; margin-bottom: 0.55rem; }
+        .cov-cell .total { font-size: 1.5rem; font-weight: 800; color: #1a202c; line-height: 1; letter-spacing: -0.3px; }
+        .cov-cell .break { display: flex; gap: 0.35rem; margin-top: 0.5rem; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+        .cov-cell .break span { display: inline-flex; align-items: center; gap: 0.2rem; }
+        .cov-cell .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+        .dot-founder { background: #1d6df2; }
+        .dot-premium { background: #9f7aea; }
+        .dot-basic   { background: #718096; }
+
+        /* Heat intensity: gap (red) → thin (yellow) → good (green) → heavy (deep green) */
+        .cov-cell[data-heat="gap"]   { background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%); border-color: #feb2b2; }
+        .cov-cell[data-heat="thin"]  { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-color: #fde68a; }
+        .cov-cell[data-heat="good"]  { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-color: #a7f3d0; }
+        .cov-cell[data-heat="heavy"] { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-color: #6ee7b7; }
+        .cov-cell[data-heat="gap"] .total { color: #c53030; }
+
+        .cov-legend { display: flex; gap: 1rem; font-size: 0.75rem; color: #718096; margin-top: 1rem; flex-wrap: wrap; }
+        .cov-legend-item { display: inline-flex; align-items: center; gap: 0.4rem; }
+        .cov-legend-swatch { width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.05); }
+
         @media (max-width: 900px) {
             .admin-wrap { grid-template-columns: 1fr; }
             .admin-main { padding: 1.75rem 1.25rem; }
@@ -60,27 +118,62 @@
                 <p>First-party traffic + activity, last 30 days. No external analytics service — everything is from your own database.</p>
             </div>
 
-            <div id="m-kpis" class="m-kpis">
-                <div class="empty" style="grid-column:1/-1;">Loading…</div>
+            <div class="m-tabs" role="tablist">
+                <button class="m-tab active" data-panel="traffic"  role="tab">Traffic</button>
+                <button class="m-tab"        data-panel="coverage" role="tab">Agent coverage</button>
             </div>
 
-            <div class="m-row">
-                <div class="m-card">
-                    <h2>Daily traffic · last 30 days</h2>
-                    <svg id="m-chart" class="m-chart" viewBox="0 0 600 220" preserveAspectRatio="none"></svg>
-                    <div id="m-chart-empty" class="empty" style="display:none;">No pageviews recorded yet. Hits will start showing up here as soon as the tracker fires on real visits.</div>
+            <!-- TRAFFIC PANEL -->
+            <section class="m-panel active" id="panel-traffic">
+                <div id="m-kpis" class="m-kpis">
+                    <div class="empty" style="grid-column:1/-1;">Loading…</div>
+                </div>
+
+                <div class="m-row">
+                    <div class="m-card">
+                        <h2>Daily traffic · last 30 days</h2>
+                        <svg id="m-chart" class="m-chart" viewBox="0 0 600 220" preserveAspectRatio="none"></svg>
+                        <div id="m-chart-empty" class="empty" style="display:none;">No pageviews recorded yet. Hits will start showing up here as soon as the tracker fires on real visits.</div>
+                    </div>
+
+                    <div class="m-card">
+                        <h2>Top referrers · last 30 days</h2>
+                        <div id="m-refs" class="m-list"></div>
+                    </div>
                 </div>
 
                 <div class="m-card">
-                    <h2>Top referrers · last 30 days</h2>
-                    <div id="m-refs" class="m-list"></div>
+                    <h2>Top pages · last 30 days</h2>
+                    <div id="m-pages" class="m-list"></div>
                 </div>
-            </div>
+            </section>
 
-            <div class="m-card">
-                <h2>Top pages · last 30 days</h2>
-                <div id="m-pages" class="m-list"></div>
-            </div>
+            <!-- AGENT COVERAGE PANEL -->
+            <section class="m-panel" id="panel-coverage">
+                <div id="cov-summary" class="cov-summary">
+                    <div class="empty" style="grid-column:1/-1;">Loading…</div>
+                </div>
+
+                <div class="cov-controls">
+                    <button class="cov-pill active" data-filter="all">All areas</button>
+                    <button class="cov-pill"        data-filter="gap">Gaps (0 agents)</button>
+                    <button class="cov-pill"        data-filter="thin">Thin (1 agent)</button>
+                    <button class="cov-pill"        data-filter="needs-founder">No founder yet</button>
+                    <input id="cov-search" class="cov-search" type="search" placeholder="Search area or state…">
+                </div>
+
+                <div id="cov-grid" class="cov-grid"></div>
+
+                <div class="cov-legend">
+                    <span class="cov-legend-item"><span class="cov-legend-swatch" style="background:#fed7d7;"></span> Gap — 0 agents</span>
+                    <span class="cov-legend-item"><span class="cov-legend-swatch" style="background:#fef3c7;"></span> Thin — 1 agent</span>
+                    <span class="cov-legend-item"><span class="cov-legend-swatch" style="background:#d1fae5;"></span> Good — 2–3 agents</span>
+                    <span class="cov-legend-item"><span class="cov-legend-swatch" style="background:#a7f3d0;"></span> Heavy — 4+ agents</span>
+                    <span class="cov-legend-item"><span class="dot dot-founder"></span> Founder</span>
+                    <span class="cov-legend-item"><span class="dot dot-premium"></span> Premium/Top</span>
+                    <span class="cov-legend-item"><span class="dot dot-basic"></span> Basic/Specialist</span>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -185,6 +278,110 @@
         function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
         document.addEventListener('DOMContentLoaded', load);
+
+        // ─── Tabs ──────────────────────────────────────────────────────
+        document.querySelectorAll('.m-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.m-tab').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.m-panel').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
+                if (btn.dataset.panel === 'coverage' && !coverageLoaded) loadCoverage();
+            });
+        });
+
+        // ─── Agent coverage heat map ────────────────────────────────────
+        let coverageLoaded = false;
+        let coverageData = [];
+        let coverageFilter = 'all';
+        let coverageQuery = '';
+
+        function heatForTotal(total) {
+            if (total === 0) return 'gap';
+            if (total === 1) return 'thin';
+            if (total <= 3) return 'good';
+            return 'heavy';
+        }
+
+        function renderCoverage() {
+            const q = coverageQuery.toLowerCase();
+            const filtered = coverageData.filter(t => {
+                if (coverageFilter === 'gap'           && t.total > 0) return false;
+                if (coverageFilter === 'thin'          && t.total !== 1) return false;
+                if (coverageFilter === 'needs-founder' && t.founders > 0) return false;
+                if (q) {
+                    const hay = `${t.name || ''} ${t.state || ''} ${t.region || ''}`.toLowerCase();
+                    if (!hay.includes(q)) return false;
+                }
+                return true;
+            });
+
+            const grid = document.getElementById('cov-grid');
+            if (!filtered.length) {
+                grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">No areas match these filters.</div>';
+                return;
+            }
+            grid.innerHTML = filtered.map(t => {
+                const heat = heatForTotal(t.total);
+                const title = `${esc(t.name)} · ${esc(t.state || '')}\nFounders: ${t.founders} · Premium/Top: ${t.premiums} · Basic/Specialist: ${t.basics}`;
+                return `
+                    <div class="cov-cell" data-heat="${heat}" title="${title}">
+                        <div class="name">${esc(t.name)}</div>
+                        <div class="state">${esc(t.state || '—')}${t.region ? ' · ' + esc(t.region) : ''}</div>
+                        <div class="total">${t.total}</div>
+                        <div class="break">
+                            <span><span class="dot dot-founder"></span>${t.founders}</span>
+                            <span><span class="dot dot-premium"></span>${t.premiums}</span>
+                            <span><span class="dot dot-basic"></span>${t.basics}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderCoverageSummary() {
+            const total = coverageData.length;
+            const gaps = coverageData.filter(t => t.total === 0).length;
+            const thin = coverageData.filter(t => t.total === 1).length;
+            const founded = coverageData.filter(t => t.founders > 0).length;
+            const agentCount = coverageData.reduce((sum, t) => sum + t.total, 0);
+            document.getElementById('cov-summary').innerHTML = `
+                <div class="cov-stat"><div class="label">Service areas</div><div class="big">${total}</div></div>
+                <div class="cov-stat"><div class="label">Coverage gaps</div><div class="big" style="color:#c53030;">${gaps}</div><div class="sub">no published agent</div></div>
+                <div class="cov-stat"><div class="label">Thin coverage</div><div class="big" style="color:#b45309;">${thin}</div><div class="sub">only 1 agent</div></div>
+                <div class="cov-stat"><div class="label">Areas w/ founder</div><div class="big" style="color:#1d6df2;">${founded}</div><div class="sub">of ${total}</div></div>
+                <div class="cov-stat"><div class="label">Total agent assignments</div><div class="big">${agentCount}</div><div class="sub">across all areas</div></div>
+            `;
+        }
+
+        async function loadCoverage() {
+            coverageLoaded = true;
+            try {
+                const res = await fetch('/api/admin/metrics/agent-coverage', { credentials: 'include' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                coverageData = await res.json();
+                renderCoverageSummary();
+                renderCoverage();
+            } catch (err) {
+                document.getElementById('cov-summary').innerHTML =
+                    `<div class="empty" style="grid-column:1/-1;color:#c53030;">Could not load coverage: ${esc(err.message)}</div>`;
+                document.getElementById('cov-grid').innerHTML = '';
+            }
+        }
+
+        document.querySelectorAll('.cov-pill').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.cov-pill').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                coverageFilter = btn.dataset.filter;
+                renderCoverage();
+            });
+        });
+
+        document.getElementById('cov-search').addEventListener('input', (e) => {
+            coverageQuery = e.target.value.trim();
+            renderCoverage();
+        });
     </script>
 </body>
 </html>
