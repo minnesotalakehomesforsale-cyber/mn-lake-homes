@@ -7,10 +7,6 @@
     <link rel="stylesheet" href="../../styles/style.css">
 <style>
         html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: #1a202c; }
-        .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
-
-        .admin-main { padding: 3rem 3.5rem; overflow-y: auto; }
-
         .toolbar { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.5rem; }
         .toolbar input, .toolbar select {
             font-family: inherit; font-size: 0.9rem; font-weight: 500;
@@ -80,9 +76,6 @@
         .err { display: none; color: #c53030; font-size: 0.85rem; padding: 0.6rem 0.85rem; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; margin-bottom: 1rem; }
 
         @media (max-width: 900px) {
-            .admin-wrap { grid-template-columns: 1fr; }
-
-            .admin-main { padding: 1.75rem 1.25rem; }
             .tags-table { display: block; overflow-x: auto; }
         }
     </style>

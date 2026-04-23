@@ -24,6 +24,9 @@
     // Keep these in lock-step with what admin-responsive.js overrides
     // at ≤900px. Single source means future tweaks land in one file.
     const BASE_CSS = `
+        /* Reserve scrollbar gutter so pages with taller content don't shift
+           the sidebar horizontally when you navigate between admin pages. */
+        html { scrollbar-gutter: stable; }
         .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
         .admin-side {
             background: #1a202c; color: #fff;
@@ -90,7 +93,7 @@
             margin-left: auto; min-width: 18px; text-align: center;
         }
         .cash-offer-badge.visible { display: inline-block; }
-        .admin-main { padding: 3rem 3.5rem; overflow-y: auto; }
+        .admin-main { padding: 3rem 3.5rem; background: #f7f9fa; overflow-y: auto; }
     `;
 
     function injectStyles() {

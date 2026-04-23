@@ -7,9 +7,6 @@
     <link rel="stylesheet" href="../../styles/style.css">
 <style>
         html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: #1a202c; }
-        .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
-        .admin-main { padding: 3rem 3.5rem; overflow-y: auto; }
-
         .toolbar { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.5rem; }
         .toolbar input, .toolbar select {
             font-family: inherit; font-size: 0.9rem; font-weight: 500;
@@ -127,8 +124,6 @@
         .lake-chip.on { border-color: #1d6df2; background: #1d6df2; color: #fff; }
 
         @media (max-width: 900px) {
-            .admin-wrap { grid-template-columns: 1fr; }
-            .admin-main { padding: 1.75rem 1.25rem; }
             .biz-table { display: block; overflow-x: auto; }
             .grid-2, .grid-3 { grid-template-columns: 1fr; }
         }
