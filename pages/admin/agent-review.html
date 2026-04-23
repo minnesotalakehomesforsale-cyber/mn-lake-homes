@@ -259,15 +259,26 @@
                         </div>
                     </div>
                     <div class="panel-body" style="padding:1.5rem;">
-                        <div id="tag-pills" style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.75rem; min-height:28px;">
-                            <span style="color:#a0aec0;font-size:0.85rem;">No tags attached.</span>
+                        <!-- Top row: search + bulk actions -->
+                        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;margin-bottom:0.75rem;">
+                            <input id="tag-filter" type="search" placeholder="Filter…"
+                                oninput="renderTagGrid()"
+                                style="flex:1;min-width:180px;padding:0.5rem 0.85rem;border:1px solid #e2e8f0;border-radius:999px;font-size:0.85rem;font-family:inherit;outline:none;">
+                            <button type="button" onclick="selectAllTags()"
+                                style="padding:0.5rem 0.9rem;border:1px solid #1d6df2;background:#1d6df2;color:#fff;border-radius:999px;font:inherit;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                Select all
+                            </button>
+                            <button type="button" onclick="clearAllTags()"
+                                style="padding:0.5rem 0.9rem;border:1px solid #e2e8f0;background:#fff;color:#4a5568;border-radius:999px;font:inherit;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                Clear all
+                            </button>
                         </div>
-                        <div style="position:relative;">
-                            <input id="tag-search" type="search" placeholder="Add a service area (city or town)…"
-                                style="width:100%;padding:0.6rem 0.85rem;border:1px solid #e2e8f0;border-radius:8px;font-size:0.9rem;font-family:inherit;outline:none;"
-                                oninput="onTagSearch()" onfocus="onTagSearch()">
-                            <div id="tag-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:260px;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;border-radius:8px;margin-top:4px;z-index:20;box-shadow:0 10px 25px rgba(0,0,0,0.08);"></div>
-                        </div>
+
+                        <div id="tag-count" style="font-size:0.78rem;color:#718096;margin-bottom:0.6rem;">0 selected</div>
+
+                        <!-- Full clickable list of every service area -->
+                        <div id="tag-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:0.4rem;"></div>
+
                         <div class="save-row" style="margin-top:1rem;">
                             <span id="tags-save-msg" class="save-msg">✓ Saved</span>
                             <button class="btn-save" onclick="saveAgentTags()">Save Service Areas</button>
@@ -429,62 +440,75 @@
                 fetch(`/api/tags/users/${agentData.user_id_ref}`),
             ]);
             _allTags = catalogRes.ok ? await catalogRes.json() : [];
+            // Stable alphabetical order so the grid is scannable.
+            _allTags.sort((a, b) =>
+                (a.state || '').localeCompare(b.state || '') ||
+                (a.name  || '').localeCompare(b.name  || '')
+            );
             const attached = attachedRes.ok ? await attachedRes.json() : [];
             _attachedTagIds = new Set(attached.map(t => t.id));
-            renderTagPills();
+            renderTagGrid();
         } catch (e) {
             console.warn('[tags] load failed', e);
         }
     }
 
-    function renderTagPills() {
-        const host = document.getElementById('tag-pills');
-        const attached = _allTags.filter(t => _attachedTagIds.has(t.id));
-        if (!attached.length) {
-            host.innerHTML = '<span style="color:#a0aec0;font-size:0.85rem;">No tags attached.</span>';
+    function renderTagGrid() {
+        const host = document.getElementById('tag-grid');
+        const counter = document.getElementById('tag-count');
+        const q = (document.getElementById('tag-filter')?.value || '').toLowerCase().trim();
+        const visible = q
+            ? _allTags.filter(t =>
+                t.name.toLowerCase().includes(q) ||
+                (t.state  && t.state.toLowerCase().includes(q)) ||
+                (t.region && t.region.toLowerCase().includes(q)))
+            : _allTags;
+
+        counter.textContent = `${_attachedTagIds.size} selected · ${visible.length} shown · ${_allTags.length} total`;
+
+        if (!visible.length) {
+            host.innerHTML = '<div style="grid-column:1/-1;color:#a0aec0;font-size:0.85rem;padding:0.75rem;">No matches.</div>';
             return;
         }
-        host.innerHTML = attached.map(t => `
-            <span data-id="${t.id}" style="display:inline-flex;align-items:center;gap:0.4rem;background:#ebf4ff;color:#1d6df2;padding:0.35rem 0.6rem;border-radius:20px;font-size:0.82rem;font-weight:600;">
-                ${escHtml(t.name)}, ${escHtml(t.state)}
-                <button type="button" onclick="removeTag('${t.id}')" aria-label="Remove"
-                    style="background:none;border:none;color:#1d6df2;cursor:pointer;padding:0;font-size:0.95rem;line-height:1;">×</button>
-            </span>
-        `).join('');
+
+        host.innerHTML = visible.map(t => {
+            const on = _attachedTagIds.has(t.id);
+            const style = on
+                ? 'background:#1d6df2;color:#fff;border:1px solid #1d6df2;'
+                : 'background:#fff;color:#2d3748;border:1px solid #e2e8f0;';
+            const sub = on ? 'rgba(255,255,255,0.75)' : '#a0aec0';
+            return `
+                <button type="button" data-id="${t.id}" onclick="toggleTag('${t.id}')"
+                    style="display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:0.5rem 0.75rem;border-radius:10px;cursor:pointer;font-family:inherit;font-size:0.82rem;font-weight:600;transition:background 0.15s,border-color 0.15s;${style}">
+                    <span>${escHtml(t.name)}</span>
+                    <span style="font-size:0.7rem;font-weight:500;color:${sub};">${escHtml(t.state || '')}${t.region ? ' · ' + escHtml(t.region) : ''}</span>
+                </button>
+            `;
+        }).join('');
     }
 
-    function onTagSearch() {
-        const q = (document.getElementById('tag-search').value || '').toLowerCase().trim();
-        const box = document.getElementById('tag-suggestions');
-        // Empty query → show first 20 available tags alphabetically so you
-        // know the catalog is populated. Typing narrows it.
-        const available = _allTags.filter(t => !_attachedTagIds.has(t.id));
-        const matches = (q.length < 1
-            ? available.slice(0, 20)
-            : available
-                .filter(t => t.name.toLowerCase().includes(q) || (t.region && t.region.toLowerCase().includes(q)))
-                .slice(0, 20));
-        if (!matches.length) { box.style.display = 'block'; box.innerHTML = '<div style="padding:0.75rem;color:#a0aec0;font-size:0.85rem;">No matches.</div>'; return; }
-        box.innerHTML = matches.map(t => `
-            <button type="button" onclick="addTag('${t.id}')"
-                style="display:block;width:100%;text-align:left;padding:0.55rem 0.85rem;border:none;background:#fff;cursor:pointer;font-family:inherit;font-size:0.88rem;border-bottom:1px solid #f7f9fa;">
-                <strong style="color:#1a202c;">${escHtml(t.name)}</strong>
-                <span style="color:#a0aec0;font-size:0.78rem;">· ${escHtml(t.state)}${t.region ? ' · ' + escHtml(t.region) : ''}</span>
-            </button>
-        `).join('');
-        box.style.display = 'block';
+    function toggleTag(tagId) {
+        if (_attachedTagIds.has(tagId)) _attachedTagIds.delete(tagId);
+        else _attachedTagIds.add(tagId);
+        renderTagGrid();
     }
 
-    function addTag(tagId) {
-        _attachedTagIds.add(tagId);
-        renderTagPills();
-        document.getElementById('tag-search').value = '';
-        document.getElementById('tag-suggestions').style.display = 'none';
+    function selectAllTags() {
+        // Select all tags currently visible under the filter (or all if no filter).
+        const q = (document.getElementById('tag-filter')?.value || '').toLowerCase().trim();
+        const visible = q
+            ? _allTags.filter(t =>
+                t.name.toLowerCase().includes(q) ||
+                (t.state  && t.state.toLowerCase().includes(q)) ||
+                (t.region && t.region.toLowerCase().includes(q)))
+            : _allTags;
+        visible.forEach(t => _attachedTagIds.add(t.id));
+        renderTagGrid();
     }
 
-    function removeTag(tagId) {
-        _attachedTagIds.delete(tagId);
-        renderTagPills();
+    function clearAllTags() {
+        _attachedTagIds.clear();
+        renderTagGrid();
     }
 
     async function saveAgentTags() {
@@ -508,14 +532,6 @@
             alert(e.message || 'Failed to save tags');
         }
     }
-
-    // Dismiss suggestions on outside click
-    document.addEventListener('click', e => {
-        if (!e.target.closest('#geo-tags-panel')) {
-            const box = document.getElementById('tag-suggestions');
-            if (box) box.style.display = 'none';
-        }
-    });
 
     function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
 
