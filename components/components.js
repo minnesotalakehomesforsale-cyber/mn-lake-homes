@@ -149,6 +149,8 @@ class GlobalHeader extends HTMLElement {
             let dashLink = rp + 'pages/agent/dashboard.html';
             if (user.role === 'admin' || user.role === 'super_admin') {
                 dashLink = rp + 'pages/admin/dashboard.html';
+            } else if (user.role === 'client') {
+                dashLink = rp + 'pages/user/dashboard.html';
             }
 
             authHtml = `
@@ -396,7 +398,7 @@ class GlobalHeader extends HTMLElement {
                 <div class="mobile-menu-footer">
                     ${user ? `
                         <div style="color:#94a3b8;font-size:0.8rem;margin-bottom:0.75rem;">Signed in as <strong style="color:#fff;">${user.display_name || user.email}</strong></div>
-                        <a href="${user.role === 'admin' || user.role === 'super_admin' ? rp + 'pages/admin/dashboard.html' : rp + 'pages/agent/dashboard.html'}" class="mobile-menu-cta-outline">Dashboard</a>
+                        <a href="${user.role === 'admin' || user.role === 'super_admin' ? rp + 'pages/admin/dashboard.html' : user.role === 'client' ? rp + 'pages/user/dashboard.html' : rp + 'pages/agent/dashboard.html'}" class="mobile-menu-cta-outline">Dashboard</a>
                         <a href="#" onclick="window._signOut(event)" class="mobile-menu-cta-outline" style="color:#fc8181;border-color:rgba(252,129,129,0.3);">Sign Out</a>
                     ` : `
                         <a href="${rp}pages/public/login.html" class="mobile-menu-cta-outline">Log In</a>
@@ -425,7 +427,7 @@ class GlobalHeader extends HTMLElement {
                 ${authHtml}
             </div>
             ${user ? `
-                <a href="${user.role === 'admin' || user.role === 'super_admin' ? rp + 'pages/admin/dashboard.html' : rp + 'pages/agent/dashboard.html'}"
+                <a href="${user.role === 'admin' || user.role === 'super_admin' ? rp + 'pages/admin/dashboard.html' : user.role === 'client' ? rp + 'pages/user/dashboard.html' : rp + 'pages/agent/dashboard.html'}"
                    class="mobile-auth-inline" aria-label="Dashboard">Dashboard</a>
             ` : `
                 <a href="${rp}pages/public/login.html" class="mobile-auth-inline">Sign in</a>

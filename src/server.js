@@ -825,6 +825,11 @@ async function ensureTables() {
             ALTER TYPE role_type ADD VALUE IF NOT EXISTS 'business_owner';
         EXCEPTION WHEN undefined_object THEN NULL;
         END $$;`);
+        // 'client' = end-user accounts (home buyers/browsers, captured at signup).
+        await pool.query(`DO $$ BEGIN
+            ALTER TYPE role_type ADD VALUE IF NOT EXISTS 'client';
+        EXCEPTION WHEN undefined_object THEN NULL;
+        END $$;`);
         await pool.query(`
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS user_id UUID;
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS stripe_customer_id     TEXT;

@@ -152,7 +152,9 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow-x: hidden;
+    /* `clip` prevents horizontal scroll without creating a new scroll container,
+       so `position: sticky` on descendants (e.g. the agents filter bar) works. */
+    overflow-x: clip;
     -webkit-font-smoothing: antialiased;
 }
 

@@ -40,6 +40,36 @@
 
         .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: #718096; text-decoration: none; font-weight: 600; font-size: 0.9rem; margin-bottom: 2rem; transition: color 0.15s; }
         .back-link:hover { color: #1a202c; }
+
+        /* Top-left "back to all posts" pill, anchored to the hero corner (below the fixed navbar) */
+        .post-back-pill {
+            position: absolute;
+            top: 5.5rem; /* clears the fixed navbar (~70px) */
+            left: 1.5rem;
+            z-index: 5;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.5rem 0.95rem 0.5rem 0.8rem;
+            border-radius: 999px;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.25);
+            transition: background 0.15s, border-color 0.15s, transform 0.15s;
+        }
+        .post-back-pill:hover {
+            background: rgba(0,0,0,0.7);
+            border-color: rgba(255,255,255,0.45);
+            transform: translateX(-2px);
+        }
+        @media (max-width: 600px) {
+            .post-back-pill { top: 4.5rem; left: 1rem; font-size: 0.78rem; padding: 0.4rem 0.8rem 0.4rem 0.65rem; }
+        }
         .post-body-wrap img { max-width: 100%; height: auto; border-radius: 10px; }
 
         @media (max-width: 900px) {
@@ -73,6 +103,10 @@
 
     <div id="post-hero" class="post-hero">
         <img id="hero-img" src="" alt="">
+        <a href="/pages/public/blog.html" class="post-back-pill" aria-label="Back to all blog posts">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Back to all posts
+        </a>
         <div class="post-hero-content">
             <span id="post-tag" class="post-tag"></span>
             <h1 id="post-title" class="post-title">Loading...</h1>
@@ -85,7 +119,6 @@
     </div>
 
     <div class="post-body-wrap">
-        <a href="/pages/public/blog.html" class="back-link">← Back to all posts</a>
         <div id="post-body"></div>
     </div>
 

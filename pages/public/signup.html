@@ -242,6 +242,11 @@
                         <input type="tel" id="phone" class="form-input" placeholder="(612) 555-0150" autocomplete="tel" required>
                     </div>
 
+                    <div class="form-group">
+                        <label class="form-label" for="password">Password</label>
+                        <input type="password" id="password" class="form-input" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" required>
+                    </div>
+
                     <button type="submit" class="signup-submit" id="signup-submit">Create account</button>
 
                     <p class="new-note">
@@ -281,7 +286,8 @@
                 first_name: document.getElementById('first_name').value.trim(),
                 last_name:  document.getElementById('last_name').value.trim(),
                 email:      document.getElementById('email').value.trim(),
-                phone:      document.getElementById('phone').value.trim()
+                phone:      document.getElementById('phone').value.trim(),
+                password:   document.getElementById('password').value
             };
 
             btn.disabled = true;
@@ -308,21 +314,8 @@
                     return;
                 }
 
-                // Success — swap form out for a confirmation view
-                document.getElementById('signup-form').style.display = 'none';
-                document.querySelector('.signup-divider').style.display = 'none';
-                document.querySelector('.agent-btn').style.display = 'none';
-                document.querySelector('.signup-footnote').style.display = 'none';
-
-                const header = document.querySelector('.signup-header');
-                header.innerHTML = `
-                    <div style="display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#ecfdf5;color:#059669;margin-bottom:1.25rem;">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    </div>
-                    <h1 style="margin-bottom:0.6rem;">You're on the list, ${payload.first_name}.</h1>
-                    <p style="margin-bottom:2rem;">Your account has been created. We'll send you an email the moment MN Lake Homes opens its doors — expect early access before the public launch.</p>
-                    <a href="/index.html" style="display:inline-flex;align-items:center;gap:0.4rem;color:#1a202c;font-weight:600;font-size:0.9rem;text-decoration:none;border:1px solid #e2e8f0;border-radius:8px;padding:0.75rem 1.25rem;">&larr; Back to home</a>
-                `;
+                // Success — JWT cookie is already set. Send them straight to their dashboard.
+                window.location.href = '/pages/user/dashboard.html';
             } catch (err) {
                 console.error(err);
                 alertEl.textContent = 'Network error. Please check your connection and try again.';

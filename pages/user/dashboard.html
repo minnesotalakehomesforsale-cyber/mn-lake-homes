@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Dashboard | MN Lake Homes</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; color: #1a202c; }
+        body { min-height: 100vh; }
+
+        .ud-wrap { max-width: 980px; margin: 6rem auto 4rem; padding: 0 1.5rem; }
+        .ud-header { margin-bottom: 2rem; }
+        .ud-eyebrow { font-size: 0.78rem; font-weight: 700; letter-spacing: 1.2px; color: #1d6df2; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .ud-title { font-size: 2.25rem; font-weight: 700; letter-spacing: -0.5px; color: #1a202c; margin: 0 0 0.35rem; }
+        .ud-subtitle { color: #4a5568; font-size: 1rem; margin: 0; }
+
+        .ud-tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid #e2e8f0; margin-bottom: 2rem; }
+        .ud-tab {
+            background: none; border: none; padding: 0.85rem 1.1rem;
+            font-size: 0.92rem; font-weight: 600; color: #4a5568;
+            cursor: pointer; font-family: inherit;
+            border-bottom: 2px solid transparent; margin-bottom: -1px;
+            transition: color 0.15s, border-color 0.15s;
+        }
+        .ud-tab:hover { color: #1a202c; }
+        .ud-tab.active { color: #1d6df2; border-bottom-color: #1d6df2; }
+
+        .ud-panel { display: none; }
+        .ud-panel.active { display: block; }
+
+        .ud-card {
+            background: #fff; border: 1px solid #edf2f7; border-radius: 14px;
+            padding: 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .ud-card + .ud-card { margin-top: 1.25rem; }
+        .ud-card h2 { font-size: 1.15rem; font-weight: 700; margin: 0 0 0.4rem; }
+        .ud-card p.ud-lead { color: #4a5568; font-size: 0.95rem; margin: 0 0 1.5rem; }
+
+        .ud-hero-empty {
+            text-align: center; padding: 3.5rem 2rem;
+            background: #fff; border: 1px dashed #cbd5e0; border-radius: 14px;
+        }
+        .ud-hero-empty .icon {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 64px; height: 64px; border-radius: 50%;
+            background: #ebf4ff; color: #1d6df2; margin-bottom: 1.25rem;
+        }
+        .ud-hero-empty h3 { font-size: 1.35rem; font-weight: 700; margin: 0 0 0.4rem; }
+        .ud-hero-empty p { color: #4a5568; max-width: 480px; margin: 0 auto; line-height: 1.6; }
+
+        .ud-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+        .ud-row.single { grid-template-columns: 1fr; }
+        .ud-field label { display: block; font-size: 0.82rem; font-weight: 600; color: #4a5568; margin-bottom: 0.35rem; }
+        .ud-field input {
+            width: 100%; box-sizing: border-box;
+            padding: 0.7rem 0.9rem; border: 1px solid #e2e8f0; border-radius: 8px;
+            font-size: 0.95rem; font-family: inherit; color: #1a202c;
+            background: #fff; outline: none; transition: border-color 0.15s;
+        }
+        .ud-field input:focus { border-color: #1d6df2; }
+
+        .ud-actions { display: flex; gap: 0.6rem; align-items: center; margin-top: 0.5rem; }
+        .ud-btn {
+            padding: 0.7rem 1.35rem; border-radius: 999px; font-weight: 600; font-size: 0.9rem;
+            font-family: inherit; cursor: pointer; border: 1px solid transparent;
+            transition: opacity 0.15s, background 0.15s;
+        }
+        .ud-btn-primary { background: #1d6df2; color: #fff; }
+        .ud-btn-primary:hover { background: #155bc8; }
+        .ud-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+        .ud-btn-link {
+            background: none; color: #e53e3e; border: none;
+            font-weight: 600; font-size: 0.9rem; cursor: pointer;
+            padding: 0.7rem 0.5rem; margin-left: auto;
+        }
+
+        .ud-note {
+            padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.88rem;
+            margin-top: 0.75rem; display: none;
+        }
+        .ud-note.show { display: block; }
+        .ud-note.ok    { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+        .ud-note.err   { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+        @media (max-width: 600px) {
+            .ud-wrap { margin-top: 5rem; padding: 0 1rem; }
+            .ud-title { font-size: 1.75rem; }
+            .ud-row { grid-template-columns: 1fr; }
+            .ud-card { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <global-header></global-header>
+
+    <main class="ud-wrap">
+        <div class="ud-header">
+            <div class="ud-eyebrow">Your account</div>
+            <h1 class="ud-title" id="ud-greeting">Welcome back.</h1>
+            <p class="ud-subtitle">Manage your profile and keep tabs on what's coming to MN Lake Homes.</p>
+        </div>
+
+        <div class="ud-tabs" role="tablist">
+            <button class="ud-tab active" data-panel="home" role="tab">Overview</button>
+            <button class="ud-tab"        data-panel="account" role="tab">Account settings</button>
+        </div>
+
+        <!-- Overview -->
+        <section class="ud-panel active" id="panel-home">
+            <div class="ud-hero-empty">
+                <div class="icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
+                <h3>More coming soon.</h3>
+                <p>You're in. We'll light this dashboard up as features roll out — saved lakes, tour requests, agent matches, and more. In the meantime, browse listings and explore Minnesota's lakes from the home page.</p>
+            </div>
+        </section>
+
+        <!-- Account settings -->
+        <section class="ud-panel" id="panel-account">
+            <div class="ud-card">
+                <h2>Profile</h2>
+                <p class="ud-lead">Update your name, email, and phone.</p>
+                <form id="form-profile">
+                    <div class="ud-row">
+                        <div class="ud-field">
+                            <label for="f-first">First name</label>
+                            <input type="text" id="f-first" autocomplete="given-name">
+                        </div>
+                        <div class="ud-field">
+                            <label for="f-last">Last name</label>
+                            <input type="text" id="f-last" autocomplete="family-name">
+                        </div>
+                    </div>
+                    <div class="ud-row">
+                        <div class="ud-field">
+                            <label for="f-email">Email</label>
+                            <input type="email" id="f-email" autocomplete="email">
+                        </div>
+                        <div class="ud-field">
+                            <label for="f-phone">Phone</label>
+                            <input type="tel" id="f-phone" autocomplete="tel">
+                        </div>
+                    </div>
+                    <div class="ud-actions">
+                        <button type="submit" class="ud-btn ud-btn-primary" id="btn-profile">Save changes</button>
+                    </div>
+                    <div class="ud-note" id="note-profile"></div>
+                </form>
+            </div>
+
+            <div class="ud-card">
+                <h2>Password</h2>
+                <p class="ud-lead">Choose a strong password — at least 8 characters.</p>
+                <form id="form-password">
+                    <div class="ud-row single">
+                        <div class="ud-field">
+                            <label for="p-current">Current password</label>
+                            <input type="password" id="p-current" autocomplete="current-password">
+                        </div>
+                    </div>
+                    <div class="ud-row">
+                        <div class="ud-field">
+                            <label for="p-new">New password</label>
+                            <input type="password" id="p-new" autocomplete="new-password">
+                        </div>
+                        <div class="ud-field">
+                            <label for="p-confirm">Confirm new password</label>
+                            <input type="password" id="p-confirm" autocomplete="new-password">
+                        </div>
+                    </div>
+                    <div class="ud-actions">
+                        <button type="submit" class="ud-btn ud-btn-primary" id="btn-password">Update password</button>
+                        <button type="button" class="ud-btn-link" id="btn-signout">Sign out</button>
+                    </div>
+                    <div class="ud-note" id="note-password"></div>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <global-footer></global-footer>
+
+    <script src="../../components/components.js" defer></script>
+    <script>
+        // ── Auth gate: must be signed in to view this page ─────────────
+        (async function authGate() {
+            try {
+                const r = await fetch('/api/auth/session');
+                if (!r.ok) throw new Error('unauth');
+                const u = await r.json();
+                const first = (u.display_name || u.email || '').split(' ')[0];
+                if (first) document.getElementById('ud-greeting').textContent = `Welcome back, ${first}.`;
+
+                // Prefill profile form from DB (fetch extended profile)
+                const me = await fetch('/api/auth/me').then(res => res.ok ? res.json() : null).catch(() => null);
+                if (me) {
+                    document.getElementById('f-first').value = me.first_name || '';
+                    document.getElementById('f-last').value  = me.last_name  || '';
+                    document.getElementById('f-email').value = me.email      || '';
+                    document.getElementById('f-phone').value = me.phone      || '';
+                } else {
+                    // Fallback: split display_name
+                    const parts = (u.display_name || '').split(' ');
+                    document.getElementById('f-first').value = parts[0] || '';
+                    document.getElementById('f-last').value  = parts.slice(1).join(' ') || '';
+                    document.getElementById('f-email').value = u.email || '';
+                }
+            } catch (_) {
+                window.location.href = '/pages/public/login.html?redirect=/pages/user/dashboard.html';
+            }
+        })();
+
+        // ── Tabs ───────────────────────────────────────────────────────
+        document.querySelectorAll('.ud-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.ud-tab').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.ud-panel').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
+            });
+        });
+
+        const showNote = (el, msg, kind) => {
+            el.textContent = msg;
+            el.classList.remove('ok', 'err');
+            el.classList.add(kind, 'show');
+        };
+
+        // ── Profile save ────────────────────────────────────────────────
+        document.getElementById('form-profile').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-profile');
+            const note = document.getElementById('note-profile');
+            btn.disabled = true;
+            btn.textContent = 'Saving…';
+            try {
+                const res = await fetch('/api/auth/profile', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        first_name: document.getElementById('f-first').value.trim(),
+                        last_name:  document.getElementById('f-last').value.trim(),
+                        email:      document.getElementById('f-email').value.trim(),
+                        phone:      document.getElementById('f-phone').value.trim()
+                    })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || 'Could not save.');
+                showNote(note, 'Saved. Your profile is up to date.', 'ok');
+            } catch (err) {
+                showNote(note, err.message, 'err');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Save changes';
+            }
+        });
+
+        // ── Password change ─────────────────────────────────────────────
+        document.getElementById('form-password').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-password');
+            const note = document.getElementById('note-password');
+            const current = document.getElementById('p-current').value;
+            const next    = document.getElementById('p-new').value;
+            const confirm = document.getElementById('p-confirm').value;
+
+            if (next.length < 8)       return showNote(note, 'New password must be at least 8 characters.', 'err');
+            if (next !== confirm)      return showNote(note, 'New passwords do not match.', 'err');
+
+            btn.disabled = true;
+            btn.textContent = 'Updating…';
+            try {
+                const res = await fetch('/api/auth/password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ current_password: current, new_password: next })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || 'Could not update password.');
+                showNote(note, 'Password updated.', 'ok');
+                e.target.reset();
+            } catch (err) {
+                showNote(note, err.message, 'err');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Update password';
+            }
+        });
+
+        // ── Sign out ────────────────────────────────────────────────────
+        document.getElementById('btn-signout').addEventListener('click', async () => {
+            try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (_) {}
+            window.location.href = '/index.html';
+        });
+    </script>
+</body>
+</html>

@@ -1,28 +1,40 @@
 const pool = require('../database/pool');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const email = require('../services/email');
+const emailService = require('../services/email');
 const { logActivity } = require('../services/activity-log');
+
+const setAuthCookie = (res, token) => {
+    res.cookie('auth_session', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 86400000 // 24 hours
+    });
+};
 
 /**
  * POST /api/auth/waitlist
- * Public-facing "create account" endpoint for the beta waitlist.
- * Creates a non-loggable draft user (role: 'client', status: 'pending').
+ * Creates an active client account with a real password and auto-logs in.
  * Rejects duplicates by email OR phone.
  */
 const waitlist = async (req, res) => {
-    let { first_name, last_name, email, phone } = req.body || {};
+    let { first_name, last_name, email, phone, password } = req.body || {};
 
     first_name = (first_name || '').trim();
     last_name  = (last_name  || '').trim();
     email      = (email      || '').trim().toLowerCase();
     phone      = (phone      || '').trim();
+    password   = password || '';
 
-    if (!first_name || !last_name || !email || !phone) {
-        return res.status(400).json({ error: 'First name, last name, email, and phone are all required.' });
+    if (!first_name || !last_name || !email || !phone || !password) {
+        return res.status(400).json({ error: 'First name, last name, email, phone, and password are all required.' });
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return res.status(400).json({ error: 'Please enter a valid email address.' });
+    }
+    if (password.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters.' });
     }
 
     const digits = phone.replace(/\D/g, '');
@@ -48,44 +60,40 @@ const waitlist = async (req, res) => {
             });
         }
 
-        // Unusable password hash — waitlist accounts cannot sign in during beta.
-        const unusable = await bcrypt.hash(`waitlist:${Date.now()}:${Math.random()}`, 10);
+        const passwordHash = await bcrypt.hash(password, 10);
 
-        await pool.query(
+        const userRes = await pool.query(
             `INSERT INTO users (first_name, last_name, full_name, email, phone, password_hash, role, account_status)
-             VALUES ($1, $2, $3, $4, $5, $6, 'client', 'pending')`,
-            [first_name, last_name, `${first_name} ${last_name}`, email, phone, unusable]
+             VALUES ($1, $2, $3, $4, $5, $6, 'client', 'active')
+             RETURNING id`,
+            [first_name, last_name, `${first_name} ${last_name}`, email, phone, passwordHash]
         );
+        const userId = userRes.rows[0].id;
 
-        // Fire-and-forget welcome email
-        email.sendWelcome({ email, first_name, full_name: `${first_name} ${last_name}` });
+        // Auto-login: issue JWT cookie so they land in their dashboard
+        const token = jwt.sign({ userId, role: 'client' }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        setAuthCookie(res, token);
+
+        // Fire-and-forget welcome email (doesn't block the response)
+        try { emailService.sendWelcome({ email, first_name, full_name: `${first_name} ${last_name}` }); } catch (_) {}
 
         logActivity({
-            event_type: 'waitlist.signup',
+            event_type: 'client.signup',
             event_scope: 'auth',
-            actor: { type: 'public', label: email },
-            target: { type: 'user', label: `${first_name} ${last_name}` },
+            actor: { type: 'client', id: userId, label: `${first_name} ${last_name}` },
+            target: { type: 'user', id: userId, label: `${first_name} ${last_name}` },
             details: { email, phone },
             req,
         });
 
-        res.status(201).json({ success: true });
+        res.status(201).json({ success: true, role: 'client', display_name: `${first_name} ${last_name}` });
     } catch (err) {
-        console.error('[waitlist]', err.message);
+        console.error('[client signup]', err.message);
         if (err.code === '23505') {
             return res.status(409).json({ error: 'An account with that email already exists.' });
         }
         res.status(500).json({ error: 'Something went wrong. Please try again shortly.' });
     }
-};
-
-const setCookie = (res, token) => {
-    res.cookie('auth_session', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 86400000 // 24 hours
-    });
 };
 
 /**
@@ -175,10 +183,10 @@ const register = async (req, res) => {
         await client.query('COMMIT');
 
         const token = jwt.sign({ userId, role: 'agent' }, process.env.JWT_SECRET, { expiresIn: '24h' });
-        setCookie(res, token);
+        setAuthCookie(res, token);
 
         // Fire-and-forget agent welcome email
-        email.sendAgentWelcome({ email, display_name });
+        try { emailService.sendAgentWelcome({ email, display_name }); } catch (_) {}
 
         logActivity({
             event_type: 'agent.register',
@@ -271,7 +279,7 @@ const login = async (req, res) => {
         await pool.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [user.id]);
 
         const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
-        setCookie(res, token);
+        setAuthCookie(res, token);
 
         logActivity({
             event_type: 'auth.login',
@@ -354,4 +362,128 @@ const session = async (req, res) => {
     }
 };
 
-module.exports = { register, login, logout, session, waitlist };
+/**
+ * GET /api/auth/me
+ * Returns the full profile (first_name, last_name, email, phone) for the signed-in user.
+ * Used by the client dashboard to prefill the account-settings form.
+ */
+const me = async (req, res) => {
+    if (!req.user?.userId) return res.status(401).json({ error: 'Not authenticated.' });
+    try {
+        const r = await pool.query(
+            `SELECT id, first_name, last_name, full_name, email, phone, role, account_status
+               FROM users WHERE id = $1`,
+            [req.user.userId]
+        );
+        if (!r.rows.length) return res.status(401).json({ error: 'Session user not found.' });
+        res.json(r.rows[0]);
+    } catch (err) {
+        console.error('[me]', err.message);
+        res.status(500).json({ error: 'Server error.' });
+    }
+};
+
+/**
+ * PATCH /api/auth/profile
+ * Updates the signed-in user's first/last name, email, or phone.
+ * Any omitted field is left alone. Rejects duplicate email/phone.
+ */
+const updateProfile = async (req, res) => {
+    if (!req.user?.userId) return res.status(401).json({ error: 'Not authenticated.' });
+
+    let { first_name, last_name, email, phone } = req.body || {};
+    const patch = {};
+    if (typeof first_name === 'string') patch.first_name = first_name.trim();
+    if (typeof last_name  === 'string') patch.last_name  = last_name.trim();
+    if (typeof email      === 'string') patch.email      = email.trim().toLowerCase();
+    if (typeof phone      === 'string') patch.phone      = phone.trim();
+
+    if (patch.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(patch.email)) {
+        return res.status(400).json({ error: 'Please enter a valid email address.' });
+    }
+    if (patch.phone) {
+        const digits = patch.phone.replace(/\D/g, '');
+        if (digits.length < 10) return res.status(400).json({ error: 'Please enter a valid phone number.' });
+    }
+
+    try {
+        if (patch.email || patch.phone) {
+            const digits = patch.phone ? patch.phone.replace(/\D/g, '') : null;
+            const dup = await pool.query(
+                `SELECT id FROM users
+                  WHERE id <> $1
+                    AND ( ($2::text IS NOT NULL AND LOWER(email) = $2)
+                       OR ($3::text IS NOT NULL AND REGEXP_REPLACE(COALESCE(phone, ''), '[^0-9]', '', 'g') = $3) )
+                  LIMIT 1`,
+                [req.user.userId, patch.email || null, digits]
+            );
+            if (dup.rows.length) return res.status(409).json({ error: 'That email or phone is already in use.' });
+        }
+
+        const sets = [];
+        const vals = [];
+        let i = 1;
+        for (const [k, v] of Object.entries(patch)) {
+            sets.push(`${k} = $${i++}`);
+            vals.push(v);
+        }
+        if (patch.first_name !== undefined || patch.last_name !== undefined) {
+            sets.push(`full_name = TRIM(COALESCE($${i++}, first_name) || ' ' || COALESCE($${i++}, last_name))`);
+            vals.push(patch.first_name ?? null, patch.last_name ?? null);
+        }
+        if (!sets.length) return res.json({ success: true, unchanged: true });
+        vals.push(req.user.userId);
+        await pool.query(`UPDATE users SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${i}`, vals);
+
+        logActivity({
+            event_type: 'user.profile.update',
+            event_scope: 'auth',
+            actor: { type: req.user.role || 'user', id: req.user.userId },
+            details: { fields: Object.keys(patch) },
+            req,
+        });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[updateProfile]', err.message);
+        res.status(500).json({ error: 'Could not update your profile.' });
+    }
+};
+
+/**
+ * POST /api/auth/password
+ * Changes the signed-in user's password. Requires current_password match.
+ */
+const changePassword = async (req, res) => {
+    if (!req.user?.userId) return res.status(401).json({ error: 'Not authenticated.' });
+    const { current_password, new_password } = req.body || {};
+    if (!current_password || !new_password) {
+        return res.status(400).json({ error: 'Current and new password are both required.' });
+    }
+    if (new_password.length < 8) {
+        return res.status(400).json({ error: 'New password must be at least 8 characters.' });
+    }
+
+    try {
+        const r = await pool.query(`SELECT password_hash FROM users WHERE id = $1`, [req.user.userId]);
+        if (!r.rows.length) return res.status(401).json({ error: 'Session user not found.' });
+
+        const ok = await bcrypt.compare(current_password, r.rows[0].password_hash);
+        if (!ok) return res.status(401).json({ error: 'Current password is incorrect.' });
+
+        const newHash = await bcrypt.hash(new_password, 10);
+        await pool.query(`UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`, [newHash, req.user.userId]);
+
+        logActivity({
+            event_type: 'user.password.change',
+            event_scope: 'auth',
+            actor: { type: req.user.role || 'user', id: req.user.userId },
+            req,
+        });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[changePassword]', err.message);
+        res.status(500).json({ error: 'Could not change your password.' });
+    }
+};
+
+module.exports = { register, login, logout, session, waitlist, me, updateProfile, changePassword };
