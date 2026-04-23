@@ -571,6 +571,27 @@ const deleteUser = async (req, res) => {
 
 // ─── LEADS ────────────────────────────────────────────────────────────────────
 
+/**
+ * GET /api/admin/leads/unassigned-count
+ * Returns { count } of leads that still need assignment (no agent_id and no
+ * assigned_user_id), excluding soft-deleted rows. Powers the admin nav red dot.
+ */
+const getUnassignedLeadCount = async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT COUNT(*)::int AS count
+               FROM leads
+              WHERE agent_id IS NULL
+                AND assigned_user_id IS NULL
+                AND deleted_at IS NULL`
+        );
+        res.json({ count: rows[0]?.count || 0 });
+    } catch (err) {
+        console.error('[getUnassignedLeadCount]', err.message);
+        res.status(500).json({ error: 'Server error.' });
+    }
+};
+
 const getLeadDetail = async (req, res) => {
     try {
         const { rows } = await pool.query(`
@@ -715,5 +736,6 @@ module.exports = {
     updateLeadStatus,
     assignLead,
     addLeadNote,
-    getAgentLeads
+    getAgentLeads,
+    getUnassignedLeadCount
 };

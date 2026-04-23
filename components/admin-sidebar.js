@@ -108,7 +108,7 @@
         { key: 'dashboard',   href: 'dashboard.html',  label: 'Dashboard' },
         { key: 'metrics',     href: 'metrics.html',    label: 'Metrics' },
         { key: 'agents',      href: 'agents.html',     label: 'Agents Directory' },
-        { key: 'leads',       href: 'leads.html',      label: 'Central Leads' },
+        { key: 'leads',       href: 'leads.html',      label: 'Central Leads', badgeId: 'nav-badge-leads' },
         { key: 'inquiries',   href: 'inquiries.html',  label: 'Inquiries', badgeId: 'nav-badge-inquiries' },
         { key: 'blog',        href: 'blog.html',       label: 'Blog & Content' },
         { key: 'resources',   href: 'resources.html',  label: 'Resources' },

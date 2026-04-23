@@ -3,6 +3,7 @@ const emailService = require('../services/email');
 const { logActivity } = require('../services/activity-log');
 const { geocodeAddress } = require('../services/geocoder');
 const { matchTagsAndUsers } = require('../services/tag-matcher');
+const { routeLead } = require('../services/lead-router');
 
 const createLead = async (req, res) => {
     let {
@@ -102,7 +103,7 @@ const createLead = async (req, res) => {
                 try {
                     const geo = await geocodeAddress(addressForRouting);
                     if (!geo) return;
-                    const { tags, users } = await matchTagsAndUsers({ lat: geo.lat, lng: geo.lng });
+                    const { tags } = await matchTagsAndUsers({ lat: geo.lat, lng: geo.lng });
                     if (!tags.length) return;
 
                     // Record which tags matched (+ each distance) for audit.
@@ -119,40 +120,74 @@ const createLead = async (req, res) => {
                         params
                     );
 
-                    // Only notify active agent accounts. Admin roles see the
-                    // existing "new lead" admin email and don't need dupes.
-                    const tagNameById = new Map(tags.map(t => [t.id, `${t.name}, ${t.state}`]));
-                    const recipients = users.filter(u => u.role === 'agent' && u.email);
-                    recipients.forEach(u => {
-                        const areas = (u.matched_tag_ids || []).map(id => tagNameById.get(id)).filter(Boolean);
-                        emailService.sendMatchedAgentNotification({
-                            to: u.email,
-                            agentFirstName: (u.full_name || '').split(' ')[0] || 'there',
-                            lead: {
-                                id: newLeadId,
-                                name,
-                                email,
-                                phone,
-                                notes,
-                                type: enumType,
-                                source,
-                                address: geo.formattedAddress || addressForRouting,
-                            },
-                            distanceMiles: u.min_distance_miles,
-                            matchedAreas: areas,
+                    // ── Auto-assign via router ──
+                    // Skip routing if a direct agent_id was supplied (e.g., lead
+                    // came from an agent-profile-specific form). That agent stays.
+                    if (finalAgentId) {
+                        logActivity({
+                            event_type: 'lead.route_skipped_direct_assign',
+                            event_scope: 'lead',
+                            actor: { type: 'system', label: 'lead-router' },
+                            target: { type: 'lead', id: newLeadId, label: `${name} (${enumType})` },
+                            details: { reason: 'direct_agent_id_provided', agent_id: finalAgentId },
                         });
+                        return;
+                    }
+
+                    const pick = await routeLead({ lat: geo.lat, lng: geo.lng });
+                    if (!pick) {
+                        // No eligible agent in any nearby tag — lead stays unassigned.
+                        logActivity({
+                            event_type: 'lead.route_unassigned',
+                            event_scope: 'lead',
+                            actor: { type: 'system', label: 'lead-router' },
+                            target: { type: 'lead', id: newLeadId, label: `${name} (${enumType})` },
+                            details: { lat: geo.lat, lng: geo.lng, reason: 'no_eligible_agent' },
+                        });
+                        return;
+                    }
+
+                    // Assign the lead. assigned_user_id is the agent's user record;
+                    // agent_id is the agents table row.
+                    await pool.query(
+                        `UPDATE leads
+                            SET agent_id         = $1,
+                                assigned_user_id = $2,
+                                lead_status      = 'contacted',
+                                updated_at       = NOW()
+                          WHERE id = $3`,
+                        [pick.agentId, pick.userId, newLeadId]
+                    );
+
+                    // Email just the assigned agent.
+                    emailService.sendMatchedAgentNotification({
+                        to: pick.email,
+                        agentFirstName: (pick.fullName || '').split(' ')[0] || 'there',
+                        lead: {
+                            id: newLeadId,
+                            name,
+                            email,
+                            phone,
+                            notes,
+                            type: enumType,
+                            source,
+                            address: geo.formattedAddress || addressForRouting,
+                        },
+                        distanceMiles: pick.distanceMiles,
+                        matchedAreas: [pick.tagName],
                     });
 
                     logActivity({
-                        event_type: 'lead.route_matched',
+                        event_type: 'lead.route_assigned',
                         event_scope: 'lead',
-                        actor: { type: 'system', label: 'tag-matcher' },
+                        actor: { type: 'system', label: 'lead-router' },
                         target: { type: 'lead', id: newLeadId, label: `${name} (${enumType})` },
                         details: {
                             lat: geo.lat, lng: geo.lng,
-                            tag_count: tags.length,
-                            agent_count: recipients.length,
-                            tag_ids: tags.map(t => t.id),
+                            tag_id: pick.tagId, tag_name: pick.tagName,
+                            tier: pick.tierCode,
+                            assigned_user_id: pick.userId,
+                            assigned_agent_id: pick.agentId,
                         },
                     });
                 } catch (err) {

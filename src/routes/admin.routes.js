@@ -15,6 +15,7 @@ router.patch('/users/:id/password', adminController.resetUserPassword);    // PA
 router.delete('/users/:id', adminController.deleteUser);                   // DELETE user
 
 // ─── LEADS (must come before /:id to avoid shadowing) ────────────────────────
+router.get('/leads/unassigned-count', adminController.getUnassignedLeadCount);
 router.get('/leads/:id', adminController.getLeadDetail);
 router.patch('/leads/:id/status', adminController.updateLeadStatus);
 router.patch('/leads/:id/assign', adminController.assignLead);

@@ -808,6 +808,93 @@ async function ensureTables() {
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
         `);
 
+        // ── Lead routing infrastructure (Founder/Premium/Basic tiers + round-robin) ──
+        // Two new membership tiers. Sort priorities keep ordering intuitive
+        // (lower = higher priority): founder 50, top_agent 100, premium 150,
+        // mn_lake_specialist 200, basic 300.
+        await pool.query(`
+            INSERT INTO memberships (name, code, description, display_badge_label, sort_priority)
+            VALUES
+                ('Founder',  'founder',  'Exclusive founding agent for a service area — receives 70% of leads in that area.', 'Founder',  50),
+                ('Premium',  'premium',  'Premium network agent — receives leads via round-robin after the founder.',         'Premium',  150)
+            ON CONFLICT (code) DO UPDATE
+                SET name                = EXCLUDED.name,
+                    description         = EXCLUDED.description,
+                    display_badge_label = EXCLUDED.display_badge_label,
+                    sort_priority       = EXCLUDED.sort_priority;
+        `);
+
+        // Per-tag routing counter powers the 70/30 founder split. Increments on
+        // each successful assignment in that tag's geography.
+        await pool.query(`
+            ALTER TABLE tags ADD COLUMN IF NOT EXISTS lead_routing_counter INTEGER NOT NULL DEFAULT 0;
+        `);
+
+        // Per-user (agent) last-routed timestamp for round-robin fairness within a tier.
+        // NULL = never routed — picked first. Cleared when a new founder is seated in a tag.
+        await pool.query(`
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS last_routed_at TIMESTAMPTZ;
+        `);
+
+        // Founder uniqueness: at most one user with membership.code='founder' per tag.
+        // Enforced via a partial unique index on user_tags joined to memberships.
+        // Materialized column on user_tags + trigger keeps it fast and index-able.
+        await pool.query(`
+            ALTER TABLE user_tags ADD COLUMN IF NOT EXISTS membership_code VARCHAR(100);
+        `);
+        // Keep user_tags.membership_code in sync with the agent's current tier.
+        await pool.query(`
+            UPDATE user_tags ut
+               SET membership_code = m.code
+              FROM agents a JOIN memberships m ON m.id = a.membership_id
+             WHERE a.user_id = ut.user_id
+               AND (ut.membership_code IS DISTINCT FROM m.code);
+        `);
+        await pool.query(`
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_user_tags_founder_per_tag
+                ON user_tags (tag_id)
+                WHERE membership_code = 'founder';
+        `);
+
+        // Trigger: whenever an agent's membership_id changes, sync user_tags.membership_code.
+        await pool.query(`
+            CREATE OR REPLACE FUNCTION sync_user_tags_membership() RETURNS TRIGGER AS $$
+            BEGIN
+                UPDATE user_tags ut
+                   SET membership_code = (SELECT code FROM memberships WHERE id = NEW.membership_id)
+                 WHERE ut.user_id = NEW.user_id;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+        `);
+        await pool.query(`
+            DROP TRIGGER IF EXISTS trg_sync_user_tags_membership ON agents;
+            CREATE TRIGGER trg_sync_user_tags_membership
+            AFTER UPDATE OF membership_id ON agents
+            FOR EACH ROW EXECUTE FUNCTION sync_user_tags_membership();
+        `);
+        // And when a new user_tag row is inserted without membership_code set, backfill it.
+        await pool.query(`
+            CREATE OR REPLACE FUNCTION fill_user_tag_membership() RETURNS TRIGGER AS $$
+            BEGIN
+                IF NEW.membership_code IS NULL THEN
+                    NEW.membership_code := (
+                        SELECT m.code FROM agents a
+                        JOIN memberships m ON m.id = a.membership_id
+                        WHERE a.user_id = NEW.user_id
+                    );
+                END IF;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+        `);
+        await pool.query(`
+            DROP TRIGGER IF EXISTS trg_fill_user_tag_membership ON user_tags;
+            CREATE TRIGGER trg_fill_user_tag_membership
+            BEFORE INSERT ON user_tags
+            FOR EACH ROW EXECUTE FUNCTION fill_user_tag_membership();
+        `);
+
         // Businesses: social links + 'pending' status for the public
         // self-submission → admin-approve flow. Columns are nullable
         // since most legacy rows won't have them.
