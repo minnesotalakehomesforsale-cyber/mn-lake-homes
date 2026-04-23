@@ -300,9 +300,11 @@
                     <div class="panel-body" style="padding: 1.5rem;">
                         <div class="field-label" style="margin-bottom:0.5rem;">Assign Membership</div>
                         <select id="membership-select" class="field-input" style="width:100%;margin-bottom:0.75rem;">
-                            <option value="basic">Basic</option>
-                            <option value="mn_lake_specialist">MN Lake Specialist</option>
+                            <option value="founder">Founder</option>
+                            <option value="premium">Premium</option>
                             <option value="top_agent">Top Agent</option>
+                            <option value="mn_lake_specialist">MN Lake Specialist</option>
+                            <option value="basic">Basic</option>
                         </select>
                         <button class="btn-save" style="width:100%;" onclick="changeMembership()">Update Membership</button>
                         <div id="mem-result" class="action-result"></div>
@@ -454,11 +456,14 @@
     function onTagSearch() {
         const q = (document.getElementById('tag-search').value || '').toLowerCase().trim();
         const box = document.getElementById('tag-suggestions');
-        if (q.length < 1) { box.style.display = 'none'; box.innerHTML = ''; return; }
-        const matches = _allTags
-            .filter(t => !_attachedTagIds.has(t.id))
-            .filter(t => t.name.toLowerCase().includes(q) || (t.region && t.region.toLowerCase().includes(q)))
-            .slice(0, 20);
+        // Empty query → show first 20 available tags alphabetically so you
+        // know the catalog is populated. Typing narrows it.
+        const available = _allTags.filter(t => !_attachedTagIds.has(t.id));
+        const matches = (q.length < 1
+            ? available.slice(0, 20)
+            : available
+                .filter(t => t.name.toLowerCase().includes(q) || (t.region && t.region.toLowerCase().includes(q)))
+                .slice(0, 20));
         if (!matches.length) { box.style.display = 'block'; box.innerHTML = '<div style="padding:0.75rem;color:#a0aec0;font-size:0.85rem;">No matches.</div>'; return; }
         box.innerHTML = matches.map(t => `
             <button type="button" onclick="addTag('${t.id}')"
