@@ -204,6 +204,214 @@ app.get('/pages/public/lake-minnetonka.html', (req, res) => {
     res.redirect(301, '/lakes/lake-minnetonka');
 });
 
+// ─── /api/analytics/track ─────────────────────────────────────────────────
+// Single-table pageview log. Fire-and-forget: any DB error is swallowed
+// so a transient issue doesn't break the visitor's request. We hash the
+// IP+UA rather than store them raw to keep the table privacy-friendly
+// (no PII, no cookies). The admin dashboard reads counts from this.
+app.post('/api/analytics/track', async (req, res) => {
+    try {
+        const b = req.body || {};
+        const path = String(b.path || '').slice(0, 500) || '/';
+        const referrer = b.referrer ? String(b.referrer).slice(0, 500) : null;
+        const ua = String(req.headers['user-agent'] || '').slice(0, 300) || null;
+        const session_id = b.session_id ? String(b.session_id).slice(0, 60) : null;
+        // Drop obvious crawler traffic so our own counts aren't inflated.
+        if (ua && /bot|crawler|spider|slurp|bingpreview|facebookexternalhit|twitterbot|linkedinbot|applebot|headlesschrome/i.test(ua)) {
+            return res.status(204).end();
+        }
+        // Don't log admin/auth/API paths — they're not interesting
+        // marketing-side, and 99% of them come from the admin browsing
+        // their own site while signed in.
+        if (/^\/(pages\/admin|api|business\/dashboard|admin)\b/.test(path)) {
+            return res.status(204).end();
+        }
+        const crypto = require('crypto');
+        const ip = (req.headers['x-forwarded-for'] || req.ip || '').split(',')[0].trim();
+        const visitorHash = crypto.createHash('sha256').update(ip + '|' + (ua || '')).digest('hex').slice(0, 24);
+        await pool.query(
+            `INSERT INTO page_views (path, referrer, visitor_hash, ua, session_id) VALUES ($1,$2,$3,$4,$5)`,
+            [path, referrer, visitorHash, ua, session_id]
+        );
+        res.status(204).end();
+    } catch (err) {
+        // Never surface analytics failures to the client
+        res.status(204).end();
+    }
+});
+
+// ─── /api/analytics/summary ───────────────────────────────────────────────
+// Admin-only overview for the metrics dashboard. Returns pageviews +
+// top pages + top referrers + daily counts, plus the lead/inquiry/
+// signup counts the admin actually cares about.
+app.get('/api/analytics/summary', async (req, res) => {
+    // Lightweight inline auth — same as other admin endpoints: require
+    // a verified admin JWT, otherwise bail.
+    try {
+        const jwt = require('jsonwebtoken');
+        let token = req.cookies?.auth_session;
+        if (!token && req.headers.authorization?.startsWith('Bearer ')) {
+            token = req.headers.authorization.split(' ')[1];
+        }
+        if (!token) return res.status(401).json({ error: 'Not logged in.' });
+        const user = jwt.verify(token, process.env.JWT_SECRET);
+        if (!['admin', 'super_admin'].includes(user.role)) {
+            return res.status(403).json({ error: 'Admin only.' });
+        }
+    } catch (_) {
+        return res.status(401).json({ error: 'Invalid session.' });
+    }
+
+    try {
+        const since7  = `NOW() - INTERVAL '7 days'`;
+        const since30 = `NOW() - INTERVAL '30 days'`;
+
+        const [totals7, totals30, topPages, topReferrers, daily, leads, inquiries, newBiz, newAgents] = await Promise.all([
+            pool.query(`SELECT COUNT(*)::int AS views, COUNT(DISTINCT visitor_hash)::int AS visitors FROM page_views WHERE created_at > ${since7}`),
+            pool.query(`SELECT COUNT(*)::int AS views, COUNT(DISTINCT visitor_hash)::int AS visitors FROM page_views WHERE created_at > ${since30}`),
+            pool.query(`SELECT path, COUNT(*)::int AS views FROM page_views WHERE created_at > ${since30} GROUP BY path ORDER BY views DESC LIMIT 15`),
+            pool.query(`
+                SELECT COALESCE(NULLIF(SUBSTRING(referrer FROM '^https?://([^/]+)'), ''), 'direct') AS host,
+                       COUNT(*)::int AS views
+                FROM page_views
+                WHERE created_at > ${since30}
+                  AND (referrer IS NULL
+                       OR referrer NOT LIKE 'https://minnesotalakehomesforsale.com%'
+                       AND referrer NOT LIKE 'http://minnesotalakehomesforsale.com%'
+                       AND referrer NOT LIKE 'https://www.minnesotalakehomesforsale.com%')
+                GROUP BY host ORDER BY views DESC LIMIT 10`),
+            pool.query(`
+                SELECT date_trunc('day', created_at)::date AS day,
+                       COUNT(*)::int AS views,
+                       COUNT(DISTINCT visitor_hash)::int AS visitors
+                FROM page_views
+                WHERE created_at > ${since30}
+                GROUP BY day
+                ORDER BY day ASC`),
+            pool.query(`SELECT COUNT(*)::int AS c7, (SELECT COUNT(*)::int FROM leads WHERE submitted_at > ${since30} AND deleted_at IS NULL) AS c30 FROM leads WHERE submitted_at > ${since7} AND deleted_at IS NULL`),
+            pool.query(`SELECT COUNT(*)::int AS c7, (SELECT COUNT(*)::int FROM contact_inquiries WHERE created_at > ${since30} AND deleted_at IS NULL) AS c30 FROM contact_inquiries WHERE created_at > ${since7} AND deleted_at IS NULL`),
+            pool.query(`SELECT COUNT(*)::int AS c7, (SELECT COUNT(*)::int FROM businesses WHERE created_at > ${since30}) AS c30 FROM businesses WHERE created_at > ${since7}`),
+            pool.query(`SELECT COUNT(*)::int AS c7, (SELECT COUNT(*)::int FROM agents WHERE created_at > ${since30} AND deleted_at IS NULL) AS c30 FROM agents WHERE created_at > ${since7} AND deleted_at IS NULL`),
+        ]);
+
+        res.json({
+            views_7d:    totals7.rows[0],
+            views_30d:   totals30.rows[0],
+            top_pages:   topPages.rows,
+            top_referrers: topReferrers.rows,
+            daily:       daily.rows,
+            leads:       leads.rows[0],
+            inquiries:   inquiries.rows[0],
+            new_businesses: newBiz.rows[0],
+            new_agents:  newAgents.rows[0],
+        });
+    } catch (err) {
+        console.error('[analytics.summary]', err.message);
+        res.status(500).json({ error: 'Failed to load analytics.' });
+    }
+});
+
+// ─── /robots.txt ──────────────────────────────────────────────────────────
+// Open to all crawlers for public content; blocks admin + auth + API paths
+// that shouldn't appear in search results. Points at the dynamic sitemap.
+app.get('/robots.txt', (req, res) => {
+    res.type('text/plain').send(
+`User-agent: *
+Allow: /
+
+# Don't crawl dashboards, admin, or raw APIs
+Disallow: /api/
+Disallow: /pages/admin/
+Disallow: /pages/agent/
+Disallow: /business/dashboard
+Disallow: /admin/
+Disallow: /login
+Disallow: /signup
+Disallow: /agent-login
+Disallow: /business-login
+Disallow: /forbidden
+
+Sitemap: https://minnesotalakehomesforsale.com/sitemap.xml
+`);
+});
+
+// ─── /sitemap.xml ─────────────────────────────────────────────────────────
+// Generated on every request from the DB + a static page list. Small
+// enough that caching is premature — ~200-300 entries at current size.
+// Google + Bing both fetch this once per crawl cycle.
+app.get('/sitemap.xml', async (req, res) => {
+    const base = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
+    const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;' }[c]));
+    const iso = (d) => { try { return new Date(d).toISOString().split('T')[0]; } catch (_) { return null; } };
+
+    try {
+        const [lakes, towns, businesses, agents, posts] = await Promise.all([
+            pool.query(`SELECT slug, updated_at FROM lakes WHERE status = 'published'`),
+            pool.query(`SELECT DISTINCT t.slug, t.updated_at FROM tags t
+                        WHERE t.active = TRUE
+                          AND EXISTS (SELECT 1 FROM lake_tags lt
+                                      JOIN lakes l ON l.id = lt.lake_id
+                                      WHERE lt.tag_id = t.id AND l.status = 'published')`),
+            pool.query(`SELECT slug, updated_at FROM businesses
+                        WHERE status = 'active'
+                          AND (user_id IS NULL OR subscription_status = 'active')`),
+            pool.query(`SELECT slug, updated_at FROM agents
+                        WHERE profile_status = 'published' AND is_published = TRUE AND deleted_at IS NULL`),
+            pool.query(`SELECT slug, updated_at, published_at FROM blog_posts
+                        WHERE is_published = TRUE AND deleted_at IS NULL`),
+        ]);
+
+        const entries = [];
+        const push = (loc, opts = {}) => entries.push({ loc, ...opts });
+
+        // Static pages — ordered by importance (priority drives crawl order).
+        const staticPages = [
+            { url: '/',                priority: 1.0, changefreq: 'weekly'  },
+            { url: '/buy',             priority: 0.9, changefreq: 'weekly'  },
+            { url: '/sell',            priority: 0.9, changefreq: 'weekly'  },
+            { url: '/towns',           priority: 0.9, changefreq: 'weekly'  },
+            { url: '/agents',          priority: 0.8, changefreq: 'weekly'  },
+            { url: '/cash-offer',      priority: 0.7, changefreq: 'monthly' },
+            { url: '/blog',            priority: 0.7, changefreq: 'daily'   },
+            { url: '/resources',       priority: 0.6, changefreq: 'monthly' },
+            { url: '/rent',            priority: 0.6, changefreq: 'weekly'  },
+            { url: '/join',            priority: 0.5, changefreq: 'monthly' },
+            { url: '/submit-business', priority: 0.5, changefreq: 'monthly' },
+            { url: '/business-signup', priority: 0.5, changefreq: 'monthly' },
+            { url: '/commonrealtor',   priority: 0.5, changefreq: 'monthly' },
+            { url: '/about',           priority: 0.5, changefreq: 'yearly'  },
+            { url: '/contact',         priority: 0.5, changefreq: 'yearly'  },
+            { url: '/faq',             priority: 0.4, changefreq: 'yearly'  },
+            { url: '/careers',         priority: 0.3, changefreq: 'monthly' },
+        ];
+        for (const p of staticPages) push(base + p.url, { priority: p.priority, changefreq: p.changefreq });
+
+        // Dynamic pages, in priority order. Lakes + towns are our biggest
+        // SEO surface — they're where cabin buyers and sellers actually land.
+        for (const l of lakes.rows)      push(`${base}/lakes/${encodeURIComponent(l.slug)}`,       { lastmod: iso(l.updated_at),  priority: 0.8, changefreq: 'weekly'  });
+        for (const t of towns.rows)      push(`${base}/towns/${encodeURIComponent(t.slug)}`,       { lastmod: iso(t.updated_at),  priority: 0.8, changefreq: 'weekly'  });
+        for (const b of businesses.rows) push(`${base}/businesses/${encodeURIComponent(b.slug)}`,  { lastmod: iso(b.updated_at),  priority: 0.6, changefreq: 'monthly' });
+        for (const a of agents.rows)     push(`${base}/pages/public/agent-profile.html?slug=${encodeURIComponent(a.slug)}`, { lastmod: iso(a.updated_at), priority: 0.6, changefreq: 'monthly' });
+        for (const p of posts.rows)      push(`${base}/pages/public/blog-post.html?slug=${encodeURIComponent(p.slug)}`,     { lastmod: iso(p.published_at || p.updated_at), priority: 0.5, changefreq: 'monthly' });
+
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${entries.map(e => `  <url>
+    <loc>${esc(e.loc)}</loc>${e.lastmod ? `
+    <lastmod>${e.lastmod}</lastmod>` : ''}
+    <changefreq>${e.changefreq || 'monthly'}</changefreq>
+    <priority>${(e.priority ?? 0.5).toFixed(1)}</priority>
+  </url>`).join('\n')}
+</urlset>`;
+        res.type('application/xml').send(xml);
+    } catch (err) {
+        console.error('[sitemap]', err.message);
+        // Degrade to an empty-but-valid sitemap rather than 500 — a
+        // transient DB blip shouldn't deindex the whole site.
+        res.type('application/xml').send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
+    }
+});
+
 // ─── Lakes: public browse + dynamic lake pages ─────────────────────────
 // These sit in front of express.static so /lakes and /lakes/:slug resolve
 // to the lake templates, not to any same-named static file. The detail
@@ -245,6 +453,17 @@ app.get('/lakes/:slug', async (req, res, next) => {
             const canonical = `/lakes/${lake.slug}`;
             const hero     = lake.hero_image_url     || '/assets/images/mn-winter-birch-chalet.jpg';
             const featured = lake.featured_image_url || lake.hero_image_url || '/assets/images/mn-canoe-shore.webp';
+            const siteBase = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
+            const lakeBreadcrumb = JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'BreadcrumbList',
+                itemListElement: [
+                    { '@type': 'ListItem', position: 1, name: 'Home',  item: `${siteBase}/` },
+                    { '@type': 'ListItem', position: 2, name: 'Lakes', item: `${siteBase}/towns` },
+                    { '@type': 'ListItem', position: 3, name: lake.name, item: `${siteBase}/lakes/${lake.slug}` },
+                ],
+            });
+            const lakeStructuredData = `<script type="application/ld+json">${lakeBreadcrumb}</script>`;
             const replacements = {
                 '{{LAKE_SEO_TITLE}}':       escapeHtml(title),
                 '{{LAKE_SEO_DESCRIPTION}}': escapeHtml(desc),
@@ -260,6 +479,7 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 '{{LAKE_REGION}}':          escapeHtml(lake.region || ''),
                 '{{LAKE_COUNTY}}':          escapeHtml(lake.county || ''),
                 '{{LAKE_STATE}}':           escapeHtml(lake.state || ''),
+                '{{LAKE_STRUCTURED_DATA}}': lakeStructuredData,
             };
             let out = html;
             for (const [k, v] of Object.entries(replacements)) {
@@ -309,6 +529,50 @@ app.get('/businesses/:slug', async (req, res, next) => {
             const title = `${biz.name} | ${prettyType}${locLine ? ' in ' + locLine : ''}`;
             const desc  = (biz.description && biz.description.slice(0, 160))
                 || `${prettyType}${locLine ? ' in ' + locLine : ''} — contact ${biz.name} for hours, info, and bookings.`;
+            // LocalBusiness + BreadcrumbList JSON-LD — lets Google show
+            // rich results (stars, hours, contact) instead of a plain
+            // blue link. Built server-side so Googlebot sees it without
+            // executing JS. JSON.stringify escapes <, >, etc. safely
+            // inside the JSON-LD script block.
+            const siteBase = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
+            const bizJsonLd = JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'LocalBusiness',
+                '@id': `${siteBase}/businesses/${biz.slug}`,
+                name: biz.name,
+                description: biz.description || undefined,
+                url: `${siteBase}/businesses/${biz.slug}`,
+                image: biz.featured_image_url || undefined,
+                telephone: biz.phone || undefined,
+                email: biz.email || undefined,
+                address: (biz.address || biz.city) ? {
+                    '@type': 'PostalAddress',
+                    streetAddress: biz.address || undefined,
+                    addressLocality: biz.city || undefined,
+                    addressRegion: biz.state || undefined,
+                    postalCode: biz.zip || undefined,
+                    addressCountry: 'US',
+                } : undefined,
+                geo: (biz.latitude != null && biz.longitude != null) ? {
+                    '@type': 'GeoCoordinates',
+                    latitude: biz.latitude,
+                    longitude: biz.longitude,
+                } : undefined,
+                sameAs: [biz.website_url, biz.instagram_url, biz.facebook_url].filter(Boolean),
+            });
+            const breadcrumbJsonLd = JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'BreadcrumbList',
+                itemListElement: [
+                    { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteBase}/` },
+                    { '@type': 'ListItem', position: 2, name: 'Businesses & Services', item: `${siteBase}/towns?view=biz` },
+                    { '@type': 'ListItem', position: 3, name: biz.name, item: `${siteBase}/businesses/${biz.slug}` },
+                ],
+            });
+            const structuredData =
+                `<script type="application/ld+json">${bizJsonLd}</script>\n    ` +
+                `<script type="application/ld+json">${breadcrumbJsonLd}</script>`;
+
             const replacements = {
                 '{{BUSINESS_SEO_TITLE}}':       escapeHtml(title),
                 '{{BUSINESS_SEO_DESCRIPTION}}': escapeHtml(desc),
@@ -330,6 +594,9 @@ app.get('/businesses/:slug', async (req, res, next) => {
                 '{{BUSINESS_IMAGE}}':           escapeHtml(biz.featured_image_url || ''),
                 '{{BUSINESS_LATITUDE}}':        escapeHtml(biz.latitude ?? ''),
                 '{{BUSINESS_LONGITUDE}}':       escapeHtml(biz.longitude ?? ''),
+                // Structured-data block injected verbatim — already contains
+                // JSON-safe output from JSON.stringify, no HTML-escaping.
+                '{{BUSINESS_STRUCTURED_DATA}}': structuredData,
             };
             let out = html;
             for (const [k, v] of Object.entries(replacements)) {
@@ -391,6 +658,17 @@ app.get('/towns/:slug', async (req, res, next) => {
             // Towns don't carry their own hero image yet — fall back to a
             // generic Minnesota waterfront shot until per-town imagery is added.
             const heroImage = '/assets/images/mn-aerial-small-town.jpg';
+            const siteBase = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
+            const townBreadcrumb = JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'BreadcrumbList',
+                itemListElement: [
+                    { '@type': 'ListItem', position: 1, name: 'Home',  item: `${siteBase}/` },
+                    { '@type': 'ListItem', position: 2, name: 'Lake Towns', item: `${siteBase}/towns` },
+                    { '@type': 'ListItem', position: 3, name: tag.name,   item: `${siteBase}/towns/${tag.slug}` },
+                ],
+            });
+            const townStructuredData = `<script type="application/ld+json">${townBreadcrumb}</script>`;
             const replacements = {
                 '{{TOWN_SEO_TITLE}}':       escapeHtml(title),
                 '{{TOWN_SEO_DESCRIPTION}}': escapeHtml(desc),
@@ -403,6 +681,7 @@ app.get('/towns/:slug', async (req, res, next) => {
                 '{{TOWN_LATITUDE}}':        escapeHtml(tag.latitude ?? ''),
                 '{{TOWN_LONGITUDE}}':       escapeHtml(tag.longitude ?? ''),
                 '{{TOWN_HERO_IMAGE}}':      escapeHtml(heroImage),
+                '{{TOWN_STRUCTURED_DATA}}': townStructuredData,
             };
             let out = html;
             for (const [k, v] of Object.entries(replacements)) {
@@ -830,6 +1109,23 @@ async function ensureTables() {
                 created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 UNIQUE (business_id, tag_id)
             );
+
+            -- Simple first-party pageview analytics. No external services,
+            -- no cookies — just a path + a timestamp + a referrer and a
+            -- hashed visitor token. Lets us see traffic volumes, top
+            -- pages, and referrers without handing data to GA4.
+            CREATE TABLE IF NOT EXISTS page_views (
+                id          BIGSERIAL PRIMARY KEY,
+                path        TEXT NOT NULL,
+                referrer    TEXT,
+                visitor_hash TEXT,
+                ua          TEXT,
+                session_id  TEXT,
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_page_views_created   ON page_views(created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_page_views_path      ON page_views(path);
+            CREATE INDEX IF NOT EXISTS idx_page_views_visitor   ON page_views(visitor_hash);
             CREATE INDEX IF NOT EXISTS idx_business_tags_tag      ON business_tags(tag_id);
             CREATE INDEX IF NOT EXISTS idx_business_tags_business ON business_tags(business_id);
 

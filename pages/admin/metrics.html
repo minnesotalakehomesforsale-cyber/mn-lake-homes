@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metrics | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'Inter', sans-serif; color: #1a202c; }
+        .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        .admin-main { padding: 3rem 3.5rem; overflow-y: auto; }
+
+        .m-head { margin-bottom: 2rem; }
+        .m-head h1 { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.75px; margin: 0 0 0.25rem; }
+        .m-head p  { color: #718096; font-size: 0.95rem; margin: 0; }
+
+        /* Top-row KPI cards */
+        .m-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .m-kpi { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.25rem 1.35rem; }
+        .m-kpi .label { font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #a0aec0; margin: 0 0 0.4rem; }
+        .m-kpi .big   { font-size: 2.1rem; font-weight: 800; color: #1a202c; letter-spacing: -0.6px; line-height: 1.1; }
+        .m-kpi .sub   { font-size: 0.8rem; color: #718096; margin-top: 0.35rem; }
+
+        .m-row { display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+        .m-card { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.5rem; }
+        .m-card h2 { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #718096; margin: 0 0 1.1rem; }
+
+        /* Daily traffic chart — SVG-rendered inline, no external library */
+        .m-chart { width: 100%; height: 220px; display: block; }
+        .m-chart .axis-label { font-size: 10px; fill: #a0aec0; }
+
+        /* List-style table for top pages / referrers */
+        .m-list { display: table; width: 100%; }
+        .m-list-row { display: table-row; }
+        .m-list-row > div { display: table-cell; padding: 0.55rem 0.5rem; font-size: 0.88rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        .m-list-row:last-child > div { border-bottom: none; }
+        .m-list-label { color: #1a202c; font-weight: 500; word-break: break-all; }
+        .m-list-count { color: #718096; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 700; }
+
+        .empty { text-align: center; color: #a0aec0; padding: 2rem 1rem; font-size: 0.9rem; }
+
+        @media (max-width: 900px) {
+            .admin-wrap { grid-template-columns: 1fr; }
+            .admin-main { padding: 1.75rem 1.25rem; }
+            .m-row { grid-template-columns: 1fr; }
+        }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-nav-badges.js" defer></script>
+</head>
+<body>
+    <div class="admin-wrap">
+        <admin-sidebar active="metrics"></admin-sidebar>
+
+        <main class="admin-main">
+            <div class="m-head">
+                <h1>Metrics</h1>
+                <p>First-party traffic + activity, last 30 days. No external analytics service — everything is from your own database.</p>
+            </div>
+
+            <div id="m-kpis" class="m-kpis">
+                <div class="empty" style="grid-column:1/-1;">Loading…</div>
+            </div>
+
+            <div class="m-row">
+                <div class="m-card">
+                    <h2>Daily traffic · last 30 days</h2>
+                    <svg id="m-chart" class="m-chart" viewBox="0 0 600 220" preserveAspectRatio="none"></svg>
+                    <div id="m-chart-empty" class="empty" style="display:none;">No pageviews recorded yet. Hits will start showing up here as soon as the tracker fires on real visits.</div>
+                </div>
+
+                <div class="m-card">
+                    <h2>Top referrers · last 30 days</h2>
+                    <div id="m-refs" class="m-list"></div>
+                </div>
+            </div>
+
+            <div class="m-card">
+                <h2>Top pages · last 30 days</h2>
+                <div id="m-pages" class="m-list"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        async function load() {
+            try {
+                const res = await fetch('/api/analytics/summary', { credentials: 'include' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const d = await res.json();
+                renderKpis(d);
+                renderChart(d.daily);
+                renderList('m-pages', d.top_pages, r => ({ label: r.path, count: r.views }));
+                renderList('m-refs',  d.top_referrers, r => ({ label: r.host, count: r.views }));
+            } catch (err) {
+                document.getElementById('m-kpis').innerHTML =
+                    `<div class="empty" style="grid-column:1/-1;color:#c53030;">Could not load metrics: ${esc(err.message || 'unknown error')}</div>`;
+            }
+        }
+
+        function renderKpis(d) {
+            const rows = [
+                { label: 'Pageviews · 7d',    big: d.views_7d.views,     sub: `${d.views_7d.visitors} unique visitors` },
+                { label: 'Pageviews · 30d',   big: d.views_30d.views,    sub: `${d.views_30d.visitors} unique visitors` },
+                { label: 'Leads · 7d / 30d',  big: `${d.leads.c7} / ${d.leads.c30}` },
+                { label: 'Inquiries · 7d / 30d', big: `${d.inquiries.c7} / ${d.inquiries.c30}` },
+                { label: 'New businesses · 7d / 30d', big: `${d.new_businesses.c7} / ${d.new_businesses.c30}` },
+                { label: 'New agents · 7d / 30d', big: `${d.new_agents.c7} / ${d.new_agents.c30}` },
+            ];
+            document.getElementById('m-kpis').innerHTML = rows.map(r => `
+                <div class="m-kpi">
+                    <div class="label">${esc(r.label)}</div>
+                    <div class="big">${esc(r.big)}</div>
+                    ${r.sub ? `<div class="sub">${esc(r.sub)}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function renderChart(daily) {
+            const svg = document.getElementById('m-chart');
+            if (!daily || !daily.length) {
+                svg.style.display = 'none';
+                document.getElementById('m-chart-empty').style.display = '';
+                return;
+            }
+            // Fill in any missing days in the 30-day range with zero so the
+            // chart doesn't visually skip over silent days.
+            const days = {};
+            daily.forEach(d => { days[d.day.slice(0, 10)] = d.views; });
+            const out = [];
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date(); d.setDate(d.getDate() - i);
+                const key = d.toISOString().slice(0, 10);
+                out.push({ day: key, views: days[key] || 0 });
+            }
+
+            const W = 600, H = 220, padL = 28, padR = 8, padT = 10, padB = 22;
+            const chartW = W - padL - padR, chartH = H - padT - padB;
+            const max = Math.max(1, ...out.map(o => o.views));
+            const xStep = chartW / Math.max(1, out.length - 1);
+
+            const points = out.map((o, i) => {
+                const x = padL + i * xStep;
+                const y = padT + chartH - (o.views / max) * chartH;
+                return `${x.toFixed(1)},${y.toFixed(1)}`;
+            }).join(' ');
+            const areaPath = `M${padL},${padT + chartH} L${points.split(' ').join(' L')} L${padL + chartW},${padT + chartH} Z`;
+            const firstLabel = out[0].day.slice(5);
+            const lastLabel  = out[out.length - 1].day.slice(5);
+
+            svg.innerHTML = `
+                <defs>
+                    <linearGradient id="m-grad" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0" stop-color="#1d6df2" stop-opacity="0.25"/>
+                        <stop offset="1" stop-color="#1d6df2" stop-opacity="0"/>
+                    </linearGradient>
+                </defs>
+                <line x1="${padL}" y1="${padT + chartH}" x2="${W - padR}" y2="${padT + chartH}" stroke="#edf2f7" stroke-width="1"/>
+                <path d="${areaPath}" fill="url(#m-grad)"/>
+                <polyline points="${points}" fill="none" stroke="#1d6df2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <text class="axis-label" x="${padL}"   y="${H - 6}" text-anchor="start">${firstLabel}</text>
+                <text class="axis-label" x="${W - padR}" y="${H - 6}" text-anchor="end">${lastLabel}</text>
+                <text class="axis-label" x="${padL - 4}" y="${padT + 6}" text-anchor="end">${max}</text>
+                <text class="axis-label" x="${padL - 4}" y="${padT + chartH}" text-anchor="end">0</text>
+            `;
+        }
+
+        function renderList(id, rows, mapFn) {
+            const el = document.getElementById(id);
+            if (!rows || !rows.length) {
+                el.innerHTML = '<div class="empty">No data yet.</div>';
+                return;
+            }
+            el.innerHTML = rows.map(r => {
+                const { label, count } = mapFn(r);
+                return `<div class="m-list-row">
+                    <div class="m-list-label">${esc(label)}</div>
+                    <div class="m-list-count">${esc(count)}</div>
+                </div>`;
+            }).join('');
+        }
+
+        function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+        document.addEventListener('DOMContentLoaded', load);
+    </script>
+</body>
+</html>

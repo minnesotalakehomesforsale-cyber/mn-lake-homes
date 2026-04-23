@@ -1022,3 +1022,44 @@ document.addEventListener('keydown', e => {
         if (ov && ov.style.display !== 'none') { e.preventDefault(); window._lfNext(); }
     }
 });
+
+// ─── First-party pageview beacon ────────────────────────────────────────────
+// Fires once per page load. Skips the admin + business-owner dashboards
+// (the server-side handler also filters them out as a belt-and-suspenders).
+// Uses sendBeacon when available so it survives the unload cycle on SPA-
+// style navigations; falls back to fetch keepalive otherwise.
+(function trackPageview() {
+    try {
+        const path = location.pathname + (location.search || '');
+        if (/^\/(pages\/admin|api|business\/dashboard|admin)\b/.test(location.pathname)) return;
+
+        // Per-tab session id so we can later compute sessions-to-views ratios.
+        let sid = null;
+        try {
+            sid = sessionStorage.getItem('_mnlh_sid');
+            if (!sid) {
+                sid = Math.random().toString(36).slice(2) + Date.now().toString(36);
+                sessionStorage.setItem('_mnlh_sid', sid);
+            }
+        } catch (_) { /* private-browsing can block sessionStorage */ }
+
+        const payload = JSON.stringify({
+            path,
+            referrer: document.referrer || null,
+            session_id: sid,
+        });
+        const url = '/api/analytics/track';
+        if (navigator.sendBeacon) {
+            const blob = new Blob([payload], { type: 'application/json' });
+            navigator.sendBeacon(url, blob);
+        } else {
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: payload,
+                keepalive: true,
+                credentials: 'omit',
+            }).catch(() => {});
+        }
+    } catch (_) { /* analytics must never break a page */ }
+})();
