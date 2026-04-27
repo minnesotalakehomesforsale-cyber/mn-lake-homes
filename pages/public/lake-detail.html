@@ -101,17 +101,6 @@
         .lm-biz-section h3 { font-size: 1.75rem; font-weight: 700; color: #1a202c; margin: 0 0 0.5rem; letter-spacing: -0.5px; }
         .lm-biz-section p.sub { color: #718096; margin: 0 0 1.75rem; line-height: 1.6; }
 
-        /* "Part of these towns" — prominent callout band right below the hero.
-           This is the primary wayfinding moment on the lake page now that
-           towns are the hub: we nudge the reader toward the town-level
-           directory where agents/businesses/blog posts aggregate. */
-        .lm-towns-band { background: #fff; border-bottom: 1px solid #edf2f7; padding: 2rem; }
-        .lm-towns-inner { max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem; }
-        .lm-towns-label { font-size: 0.72rem; font-weight: 800; color: #a0aec0; letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; }
-        .lm-towns-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; flex: 1; }
-        .lm-town-chip { display:inline-flex; align-items:center; gap:0.4rem; background:#f7f9fa; border:1px solid #edf2f7; border-radius:99px; padding:0.5rem 1rem; font-size:0.88rem; font-weight:600; color:#1a202c; text-decoration:none; transition: border-color 0.15s, background 0.15s, color 0.15s; }
-        .lm-town-chip:hover { border-color:#1d6df2; color:#1d6df2; background:#fff; }
-
         .sp-dark-section { background: var(--bg-dark); color: #fff; padding: 6rem 2rem; text-align: center; }
         .sp-dark-section h2 { font-size: 3rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -1px; color: #fff; }
         .sp-dark-section p { font-size: 1.15rem; color: #a0aec0; margin-bottom: 2.5rem; line-height: 1.6; }
@@ -135,7 +124,7 @@
             .sp-title { font-size: 1.75rem; }
             .sp-body p { font-size: 0.98rem; line-height: 1.6; }
             .sp-body p br, .sp-title br { display: none; }
-            .lm-blog, .lm-biz, .lm-towns { padding: 3rem 1.25rem; }
+            .lm-blog, .lm-biz { padding: 3rem 1.25rem; }
             .lm-blog h2, .lm-biz h2 { font-size: 1.85rem; }
             .sp-dark-section { padding: 4rem 1.25rem; }
             .sp-dark-section h2 { font-size: 2rem; }
@@ -166,16 +155,6 @@
             <div class="lm-hero-img">
                 <img src="{{LAKE_HERO_IMAGE}}" alt="{{LAKE_NAME}} waterfront real estate in {{LAKE_STATE}}" width="1200" height="800" fetchpriority="high">
             </div>
-        </div>
-    </section>
-
-    <!-- Part of these towns — primary nav signal back to the town hubs
-         where agents/businesses/blog aggregate. Hidden if the lake has
-         no towns linked. -->
-    <section id="lm-towns-band" class="lm-towns-band" style="display:none;">
-        <div class="lm-towns-inner">
-            <span class="lm-towns-label">Part of</span>
-            <div id="lm-towns-grid" class="lm-towns-grid"></div>
         </div>
     </section>
 
@@ -418,24 +397,6 @@
             } catch (_) { /* stays hidden */ }
         }
 
-        async function loadLakeTowns() {
-            const section = document.getElementById('lm-towns-band');
-            const grid = document.getElementById('lm-towns-grid');
-            if (!grid || !section) return;
-            try {
-                const res = await fetch(`/api/lakes/${encodeURIComponent(LAKE_ID)}/tags`);
-                if (!res.ok) throw new Error();
-                const towns = await res.json();
-                if (!towns.length) return;
-                section.style.display = '';
-                grid.innerHTML = towns.map(t => `
-                    <a href="/towns/${encodeURIComponent(t.slug)}" class="lm-town-chip">
-                        <span style="color:#1d6df2;">📍</span>
-                        ${escHtml(t.name)}
-                    </a>`).join('');
-            } catch (_) { /* stays hidden */ }
-        }
-
         function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
         // ── Shared "businesses nearby" fallback ──────────────────────────
@@ -547,7 +508,6 @@
             loadLakeAgents();
             loadLakeBlog();
             loadLakeBiz();
-            loadLakeTowns();
             // Standalone "Businesses near {lake}" row — ≥3 geo-tagged required.
             renderTaggedBusinesses({
                 endpoint:  `/api/lakes/${encodeURIComponent(LAKE_ID)}/businesses`,
