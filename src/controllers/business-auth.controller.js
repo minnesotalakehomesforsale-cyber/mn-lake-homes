@@ -32,6 +32,7 @@ const { logActivity } = require('../services/activity-log');
 // Aliased to emailService because this file uses `email` as a local
 // variable name (req.body.email).
 const emailService = require('./../services/email');
+const hubspot = require('./../services/hubspot');
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -216,6 +217,23 @@ exports.signup = async (req, res) => {
             slug: biz.slug,
             businessId: biz.id,
         });
+
+        // Fire-and-forget HubSpot mirror for the business owner.
+        (async () => {
+            const r = await hubspot.syncContact({
+                email,
+                firstname: firstName,
+                lastname:  lastName,
+                user_type: 'business_owner',
+                signup_source: 'business_signup',
+                company:   business_name,
+                business_type,
+            });
+            if (r?.id) {
+                pool.query(`UPDATE users SET hs_contact_id = $1 WHERE id = $2`, [r.id, userId])
+                    .catch(e => console.error('[hubspot] save id failed:', e.message));
+            }
+        })();
 
         // Try to produce a Checkout URL. If Stripe isn't set up yet, we
         // still return success — the dashboard will show a "finish

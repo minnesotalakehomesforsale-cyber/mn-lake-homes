@@ -350,6 +350,14 @@
                             style="color:#1d6df2;font-size:0.9rem;font-weight:600;text-decoration:none;">
                             → View Public Profile
                         </a>
+                        <a id="link-hubspot" href="#" target="_blank" rel="noopener"
+                            style="color:#ff7a59;font-size:0.9rem;font-weight:600;text-decoration:none;display:none;">
+                            → View in HubSpot
+                        </a>
+                        <span id="link-hubspot-pending"
+                            style="color:#a0aec0;font-size:0.85rem;font-style:italic;display:none;">
+                            HubSpot sync pending — sends on next edit.
+                        </span>
                     </div>
                 </div>
             </div>
@@ -600,6 +608,18 @@
         // Public profile link
         document.getElementById('link-public-profile').href =
             `/pages/public/agent-profile.html?slug=${a.slug}`;
+
+        // HubSpot deep link — only renders once sync has populated hs_contact_id.
+        const hsLink    = document.getElementById('link-hubspot');
+        const hsPending = document.getElementById('link-hubspot-pending');
+        if (a.hs_contact_url) {
+            hsLink.href = a.hs_contact_url;
+            hsLink.style.display = 'block';
+            hsPending.style.display = 'none';
+        } else {
+            hsLink.style.display = 'none';
+            hsPending.style.display = 'block';
+        }
     }
 
     function statusBadge(status) {

@@ -1,6 +1,7 @@
 const pool = require('../database/pool');
 const bcrypt = require('bcrypt');
 const { logActivity } = require('../services/activity-log');
+const hubspot = require('../services/hubspot');
 
 /**
  * GET /api/admin
@@ -70,6 +71,7 @@ const getAgentDetail = async (req, res) => {
                    u.id as user_id_ref, u.email, u.full_name, u.first_name, u.last_name,
                    u.phone as user_phone, u.role as user_role, u.account_status as user_status,
                    u.created_at as user_created_at, u.last_login_at,
+                   u.hs_contact_id,
                    m.name as membership_name, m.code as membership_code, m.display_badge_label as membership_badge
             FROM agents a
             JOIN users u ON a.user_id = u.id
@@ -78,7 +80,9 @@ const getAgentDetail = async (req, res) => {
         `;
         const { rows } = await pool.query(query, [req.params.id]);
         if (rows.length === 0) return res.status(404).json({ error: 'Agent not found.' });
-        res.json(rows[0]);
+        const out = rows[0];
+        out.hs_contact_url = hubspot.getPortalContactUrl(out.hs_contact_id);
+        res.json(out);
     } catch (err) {
         console.error('[getAgentDetail]', err.message);
         res.status(500).json({ error: 'Failed to fetch agent detail.' });
@@ -138,6 +142,19 @@ const createAgent = async (req, res) => {
         );
 
         await client.query('COMMIT');
+
+        // Fire-and-forget HubSpot mirror for the new agent.
+        (async () => {
+            const r = await hubspot.syncContact({
+                email, firstname: first_name, lastname: last_name,
+                user_type: 'agent', signup_source: 'admin_created',
+                company: brokerage_name || undefined,
+            });
+            if (r?.id) {
+                pool.query(`UPDATE users SET hs_contact_id = $1 WHERE id = $2`, [r.id, userId])
+                    .catch(e => console.error('[hubspot] save id failed:', e.message));
+            }
+        })();
 
         logActivity({
             event_type: 'agent.admin.create',
@@ -224,6 +241,35 @@ const updateAgentProfile = async (req, res) => {
             }).filter(([, v]) => v !== undefined && v !== null && v !== '')),
             req,
         });
+
+        // Fire-and-forget HubSpot sync. Pull the underlying user row to
+        // patch by hs_contact_id (or upsert if it's still null).
+        (async () => {
+            const u = await pool.query(
+                `SELECT u.id AS user_id, u.email, u.first_name, u.last_name, u.phone,
+                        u.role, u.hs_contact_id, a.brokerage_name, a.city, a.state
+                   FROM agents a JOIN users u ON u.id = a.user_id
+                  WHERE a.id = $1`,
+                [id]
+            );
+            const row = u.rows[0];
+            if (!row?.email) return;
+            const props = {
+                email: row.email, firstname: row.first_name, lastname: row.last_name,
+                phone: row.phone, user_type: row.role || 'agent',
+                company: row.brokerage_name || undefined,
+                city: row.city || undefined, state: row.state || undefined,
+            };
+            if (row.hs_contact_id) {
+                hubspot.updateContact(row.hs_contact_id, props);
+            } else {
+                const r = await hubspot.syncContact(props);
+                if (r?.id) {
+                    pool.query(`UPDATE users SET hs_contact_id = $1 WHERE id = $2`, [r.id, row.user_id])
+                        .catch(e => console.error('[hubspot] save id failed:', e.message));
+                }
+            }
+        })();
 
         res.json({ success: true });
     } catch (err) {

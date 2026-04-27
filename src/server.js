@@ -153,6 +153,29 @@ app.get('/api/_diagnostic', async (req, res) => {
         process.env.RESEND_API_KEY ? 'resend' :
         'NONE — set GMAIL_USER+GMAIL_APP_PASSWORD or RESEND_API_KEY';
 
+    // HubSpot — verifies env vars are loaded AND credentials work.
+    out.checks.hubspot_env = {
+        HUBSPOT_ACCESS_TOKEN: process.env.HUBSPOT_ACCESS_TOKEN ? 'set' : 'MISSING',
+        HUBSPOT_PORTAL_ID:    process.env.HUBSPOT_PORTAL_ID    || 'MISSING',
+        HUBSPOT_REGION:       process.env.HUBSPOT_REGION       || 'na2 (default)',
+        HUBSPOT_ENABLE_SYNC:  process.env.HUBSPOT_ENABLE_SYNC  || 'true (default)',
+    };
+    try {
+        const hubspot = require('./services/hubspot');
+        if (!hubspot.isConfigured()) {
+            out.checks.hubspot_ping = 'skipped — HUBSPOT_ACCESS_TOKEN/PORTAL_ID missing';
+        } else {
+            const r = await hubspot.ping();
+            out.checks.hubspot_ping = r.ok
+                ? 'pass'
+                : `fail: ${r.reason || 'unknown'}${r.status ? ` (${r.status})` : ''}`;
+            if (!r.ok) out.status = 'degraded';
+        }
+    } catch (e) {
+        out.checks.hubspot_ping = `fail: ${e.message || e}`;
+        out.status = 'degraded';
+    }
+
     res.json(out);
 });
 
@@ -806,6 +829,15 @@ async function ensureTables() {
         await pool.query(`
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT;
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
+        `);
+
+        // HubSpot mirror id — populated by src/services/hubspot.js after a
+        // successful upsert. NULL means "not yet synced" (or sync was off
+        // when the record was created); we re-attempt on next contact edit.
+        await pool.query(`
+            ALTER TABLE users              ADD COLUMN IF NOT EXISTS hs_contact_id TEXT;
+            ALTER TABLE leads              ADD COLUMN IF NOT EXISTS hs_contact_id TEXT;
+            ALTER TABLE contact_inquiries  ADD COLUMN IF NOT EXISTS hs_contact_id TEXT;
         `);
 
         // ── Lead routing infrastructure (Founder/Premium/Basic tiers + round-robin) ──

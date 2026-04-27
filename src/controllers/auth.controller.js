@@ -2,6 +2,7 @@ const pool = require('../database/pool');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const emailService = require('../services/email');
+const hubspot = require('../services/hubspot');
 const { logActivity } = require('../services/activity-log');
 
 const setAuthCookie = (res, token) => {
@@ -76,6 +77,19 @@ const waitlist = async (req, res) => {
 
         // Fire-and-forget welcome email (doesn't block the response)
         try { emailService.sendWelcome({ email, first_name, full_name: `${first_name} ${last_name}` }); } catch (_) {}
+
+        // Fire-and-forget HubSpot mirror — store the returned id so admins
+        // can deep-link to the contact's HubSpot timeline later.
+        (async () => {
+            const r = await hubspot.syncContact({
+                email, firstname: first_name, lastname: last_name, phone,
+                user_type: 'client', signup_source: 'waitlist',
+            });
+            if (r?.id) {
+                pool.query(`UPDATE users SET hs_contact_id = $1 WHERE id = $2`, [r.id, userId])
+                    .catch(e => console.error('[hubspot] save id failed:', e.message));
+            }
+        })();
 
         logActivity({
             event_type: 'client.signup',
@@ -187,6 +201,21 @@ const register = async (req, res) => {
 
         // Fire-and-forget agent welcome email
         try { emailService.sendAgentWelcome({ email, display_name }); } catch (_) {}
+
+        // Fire-and-forget HubSpot mirror for the new agent.
+        (async () => {
+            const r = await hubspot.syncContact({
+                email,
+                firstname: display_name.split(' ')[0],
+                lastname:  display_name.split(' ').slice(1).join(' '),
+                user_type: 'agent', signup_source: 'agent_register',
+                company:   brokerage_name || undefined,
+            });
+            if (r?.id) {
+                pool.query(`UPDATE users SET hs_contact_id = $1 WHERE id = $2`, [r.id, userId])
+                    .catch(e => console.error('[hubspot] save id failed:', e.message));
+            }
+        })();
 
         logActivity({
             event_type: 'agent.register',
@@ -434,6 +463,30 @@ const updateProfile = async (req, res) => {
         if (!sets.length) return res.json({ success: true, unchanged: true });
         vals.push(req.user.userId);
         await pool.query(`UPDATE users SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${i}`, vals);
+
+        // Fire-and-forget HubSpot sync. If we already have an hs_contact_id,
+        // patch by id; otherwise upsert by email so we don't lose the link.
+        (async () => {
+            const u = await pool.query(
+                `SELECT email, first_name, last_name, phone, role, hs_contact_id FROM users WHERE id = $1`,
+                [req.user.userId]
+            );
+            const row = u.rows[0];
+            if (!row?.email) return;
+            const props = {
+                email: row.email, firstname: row.first_name, lastname: row.last_name,
+                phone: row.phone, user_type: row.role || undefined,
+            };
+            if (row.hs_contact_id) {
+                hubspot.updateContact(row.hs_contact_id, props);
+            } else {
+                const r = await hubspot.syncContact(props);
+                if (r?.id) {
+                    pool.query(`UPDATE users SET hs_contact_id = $1 WHERE id = $2`, [r.id, req.user.userId])
+                        .catch(e => console.error('[hubspot] save id failed:', e.message));
+                }
+            }
+        })();
 
         logActivity({
             event_type: 'user.profile.update',

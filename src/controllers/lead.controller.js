@@ -1,5 +1,6 @@
 const pool = require('../database/pool');
 const emailService = require('../services/email');
+const hubspot = require('../services/hubspot');
 const { logActivity } = require('../services/activity-log');
 const { geocodeAddress } = require('../services/geocoder');
 const { matchTagsAndUsers } = require('../services/tag-matcher');
@@ -90,6 +91,28 @@ const createLead = async (req, res) => {
             source,
             notes
         });
+
+        // Fire-and-forget HubSpot mirror — leads with no email are skipped
+        // inside hubspot.syncContact (email is the canonical key).
+        if (newLeadId && email) {
+            (async () => {
+                const lastName = name.split(' ').slice(1).join(' ');
+                const r = await hubspot.syncContact({
+                    email,
+                    firstname: firstName,
+                    lastname:  lastName,
+                    phone: phone || undefined,
+                    user_type: 'lead',
+                    signup_source: source || enumType,
+                    city: propCity || undefined,
+                    state: propState || undefined,
+                });
+                if (r?.id) {
+                    pool.query(`UPDATE leads SET hs_contact_id = $1 WHERE id = $2`, [r.id, newLeadId])
+                        .catch(e => console.error('[hubspot] save id failed:', e.message));
+                }
+            })();
+        }
 
         // Fire-and-forget geo routing: if we captured a property address,
         // geocode it, find agents whose service-area tags fall within the

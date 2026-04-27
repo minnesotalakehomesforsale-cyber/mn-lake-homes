@@ -13,6 +13,7 @@
 
 const pool = require('../database/pool');
 const email = require('../services/email');
+const hubspot = require('../services/hubspot');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
@@ -96,6 +97,24 @@ exports.createInquiry = async (req, res) => {
         email.sendInquiryConfirmation({
             to: submitterEmail, name, source,
         });
+
+        // Fire-and-forget HubSpot mirror — these are top-of-funnel leads,
+        // exactly what HubSpot's marketing tooling is for.
+        (async () => {
+            const [first, ...rest] = String(name).split(' ');
+            const r = await hubspot.syncContact({
+                email: submitterEmail,
+                firstname: first || '',
+                lastname:  rest.join(' '),
+                phone: phone || undefined,
+                user_type: 'inquiry',
+                signup_source: source === 'commonrealtor' ? 'commonrealtor_contact' : 'mnlakehomes_contact',
+            });
+            if (r?.id) {
+                pool.query(`UPDATE contact_inquiries SET hs_contact_id = $1 WHERE id = $2`, [r.id, saved.id])
+                    .catch(e => console.error('[hubspot] save id failed:', e.message));
+            }
+        })();
 
         logActivity({
             event_type: 'inquiry.create',
