@@ -1534,4 +1534,17 @@ app.listen(PORT, async () => {
     console.log(`=======================================`);
     await ensureTables();
     await backfillBusinessCoords();
+
+    // Push every existing contact (users / leads / inquiries) into HubSpot
+    // in the background. Idempotent — only touches rows whose hs_contact_id
+    // is still NULL. Throttled internally to respect rate limits. Runs as
+    // fire-and-forget so a flaky HubSpot can't delay startup.
+    (async () => {
+        try {
+            const hubspot = require('./services/hubspot');
+            await hubspot.backfillExistingRecords(pool);
+        } catch (err) {
+            console.error('[hubspot.backfill] failed:', err.message);
+        }
+    })();
 });

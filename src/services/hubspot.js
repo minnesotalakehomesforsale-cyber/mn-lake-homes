@@ -69,6 +69,9 @@ async function hsFetch(path, { method = 'GET', body } = {}) {
     let data = null;
     try { data = text ? JSON.parse(text) : null; } catch (_) { /* leave as text */ }
     if (!res.ok) {
+        // Log the full response body so 400s from missing custom properties,
+        // schema mismatches, etc. are debuggable in Render logs.
+        console.error(`[hubspot] HTTP ${res.status} ${method} ${path} ::`, text.slice(0, 500));
         const msg = data?.message || text || `HTTP ${res.status}`;
         const err = new Error(msg);
         err.status = res.status;
@@ -76,6 +79,25 @@ async function hsFetch(path, { method = 'GET', body } = {}) {
         throw err;
     }
     return data;
+}
+
+// HubSpot rejects POSTs with unknown property names. Restrict every sync
+// to standard built-in contact fields so the integration works without
+// requiring custom properties to be provisioned in the user's HubSpot
+// account first. If/when the user adds custom properties (user_type,
+// signup_source, etc.) they can be re-enabled here.
+const ALLOWED_PROPS = new Set([
+    'email', 'firstname', 'lastname', 'phone', 'company',
+    'city', 'state', 'zip', 'address', 'website',
+    'jobtitle', 'lifecyclestage',
+]);
+
+function whitelistProps(props) {
+    const out = {};
+    for (const [k, v] of Object.entries(props || {})) {
+        if (ALLOWED_PROPS.has(k)) out[k] = v;
+    }
+    return out;
 }
 
 /**
@@ -91,8 +113,8 @@ async function syncContact(payload) {
     if (!ENABLED)        { logSkip('HUBSPOT_ENABLE_SYNC=false'); return null; }
     if (!isConfigured()) { logSkip('HUBSPOT_ACCESS_TOKEN/PORTAL_ID not set'); return null; }
 
-    const props = cleanProps(payload);
-    const email = (props.email || '').toLowerCase();
+    const props = whitelistProps(cleanProps(payload));
+    const email = ((payload?.email) || '').toLowerCase();
     if (!email) { logSkip('no email'); return null; }
     props.email = email;
 
@@ -132,7 +154,7 @@ async function updateContact(hsContactId, props) {
     if (!isConfigured()) { logSkip('HUBSPOT_ACCESS_TOKEN/PORTAL_ID not set'); return null; }
     if (!hsContactId)    { logSkip('no hs_contact_id'); return null; }
 
-    const cleaned = cleanProps(props);
+    const cleaned = whitelistProps(cleanProps(props));
     if (!Object.keys(cleaned).length) return { id: hsContactId, unchanged: true };
 
     try {
@@ -157,6 +179,91 @@ function getPortalContactUrl(hsContactId) {
     if (!PORTAL_ID || !hsContactId) return null;
     const sub = REGION && REGION !== 'na1' ? `app-${REGION}` : 'app';
     return `https://${sub}.hubspot.com/contacts/${PORTAL_ID}/contact/${hsContactId}`;
+}
+
+/**
+ * Backfill loop: sweep every users / leads / contact_inquiries row whose
+ * hs_contact_id is still NULL and push them to HubSpot. Runs once on
+ * server boot, after `ensureTables()`. Throttled to ~5 contacts/sec to
+ * stay well under HubSpot's 100/10s rate limit.
+ *
+ * `pool` is passed in (rather than required at the top of this file) so
+ * we don't introduce a circular dependency with database/pool.js.
+ */
+async function backfillExistingRecords(pool) {
+    if (!ENABLED || !isConfigured()) return;
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+    const tables = [
+        {
+            name: 'users',
+            select: `SELECT id, email, first_name AS firstname, last_name AS lastname, phone
+                       FROM users
+                      WHERE hs_contact_id IS NULL AND email IS NOT NULL AND email <> ''
+                        AND deleted_at IS NULL
+                      LIMIT 500`,
+        },
+        {
+            name: 'leads',
+            // Leads store the full name in one column; split it cheaply.
+            select: `SELECT id, email, full_name, phone, property_city AS city, property_state AS state
+                       FROM leads
+                      WHERE hs_contact_id IS NULL AND email IS NOT NULL AND email <> ''
+                        AND deleted_at IS NULL
+                      LIMIT 500`,
+        },
+        {
+            name: 'contact_inquiries',
+            select: `SELECT id, email, name, phone
+                       FROM contact_inquiries
+                      WHERE hs_contact_id IS NULL AND email IS NOT NULL AND email <> ''
+                        AND deleted_at IS NULL
+                      LIMIT 500`,
+        },
+    ];
+
+    let totalSynced = 0;
+    for (const t of tables) {
+        let rows;
+        try {
+            ({ rows } = await pool.query(t.select));
+        } catch (e) {
+            console.warn(`[hubspot.backfill] skip ${t.name} — ${e.message}`);
+            continue;
+        }
+        if (!rows.length) continue;
+        console.log(`[hubspot.backfill] ${t.name}: ${rows.length} rows pending`);
+
+        for (const row of rows) {
+            const props = (() => {
+                if (t.name === 'users') {
+                    return { email: row.email, firstname: row.firstname, lastname: row.lastname, phone: row.phone };
+                }
+                if (t.name === 'leads') {
+                    const [first, ...rest] = String(row.full_name || '').split(' ');
+                    return {
+                        email: row.email, firstname: first, lastname: rest.join(' '),
+                        phone: row.phone, city: row.city, state: row.state,
+                    };
+                }
+                // contact_inquiries
+                const [first, ...rest] = String(row.name || '').split(' ');
+                return { email: row.email, firstname: first, lastname: rest.join(' '), phone: row.phone };
+            })();
+
+            const r = await syncContact(props);
+            if (r?.id) {
+                try {
+                    await pool.query(`UPDATE ${t.name} SET hs_contact_id = $1 WHERE id = $2`, [r.id, row.id]);
+                    totalSynced++;
+                } catch (e) {
+                    console.error(`[hubspot.backfill] save id failed for ${t.name}.${row.id}:`, e.message);
+                }
+            }
+            await sleep(200); // ~5 contacts/sec — well under HubSpot's 100/10s
+        }
+    }
+    if (totalSynced) console.log(`[hubspot.backfill] complete · ${totalSynced} synced`);
 }
 
 /**
@@ -187,4 +294,5 @@ module.exports = {
     getPortalContactUrl,
     isConfigured,
     ping,
+    backfillExistingRecords,
 };
