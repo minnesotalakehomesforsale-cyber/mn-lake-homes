@@ -430,6 +430,7 @@ const getUserDetail = async (req, res) => {
         const { rows } = await pool.query(
             `SELECT u.id, u.first_name, u.last_name, u.full_name, u.email, u.role,
                     u.account_status, u.last_login_at, u.created_at, u.updated_at,
+                    u.hs_contact_id,
                     (u.password_hash IS NOT NULL) AS has_password,
                     a.id as agent_id, a.display_name, a.brokerage_name, a.profile_status,
                     a.is_published, a.slug, m.name as membership_name, m.code as membership_code
@@ -440,7 +441,9 @@ const getUserDetail = async (req, res) => {
             [req.params.id]
         );
         if (rows.length === 0) return res.status(404).json({ error: 'User not found.' });
-        res.json(rows[0]);
+        const out = rows[0];
+        out.hs_contact_url = hubspot.getPortalContactUrl(out.hs_contact_id);
+        res.json(out);
     } catch (err) {
         console.error('[getUserDetail]', err.message);
         res.status(500).json({ error: 'Failed to fetch user detail.' });
@@ -494,10 +497,98 @@ const updateUser = async (req, res) => {
             req,
         });
 
+        // Fire-and-forget HubSpot sync — admin-edited fields propagate to
+        // HubSpot so marketing always sees current data.
+        (async () => {
+            const u = await pool.query(
+                `SELECT email, first_name, last_name, phone, role, hs_contact_id FROM users WHERE id = $1`,
+                [id]
+            );
+            const row = u.rows[0];
+            if (!row?.email) return;
+            const props = {
+                email: row.email, firstname: row.first_name, lastname: row.last_name,
+                phone: row.phone, user_type: row.role || undefined,
+            };
+            if (row.hs_contact_id) {
+                hubspot.updateContact(row.hs_contact_id, props);
+            } else {
+                const r = await hubspot.syncContact(props);
+                if (r?.id) {
+                    pool.query(`UPDATE users SET hs_contact_id = $1 WHERE id = $2`, [r.id, id])
+                        .catch(e => console.error('[hubspot] save id failed:', e.message));
+                }
+            }
+        })();
+
         res.json({ success: true });
     } catch (err) {
         console.error('[updateUser]', err.message);
         res.status(500).json({ error: 'Failed to update user.' });
+    }
+};
+
+/**
+ * POST /api/admin/users/:id/hubspot-sync
+ * Manually trigger a HubSpot sync for a single user. Used by the admin
+ * "Sync to HubSpot now" button to populate hs_contact_id on records that
+ * predate the integration. Awaited (not fire-and-forget) so the UI can
+ * show success/failure inline.
+ */
+const syncUserToHubspot = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const u = await pool.query(
+            `SELECT u.id, u.email, u.first_name, u.last_name, u.phone, u.role, u.hs_contact_id,
+                    a.brokerage_name, a.city, a.state
+               FROM users u
+               LEFT JOIN agents a ON a.user_id = u.id
+              WHERE u.id = $1`,
+            [id]
+        );
+        const row = u.rows[0];
+        if (!row)        return res.status(404).json({ error: 'User not found.' });
+        if (!row.email)  return res.status(400).json({ error: 'User has no email — cannot sync.' });
+        if (!hubspot.isConfigured()) {
+            return res.status(503).json({ error: 'HubSpot is not configured on this server.' });
+        }
+
+        const props = {
+            email: row.email, firstname: row.first_name, lastname: row.last_name,
+            phone: row.phone, user_type: row.role || undefined,
+            company: row.brokerage_name || undefined,
+            city: row.city || undefined, state: row.state || undefined,
+        };
+
+        let result;
+        if (row.hs_contact_id) {
+            result = await hubspot.updateContact(row.hs_contact_id, props);
+        } else {
+            result = await hubspot.syncContact(props);
+            if (result?.id) {
+                await pool.query(`UPDATE users SET hs_contact_id = $1 WHERE id = $2`, [result.id, id]);
+            }
+        }
+
+        if (!result?.id) return res.status(502).json({ error: 'HubSpot sync failed — see server logs.' });
+
+        logActivity({
+            event_type: 'user.hubspot.sync',
+            event_scope: 'user',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'user', id, label: row.email },
+            details: { hs_contact_id: result.id },
+            req,
+        });
+
+        res.json({
+            success: true,
+            hs_contact_id: result.id,
+            hs_contact_url: hubspot.getPortalContactUrl(result.id),
+        });
+    } catch (err) {
+        console.error('[syncUserToHubspot]', err.message);
+        res.status(500).json({ error: 'Failed to sync to HubSpot.' });
     }
 };
 
@@ -813,6 +904,7 @@ module.exports = {
     updateUserStatus,
     resetUserPassword,
     deleteUser,
+    syncUserToHubspot,
     getLeadDetail,
     updateLeadStatus,
     assignLead,

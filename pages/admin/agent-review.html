@@ -354,10 +354,16 @@
                             style="color:#ff7a59;font-size:0.9rem;font-weight:600;text-decoration:none;display:none;">
                             → View in HubSpot
                         </a>
-                        <span id="link-hubspot-pending"
-                            style="color:#a0aec0;font-size:0.85rem;font-style:italic;display:none;">
-                            HubSpot sync pending — sends on next edit.
-                        </span>
+                        <div id="link-hubspot-pending" style="display:none;">
+                            <div style="color:#718096;font-size:0.83rem;font-style:italic;margin-bottom:0.6rem;">
+                                Not yet synced to HubSpot.
+                            </div>
+                            <button class="action-btn" id="hs-sync-btn" onclick="syncAgentToHubspot()"
+                                style="background:#ff7a59;color:#fff;font-size:0.85rem;padding:0.6rem 0.85rem;margin-bottom:0;">
+                                ↗ Sync to HubSpot now
+                            </button>
+                            <div id="hs-sync-msg" style="font-size:0.8rem;margin-top:0.5rem;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -401,16 +407,6 @@
 
     // ── Init ─────────────────────────────────────────────────────────────────
     async function init() {
-        try {
-            const res = await fetch('/api/auth/session');
-            if (res.ok) {
-                const s = await res.json();
-                document.querySelector('.admin-side h1').innerHTML =
-                    `MNLH <span>ADMIN</span><div style="font-size:0.7rem;color:#718096;font-weight:400;margin-top:4px;">${s.display_name}</div>`;
-            }
-        } catch(_) {
-        }
-
         if (!agentId) {
             document.getElementById('agent-headline').textContent = 'No Agent ID';
             return;
@@ -827,6 +823,28 @@
     }
 
     // ── Profile Status Actions ───────────────────────────────────────────────
+    async function syncAgentToHubspot() {
+        const btn = document.getElementById('hs-sync-btn');
+        const msg = document.getElementById('hs-sync-msg');
+        if (!agentData?.user_id_ref) { msg.textContent = 'Cannot sync — missing user reference.'; msg.style.color = '#c53030'; return; }
+        btn.disabled = true;
+        const original = btn.textContent;
+        btn.textContent = '⏳ Syncing…';
+        try {
+            const res = await fetch(`/api/admin/users/${agentData.user_id_ref}/hubspot-sync`, { method: 'POST' });
+            const d = await res.json();
+            if (!res.ok) throw new Error(d.error || 'Sync failed.');
+            msg.textContent = '✓ Synced to HubSpot.';
+            msg.style.color = '#2f855a';
+            await loadAgent();
+        } catch (err) {
+            msg.textContent = err.message;
+            msg.style.color = '#c53030';
+            btn.disabled = false;
+            btn.textContent = original;
+        }
+    }
+
     async function setStatus(newStatus) {
         const membership_code = document.getElementById('membership-select').value;
         try {

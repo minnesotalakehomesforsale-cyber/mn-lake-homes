@@ -12,6 +12,7 @@ router.get('/users/:id', adminController.getUserDetail);                   // GE
 router.patch('/users/:id', adminController.updateUser);                    // PATCH name/email/role
 router.patch('/users/:id/status', adminController.updateUserStatus);       // PATCH account status
 router.patch('/users/:id/password', adminController.resetUserPassword);    // PATCH password reset
+router.post('/users/:id/hubspot-sync', adminController.syncUserToHubspot); // POST manual HubSpot sync
 router.delete('/users/:id', adminController.deleteUser);                   // DELETE user
 
 // ─── METRICS ─────────────────────────────────────────────────────────────────

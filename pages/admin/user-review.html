@@ -173,6 +173,21 @@
                 </div>
 
                 <div class="panel">
+                    <div class="panel-hd">HubSpot</div>
+                    <div class="panel-body">
+                        <a id="hs-link" href="#" target="_blank" rel="noopener"
+                           style="display:none;color:#ff7a59;font-size:0.92rem;font-weight:700;text-decoration:none;">
+                            → View in HubSpot
+                        </a>
+                        <div id="hs-pending" style="display:none;font-size:0.85rem;color:#718096;line-height:1.5;">
+                            <div style="margin-bottom:0.65rem;font-style:italic;">Not yet synced to HubSpot.</div>
+                            <button class="btn btn-neutral btn-wide" id="hs-sync-btn" onclick="syncToHubspot()">↗ Sync to HubSpot now</button>
+                        </div>
+                        <span class="save-msg" id="hs-msg" style="margin-top:0.5rem;"></span>
+                    </div>
+                </div>
+
+                <div class="panel">
                     <div class="panel-hd">Metadata</div>
                     <div class="panel-body">
                         <div class="meta-row"><span class="meta-label">User ID</span><span class="meta-value" id="meta-id" style="font-family:monospace;font-size:0.7rem;">—</span></div>
@@ -241,6 +256,18 @@
         document.getElementById('meta-joined').textContent     = fmtDate(user.created_at);
         document.getElementById('meta-last-login').textContent = user.last_login_at ? fmtDate(user.last_login_at) : 'Never';
         document.getElementById('meta-updated').textContent    = fmtDate(user.updated_at);
+
+        // HubSpot panel — link if synced, manual sync button if not.
+        const hsLink    = document.getElementById('hs-link');
+        const hsPending = document.getElementById('hs-pending');
+        if (user.hs_contact_url) {
+            hsLink.href = user.hs_contact_url;
+            hsLink.style.display = 'block';
+            hsPending.style.display = 'none';
+        } else {
+            hsLink.style.display = 'none';
+            hsPending.style.display = 'block';
+        }
 
         // Linked agent profile
         if (user.agent_id) {
@@ -336,6 +363,24 @@
             await load();
         } catch (err) {
             setMsg(msg, err.message, true);
+        }
+    }
+
+    async function syncToHubspot() {
+        const btn = document.getElementById('hs-sync-btn');
+        const msg = document.getElementById('hs-msg');
+        btn.disabled = true;
+        btn.textContent = '⏳ Syncing…';
+        try {
+            const res = await fetch(`/api/admin/users/${userId}/hubspot-sync`, { method: 'POST' });
+            const d = await res.json();
+            if (!res.ok) throw new Error(d.error || 'Sync failed.');
+            setMsg(msg, '✓ Synced to HubSpot.');
+            await load();
+        } catch (err) {
+            setMsg(msg, err.message, true);
+            btn.disabled = false;
+            btn.textContent = '↗ Sync to HubSpot now';
         }
     }
 

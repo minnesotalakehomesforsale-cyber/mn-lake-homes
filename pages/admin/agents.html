@@ -207,15 +207,6 @@
     let currentStatusFilter = 'all';
 
     async function init() {
-        try {
-            const res = await fetch('/api/auth/session');
-            if (res.ok) {
-                const data = await res.json();
-                document.querySelector('.admin-side h1').innerHTML =
-                    `MNLH <span>ADMIN</span><div style="font-size:0.7rem;color:#718096;font-weight:400;margin-top:4px;">${data.display_name}</div>`;
-            }
-        } catch(_) { /* not logged in, continue */ }
-
         await loadAgents();
     }
 
