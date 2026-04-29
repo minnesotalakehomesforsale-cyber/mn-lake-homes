@@ -10,6 +10,10 @@
    6. PAGE-SPECIFIC ZONES
 ========================================================================= */
 
+/* Inter — used only for the index hero title to match the canonical
+   reference's typography. Self-hosted SF Pro stays the body default. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 /* 0. WEB FONTS — SF Pro (self-hosted, Latin subset) */
 @font-face {
     font-family: 'SF Pro Text';
@@ -604,6 +608,7 @@ body {
     margin-bottom: 1.5rem;
     letter-spacing: 0.5px;
     text-transform: uppercase;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .title {
@@ -612,6 +617,9 @@ body {
     font-weight: 800;
     letter-spacing: -2.5px;
     color: var(--text-primary);
+    /* Override the global SF-Pro-Display rule on h1 so the hero title
+       uses Inter and matches the canonical reference's letterforms. */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* Legacy .title-line wrapper — keep as no-op so older markup still flows. */
@@ -683,6 +691,25 @@ body {
     width: 500px;
     height: 520px;
     z-index: 2;
+}
+
+/* Hero CTAs — scoped overrides so the hero buttons match the reference's
+   bigger-pill treatment without affecting buttons elsewhere on the site. */
+.hero-section .btn {
+    padding: 1rem 2.25rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    border-radius: 99px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.hero-section .btn-outline {
+    border: 2px solid var(--text-primary);
+    background: transparent;
+    color: var(--text-primary);
+}
+.hero-section .btn-outline:hover {
+    background: var(--text-primary);
+    color: #0a0a0a;
 }
 
 /* Floating Promo Banner */
@@ -956,6 +983,7 @@ body {
 @media (max-width: 600px) {
     .title { font-size: 3.2rem; line-height: 1.05; letter-spacing: -1.5px; }
     .subtitle { font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 1rem; }
+    .hero-section .btn { padding: 0.95rem 1.6rem; font-size: 1rem; }
     .left-card, .right-card, .center-card { flex: 0 0 78vw; height: 320px; }
     .flex-title { font-size: 2.25rem; }
     .info-title, .business-title, .mission-title { font-size: 2.15rem; }
