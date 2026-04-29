@@ -960,27 +960,15 @@ body {
 @media (max-width: 900px) {
     .flex-section { padding: 4rem 1.25rem; }
     .flex-title { font-size: 3rem; margin-bottom: 2rem; letter-spacing: -1px; }
-    .flex-tab-container {
-        align-self: stretch;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-    }
+    .flex-tab-container { align-self: stretch; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .flex-tab-container::-webkit-scrollbar { display: none; }
     .flex-tab { white-space: nowrap; flex: 0 0 auto; padding: 0.85rem 1.1rem; font-size: 0.85rem; }
     .flex-card { padding: 2rem 1.5rem; border-radius: 12px; }
-    .flex-card-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1.25rem;
-        margin-bottom: 1.75rem;
-    }
+    .flex-card-header { flex-direction: column; align-items: flex-start; gap: 1.25rem; margin-bottom: 1.75rem; }
     .flex-card-header p { max-width: 100%; font-size: 1rem; }
     .flex-card-header .btn { align-self: flex-start; }
     .flex-images { flex-direction: column; gap: 1rem; }
     .flex-img { height: 220px; }
-
-    /* Split layout stacks on mobile — image below text */
     .flex-split { grid-template-columns: 1fr; gap: 1.75rem; }
     .flex-split-heading { font-size: 1.5rem; }
     .flex-split-text p { font-size: 0.95rem; }
@@ -990,6 +978,10 @@ body {
     .flex-title { font-size: 2.25rem; }
     .flex-card { padding: 1.5rem 1.25rem; }
     .flex-img { height: 180px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .flex-tab-container { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 0.5rem; width: 100%; -webkit-overflow-scrolling: touch; }
+    .flex-tab-container::-webkit-scrollbar { display: none; }
+    .flex-tab { white-space: nowrap; padding: 0.4rem 1rem; font-size: 0.95rem; margin-bottom: 0; margin-right: 0.25rem; flex-shrink: 0; border-radius: 50px; }
 }
 
 /* Responsive — hero */
@@ -1011,100 +1003,42 @@ body {
 
 @media (max-width: 900px) {
     /* Below 900px the 100vh constraint + 3-card row doesn't work; let the hero grow with content. */
-    .hero-section {
-        height: auto;
-        min-height: 0;
-        overflow: visible;
-        padding-top: 6rem;
-        padding-bottom: 3rem;
-    }
-    .title { font-size: 2.75rem; letter-spacing: -1px; }
+    .hero-section { height: auto; min-height: 0; overflow: visible; padding-top: 6rem; padding-bottom: 3rem; }
+    .title { font-size: 4.5rem; }
     /* Center all lines — zig-zag reads as noise at this width */
-    .title-line-1, .title-line-2, .title-line-3 {
-        margin-left: auto;
-        margin-right: auto;
-    }
+    .title-line-1, .title-line-2, .title-line-3 { margin-left: auto; margin-right: auto; }
     .hero-content { max-width: 100%; padding: 0 1rem; }
-    .nav-links,
-    .nav-actions { display: none; }
+    .nav-links { display: none; }
     /* Convert 3-image grid into a horizontal scrolling carousel */
-    .hero-showcase {
-        flex-direction: row;
-        align-items: stretch;
-        justify-content: flex-start;
-        gap: 1rem;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        padding: 0 1.5rem 1.5rem;
-        max-width: 100%;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        -webkit-overflow-scrolling: touch;
-    }
+    .hero-showcase { flex-direction: row; align-items: stretch; justify-content: flex-start; gap: 1.5rem; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 1.5rem 1.5rem; scrollbar-width: none; -ms-overflow-style: none; -webkit-overflow-scrolling: touch; }
     .hero-showcase::-webkit-scrollbar { display: none; }
-    .left-card, .right-card, .center-card {
-        width: auto;
-        max-width: none;
-        flex: 0 0 72vw;
-        height: 380px;
-        margin-top: 0;
-        scroll-snap-align: center;
-    }
-    .hero-banner {
-        max-width: calc(100vw - 2rem);
-    }
+    .left-card, .right-card, .center-card { width: 100%; max-width: none; flex: 0 0 75vw; height: 380px; margin-top: 0; scroll-snap-align: center; }
+    .flex-split { grid-template-columns: 1fr; }
+    .hero-banner { max-width: calc(100vw - 2rem); }
     /* Convert floating banner to narrow column */
-    .floating-promo {
-        flex-direction: column;
-        text-align: center;
-        gap: 0.5rem;
-        padding: 1rem 2rem;
-        width: 100%;
-        max-width: calc(100vw - 1rem);
-        bottom: 0.5rem;
-        border-width: 1px;
-        border-radius: 8px;
-    }
-    .promo-close {
-        position: absolute;
-        top: 0.5rem;
-        right: 0.5rem;
-    }
-    .floating-promo .btn {
-        padding: 0.6rem 1.5rem;
-        font-size: 0.9rem;
-        border-radius: 6px;
-    }
+    .floating-promo { flex-direction: column; text-align: center; gap: 0.5rem; padding: 1rem 2rem 1rem; width: 100%; max-width: calc(100vw - 1rem); bottom: 0.5rem; border-width: 1px; border-radius: 8px; }
+    .promo-close { position: absolute; top: 0.5rem; right: 0.5rem; }
+    .floating-promo .btn { padding: 0.6rem 1.5rem; font-size: 0.9rem; border-radius: 6px; }
 }
 
 @media (max-width: 600px) {
-    /* Mobile hero title must stay BIG per product preference */
-    .title { font-size: 5rem; line-height: 1.02; letter-spacing: -2px; font-weight: 600; }
-    .subtitle { font-size: 0.95rem; margin-bottom: 1rem; }
-    .hero-section {
-        height: auto;
-        min-height: 0;
-        overflow: visible;
-        padding: 5rem 0.75rem 2.5rem;
-    }
-    .hero-content {
-        margin-top: 0;
-        margin-bottom: 1.25rem;
-        padding: 0 0.5rem;
-        text-align: center;
-    }
-    /* Center all lines on mobile — zig-zag doesn't fit narrow viewports */
-    .title-line-1, .title-line-2, .title-line-3 {
-        margin-left: auto;
-        margin-right: auto;
-    }
-    /* 3-card swipeable carousel — JS snaps it to the center card on load */
-    .hero-showcase .left-card,
-    .hero-showcase .right-card,
-    .hero-showcase .center-card {
-        flex: 0 0 78vw;
-        height: 320px;
-    }
+    .title { font-size: 3.2rem; line-height: 1.05; letter-spacing: -1.5px; }
+    .subtitle { font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 1rem; }
+    .left-card, .right-card, .center-card { flex: 0 0 78vw; height: 320px; }
+    .flex-title { font-size: 2.25rem; }
+    .info-title, .business-title, .mission-title { font-size: 2.15rem; }
+    .hero-section { padding: 3.5rem 0.75rem 3rem; }
+    #estimate-cta-btn { padding: 0.9rem 1.75rem !important; font-size: 1rem !important; }
+    .flex-card { padding: 1.5rem 1.25rem; }
+    .flex-img { height: 180px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .flex-tab-container { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 0.5rem; width: 100%; -webkit-overflow-scrolling: touch; }
+    .flex-tab-container::-webkit-scrollbar { display: none; }
+    .flex-tab { white-space: nowrap; padding: 0.4rem 1rem; font-size: 0.95rem; margin-bottom: 0; margin-right: 0.25rem; flex-shrink: 0; border-radius: 50px; }
+    .navbar { padding: 0.9rem 1.25rem; }
+    .navbar .logo img { height: 50px !important; }
+    .nav-actions .btn { padding: 0.45rem 1rem; font-size: 0.8rem; }
+    .hero-content { align-items: center; text-align: center; }
     /* Floating banner becomes a full-screen glass overlay */
     .floating-promo {
         left: 0; right: 0; top: 0; bottom: 0;
@@ -1125,12 +1059,10 @@ body {
         z-index: 2000;
     }
     .floating-promo.revealed { transform: translateY(0); }
-    .promo-content p { font-size: 1.2rem; line-height: 1.5; color: #fff; }
+    .promo-content p { font-size: 1.2rem; line-height: 1.5; color: #FFFFFF; }
     .promo-content strong { display: block; margin-bottom: 0.5rem; font-size: 2rem; color: var(--highlight-color); line-height: 1.1; }
     .floating-promo .btn { padding: 1.25rem 2rem; font-size: 1.2rem; border-radius: 50px; width: 100%; max-width: 300px; margin-top: 1rem; }
-    .promo-close { top: 2rem; right: 2rem; font-size: 2rem; color: #fff; }
-    .nav-actions { display: none; }
-    .navbar { padding: 1.1rem 1.25rem; }
+    .promo-close { top: 2rem; right: 2rem; font-size: 2rem; color: #FFFFFF; }
 }
 
 @media (max-width: 400px) {
@@ -1212,15 +1144,16 @@ body {
     font-weight: 500;
 }
 
-@media (max-width: 768px) {
-    .info-split-container {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1.5rem;
-    }
-    .info-title {
-        font-size: 2.5rem;
-    }
+@media (max-width: 900px) {
+    .info-split-container { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
+    .info-container { flex-direction: column; text-align: center; gap: 2.5rem; }
+    .info-form { width: 100%; max-width: 100%; }
+    .info-title { font-size: 2.5rem; }
+}
+
+@media (max-width: 600px) {
+    .info-section { padding: 4rem 1.5rem; }
+    .info-form { padding: 2rem 1.5rem; }
 }
 
 /* Business Type Section */
@@ -1469,11 +1402,27 @@ body {
 /* Mission section mobile */
 @media (max-width: 768px) {
     .mission-section { padding: 5rem 1.25rem; }
-    .mission-title { font-size: 2.5rem; margin-bottom: 1.5rem; }
-    .mission-desc { font-size: 1rem; }
+    .mission-title { font-size: 3.5rem; letter-spacing: -1.5px; margin-bottom: 1.5rem; }
+    .mission-desc { font-size: 1.1rem; }
 }
 @media (max-width: 480px) {
     .mission-title { font-size: 2rem; }
+}
+
+/* Estimate Modal mobile (full-screen quote form on phones).
+   Selectors here intentionally target a different markup pattern
+   (.option-grid / .slide-* / .estimate-price) that may not exist
+   on every page — they're no-ops where the markup is absent. */
+@media (max-width: 600px) {
+    .option-grid { grid-template-columns: 1fr; }
+    .modal-header { padding: 1.25rem 1.5rem; }
+    .modal-close { font-size: 2rem; }
+    .modal-body { padding: 2rem 1.5rem; }
+    .slide-title { font-size: 1.8rem; }
+    .slide-desc { font-size: 1rem; }
+    .estimate-price { font-size: 3rem; }
+    .slide-actions { flex-direction: column-reverse; gap: 0.75rem; }
+    .slide-actions button { width: 100%; }
 }
 
 /* Mission Section */
@@ -1688,24 +1637,17 @@ body {
 }
 
 @media (max-width: 900px) {
-    .testimonial-top, .testimonial-bottom {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .testimonial-controls {
-        margin-top: 2rem;
-    }
-    .testimonial-media {
-        width: 100%;
-        margin-top: 3rem;
-    }
-    .testimonial-info {
-        flex: auto;
-        margin-bottom: 0;
-    }
-    .media-vertical-tab {
-        display: none;
-    }
+    .testimonial-top, .testimonial-bottom { flex-direction: column; align-items: flex-start; }
+    .testimonial-controls { margin-top: 1.5rem; }
+    .testimonial-media { width: 100%; margin-top: 3rem; }
+    .testimonial-info { flex: auto; margin-bottom: 0; text-align: left; }
+    .media-vertical-tab { display: none; }
+    .testimonial-main-title { font-size: 3.5rem; line-height: 1.05; letter-spacing: -1.5px; }
+    .testimonial-quote { font-size: 1.35rem; line-height: 1.55; }
+    .testimonial-brand { font-size: 1.75rem; }
+    .testimonial-category { font-size: 0.95rem; margin-bottom: 0.75rem; }
+    .testimonial-section { padding: 4rem 1.5rem; }
+    .testimonial-top { margin-bottom: 2.5rem; }
 }
 
 /* Pricing Section */
@@ -2246,20 +2188,10 @@ body {
 }
 
 @media (max-width: 900px) {
-    .site-footer {
-        padding: 4rem 2rem 0;
-    }
-    .footer-container {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 2.5rem;
-    }
-    .footer-links {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 2rem;
-        width: 100%;
-    }
+    .site-footer { padding: 4rem 2rem 0; }
+    .footer-container { flex-direction: column; align-items: flex-start; gap: 2.5rem; text-align: left; }
+    .footer-links { flex-direction: column; align-items: flex-start; gap: 2rem; width: 100%; }
+    .footer-contact { align-items: flex-start; }
     .link-column { align-items: flex-start; width: 100%; }
 }
 
