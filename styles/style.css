@@ -956,11 +956,11 @@ body {
 @media (max-width: 600px) {
     .title { font-size: 3.2rem; line-height: 1.05; letter-spacing: -1.5px; }
     .subtitle { font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 1rem; }
-    .hero-content { margin-top: 2rem; padding: 0 1rem; }
     .left-card, .right-card, .center-card { flex: 0 0 78vw; height: 320px; }
     .flex-title { font-size: 2.25rem; }
     .info-title, .business-title, .mission-title { font-size: 2.15rem; }
     .hero-section { padding: 3.5rem 0.75rem 3rem; }
+    .hero-content { align-items: center; text-align: center; }
     #estimate-cta-btn { padding: 0.9rem 1.75rem !important; font-size: 1rem !important; }
     .flex-card { padding: 1.5rem 1.25rem; }
     .flex-img { height: 180px; }
@@ -971,7 +971,6 @@ body {
     .navbar { padding: 0.9rem 1.25rem; }
     .navbar .logo img { height: 50px !important; }
     .nav-actions .btn { padding: 0.45rem 1rem; font-size: 0.8rem; }
-    .hero-content { align-items: center; text-align: center; }
     /* Floating banner becomes a full-screen glass overlay */
     .floating-promo {
         left: 0; right: 0; top: 0; bottom: 0;
@@ -996,10 +995,6 @@ body {
     .promo-content strong { display: block; margin-bottom: 0.5rem; font-size: 2rem; color: var(--highlight-color); line-height: 1.1; }
     .floating-promo .btn { padding: 1.25rem 2rem; font-size: 1.2rem; border-radius: 50px; width: 100%; max-width: 300px; margin-top: 1rem; }
     .promo-close { top: 2rem; right: 2rem; font-size: 2rem; color: #FFFFFF; }
-}
-
-@media (max-width: 400px) {
-    .title { font-size: 4.25rem; letter-spacing: -1.75px; line-height: 1.02; }
 }
 
 /* Hero CTAs */
