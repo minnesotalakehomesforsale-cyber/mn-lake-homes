@@ -954,7 +954,7 @@ body {
 }
 
 @media (max-width: 600px) {
-    .title { font-size: 3.75rem; line-height: 1.02; letter-spacing: -2px; font-weight: 800; }
+    .title { font-size: 3.2rem; line-height: 1.05; letter-spacing: -1.5px; }
     .subtitle { font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 1rem; }
     .hero-content { margin-top: 2rem; padding: 0 1rem; }
     .left-card, .right-card, .center-card { flex: 0 0 78vw; height: 320px; }
