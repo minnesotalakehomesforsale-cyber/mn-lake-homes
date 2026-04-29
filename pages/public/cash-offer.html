@@ -205,6 +205,13 @@
             overflow-y: auto;
         }
         #cash-offer-overlay.open { display: block; }
+        /* Google's address-autocomplete dropdown defaults to z-index 1000.
+           The cash-offer overlay sits at 9500, so without this override the
+           Google suggestions render BEHIND the overlay and the user never
+           sees them. Bump above the overlay so the dropdown is visible. */
+        .pac-container {
+            z-index: 10000 !important;
+        }
         .coo-progress { position: sticky; top: 0; left: 0; right: 0; height: 4px; background: #f0f4f8; z-index: 5; }
         .coo-progress-bar { height: 100%; background: #1d6df2; width: 0%; transition: width 0.4s ease; border-radius: 0 99px 99px 0; }
         .coo-chrome {
