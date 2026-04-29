@@ -577,53 +577,44 @@ body {
 
 /* =========================================================================
    HERO SECTION — base (desktop and up)
+   Ported from canonical reference: simple flex column, centered content,
+   one big bold title, CTAs sit directly under the title above the showcase.
    ========================================================================= */
-/* Main Container */
 .hero-section {
-    height: 100vh;
-    min-height: 640px; /* floor so extremely short windows still fit the content */
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding-top: 10rem; /* pushes the whole block lower on the page */
-    padding-bottom: 1rem;
+    padding-top: 4rem;
     position: relative;
-    overflow: hidden;
+    padding-bottom: 8rem;
 }
 
-/* Text Content Area — sits directly above the showcase */
 .hero-content {
     text-align: center;
-    position: relative;
-    z-index: 3;
-    margin-top: 0;
-    margin-bottom: 1.5rem;
-    width: 100%;
-    max-width: 900px;
+    z-index: 2;
+    margin-top: 5.5rem;
+    margin-bottom: 2rem;
 }
 
 .subtitle {
-    color: var(--text-primary);
-    font-size: 1rem;
-    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    font-weight: 600;
     margin-bottom: 1.5rem;
-    letter-spacing: normal;
-    text-transform: none;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .title {
-    font-size: 4.5rem;
-    line-height: 1.1;
-    font-weight: 600;
-    letter-spacing: -1.5px;
+    font-size: 6rem;
+    line-height: 1.05;
+    font-weight: 800;
+    letter-spacing: -2.5px;
     color: var(--text-primary);
-    max-width: 900px;
-    margin-left: auto;
-    margin-right: auto;
 }
 
-/* All lines centered */
+/* Legacy .title-line wrapper — keep as no-op so older markup still flows. */
 .title-line {
     display: block;
     width: fit-content;
@@ -648,26 +639,26 @@ body {
     color: #a0aec0;
 }
 
-/* Image Showcase Grid — matches SpotOn: landscape center, portrait sides, center extends up behind the title */
+/* Showcase Grid — three-card display: portrait sides, taller landscape center. */
 .hero-showcase {
     display: flex;
     justify-content: center;
-    align-items: flex-end;
-    gap: 2rem;
+    align-items: flex-start;
+    gap: 1.5rem;
     width: 100%;
-    max-width: 1280px;
-    margin-top: 0;
+    max-width: 1200px;
+    margin-top: 2rem;
     position: relative;
     z-index: 1;
 }
 
-/* Individual Image Cards */
 .showcase-card {
-    border-radius: 28px;
+    border-radius: 20px;
     overflow: hidden;
     background: var(--bg-dark);
     position: relative;
-    box-shadow: 0 15px 30px rgba(7, 89, 133, 0.2);
+    border: 4px solid var(--bg-dark);
+    box-shadow: 0 15px 30px rgba(11, 42, 16, 0.2);
 }
 
 .showcase-card img {
@@ -682,16 +673,15 @@ body {
     transform: scale(1.05);
 }
 
-/* Side cards: portrait, bottom-aligned */
 .left-card, .right-card {
-    width: 340px;
-    height: 360px;
+    width: 320px;
+    height: 480px;
+    margin-top: 5rem;
 }
 
-/* Center card: wider and taller, extends up behind the title (SpotOn's key visual) */
 .center-card {
-    width: 520px;
-    height: 410px;
+    width: 500px;
+    height: 520px;
     z-index: 2;
 }
 
@@ -949,22 +939,15 @@ body {
 }
 
 @media (max-width: 900px) {
-    /* Hero stays full-viewport on tablet/phone with content centered. */
-    .hero-section { height: auto; min-height: 100vh; overflow: visible; padding-top: 8rem; padding-bottom: 3rem; justify-content: center; }
     .title { font-size: 4.5rem; }
-    /* Center all lines — zig-zag reads as noise at this width */
-    .title-line-1, .title-line-2, .title-line-3 { margin-left: auto; margin-right: auto; }
-    .hero-content { max-width: 100%; padding: 0 1rem; }
     /* Mobile nav simplifies to: logo + single auth pill + hamburger.
        The full Log In / Get Started pair is desktop-only. */
     .nav-links,
     .nav-actions { display: none; }
-    /* Convert 3-image grid into a horizontal scrolling carousel */
     .hero-showcase { flex-direction: row; align-items: stretch; justify-content: flex-start; gap: 1.5rem; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 1.5rem 1.5rem; scrollbar-width: none; -ms-overflow-style: none; -webkit-overflow-scrolling: touch; }
     .hero-showcase::-webkit-scrollbar { display: none; }
-    .left-card, .right-card, .center-card { width: 100%; max-width: none; flex: 0 0 88vw; height: 420px; margin-top: 0; scroll-snap-align: center; border-radius: 22px; }
+    .left-card, .right-card, .center-card { width: 100%; max-width: none; flex: 0 0 75vw; height: 380px; margin-top: 0; scroll-snap-align: center; }
     .flex-split { grid-template-columns: 1fr; }
-    /* Convert floating banner to narrow column */
     .floating-promo { flex-direction: column; text-align: center; gap: 0.5rem; padding: 1rem 2rem 1rem; width: 100%; max-width: calc(100vw - 1rem); bottom: 0.5rem; border-width: 1px; border-radius: 8px; }
     .promo-close { position: absolute; top: 0.5rem; right: 0.5rem; }
     .floating-promo .btn { padding: 0.6rem 1.5rem; font-size: 0.9rem; border-radius: 6px; }
@@ -973,10 +956,10 @@ body {
 @media (max-width: 600px) {
     .title { font-size: 3.2rem; line-height: 1.05; letter-spacing: -1.5px; }
     .subtitle { font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 1rem; }
-    .left-card, .right-card, .center-card { flex: 0 0 88vw; height: 360px; border-radius: 20px; }
+    .left-card, .right-card, .center-card { flex: 0 0 78vw; height: 320px; }
     .flex-title { font-size: 2.25rem; }
     .info-title, .business-title, .mission-title { font-size: 2.15rem; }
-    .hero-section { min-height: 100vh; padding: 6rem 0.75rem 2.5rem; justify-content: center; }
+    .hero-section { padding: 3.5rem 0.75rem 3rem; }
     #estimate-cta-btn { padding: 0.9rem 1.75rem !important; font-size: 1rem !important; }
     .flex-card { padding: 1.5rem 1.25rem; }
     .flex-img { height: 180px; }
