@@ -116,7 +116,6 @@ html { scroll-behavior: smooth; }
 .hero-content .subtitle  { animation: hero-rise 0.8s var(--ease-out) 0.05s both; }
 .hero-content .title     { animation: hero-rise 0.9s var(--ease-out) 0.20s both; }
 .hero-showcase           { animation: hero-rise 1.0s var(--ease-out) 0.40s both; }
-.hero-banner             { animation: hero-rise 0.9s var(--ease-out) 0.60s both; }
 
 /* Respect users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
@@ -129,8 +128,7 @@ html { scroll-behavior: smooth; }
     }
     .hero-content .subtitle,
     .hero-content .title,
-    .hero-showcase,
-    .hero-banner { animation: none !important; }
+    .hero-showcase { animation: none !important; }
 }
 
 /* Use the Display cut for big/heavy headings. */
@@ -650,56 +648,6 @@ body {
     color: #a0aec0;
 }
 
-/* In-hero announcement banner — wide pill spanning most of the image row's width */
-.hero-banner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    background: var(--accent-blue);
-    color: #fff;
-    border-radius: 999px;
-    padding: 1rem 0.7rem 1rem 2rem;
-    width: 100%;
-    max-width: 520px;
-    margin-top: 1rem;
-    box-shadow: 0 8px 24px rgba(29, 109, 242, 0.35);
-}
-.hero-banner-text {
-    margin: 0;
-    font-size: 1.05rem;
-    font-weight: 500;
-    line-height: 1.3;
-}
-.hero-banner-text strong { font-weight: 700; }
-.hero-banner-btn {
-    flex-shrink: 0;
-    background: #fff;
-    color: #1a202c;
-    border: none;
-    border-radius: 999px;
-    padding: 0.7rem 1.5rem;
-    font-size: 0.95rem;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: transform 0.15s, box-shadow 0.15s;
-}
-.hero-banner-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-@media (max-width: 600px) {
-    .hero-banner {
-        flex-direction: column;
-        border-radius: 18px;
-        padding: 1rem 1.25rem;
-        gap: 0.85rem;
-        text-align: center;
-    }
-    .hero-banner-btn { width: 100%; }
-}
-
 /* Image Showcase Grid — matches SpotOn: landscape center, portrait sides, center extends up behind the title */
 .hero-showcase {
     display: flex;
@@ -998,12 +946,11 @@ body {
         width: 420px;
         height: 360px;
     }
-    .hero-banner { max-width: 420px; }
 }
 
 @media (max-width: 900px) {
-    /* Below 900px the 100vh constraint + 3-card row doesn't work; let the hero grow with content. */
-    .hero-section { height: auto; min-height: 0; overflow: visible; padding-top: 6rem; padding-bottom: 3rem; }
+    /* Hero stays full-viewport on tablet/phone with content centered. */
+    .hero-section { height: auto; min-height: 100vh; overflow: visible; padding-top: 8rem; padding-bottom: 3rem; justify-content: center; }
     .title { font-size: 4.5rem; }
     /* Center all lines — zig-zag reads as noise at this width */
     .title-line-1, .title-line-2, .title-line-3 { margin-left: auto; margin-right: auto; }
@@ -1014,7 +961,6 @@ body {
     .hero-showcase::-webkit-scrollbar { display: none; }
     .left-card, .right-card, .center-card { width: 100%; max-width: none; flex: 0 0 75vw; height: 380px; margin-top: 0; scroll-snap-align: center; }
     .flex-split { grid-template-columns: 1fr; }
-    .hero-banner { max-width: calc(100vw - 2rem); }
     /* Convert floating banner to narrow column */
     .floating-promo { flex-direction: column; text-align: center; gap: 0.5rem; padding: 1rem 2rem 1rem; width: 100%; max-width: calc(100vw - 1rem); bottom: 0.5rem; border-width: 1px; border-radius: 8px; }
     .promo-close { position: absolute; top: 0.5rem; right: 0.5rem; }
@@ -1027,7 +973,7 @@ body {
     .left-card, .right-card, .center-card { flex: 0 0 78vw; height: 320px; }
     .flex-title { font-size: 2.25rem; }
     .info-title, .business-title, .mission-title { font-size: 2.15rem; }
-    .hero-section { padding: 3.5rem 0.75rem 3rem; }
+    .hero-section { min-height: 100vh; padding: 6rem 0.75rem 2.5rem; justify-content: center; }
     #estimate-cta-btn { padding: 0.9rem 1.75rem !important; font-size: 1rem !important; }
     .flex-card { padding: 1.5rem 1.25rem; }
     .flex-img { height: 180px; }
@@ -1388,14 +1334,21 @@ body {
     .business-type-section { padding: 4rem 1.25rem; }
     .business-type-container {
         flex-direction: column;
-        align-items: stretch;
+        align-items: center;
+        text-align: center;
         gap: 2rem;
     }
+    .business-text { text-align: center; }
     .business-title {
         font-size: 2.25rem;
         letter-spacing: -1px;
     }
-    .business-form { width: 100%; }
+    .business-form {
+        width: 100%;
+        max-width: 350px;
+        margin: 0 auto;
+        align-items: stretch;
+    }
     .business-form .btn { width: 100%; }
 }
 
