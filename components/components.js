@@ -767,6 +767,13 @@ function _lfRender() {
             <input type="${f.type}" id="lf-${f.id}" placeholder="${f.ph}" autocomplete="${f.ac||'off'}"
                 style="${iStyle}text-align:center;" ${focus} value="${_lfs.data[f.id]||''}">`;
         setTimeout(() => document.getElementById('lf-' + f.id)?.focus(), 60);
+        // Wire up Google Places Autocomplete on the address question.
+        // Loads the Maps JS lazily (once per session) and attaches a US-only
+        // address autocomplete to the input. Failures fall back to a plain
+        // text field so the form is never blocked if Places is unavailable.
+        if (f.id === 'address') {
+            _lfAttachAddressAutocomplete();
+        }
     }
 
     // next button
@@ -775,6 +782,82 @@ function _lfRender() {
     btn.style.display = f.type === 'select' ? 'none' : 'block';
     btn.textContent   = _lfs.step === total - 1 ? 'Submit →' : 'Continue →';
     btn.style.background = '#1a202c';
+}
+
+// ── Google Places autocomplete on the address step ──────────────────────────
+// Mirrors the cash-offer overlay's loader: pulls the public Places key from
+// /api/config/public, injects maps.googleapis.com once, and attaches an
+// Autocomplete to the lead-form's address input. Stays fire-and-forget — if
+// the key is missing or the script fails, the input still works as plain text.
+let _lfPlacesState = null; // 'loading' | 'ready' | 'failed'
+
+function _lfEnsurePacContainerZ() {
+    // The lead-form overlay sits at z-index 9000. Google's .pac-container
+    // suggestion dropdown defaults to z-index 1000, so without this bump the
+    // suggestions render BEHIND the overlay. Inject once per session.
+    if (document.getElementById('lf-pac-z')) return;
+    const style = document.createElement('style');
+    style.id = 'lf-pac-z';
+    style.textContent = '.pac-container { z-index: 10001 !important; }';
+    document.head.appendChild(style);
+}
+
+function _lfBindAutocomplete() {
+    const input = document.getElementById('lf-address');
+    if (!input || !window.google || !window.google.maps || !window.google.maps.places) return;
+    if (input.dataset.lfAutocomplete === '1') return;          // idempotent
+    input.dataset.lfAutocomplete = '1';
+    const ac = new google.maps.places.Autocomplete(input, {
+        types: ['address'],
+        componentRestrictions: { country: 'us' },
+        fields: ['place_id', 'formatted_address', 'address_components', 'geometry'],
+    });
+    ac.addListener('place_changed', () => {
+        const place = ac.getPlace();
+        const addr  = place?.formatted_address || input.value;
+        if (addr) {
+            input.value = addr;
+            _lfs.data.address = addr;
+        }
+    });
+    // Suppress Enter (Google's dropdown handles it) so the form doesn't
+    // advance to the next step before the user picks a suggestion.
+    input.addEventListener('keydown', e => { if (e.key === 'Enter' && document.querySelector('.pac-container:not([style*="display: none"])')) e.preventDefault(); });
+}
+
+async function _lfAttachAddressAutocomplete() {
+    _lfEnsurePacContainerZ();
+    if (window.google && window.google.maps && window.google.maps.places) {
+        _lfPlacesState = 'ready';
+        _lfBindAutocomplete();
+        return;
+    }
+    if (_lfPlacesState === 'loading') {
+        // Another step already kicked off the load. Bind once it's ready.
+        const t = setInterval(() => {
+            if (window.google?.maps?.places) { clearInterval(t); _lfBindAutocomplete(); }
+        }, 100);
+        setTimeout(() => clearInterval(t), 8000);
+        return;
+    }
+    if (_lfPlacesState === 'failed') return;
+
+    _lfPlacesState = 'loading';
+    try {
+        const res = await fetch('/api/config/public');
+        const cfg = await res.json().catch(() => ({}));
+        const key = cfg?.googlePlacesKey;
+        if (!key) { _lfPlacesState = 'failed'; return; }
+        window._lfGoogleReady = () => { _lfPlacesState = 'ready'; _lfBindAutocomplete(); };
+        const s = document.createElement('script');
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&loading=async&callback=_lfGoogleReady`;
+        s.defer = true;
+        s.onerror = () => { _lfPlacesState = 'failed'; };
+        document.head.appendChild(s);
+    } catch (err) {
+        console.warn('[lead-form] Google Places disabled:', err.message);
+        _lfPlacesState = 'failed';
+    }
 }
 
 function _lfSlide() {
