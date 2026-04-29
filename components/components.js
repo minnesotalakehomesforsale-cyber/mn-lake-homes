@@ -531,7 +531,7 @@ class GlobalFooter extends HTMLElement {
                     <h4>Explore</h4>
                     <a href="${bp}resources.html">Resources Library</a>
                     <a href="${bp}blog.html">Blog</a>
-                    <a href="${bp}lake-minnetonka.html">Lake Minnetonka</a>
+                    <a href="/lakes/lake-minnetonka">Lake Minnetonka</a>
                     <a href="${bp}about.html">About Us</a>
                     <a href="${bp}faq.html">FAQs</a>
                 </div>
