@@ -7,12 +7,14 @@
  *   No localStorage is used for auth state.
  */
 
-// Absolute paths so the header works from every URL shape the server
-// routes to — /, /pages/public/*.html, /towns/:slug, /lakes/:slug,
-// /businesses/:slug, /business/dashboard, etc. Relative paths were
-// resolving to nonsense like /towns/pages/public/sell.html.
-const getDepth = () => window.location.pathname.startsWith('/pages/') ? '' : '/pages/public/';
-const getRoot  = () => window.location.pathname.startsWith('/pages/') ? '../../' : '/';
+// Always use absolute paths so the header/footer hrefs work from every URL
+// shape the server routes to: /, /pages/public/*, /pages/agent/*,
+// /pages/user/*, /pages/business/*, /pages/admin/*, /towns/:slug,
+// /lakes/:slug, /businesses/:slug, etc. The previous depth-aware logic
+// returned '' on any /pages/* path, which made dashboard pages 404 on
+// every nav link (e.g. 'buy.html' resolving to /pages/agent/buy.html).
+const getDepth = () => '/pages/public/';
+const getRoot  = () => '/';
 
 // ─── Global Header ────────────────────────────────────────────────────────────
 
@@ -328,7 +330,6 @@ class GlobalHeader extends HTMLElement {
                     ]},
                     { heading: 'Company', links: [
                         { label: 'About Us',      href: `${bp}about.html` },
-                        { label: 'CommonRealtor', href: `${bp}commonrealtor.html` },
                         { label: 'FAQ',           href: `${bp}faq.html` },
                         { label: 'Contact Us',    href: `${bp}contact.html` },
                         { label: 'Careers',       href: `${bp}careers.html` },
@@ -492,15 +493,6 @@ class GlobalFooter extends HTMLElement {
     _buildFooter(bp, rp, user) {
         const isStaff = user && (user.role === 'admin' || user.role === 'super_admin');
 
-        const networkLinks = `
-            <a href="${bp}join.html">Join the Network</a>
-            <a href="${bp}contact.html">Contact Us</a>
-            ${isStaff ? `
-                <a href="${rp}pages/public/login.html" style="color:#4b5563;">Agent Login</a>
-                <a href="${rp}pages/admin/dashboard.html" style="color:#4b5563;">Admin Portal</a>
-            ` : ''}
-        `;
-
         return `<footer class="site-footer">
         <div class="footer-container">
 
@@ -516,7 +508,7 @@ class GlobalFooter extends HTMLElement {
                     </a>
                 </div>
                 <p class="footer-desc">Minnesota's premier lakefront real estate network — connecting buyers, sellers, and agents across the state's finest waterfront communities.</p>
-                <button class="btn btn-primary" onclick="window.openForm('general')" style="font-size:0.85rem;padding:0.65rem 1.4rem;border:none;cursor:pointer;">Get in Touch</button>
+                <a href="${bp}contact.html" class="btn btn-primary" style="font-size:0.85rem;padding:0.65rem 1.4rem;text-decoration:none;display:inline-block;">Get in Touch</a>
             </div>
 
             <div class="footer-links">
@@ -525,25 +517,30 @@ class GlobalFooter extends HTMLElement {
                     <a href="${bp}buy.html">Buy a Home</a>
                     <a href="${bp}sell.html">Sell a Home</a>
                     <a href="${bp}rent.html">Rent a Home</a>
+                    <a href="${bp}cash-offer.html">Get a Cash Offer</a>
                     <a href="${bp}agents.html">Find an Agent</a>
                 </div>
                 <div class="link-column">
                     <h4>Explore</h4>
-                    <a href="${bp}resources.html">Resources Library</a>
+                    <a href="/towns">Lakes &amp; Towns</a>
+                    <a href="${bp}resources.html">Resource Library</a>
                     <a href="${bp}blog.html">Blog</a>
-                    <a href="/lakes/lake-minnetonka">Lake Minnetonka</a>
-                    <a href="${bp}about.html">About Us</a>
-                    <a href="${bp}faq.html">FAQs</a>
+                    <a href="${bp}resources.html?category=Market%20Reports">Market Reports</a>
                 </div>
                 <div class="link-column">
-                    <h4>Network</h4>
-                    ${networkLinks}
+                    <h4>Company</h4>
+                    <a href="${bp}about.html">About Us</a>
+                    <a href="${bp}contact.html">Contact Us</a>
+                    <a href="${bp}faq.html">FAQ</a>
+                    <a href="${bp}join.html">Join as an Agent</a>
+                    <a href="/business-signup">List your Business</a>
+                    ${isStaff ? `<a href="${rp}pages/admin/dashboard.html">Admin Portal</a>` : ''}
                 </div>
             </div>
 
         </div>
         <div class="footer-bottom">
-            <p class="footer-copyright">&copy; 2026 MinnesotaLakeHomesForSale.com &mdash; Part of the <a href="/commonrealtor" style="color:inherit;text-decoration:underline;">CommonRealtor</a> portfolio. All rights reserved. <span style="margin:0 0.4rem;opacity:0.5;">·</span> <a href="/privacy" style="color:inherit;text-decoration:underline;">Privacy</a> <span style="margin:0 0.4rem;opacity:0.5;">·</span> <a href="/terms" style="color:inherit;text-decoration:underline;">Terms</a></p>
+            <p class="footer-copyright">&copy; 2026 MinnesotaLakeHomesForSale.com. All rights reserved. <span style="margin:0 0.4rem;opacity:0.5;">·</span> <a href="/privacy" style="color:inherit;text-decoration:underline;">Privacy</a> <span style="margin:0 0.4rem;opacity:0.5;">·</span> <a href="/terms" style="color:inherit;text-decoration:underline;">Terms</a></p>
             <p class="footer-disclaimer">MinnesotaLakeHomesForSale.com is a real estate network and lead generation platform, not a licensed brokerage. We do not represent buyers or sellers directly. All transactions are facilitated by independently licensed real estate professionals. This platform is currently in beta &mdash; we are testing an agent match experience designed to enhance the real estate journey and Minnesota lake life. Results and agent availability may vary.</p>
         </div>
     </footer>`;
@@ -565,7 +562,7 @@ const _LF_CFG = {
             { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
             { q: d => `${d.first}, what's your budget range?`,              hint: 'Helps us match you with the right properties.',               field: { id: 'budget',   type: 'select',  ph: 'Select a range…',         opts: ['Under $500K','$500K – $750K','$750K – $1M','$1M – $2M','Over $2M'] } },
             { q: 'When are you hoping to buy?',                                                                                                   field: { id: 'timeline', type: 'select',  ph: 'Select a timeline…',      opts: ['ASAP — ready to move','Within 1–3 months','Within 3–6 months','Just exploring for now'] } },
-            { q: d => `Almost done, ${d.first}. How can we reach you?`,     hint: "Enter at least one contact method and we'll be in touch within one business day.", field: { id: 'contact', type: 'contact' } }
+            { q: d => `Last step, ${d.first} — create your account.`,       hint: "We'll save your search and email new lake-home matches as they come up.",                            field: { id: 'auth', type: 'auth' } }
         ]
     },
     sell: {
@@ -575,7 +572,7 @@ const _LF_CFG = {
             { q: 'Who are we speaking with today?',          hint: "Let's start with your first name.",                                         field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
             { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
             { q: 'When are you looking to sell?',                                                                                                 field: { id: 'timeline', type: 'select',  ph: 'Select a timeline…',      opts: ['As soon as possible','Within 3 months','3–6 months out','Just exploring options'] } },
-            { q: d => `Great, ${d.first}. How can we reach you?`,            hint: "We'll send your free market analysis within one business day.", field: { id: 'contact', type: 'contact' } }
+            { q: d => `Last step, ${d.first} — create your account.`,        hint: "We'll save your submission and email your free market analysis within one business day.",     field: { id: 'auth', type: 'auth' } }
         ]
     },
     rent: {
@@ -585,7 +582,7 @@ const _LF_CFG = {
             { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
             { q: 'When do you need it?',                    hint: 'Helps us check availability.',                                               field: { id: 'timeline', type: 'select',  ph: 'Select a timeframe…',     opts: ['This weekend','This month','Seasonal (summer or winter)','Year-round lease'] } },
             { q: d => `${d.first}, what's your monthly budget?`,                                                                                  field: { id: 'budget',   type: 'select',  ph: 'Select a range…',         opts: ['Under $1,500/mo','$1,500 – $3,000/mo','$3,000 – $5,000/mo','Over $5,000/mo'] } },
-            { q: d => `Perfect, ${d.first}. How can we reach you?`,         hint: "We'll start finding your ideal rental right away.",           field: { id: 'contact', type: 'contact' } }
+            { q: d => `Last step, ${d.first} — create your account.`,       hint: "We'll save your rental search and start finding matches right away.",                                field: { id: 'auth', type: 'auth' } }
         ]
     },
     agent: {
@@ -594,7 +591,7 @@ const _LF_CFG = {
             { q: 'Who are we speaking with today?',         hint: "Let's start with your first name.",                                          field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
             { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
             { q: d => `${d.first}, what do you need help with?`,            hint: "We'll match you with the right specialist.",                  field: { id: 'intent',   type: 'select',  ph: 'Select one…',             opts: ['Buying a lake home','Selling my property','Finding a rental','Market information','General question'] } },
-            { q: d => `Got it, ${d.first}. How can we reach you?`,          hint: 'A local specialist will be in touch within one business day.', field: { id: 'contact', type: 'contact' } }
+            { q: d => `Last step, ${d.first} — create your account.`,       hint: 'A local specialist will reach out, and your inquiry will be saved to your account.',                 field: { id: 'auth', type: 'auth' } }
         ]
     },
     general: {
@@ -603,7 +600,7 @@ const _LF_CFG = {
             { q: 'Who are we speaking with today?',         hint: "Let's start with your first name.",                                          field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
             { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
             { q: d => `How can we help you, ${d.first}?`,                                                                                        field: { id: 'intent',   type: 'select',  ph: 'Select one…',             opts: ['I want to buy a home','I want to sell my property',"I'm looking for a rental",'I need to find an agent','General question'] } },
-            { q: d => `Perfect, ${d.first}. How can we reach you?`,         hint: "We'll be in touch within one business day.",                  field: { id: 'contact', type: 'contact' } }
+            { q: d => `Last step, ${d.first} — create your account.`,       hint: "We'll save your message and respond within one business day.",                                       field: { id: 'auth', type: 'auth' } }
         ]
     },
     cash_offer: {
@@ -615,7 +612,7 @@ const _LF_CFG = {
             { q: 'What type of property is it?',                                                                                                  field: { id: 'property_type', type: 'select', ph: 'Select one…',       opts: ['Single-family lake home','Cabin / cottage','Condo or townhouse','Multi-family','Vacant lakefront land','Other'] } },
             { q: 'What condition is the home in?',          hint: 'A ballpark is fine — we\'ll confirm during the walkthrough.',                 field: { id: 'condition', type: 'select', ph: 'Select one…',            opts: ['Move-in ready','Light cosmetic updates needed','Major repairs needed','Tear-down / as-is'] } },
             { q: 'When would you like to close?',                                                                                                 field: { id: 'timeline', type: 'select',  ph: 'Select a timeline…',      opts: ['As soon as possible (7–14 days)','2–4 weeks','1–2 months','Just exploring options'] } },
-            { q: d => `Last step, ${d.first}. How can we reach you?`,       hint: "Your cash offer will arrive within 48 hours.",                 field: { id: 'contact', type: 'contact' } }
+            { q: d => `Last step, ${d.first} — create your account.`,       hint: "Your cash offer will arrive within 48 hours and be saved to your account.",                          field: { id: 'auth', type: 'auth' } }
         ]
     }
 };
@@ -747,14 +744,8 @@ function _lfRender() {
     const focus  = `onfocus="this.style.borderColor='#1d6df2'" onblur="this.style.borderColor='#e2e8f0'"`;
     const area   = document.getElementById('lf-field');
 
-    if (f.type === 'contact') {
-        area.innerHTML = `
-            <input type="email" id="lf-email" placeholder="Email address"
-                style="${iStyle}" ${focus} value="${_lfs.data.email || ''}">
-            <div style="height:0.75rem;"></div>
-            <input type="tel"   id="lf-phone" placeholder="Phone number (optional)"
-                style="${iStyle}" ${focus} value="${_lfs.data.phone || ''}">`;
-        setTimeout(() => document.getElementById('lf-email')?.focus(), 60);
+    if (f.type === 'auth') {
+        _lfRenderAuthStep(area, iStyle, focus);
     } else if (f.type === 'select') {
         const opts = f.opts.map(o => `<option value="${o}" ${_lfs.data[f.id]===o?'selected':''}>${o}</option>`).join('');
         area.innerHTML = `
@@ -767,12 +758,10 @@ function _lfRender() {
             <input type="${f.type}" id="lf-${f.id}" placeholder="${f.ph}" autocomplete="${f.ac||'off'}"
                 style="${iStyle}text-align:center;" ${focus} value="${_lfs.data[f.id]||''}">`;
         setTimeout(() => document.getElementById('lf-' + f.id)?.focus(), 60);
-        // Wire up Google Places Autocomplete on the address question.
-        // Loads the Maps JS lazily (once per session) and attaches a US-only
-        // address autocomplete to the input. Failures fall back to a plain
-        // text field so the form is never blocked if Places is unavailable.
         if (f.id === 'address') {
-            _lfAttachAddressAutocomplete();
+            _lfAddressInit();
+        } else {
+            _lfAddressTeardown();
         }
     }
 
@@ -784,17 +773,47 @@ function _lfRender() {
     btn.style.background = '#1a202c';
 }
 
-// ── Google Places autocomplete on the address step ──────────────────────────
-// Mirrors the cash-offer overlay's loader: pulls the public Places key from
-// /api/config/public, injects maps.googleapis.com once, and attaches an
-// Autocomplete to the lead-form's address input. Stays fire-and-forget — if
-// the key is missing or the script fails, the input still works as plain text.
-let _lfPlacesState = null; // 'loading' | 'ready' | 'failed'
+// ── Auth step (signup / signin) ─────────────────────────────────────────────
+// Replaces the old "contact" step. Submitting the form now requires either
+// creating a client account or signing in to an existing one — every lead is
+// tied to a real user_id from the start.
+function _lfRenderAuthStep(area, iStyle, focus) {
+    if (!_lfs.authMode) _lfs.authMode = 'signup'; // 'signup' | 'signin'
+    const tabBase   = 'flex:1;padding:0.7rem 1rem;background:#fff;border:1px solid #e2e8f0;border-radius:10px;font-family:inherit;font-weight:600;font-size:0.9rem;cursor:pointer;color:#4a5568;transition:all 0.15s;';
+    const tabActive = 'flex:1;padding:0.7rem 1rem;background:#1a202c;border:1px solid #1a202c;border-radius:10px;font-family:inherit;font-weight:700;font-size:0.9rem;cursor:pointer;color:#fff;';
+    const fieldsHtml = _lfs.authMode === 'signup'
+        ? `
+            <input type="email"    id="lf-email"    placeholder="Email address"           autocomplete="email"           style="${iStyle}" ${focus} value="${_lfs.data.email || ''}">
+            <div style="height:0.6rem;"></div>
+            <input type="tel"      id="lf-phone"    placeholder="Phone number"            autocomplete="tel"             style="${iStyle}" ${focus} value="${_lfs.data.phone || ''}">
+            <div style="height:0.6rem;"></div>
+            <input type="password" id="lf-password" placeholder="Create a password (min 8 chars)" autocomplete="new-password" style="${iStyle}" ${focus} value="">`
+        : `
+            <input type="email"    id="lf-email"    placeholder="Email address"           autocomplete="email"           style="${iStyle}" ${focus} value="${_lfs.data.email || ''}">
+            <div style="height:0.6rem;"></div>
+            <input type="password" id="lf-password" placeholder="Your password"           autocomplete="current-password" style="${iStyle}" ${focus} value="">`;
+
+    area.innerHTML = `
+        <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+            <button type="button" id="lf-auth-signup" style="${_lfs.authMode === 'signup' ? tabActive : tabBase}">Create account</button>
+            <button type="button" id="lf-auth-signin" style="${_lfs.authMode === 'signin' ? tabActive : tabBase}">Sign in</button>
+        </div>
+        ${fieldsHtml}`;
+
+    document.getElementById('lf-auth-signup').onclick = () => { _lfs.authMode = 'signup'; _lfRenderAuthStep(area, iStyle, focus); };
+    document.getElementById('lf-auth-signin').onclick = () => { _lfs.authMode = 'signin'; _lfRenderAuthStep(area, iStyle, focus); };
+    setTimeout(() => document.getElementById('lf-email')?.focus(), 60);
+}
+
+// ── Address autocomplete on the lead form ───────────────────────────────────
+// Uses the SAME google.maps.places.Autocomplete widget the sell hero uses.
+// The pac-container z-index is bumped so it sits above the overlay (z=9000),
+// and the form's scroll-lock now uses overflow:hidden instead of pinning body
+// with position:fixed (the latter broke the widget's coordinate math).
+
+let _lfMapsState = null; // 'loading' | 'ready' | 'failed'
 
 function _lfEnsurePacContainerZ() {
-    // The lead-form overlay sits at z-index 9000. Google's .pac-container
-    // suggestion dropdown defaults to z-index 1000, so without this bump the
-    // suggestions render BEHIND the overlay. Inject once per session.
     if (document.getElementById('lf-pac-z')) return;
     const style = document.createElement('style');
     style.id = 'lf-pac-z';
@@ -802,11 +821,57 @@ function _lfEnsurePacContainerZ() {
     document.head.appendChild(style);
 }
 
-function _lfBindAutocomplete() {
+function _lfLoadMaps() {
+    if (window.google?.maps?.places) { _lfMapsState = 'ready'; return Promise.resolve(); }
+    if (_lfMapsState === 'ready')   return Promise.resolve();
+    if (_lfMapsState === 'failed')  return Promise.reject(new Error('maps_failed'));
+    if (window.__lfMapsPromise)     return window.__lfMapsPromise;
+
+    window.__lfMapsPromise = (async () => {
+        if (document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]')) {
+            await new Promise((resolve, reject) => {
+                const t0 = Date.now();
+                const tick = setInterval(() => {
+                    if (window.google?.maps?.places) { clearInterval(tick); resolve(); }
+                    else if (Date.now() - t0 > 10000) { clearInterval(tick); reject(new Error('timeout')); }
+                }, 80);
+            });
+            _lfMapsState = 'ready';
+            return;
+        }
+        const res = await fetch('/api/config/public');
+        const cfg = await res.json().catch(() => ({}));
+        const key = cfg?.googlePlacesKey;
+        if (!key) throw new Error('no_key');
+        await new Promise((resolve, reject) => {
+            const cb = '__lfMapsCb_' + Math.random().toString(36).slice(2);
+            window[cb] = () => { delete window[cb]; resolve(); };
+            const s = document.createElement('script');
+            s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&loading=async&callback=${cb}`;
+            s.async = true;
+            s.onerror = () => { delete window[cb]; reject(new Error('script_load')); };
+            document.head.appendChild(s);
+        });
+        _lfMapsState = 'ready';
+    })().catch(err => {
+        _lfMapsState = 'failed';
+        console.warn('[lead-form] Maps load failed:', err.message);
+        throw err;
+    });
+    return window.__lfMapsPromise;
+}
+
+function _lfAddressTeardown() {
+    // No-op — the Autocomplete widget cleans itself up when its input is
+    // removed from the DOM (which happens on every step navigation).
+}
+
+function _lfBindWidget() {
     const input = document.getElementById('lf-address');
-    if (!input || !window.google || !window.google.maps || !window.google.maps.places) return;
-    if (input.dataset.lfAutocomplete === '1') return;          // idempotent
-    input.dataset.lfAutocomplete = '1';
+    if (!input || input.dataset.lfBound === '1') return;
+    if (!window.google?.maps?.places) return;
+    input.dataset.lfBound = '1';
+
     const ac = new google.maps.places.Autocomplete(input, {
         types: ['address'],
         componentRestrictions: { country: 'us' },
@@ -814,49 +879,29 @@ function _lfBindAutocomplete() {
     });
     ac.addListener('place_changed', () => {
         const place = ac.getPlace();
-        const addr  = place?.formatted_address || input.value;
+        const addr = place?.formatted_address || input.value;
         if (addr) {
             input.value = addr;
             _lfs.data.address = addr;
         }
     });
-    // Suppress Enter (Google's dropdown handles it) so the form doesn't
-    // advance to the next step before the user picks a suggestion.
-    input.addEventListener('keydown', e => { if (e.key === 'Enter' && document.querySelector('.pac-container:not([style*="display: none"])')) e.preventDefault(); });
+    // Suppress Enter while a suggestion is highlighted — Google's dropdown
+    // handles selection — so the form doesn't advance prematurely.
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && document.querySelector('.pac-container:not([style*="display: none"])')) {
+            e.preventDefault();
+        }
+    });
 }
 
-async function _lfAttachAddressAutocomplete() {
+async function _lfAddressInit() {
     _lfEnsurePacContainerZ();
-    if (window.google && window.google.maps && window.google.maps.places) {
-        _lfPlacesState = 'ready';
-        _lfBindAutocomplete();
-        return;
-    }
-    if (_lfPlacesState === 'loading') {
-        // Another step already kicked off the load. Bind once it's ready.
-        const t = setInterval(() => {
-            if (window.google?.maps?.places) { clearInterval(t); _lfBindAutocomplete(); }
-        }, 100);
-        setTimeout(() => clearInterval(t), 8000);
-        return;
-    }
-    if (_lfPlacesState === 'failed') return;
-
-    _lfPlacesState = 'loading';
+    if (window.google?.maps?.places) { _lfBindWidget(); return; }
     try {
-        const res = await fetch('/api/config/public');
-        const cfg = await res.json().catch(() => ({}));
-        const key = cfg?.googlePlacesKey;
-        if (!key) { _lfPlacesState = 'failed'; return; }
-        window._lfGoogleReady = () => { _lfPlacesState = 'ready'; _lfBindAutocomplete(); };
-        const s = document.createElement('script');
-        s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&loading=async&callback=_lfGoogleReady`;
-        s.defer = true;
-        s.onerror = () => { _lfPlacesState = 'failed'; };
-        document.head.appendChild(s);
-    } catch (err) {
-        console.warn('[lead-form] Google Places disabled:', err.message);
-        _lfPlacesState = 'failed';
+        await _lfLoadMaps();
+        _lfBindWidget();
+    } catch (_) {
+        // Plain text fallback — input still works.
     }
 }
 
@@ -866,28 +911,17 @@ function _lfSlide() {
     setTimeout(() => { _lfRender(); body.style.opacity = '1'; body.style.transform = 'translateY(0)'; }, 140);
 }
 
-// iOS Safari ignores `body { overflow: hidden }` for scroll-lock; pin the
-// body with position:fixed instead and restore scroll on close.
+// Scroll-lock: just disable scroll on html+body. The previous version pinned
+// body with position:fixed (an iOS hack), which broke google.maps.places.Autocomplete
+// inside the overlay — the widget silently returned zero results because its
+// internal coordinate math relied on body being statically positioned.
 function _lfLockScroll() {
-    const y = window.scrollY || window.pageYOffset || 0;
-    document.body.dataset.lfSavedY = String(y);
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${y}px`;
-    document.body.style.left = '0';
-    document.body.style.right = '0';
-    document.body.style.width = '100%';
+    document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
 }
 function _lfUnlockScroll() {
-    const saved = Number(document.body.dataset.lfSavedY || 0);
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.left = '';
-    document.body.style.right = '';
-    document.body.style.width = '';
+    document.documentElement.style.overflow = '';
     document.body.style.overflow = '';
-    delete document.body.dataset.lfSavedY;
-    window.scrollTo(0, saved);
 }
 
 window.openForm = function(type, prefill) {
@@ -911,6 +945,7 @@ window.openForm = function(type, prefill) {
 window.closeForm = function() {
     const el = document.getElementById('lf-overlay');
     if (el) el.style.display = 'none';
+    _lfAddressTeardown();
     _lfUnlockScroll();
 };
 
@@ -923,12 +958,20 @@ window._lfNext = function() {
     const f     = steps[_lfs.step].field;
     const err   = document.getElementById('lf-err');
 
-    if (f.type === 'contact') {
-        const email = (document.getElementById('lf-email')?.value || '').trim();
-        const phone = (document.getElementById('lf-phone')?.value || '').trim();
-        if (!email && !phone) { err.textContent = 'Please enter at least one contact method.'; err.style.display = 'block'; return; }
-        _lfs.data.email = email || null;
-        _lfs.data.phone = phone || null;
+    if (f.type === 'auth') {
+        const email    = (document.getElementById('lf-email')?.value    || '').trim();
+        const phone    = (document.getElementById('lf-phone')?.value    || '').trim();
+        const password = (document.getElementById('lf-password')?.value || '');
+        if (!email)                                       { err.textContent = 'Email is required.';                              err.style.display = 'block'; return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))    { err.textContent = 'Please enter a valid email address.';              err.style.display = 'block'; return; }
+        if (!password)                                    { err.textContent = 'Password is required.';                           err.style.display = 'block'; return; }
+        if (_lfs.authMode === 'signup') {
+            if (!phone)            { err.textContent = 'Phone number is required.';   err.style.display = 'block'; return; }
+            if (password.length < 8) { err.textContent = 'Password must be at least 8 characters.'; err.style.display = 'block'; return; }
+        }
+        _lfs.data.email    = email;
+        _lfs.data.phone    = phone || _lfs.data.phone || null;
+        _lfs.data.password = password;
     } else if (f.type === 'select') {
         const val = document.getElementById('lf-' + f.id)?.value;
         if (!val) return;
@@ -951,7 +994,7 @@ async function _lfDoSubmit() {
     // address + placeId + property_* live on the lead record directly,
     // so exclude them from the free-form notes dump.
     const skip = new Set([
-        'first','last','email','phone',
+        'first','last','email','phone','password',
         'address','placeId',
         'property_street','property_city','property_state','property_zip',
     ]);
@@ -959,13 +1002,54 @@ async function _lfDoSubmit() {
         .map(([k,v]) => `${k[0].toUpperCase()+k.slice(1).replace(/_/g,' ')}: ${v}`).join('\n');
 
     const btn = document.getElementById('lf-next');
-    btn.disabled = true; btn.textContent = 'Submitting…'; btn.style.background = '#a0aec0';
-    document.getElementById('lf-err').style.display = 'none';
+    const errEl = document.getElementById('lf-err');
+    btn.disabled = true; btn.style.background = '#a0aec0';
+    errEl.style.display = 'none';
 
     try {
+        // Step 1: authenticate (signup or signin). On success the
+        // auth_session cookie is set, so /api/leads will see req.user.
+        btn.textContent = _lfs.authMode === 'signup' ? 'Creating account…' : 'Signing in…';
+        if (_lfs.authMode === 'signup') {
+            const r = await fetch('/api/auth/waitlist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    first_name: d.first || '',
+                    last_name:  d.last  || '',
+                    email:      d.email,
+                    phone:      d.phone,
+                    password:   d.password,
+                }),
+            });
+            if (!r.ok) {
+                const j = await r.json().catch(() => ({}));
+                if (r.status === 409) {
+                    throw new Error("That email's already registered — click \"Sign in\" above to use it.");
+                }
+                throw new Error(j.error || 'Could not create your account.');
+            }
+        } else {
+            const r = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ email: d.email, password: d.password }),
+            });
+            if (!r.ok) {
+                const j = await r.json().catch(() => ({}));
+                throw new Error(j.error || 'Sign in failed — check your email and password.');
+            }
+        }
+
+        // Step 2: submit the lead. The cookie set above means the server
+        // will read req.user.userId and store it as leads.user_id.
+        btn.textContent = 'Submitting…';
         const res = await fetch('/api/leads', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
                 name,
                 email: d.email||null,

@@ -45,14 +45,19 @@
     {{TOWN_STRUCTURED_DATA}}
 
     <style>
-        /* Hero — dark split, mirrors lake-detail */
-        .tn-hero { position: relative; padding: 12rem 2rem 5rem; background-color: var(--bg-dark); color: #fff; }
+        /* Hero — white treatment, mirrors the lake page exactly. */
+        .tn-hero { position: relative; padding: 12rem 2rem 5rem; background-color: #fff; color: #1a202c; }
         .tn-hero-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
-        .tn-hero h1 { font-size: 4rem; font-weight: 700; letter-spacing: -1.75px; line-height: 1.05; margin-bottom: 1.5rem; }
+        .tn-hero h1 { font-size: 4.5rem; font-weight: 700; letter-spacing: -2px; line-height: 1.05; margin-bottom: 1.5rem; color: #1a202c; }
         .tn-hero h1 span { color: var(--accent-blue); }
-        .tn-hero .eyebrow { display: inline-block; font-size: 0.78rem; font-weight: 800; color: #1d6df2; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 1rem; }
-        .tn-hero p.lead { font-size: 1.2rem; color: #a0aec0; line-height: 1.6; margin-bottom: 2.5rem; max-width: 520px; }
-        .tn-hero-img { height: 500px; border-radius: 20px; overflow: hidden; }
+        .tn-hero .eyebrow {
+            display: inline-block;
+            font-size: 0.78rem; font-weight: 700; letter-spacing: 1.5px;
+            color: var(--accent-blue, #1d6df2); text-transform: uppercase;
+            margin-bottom: 0.85rem;
+        }
+        .tn-hero p.lead { font-size: 1.25rem; font-weight: 400; color: #4a5568; line-height: 1.6; margin-bottom: 2.5rem; max-width: 520px; }
+        .tn-hero-img { height: 500px; border-radius: 20px; overflow: hidden; box-shadow: 0 22px 50px rgba(16,24,40,0.12); }
         .tn-hero-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .tn-hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
 
@@ -61,21 +66,23 @@
             top: 6.5rem; left: 2rem;
             display: inline-flex; align-items: center; gap: 0.35rem;
             font-size: 0.82rem; font-weight: 600;
-            color: #a0aec0; text-decoration: none;
+            color: #718096; text-decoration: none;
             padding: 0.35rem 0.65rem; border-radius: 6px;
             transition: color 0.15s, background 0.15s;
         }
-        .tn-back-link:hover { color: #fff; background: rgba(255,255,255,0.06); }
+        .tn-back-link:hover { color: #1a202c; background: rgba(16,24,40,0.05); }
 
-        /* Shared section frame */
-        .tn-section { padding: 5rem 2rem; }
+        /* Shared section frame — all sections render at 1200px wide for
+           visual consistency with the lake page. */
+        .tn-section { padding: 5rem 2rem 6rem; }
         .tn-section .inner { max-width: 1200px; margin: 0 auto; }
-        .tn-section h2 { font-size: 2.25rem; font-weight: 700; color: #1a202c; margin: 0 0 0.5rem; letter-spacing: -0.75px; }
-        .tn-section p.lead { color: #718096; font-size: 1.02rem; max-width: 720px; margin: 0 0 2.5rem; line-height: 1.6; }
+        .tn-section h2 { font-size: 2.5rem; font-weight: 800; color: #1a202c; margin: 0 0 0.5rem; letter-spacing: -1px; line-height: 1.1; }
+        .tn-section p.lead { color: #718096; font-size: 1.05rem; max-width: 720px; margin: 0 0 2.5rem; line-height: 1.6; }
         .tn-section.centered h2, .tn-section.centered p.lead { text-align: center; margin-left: auto; margin-right: auto; }
         .tn-section.gray { background: #f7f9fa; }
 
-        /* Lake cards (primary content on town page) */
+        /* Lake cards — primary content on the town page, only shows up when
+           lakes are linked to the town via lake_tags. */
         .tn-lake-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
         .tn-lake-card {
             display: flex; flex-direction: column;
@@ -95,34 +102,78 @@
         .tn-lake-body p { color: #4a5568; font-size: 0.92rem; line-height: 1.55; margin: 0 0 1.1rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
         .tn-lake-cta { margin-top: auto; display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.88rem; font-weight: 800; color: #1d6df2; transition: gap 0.15s, color 0.15s; }
 
-        /* Businesses (reusable with 4 type sections) */
-        .tn-biz-section { margin-bottom: 3rem; }
-        .tn-biz-section:last-child { margin-bottom: 0; }
-        .tn-biz-section h3 { font-size: 1.6rem; font-weight: 700; color: #1a202c; margin: 0 0 0.4rem; letter-spacing: -0.4px; }
-        .tn-biz-section p.sub { color: #718096; margin: 0 0 1.5rem; line-height: 1.6; }
-        .tn-biz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
-
         /* Blog card grid */
         .tn-blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
 
-        /* Dark CTA */
-        .tn-dark { background: var(--bg-dark); color: #fff; padding: 6rem 2rem; text-align: center; }
-        .tn-dark h2 { font-size: 3rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -1px; color: #fff; }
-        .tn-dark p { font-size: 1.15rem; color: #a0aec0; margin-bottom: 2.5rem; line-height: 1.6; }
+        .tn-empty { grid-column: 1/-1; text-align: center; padding: 3rem 2rem; color: #718096; background: #fff; border: 1px dashed #cbd5e0; border-radius: 14px; }
 
-        .tn-empty { grid-column: 1/-1; text-align: center; padding: 3rem 2rem; color: #a0aec0; background: #fff; border: 1px dashed #edf2f7; border-radius: 14px; }
+        /* About-this-town — editorial layout, mirrors the lake page so the
+           prose, eyebrow, heading, and facts strip all align in the same
+           1200px column. */
+        .ld-about { padding: 5rem 2rem 6rem; background: #fff; }
+        .ld-about-inner { max-width: 1200px; margin: 0 auto; }
+        .ld-about-eyebrow {
+            display: inline-block;
+            font-size: 0.78rem; font-weight: 700; letter-spacing: 1.5px;
+            color: var(--accent-blue, #1d6df2); text-transform: uppercase;
+            margin-bottom: 0.85rem;
+        }
+        .ld-about-inner h2 {
+            font-size: 2.6rem; font-weight: 800; letter-spacing: -1.25px;
+            color: #1a202c; margin: 0 0 1.5rem; line-height: 1.1;
+        }
+        .ld-about-inner [id^="tn-description"] p {
+            color: #2d3748; font-size: 1.06rem; line-height: 1.8; margin: 0 0 1.35rem;
+        }
+        .ld-about-inner #tn-description-1 p:first-of-type {
+            font-size: 1.25rem; line-height: 1.55; color: #1a202c; font-weight: 500;
+            margin-bottom: 1.75rem;
+        }
+        .ld-about-inner [id^="tn-description"] p:last-child { margin-bottom: 0; }
+
+        /* Continued about sections — tighter top padding + standard prose. */
+        .ld-about.ld-about-continued { padding: 4rem 2rem 5rem; }
+        .ld-about.ld-about-continued .ld-about-inner #tn-description-2 p:first-of-type,
+        .ld-about.ld-about-continued .ld-about-inner #tn-description-3 p:first-of-type {
+            font-size: 1.06rem; font-weight: 400; color: #2d3748; margin-bottom: 1.35rem;
+        }
+
+        /* Quick-facts strip — sits at the bottom of the third about block. */
+        .ld-facts {
+            margin-top: 3rem; padding-top: 2.5rem;
+            border-top: 1px solid #e2e8f0;
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;
+        }
+        .ld-fact { text-align: center; padding: 0.5rem 0.25rem; }
+        .ld-fact .label { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #718096; margin-bottom: 0.45rem; }
+        .ld-fact .value { display: block; font-size: 1.5rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; line-height: 1.15; }
+        .ld-fact .unit  { font-size: 0.85rem; font-weight: 600; color: #4a5568; margin-left: 0.2rem; }
+
+        /* Final-CTA container — bump from the global 1000px to 1200px so it
+           lines up with the other town-page sections. */
+        .tn-cta .business-type-container { max-width: 1200px; }
 
         @media (max-width: 900px) {
             .tn-hero { padding: 7rem 1.25rem 3rem; }
             .tn-hero-inner { grid-template-columns: 1fr; gap: 2rem; }
-            .tn-hero h1 { font-size: 2.5rem; letter-spacing: -1px; }
+            .tn-hero h1 { font-size: 2.75rem; letter-spacing: -1.25px; }
             .tn-hero p.lead { font-size: 1.05rem; }
             .tn-hero-img { height: 240px; }
             .tn-back-link { top: 4.5rem; left: 1.25rem; font-size: 0.78rem; padding: 0.3rem 0.55rem; }
-            .tn-section { padding: 3rem 1.25rem; }
-            .tn-section h2 { font-size: 1.75rem; }
-            .tn-dark { padding: 4rem 1.25rem; }
-            .tn-dark h2 { font-size: 2rem; }
+            .tn-section { padding: 3rem 1.25rem 4rem; }
+            .tn-section h2 { font-size: 1.95rem; letter-spacing: -1px; }
+            .ld-about { padding: 3rem 1.25rem 4rem; }
+            .ld-about.ld-about-continued { padding: 2.5rem 1.25rem 3.25rem; }
+            .ld-about-inner h2 { font-size: 1.95rem; margin-bottom: 1.15rem; letter-spacing: -1px; }
+            .ld-about-inner [id^="tn-description"] p { font-size: 1rem; line-height: 1.7; margin-bottom: 1.15rem; }
+            .ld-about-inner #tn-description-1 p:first-of-type { font-size: 1.1rem; line-height: 1.6; margin-bottom: 1.4rem; }
+            .ld-facts { grid-template-columns: repeat(2, 1fr); gap: 1.25rem; margin-top: 2.25rem; padding-top: 1.75rem; }
+            .ld-fact .value { font-size: 1.25rem; }
+            .ld-fact .label { font-size: 0.66rem; }
+        }
+        @media (max-width: 480px) {
+            .tn-hero h1 { font-size: 2.25rem; }
+            .tn-section h2 { font-size: 1.7rem; }
         }
     </style>
 </head>
@@ -130,14 +181,14 @@
 
     <global-header></global-header>
 
-    <!-- Hero -->
+    <!-- Hero — white treatment, mirrors lake page. -->
     <section class="tn-hero">
         <a href="/towns" class="tn-back-link"><span aria-hidden="true">←</span> All lake towns</a>
         <div class="tn-hero-inner">
             <div>
                 <div class="eyebrow">Minnesota lake town · {{TOWN_REGION}}</div>
-                <h1><span>{{TOWN_NAME}}</span>, {{TOWN_STATE}}</h1>
-                <p class="lead" id="tn-intro">Lake homes, local agents, and trusted businesses serving {{TOWN_NAME}}.</p>
+                <h1>{{TOWN_HERO_H1_HTML}}
+                <p class="lead" id="tn-intro">{{TOWN_INTRO_TEXT}}</p>
                 <div class="tn-hero-actions">
                     <button onclick="openForm('buy')" class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none; cursor: pointer;">Contact a specialist</button>
                 </div>
@@ -148,18 +199,17 @@
         </div>
     </section>
 
-    <!-- Lakes in this town (primary) -->
-    <section class="tn-section gray" id="tn-lakes-section">
-        <div class="inner">
-            <h2>Lakes in {{TOWN_NAME}}</h2>
-            <p class="lead">Every lake connected to {{TOWN_NAME}} — click into any one for agents, service providers, and what makes that lake worth owning on.</p>
-            <div id="tn-lakes" class="tn-lake-grid">
-                <div class="tn-empty">Loading lakes…</div>
-            </div>
+    <!-- About part 1 — eyebrow + heading + first chunk of description.
+         Hidden at render if no description is set on the tag. -->
+    <section class="ld-about" id="tn-about-1-section" style="display:none;">
+        <div class="ld-about-inner">
+            <span class="ld-about-eyebrow" id="tn-about-eyebrow"></span>
+            <h2>About {{TOWN_NAME}}</h2>
+            <div id="tn-description-1"></div>
         </div>
     </section>
 
-    <!-- Featured Agents serving this town (hidden when none tagged) -->
+    <!-- Featured Agents serving this town -->
     <section class="tn-section centered" id="tn-agents-section" style="display:none;">
         <div class="inner">
             <h2>Featured agents near {{TOWN_NAME}}</h2>
@@ -170,8 +220,7 @@
     </section>
     <style>
         /* Keep featured-agent cards at a normal size even when only one
-           agent is tagged — stock .agents-grid uses minmax(280px, 1fr)
-           which stretches a single card across the full container. */
+           is tagged — stock .agents-grid stretches a lone card otherwise. */
         #tn-agents, #tn-nearby-biz {
             grid-template-columns: repeat(auto-fit, minmax(280px, 360px)) !important;
             justify-content: center !important;
@@ -182,19 +231,52 @@
         }
     </style>
 
-    <!-- Businesses near this town (hidden when fewer than 3 tagged) -->
-    <section class="tn-section centered" id="tn-nearby-biz-section" style="display:none;">
+    <!-- About part 2 — middle chunk of description. -->
+    <section class="ld-about ld-about-continued" id="tn-about-2-section" style="display:none;">
+        <div class="ld-about-inner">
+            <div id="tn-description-2"></div>
+        </div>
+    </section>
+
+    <!-- Lakes in this town — town-page-only section sits in the middle of
+         the editorial flow so users hit lakes after meeting the agents. -->
+    <section class="tn-section gray" id="tn-lakes-section">
         <div class="inner">
-            <h2 id="tn-nearby-biz-heading">Businesses near {{TOWN_NAME}}</h2>
-            <p class="lead" id="tn-nearby-biz-lead">Restaurants, marinas, services, and more around {{TOWN_NAME}} — Featured Partners lead the list.</p>
+            <h2>Lakes in {{TOWN_NAME}}</h2>
+            <p class="lead">Every lake connected to {{TOWN_NAME}} — click into any one for agents, service providers, and what makes that lake worth owning on.</p>
+            <div id="tn-lakes" class="tn-lake-grid">
+                <div class="tn-empty">Loading lakes…</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Businesses near this town — always rendered with empty
+         state when no partners tagged yet. -->
+    <section class="tn-section centered" id="tn-nearby-biz-section">
+        <div class="inner">
+            <h2 id="tn-nearby-biz-heading">Featured {{TOWN_NAME}} Businesses</h2>
+            <p class="lead" id="tn-nearby-biz-lead">Resorts, marinas, dock builders, and lake-area pros our community relies on.</p>
             <div id="tn-nearby-biz" class="agents-grid"></div>
+            <div id="tn-nearby-biz-empty" style="display:none;max-width:560px;margin:0 auto;background:#fff;border:1px dashed #cbd5e0;border-radius:14px;padding:2.5rem 1.75rem;text-align:center;">
+                <div style="font-size:2rem;margin-bottom:0.75rem;">🏖️</div>
+                <h3 style="font-size:1.2rem;font-weight:700;color:#1a202c;margin:0 0 0.5rem;">No featured partners in {{TOWN_NAME}} yet.</h3>
+                <p style="color:#718096;font-size:0.96rem;line-height:1.55;margin:0 0 1.5rem;">Resorts, marinas, dock builders, photographers — be the first {{TOWN_NAME}} business listed here.</p>
+                <a href="/business-signup" class="btn btn-primary" style="display:inline-block;padding:0.85rem 1.6rem;font-size:0.95rem;text-decoration:none;border:none;cursor:pointer;">List your business</a>
+            </div>
             <div id="tn-nearby-biz-cta" style="text-align:center;margin-top:1.75rem;"></div>
         </div>
     </section>
 
+    <!-- About part 3 — closing chunk of description + quick-facts strip. -->
+    <section class="ld-about ld-about-continued" id="tn-about-3-section" style="display:none;">
+        <div class="ld-about-inner">
+            <div id="tn-description-3"></div>
+            <div id="tn-facts" class="ld-facts" style="display:none;"></div>
+        </div>
+    </section>
 
-    <!-- From the blog (transitive) -->
-    <section class="tn-section" id="tn-blog-section" style="display:none;">
+    <!-- From the blog -->
+    <section class="tn-section centered gray" id="tn-blog-section" style="display:none;">
         <div class="inner">
             <h2>From the blog — {{TOWN_NAME}}</h2>
             <p class="lead">Guides, market takes, and local stories covering {{TOWN_NAME}} and its lakes.</p>
@@ -202,14 +284,26 @@
         </div>
     </section>
 
-    <!-- Dark CTA -->
-    <section class="tn-dark">
-        <div style="max-width: 800px; margin: 0 auto;">
-            <h2>Ready to explore {{TOWN_NAME}}?</h2>
-            <p>Get connected with a local specialist who knows this market inside and out.</p>
-            <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-                <button class="btn btn-primary" style="padding:1.1rem 2.25rem;font-size:1.05rem;border:none;" onclick="openForm('buy')">Start your journey</button>
-                <a href="/towns" class="btn btn-ghost" style="padding:1.1rem 2.25rem;font-size:1.05rem;text-decoration:none;border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:8px;">Browse all towns</a>
+    <!-- Final CTA — mirrors the homepage / lake page "Are you looking to
+         buy or sell?" pattern. Reuses .business-type-section from style.css. -->
+    <section class="business-type-section tn-cta">
+        <div class="business-type-container">
+            <div class="business-text">
+                <h2 class="business-title">Are you looking to<br>buy or sell?</h2>
+                <p class="business-desc">Let's find the right property or buyer for your {{TOWN_NAME}} home.</p>
+            </div>
+            <div class="business-form">
+                <label for="tn-intent-select">My interest</label>
+                <div class="select-wrapper">
+                    <select id="tn-intent-select">
+                        <option value="" disabled selected>Select an option</option>
+                        <option value="buy">Buy a Lake Home</option>
+                        <option value="sell">Sell my Lakefront Property</option>
+                        <option value="explore">Explore Communities</option>
+                        <option value="agent">Speak to an Agent</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" style="margin-top:0.5rem; padding: 1rem 1.5rem; border:none;" onclick="tnOpenIntent()">Get started</button>
             </div>
         </div>
     </section>
@@ -218,11 +312,76 @@
     <lead-modal></lead-modal>
 
     <script>
-        const TOWN_ID   = '{{TOWN_ID}}';
-        const TOWN_SLUG = '{{TOWN_SLUG}}';
-        const TOWN_NAME = '{{TOWN_NAME}}';
-        const TOWN_LAT  = parseFloat('{{TOWN_LATITUDE}}');
-        const TOWN_LNG  = parseFloat('{{TOWN_LONGITUDE}}');
+        const TOWN_ID     = '{{TOWN_ID}}';
+        const TOWN_SLUG   = '{{TOWN_SLUG}}';
+        const TOWN_NAME   = '{{TOWN_NAME}}';
+        const TOWN_REGION = '{{TOWN_REGION}}';
+        const TOWN_STATE  = '{{TOWN_STATE}}';
+        const TOWN_COUNTY = '{{TOWN_COUNTY}}';
+        const TOWN_LAT    = parseFloat('{{TOWN_LATITUDE}}');
+        const TOWN_LNG    = parseFloat('{{TOWN_LONGITUDE}}');
+        // Server-injected description JSON. Parsed once, split into thirds,
+        // and rendered into the three about-section slots interleaved with
+        // the agents/businesses/blogs blocks (same pattern as the lake page).
+        const TOWN_DESCRIPTION = {{TOWN_DESCRIPTION_JSON}};
+
+        // Per-town quick-facts. Long-term these should live on the tags
+        // table as JSONB; for now a small client-side map keyed by slug
+        // keeps each town's facts editable without a schema change.
+        const TOWN_FACTS_BY_SLUG = {
+            'detroit-lakes': [
+                { label: 'Lakes within 25 mi', value: '400+' },
+                { label: 'Year-round pop',     value: '~9,500' },
+                { label: 'From Twin Cities',   value: '3',     unit: 'hrs' },
+                { label: 'From Fargo',         value: '45',    unit: 'min' },
+            ],
+        };
+        window.TOWN_FACTS = TOWN_FACTS_BY_SLUG[TOWN_SLUG] || null;
+
+        // ── About sections — split description into three chunks ─────────
+        function renderTownAbout() {
+            const eyebrowEl = document.getElementById('tn-about-eyebrow');
+            if (eyebrowEl) {
+                const bits = [TOWN_REGION, TOWN_COUNTY && `${TOWN_COUNTY} County`, TOWN_STATE].filter(Boolean);
+                eyebrowEl.textContent = bits.join(' · ');
+            }
+
+            const sec1 = document.getElementById('tn-about-1-section');
+            const sec2 = document.getElementById('tn-about-2-section');
+            const sec3 = document.getElementById('tn-about-3-section');
+
+            const body = (TOWN_DESCRIPTION || '').trim();
+            if (body) {
+                const paragraphs = body.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+                const total = paragraphs.length;
+                const splitInThirds = total >= 6;
+                const a = splitInThirds ? Math.ceil(total / 3) : total;
+                const b = splitInThirds ? Math.ceil(2 * total / 3) : total;
+                const chunks = [
+                    paragraphs.slice(0, a),
+                    paragraphs.slice(a, b),
+                    paragraphs.slice(b),
+                ];
+                const renderChunk = (paras) => paras.map(p => `<p>${escHtml(p)}</p>`).join('');
+                document.getElementById('tn-description-1').innerHTML = renderChunk(chunks[0]);
+                sec1.style.display = '';
+                if (chunks[1].length) { document.getElementById('tn-description-2').innerHTML = renderChunk(chunks[1]); sec2.style.display = ''; }
+                if (chunks[2].length) { document.getElementById('tn-description-3').innerHTML = renderChunk(chunks[2]); sec3.style.display = ''; }
+            }
+
+            const factsEl = document.getElementById('tn-facts');
+            const facts   = (window.TOWN_FACTS && window.TOWN_FACTS.length) ? window.TOWN_FACTS : [];
+            if (factsEl && facts.length >= 3) {
+                factsEl.innerHTML = facts.map(f => `
+                    <div class="ld-fact">
+                        <span class="label">${escHtml(f.label)}</span>
+                        <span class="value">${escHtml(f.value)}${f.unit ? `<span class="unit">${escHtml(f.unit)}</span>` : ''}</span>
+                    </div>
+                `).join('');
+                factsEl.style.display = '';
+                if (sec3.style.display === 'none') sec3.style.display = '';
+            }
+        }
 
         // ── Lakes in this town (primary section) ─────────────────────────
         async function loadLakes() {
@@ -350,30 +509,43 @@
         };
 
         // Hard geo rule: only businesses tagged to this lake/town via
-        // business_lakes (directly or transitively). Need ≥3 — else the
-        // whole section is hidden since a half-filled row looks bad.
-        const MIN_TAGGED_BUSINESSES = 3;
+        // Featured Businesses — section is always visible; if no partners
+        // are tagged we show an empty-state card with a "list your business"
+        // CTA so the section feels intentional rather than missing.
         async function renderTaggedBusinesses({ endpoint, anchorName, sectionEl, headingEl, leadEl, gridEl, ctaEl }) {
             injectBizStyles();
+            const emptyEl = document.getElementById('tn-nearby-biz-empty');
             try {
                 const r = await fetch(endpoint);
                 if (!r.ok) throw new Error();
                 const all = await r.json();
-                if (all.length < MIN_TAGGED_BUSINESSES) {
-                    if (sectionEl) sectionEl.style.display = 'none';
+
+                if (headingEl) headingEl.textContent = `Featured ${anchorName} Businesses`;
+                if (leadEl)    leadEl.textContent    = 'Resorts, marinas, dock builders, and lake-area pros our community relies on.';
+
+                if (all.length === 0) {
+                    gridEl.innerHTML = '';
+                    if (emptyEl) emptyEl.style.display = 'block';
+                    if (ctaEl)   ctaEl.innerHTML = '';
                     return;
                 }
-                const picks = all.slice(0, 3);
-                if (headingEl) headingEl.textContent = `Businesses near ${anchorName}`;
-                if (leadEl) leadEl.textContent =
-                    `Restaurants, marinas, services, and more around ${anchorName} — Featured Partners lead the list.`;
-                gridEl.innerHTML = picks.map(renderBizCard).join('');
+                if (emptyEl) emptyEl.style.display = 'none';
+                gridEl.innerHTML = all.slice(0, 6).map(renderBizCard).join('');
                 if (ctaEl) ctaEl.innerHTML = '<a href="/towns?view=biz" class="nb-cta">View all businesses →</a>';
-                if (sectionEl) sectionEl.style.display = '';
             } catch (_) {
-                if (sectionEl) sectionEl.style.display = 'none';
+                gridEl.innerHTML = '';
+                if (emptyEl) emptyEl.style.display = 'block';
+                if (ctaEl)   ctaEl.innerHTML = '';
             }
         }
+
+        // Final-CTA intent picker — mirrors the homepage / lake page handler.
+        window.tnOpenIntent = function () {
+            const select = document.getElementById('tn-intent-select');
+            if (!select || !select.value) { alert('Please select what you are looking to do first!'); return; }
+            const map = { buy: 'buy', sell: 'sell', explore: 'general', agent: 'agent' };
+            window.openForm(map[select.value] || 'general');
+        };
 
         function renderBizCard(b) {
             const color = BIZ_COLORS[b.type] || BIZ_COLORS.other;
@@ -441,6 +613,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            renderTownAbout();
             loadLakes();
             loadAgents();
             loadBlog();

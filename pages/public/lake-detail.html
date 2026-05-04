@@ -47,31 +47,79 @@
     {{LAKE_STRUCTURED_DATA}}
 
     <style>
-        /* Hero (mirrors the original Lake Minnetonka hand-authored look) */
-        .lm-hero { position: relative; padding: 12rem 2rem 5rem; background-color: var(--bg-dark); color: #fff; }
+        /* Hero — light/white treatment to match the rest of the page. */
+        .lm-hero { position: relative; padding: 12rem 2rem 5rem; background-color: #fff; color: #1a202c; }
         .lm-hero-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
-        .lm-hero h1 { font-size: 4.5rem; font-weight: 700; letter-spacing: -2px; line-height: 1.05; margin-bottom: 1.5rem; }
+        .lm-hero h1 { font-size: 4.5rem; font-weight: 700; letter-spacing: -2px; line-height: 1.05; margin-bottom: 1.5rem; color: #1a202c; }
         .lm-hero h1 span { color: var(--accent-blue); }
-        .lm-hero p.lead { font-size: 1.25rem; color: #a0aec0; line-height: 1.6; margin-bottom: 2.5rem; max-width: 520px; }
-        .lm-hero-img { height: 500px; border-radius: 20px; overflow: hidden; }
+        .lm-hero p.lead { font-size: 1.25rem; color: #4a5568; line-height: 1.6; margin-bottom: 2.5rem; max-width: 520px; }
+        .lm-hero-img { height: 500px; border-radius: 20px; overflow: hidden; box-shadow: 0 22px 50px rgba(16,24,40,0.12); }
         .lm-hero-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .lm-hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
 
-        /* Small top-left back-link. Absolutely positioned so it sits
-           below the nav but above the hero content, and doesn't compete
-           with the primary CTA for visual weight. */
+        /* Small top-left back-link, recolored for the light hero. */
         .lm-back-link {
             position: absolute;
             top: 6.5rem; left: 2rem;
             display: inline-flex; align-items: center; gap: 0.35rem;
             font-size: 0.82rem; font-weight: 600;
-            color: #a0aec0; text-decoration: none;
+            color: #718096; text-decoration: none;
             padding: 0.35rem 0.65rem; border-radius: 6px;
             transition: color 0.15s, background 0.15s;
         }
-        .lm-back-link:hover { color: #fff; background: rgba(255,255,255,0.06); }
+        .lm-back-link:hover { color: #1a202c; background: rgba(16,24,40,0.05); }
 
-        /* Alternating SEO content — image + title + body */
+        /* About-this-lake — editorial layout. Section container matches the
+           agents/businesses/blogs sections at 1200px so all blocks scan the
+           same width down the page. Everything inside aligns flush-left to
+           the 1200px column for consistent horizontal positioning across
+           the eyebrow, heading, description paragraphs, and facts strip. */
+        .ld-about { padding: 5rem 2rem 6rem; background: #fff; }
+        .ld-about-inner { max-width: 1200px; margin: 0 auto; }
+        /* Final-CTA container — bump from the global 1000px to 1200px so it
+           lines up with the other lake-page sections (agents/businesses/blogs). */
+        .ld-cta .business-type-container { max-width: 1200px; }
+        .ld-about-eyebrow {
+            display: inline-block;
+            font-size: 0.78rem; font-weight: 700; letter-spacing: 1.5px;
+            color: var(--accent-blue, #1d6df2); text-transform: uppercase;
+            margin-bottom: 0.85rem;
+        }
+        .ld-about-inner h2 {
+            font-size: 2.6rem; font-weight: 800; letter-spacing: -1.25px;
+            color: #1a202c; margin: 0 0 1.5rem; line-height: 1.1;
+        }
+        .ld-about-inner [id^="ld-description"] p {
+            color: #2d3748; font-size: 1.06rem; line-height: 1.8; margin: 0 0 1.35rem;
+        }
+        .ld-about-inner #ld-description-1 p:first-of-type {
+            font-size: 1.25rem; line-height: 1.55; color: #1a202c; font-weight: 500;
+            margin-bottom: 1.75rem;
+        }
+        .ld-about-inner [id^="ld-description"] p:last-child { margin-bottom: 0; }
+
+        /* "Continued" about sections — same readable column, but tighter
+           top padding because the previous section already has its own
+           bottom padding. No eyebrow/heading inside; just the prose. */
+        .ld-about.ld-about-continued { padding: 4rem 2rem 5rem; }
+        .ld-about.ld-about-continued .ld-about-inner #ld-description-2 p:first-of-type,
+        .ld-about.ld-about-continued .ld-about-inner #ld-description-3 p:first-of-type {
+            font-size: 1.06rem; font-weight: 400; color: #2d3748; margin-bottom: 1.35rem;
+        }
+
+        /* Quick-facts strip — sits at the bottom of the about section.
+           Anything passed in via window.LAKE_FACTS gets rendered. */
+        .ld-facts {
+            margin-top: 3rem; padding-top: 2.5rem;
+            border-top: 1px solid #e2e8f0;
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;
+        }
+        .ld-fact { text-align: center; padding: 0.5rem 0.25rem; }
+        .ld-fact .label { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #718096; margin-bottom: 0.45rem; }
+        .ld-fact .value { display: block; font-size: 1.5rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; line-height: 1.15; }
+        .ld-fact .unit  { font-size: 0.85rem; font-weight: 600; color: #4a5568; margin-left: 0.2rem; }
+
+        /* Legacy alternating layout — preserved for any other page using it. */
         .sp-section { padding: 6rem 2rem; }
         .sp-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
         .sp-grid.reverse { direction: rtl; }
@@ -117,6 +165,14 @@
             .lm-expert { padding: 4rem 1.25rem; }
             .lm-expert h2 { font-size: 1.85rem; }
             .lm-expert p.lead { font-size: 1rem; }
+            .ld-about { padding: 3rem 1.25rem 4rem; }
+            .ld-about.ld-about-continued { padding: 2.5rem 1.25rem 3.25rem; }
+            .ld-about-inner h2 { font-size: 1.95rem; margin-bottom: 1.15rem; letter-spacing: -1px; }
+            .ld-about-inner [id^="ld-description"] p { font-size: 1rem; line-height: 1.7; margin-bottom: 1.15rem; }
+            .ld-about-inner #ld-description-1 p:first-of-type { font-size: 1.1rem; line-height: 1.6; margin-bottom: 1.4rem; }
+            .ld-facts { grid-template-columns: repeat(2, 1fr); gap: 1.25rem; margin-top: 2.25rem; padding-top: 1.75rem; }
+            .ld-fact .value { font-size: 1.25rem; }
+            .ld-fact .label { font-size: 0.66rem; }
             .sp-section { padding: 3rem 1.25rem; }
             .sp-grid { grid-template-columns: 1fr; gap: 1.5rem; direction: ltr; }
             .sp-grid.reverse { direction: ltr; }
@@ -146,10 +202,10 @@
         <a href="/towns" class="lm-back-link"><span aria-hidden="true">←</span> All lakes &amp; towns</a>
         <div class="lm-hero-inner">
             <div>
-                <h1>Your new view on<br><span>{{LAKE_NAME}}</span></h1>
+                <h1>Explore<br><span>{{LAKE_NAME}}</span></h1>
                 <p class="lead" id="ld-intro">{{LAKE_INTRO_TEXT}}</p>
                 <div class="lm-hero-actions">
-                    <button onclick="openForm('buy')" class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none; cursor: pointer;">Contact an expert</button>
+                    <button onclick="openForm('buy')" class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none; cursor: pointer;">Get new {{LAKE_NAME}} listings</button>
                 </div>
             </div>
             <div class="lm-hero-img">
@@ -158,17 +214,13 @@
         </div>
     </section>
 
-    <!-- About the lake (image left, text right). Hidden at render if no
-         description/intro_text is set so we don't show an empty block. -->
-    <section class="sp-section" id="ld-about-section">
-        <div class="sp-grid">
-            <div class="sp-media-wrapper">
-                <img src="{{LAKE_FEATURED_IMAGE}}" alt="On the water at {{LAKE_NAME}}" loading="lazy" width="1200" height="800">
-            </div>
-            <div class="sp-body">
-                <h2 class="sp-title">About<br>{{LAKE_NAME}}</h2>
-                <div id="ld-description"></div>
-            </div>
+    <!-- About part 1 — eyebrow, heading, first chunk of description.
+         Hidden at render if no description/intro_text is set. -->
+    <section class="ld-about" id="ld-about-1-section">
+        <div class="ld-about-inner">
+            <span class="ld-about-eyebrow" id="ld-about-eyebrow"></span>
+            <h2>About {{LAKE_NAME}}</h2>
+            <div id="ld-description-1"></div>
         </div>
     </section>
 
@@ -194,13 +246,35 @@
         }
     </style>
 
-    <!-- Businesses near this lake (hidden when fewer than 3 tagged) -->
-    <section id="lake-nearby-biz-section" class="lm-expert" style="display:none;">
+    <!-- About part 2 — middle chunk of description (lifestyle / on-the-water). -->
+    <section class="ld-about ld-about-continued" id="ld-about-2-section" style="display:none;">
+        <div class="ld-about-inner">
+            <div id="ld-description-2"></div>
+        </div>
+    </section>
+
+    <!-- Featured Businesses on this lake. Always rendered — empty state
+         shown when no partners are tagged yet. -->
+    <section id="lake-nearby-biz-section" class="lm-expert">
         <div class="lm-expert-inner">
-            <h2 id="lake-nearby-biz-heading">Businesses near {{LAKE_NAME}}</h2>
-            <p class="lead" id="lake-nearby-biz-lead">Restaurants, marinas, services, and more around {{LAKE_NAME}} — Featured Partners lead the list.</p>
+            <h2 id="lake-nearby-biz-heading">Featured {{LAKE_NAME}} Businesses</h2>
+            <p class="lead" id="lake-nearby-biz-lead">Resorts, marinas, dock builders, and lake-area pros our community relies on.</p>
             <div id="lake-nearby-biz-grid" class="agents-grid"></div>
+            <div id="lake-nearby-biz-empty" style="display:none;max-width:560px;margin:0 auto;background:#fff;border:1px dashed #cbd5e0;border-radius:14px;padding:2.5rem 1.75rem;text-align:center;">
+                <div style="font-size:2rem;margin-bottom:0.75rem;">🏖️</div>
+                <h3 style="font-size:1.2rem;font-weight:700;color:#1a202c;margin:0 0 0.5rem;">No featured partners on {{LAKE_NAME}} yet.</h3>
+                <p style="color:#718096;font-size:0.96rem;line-height:1.55;margin:0 0 1.5rem;">Resorts, marinas, dock builders, photographers — be the first lake-area business listed here.</p>
+                <a href="/business-signup" class="btn btn-primary" style="display:inline-block;padding:0.85rem 1.6rem;font-size:0.95rem;text-decoration:none;border:none;cursor:pointer;">List your business</a>
+            </div>
             <div id="lake-nearby-biz-cta" style="text-align:center;margin-top:1.75rem;"></div>
+        </div>
+    </section>
+
+    <!-- About part 3 — closing chunk of description + quick-facts strip. -->
+    <section class="ld-about ld-about-continued" id="ld-about-3-section" style="display:none;">
+        <div class="ld-about-inner">
+            <div id="ld-description-3"></div>
+            <div id="ld-facts" class="ld-facts" style="display:none;"></div>
         </div>
     </section>
 
@@ -213,22 +287,27 @@
         </div>
     </section>
 
-    <!-- Local directory: restaurants, marinas, services, photographers -->
-    <section id="lake-biz" class="lm-biz" style="display:none;">
-        <div class="lm-biz-inner">
-            <h2>Life around {{LAKE_NAME}}</h2>
-            <p class="lead">Restaurants, marinas, services, and photographers trusted by the people who live here.</p>
-            <div id="biz-sections"></div>
-        </div>
-    </section>
-
-    <!-- Final CTA -->
-    <section class="sp-dark-section">
-        <div style="max-width: 800px; margin: 0 auto;">
-            <h2>Ready to explore {{LAKE_NAME}}?</h2>
-            <p>Let's get you on the water. View private inventory or get a pricing analysis for your current waterfront estate.</p>
-            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                <button class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none;" onclick="openForm('buy')">Start your journey</button>
+    <!-- Final CTA — mirrors the homepage "Are you looking to buy or sell?"
+         pattern. Reuses the .business-type-section styles already in
+         style.css so the look matches the index hero CTA exactly. -->
+    <section class="business-type-section ld-cta">
+        <div class="business-type-container">
+            <div class="business-text">
+                <h2 class="business-title">Are you looking to<br>buy or sell?</h2>
+                <p class="business-desc">Let's find the right property or buyer for your {{LAKE_NAME}} home.</p>
+            </div>
+            <div class="business-form">
+                <label for="ld-intent-select">My interest</label>
+                <div class="select-wrapper">
+                    <select id="ld-intent-select">
+                        <option value="" disabled selected>Select an option</option>
+                        <option value="buy">Buy a Lake Home</option>
+                        <option value="sell">Sell my Lakefront Property</option>
+                        <option value="explore">Explore Communities</option>
+                        <option value="agent">Speak to an Agent</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" style="margin-top:0.5rem; padding: 1rem 1.5rem; border:none;" onclick="ldOpenIntent()">Get started</button>
             </div>
         </div>
     </section>
@@ -243,25 +322,82 @@
         const LAKE_LAT  = parseFloat('{{LAKE_LATITUDE}}');
         const LAKE_LNG  = parseFloat('{{LAKE_LONGITUDE}}');
 
+        // Per-lake quick-facts. Long-term this should live on the lakes
+        // table as JSONB; for now a small client-side map keyed by slug
+        // keeps each lake's facts editable without a schema change.
+        const LAKE_FACTS_BY_SLUG = {
+            'detroit-lake': [
+                { label: 'Surface area',       value: '3,000', unit: 'acres' },
+                { label: 'Max depth',          value: '88',    unit: 'ft'    },
+                { label: 'From Twin Cities',   value: '3.5',   unit: 'hrs'   },
+                { label: 'Signature fishery',  value: 'Walleye + muskie' },
+            ],
+        };
+        window.LAKE_FACTS = LAKE_FACTS_BY_SLUG[LAKE_SLUG] || null;
+
         // ── About section: populate from description (preferred) or intro_text ──
         async function loadLake() {
             try {
                 const res = await fetch(`/api/lakes/${encodeURIComponent(LAKE_SLUG)}`);
                 if (!res.ok) return;
                 const lake = await res.json();
-                // Intro was server-rendered already; overwrite only if we got
-                // a richer value from the API (intro_text can be longer than
-                // seo_description).
                 if (lake.intro_text) document.getElementById('ld-intro').textContent = lake.intro_text;
+
+                // Eyebrow above the H2: "Region · County, State"
+                const eyebrowEl = document.getElementById('ld-about-eyebrow');
+                if (eyebrowEl) {
+                    const bits = [lake.region, lake.county && `${lake.county} County`, lake.state].filter(Boolean);
+                    eyebrowEl.textContent = bits.join(' · ');
+                }
+
+                // Description split into 3 chunks interleaved with the agents,
+                // businesses, and blogs sections. With 6+ paragraphs we get a
+                // clean third-third-third split; with fewer paragraphs the
+                // first chunk gets everything and the continued sections hide.
                 const body = lake.description || lake.intro_text;
-                const aboutSection = document.getElementById('ld-about-section');
+                const sec1 = document.getElementById('ld-about-1-section');
+                const sec2 = document.getElementById('ld-about-2-section');
+                const sec3 = document.getElementById('ld-about-3-section');
                 if (body && body.trim()) {
-                    // Split on blank lines so multi-paragraph descriptions keep their breaks.
                     const paragraphs = body.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
-                    document.getElementById('ld-description').innerHTML =
-                        paragraphs.map(p => `<p>${escHtml(p)}</p>`).join('');
+                    const total = paragraphs.length;
+                    const splitInThirds = total >= 6;
+                    const a = splitInThirds ? Math.ceil(total / 3) : total;
+                    const b = splitInThirds ? Math.ceil(2 * total / 3) : total;
+                    const chunks = [
+                        paragraphs.slice(0, a),
+                        paragraphs.slice(a, b),
+                        paragraphs.slice(b),
+                    ];
+                    const renderChunk = (paras) => paras.map(p => `<p>${escHtml(p)}</p>`).join('');
+                    document.getElementById('ld-description-1').innerHTML = renderChunk(chunks[0]);
+                    if (chunks[1].length) {
+                        document.getElementById('ld-description-2').innerHTML = renderChunk(chunks[1]);
+                        sec2.style.display = '';
+                    }
+                    if (chunks[2].length) {
+                        document.getElementById('ld-description-3').innerHTML = renderChunk(chunks[2]);
+                        sec3.style.display = '';
+                    }
                 } else {
-                    aboutSection.style.display = 'none';
+                    sec1.style.display = 'none';
+                }
+
+                // Quick-facts strip lives at the bottom of the third about
+                // block (or hides when no per-lake facts are configured).
+                const factsEl = document.getElementById('ld-facts');
+                const facts = (window.LAKE_FACTS && window.LAKE_FACTS.length) ? window.LAKE_FACTS : [];
+                if (factsEl && facts.length >= 3) {
+                    factsEl.innerHTML = facts.map(f => `
+                        <div class="ld-fact">
+                            <span class="label">${escHtml(f.label)}</span>
+                            <span class="value">${escHtml(f.value)}${f.unit ? `<span class="unit">${escHtml(f.unit)}</span>` : ''}</span>
+                        </div>
+                    `).join('');
+                    factsEl.style.display = '';
+                    // Make sure section 3 is visible if we have facts even
+                    // when no description chunk landed there.
+                    if (sec3.style.display === 'none') sec3.style.display = '';
                 }
             } catch (_) { /* server-rendered hero content is already visible — degrade silently */ }
         }
@@ -339,65 +475,15 @@
             } catch (_) { /* stays hidden */ }
         }
 
-        // ── Local directory ────────────────────────────────────────────
-        const BIZ_SECTIONS = [
-            { type: 'restaurant',   heading: 'Restaurants',      icon: '🍽️', blurb: "Where locals eat, when they're on the water." },
-            { type: 'marina',       heading: 'Marinas & access', icon: '⛵', blurb: 'Slip rentals, fuel, and public lake access.' },
-            { type: 'service',      heading: 'Services',         icon: '🔧', blurb: 'Dock installation, lawn care, snow removal, and more.' },
-            { type: 'photographer', heading: 'Photographers',    icon: '📷', blurb: 'Listing, drone, and family photography specialists.' },
-        ];
-
-        async function loadLakeBiz() {
-            const section = document.getElementById('lake-biz');
-            const container = document.getElementById('biz-sections');
-            if (!container || !section) return;
-            try {
-                const results = await Promise.all(
-                    BIZ_SECTIONS.map(s =>
-                        fetch(`/api/lakes/${encodeURIComponent(LAKE_ID)}/businesses?type=${encodeURIComponent(s.type)}`)
-                            .then(r => r.ok ? r.json() : [])
-                            .catch(() => [])
-                    )
-                );
-                const html = BIZ_SECTIONS.map((s, i) => {
-                    const rows = results[i];
-                    if (!rows.length) return '';
-                    const cards = rows.map(b => {
-                        const thumb = b.featured_image_url || '';
-                        const priceOrCity = [b.city, b.price_range].filter(Boolean).join(' · ');
-                        return `
-                            <div style="background:#fff;border:1px solid #edf2f7;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;">
-                                <div style="height:160px;background:#f7f9fa;overflow:hidden;">
-                                    ${thumb
-                                        ? `<img src="${escHtml(thumb)}" alt="${escHtml(b.name)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">`
-                                        : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#cbd5e0;">${s.icon}</div>`}
-                                </div>
-                                <div style="padding:1.1rem 1.25rem 1.25rem;flex:1;display:flex;flex-direction:column;">
-                                    <div style="font-size:1.05rem;font-weight:700;color:#1a202c;line-height:1.35;margin-bottom:0.3rem;">${escHtml(b.name)}</div>
-                                    ${priceOrCity ? `<div style="font-size:0.78rem;color:#718096;margin-bottom:0.5rem;">${escHtml(priceOrCity)}</div>` : ''}
-                                    ${b.description ? `<div style="font-size:0.88rem;color:#4a5568;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;margin-bottom:0.9rem;">${escHtml(b.description)}</div>` : ''}
-                                    <div style="margin-top:auto;display:flex;gap:0.5rem;flex-wrap:wrap;">
-                                        ${b.website_url ? `<a href="${escHtml(b.website_url)}" target="_blank" rel="noopener" style="font-size:0.8rem;font-weight:700;color:#1d6df2;text-decoration:none;">Visit ↗</a>` : ''}
-                                        ${b.phone ? `<a href="tel:${escHtml(b.phone.replace(/[^\d+]/g,''))}" style="font-size:0.8rem;font-weight:700;color:#4a5568;text-decoration:none;">${escHtml(b.phone)}</a>` : ''}
-                                    </div>
-                                </div>
-                            </div>`;
-                    }).join('');
-                    return `
-                        <div class="lm-biz-section">
-                            <h3>${s.icon} ${escHtml(s.heading)}</h3>
-                            <p class="sub">${escHtml(s.blurb)}</p>
-                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;">${cards}</div>
-                        </div>`;
-                }).join('');
-                if (html.trim()) {
-                    container.innerHTML = html;
-                    section.style.display = '';
-                }
-            } catch (_) { /* stays hidden */ }
-        }
-
         function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+        // Final-CTA intent picker — mirrors the homepage's openModalFromSection.
+        window.ldOpenIntent = function () {
+            const select = document.getElementById('ld-intent-select');
+            if (!select || !select.value) { alert('Please select what you are looking to do first!'); return; }
+            const map = { buy: 'buy', sell: 'sell', explore: 'general', agent: 'agent' };
+            window.openForm(map[select.value] || 'general');
+        };
 
         // ── Shared "businesses nearby" fallback ──────────────────────────
         // Geo is a hard filter (25 km radius). Within that set, Featured
@@ -416,28 +502,34 @@
             photographer: 'Photographer', other: 'Local Business',
         };
 
-        // Hard geo rule: only businesses tagged to this lake (via
-        // business_lakes). Need ≥3 — else the whole section is hidden.
-        const MIN_TAGGED_BUSINESSES = 3;
+        // Featured Businesses block. Section is always visible; if no
+        // partners are tagged yet we show an empty-state card with a
+        // "list your business" CTA so the section still feels intentional.
         async function renderTaggedBusinesses({ endpoint, anchorName, sectionEl, headingEl, leadEl, gridEl, ctaEl }) {
             injectBizStyles();
+            const emptyEl = document.getElementById('lake-nearby-biz-empty');
             try {
                 const r = await fetch(endpoint);
                 if (!r.ok) throw new Error();
                 const all = await r.json();
-                if (all.length < MIN_TAGGED_BUSINESSES) {
-                    if (sectionEl) sectionEl.style.display = 'none';
+
+                if (headingEl) headingEl.textContent = `Featured ${anchorName} Businesses`;
+                if (leadEl)    leadEl.textContent    = 'Resorts, marinas, dock builders, and lake-area pros our community relies on.';
+
+                if (all.length === 0) {
+                    gridEl.innerHTML = '';
+                    if (emptyEl) emptyEl.style.display = 'block';
+                    if (ctaEl)   ctaEl.innerHTML = '';
                     return;
                 }
-                const picks = all.slice(0, 3);
-                if (headingEl) headingEl.textContent = `Businesses near ${anchorName}`;
-                if (leadEl) leadEl.textContent =
-                    `Restaurants, marinas, services, and more around ${anchorName} — Featured Partners lead the list.`;
-                gridEl.innerHTML = picks.map(renderBizCard).join('');
+                if (emptyEl) emptyEl.style.display = 'none';
+                gridEl.innerHTML = all.slice(0, 6).map(renderBizCard).join('');
                 if (ctaEl) ctaEl.innerHTML = '<a href="/towns?view=biz" class="nb-cta">View all businesses →</a>';
-                if (sectionEl) sectionEl.style.display = '';
             } catch (_) {
-                if (sectionEl) sectionEl.style.display = 'none';
+                // API failure — degrade to the empty state rather than hiding.
+                gridEl.innerHTML = '';
+                if (emptyEl) emptyEl.style.display = 'block';
+                if (ctaEl)   ctaEl.innerHTML = '';
             }
         }
 
@@ -507,8 +599,6 @@
             loadLake();
             loadLakeAgents();
             loadLakeBlog();
-            loadLakeBiz();
-            // Standalone "Businesses near {lake}" row — ≥3 geo-tagged required.
             renderTaggedBusinesses({
                 endpoint:  `/api/lakes/${encodeURIComponent(LAKE_ID)}/businesses`,
                 anchorName: LAKE_NAME,

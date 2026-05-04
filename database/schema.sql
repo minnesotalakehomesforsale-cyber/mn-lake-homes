@@ -155,7 +155,8 @@ CREATE TABLE IF NOT EXISTS leads (
     
     agent_id UUID REFERENCES agents(id) ON DELETE SET NULL,
     assigned_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+
     lead_status lead_status_type NOT NULL DEFAULT 'new',
     contact_preference VARCHAR(50),
     location_text VARCHAR(255),
@@ -175,6 +176,7 @@ CREATE INDEX IF NOT EXISTS idx_leads_type ON leads(lead_type);
 CREATE INDEX IF NOT EXISTS idx_leads_source ON leads(lead_source);
 CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(lead_status);
 CREATE INDEX IF NOT EXISTS idx_leads_assigned_user ON leads(assigned_user_id);
+CREATE INDEX IF NOT EXISTS idx_leads_user_id ON leads(user_id);
 CREATE INDEX IF NOT EXISTS idx_leads_agent_id ON leads(agent_id);
 CREATE INDEX IF NOT EXISTS idx_leads_submitted_at ON leads(submitted_at);
 

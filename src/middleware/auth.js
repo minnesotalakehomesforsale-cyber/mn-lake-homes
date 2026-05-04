@@ -53,4 +53,24 @@ const requireRole = (allowedRoles) => {
     };
 };
 
-module.exports = { verifyToken, requireRole };
+/**
+ * attachUserIfPresent
+ * Same as verifyToken but doesn't reject when no token is present — just
+ * leaves req.user undefined. Use on public endpoints that want to know
+ * the caller's identity if they happen to be logged in (e.g. leads).
+ */
+const attachUserIfPresent = (req, res, next) => {
+    let token = req.cookies?.auth_session;
+    if (!token && req.headers.authorization?.startsWith('Bearer ')) {
+        token = req.headers.authorization.split(' ')[1];
+    }
+    if (!token) return next();
+    try {
+        req.user = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (_) {
+        // Bad/expired token on a public route — just continue anonymously.
+    }
+    next();
+};
+
+module.exports = { verifyToken, requireRole, attachUserIfPresent };

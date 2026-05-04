@@ -558,7 +558,18 @@ exports.replaceLakesForBlogPost = async (req, res) => {
 exports.listBusinesses = async (req, res) => {
     try {
         const adminCaller = isAdmin(req);
-        const where = ['bl.lake_id = $1'];
+        // Mirrors the agents pattern: a business qualifies if it's either
+        // directly linked via business_lakes OR shares any geo tag with the
+        // lake via lake_tags ⟷ business_tags. Lets one tag (e.g. 'gull-lake')
+        // surface every Brainerd-area pro who tagged themselves once.
+        const where = [`(
+            bl.lake_id IS NOT NULL
+            OR EXISTS (
+                SELECT 1 FROM lake_tags lt
+                JOIN business_tags bt ON bt.tag_id = lt.tag_id
+                WHERE lt.lake_id = $1 AND bt.business_id = b.id
+            )
+        )`];
         const params = [req.params.id];
 
         if (req.query.type) {
@@ -566,25 +577,29 @@ exports.listBusinesses = async (req, res) => {
             where.push(`b.type = $${params.length}`);
         }
         if (!adminCaller) {
-            // Public visibility mirrors /api/businesses: active status +
-            // (admin-managed OR active subscription). Keeps unpaid owner
-            // rows out of the lake page even when they're still linked.
             where.push(`b.status = 'active'`);
             where.push(`(b.user_id IS NULL OR b.subscription_status = 'active')`);
         }
 
         const { rows } = await pool.query(
-            `SELECT b.id, b.slug, b.name, b.type, b.description, b.phone, b.email,
+            `SELECT DISTINCT ON (b.id)
+                    b.id, b.slug, b.name, b.type, b.description, b.phone, b.email,
                     b.website_url, b.address, b.city, b.state, b.zip,
                     b.latitude, b.longitude, b.hours, b.price_range,
                     b.featured_image_url, b.status, b.tier,
-                    bl.is_featured
-             FROM business_lakes bl
-             JOIN businesses b ON b.id = bl.business_id
+                    COALESCE(bl.is_featured, FALSE) AS is_featured
+             FROM businesses b
+             LEFT JOIN business_lakes bl ON bl.business_id = b.id AND bl.lake_id = $1
              WHERE ${where.join(' AND ')}
-             ORDER BY (b.tier = 'premium') DESC, bl.is_featured DESC, b.name ASC`,
+             ORDER BY b.id`,
             params
         );
+        // Re-sort after DISTINCT ON (which forces b.id leading order).
+        rows.sort((x, y) => {
+            if ((x.tier === 'premium') !== (y.tier === 'premium')) return x.tier === 'premium' ? -1 : 1;
+            if (x.is_featured !== y.is_featured) return y.is_featured ? 1 : -1;
+            return (x.name || '').localeCompare(y.name || '');
+        });
         res.json(rows);
     } catch (err) {
         console.error('[lakes.listBusinesses]', err.message);

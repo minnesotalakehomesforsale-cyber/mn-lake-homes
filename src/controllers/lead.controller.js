@@ -36,14 +36,20 @@ const createLead = async (req, res) => {
         // Coerce agent string if dummy provided
         const finalAgentId = (agent_id && agent_id !== 'uuid-string-dummy') ? agent_id : null;
 
+        // Capture user_id when the caller is signed in (the lead form now
+        // requires account creation/sign-in before submission). Falls back to
+        // null on legacy/anonymous calls so nothing breaks.
+        const submittedUserId = req.user?.userId || null;
+
         const query = `
             INSERT INTO leads (
                 full_name, first_name, email, phone, message,
                 lead_type, lead_source, agent_id, lead_status,
                 property_address, property_street, property_city,
-                property_state, property_zip, property_place_id
+                property_state, property_zip, property_place_id,
+                user_id
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', $9, $10, $11, $12, $13, $14)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', $9, $10, $11, $12, $13, $14, $15)
             RETURNING id
         `;
         // We extrapolate first name logically
@@ -64,6 +70,7 @@ const createLead = async (req, res) => {
             name, firstName, email, phone, notes,
             enumType, source, finalAgentId,
             propAddress, propStreet, propCity, propState, propZip, propPlaceId,
+            submittedUserId,
         ]);
         const newLeadId = leadRows[0]?.id;
 

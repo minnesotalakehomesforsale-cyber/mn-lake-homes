@@ -661,7 +661,9 @@ app.get('/towns', (req, res) => {
 app.get('/towns/:slug', async (req, res, next) => {
     try {
         const { rows } = await pool.query(
-            `SELECT t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude
+            `SELECT t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude,
+                    t.intro_text, t.description,
+                    t.hero_image_url, t.seo_title, t.seo_description
              FROM tags t
              WHERE t.slug = $1 AND t.active = TRUE
              LIMIT 1`,
@@ -677,12 +679,12 @@ app.get('/towns/:slug', async (req, res, next) => {
         const templatePath = path.join(PROJECT_ROOT, 'pages/public/town-detail.html');
         fs.readFile(templatePath, 'utf8', (err, html) => {
             if (err) return next(err);
-            const title = `${tag.name}, ${tag.state} — Lake Homes, Agents & Local Businesses`;
-            const desc  = `Browse lake homes for sale, top local agents, and trusted businesses serving ${tag.name}, ${tag.state}.`;
+            // Per-town overrides win when set, otherwise fall back to safe
+            // auto-generated values so towns without curated content still ship.
+            const title = tag.seo_title       || `${tag.name}, ${tag.state} — Lake Homes, Agents & Local Businesses`;
+            const desc  = tag.seo_description || `Browse lake homes for sale, top local agents, and trusted businesses serving ${tag.name}, ${tag.state}.`;
             const canonical = `/towns/${tag.slug}`;
-            // Towns don't carry their own hero image yet — fall back to a
-            // generic Minnesota waterfront shot until per-town imagery is added.
-            const heroImage = '/assets/images/mn-aerial-small-town.jpg';
+            const heroImage = tag.hero_image_url || '/assets/images/mn-aerial-small-town.jpg';
             const siteBase = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
             const townBreadcrumb = JSON.stringify({
                 '@context': 'https://schema.org',
@@ -694,19 +696,39 @@ app.get('/towns/:slug', async (req, res, next) => {
                 ],
             });
             const townStructuredData = `<script type="application/ld+json">${townBreadcrumb}</script>`;
+            // Hero text — when curated copy is present we surface a fuller
+            // SEO-leaning H1 ("[Town] Lake Homes for Sale"); otherwise the
+            // template falls back to the simpler "Explore [Town]" treatment.
+            const hasContent      = !!(tag.description && tag.description.trim());
+            const heroH1HtmlRich  = `${escapeHtml(tag.name)} <span>Homes for Sale</span>`;
+            const heroH1HtmlBasic = `Explore<br><span>${escapeHtml(tag.name)}</span></h1>`;
+            const heroH1Html      = hasContent ? heroH1HtmlRich : heroH1HtmlBasic;
+            const introText       = (tag.intro_text || '').trim()
+                || `Lake homes, local agents, and trusted businesses serving ${tag.name}, ${tag.state}.`;
+
+            // Description is JSON-encoded so the template's client-side JS
+            // can parse and split it into the about-1/2/3 sections without
+            // worrying about escaping line breaks. JSON.stringify produces
+            // a quoted JS-safe string we drop straight into a script tag.
+            const descriptionJson = JSON.stringify(tag.description || '');
+
             const replacements = {
-                '{{TOWN_SEO_TITLE}}':       escapeHtml(title),
-                '{{TOWN_SEO_DESCRIPTION}}': escapeHtml(desc),
-                '{{TOWN_NAME}}':            escapeHtml(tag.name),
-                '{{TOWN_SLUG}}':            escapeHtml(tag.slug),
-                '{{TOWN_ID}}':              escapeHtml(tag.id),
-                '{{TOWN_STATE}}':           escapeHtml(tag.state || ''),
-                '{{TOWN_REGION}}':          escapeHtml(tag.region || 'Minnesota'),
-                '{{TOWN_CANONICAL_PATH}}':  escapeHtml(canonical),
-                '{{TOWN_LATITUDE}}':        escapeHtml(tag.latitude ?? ''),
-                '{{TOWN_LONGITUDE}}':       escapeHtml(tag.longitude ?? ''),
-                '{{TOWN_HERO_IMAGE}}':      escapeHtml(heroImage),
-                '{{TOWN_STRUCTURED_DATA}}': townStructuredData,
+                '{{TOWN_SEO_TITLE}}':        escapeHtml(title),
+                '{{TOWN_SEO_DESCRIPTION}}':  escapeHtml(desc),
+                '{{TOWN_NAME}}':             escapeHtml(tag.name),
+                '{{TOWN_SLUG}}':             escapeHtml(tag.slug),
+                '{{TOWN_ID}}':               escapeHtml(tag.id),
+                '{{TOWN_STATE}}':            escapeHtml(tag.state || ''),
+                '{{TOWN_REGION}}':           escapeHtml(tag.region || 'Minnesota'),
+                '{{TOWN_CANONICAL_PATH}}':   escapeHtml(canonical),
+                '{{TOWN_LATITUDE}}':         escapeHtml(tag.latitude ?? ''),
+                '{{TOWN_LONGITUDE}}':        escapeHtml(tag.longitude ?? ''),
+                '{{TOWN_COUNTY}}':           escapeHtml(tag.county || ''),
+                '{{TOWN_HERO_IMAGE}}':       escapeHtml(heroImage),
+                '{{TOWN_HERO_H1_HTML}}':     heroH1Html,
+                '{{TOWN_INTRO_TEXT}}':       escapeHtml(introText),
+                '{{TOWN_DESCRIPTION_JSON}}': descriptionJson,
+                '{{TOWN_STRUCTURED_DATA}}':  townStructuredData,
             };
             let out = html;
             for (const [k, v] of Object.entries(replacements)) {
@@ -1088,9 +1110,22 @@ async function ensureTables() {
                 latitude NUMERIC(9,6),
                 longitude NUMERIC(9,6),
                 active BOOLEAN NOT NULL DEFAULT TRUE,
+                intro_text      TEXT,
+                description     TEXT,
+                hero_image_url  TEXT,
+                seo_title       VARCHAR(300),
+                seo_description TEXT,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
+            -- Backfill for existing deployments where the tags table predates
+            -- the town-content fields (intro_text/description/etc).
+            ALTER TABLE tags
+                ADD COLUMN IF NOT EXISTS intro_text      TEXT,
+                ADD COLUMN IF NOT EXISTS description     TEXT,
+                ADD COLUMN IF NOT EXISTS hero_image_url  TEXT,
+                ADD COLUMN IF NOT EXISTS seo_title       VARCHAR(300),
+                ADD COLUMN IF NOT EXISTS seo_description TEXT;
             CREATE INDEX IF NOT EXISTS idx_tags_state_region ON tags(state, region);
             CREATE INDEX IF NOT EXISTS idx_tags_active_coords ON tags(active, latitude, longitude)
                 WHERE active = TRUE AND latitude IS NOT NULL AND longitude IS NOT NULL;
@@ -1369,20 +1404,23 @@ async function ensureTables() {
             const values = [];
             const params = [];
             LAKES_SEED.forEach((l, i) => {
-                const base = i * 12;
-                values.push(`($${base+1}, $${base+2}, $${base+3}, $${base+4}, $${base+5}, $${base+6}, $${base+7}, $${base+8}, $${base+9}, $${base+10}, $${base+11}, $${base+12})`);
+                const base = i * 14;
+                values.push(`($${base+1}, $${base+2}, $${base+3}, $${base+4}, $${base+5}, $${base+6}, $${base+7}, $${base+8}, $${base+9}, $${base+10}, $${base+11}, $${base+12}, $${base+13}, $${base+14})`);
                 params.push(
                     l.slug, l.name, l.state || 'MN', l.region || null, l.county || null,
                     l.latitude ?? null, l.longitude ?? null,
                     l.intro_text || null, l.seo_title || null, l.seo_description || null,
                     l.status || 'draft',
                     l.description || null,
+                    l.hero_image_url || null,
+                    l.featured_image_url || null,
                 );
             });
             await pool.query(
                 `INSERT INTO lakes
                    (slug, name, state, region, county, latitude, longitude,
-                    intro_text, seo_title, seo_description, status, description)
+                    intro_text, seo_title, seo_description, status, description,
+                    hero_image_url, featured_image_url)
                  VALUES ${values.join(', ')}
                  ON CONFLICT (slug) DO NOTHING`,
                 params
