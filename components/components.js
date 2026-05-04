@@ -747,12 +747,21 @@ function _lfRender() {
     if (f.type === 'auth') {
         _lfRenderAuthStep(area, iStyle, focus);
     } else if (f.type === 'select') {
-        const opts = f.opts.map(o => `<option value="${o}" ${_lfs.data[f.id]===o?'selected':''}>${o}</option>`).join('');
-        area.innerHTML = `
-            <select id="lf-${f.id}" style="${iStyle}color:#1a202c;appearance:none;cursor:pointer;"
-                ${focus} onchange="window._lfNext()">
-                <option value="" disabled ${_lfs.data[f.id]?'':'selected'}>${f.ph}</option>${opts}
-            </select>`;
+        // Render each option as a clickable card. Clicking sets the value
+        // and immediately advances the form (same UX as the old <select>
+        // onchange but with a tap target sized for fingers + keyboards).
+        const current = _lfs.data[f.id];
+        const cards = f.opts.map((o, i) => {
+            const sel = current === o;
+            return `<button type="button" class="lf-opt-card${sel ? ' is-selected' : ''}"
+                       data-value="${o.replace(/"/g, '&quot;')}"
+                       onclick="window._lfPickOption(${JSON.stringify(o).replace(/"/g, '&quot;')})">
+                       <span class="lf-opt-label">${o}</span>
+                       <span class="lf-opt-arrow" aria-hidden="true">→</span>
+                   </button>`;
+        }).join('');
+        area.innerHTML = `<div class="lf-opt-grid" id="lf-${f.id}-grid">${cards}</div>`;
+        _lfEnsureOptCardStyles();
     } else {
         area.innerHTML = `
             <input type="${f.type}" id="lf-${f.id}" placeholder="${f.ph}" autocomplete="${f.ac||'off'}"
@@ -777,6 +786,51 @@ function _lfRender() {
 // Replaces the old "contact" step. Submitting the form now requires either
 // creating a client account or signing in to an existing one — every lead is
 // tied to a real user_id from the start.
+// ── Card-based select option picker ────────────────────────────────────────
+// Each option in a select-type step renders as a clickable card. Clicking
+// stores the value in _lfs.data and immediately advances the form (same
+// as the old <select> onchange behavior, just nicer to tap).
+window._lfPickOption = function (value) {
+    const steps = _lfSteps();
+    const f = steps[_lfs.step].field;
+    if (!f || f.type !== 'select') return;
+    _lfs.data[f.id] = value;
+    if (_lfs.step === steps.length - 1) { _lfDoSubmit(); return; }
+    _lfs.step++;
+    _lfSlide();
+};
+
+function _lfEnsureOptCardStyles() {
+    if (document.getElementById('lf-opt-card-styles')) return;
+    const s = document.createElement('style');
+    s.id = 'lf-opt-card-styles';
+    s.textContent = `
+        .lf-opt-grid {
+            display: grid; grid-template-columns: 1fr; gap: 0.6rem;
+        }
+        .lf-opt-card {
+            display: flex; align-items: center; justify-content: space-between;
+            width: 100%; padding: 1.05rem 1.25rem;
+            background: #fff; border: 2px solid #e2e8f0; border-radius: 12px;
+            font-family: inherit; font-size: 1.05rem; font-weight: 600;
+            color: #1a202c; cursor: pointer; text-align: left;
+            transition: border-color 0.15s, background 0.15s, transform 0.1s, box-shadow 0.15s;
+        }
+        .lf-opt-card:hover {
+            border-color: #1d6df2; background: #f7fafc;
+        }
+        .lf-opt-card:active { transform: translateY(1px); }
+        .lf-opt-card.is-selected {
+            border-color: #1d6df2; background: #ebf4ff;
+        }
+        .lf-opt-card .lf-opt-arrow {
+            color: #cbd5e0; font-weight: 700; font-size: 1.05rem; transition: color 0.15s, transform 0.15s;
+        }
+        .lf-opt-card:hover .lf-opt-arrow { color: #1d6df2; transform: translateX(3px); }
+    `;
+    document.head.appendChild(s);
+}
+
 function _lfRenderAuthStep(area, iStyle, focus) {
     if (!_lfs.authMode) _lfs.authMode = 'signup'; // 'signup' | 'signin'
     const tabBase   = 'flex:1;padding:0.7rem 1rem;background:#fff;border:1px solid #e2e8f0;border-radius:10px;font-family:inherit;font-weight:600;font-size:0.9rem;cursor:pointer;color:#4a5568;transition:all 0.15s;';
@@ -985,9 +1039,9 @@ window._lfNext = function() {
         _lfs.data.phone    = phone || _lfs.data.phone || null;
         _lfs.data.password = password;
     } else if (f.type === 'select') {
-        const val = document.getElementById('lf-' + f.id)?.value;
-        if (!val) return;
-        _lfs.data[f.id] = val;
+        // Card-based selects write directly to _lfs.data via _lfPickOption,
+        // so the value is already there if one was picked.
+        if (!_lfs.data[f.id]) return;
     } else {
         const val = (document.getElementById('lf-' + f.id)?.value || '').trim();
         if (!val) { err.textContent = 'This field is required.'; err.style.display = 'block'; return; }
