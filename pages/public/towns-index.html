@@ -964,7 +964,7 @@
                 // fills the pane instead of showing a huge margin of
                 // surrounding states. fitBounds() after pin render still
                 // wins if data concentrates elsewhere.
-                center: [46.4, -94.0], zoom: 7.75,
+                center: [46.4, -94.0], zoom: 7.5,
                 minZoom: 5, zoomSnap: 0.25,
                 wheelPxPerZoomLevel: 110,
                 zoomAnimation: true,
@@ -1079,7 +1079,7 @@
             });
 
             if (bounds.length) {
-                map.fitBounds(bounds, { padding: [50, 50], maxZoom: 9, animate: true });
+                map.fitBounds(bounds, { padding: [70, 70], maxZoom: 8.5, animate: true });
             }
             // Leaflet sometimes miscalculates when rendered inside a freshly
             // revealed flex/grid pane — nudge it after the DOM paints.
