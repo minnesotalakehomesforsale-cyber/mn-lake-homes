@@ -793,12 +793,24 @@ function _lfRenderAuthStep(area, iStyle, focus) {
             <div style="height:0.6rem;"></div>
             <input type="password" id="lf-password" placeholder="Your password"           autocomplete="current-password" style="${iStyle}" ${focus} value="">`;
 
+    // Legal disclaimer below the fields. Only shown in signup mode — sign-in
+    // doesn't need fresh consent, the user already accepted on registration.
+    const consentHtml = _lfs.authMode === 'signup'
+        ? `<p style="margin:0.85rem 0 0;text-align:center;color:#718096;font-size:0.78rem;line-height:1.5;">
+               By creating your account and submitting this form, you agree to our
+               <a href="/privacy" target="_blank" rel="noopener" style="color:#4a5568;text-decoration:underline;">Privacy&nbsp;Policy</a>
+               and
+               <a href="/terms" target="_blank" rel="noopener" style="color:#4a5568;text-decoration:underline;">Terms&nbsp;of&nbsp;Service</a>.
+           </p>`
+        : '';
+
     area.innerHTML = `
         <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
             <button type="button" id="lf-auth-signup" style="${_lfs.authMode === 'signup' ? tabActive : tabBase}">Create account</button>
             <button type="button" id="lf-auth-signin" style="${_lfs.authMode === 'signin' ? tabActive : tabBase}">Sign in</button>
         </div>
-        ${fieldsHtml}`;
+        ${fieldsHtml}
+        ${consentHtml}`;
 
     document.getElementById('lf-auth-signup').onclick = () => { _lfs.authMode = 'signup'; _lfRenderAuthStep(area, iStyle, focus); };
     document.getElementById('lf-auth-signin').onclick = () => { _lfs.authMode = 'signin'; _lfRenderAuthStep(area, iStyle, focus); };
