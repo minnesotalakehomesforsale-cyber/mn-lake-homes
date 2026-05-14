@@ -77,6 +77,25 @@
         .ls-contacted  { background:#f0fff4; color:#276749; border:1px solid #c6f6d5; }
         .ls-closed     { background:#edf2f7; color:#4a5568; }
         .ls-archived   { background:#fff5f5; color:#9b2c2c; }
+
+        /* Profile header card */
+        .profile-header { display: flex; gap: 1.75rem; background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 2px 6px rgba(0,0,0,0.03); padding: 1.75rem 2rem; margin-bottom: 1.5rem; }
+        .ph-photo { width: 116px; height: 116px; border-radius: 12px; background: #edf2f7; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+        .ph-photo img { width: 100%; height: 100%; object-fit: cover; }
+        .ph-main { flex: 1; min-width: 0; }
+        .ph-name-row { display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap; }
+        .ph-name-row h1 { font-size: 1.75rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; margin: 0; }
+        .profile-header .sub { color: #718096; font-size: 0.9rem; margin-top: 0.2rem; }
+        .ph-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem 1.5rem; margin-top: 1.35rem; }
+        .ph-field { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+        .ph-label { font-size: 0.68rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; }
+        .ph-value { font-size: 0.9rem; font-weight: 600; color: #1a202c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ph-value .s-badge { font-size: 0.68rem; padding: 0.25rem 0.6rem; }
+
+        /* Controls tab grid */
+        .controls-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; align-items: start; }
+        @media (max-width: 1100px) { .ph-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 900px) { .profile-header { flex-direction: column; } .controls-grid { grid-template-columns: 1fr; } }
     </style>
     <script src="../../components/admin-guard.js"></script>
     <script src="../../components/admin-responsive.js" defer></script>
@@ -94,27 +113,43 @@
             ← Back to Ledger
         </a>
 
-        <div class="page-header">
-            <div>
-                <h1 id="agent-headline">Loading…</h1>
-                <div class="sub" id="agent-sub">Fetching agent record from database…</div>
+        <!-- PROFILE HEADER CARD -->
+        <div class="profile-header">
+            <div class="ph-photo" id="hdr-photo">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
             </div>
-            <div id="status-badge-container"></div>
+            <div class="ph-main">
+                <div class="ph-name-row">
+                    <h1 id="agent-headline">Loading…</h1>
+                    <div id="status-badge-container"></div>
+                </div>
+                <div class="sub" id="agent-sub">Fetching agent record from database…</div>
+                <div class="ph-grid">
+                    <div class="ph-field"><div class="ph-label">Membership Tier</div><div class="ph-value" id="hdr-membership">—</div></div>
+                    <div class="ph-field"><div class="ph-label">Profile Status</div><div class="ph-value" id="hdr-profile-status">—</div></div>
+                    <div class="ph-field"><div class="ph-label">Account Status</div><div class="ph-value" id="hdr-account-status">—</div></div>
+                    <div class="ph-field"><div class="ph-label">Email</div><div class="ph-value" id="hdr-email">—</div></div>
+                    <div class="ph-field"><div class="ph-label">Public Phone</div><div class="ph-value" id="hdr-phone">—</div></div>
+                    <div class="ph-field"><div class="ph-label">Primary City</div><div class="ph-value" id="hdr-city">—</div></div>
+                    <div class="ph-field"><div class="ph-label">Last Login</div><div class="ph-value" id="hdr-lastlogin">—</div></div>
+                    <div class="ph-field"><div class="ph-label">Member Since</div><div class="ph-value" id="hdr-created">—</div></div>
+                </div>
+            </div>
         </div>
 
         <!-- Page Tabs -->
         <div class="page-tabs">
-            <button class="page-tab active" id="ptab-profile" onclick="switchPageTab('profile')">Account &amp; Profile</button>
+            <button class="page-tab active" id="ptab-details" onclick="switchPageTab('details')">Details</button>
+            <button class="page-tab" id="ptab-profile" onclick="switchPageTab('profile')">Profile</button>
+            <button class="page-tab" id="ptab-areas" onclick="switchPageTab('areas')">Service Areas</button>
+            <button class="page-tab" id="ptab-controls" onclick="switchPageTab('controls')">Membership &amp; Status</button>
             <button class="page-tab" id="ptab-leads" onclick="switchPageTab('leads')">
                 Lead Tracker <span class="tab-count" id="lead-tab-count" style="display:none;">0</span>
             </button>
         </div>
 
-        <!-- TAB: Account & Profile -->
-        <div id="tab-content-profile">
-        <div class="layout">
-            <!-- Left: Account + Profile panels -->
-            <div>
+        <!-- TAB: Details -->
+        <div id="tab-content-details">
                 <!-- ACCOUNT SECTION -->
                 <div class="panel">
                     <div class="panel-header">
@@ -162,7 +197,10 @@
                         </div>
                     </div>
                 </div>
+        </div><!-- end tab-content-details -->
 
+        <!-- TAB: Profile -->
+        <div id="tab-content-profile" style="display:none;">
                 <!-- PROFILE SECTION -->
                 <div class="panel">
                     <div class="panel-header">
@@ -245,7 +283,10 @@
                         </div>
                     </div>
                 </div>
+        </div><!-- end tab-content-profile -->
 
+        <!-- TAB: Service Areas -->
+        <div id="tab-content-areas" style="display:none;">
                 <!-- Geo Tags (service-area routing) -->
                 <div class="panel" id="geo-tags-panel">
                     <div class="panel-header">
@@ -281,10 +322,11 @@
                         </div>
                     </div>
                 </div>
-            </div>
+        </div><!-- end tab-content-areas -->
 
-            <!-- Right: Controls sidebar -->
-            <div>
+        <!-- TAB: Membership & Status -->
+        <div id="tab-content-controls" style="display:none;">
+            <div class="controls-grid">
                 <!-- Featured Agent -->
                 <div class="panel">
                     <div class="panel-header"><div class="panel-title">Featured Agent</div></div>
@@ -367,9 +409,8 @@
                         </span>
                     </div>
                 </div>
-            </div>
-        </div>
-        </div><!-- end tab-content-profile -->
+            </div><!-- end controls-grid -->
+        </div><!-- end tab-content-controls -->
 
         <!-- TAB: Lead Tracker -->
         <div id="tab-content-leads" style="display:none;">
@@ -542,6 +583,22 @@
         document.getElementById('agent-headline').textContent = a.display_name;
         document.getElementById('agent-sub').textContent = `${a.email || ''} · ${a.brokerage_name || 'Independent'}`;
         document.getElementById('status-badge-container').innerHTML = statusBadge(a.profile_status);
+
+        // Header card
+        if (a.profile_photo_url) {
+            document.getElementById('hdr-photo').innerHTML = `<img src="${a.profile_photo_url}" alt="">`;
+        }
+        const memLabels = { founder:'Founder', premium:'Premium', top_agent:'Top Agent', mn_lake_specialist:'MN Lake Specialist', basic:'Basic' };
+        document.getElementById('hdr-membership').textContent   = memLabels[a.membership_code] || a.membership_code || '—';
+        document.getElementById('hdr-profile-status').innerHTML = statusBadge(a.profile_status);
+        document.getElementById('hdr-account-status').innerHTML = (a.user_status === 'active')
+            ? '<span class="s-badge s-published">Active</span>'
+            : '<span class="s-badge s-suspended">Suspended</span>';
+        document.getElementById('hdr-email').textContent     = a.email || '—';
+        document.getElementById('hdr-phone').textContent     = a.phone_public || a.user_phone || '—';
+        document.getElementById('hdr-city').textContent      = a.city || '—';
+        document.getElementById('hdr-lastlogin').textContent = a.last_login_at ? new Date(a.last_login_at).toLocaleString() : 'Never';
+        document.getElementById('hdr-created').textContent   = a.user_created_at ? new Date(a.user_created_at).toLocaleDateString() : '—';
 
         // Account panel
         document.getElementById('acc-first').value      = a.first_name      || '';
@@ -755,6 +812,8 @@
         reader.onload = (e) => {
             document.getElementById('p-photo-preview').innerHTML =
                 `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+            document.getElementById('hdr-photo').innerHTML =
+                `<img src="${e.target.result}" alt="">`;
         };
         reader.readAsDataURL(file);
 
@@ -896,10 +955,11 @@
 
     // ── Page Tab Switching ───────────────────────────────────────────────────
     function switchPageTab(tab) {
-        document.getElementById('tab-content-profile').style.display = tab === 'profile' ? 'block' : 'none';
-        document.getElementById('tab-content-leads').style.display   = tab === 'leads'   ? 'block' : 'none';
-        document.getElementById('ptab-profile').classList.toggle('active', tab === 'profile');
-        document.getElementById('ptab-leads').classList.toggle('active',   tab === 'leads');
+        const tabs = ['details', 'profile', 'areas', 'controls', 'leads'];
+        tabs.forEach(t => {
+            document.getElementById('tab-content-' + t).style.display = (t === tab) ? 'block' : 'none';
+            document.getElementById('ptab-' + t).classList.toggle('active', t === tab);
+        });
         if (tab === 'leads' && agentLeadsAll === null) loadAgentLeads();
     }
 
