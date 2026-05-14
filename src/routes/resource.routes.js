@@ -13,6 +13,7 @@ const express = require('express');
 const router  = express.Router();
 const jwt     = require('jsonwebtoken');
 const c       = require('../controllers/resource.controller');
+const { verifyToken } = require('../middleware/auth');
 
 // Soft auth — if a valid session cookie is present we attach req.user
 // so the controller can unlock admin-only query params (e.g.
@@ -30,5 +31,8 @@ function softAuth(req, res, next) {
 router.get('/categories', softAuth, c.categories);
 router.get('/:slug',      softAuth, c.detail);
 router.get('/',           softAuth, c.list);
+
+// Admin write — hard delete a resource.
+router.delete('/:id', verifyToken, c.remove);
 
 module.exports = router;

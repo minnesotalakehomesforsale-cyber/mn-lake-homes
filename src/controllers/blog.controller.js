@@ -2,6 +2,7 @@ const pool = require('../database/pool');
 const path = require('path');
 const fs   = require('fs');
 const multer = require('multer');
+const { logActivity } = require('../services/activity-log');
 
 // ─── Image upload config ─────────────────────────────────────────────────────
 const UPLOAD_DIR = path.join(__dirname, '..', '..', 'assets', 'images');
@@ -166,14 +167,24 @@ const updatePost = async (req, res) => {
     }
 };
 
-// DELETE /api/blog/admin/:id — soft delete
+// DELETE /api/blog/admin/:id — hard delete. Removes the post row entirely;
+// the ON DELETE CASCADE FK on blog_post_lakes cleans up its lake links so
+// it disappears from every lake/town page's "From the blog" section too.
 const deletePost = async (req, res) => {
     try {
-        const { rowCount } = await pool.query(
-            `UPDATE blog_posts SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL`,
+        const { rowCount, rows } = await pool.query(
+            `DELETE FROM blog_posts WHERE id = $1 RETURNING id, title`,
             [req.params.id]
         );
         if (!rowCount) return res.status(404).json({ error: 'Post not found.' });
+        logActivity({
+            event_type: 'blog.delete',
+            event_scope: 'blog',
+            severity: 'warning',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'blog_post', id: rows[0].id, label: rows[0].title },
+            req,
+        });
         res.json({ success: true });
     } catch (err) {
         console.error('[blog.deletePost]', err.message);

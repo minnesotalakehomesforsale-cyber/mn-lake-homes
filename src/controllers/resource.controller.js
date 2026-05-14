@@ -10,6 +10,7 @@
  */
 
 const pool = require('../database/pool');
+const { logActivity } = require('../services/activity-log');
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function numOrNull(v) {
@@ -103,5 +104,34 @@ exports.detail = async (req, res) => {
     } catch (err) {
         console.error('[resources.detail]', err.message);
         res.status(500).json({ error: 'Failed to load resource.' });
+    }
+};
+
+// DELETE /api/resources/:id — hard delete (admin only). Nothing else
+// references the resources table, so a plain DELETE fully removes it
+// from the catalog and every public grid at once.
+exports.remove = async (req, res) => {
+    try {
+        const role = req.user?.role;
+        if (role !== 'admin' && role !== 'super_admin') {
+            return res.status(403).json({ error: 'Admin only.' });
+        }
+        const { rowCount, rows } = await pool.query(
+            `DELETE FROM resources WHERE id = $1 RETURNING id, title`,
+            [req.params.id]
+        );
+        if (!rowCount) return res.status(404).json({ error: 'Resource not found.' });
+        logActivity({
+            event_type: 'resource.delete',
+            event_scope: 'resource',
+            severity: 'warning',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'resource', id: rows[0].id, label: rows[0].title },
+            req,
+        });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[resources.remove]', err.message);
+        res.status(500).json({ error: 'Failed to delete resource.' });
     }
 };

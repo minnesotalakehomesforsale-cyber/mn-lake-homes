@@ -88,6 +88,19 @@
 
         function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+        // ── Hard delete a resource ───────────────────────────────────────
+        async function deleteResource(id, title) {
+            if (!confirm(`Delete "${title}"? This permanently removes it from the resources catalog and every public page. This cannot be undone.`)) return;
+            try {
+                const res = await fetch(`/api/resources/${id}`, { method: 'DELETE', credentials: 'include' });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || `Delete failed (HTTP ${res.status}).`);
+                await load();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
         async function load() {
             const wrap = document.getElementById('table-wrap');
             wrap.innerHTML = '<div class="empty">Loading…</div>';
@@ -177,6 +190,7 @@
                             <th>Status</th>
                             <th>URL</th>
                             <th style="white-space:nowrap;">Created</th>
+                            <th style="width: 80px;"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -197,6 +211,8 @@
                                     ? `<a class="url-cell" href="${escHtml(r.url)}" target="_blank" rel="noopener" title="${escHtml(r.url)}">${escHtml(r.url)}</a>`
                                     : '<span class="muted">—</span>'}</td>
                                 <td class="muted" style="white-space:nowrap;">${new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                                <td><button type="button" onclick="deleteResource('${r.id}', '${escHtml(r.title)}')"
+                                        style="background:#fff;color:#c53030;border:1px solid #fc8181;border-radius:6px;padding:0.35rem 0.7rem;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit;">Delete</button></td>
                             </tr>
                         `).join('')}
                     </tbody>
