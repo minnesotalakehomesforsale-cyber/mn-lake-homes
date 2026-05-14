@@ -764,6 +764,19 @@ app.get('/:page', (req, res, next) => {
 // AUTO-MIGRATE: ensure any new tables exist
 // ==========================================
 const pool = require('./database/pool');
+// Run a DDL/migration statement that may legitimately fail on a fresh
+// database — e.g. an ALTER/INDEX/TRIGGER on a table that is CREATEd later
+// in this same function. Logs and continues instead of aborting the whole
+// boot sequence. The statement succeeds normally on the next boot, once the
+// target table exists.
+async function safeExec(sql, params) {
+    try {
+        await pool.query(sql, params);
+    } catch (err) {
+        console.warn(' Migration step skipped (will retry next boot):', err.message);
+    }
+}
+
 async function ensureTables() {
     try {
         await pool.query(`
@@ -881,7 +894,7 @@ async function ensureTables() {
 
         // Per-tag routing counter powers the 70/30 founder split. Increments on
         // each successful assignment in that tag's geography.
-        await pool.query(`
+        await safeExec(`
             ALTER TABLE tags ADD COLUMN IF NOT EXISTS lead_routing_counter INTEGER NOT NULL DEFAULT 0;
         `);
 
@@ -894,18 +907,18 @@ async function ensureTables() {
         // Founder uniqueness: at most one user with membership.code='founder' per tag.
         // Enforced via a partial unique index on user_tags joined to memberships.
         // Materialized column on user_tags + trigger keeps it fast and index-able.
-        await pool.query(`
+        await safeExec(`
             ALTER TABLE user_tags ADD COLUMN IF NOT EXISTS membership_code VARCHAR(100);
         `);
         // Keep user_tags.membership_code in sync with the agent's current tier.
-        await pool.query(`
+        await safeExec(`
             UPDATE user_tags ut
                SET membership_code = m.code
               FROM agents a JOIN memberships m ON m.id = a.membership_id
              WHERE a.user_id = ut.user_id
                AND (ut.membership_code IS DISTINCT FROM m.code);
         `);
-        await pool.query(`
+        await safeExec(`
             CREATE UNIQUE INDEX IF NOT EXISTS ux_user_tags_founder_per_tag
                 ON user_tags (tag_id)
                 WHERE membership_code = 'founder';
@@ -943,7 +956,7 @@ async function ensureTables() {
             END;
             $$ LANGUAGE plpgsql;
         `);
-        await pool.query(`
+        await safeExec(`
             DROP TRIGGER IF EXISTS trg_fill_user_tag_membership ON user_tags;
             CREATE TRIGGER trg_fill_user_tag_membership
             BEFORE INSERT ON user_tags
@@ -953,7 +966,7 @@ async function ensureTables() {
         // Businesses: social links + 'pending' status for the public
         // self-submission → admin-approve flow. Columns are nullable
         // since most legacy rows won't have them.
-        await pool.query(`
+        await safeExec(`
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS instagram_url TEXT;
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS facebook_url  TEXT;
         `);
@@ -972,7 +985,7 @@ async function ensureTables() {
             ALTER TYPE role_type ADD VALUE IF NOT EXISTS 'client';
         EXCEPTION WHEN undefined_object THEN NULL;
         END $$;`);
-        await pool.query(`
+        await safeExec(`
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS user_id UUID;
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS stripe_customer_id     TEXT;
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
