@@ -1,97 +1,104 @@
 /**
- * resources-seed.js — Initial resources catalog bootstrapped at app start.
+ * resources-seed.js — Resources catalog bootstrapped at app start.
  *
  * Loaded by src/server.js ensureTables() with an INSERT … ON CONFLICT
- * (slug) DO NOTHING so the list is safe to reload every boot. Admin
- * edits to existing slugs are preserved; adding a new row here ships
- * it on the next deploy.
+ * (slug) DO NOTHING so the list is safe to reload every boot.
  *
- * Kept intentionally small — the admin UI (Phase 2) will be the
- * canonical way to add new resources at scale.
+ * Phase 1 launch set: 8 gated PDF downloads (4 buyer, 4 seller). Each
+ * `url` points at a PDF in /assets/resources/. The public resources
+ * page treats any resource whose url starts with /assets/resources/
+ * as a gated download — clicking the card opens an email-capture
+ * modal, and on submit the visitor becomes a lead (source:
+ * 'resource_download') and is emailed the download link.
+ *
+ * To fully swap the catalog on an existing database (not just a fresh
+ * one), run: node scripts/replace-resources.js
  */
 
 module.exports = [
+    // ── Buyer downloads ─────────────────────────────────────────────
     {
-        slug: 'lake-buyer-guide',
-        title: 'The Minnesota Lake Home Buyer Guide',
-        description: 'A 32-page walk-through of everything first-time buyers need to know — from shoreline setbacks to dock permits and winterization.',
-        category: 'Guides',
-        resource_type: 'pdf',
-        url: '#',
+        slug: 'lake-region-comparison-guide',
+        title: 'Lake Region Comparison Guide',
+        description: 'Five Minnesota lake regions side by side — price, drive time, water clarity, and character — with a "best fit by buyer type" matrix. 9 pages.',
+        category: 'Buyer Resources',
+        resource_type: 'Guide',
+        url: '/assets/resources/lake-region-comparison-guide.pdf',
+        thumbnail_url: '/assets/images/mn-aerial-lake-homes.jpg',
+        tags: ['buyer', 'guide'],
+        featured: true,
+    },
+    {
+        slug: 'first-time-lake-buyer-roadmap',
+        title: 'First-Time Lake Buyer Roadmap',
+        description: 'An 8-step walkthrough of the lake-home buying process — timelines, document lists, and the tips first-timers wish they had. 7 pages.',
+        category: 'Buyer Resources',
+        resource_type: 'Guide',
+        url: '/assets/resources/first-time-lake-buyer-roadmap.pdf',
         thumbnail_url: '/assets/images/mn-canoe-shore.webp',
-        tags: ['buyer', 'first-time'],
+        tags: ['buyer', 'guide', 'first-time'],
         featured: true,
     },
     {
-        slug: 'shoreline-regulations',
-        title: 'Shoreline Setback & Permit Reference',
-        description: 'Every Minnesota county rule that matters when building, remodeling, or selling on the water.',
-        category: 'Guides',
-        resource_type: 'article',
-        url: '#',
+        slug: 'waterfront-inspection-checklist',
+        title: 'Waterfront Inspection Checklist',
+        description: 'A print-and-use, lake-specific inspection checklist — septic, well, shoreline, dock, ice and weather, access, and outbuildings. 5 pages.',
+        category: 'Buyer Resources',
+        resource_type: 'Checklist',
+        url: '/assets/resources/waterfront-inspection-checklist.pdf',
         thumbnail_url: '/assets/images/mn-dock-water-tower.webp',
-        tags: ['legal', 'permits'],
+        tags: ['buyer', 'checklist', 'inspection'],
     },
     {
-        slug: 'property-value-calc',
-        title: 'Lakefront Property Value Calculator',
-        description: 'Plug in your address and get an instant estimate powered by live comps and public records.',
-        category: 'Tools',
-        resource_type: 'calculator',
-        url: '/pages/public/cash-offer.html',
-        thumbnail_url: '/assets/images/mn-modern-glass-home.jpg',
-        tags: ['valuation', 'seller'],
-        featured: true,
-    },
-    {
-        slug: '2026-market-report',
-        title: '2026 Minnesota Lakefront Market Report',
-        description: 'Sold volume, price-per-linear-foot, and regional breakdowns across every major MN lake market.',
-        category: 'Market Reports',
-        resource_type: 'pdf',
-        url: '#',
-        thumbnail_url: '/assets/images/mn-maple-lake-aerial.jpg',
-        tags: ['market', 'data'],
-        featured: true,
-    },
-    {
-        slug: 'dock-permit-guide',
-        title: 'Dock & Lift Permit Quick Reference',
-        description: 'The five agencies that matter and what each requires before your dock goes in next spring.',
-        category: 'Guides',
-        resource_type: 'article',
-        url: '#',
-        thumbnail_url: '/assets/images/mn-dock-water-tower.webp',
-        tags: ['permits', 'dock'],
-    },
-    {
-        slug: 'mortgage-preapproval-checklist',
-        title: 'Lake Home Mortgage Pre-Approval Checklist',
-        description: 'Every document your lender will ask for, organized by category and labeled for the waterfront-specific questions.',
-        category: 'Checklists',
-        resource_type: 'pdf',
-        url: '#',
+        slug: 'property-tax-lakeshore-estimator',
+        title: 'Property Tax + Lakeshore Tax Estimator',
+        description: 'A worksheet plus worked examples for estimating Minnesota property tax on a lake home before you make an offer. 5 pages.',
+        category: 'Buyer Resources',
+        resource_type: 'Worksheet',
+        url: '/assets/resources/property-tax-lakeshore-estimator.pdf',
         thumbnail_url: '/assets/images/mn-cape-cod-lakefront.jpg',
-        tags: ['buyer', 'financing'],
+        tags: ['buyer', 'worksheet', 'taxes'],
     },
+
+    // ── Seller downloads ────────────────────────────────────────────
     {
-        slug: 'seasonal-rental-template',
-        title: 'Seasonal Rental Terms Template',
-        description: 'Bulletproof rental agreement tailored for Minnesota lake homes — covers docks, boats, and shoreline use.',
-        category: 'Templates',
-        resource_type: 'pdf',
-        url: '#',
+        slug: 'minnesota-lake-home-seller-guide',
+        title: 'Minnesota Lake Home Seller Guide',
+        description: 'The flagship seller playbook — pricing and comps, seasonal timing, prep, photography, disclosures, and an 8-week pre-listing timeline. 7 pages.',
+        category: 'Seller Resources',
+        resource_type: 'Guide',
+        url: '/assets/resources/minnesota-lake-home-seller-guide.pdf',
         thumbnail_url: '/assets/images/mn-lodge-lake-house.jpg',
-        tags: ['rental', 'legal'],
+        tags: ['seller', 'guide'],
     },
     {
-        slug: 'closing-costs-calc',
-        title: 'Closing Costs Calculator',
-        description: 'Budget for title, transfer taxes, agent fees, and the lake-specific surveys most tools miss.',
-        category: 'Tools',
-        resource_type: 'calculator',
-        url: '#',
-        thumbnail_url: '/assets/images/mn-stucco-home-path.jpg',
-        tags: ['seller', 'buyer', 'financing'],
+        slug: 'sellers-net-proceeds-calculator',
+        title: "Seller's Net Proceeds Calculator",
+        description: 'A worksheet walking every line item from gross sale price to net proceeds, with a worked $600k example. 5 pages.',
+        category: 'Seller Resources',
+        resource_type: 'Worksheet',
+        url: '/assets/resources/sellers-net-proceeds-calculator.pdf',
+        thumbnail_url: '/assets/images/mn-modern-glass-home.jpg',
+        tags: ['seller', 'worksheet'],
+    },
+    {
+        slug: 'pre-listing-cabin-prep-checklist',
+        title: 'Pre-Listing Cabin Prep Checklist',
+        description: 'A week-by-week prep checklist — eight weeks down to the day before — for getting a cabin listing-ready. 5 pages.',
+        category: 'Seller Resources',
+        resource_type: 'Checklist',
+        url: '/assets/resources/pre-listing-cabin-prep-checklist.pdf',
+        thumbnail_url: '/assets/images/mn-rustic-modern-lake-house.jpg',
+        tags: ['seller', 'checklist'],
+    },
+    {
+        slug: 'seller-disclosure-reference',
+        title: 'Seller Disclosure Reference',
+        description: "A reference companion to Minnesota's required Seller's Property Disclosure — lakeshore-specific sections, with example language. 6 pages.",
+        category: 'Seller Resources',
+        resource_type: 'Reference',
+        url: '/assets/resources/seller-disclosure-reference.pdf',
+        thumbnail_url: '/assets/images/mn-maple-lake-aerial.jpg',
+        tags: ['seller', 'reference', 'disclosure'],
     },
 ];

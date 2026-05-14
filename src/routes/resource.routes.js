@@ -29,6 +29,9 @@ function softAuth(req, res, next) {
 }
 
 router.get('/categories', softAuth, c.categories);
+// Email-gated download capture — public, no account needed. Sits before
+// /:slug so the "download" segment isn't read as a slug.
+router.post('/:slug/download', c.captureDownload);
 router.get('/:slug',      softAuth, c.detail);
 router.get('/',           softAuth, c.list);
 

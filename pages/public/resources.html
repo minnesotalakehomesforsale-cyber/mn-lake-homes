@@ -215,13 +215,19 @@
         function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
         function escAttr(s) { return escHtml(s); }
 
+        // Resources keyed by slug so the download modal can look one up.
+        const RX_BY_SLUG = {};
+
+        // A gated download = a resource whose url is a local PDF asset.
+        function isGatedDownload(r) {
+            return typeof r.url === 'string' && r.url.startsWith('/assets/resources/');
+        }
+
         function cardHtml(r) {
+            RX_BY_SLUG[r.slug] = r;
             const hasImg = !!r.thumbnail_url;
             const typeLabel = TYPE_LABEL[r.resource_type] || r.resource_type;
-            const linkOut = r.url && r.url !== '#' ? r.url : '#';
-            const target  = /^https?:\/\//.test(r.url || '') ? ' target="_blank" rel="noopener"' : '';
-            return `
-                <a class="rx-card" href="${escAttr(linkOut)}"${target}>
+            const inner = `
                     <div class="rx-card-image">
                         ${hasImg ? `<img src="${escAttr(r.thumbnail_url)}" alt="${escAttr(r.title)}" loading="lazy">` : ''}
                         <span class="rx-type-badge">${escHtml(typeLabel)}</span>
@@ -231,10 +237,18 @@
                         <div class="rx-card-category">${escHtml(r.category)}</div>
                         <div class="rx-card-title">${escHtml(r.title)}</div>
                         ${r.description ? `<div class="rx-card-desc">${escHtml(r.description)}</div>` : ''}
-                        <div class="rx-card-cta">Open &rarr;</div>
-                    </div>
-                </a>
-            `;
+                        <div class="rx-card-cta">${isGatedDownload(r) ? 'Get the download' : 'Open'} &rarr;</div>
+                    </div>`;
+            // Gated downloads open the email-capture modal; everything else
+            // is a plain link out.
+            if (isGatedDownload(r)) {
+                return `<div class="rx-card" role="button" tabindex="0" style="cursor:pointer;"
+                             onclick="openDownloadModal('${escAttr(r.slug)}')"
+                             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDownloadModal('${escAttr(r.slug)}')}">${inner}</div>`;
+            }
+            const linkOut = r.url && r.url !== '#' ? r.url : '#';
+            const target  = /^https?:\/\//.test(r.url || '') ? ' target="_blank" rel="noopener"' : '';
+            return `<a class="rx-card" href="${escAttr(linkOut)}"${target}>${inner}</a>`;
         }
 
         // ── Category pills ───────────────────────────────────────────────
@@ -404,6 +418,105 @@
             loadBlog();
             loadResources(false);
         });
+
+        // ── Email-gated download modal ───────────────────────────────────
+        let _rxDownloadSlug = null;
+
+        function openDownloadModal(slug) {
+            const r = RX_BY_SLUG[slug];
+            if (!r) return;
+            _rxDownloadSlug = slug;
+            document.getElementById('rx-dl-title').textContent = r.title;
+            document.getElementById('rx-dl-desc').textContent  = r.description || '';
+            document.getElementById('rx-dl-type').textContent  = (TYPE_LABEL[r.resource_type] || r.resource_type || 'Resource');
+            // reset to the form state
+            document.getElementById('rx-dl-form').style.display = 'block';
+            document.getElementById('rx-dl-success').style.display = 'none';
+            document.getElementById('rx-dl-err').style.display = 'none';
+            document.getElementById('rx-dl-name').value  = '';
+            document.getElementById('rx-dl-email').value = '';
+            document.getElementById('rx-dl-phone').value = '';
+            const btn = document.getElementById('rx-dl-submit');
+            btn.disabled = false; btn.textContent = 'Email me the download';
+            document.getElementById('rx-dl-modal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => document.getElementById('rx-dl-email').focus(), 60);
+        }
+
+        function closeDownloadModal() {
+            document.getElementById('rx-dl-modal').style.display = 'none';
+            document.body.style.overflow = '';
+            _rxDownloadSlug = null;
+        }
+
+        async function submitDownload() {
+            const err   = document.getElementById('rx-dl-err');
+            const name  = document.getElementById('rx-dl-name').value.trim();
+            const email = document.getElementById('rx-dl-email').value.trim();
+            const phone = document.getElementById('rx-dl-phone').value.trim();
+            err.style.display = 'none';
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                err.textContent = 'Please enter a valid email address.';
+                err.style.display = 'block';
+                return;
+            }
+            const btn = document.getElementById('rx-dl-submit');
+            btn.disabled = true; btn.textContent = 'Sending…';
+            try {
+                const res = await fetch(`/api/resources/${encodeURIComponent(_rxDownloadSlug)}/download`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, phone }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
+                // Show the success state with an immediate download link.
+                document.getElementById('rx-dl-form').style.display = 'none';
+                document.getElementById('rx-dl-success').style.display = 'block';
+                const dl = document.getElementById('rx-dl-download-link');
+                dl.href = data.url;
+                dl.setAttribute('download', '');
+                document.getElementById('rx-dl-success-email').textContent = email;
+            } catch (e) {
+                err.textContent = e.message;
+                err.style.display = 'block';
+                btn.disabled = false; btn.textContent = 'Email me the download';
+            }
+        }
     </script>
+
+    <!-- Email-gated download modal -->
+    <div id="rx-dl-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,0.6);align-items:center;justify-content:center;padding:1.5rem;">
+        <div style="background:#fff;border-radius:16px;max-width:460px;width:100%;padding:2rem;box-shadow:0 30px 70px rgba(0,0,0,0.3);position:relative;">
+            <button onclick="closeDownloadModal()" aria-label="Close" style="position:absolute;top:1rem;right:1rem;width:32px;height:32px;border-radius:50%;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:1rem;color:#718096;">&times;</button>
+            <div id="rx-dl-type" style="font-size:0.72rem;font-weight:800;letter-spacing:0.6px;text-transform:uppercase;color:#1d6df2;margin-bottom:0.5rem;"></div>
+            <h2 id="rx-dl-title" style="font-size:1.4rem;font-weight:800;color:#1a202c;line-height:1.25;margin:0 0 0.6rem;"></h2>
+            <p id="rx-dl-desc" style="font-size:0.94rem;color:#4a5568;line-height:1.55;margin:0 0 1.5rem;"></p>
+
+            <div id="rx-dl-form">
+                <p style="font-size:0.86rem;color:#718096;margin:0 0 1rem;">Enter your email and we'll send the PDF straight to your inbox — and you can grab it here immediately too.</p>
+                <input id="rx-dl-name" type="text" placeholder="Name (optional)" autocomplete="name"
+                    style="width:100%;box-sizing:border-box;padding:0.8rem 1rem;border:1px solid #e2e8f0;border-radius:10px;font-family:inherit;font-size:0.95rem;margin-bottom:0.6rem;outline:none;">
+                <input id="rx-dl-email" type="email" placeholder="Email address" autocomplete="email"
+                    style="width:100%;box-sizing:border-box;padding:0.8rem 1rem;border:1px solid #e2e8f0;border-radius:10px;font-family:inherit;font-size:0.95rem;margin-bottom:0.6rem;outline:none;">
+                <input id="rx-dl-phone" type="tel" placeholder="Phone (optional)" autocomplete="tel"
+                    style="width:100%;box-sizing:border-box;padding:0.8rem 1rem;border:1px solid #e2e8f0;border-radius:10px;font-family:inherit;font-size:0.95rem;margin-bottom:0.6rem;outline:none;">
+                <div id="rx-dl-err" style="display:none;color:#c53030;font-size:0.85rem;margin-bottom:0.6rem;"></div>
+                <button id="rx-dl-submit" onclick="submitDownload()"
+                    style="width:100%;padding:0.95rem;background:#1d6df2;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:0.95rem;cursor:pointer;font-family:inherit;">Email me the download</button>
+                <p style="font-size:0.74rem;color:#a0aec0;line-height:1.5;margin:0.85rem 0 0;text-align:center;">We'll occasionally send Minnesota lake-market updates. Unsubscribe anytime.</p>
+            </div>
+
+            <div id="rx-dl-success" style="display:none;text-align:center;">
+                <div style="width:52px;height:52px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <h3 style="font-size:1.15rem;font-weight:800;color:#1a202c;margin:0 0 0.4rem;">You're all set.</h3>
+                <p style="font-size:0.9rem;color:#4a5568;line-height:1.55;margin:0 0 1.25rem;">We sent it to <strong id="rx-dl-success-email"></strong>. Here's your copy now:</p>
+                <a id="rx-dl-download-link" href="#" target="_blank" rel="noopener"
+                    style="display:inline-block;padding:0.9rem 1.75rem;background:#1d6df2;color:#fff;border-radius:10px;font-weight:700;font-size:0.95rem;text-decoration:none;">Download the PDF</a>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

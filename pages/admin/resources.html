@@ -54,31 +54,50 @@
                 <a href="/pages/public/resources.html" target="_blank" class="row-btn" style="padding:0.55rem 1rem;background:#fff;border:1px solid #e2e8f0;border-radius:8px;text-decoration:none;color:#4a5568;font-weight:600;font-size:0.85rem;">↗ View public page</a>
             </header>
 
-            <div class="stat-strip" id="stat-strip">
-                <div class="stat-card"><div class="lbl">Total</div><div class="val" id="stat-total">—</div></div>
-                <div class="stat-card"><div class="lbl">Active</div><div class="val" id="stat-active" style="color:#059669;">—</div></div>
-                <div class="stat-card"><div class="lbl">Featured</div><div class="val" id="stat-featured" style="color:#b45309;">—</div></div>
-                <div class="stat-card"><div class="lbl">Categories</div><div class="val" id="stat-categories">—</div></div>
+            <!-- Tabs -->
+            <div style="display:flex;gap:0.25rem;border-bottom:1px solid #e2e8f0;margin-bottom:1.75rem;">
+                <button class="rsc-tab active" data-tab="resources" onclick="switchTab('resources')"
+                    style="background:none;border:none;padding:0.85rem 1.1rem;font-size:0.92rem;font-weight:600;color:#1d6df2;cursor:pointer;font-family:inherit;border-bottom:2px solid #1d6df2;margin-bottom:-1px;">Resources</button>
+                <button class="rsc-tab" data-tab="downloads" onclick="switchTab('downloads')"
+                    style="background:none;border:none;padding:0.85rem 1.1rem;font-size:0.92rem;font-weight:600;color:#4a5568;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-1px;">Downloads <span id="dl-count-badge" style="background:#edf2f7;color:#4a5568;font-size:0.72rem;font-weight:800;padding:0.1rem 0.45rem;border-radius:999px;margin-left:0.25rem;">—</span></button>
             </div>
 
-            <div class="toolbar">
-                <input type="search" id="search" placeholder="Search by title or description…" oninput="applyFilters()">
-                <select id="filter-category" onchange="applyFilters()">
-                    <option value="">All categories</option>
-                </select>
-                <select id="filter-type" onchange="applyFilters()">
-                    <option value="">All types</option>
-                </select>
-                <select id="filter-active" onchange="load()">
-                    <option value="all" selected>Active + inactive</option>
-                    <option value="true">Active only</option>
-                    <option value="false">Inactive only</option>
-                </select>
-                <span id="count" class="muted" style="margin-left:auto;"></span>
+            <!-- Resources tab -->
+            <div id="tab-resources">
+                <div class="stat-strip" id="stat-strip">
+                    <div class="stat-card"><div class="lbl">Total</div><div class="val" id="stat-total">—</div></div>
+                    <div class="stat-card"><div class="lbl">Active</div><div class="val" id="stat-active" style="color:#059669;">—</div></div>
+                    <div class="stat-card"><div class="lbl">Featured</div><div class="val" id="stat-featured" style="color:#b45309;">—</div></div>
+                    <div class="stat-card"><div class="lbl">Categories</div><div class="val" id="stat-categories">—</div></div>
+                </div>
+
+                <div class="toolbar">
+                    <input type="search" id="search" placeholder="Search by title or description…" oninput="applyFilters()">
+                    <select id="filter-category" onchange="applyFilters()">
+                        <option value="">All categories</option>
+                    </select>
+                    <select id="filter-type" onchange="applyFilters()">
+                        <option value="">All types</option>
+                    </select>
+                    <select id="filter-active" onchange="load()">
+                        <option value="all" selected>Active + inactive</option>
+                        <option value="true">Active only</option>
+                        <option value="false">Inactive only</option>
+                    </select>
+                    <span id="count" class="muted" style="margin-left:auto;"></span>
+                </div>
+
+                <div id="table-wrap">
+                    <div class="empty">Loading resources…</div>
+                </div>
             </div>
 
-            <div id="table-wrap">
-                <div class="empty">Loading resources…</div>
+            <!-- Downloads tab — leads captured by the gated resource downloads -->
+            <div id="tab-downloads" style="display:none;">
+                <p style="color:#718096;font-size:0.92rem;margin:0 0 1.25rem;">Everyone who gave their email to download a resource. Each one is also a lead (source <code>resource_download</code>) in the main leads inbox and synced to HubSpot.</p>
+                <div id="downloads-wrap">
+                    <div class="empty">Loading downloads…</div>
+                </div>
             </div>
         </main>
     </div>
@@ -220,7 +239,66 @@
             `;
         }
 
-        document.addEventListener('DOMContentLoaded', load);
+        // ── Tabs ─────────────────────────────────────────────────────────
+        function switchTab(tab) {
+            document.getElementById('tab-resources').style.display = tab === 'resources' ? 'block' : 'none';
+            document.getElementById('tab-downloads').style.display = tab === 'downloads' ? 'block' : 'none';
+            document.querySelectorAll('.rsc-tab').forEach(b => {
+                const on = b.dataset.tab === tab;
+                b.style.color = on ? '#1d6df2' : '#4a5568';
+                b.style.borderBottomColor = on ? '#1d6df2' : 'transparent';
+            });
+            if (tab === 'downloads') loadDownloads();
+        }
+
+        // ── Downloads tab — resource-download leads ──────────────────────
+        async function loadDownloads() {
+            const wrap = document.getElementById('downloads-wrap');
+            wrap.innerHTML = '<div class="empty">Loading…</div>';
+            try {
+                const res = await fetch('/api/leads/admin/inbox');
+                if (!res.ok) throw new Error();
+                const all = await res.json();
+                const rows = all.filter(l => l.source === 'resource_download');
+                document.getElementById('dl-count-badge').textContent = rows.length;
+                if (!rows.length) {
+                    wrap.innerHTML = '<div class="empty">No resource downloads captured yet. They show up here the moment someone grabs a gated PDF.</div>';
+                    return;
+                }
+                wrap.innerHTML = `
+                    <table class="ledger-table">
+                        <thead><tr>
+                            <th>Name</th><th>Email</th><th>Phone</th><th>Resource</th>
+                            <th>Status</th><th style="white-space:nowrap;">Captured</th>
+                        </tr></thead>
+                        <tbody>
+                        ${rows.map(l => {
+                            // createLead stores "Resource download: <title>" in message;
+                            // getAdminLeads doesn't return message, so fall back gracefully.
+                            const resourceLabel = l.message ? escHtml(l.message.replace(/^Resource download:\s*/i, '')) : '<span class="muted">—</span>';
+                            return `
+                            <tr>
+                                <td><strong>${escHtml(l.name || '—')}</strong></td>
+                                <td>${l.email ? `<a class="url-cell" href="mailto:${escHtml(l.email)}">${escHtml(l.email)}</a>` : '<span class="muted">—</span>'}</td>
+                                <td class="muted">${escHtml(l.phone || '—')}</td>
+                                <td>${resourceLabel}</td>
+                                <td><span class="pill ${l.status === 'new' ? 'feat' : 'cat'}">${escHtml(l.status || 'new')}</span></td>
+                                <td class="muted" style="white-space:nowrap;">${l.created_at ? new Date(l.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</td>
+                            </tr>`;
+                        }).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (_) {
+                wrap.innerHTML = '<div class="empty" style="color:#c53030;">Failed to load downloads.</div>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            load();
+            // Prime the Downloads badge count without switching tabs.
+            loadDownloads().then(() => switchTab('resources'));
+        });
     </script>
 </body>
 </html>

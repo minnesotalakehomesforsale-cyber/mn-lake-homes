@@ -11,6 +11,8 @@
 
 const pool = require('../database/pool');
 const { logActivity } = require('../services/activity-log');
+const hubspot = require('../services/hubspot');
+const emailService = require('../services/email');
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function numOrNull(v) {
@@ -104,6 +106,100 @@ exports.detail = async (req, res) => {
     } catch (err) {
         console.error('[resources.detail]', err.message);
         res.status(500).json({ error: 'Failed to load resource.' });
+    }
+};
+
+// ─── POST /api/resources/:slug/download ─────────────────────────────────────
+// Email-gated download capture. The visitor gives an email (+ optional
+// name/phone); we record them as a lead (source: 'resource_download'),
+// mirror to HubSpot, email them the download link, and return the URL so
+// the front end can also hand it over immediately. No account required.
+exports.captureDownload = async (req, res) => {
+    let { name, email, phone } = req.body || {};
+    name  = (name  || '').trim();
+    email = (email || '').trim().toLowerCase();
+    phone = (phone || '').trim();
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ error: 'A valid email is required.' });
+    }
+
+    try {
+        const { rows } = await pool.query(
+            `SELECT id, slug, title, url FROM resources WHERE slug = $1 AND active = TRUE`,
+            [req.params.slug]
+        );
+        if (!rows.length) return res.status(404).json({ error: 'Resource not found.' });
+        const resource = rows[0];
+
+        const fullName  = name || email.split('@')[0];
+        const firstName = fullName.split(' ')[0] || 'there';
+        const lastName  = fullName.split(' ').slice(1).join(' ') || null;
+
+        // Link the lead to an existing account by email, same rule as the
+        // main lead form — if no account exists it stays unassigned and
+        // gets backfilled if they sign up later.
+        let userId = null;
+        const u = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1 LIMIT 1', [email]);
+        if (u.rows.length) userId = u.rows[0].id;
+
+        const { rows: leadRows } = await pool.query(
+            `INSERT INTO leads (full_name, first_name, email, phone, message,
+                                lead_type, lead_source, lead_status, user_id)
+             VALUES ($1, $2, $3, $4, $5, 'general_contact', 'resource_download', 'new', $6)
+             RETURNING id`,
+            [fullName, firstName, email, phone || null,
+             `Resource download: ${resource.title}`, userId]
+        );
+        const leadId = leadRows[0]?.id;
+
+        logActivity({
+            event_type: 'resource.download',
+            event_scope: 'resource',
+            actor: { type: 'public', label: email },
+            target: { type: 'resource', id: resource.id, label: resource.title },
+            details: { lead_id: leadId, slug: resource.slug, email, phone },
+            req,
+        });
+
+        // Fire-and-forget: HubSpot mirror.
+        (async () => {
+            const r = await hubspot.syncContact({
+                email, firstname: firstName, lastname: lastName || undefined,
+                phone: phone || undefined,
+                user_type: 'lead', signup_source: `resource:${resource.slug}`,
+            });
+            if (r?.id && leadId) {
+                pool.query(`UPDATE leads SET hs_contact_id = $1 WHERE id = $2`, [r.id, leadId])
+                    .catch(e => console.error('[resource download] hs id save failed:', e.message));
+            }
+        })().catch(e => console.error('[resource download] hubspot sync failed:', e.message));
+
+        // Fire-and-forget: email the download link.
+        const siteBase = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
+        const downloadUrl = `${siteBase}${resource.url}`;
+        try {
+            emailService.sendCustom({
+                to: email,
+                subject: `Your download: ${resource.title}`,
+                html: emailService.layout({
+                    title: 'Here’s your download',
+                    preheader: `${resource.title} from MN Lake Homes`,
+                    body: `<p>Hi ${firstName},</p>
+                           <p>Thanks for grabbing <strong>${resource.title}</strong>. Your copy is ready — the button below opens the PDF.</p>
+                           <p>Save it, print it, share it. And when you're ready to talk through a specific lake or property, a local specialist is one form away.</p>`,
+                    ctaText: 'Download the PDF',
+                    ctaUrl: downloadUrl,
+                }),
+            });
+        } catch (e) {
+            console.error('[resource download] email failed:', e.message);
+        }
+
+        res.json({ success: true, url: resource.url, title: resource.title });
+    } catch (err) {
+        console.error('[resources.captureDownload]', err.message);
+        res.status(500).json({ error: 'Could not process your download. Please try again.' });
     }
 };
 
