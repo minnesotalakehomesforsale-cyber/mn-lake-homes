@@ -871,6 +871,38 @@ const addLeadNote = async (req, res) => {
     }
 };
 
+// DELETE /api/admin/leads/:id — hard delete. Removes the lead row entirely;
+// the ON DELETE CASCADE foreign keys clean up lead_notes, lead_tags, and
+// lead_assignments automatically. Once gone it's gone everywhere — admin,
+// agent, and the submitter's dashboard all read the same row.
+const deleteLead = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const info = await pool.query(
+            `SELECT full_name, email, lead_type FROM leads WHERE id = $1`,
+            [id]
+        );
+        if (!info.rows.length) return res.status(404).json({ error: 'Lead not found.' });
+
+        await pool.query(`DELETE FROM leads WHERE id = $1`, [id]);
+
+        logActivity({
+            event_type: 'lead.delete',
+            event_scope: 'lead',
+            severity: 'warning',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'lead', id, label: info.rows[0]?.full_name || info.rows[0]?.email },
+            details: { email: info.rows[0]?.email, lead_type: info.rows[0]?.lead_type },
+            req,
+        });
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[deleteLead]', err.message);
+        res.status(500).json({ error: 'Failed to delete lead.' });
+    }
+};
+
 const getAgentLeads = async (req, res) => {
     try {
         const { rows } = await pool.query(`
@@ -909,6 +941,7 @@ module.exports = {
     updateLeadStatus,
     assignLead,
     addLeadNote,
+    deleteLead,
     getAgentLeads,
     getUnassignedLeadCount,
     getAgentCoverage

@@ -105,6 +105,12 @@
                             </select>
 
                             <button class="btn-full" style="background:#38a169; color:#fff;" onclick="executeAssignment()">Execute Manual Assignment</button>
+
+                            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #fed7d7;">
+                                <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #c53030; text-transform: uppercase; margin-bottom: 0.5rem;">Danger Zone</label>
+                                <p style="font-size: 0.8rem; color: #718096; margin: 0 0 0.75rem; line-height: 1.5;">Permanently removes this lead — from the admin inbox, the agent's queue, and the submitter's account. Cannot be undone.</p>
+                                <button class="btn-full" style="background:#fff; color:#c53030; border:1px solid #fc8181;" onclick="confirmDeleteLead()">Delete Lead</button>
+                            </div>
                         </div>
                     </div>
 
@@ -122,6 +128,21 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Delete confirmation modal -->
+    <div id="delete-modal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(15,23,42,0.55); align-items:center; justify-content:center; padding:1.5rem;">
+        <div style="background:#fff; border-radius:14px; max-width:420px; width:100%; padding:2rem; box-shadow:0 24px 60px rgba(0,0,0,0.25);">
+            <div style="width:48px; height:48px; border-radius:50%; background:#fff5f5; display:flex; align-items:center; justify-content:center; margin-bottom:1rem;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c53030" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </div>
+            <h3 style="font-size:1.2rem; font-weight:800; color:#1a202c; margin:0 0 0.5rem;">Delete this lead?</h3>
+            <p style="font-size:0.92rem; color:#4a5568; line-height:1.55; margin:0 0 1.5rem;">This permanently deletes the lead everywhere — admin inbox, the assigned agent's queue, and the submitter's dashboard. <strong>This cannot be undone.</strong></p>
+            <div style="display:flex; gap:0.6rem;">
+                <button onclick="closeDeleteModal()" style="flex:1; padding:0.8rem; border:1px solid #e2e8f0; background:#fff; color:#4a5568; font-weight:700; font-size:0.9rem; border-radius:8px; cursor:pointer;">Cancel</button>
+                <button id="delete-confirm-btn" onclick="executeDeleteLead()" style="flex:1; padding:0.8rem; border:none; background:#c53030; color:#fff; font-weight:700; font-size:0.9rem; border-radius:8px; cursor:pointer;">Yes, delete it</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -264,6 +285,30 @@
                 window.location.reload();
             } catch (err) {
                 alert(err.message);
+            }
+        }
+
+        // ── Delete lead (hard delete) ───────────────────────────────────
+        function confirmDeleteLead() {
+            document.getElementById('delete-modal').style.display = 'flex';
+        }
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').style.display = 'none';
+        }
+        async function executeDeleteLead() {
+            const btn = document.getElementById('delete-confirm-btn');
+            btn.disabled = true;
+            btn.textContent = 'Deleting…';
+            try {
+                const res = await fetch(`/api/admin/leads/${leadId}`, { method: 'DELETE' });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `Delete failed (HTTP ${res.status}).`);
+                // Gone. Back to the leads inbox.
+                window.location.href = '/pages/admin/leads.html';
+            } catch (err) {
+                alert(err.message);
+                btn.disabled = false;
+                btn.textContent = 'Yes, delete it';
             }
         }
 

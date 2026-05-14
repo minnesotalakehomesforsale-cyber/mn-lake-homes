@@ -24,6 +24,7 @@ router.get('/leads/:id', adminController.getLeadDetail);
 router.patch('/leads/:id/status', adminController.updateLeadStatus);
 router.patch('/leads/:id/assign', adminController.assignLead);
 router.post('/leads/:id/notes', adminController.addLeadNote);
+router.delete('/leads/:id', adminController.deleteLead);                    // DELETE lead (hard delete)
 
 // ─── AGENT LEADS (must come before /:id to avoid shadowing) ─────────────────
 router.get('/:id/leads', adminController.getAgentLeads);
