@@ -34,5 +34,6 @@ router.get('/:id', adminController.getAgentDetail);                      // GET 
 router.patch('/:id/profile', adminController.updateAgentProfile);        // PATCH /api/admin/:id/profile
 router.patch('/:id/status', adminController.updateStatus);               // PATCH /api/admin/:id/status
 router.patch('/:id/account-status', adminController.updateAccountStatus);// PATCH /api/admin/:id/account-status
+router.delete('/:id', adminController.deleteAgent);                      // DELETE agent (hard delete: profile + account)
 
 module.exports = router;

@@ -903,6 +903,58 @@ const deleteLead = async (req, res) => {
     }
 };
 
+// DELETE /api/admin/:id — hard delete an agent. :id is the agents.id.
+// Removes the agent profile AND the underlying user account so they're
+// gone everywhere — directory, lake pages, login. agents.user_id is
+// ON DELETE RESTRICT, so the agents row must go before the users row;
+// done in a transaction. CASCADE FKs clean up agent_lakes, user_tags,
+// lead_notes; leads they were assigned to fall back to unassigned
+// (leads.agent_id / assigned_user_id are ON DELETE SET NULL).
+const deleteAgent = async (req, res) => {
+    const { id } = req.params;
+    const client = await pool.connect();
+    try {
+        const info = await client.query(
+            `SELECT a.user_id, a.display_name, u.email, u.role
+               FROM agents a JOIN users u ON u.id = a.user_id
+              WHERE a.id = $1`,
+            [id]
+        );
+        if (!info.rows.length) {
+            client.release();
+            return res.status(404).json({ error: 'Agent not found.' });
+        }
+        const { user_id, display_name, email, role } = info.rows[0];
+        if (role === 'super_admin') {
+            client.release();
+            return res.status(400).json({ error: 'Cannot delete a super admin account.' });
+        }
+
+        await client.query('BEGIN');
+        await client.query('DELETE FROM agents WHERE id = $1', [id]);
+        await client.query('DELETE FROM users WHERE id = $1', [user_id]);
+        await client.query('COMMIT');
+
+        logActivity({
+            event_type: 'agent.delete',
+            event_scope: 'agent',
+            severity: 'warning',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'agent', id, label: display_name || email },
+            details: { email, user_id },
+            req,
+        });
+
+        res.json({ success: true });
+    } catch (err) {
+        await client.query('ROLLBACK').catch(() => {});
+        console.error('[deleteAgent]', err.message);
+        res.status(500).json({ error: 'Failed to delete agent.' });
+    } finally {
+        client.release();
+    }
+};
+
 const getAgentLeads = async (req, res) => {
     try {
         const { rows } = await pool.query(`
@@ -942,6 +994,7 @@ module.exports = {
     assignLead,
     addLeadNote,
     deleteLead,
+    deleteAgent,
     getAgentLeads,
     getUnassignedLeadCount,
     getAgentCoverage
