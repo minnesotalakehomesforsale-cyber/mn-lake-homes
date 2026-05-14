@@ -195,3 +195,30 @@ exports.patch = async (req, res) => {
         res.status(500).json({ error: 'Failed to update lead.' });
     }
 };
+
+// DELETE /api/admin/cash-offers/:id — hard delete. Nothing FKs to
+// cash_offer_leads, so a plain DELETE fully removes it. Distinct from
+// the archive action (PATCH status=archived), which is reversible.
+// Route already enforces verifyToken + admin role.
+exports.remove = async (req, res) => {
+    try {
+        const { rowCount, rows } = await pool.query(
+            `DELETE FROM cash_offer_leads WHERE id = $1
+             RETURNING id, full_name, address_raw`,
+            [req.params.id]
+        );
+        if (!rowCount) return res.status(404).json({ error: 'Cash offer lead not found.' });
+        logActivity({
+            event_type: 'cash_offer.delete',
+            event_scope: 'cash_offer',
+            severity: 'warning',
+            actor: { type: 'user', id: req.user?.userId, label: req.user?.email || req.user?.role || 'admin' },
+            target: { type: 'cash_offer_lead', id: rows[0].id, label: `${rows[0].full_name || ''} · ${rows[0].address_raw || ''}`.trim() },
+            req,
+        });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[cash-offer] admin delete failed:', err.message);
+        res.status(500).json({ error: 'Failed to delete cash offer lead.' });
+    }
+};

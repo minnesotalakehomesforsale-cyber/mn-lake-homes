@@ -434,8 +434,33 @@
                 <button class="dr-btn secondary" onclick="window.open('/api/cash-offer/${encodeURIComponent(o.id)}/pdf','_blank')">Download PDF</button>
             </div>
             <div id="dr-save-msg" style="margin-top:0.75rem; font-size:0.82rem; color:#2f855a; display:none;"></div>
+
+            <div style="margin-top:1.5rem; padding-top:1.25rem; border-top:1px solid #fecaca;">
+                <div style="font-size:0.72rem; font-weight:700; color:#c53030; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:0.35rem;">Danger Zone</div>
+                <p style="font-size:0.8rem; color:#718096; line-height:1.5; margin:0 0 0.75rem;">Permanently deletes this cash offer lead. Cannot be undone. (To just hide it, use Archive instead.)</p>
+                <button class="dr-btn danger" id="dr-delete">🗑 Delete permanently</button>
+            </div>
         `;
         document.getElementById('dr-save').onclick = () => saveDrawer(o.id);
+        document.getElementById('dr-delete').onclick = () => deleteOffer(o.id);
+    }
+
+    async function deleteOffer(id) {
+        if (!confirm('Permanently delete this cash offer lead? This removes it everywhere and cannot be undone.')) return;
+        const btn = document.getElementById('dr-delete');
+        btn.disabled = true;
+        btn.textContent = 'Deleting…';
+        try {
+            const res = await fetch(`/api/admin/cash-offers/${id}`, { method: 'DELETE', credentials: 'include' });
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(d.error || `Delete failed (HTTP ${res.status}).`);
+            closeDrawer();
+            await loadOffers();
+        } catch (err) {
+            alert(err.message);
+            btn.disabled = false;
+            btn.textContent = '🗑 Delete permanently';
+        }
     }
 
     async function saveDrawer(id) {

@@ -18,5 +18,6 @@ router.get('/new-count',  ...adminOnly, ctrl.newCount);
 router.get('/',           ...adminOnly, ctrl.list);
 router.get('/:id',        ...adminOnly, ctrl.detail);
 router.patch('/:id',      ...adminOnly, ctrl.patch);
+router.delete('/:id',     ...adminOnly, ctrl.remove);   // hard delete (irreversible)
 
 module.exports = router;
