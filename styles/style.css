@@ -1005,30 +1005,14 @@ body {
     .navbar { padding: 0.9rem 1.25rem; }
     .navbar .logo img { height: 50px !important; }
     .nav-actions .btn { padding: 0.45rem 1rem; font-size: 0.8rem; }
-    /* Floating banner becomes a full-screen glass overlay */
-    .floating-promo {
-        left: 0; right: 0; top: 0; bottom: 0;
-        transform: translateY(150%);
-        width: 100vw; max-width: 100vw; height: 100vh;
-        border-radius: 0;
-        background: rgba(10, 10, 10, 0.95);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: none;
-        padding: 2rem;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        gap: 2rem;
-        z-index: 2000;
+    /* On phones the floating promo is hidden entirely. It used to expand
+       into a full-screen glass overlay on scroll, which was too intrusive.
+       Desktop + tablet keep the small bottom bubble. */
+    .floating-promo,
+    .floating-promo.revealed,
+    .floating-promo.hide-promo {
+        display: none !important;
     }
-    .floating-promo.revealed { transform: translateY(0); }
-    .promo-content p { font-size: 1.2rem; line-height: 1.5; color: #FFFFFF; }
-    .promo-content strong { display: block; margin-bottom: 0.5rem; font-size: 2rem; color: var(--highlight-color); line-height: 1.1; }
-    .floating-promo .btn { padding: 1.25rem 2rem; font-size: 1.2rem; border-radius: 50px; width: 100%; max-width: 300px; margin-top: 1rem; }
-    .promo-close { top: 2rem; right: 2rem; font-size: 2rem; color: #FFFFFF; }
 }
 
 /* Hero CTAs */
