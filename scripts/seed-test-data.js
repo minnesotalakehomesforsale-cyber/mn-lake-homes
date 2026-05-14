@@ -1,7 +1,8 @@
 /**
- * seed-test-data.js — one-shot test data to verify a fresh database.
+ * seed-test-data.js — one-shot setup + test data for a fresh database.
  *
- * Creates:
+ * Self-contained: builds the full schema, creates the lakes/businesses
+ * tables, then seeds:
  *   1. A master super_admin login
  *   2. Agent "Lara Bergstrom" — published profile + login
  *   3. Three lakes (published)
@@ -10,7 +11,8 @@
  * Run on Render Shell (DATABASE_URL is already set there):
  *   node scripts/seed-test-data.js
  *
- * Idempotent — safe to re-run. Uses ON CONFLICT so it never duplicates rows.
+ * Idempotent — safe to re-run. All DDL is IF NOT EXISTS and all inserts
+ * use ON CONFLICT, so re-running never duplicates or clobbers data.
  */
 
 // Production runs already have DATABASE_URL in the environment. Only fall
@@ -19,10 +21,64 @@ if (!process.env.DATABASE_URL) {
     require('dotenv').config({ path: '.env.local' });
 }
 
+const fs = require('fs');
+const path = require('path');
 const bcrypt = require('bcrypt');
 const pool = require('../src/database/pool');
 
 console.log('→ Connecting to:', (process.env.DATABASE_URL || '').replace(/:[^:@]+@/, ':****@'));
+
+// Core tables (users, memberships, agents, leads, …) live in schema.sql.
+// The lakes/businesses tables are normally created by the app on boot —
+// recreated here so this script works against a brand-new database
+// without needing a server restart in between.
+const LAKES_TABLE_DDL = `
+    CREATE TABLE IF NOT EXISTS lakes (
+        id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        slug               VARCHAR(120) UNIQUE NOT NULL,
+        name               VARCHAR(200) NOT NULL,
+        state              VARCHAR(2)   NOT NULL DEFAULT 'MN',
+        region             VARCHAR(100),
+        county             VARCHAR(100),
+        latitude           NUMERIC(9,6),
+        longitude          NUMERIC(9,6),
+        intro_text         TEXT,
+        description        TEXT,
+        hero_image_url     TEXT,
+        featured_image_url TEXT,
+        seo_title          VARCHAR(300),
+        seo_description    TEXT,
+        status             VARCHAR(20) NOT NULL DEFAULT 'draft',
+        created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+`;
+
+const BUSINESSES_TABLE_DDL = `
+    CREATE TABLE IF NOT EXISTS businesses (
+        id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        slug                VARCHAR(160) UNIQUE NOT NULL,
+        name                VARCHAR(200) NOT NULL,
+        type                VARCHAR(40)  NOT NULL,
+        description         TEXT,
+        phone               VARCHAR(50),
+        email               VARCHAR(255),
+        website_url         TEXT,
+        address             TEXT,
+        city                VARCHAR(120),
+        state               VARCHAR(2)   NOT NULL DEFAULT 'MN',
+        zip                 VARCHAR(20),
+        latitude            NUMERIC(9,6),
+        longitude           NUMERIC(9,6),
+        hours               TEXT,
+        price_range         VARCHAR(20),
+        featured_image_url  TEXT,
+        gallery             JSONB NOT NULL DEFAULT '[]'::jsonb,
+        status              VARCHAR(20) NOT NULL DEFAULT 'active',
+        created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+`;
 
 const ADMIN = {
     email: 'admin@mnlakehomes.com',
@@ -141,6 +197,18 @@ async function seed() {
     console.log('\n=======================================================');
     console.log(' MN LAKE HOMES — TEST DATA SEED');
     console.log('=======================================================\n');
+
+    // ── Step 0: ensure the schema exists ────────────────────────────────
+    // Applies the core schema (users, memberships + tiers, agents, leads,
+    // …) and the lakes/businesses tables. All IF NOT EXISTS — a no-op on a
+    // database that's already set up.
+    const schemaPath = path.join(__dirname, '../database/schema.sql');
+    const schemaSql = fs.readFileSync(schemaPath, 'utf8');
+    await pool.query(schemaSql);
+    console.log('✅ Core schema ensured (users, memberships, agents, leads, …)');
+    await pool.query(LAKES_TABLE_DDL);
+    await pool.query(BUSINESSES_TABLE_DDL);
+    console.log('✅ Lakes + businesses tables ensured\n');
 
     const client = await pool.connect();
     try {
