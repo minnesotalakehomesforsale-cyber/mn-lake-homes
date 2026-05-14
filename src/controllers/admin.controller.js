@@ -975,6 +975,52 @@ const getAgentLeads = async (req, res) => {
     }
 };
 
+/**
+ * POST /api/admin/:id/impersonate
+ * Admin-only. Mints a logged-in session for the agent behind :id so an
+ * admin can view the live site as that agent. Replaces the caller's own
+ * auth_session cookie. Protected at the route by verifyToken + requireRole.
+ */
+const impersonateAgent = async (req, res) => {
+    const jwt = require('jsonwebtoken');
+    const { id } = req.params;
+    try {
+        const { rows } = await pool.query(
+            `SELECT u.id, u.role, u.account_status, u.email
+             FROM agents a JOIN users u ON u.id = a.user_id
+             WHERE a.id = $1`,
+            [id]
+        );
+        if (!rows.length) return res.status(404).json({ error: 'Agent not found.' });
+        const user = rows[0];
+        if (user.account_status !== 'active') {
+            return res.status(403).json({ error: "This agent's account is not active — reactivate it before logging in as them." });
+        }
+
+        const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        res.cookie('auth_session', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 86400000 // 24 hours
+        });
+
+        logActivity({
+            event_type: 'admin.impersonate',
+            event_scope: 'auth',
+            severity: 'warning',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.role || 'admin' },
+            target: { type: 'user', id: user.id, label: user.email },
+            req,
+        });
+
+        res.json({ success: true, redirect: '/pages/agent/dashboard.html' });
+    } catch (err) {
+        console.error('[impersonateAgent]', err.message);
+        res.status(500).json({ error: 'Could not start impersonation session.' });
+    }
+};
+
 module.exports = {
     getLedger,
     getAgentDetail,
@@ -987,6 +1033,7 @@ module.exports = {
     updateUser,
     updateUserStatus,
     resetUserPassword,
+    impersonateAgent,
     deleteUser,
     syncUserToHubspot,
     getLeadDetail,

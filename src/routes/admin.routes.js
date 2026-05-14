@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/admin.controller');
+const { verifyToken, requireRole } = require('../middleware/auth');
 
 // ─── AGENT LEDGER ─────────────────────────────────────────────────────────────
 router.get('/', adminController.getLedger);                              // GET /api/admin?search=&status=&membership=&published=
@@ -31,6 +32,7 @@ router.get('/:id/leads', adminController.getAgentLeads);
 
 // ─── AGENT DETAIL (generic /:id last, so specific prefixes match first) ──────
 router.get('/:id', adminController.getAgentDetail);                      // GET /api/admin/:id
+router.post('/:id/impersonate', verifyToken, requireRole(['admin', 'super_admin']), adminController.impersonateAgent); // POST log in as agent (admin-only)
 router.patch('/:id/profile', adminController.updateAgentProfile);        // PATCH /api/admin/:id/profile
 router.patch('/:id/status', adminController.updateStatus);               // PATCH /api/admin/:id/status
 router.patch('/:id/account-status', adminController.updateAccountStatus);// PATCH /api/admin/:id/account-status

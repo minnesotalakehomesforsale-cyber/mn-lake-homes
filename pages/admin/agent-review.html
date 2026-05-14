@@ -79,7 +79,11 @@
         .ls-archived   { background:#fff5f5; color:#9b2c2c; }
 
         /* Profile header card */
-        .profile-header { display: flex; gap: 1.75rem; background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 2px 6px rgba(0,0,0,0.03); padding: 1.75rem 2rem; margin-bottom: 1.5rem; }
+        .profile-header { position: relative; display: flex; gap: 1.75rem; background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 2px 6px rgba(0,0,0,0.03); padding: 1.75rem 2rem; margin-bottom: 1.5rem; }
+        .ph-actions { position: absolute; top: 1.25rem; right: 1.5rem; display: flex; gap: 0.5rem; }
+        .ph-action-btn { width: 38px; height: 38px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; color: #4a5568; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; padding: 0; }
+        .ph-action-btn:hover { border-color: #1d6df2; color: #1d6df2; background: #f7faff; }
+        .ph-action-btn:disabled { opacity: 0.5; cursor: default; }
         .ph-photo { width: 116px; height: 116px; border-radius: 12px; background: #edf2f7; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
         .ph-photo img { width: 100%; height: 100%; object-fit: cover; }
         .ph-main { flex: 1; min-width: 0; }
@@ -134,6 +138,14 @@
                     <div class="ph-field"><div class="ph-label">Last Login</div><div class="ph-value" id="hdr-lastlogin">—</div></div>
                     <div class="ph-field"><div class="ph-label">Member Since</div><div class="ph-value" id="hdr-created">—</div></div>
                 </div>
+            </div>
+            <div class="ph-actions">
+                <button class="ph-action-btn" id="btn-impersonate" title="Log in as this agent — opens the live site in a new tab" onclick="impersonateAgent()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="14.5" r="3.5"></circle><circle cx="17.5" cy="14.5" r="3.5"></circle><path d="M10 14 L14 14"></path><path d="M1.5 9.5 L8 9.5"></path><path d="M16 9.5 L22.5 9.5"></path></svg>
+                </button>
+                <button class="ph-action-btn" id="btn-reset-pw" title="Reset password &amp; email the agent a new one" onclick="resetAgentPassword()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                </button>
             </div>
         </div>
 
@@ -1072,6 +1084,51 @@
             alert(err.message);
             btn.disabled = false;
             btn.textContent = 'Yes, delete this agent';
+        }
+    }
+
+    // ── Impersonate — log in as this agent on the live site ─────────────────
+    async function impersonateAgent() {
+        if (!confirm('Log in as this agent and open the live site in a new tab?\n\nNote: this replaces your admin session in this browser — to get back into the admin panel, sign in again at /login.')) return;
+        const btn = document.getElementById('btn-impersonate');
+        btn.disabled = true;
+        try {
+            const res = await fetch(`/api/admin/${agentId}/impersonate`, { method: 'POST', credentials: 'include' });
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(d.error || `Failed (HTTP ${res.status}).`);
+            window.open(d.redirect || '/pages/agent/dashboard.html', '_blank');
+        } catch (e) {
+            alert(e.message || 'Could not start the session.');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    // ── Reset password — emails the agent a new temporary password ──────────
+    async function resetAgentPassword() {
+        if (!agentData || !agentData.user_id_ref) {
+            alert('No linked user account for this agent.');
+            return;
+        }
+        const to = agentData.email || 'the agent';
+        if (!confirm(`Reset this agent's password?\n\nA new temporary password will be generated and emailed to ${to}.`)) return;
+        const btn = document.getElementById('btn-reset-pw');
+        btn.disabled = true;
+        try {
+            const tempPassword = 'Mnlh-' + Math.random().toString(36).slice(2, 10) + Math.floor(10 + Math.random() * 89);
+            const res = await fetch(`/api/admin/users/${agentData.user_id_ref}/password`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ new_password: tempPassword })
+            });
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(d.error || `Failed (HTTP ${res.status}).`);
+            alert(`Password reset. A new temporary password has been emailed to ${to}.`);
+        } catch (e) {
+            alert(e.message || 'Could not reset the password.');
+        } finally {
+            btn.disabled = false;
         }
     }
 
