@@ -1089,14 +1089,16 @@
 
     // ── Impersonate — log in as this agent on the live site ─────────────────
     async function impersonateAgent() {
-        if (!confirm('Log in as this agent and open the live site in a new tab?\n\nNote: this replaces your admin session in this browser — to get back into the admin panel, sign in again at /login.')) return;
+        if (!confirm('Open the live site as this agent in a new tab?\n\nYour admin session stays active — this only affects the new tab.')) return;
         const btn = document.getElementById('btn-impersonate');
         btn.disabled = true;
         try {
             const res = await fetch(`/api/admin/${agentId}/impersonate`, { method: 'POST', credentials: 'include' });
             const d = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(d.error || `Failed (HTTP ${res.status}).`);
-            window.open(d.redirect || '/pages/agent/dashboard.html', '_blank');
+            if (!d.token) throw new Error('No session token was returned.');
+            const base = d.redirect || '/pages/agent/dashboard.html';
+            window.open(base + '?__imp=' + encodeURIComponent(d.token), '_blank');
         } catch (e) {
             alert(e.message || 'Could not start the session.');
         } finally {

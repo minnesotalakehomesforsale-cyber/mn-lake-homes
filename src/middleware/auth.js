@@ -2,16 +2,19 @@ const jwt = require('jsonwebtoken');
 
 /**
  * verifyToken
- * Reads the HttpOnly JWT cookie set at login and attaches the decoded payload to req.user.
- * Falls back to Authorization: Bearer header for API testing.
+ * Attaches the decoded JWT payload to req.user. Prefers an explicit
+ * Authorization: Bearer header (API testing + admin impersonation tabs)
+ * and falls back to the HttpOnly auth_session cookie set at login.
  */
 const verifyToken = (req, res, next) => {
-    let token = req.cookies?.auth_session;
-
-    // Fallback for Postman / API testing
-    if (!token && req.headers.authorization?.startsWith('Bearer ')) {
+    // Prefer an explicit Authorization header over the ambient session
+    // cookie, so an impersonation tab can act as the agent without
+    // disturbing the admin's own cookie session in other tabs.
+    let token = null;
+    if (req.headers.authorization?.startsWith('Bearer ')) {
         token = req.headers.authorization.split(' ')[1];
     }
+    if (!token) token = req.cookies?.auth_session;
 
     if (!token) {
         return res.status(401).json({ error: 'Access Denied — No active session.' });
@@ -60,10 +63,11 @@ const requireRole = (allowedRoles) => {
  * the caller's identity if they happen to be logged in (e.g. leads).
  */
 const attachUserIfPresent = (req, res, next) => {
-    let token = req.cookies?.auth_session;
-    if (!token && req.headers.authorization?.startsWith('Bearer ')) {
+    let token = null;
+    if (req.headers.authorization?.startsWith('Bearer ')) {
         token = req.headers.authorization.split(' ')[1];
     }
+    if (!token) token = req.cookies?.auth_session;
     if (!token) return next();
     try {
         req.user = jwt.verify(token, process.env.JWT_SECRET);

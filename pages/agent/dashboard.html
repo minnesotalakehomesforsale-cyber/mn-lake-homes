@@ -397,6 +397,37 @@
     </div>
 
     <script>
+        // ── Admin impersonation (per-tab) ────────────────────────────────────
+        // When opened with ?__imp=<token>, this tab authenticates as the agent
+        // using a per-tab sessionStorage token sent as a Bearer header — it
+        // never touches the shared auth_session cookie, so an admin viewing
+        // this tab keeps their own session active everywhere else.
+        (function () {
+            const params = new URLSearchParams(location.search);
+            const incoming = params.get('__imp');
+            if (incoming) {
+                sessionStorage.setItem('imp_token', incoming);
+                params.delete('__imp');
+                const qs = params.toString();
+                history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''));
+            }
+            const impToken = sessionStorage.getItem('imp_token');
+            if (impToken) {
+                window.__IMPERSONATING__ = true;
+                const _fetch = window.fetch;
+                window.fetch = function (input, init) {
+                    init = init || {};
+                    const url = typeof input === 'string' ? input : (input && input.url) || '';
+                    if (url.startsWith('/api/') || url.startsWith(location.origin + '/api/')) {
+                        const headers = new Headers(init.headers || (typeof input !== 'string' && input.headers) || {});
+                        headers.set('Authorization', 'Bearer ' + impToken);
+                        init.headers = headers;
+                    }
+                    return _fetch.call(this, input, init);
+                };
+            }
+        })();
+
         const REDIRECT_LOGIN = '../../pages/public/login.html';
         const REDIRECT_FORBIDDEN = '../../pages/public/forbidden.html';
 
@@ -545,6 +576,15 @@
         }
 
         async function logoutAgent() {
+            // In an impersonation tab, "sign out" just ends the impersonation.
+            // It must NOT call /api/auth/logout — that would clear the admin's
+            // own auth_session cookie.
+            if (window.__IMPERSONATING__) {
+                sessionStorage.removeItem('imp_token');
+                window.close();
+                window.location.href = REDIRECT_LOGIN;
+                return;
+            }
             try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch (_) {}
             window.location.href = REDIRECT_LOGIN;
         }

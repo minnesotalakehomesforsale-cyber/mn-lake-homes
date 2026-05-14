@@ -977,9 +977,11 @@ const getAgentLeads = async (req, res) => {
 
 /**
  * POST /api/admin/:id/impersonate
- * Admin-only. Mints a logged-in session for the agent behind :id so an
- * admin can view the live site as that agent. Replaces the caller's own
- * auth_session cookie. Protected at the route by verifyToken + requireRole.
+ * Admin-only. Mints a short-lived session token for the agent behind :id
+ * so an admin can view the live site as that agent. Returns the token in
+ * the JSON body (NOT a cookie) — the agent dashboard stores it per-tab in
+ * sessionStorage, so the admin's own cookie session is left untouched.
+ * Protected at the route by verifyToken + requireRole.
  */
 const impersonateAgent = async (req, res) => {
     const jwt = require('jsonwebtoken');
@@ -997,13 +999,10 @@ const impersonateAgent = async (req, res) => {
             return res.status(403).json({ error: "This agent's account is not active — reactivate it before logging in as them." });
         }
 
-        const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
-        res.cookie('auth_session', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 86400000 // 24 hours
-        });
+        // Short-lived token returned in the body — NOT set as a cookie.
+        // The agent dashboard stores it per-tab in sessionStorage so the
+        // admin's own cookie session is never touched.
+        const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '8h' });
 
         logActivity({
             event_type: 'admin.impersonate',
@@ -1014,7 +1013,7 @@ const impersonateAgent = async (req, res) => {
             req,
         });
 
-        res.json({ success: true, redirect: '/pages/agent/dashboard.html' });
+        res.json({ success: true, token, redirect: '/pages/agent/dashboard.html' });
     } catch (err) {
         console.error('[impersonateAgent]', err.message);
         res.status(500).json({ error: 'Could not start impersonation session.' });
