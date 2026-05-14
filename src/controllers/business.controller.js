@@ -509,6 +509,34 @@ exports.softDelete = async (req, res) => {
     }
 };
 
+// ─── hard delete ────────────────────────────────────────────────────────────
+// DELETE /:id/permanent — permanently removes the business row. The
+// ON DELETE CASCADE foreign keys on business_lakes and business_tags clean
+// themselves up, so it disappears from every lake and town page at once.
+// Unlike softDelete (which only archives), this is irreversible.
+exports.hardDelete = async (req, res) => {
+    try {
+        if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
+        const { rowCount, rows } = await pool.query(
+            `DELETE FROM businesses WHERE id = $1 RETURNING id, name, type`,
+            [req.params.id]
+        );
+        if (!rowCount) return res.status(404).json({ error: 'Business not found.' });
+        logActivity({
+            event_type: 'business.delete',
+            event_scope: 'business',
+            severity: 'warning',
+            actor: { type: 'user', id: req.user?.userId, label: req.user?.email || req.user?.role },
+            target: { type: 'business', id: rows[0].id, label: `${rows[0].name} (${rows[0].type})` },
+            req,
+        });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[businesses.hardDelete]', err.message);
+        res.status(500).json({ error: 'Failed to delete business.' });
+    }
+};
+
 // ─── image upload ───────────────────────────────────────────────────────────
 exports.uploadImage = (req, res) => {
     businessImageUpload(req, res, async (err) => {

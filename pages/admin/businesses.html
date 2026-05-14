@@ -327,9 +327,33 @@
                     </div>
                 </div>
 
-                <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
+                <!-- Danger Zone — only shown when editing an existing business -->
+                <div id="biz-danger-zone" style="display:none;margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid #fed7d7;">
+                    <div style="font-size:0.72rem;font-weight:700;color:#c53030;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.35rem;">Danger Zone</div>
+                    <p style="font-size:0.8rem;color:#718096;line-height:1.5;margin:0 0 0.75rem;">Permanently removes this business — from the admin list and every lake and town page it appears on. Cannot be undone. (To just hide it, use Archive instead.)</p>
+                    <button type="button" class="btn-ghost" style="color:#c53030;border-color:#fc8181;" onclick="confirmDeleteBusiness()">🗑 Delete permanently</button>
+                </div>
+
+                <div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1.5rem;">
                     <button class="btn-ghost" onclick="closeModal()">Cancel</button>
                     <button class="btn-primary" id="save-btn" onclick="saveBusiness()">Save business</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete business confirmation modal -->
+    <div id="biz-delete-modal" class="ovl" style="z-index:10000;" onclick="if(event.target===this) closeDeleteBusinessModal()">
+        <div class="modal" style="max-width:430px;">
+            <div style="padding:2rem;">
+                <div style="width:48px;height:48px;border-radius:50%;background:#fff5f5;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c53030" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </div>
+                <h2 style="font-size:1.2rem;font-weight:800;color:#1a202c;margin:0 0 0.5rem;">Delete this business?</h2>
+                <p style="font-size:0.92rem;color:#4a5568;line-height:1.55;margin:0 0 1.5rem;">This permanently deletes <strong id="biz-delete-name">this business</strong> — from the admin list and every lake and town page it's tagged to. <strong>This cannot be undone.</strong></p>
+                <div style="display:flex;gap:0.6rem;">
+                    <button class="btn-ghost" style="flex:1;text-align:center;" onclick="closeDeleteBusinessModal()">Cancel</button>
+                    <button class="btn-primary" id="biz-delete-confirm-btn" style="flex:1;background:#c53030;" onclick="executeDeleteBusiness()">Yes, delete it</button>
                 </div>
             </div>
         </div>
@@ -494,6 +518,7 @@
         // ── Modal ────────────────────────────────────────────────────────
         function openCreate() {
             _editingId = null;
+            document.getElementById('biz-danger-zone').style.display = 'none';
             document.getElementById('modal-title').textContent = 'New business';
             ['f-name','f-slug','f-desc','f-phone','f-email','f-website','f-instagram','f-facebook','f-address','f-city','f-zip','f-lat','f-lng','f-hours','f-image']
                 .forEach(id => document.getElementById(id).value = '');
@@ -515,6 +540,7 @@
             const b = _all.find(x => x.id === id);
             if (!b) return;
             _editingId = id;
+            document.getElementById('biz-danger-zone').style.display = 'block';
             document.getElementById('modal-title').textContent = `Edit: ${b.name}`;
             document.getElementById('f-name').value    = b.name || '';
             document.getElementById('f-type').value    = b.type || 'restaurant';
@@ -714,6 +740,34 @@
                 if (!res.ok) throw new Error();
                 await load();
             } catch (_) { alert('Failed to archive.'); }
+        }
+
+        // ── Hard delete (permanent) ──────────────────────────────────────
+        function confirmDeleteBusiness() {
+            const b = _all.find(x => x.id === _editingId);
+            document.getElementById('biz-delete-name').textContent = b ? b.name : 'this business';
+            document.getElementById('biz-delete-modal').classList.add('open');
+        }
+        function closeDeleteBusinessModal() {
+            document.getElementById('biz-delete-modal').classList.remove('open');
+        }
+        async function executeDeleteBusiness() {
+            const btn = document.getElementById('biz-delete-confirm-btn');
+            btn.disabled = true;
+            btn.textContent = 'Deleting…';
+            try {
+                const res = await fetch(`/api/businesses/${_editingId}/permanent`, { method: 'DELETE', credentials: 'include' });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || `Delete failed (HTTP ${res.status}).`);
+                closeDeleteBusinessModal();
+                closeModal();
+                await load();
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Yes, delete it';
+            }
         }
 
         // ── Utilities ────────────────────────────────────────────────────

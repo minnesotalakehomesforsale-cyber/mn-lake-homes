@@ -37,9 +37,10 @@ router.post('/upload-image', verifyToken, c.uploadImage);
 router.get('/:slugOrId', softAuth, c.getOne);
 
 // Admin writes
-router.post  ('/',    verifyToken, c.create);
-router.patch ('/:id', verifyToken, c.patch);
-router.delete('/:id', verifyToken, c.softDelete);
+router.post  ('/',              verifyToken, c.create);
+router.patch ('/:id',           verifyToken, c.patch);
+router.delete('/:id',           verifyToken, c.softDelete);   // archive (reversible)
+router.delete('/:id/permanent', verifyToken, c.hardDelete);   // hard delete (irreversible)
 
 // Business ↔ town (geo tag) connections — primary geographic
 // association. Admin picks up to 10 towns the business serves.
