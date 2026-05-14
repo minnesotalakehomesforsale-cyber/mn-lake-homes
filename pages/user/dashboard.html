@@ -84,11 +84,37 @@
         .ud-note.ok    { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
         .ud-note.err   { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
 
+        /* Submissions list */
+        .ud-leads-state { color: #718096; font-size: 0.92rem; padding: 1.5rem 0; }
+        .ud-lead-item {
+            display: flex; align-items: flex-start; gap: 1rem;
+            padding: 1.15rem 0; border-top: 1px solid #edf2f7;
+        }
+        .ud-lead-item:first-child { border-top: none; padding-top: 0.25rem; }
+        .ud-lead-main { flex: 1; min-width: 0; }
+        .ud-lead-top { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.3rem; }
+        .ud-lead-type {
+            font-size: 0.72rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;
+            color: #1d6df2; background: #ebf4ff; padding: 0.2rem 0.55rem; border-radius: 5px;
+        }
+        .ud-lead-status {
+            font-size: 0.72rem; font-weight: 700; text-transform: capitalize;
+            padding: 0.2rem 0.55rem; border-radius: 5px;
+            background: #f1f5f9; color: #475569;
+        }
+        .ud-lead-status.new        { background: #fef9c3; color: #854d0e; }
+        .ud-lead-status.contacted  { background: #dbeafe; color: #1e40af; }
+        .ud-lead-status.closed     { background: #dcfce7; color: #166534; }
+        .ud-lead-date { font-size: 0.8rem; color: #a0aec0; margin-left: auto; }
+        .ud-lead-detail { font-size: 0.92rem; color: #1a202c; font-weight: 600; margin: 0 0 0.15rem; }
+        .ud-lead-note { font-size: 0.86rem; color: #718096; line-height: 1.5; margin: 0.25rem 0 0; white-space: pre-line; }
+
         @media (max-width: 600px) {
             .ud-wrap { margin-top: 5rem; padding: 0 1rem; }
             .ud-title { font-size: 1.75rem; }
             .ud-row { grid-template-columns: 1fr; }
             .ud-card { padding: 1.5rem; }
+            .ud-lead-date { margin-left: 0; width: 100%; }
         }
     </style>
 </head>
@@ -109,15 +135,12 @@
 
         <!-- Overview -->
         <section class="ud-panel active" id="panel-home">
-            <div class="ud-hero-empty">
-                <div class="icon">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 16 14"></polyline>
-                    </svg>
+            <div class="ud-card">
+                <h2>Your submissions</h2>
+                <p class="ud-lead">Every form you've sent us with this email — buying, selling, renting, and agent requests. Anything you submitted before creating this account shows up here too.</p>
+                <div id="ud-leads">
+                    <div class="ud-leads-state">Loading your submissions…</div>
                 </div>
-                <h3>More coming soon.</h3>
-                <p>You're in. We'll light this dashboard up as features roll out — saved lakes, tour requests, agent matches, and more. In the meantime, browse listings and explore Minnesota's lakes from the home page.</p>
             </div>
         </section>
 
@@ -211,10 +234,60 @@
                     document.getElementById('f-last').value  = parts.slice(1).join(' ') || '';
                     document.getElementById('f-email').value = u.email || '';
                 }
+                loadMySubmissions();
             } catch (_) {
                 window.location.href = '/pages/public/login.html?redirect=/pages/user/dashboard.html';
             }
         })();
+
+        // ── Your submissions ────────────────────────────────────────────
+        const LEAD_TYPE_LABEL = {
+            buyer: 'Buyer', seller: 'Seller', general_contact: 'General',
+            agent_inquiry: 'Agent request', market_report: 'Market report',
+            property_question: 'Property question', join_request: 'Join request',
+            cash_offer: 'Cash offer',
+        };
+        function fmtDate(s) {
+            if (!s) return '';
+            const d = new Date(s);
+            return isNaN(d) ? '' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+        async function loadMySubmissions() {
+            const host = document.getElementById('ud-leads');
+            if (!host) return;
+            try {
+                const res = await fetch('/api/leads/mine');
+                if (!res.ok) throw new Error('load failed');
+                const leads = await res.json();
+                if (!leads.length) {
+                    host.innerHTML = '<div class="ud-leads-state">No submissions yet. When you submit a form on the site with this email, it\'ll show up here.</div>';
+                    return;
+                }
+                host.innerHTML = leads.map(l => {
+                    const type   = LEAD_TYPE_LABEL[l.lead_type] || l.lead_type || 'Inquiry';
+                    const status = (l.lead_status || 'new').toLowerCase();
+                    const detail = l.property_address || l.email || l.phone || '—';
+                    const note   = l.message ? `<p class="ud-lead-note">${esc(l.message)}</p>` : '';
+                    return `
+                        <div class="ud-lead-item">
+                            <div class="ud-lead-main">
+                                <div class="ud-lead-top">
+                                    <span class="ud-lead-type">${esc(type)}</span>
+                                    <span class="ud-lead-status ${esc(status)}">${esc(status)}</span>
+                                    <span class="ud-lead-date">${esc(fmtDate(l.created_at || l.submitted_at))}</span>
+                                </div>
+                                <p class="ud-lead-detail">${esc(detail)}</p>
+                                ${note}
+                            </div>
+                        </div>`;
+                }).join('');
+            } catch (_) {
+                host.innerHTML = '<div class="ud-leads-state">Couldn\'t load your submissions right now. Refresh to try again.</div>';
+            }
+        }
 
         // ── Tabs ───────────────────────────────────────────────────────
         document.querySelectorAll('.ud-tab').forEach(btn => {

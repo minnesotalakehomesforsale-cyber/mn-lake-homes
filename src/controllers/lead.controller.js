@@ -36,10 +36,19 @@ const createLead = async (req, res) => {
         // Coerce agent string if dummy provided
         const finalAgentId = (agent_id && agent_id !== 'uuid-string-dummy') ? agent_id : null;
 
-        // Capture user_id when the caller is signed in (the lead form now
-        // requires account creation/sign-in before submission). Falls back to
-        // null on legacy/anonymous calls so nothing breaks.
-        const submittedUserId = req.user?.userId || null;
+        // Link the lead to a user account by email. Forms no longer require
+        // an account — anyone can submit. If the caller is signed in we trust
+        // their session; otherwise we look up an existing account by the
+        // submitted email. No match → user_id stays null ("unassigned"), and
+        // it gets backfilled later if someone signs up with that same email.
+        let submittedUserId = req.user?.userId || null;
+        if (!submittedUserId && email) {
+            const u = await pool.query(
+                'SELECT id FROM users WHERE LOWER(email) = $1 LIMIT 1',
+                [email]
+            );
+            if (u.rows.length) submittedUserId = u.rows[0].id;
+        }
 
         const query = `
             INSERT INTO leads (
@@ -237,7 +246,7 @@ const createLead = async (req, res) => {
 const getAdminLeads = async (req, res) => {
     try {
         const query = `
-            SELECT l.id, l.full_name as name, l.email, l.phone, l.lead_type as type, 
+            SELECT l.id, l.full_name as name, l.email, l.phone, l.lead_type as type,
                    l.lead_source as source, l.lead_status as status, l.created_at,
                    a.display_name as assigned_agent_name, u.full_name as assigned_user_name,
                    l.agent_id
@@ -253,4 +262,23 @@ const getAdminLeads = async (req, res) => {
     }
 };
 
-module.exports = { createLead, getAdminLeads };
+// GET /api/leads/mine — every lead linked to the signed-in user's account.
+// Powers the "Your submissions" section on the user dashboard. Requires auth.
+const getMyLeads = async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT id, full_name, email, phone, lead_type, lead_source, lead_status,
+                    property_address, message, submitted_at, created_at
+               FROM leads
+              WHERE user_id = $1 AND deleted_at IS NULL
+              ORDER BY created_at DESC`,
+            [req.user.userId]
+        );
+        res.json(rows);
+    } catch (err) {
+        console.error('[leads.getMyLeads]', err.message);
+        res.status(500).json({ error: 'Failed to load your submissions.' });
+    }
+};
+
+module.exports = { createLead, getAdminLeads, getMyLeads };

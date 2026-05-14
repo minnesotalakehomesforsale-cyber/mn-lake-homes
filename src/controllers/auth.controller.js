@@ -71,6 +71,17 @@ const waitlist = async (req, res) => {
         );
         const userId = userRes.rows[0].id;
 
+        // Backfill: claim every lead previously submitted with this email
+        // while there was no account. Those become visible on the new
+        // dashboard immediately. Fire-and-forget — never block signup.
+        pool.query(
+            `UPDATE leads SET user_id = $1, updated_at = NOW()
+              WHERE LOWER(email) = $2 AND user_id IS NULL`,
+            [userId, email]
+        ).then(r => {
+            if (r.rowCount) console.log(`[signup] linked ${r.rowCount} prior lead(s) to ${email}`);
+        }).catch(e => console.error('[signup] lead backfill failed:', e.message));
+
         // Auto-login: issue JWT cookie so they land in their dashboard
         const token = jwt.sign({ userId, role: 'client' }, process.env.JWT_SECRET, { expiresIn: '24h' });
         setAuthCookie(res, token);
@@ -195,6 +206,17 @@ const register = async (req, res) => {
         }
 
         await client.query('COMMIT');
+
+        // Backfill: claim any leads previously submitted with this email
+        // before the account existed. Fire-and-forget on the pool (the
+        // transaction is already committed).
+        pool.query(
+            `UPDATE leads SET user_id = $1, updated_at = NOW()
+              WHERE LOWER(email) = $2 AND user_id IS NULL`,
+            [userId, email]
+        ).then(r => {
+            if (r.rowCount) console.log(`[register] linked ${r.rowCount} prior lead(s) to ${email}`);
+        }).catch(e => console.error('[register] lead backfill failed:', e.message));
 
         const token = jwt.sign({ userId, role: 'agent' }, process.env.JWT_SECRET, { expiresIn: '24h' });
         setAuthCookie(res, token);

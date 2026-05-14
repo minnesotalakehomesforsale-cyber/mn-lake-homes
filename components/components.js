@@ -562,7 +562,7 @@ const _LF_CFG = {
             { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
             { q: d => `${d.first}, what's your budget range?`,              hint: 'Helps us match you with the right properties.',               field: { id: 'budget',   type: 'select',  ph: 'Select a range…',         opts: ['Under $500K','$500K – $750K','$750K – $1M','$1M – $2M','Over $2M'] } },
             { q: 'When are you hoping to buy?',                                                                                                   field: { id: 'timeline', type: 'select',  ph: 'Select a timeline…',      opts: ['ASAP — ready to move','Within 1–3 months','Within 3–6 months','Just exploring for now'] } },
-            { q: d => `Last step, ${d.first} — create your account.`,       hint: "We'll save your search and email new lake-home matches as they come up.",                            field: { id: 'auth', type: 'auth' } }
+            { q: d => `Almost done, ${d.first}. How can we reach you?`,      hint: "Enter at least one contact method and we'll be in touch within one business day.",                  field: { id: 'contact', type: 'contact' } }
         ]
     },
     sell: {
@@ -572,7 +572,7 @@ const _LF_CFG = {
             { q: 'Who are we speaking with today?',          hint: "Let's start with your first name.",                                         field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
             { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
             { q: 'When are you looking to sell?',                                                                                                 field: { id: 'timeline', type: 'select',  ph: 'Select a timeline…',      opts: ['As soon as possible','Within 3 months','3–6 months out','Just exploring options'] } },
-            { q: d => `Last step, ${d.first} — create your account.`,        hint: "We'll save your submission and email your free market analysis within one business day.",     field: { id: 'auth', type: 'auth' } }
+            { q: d => `Great, ${d.first}. How can we reach you?`,            hint: "We'll send your free market analysis within one business day.",                                      field: { id: 'contact', type: 'contact' } }
         ]
     },
     rent: {
@@ -582,7 +582,7 @@ const _LF_CFG = {
             { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
             { q: 'When do you need it?',                    hint: 'Helps us check availability.',                                               field: { id: 'timeline', type: 'select',  ph: 'Select a timeframe…',     opts: ['This weekend','This month','Seasonal (summer or winter)','Year-round lease'] } },
             { q: d => `${d.first}, what's your monthly budget?`,                                                                                  field: { id: 'budget',   type: 'select',  ph: 'Select a range…',         opts: ['Under $1,500/mo','$1,500 – $3,000/mo','$3,000 – $5,000/mo','Over $5,000/mo'] } },
-            { q: d => `Last step, ${d.first} — create your account.`,       hint: "We'll save your rental search and start finding matches right away.",                                field: { id: 'auth', type: 'auth' } }
+            { q: d => `Perfect, ${d.first}. How can we reach you?`,          hint: "We'll start finding your ideal rental right away.",                                                  field: { id: 'contact', type: 'contact' } }
         ]
     },
     agent: {
@@ -591,7 +591,7 @@ const _LF_CFG = {
             { q: 'Who are we speaking with today?',         hint: "Let's start with your first name.",                                          field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
             { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
             { q: d => `${d.first}, what do you need help with?`,            hint: "We'll match you with the right specialist.",                  field: { id: 'intent',   type: 'select',  ph: 'Select one…',             opts: ['Buying a lake home','Selling my property','Finding a rental','Market information','General question'] } },
-            { q: d => `Last step, ${d.first} — create your account.`,       hint: 'A local specialist will reach out, and your inquiry will be saved to your account.',                 field: { id: 'auth', type: 'auth' } }
+            { q: d => `Got it, ${d.first}. How can we reach you?`,           hint: 'A local specialist will be in touch within one business day.',                                        field: { id: 'contact', type: 'contact' } }
         ]
     },
     general: {
@@ -600,7 +600,7 @@ const _LF_CFG = {
             { q: 'Who are we speaking with today?',         hint: "Let's start with your first name.",                                          field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
             { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
             { q: d => `How can we help you, ${d.first}?`,                                                                                        field: { id: 'intent',   type: 'select',  ph: 'Select one…',             opts: ['I want to buy a home','I want to sell my property',"I'm looking for a rental",'I need to find an agent','General question'] } },
-            { q: d => `Last step, ${d.first} — create your account.`,       hint: "We'll save your message and respond within one business day.",                                       field: { id: 'auth', type: 'auth' } }
+            { q: d => `Perfect, ${d.first}. How can we reach you?`,          hint: "We'll be in touch within one business day.",                                                         field: { id: 'contact', type: 'contact' } }
         ]
     },
     cash_offer: {
@@ -612,7 +612,7 @@ const _LF_CFG = {
             { q: 'What type of property is it?',                                                                                                  field: { id: 'property_type', type: 'select', ph: 'Select one…',       opts: ['Single-family lake home','Cabin / cottage','Condo or townhouse','Multi-family','Vacant lakefront land','Other'] } },
             { q: 'What condition is the home in?',          hint: 'A ballpark is fine — we\'ll confirm during the walkthrough.',                 field: { id: 'condition', type: 'select', ph: 'Select one…',            opts: ['Move-in ready','Light cosmetic updates needed','Major repairs needed','Tear-down / as-is'] } },
             { q: 'When would you like to close?',                                                                                                 field: { id: 'timeline', type: 'select',  ph: 'Select a timeline…',      opts: ['As soon as possible (7–14 days)','2–4 weeks','1–2 months','Just exploring options'] } },
-            { q: d => `Last step, ${d.first} — create your account.`,       hint: "Your cash offer will arrive within 48 hours and be saved to your account.",                          field: { id: 'auth', type: 'auth' } }
+            { q: d => `Last step, ${d.first}. How can we reach you?`,        hint: "Your cash offer will arrive within 48 hours.",                                                       field: { id: 'contact', type: 'contact' } }
         ]
     }
 };
@@ -744,8 +744,16 @@ function _lfRender() {
     const focus  = `onfocus="this.style.borderColor='#1d6df2'" onblur="this.style.borderColor='#e2e8f0'"`;
     const area   = document.getElementById('lf-field');
 
-    if (f.type === 'auth') {
-        _lfRenderAuthStep(area, iStyle, focus);
+    if (f.type === 'contact') {
+        // Email + phone capture. No account required — the lead is linked
+        // to a user account later, by email, if/when one exists.
+        area.innerHTML = `
+            <input type="email" id="lf-email" placeholder="Email address"
+                autocomplete="email" style="${iStyle}" ${focus} value="${_lfs.data.email || ''}">
+            <div style="height:0.6rem;"></div>
+            <input type="tel" id="lf-phone" placeholder="Phone number (optional)"
+                autocomplete="tel" style="${iStyle}" ${focus} value="${_lfs.data.phone || ''}">`;
+        setTimeout(() => document.getElementById('lf-email')?.focus(), 60);
     } else if (f.type === 'select') {
         // Render each option as a clickable card. Clicking sets the value
         // and immediately advances the form (same UX as the old <select>
@@ -782,10 +790,6 @@ function _lfRender() {
     btn.style.background = '#1a202c';
 }
 
-// ── Auth step (signup / signin) ─────────────────────────────────────────────
-// Replaces the old "contact" step. Submitting the form now requires either
-// creating a client account or signing in to an existing one — every lead is
-// tied to a real user_id from the start.
 // ── Card-based select option picker ────────────────────────────────────────
 // Each option in a select-type step renders as a clickable card. Clicking
 // stores the value in _lfs.data and immediately advances the form (same
@@ -829,46 +833,6 @@ function _lfEnsureOptCardStyles() {
         .lf-opt-card:hover .lf-opt-arrow { color: #1d6df2; transform: translateX(3px); }
     `;
     document.head.appendChild(s);
-}
-
-function _lfRenderAuthStep(area, iStyle, focus) {
-    if (!_lfs.authMode) _lfs.authMode = 'signup'; // 'signup' | 'signin'
-    const tabBase   = 'flex:1;padding:0.7rem 1rem;background:#fff;border:1px solid #e2e8f0;border-radius:10px;font-family:inherit;font-weight:600;font-size:0.9rem;cursor:pointer;color:#4a5568;transition:all 0.15s;';
-    const tabActive = 'flex:1;padding:0.7rem 1rem;background:#1a202c;border:1px solid #1a202c;border-radius:10px;font-family:inherit;font-weight:700;font-size:0.9rem;cursor:pointer;color:#fff;';
-    const fieldsHtml = _lfs.authMode === 'signup'
-        ? `
-            <input type="email"    id="lf-email"    placeholder="Email address"           autocomplete="email"           style="${iStyle}" ${focus} value="${_lfs.data.email || ''}">
-            <div style="height:0.6rem;"></div>
-            <input type="tel"      id="lf-phone"    placeholder="Phone number"            autocomplete="tel"             style="${iStyle}" ${focus} value="${_lfs.data.phone || ''}">
-            <div style="height:0.6rem;"></div>
-            <input type="password" id="lf-password" placeholder="Create a password (min 8 chars)" autocomplete="new-password" style="${iStyle}" ${focus} value="">`
-        : `
-            <input type="email"    id="lf-email"    placeholder="Email address"           autocomplete="email"           style="${iStyle}" ${focus} value="${_lfs.data.email || ''}">
-            <div style="height:0.6rem;"></div>
-            <input type="password" id="lf-password" placeholder="Your password"           autocomplete="current-password" style="${iStyle}" ${focus} value="">`;
-
-    // Legal disclaimer below the fields. Only shown in signup mode — sign-in
-    // doesn't need fresh consent, the user already accepted on registration.
-    const consentHtml = _lfs.authMode === 'signup'
-        ? `<p style="margin:0.85rem 0 0;text-align:center;color:#718096;font-size:0.78rem;line-height:1.5;">
-               By creating your account and submitting this form, you agree to our
-               <a href="/privacy" target="_blank" rel="noopener" style="color:#4a5568;text-decoration:underline;">Privacy&nbsp;Policy</a>
-               and
-               <a href="/terms" target="_blank" rel="noopener" style="color:#4a5568;text-decoration:underline;">Terms&nbsp;of&nbsp;Service</a>.
-           </p>`
-        : '';
-
-    area.innerHTML = `
-        <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
-            <button type="button" id="lf-auth-signup" style="${_lfs.authMode === 'signup' ? tabActive : tabBase}">Create account</button>
-            <button type="button" id="lf-auth-signin" style="${_lfs.authMode === 'signin' ? tabActive : tabBase}">Sign in</button>
-        </div>
-        ${fieldsHtml}
-        ${consentHtml}`;
-
-    document.getElementById('lf-auth-signup').onclick = () => { _lfs.authMode = 'signup'; _lfRenderAuthStep(area, iStyle, focus); };
-    document.getElementById('lf-auth-signin').onclick = () => { _lfs.authMode = 'signin'; _lfRenderAuthStep(area, iStyle, focus); };
-    setTimeout(() => document.getElementById('lf-email')?.focus(), 60);
 }
 
 // ── Address autocomplete on the lead form ───────────────────────────────────
@@ -1024,20 +988,13 @@ window._lfNext = function() {
     const f     = steps[_lfs.step].field;
     const err   = document.getElementById('lf-err');
 
-    if (f.type === 'auth') {
-        const email    = (document.getElementById('lf-email')?.value    || '').trim();
-        const phone    = (document.getElementById('lf-phone')?.value    || '').trim();
-        const password = (document.getElementById('lf-password')?.value || '');
-        if (!email)                                       { err.textContent = 'Email is required.';                              err.style.display = 'block'; return; }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))    { err.textContent = 'Please enter a valid email address.';              err.style.display = 'block'; return; }
-        if (!password)                                    { err.textContent = 'Password is required.';                           err.style.display = 'block'; return; }
-        if (_lfs.authMode === 'signup') {
-            if (!phone)            { err.textContent = 'Phone number is required.';   err.style.display = 'block'; return; }
-            if (password.length < 8) { err.textContent = 'Password must be at least 8 characters.'; err.style.display = 'block'; return; }
-        }
-        _lfs.data.email    = email;
-        _lfs.data.phone    = phone || _lfs.data.phone || null;
-        _lfs.data.password = password;
+    if (f.type === 'contact') {
+        const email = (document.getElementById('lf-email')?.value || '').trim();
+        const phone = (document.getElementById('lf-phone')?.value || '').trim();
+        if (!email && !phone)                          { err.textContent = 'Please enter at least one contact method.';  err.style.display = 'block'; return; }
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { err.textContent = 'Please enter a valid email address.'; err.style.display = 'block'; return; }
+        _lfs.data.email = email || null;
+        _lfs.data.phone = phone || null;
     } else if (f.type === 'select') {
         // Card-based selects write directly to _lfs.data via _lfPickOption,
         // so the value is already there if one was picked.
@@ -1060,7 +1017,7 @@ async function _lfDoSubmit() {
     // address + placeId + property_* live on the lead record directly,
     // so exclude them from the free-form notes dump.
     const skip = new Set([
-        'first','last','email','phone','password',
+        'first','last','email','phone',
         'address','placeId',
         'property_street','property_city','property_state','property_zip',
     ]);
@@ -1070,48 +1027,15 @@ async function _lfDoSubmit() {
     const btn = document.getElementById('lf-next');
     const errEl = document.getElementById('lf-err');
     btn.disabled = true; btn.style.background = '#a0aec0';
+    btn.textContent = 'Submitting…';
     errEl.style.display = 'none';
 
     try {
-        // Step 1: authenticate (signup or signin). On success the
-        // auth_session cookie is set, so /api/leads will see req.user.
-        btn.textContent = _lfs.authMode === 'signup' ? 'Creating account…' : 'Signing in…';
-        if (_lfs.authMode === 'signup') {
-            const r = await fetch('/api/auth/waitlist', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                    first_name: d.first || '',
-                    last_name:  d.last  || '',
-                    email:      d.email,
-                    phone:      d.phone,
-                    password:   d.password,
-                }),
-            });
-            if (!r.ok) {
-                const j = await r.json().catch(() => ({}));
-                if (r.status === 409) {
-                    throw new Error("That email's already registered — click \"Sign in\" above to use it.");
-                }
-                throw new Error(j.error || 'Could not create your account.');
-            }
-        } else {
-            const r = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ email: d.email, password: d.password }),
-            });
-            if (!r.ok) {
-                const j = await r.json().catch(() => ({}));
-                throw new Error(j.error || 'Sign in failed — check your email and password.');
-            }
-        }
-
-        // Step 2: submit the lead. The cookie set above means the server
-        // will read req.user.userId and store it as leads.user_id.
-        btn.textContent = 'Submitting…';
+        // No account required. The server links this lead to a user_id by
+        // email if an account already exists; otherwise it stays unassigned
+        // until someone creates an account with the same email (then it's
+        // backfilled). credentials:'include' so a logged-in user still gets
+        // their session honored.
         const res = await fetch('/api/leads', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
