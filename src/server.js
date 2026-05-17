@@ -55,6 +55,7 @@ app.use('/api/lakes', require('./routes/lake.routes'));
 app.use('/api/businesses',     require('./routes/business.routes'));
 app.use('/api/business-auth',  require('./routes/business-auth.routes'));
 app.use('/api/resources', require('./routes/resource.routes'));
+app.use('/api/marketing', require('./routes/marketing.routes'));
 
 app.get('/api/health', (req, res) => {
     res.json({
@@ -1094,7 +1095,8 @@ async function ensureTables() {
             );
             CREATE INDEX IF NOT EXISTS idx_cash_offer_leads_created ON cash_offer_leads(created_at DESC);
             CREATE INDEX IF NOT EXISTS idx_cash_offer_leads_status  ON cash_offer_leads(status) WHERE archived_at IS NULL;
-            ALTER TABLE cash_offer_leads ADD COLUMN IF NOT EXISTS source_site VARCHAR(40);
+            ALTER TABLE cash_offer_leads ADD COLUMN IF NOT EXISTS source_site   VARCHAR(40);
+            ALTER TABLE cash_offer_leads ADD COLUMN IF NOT EXISTS hs_contact_id TEXT;
         `);
         await pool.query(`
             CREATE TABLE IF NOT EXISTS cash_offer_config (

@@ -1116,11 +1116,38 @@
             }
         }
 
-        function submitNewsletter(event) {
+        async function submitNewsletter(event) {
             event.preventDefault();
-            event.target.reset();
+            const form   = event.target;
+            const input  = form.querySelector('input[type="email"]');
+            const btn    = form.querySelector('button[type="submit"]');
             const status = document.getElementById('cr-newsletter-status');
-            status.textContent = 'Subscribed. Welcome aboard.';
+            const email  = (input?.value || '').trim();
+            if (!email) return;
+
+            btn.disabled = true;
+            const origText = btn.textContent;
+            btn.textContent = 'Subscribing…';
+            status.textContent = '';
+
+            try {
+                const res = await fetch('/api/marketing/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, source: 'commonrealtor' }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || 'Subscription failed.');
+                form.reset();
+                status.textContent = 'Subscribed. Welcome aboard.';
+                status.style.color = '#9ae6b4';
+            } catch (err) {
+                status.textContent = err.message || 'Something went wrong. Please try again.';
+                status.style.color = '#feb2b2';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = origText;
+            }
         }
     </script>
 

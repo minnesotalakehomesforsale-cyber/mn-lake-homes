@@ -18,6 +18,7 @@ const { lookupProperty } = require('../services/rentcast');
 const { calculateOffer } = require('../services/cash-offer-calc');
 const { streamOfferPdf } = require('../services/cash-offer-pdf');
 const cashOfferEmail = require('../services/cash-offer-email');
+const hubspot = require('../services/hubspot');
 const { logActivity } = require('../services/activity-log');
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -187,6 +188,26 @@ exports.submit = async (req, res) => {
 
         // Fire-and-forget admin notification.
         cashOfferEmail.sendNewLeadNotification(leadForEmail);
+
+        // Fire-and-forget HubSpot mirror — high-intent leads belong in the
+        // marketing pipeline. Store the returned id back on the row so admins
+        // can deep-link to the contact's HubSpot timeline.
+        (async () => {
+            const [first, ...rest] = String(full_name).split(' ');
+            const r = await hubspot.syncContact({
+                email,
+                firstname: first || '',
+                lastname:  rest.join(' '),
+                phone,
+                address: address || undefined,
+                user_type: 'cash_offer_lead',
+                signup_source: sourceSite ? `cash_offer:${sourceSite}` : 'cash_offer',
+            });
+            if (r?.id) {
+                pool.query(`UPDATE cash_offer_leads SET hs_contact_id = $1 WHERE id = $2`, [r.id, leadId])
+                    .catch(e => console.error('[hubspot] save id failed:', e.message));
+            }
+        })();
 
         logActivity({
             event_type: 'cash_offer.submit',

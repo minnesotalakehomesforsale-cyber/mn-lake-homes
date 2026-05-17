@@ -262,57 +262,71 @@
             #join-question { font-size: 1.5rem !important; }
         }
     </style>
-    <script src="../../components/components.js" defer>
-        document.getElementById("agent-register-form")?.addEventListener("submit", async function(e) {
-            e.preventDefault();
-            const alertBox = document.getElementById("register-alert");
-            alertBox.style.display = "block";
-            
-            const pwd = document.getElementById("reg-password").value;
-            const confirm = document.getElementById("reg-confirm").value;
+    <script src="../../components/components.js" defer></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('agent-register-form');
+            if (!form) return;
 
-            if (pwd !== confirm) {
-                alertBox.style.backgroundColor = "#fff5f5";
-                alertBox.style.color = "#c53030";
-                alertBox.innerText = "Passwords do not match.";
-                return;
-            }
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const alertBox = document.getElementById('register-alert');
+                alertBox.style.display = 'block';
 
-            const payload = {
-                firstName: document.getElementById("reg-firstName").value,
-                lastName: document.getElementById("reg-lastName").value,
-                email: document.getElementById("reg-email").value,
-                phone: document.getElementById("reg-phone").value,
-                brokerage: document.getElementById("reg-brokerage").value,
-                password: pwd
-            };
+                const setMsg = (bg, color, msg) => {
+                    alertBox.style.backgroundColor = bg;
+                    alertBox.style.color = color;
+                    alertBox.innerText = msg;
+                };
 
-            // Simulated Backend Fetch Logic
-            try {
-                // In production: const res = await fetch("../../api/auth/register", { method:"POST"... })
-                // We mock the successful network cycle locally:
-                
-                alertBox.style.backgroundColor = "#ebf8ff";
-                alertBox.style.color = "#2b6cb0";
-                alertBox.innerText = "Provisioning secure account...";
+                const firstName = document.getElementById('reg-firstName').value.trim();
+                const lastName  = document.getElementById('reg-lastName').value.trim();
+                const email     = document.getElementById('reg-email').value.trim();
+                const phone     = document.getElementById('reg-phone').value.trim();
+                const brokerage = document.getElementById('reg-brokerage').value.trim();
+                const pwd       = document.getElementById('reg-password').value;
+                const confirm   = document.getElementById('reg-confirm').value;
 
-                setTimeout(() => {
-                    alertBox.style.backgroundColor = "#f0fff4";
-                    alertBox.style.color = "#2f855a";
-                    alertBox.innerText = "Account created! Redirecting to setup portal...";
-                    
-                    setTimeout(() => {
-                        window.location.href = "../../pages/agent/dashboard.html";
-                    }, 1500);
-                }, 1000);
+                if (pwd !== confirm) {
+                    setMsg('#fff5f5', '#c53030', 'Passwords do not match.');
+                    return;
+                }
+                if (pwd.length < 8) {
+                    setMsg('#fff5f5', '#c53030', 'Password must be at least 8 characters.');
+                    return;
+                }
 
-            } catch (err) {
-                alertBox.style.backgroundColor = "#fff5f5";
-                alertBox.style.color = "#c53030";
-                alertBox.innerText = "An error occurred during registration. Please try again.";
-            }
+                const display_name = [firstName, lastName].filter(Boolean).join(' ').trim();
+                if (!display_name) {
+                    setMsg('#fff5f5', '#c53030', 'Please enter your first and last name.');
+                    return;
+                }
+
+                setMsg('#ebf8ff', '#2b6cb0', 'Creating your account…');
+
+                try {
+                    const res = await fetch('/api/auth/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            email,
+                            password:       pwd,
+                            display_name,
+                            phone,
+                            brokerage_name: brokerage || null,
+                        }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) throw new Error(data.error || `Registration failed (${res.status}).`);
+
+                    setMsg('#f0fff4', '#2f855a', 'Account created! Redirecting to your dashboard…');
+                    setTimeout(() => { window.location.href = '/pages/agent/dashboard.html'; }, 1200);
+                } catch (err) {
+                    setMsg('#fff5f5', '#c53030', err.message || 'Something went wrong. Please try again.');
+                }
+            });
         });
-
     </script>
 </head>
 <body style="background-color: #fff;">

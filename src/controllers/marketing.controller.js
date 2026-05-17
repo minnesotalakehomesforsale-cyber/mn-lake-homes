@@ -1,20 +1,104 @@
 /**
- * marketing.controller.js — backs the admin Marketing tab.
+ * marketing.controller.js — backs the admin Marketing tab + public newsletter signup.
  *
- * Endpoints (all admin-only, mounted under /api/admin in admin.routes.js):
- *   GET    /marketing/posts                    list all post ideas
- *   POST   /marketing/posts                    create a new post idea
- *   PATCH  /marketing/posts/:id                update title/desc/date/etc
- *   DELETE /marketing/posts/:id                hard delete
- *   GET    /marketing/newsletter/subscribers   unified mailing list
- *                                              (unique emails from users + leads)
- *   GET    /marketing/overview                 dashboard counters + week strip
+ * Endpoints:
+ *   PUBLIC (mounted under /api/marketing in routes/marketing.routes.js):
+ *     POST   /marketing/subscribe                public newsletter signup
+ *
+ *   ADMIN (mounted under /api/admin in admin.routes.js):
+ *     GET    /marketing/posts                    list all post ideas
+ *     POST   /marketing/posts                    create a new post idea
+ *     PATCH  /marketing/posts/:id                update title/desc/date/etc
+ *     DELETE /marketing/posts/:id                hard delete
+ *     GET    /marketing/newsletter/subscribers   unified mailing list
+ *                                                (unique emails from users + leads)
+ *     GET    /marketing/overview                 dashboard counters + week strip
  */
 
 const pool = require('../database/pool');
+const hubspot = require('../services/hubspot');
 const { logActivity } = require('../services/activity-log');
 
 const VALID_STATUS = ['idea', 'in_progress', 'scheduled', 'posted', 'cancelled'];
+
+// ─── Public: newsletter signup ──────────────────────────────────────────────
+// Writes the email to the leads table so it shows up in the admin Marketing →
+// Newsletter mailing list (which UNIONs users + leads by email) and pushes
+// it to HubSpot. Idempotent — a repeat subscribe is a no-op on the DB side
+// and a PATCH on the HubSpot side. Public; no auth.
+exports.subscribeNewsletter = async (req, res) => {
+    let { email, source } = req.body || {};
+    email = (email || '').trim().toLowerCase();
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ error: 'Please enter a valid email address.' });
+    }
+
+    // 'commonrealtor' | 'mnlakehomes' — used in lead_source so admin can
+    // segment subscribers by site of origin.
+    const site = source === 'commonrealtor' ? 'commonrealtor' : 'mnlakehomes';
+    const leadSource = `newsletter_${site}`;
+
+    try {
+        // Skip writing a new row if we already have a lead with this email
+        // and the same newsletter source — keeps the leads table clean if
+        // someone hammers the subscribe button.
+        const dupe = await pool.query(
+            `SELECT id FROM leads
+              WHERE LOWER(email) = $1 AND lead_source = $2
+                AND deleted_at IS NULL
+              LIMIT 1`,
+            [email, leadSource]
+        );
+
+        let leadId = dupe.rows[0]?.id;
+        if (!leadId) {
+            // Link to existing user account by email so the lead appears in
+            // their dashboard, same rule as the main lead form.
+            const u = await pool.query(
+                'SELECT id FROM users WHERE LOWER(email) = $1 LIMIT 1',
+                [email]
+            );
+            const userId = u.rows[0]?.id || null;
+
+            const ins = await pool.query(
+                `INSERT INTO leads
+                   (full_name, first_name, email, lead_type, lead_source, lead_status, user_id, message)
+                 VALUES ($1, $2, $3, 'general_contact', $4, 'new', $5, $6)
+                 RETURNING id`,
+                [email, email.split('@')[0], email, leadSource, userId, 'Newsletter signup.']
+            );
+            leadId = ins.rows[0].id;
+        }
+
+        logActivity({
+            event_type: 'newsletter.subscribe',
+            event_scope: 'lead',
+            actor: { type: 'public', label: email },
+            target: { type: 'lead', id: leadId, label: email },
+            details: { source: site },
+            req,
+        });
+
+        // Fire-and-forget HubSpot mirror.
+        (async () => {
+            const r = await hubspot.syncContact({
+                email,
+                user_type: 'subscriber',
+                signup_source: leadSource,
+            });
+            if (r?.id && leadId) {
+                pool.query(`UPDATE leads SET hs_contact_id = $1 WHERE id = $2`, [r.id, leadId])
+                    .catch(e => console.error('[hubspot] save id failed:', e.message));
+            }
+        })();
+
+        res.status(201).json({ success: true });
+    } catch (err) {
+        console.error('[marketing.subscribeNewsletter]', err.message);
+        res.status(500).json({ error: 'Could not save your subscription. Please try again.' });
+    }
+};
 
 // ─── Posts (social media / content ideas) ───────────────────────────────────
 

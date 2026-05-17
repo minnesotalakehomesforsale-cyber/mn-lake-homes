@@ -1,6 +1,7 @@
 const pool = require('../database/pool');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
+const hubspot = require('../services/hubspot');
 const { logActivity } = require('../services/activity-log');
 
 // ─── Cloudinary-backed agent profile photo upload ────────────────────────────
@@ -239,6 +240,41 @@ const saveDraft = async (req, res) => {
             }).filter(([, v]) => v !== undefined && v !== null && v !== '')),
             req,
         });
+
+        // Fire-and-forget HubSpot mirror. Initial agent signup created the
+        // contact; this keeps brokerage / phone / public email in sync so
+        // outbound sequences from HubSpot stay current. Uses updateContact
+        // when we already have an hs_contact_id, otherwise upserts by email.
+        (async () => {
+            const u = await pool.query(
+                `SELECT u.email, u.hs_contact_id, a.display_name, a.brokerage_name,
+                        a.phone_public, a.city
+                   FROM users u
+              LEFT JOIN agents a ON a.user_id = u.id
+                  WHERE u.id = $1`,
+                [req.user.userId]
+            );
+            const row = u.rows[0];
+            if (!row?.email) return;
+            const [first, ...rest] = String(row.display_name || '').split(' ');
+            const props = {
+                email:     row.email,
+                firstname: first || undefined,
+                lastname:  rest.join(' ') || undefined,
+                phone:     row.phone_public || undefined,
+                company:   row.brokerage_name || undefined,
+                city:      row.city || undefined,
+            };
+            if (row.hs_contact_id) {
+                hubspot.updateContact(row.hs_contact_id, props);
+            } else {
+                const r = await hubspot.syncContact(props);
+                if (r?.id) {
+                    pool.query(`UPDATE users SET hs_contact_id = $1 WHERE id = $2`, [r.id, req.user.userId])
+                        .catch(e => console.error('[hubspot] save id failed:', e.message));
+                }
+            }
+        })();
 
         res.json({ success: true, profile: rows[0] });
     } catch (err) {

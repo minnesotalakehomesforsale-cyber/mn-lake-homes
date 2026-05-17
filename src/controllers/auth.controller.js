@@ -126,11 +126,12 @@ const waitlist = async (req, res) => {
  * Creates a new user + linked agent record.
  */
 const register = async (req, res) => {
-    let { email, password, display_name, license_number, brokerage_name, service_area_tag_ids } = req.body;
+    let { email, password, display_name, phone, license_number, brokerage_name, service_area_tag_ids } = req.body;
 
     email = (email || '').trim().toLowerCase();
     display_name = (display_name || '').trim();
     password = (password || '');
+    phone = (phone || '').trim();
 
     if (!email || !password || !display_name) {
         return res.status(400).json({ error: 'Email, password, and display name are required.' });
@@ -168,13 +169,14 @@ const register = async (req, res) => {
 
         // Create User record
         const userRes = await client.query(
-            `INSERT INTO users (first_name, last_name, full_name, email, password_hash, role, account_status)
-             VALUES ($1, $2, $3, $4, $5, 'agent', 'active') RETURNING id`,
+            `INSERT INTO users (first_name, last_name, full_name, email, phone, password_hash, role, account_status)
+             VALUES ($1, $2, $3, $4, $5, $6, 'agent', 'active') RETURNING id`,
             [
                 display_name.split(' ')[0],
                 display_name.split(' ').slice(1).join(' ') || '',
                 display_name,
                 email,
+                phone || null,
                 hashedPassword
             ]
         );
@@ -230,6 +232,7 @@ const register = async (req, res) => {
                 email,
                 firstname: display_name.split(' ')[0],
                 lastname:  display_name.split(' ').slice(1).join(' '),
+                phone:     phone || undefined,
                 user_type: 'agent', signup_source: 'agent_register',
                 company:   brokerage_name || undefined,
             });

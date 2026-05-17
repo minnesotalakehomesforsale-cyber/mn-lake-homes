@@ -220,6 +220,16 @@ async function backfillExistingRecords(pool) {
                         AND deleted_at IS NULL
                       LIMIT 500`,
         },
+        {
+            // cash_offer_leads has no deleted_at column — it uses archived_at.
+            // Skip archived so we don't push stale leads back into HubSpot.
+            name: 'cash_offer_leads',
+            select: `SELECT id, email, full_name, phone, address_raw AS address
+                       FROM cash_offer_leads
+                      WHERE hs_contact_id IS NULL AND email IS NOT NULL AND email <> ''
+                        AND archived_at IS NULL
+                      LIMIT 500`,
+        },
     ];
 
     let totalSynced = 0;
@@ -244,6 +254,13 @@ async function backfillExistingRecords(pool) {
                     return {
                         email: row.email, firstname: first, lastname: rest.join(' '),
                         phone: row.phone, city: row.city, state: row.state,
+                    };
+                }
+                if (t.name === 'cash_offer_leads') {
+                    const [first, ...rest] = String(row.full_name || '').split(' ');
+                    return {
+                        email: row.email, firstname: first, lastname: rest.join(' '),
+                        phone: row.phone, address: row.address || undefined,
                     };
                 }
                 // contact_inquiries
