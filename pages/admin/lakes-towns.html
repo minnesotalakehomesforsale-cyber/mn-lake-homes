@@ -3,30 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lakes &amp; Towns | MN Lake Homes Admin</title>
+    <title>Lakes, Towns &amp; Businesses | MN Lake Homes Admin</title>
     <link rel="stylesheet" href="../../styles/style.css">
     <style>
         html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: #1a202c; }
 
-        .page-tabs { display: flex; gap: 0.25rem; margin-bottom: 1.5rem; border-bottom: 2px solid #edf2f7; }
+        /* Page tab strip */
+        .page-tabs { display: flex; gap: 0.25rem; margin-bottom: 1.5rem; border-bottom: 2px solid #edf2f7; overflow-x: auto; }
         .page-tab {
             padding: 0.75rem 1.5rem; font-size: 0.95rem; font-weight: 600;
             color: #718096; border: none; background: none; cursor: pointer;
             border-bottom: 2px solid transparent; margin-bottom: -2px;
             font-family: inherit; transition: color 0.15s, border-color 0.15s;
+            white-space: nowrap;
         }
         .page-tab:hover { color: #1a202c; }
         .page-tab.active { color: #1d6df2; border-bottom-color: #1d6df2; }
 
-        /* Each tab pane holds a full-bleed iframe that auto-grows to its
-           content's height via postMessage from the embedded page. */
+        /* Each iframe pane auto-grows via postMessage from the embedded page. */
         .tab-pane { display: none; }
         .tab-pane.active { display: block; }
         .lt-frame {
             width: 100%; border: 0; display: block;
-            min-height: 600px;     /* baseline before postMessage arrives */
+            min-height: 600px;
             background: #f7f9fa;
         }
+
+        /* ── Overview tab ──────────────────────────────────────────── */
+        .ov-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.75rem; }
+        @media (max-width: 1000px) { .ov-grid { grid-template-columns: repeat(2, 1fr); } }
+        .ov-stat {
+            background: #fff; border: 1px solid #edf2f7; border-radius: 12px;
+            padding: 1.4rem 1.5rem; display: flex; flex-direction: column; gap: 0.4rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+        }
+        .ov-stat.clickable { cursor: pointer; }
+        .ov-stat.clickable:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(0,0,0,0.06); border-color: #cbd5e0; }
+        .ov-stat .ov-icon { font-size: 1.5rem; line-height: 1; }
+        .ov-stat .ov-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #a0aec0; }
+        .ov-stat .ov-value { font-size: 2.1rem; font-weight: 800; letter-spacing: -1px; color: #1a202c; line-height: 1.05; }
+        .ov-stat .ov-sub { font-size: 0.82rem; color: #718096; }
+        .ov-stat.lakes      { border-top: 3px solid #2b6cb0; }
+        .ov-stat.towns      { border-top: 3px solid #38a169; }
+        .ov-stat.businesses { border-top: 3px solid #c05621; }
+        .ov-stat.pending    { border-top: 3px solid #d69e2e; }
+
+        .ov-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        @media (max-width: 1000px) { .ov-cols { grid-template-columns: 1fr; } }
+        .ov-card {
+            background: #fff; border: 1px solid #edf2f7; border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03); overflow: hidden;
+        }
+        .ov-card-hd {
+            padding: 1rem 1.4rem; border-bottom: 1px solid #edf2f7;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .ov-card-title { font-size: 0.74rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #4a5568; }
+        .ov-card-cta {
+            font-size: 0.82rem; font-weight: 700; color: #1d6df2;
+            background: none; border: 0; cursor: pointer; font-family: inherit;
+        }
+        .ov-card-cta:hover { text-decoration: underline; }
+        .ov-card-body { padding: 0.5rem 0.5rem 0.85rem; }
+        .ov-item {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 0.75rem; padding: 0.7rem 0.95rem; border-radius: 8px;
+            text-decoration: none; color: inherit;
+            transition: background 0.12s;
+        }
+        .ov-item:hover { background: #f7f9fa; }
+        .ov-item .ov-item-main { min-width: 0; flex: 1; }
+        .ov-item .ov-item-name { font-weight: 700; color: #1a202c; font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ov-item .ov-item-meta { font-size: 0.76rem; color: #718096; margin-top: 0.15rem; }
+        .ov-pill {
+            display: inline-block; padding: 0.18rem 0.55rem; border-radius: 20px;
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.4px;
+            text-transform: uppercase; flex-shrink: 0;
+        }
+        .ov-pill.ok       { background: #f0fff4; color: #2f855a; }
+        .ov-pill.draft    { background: #fefcbf; color: #975a16; }
+        .ov-pill.pending  { background: #ebf8ff; color: #2b6cb0; }
+        .ov-pill.archived { background: #edf2f7; color: #4a5568; }
+        .ov-empty { padding: 1.5rem 1rem; text-align: center; color: #a0aec0; font-size: 0.88rem; }
+        .ov-skeleton { padding: 1rem; color: #a0aec0; font-size: 0.85rem; }
     </style>
     <script src="../../components/admin-guard.js"></script>
     <script src="../../components/admin-responsive.js" defer></script>
@@ -40,56 +100,232 @@
 
     <main class="admin-main">
         <header style="margin-bottom: 1.5rem;">
-            <h1 style="font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.75px; margin: 0 0 0.25rem;">Lakes &amp; Towns</h1>
-            <p style="color: #718096; font-size: 0.95rem; margin: 0;">Lake hub pages and the geo-tag taxonomy that backs them.</p>
+            <h1 style="font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.75px; margin: 0 0 0.25rem;">Lakes, Towns &amp; Businesses</h1>
+            <p style="color: #718096; font-size: 0.95rem; margin: 0;">Every place we publish — lake hub pages, the geo-tag taxonomy that backs them, and the partner businesses tied to each.</p>
         </header>
 
         <!-- Tab strip -->
         <div class="page-tabs" role="tablist">
-            <button id="tab-btn-lakes" class="page-tab active" onclick="showLT('lakes')" role="tab">Lakes</button>
-            <button id="tab-btn-towns" class="page-tab" onclick="showLT('towns')" role="tab">Towns</button>
+            <button id="tab-btn-overview"   class="page-tab active" onclick="showLT('overview')"   role="tab">Overview</button>
+            <button id="tab-btn-lakes"      class="page-tab"        onclick="showLT('lakes')"      role="tab">Lakes</button>
+            <button id="tab-btn-towns"      class="page-tab"        onclick="showLT('towns')"      role="tab">Towns</button>
+            <button id="tab-btn-businesses" class="page-tab"        onclick="showLT('businesses')" role="tab">Businesses</button>
         </div>
 
-        <!-- Tab panes — each is the full existing admin page loaded in embed mode -->
-        <div id="pane-lakes" class="tab-pane active" role="tabpanel">
-            <iframe id="frame-lakes" class="lt-frame" src="lakes.html?embed=1" title="Lakes admin"></iframe>
+        <!-- ── OVERVIEW (custom dashboard) ───────────────────────────── -->
+        <div id="pane-overview" class="tab-pane active" role="tabpanel">
+            <!-- Headline counters -->
+            <div class="ov-grid">
+                <div class="ov-stat lakes clickable" onclick="showLT('lakes')">
+                    <span class="ov-icon">🌊</span>
+                    <span class="ov-label">Lakes</span>
+                    <span class="ov-value" id="ov-lakes-total">—</span>
+                    <span class="ov-sub"><span id="ov-lakes-pub">—</span> published</span>
+                </div>
+                <div class="ov-stat towns clickable" onclick="showLT('towns')">
+                    <span class="ov-icon">🏘️</span>
+                    <span class="ov-label">Towns</span>
+                    <span class="ov-value" id="ov-towns-total">—</span>
+                    <span class="ov-sub"><span id="ov-towns-active">—</span> active</span>
+                </div>
+                <div class="ov-stat businesses clickable" onclick="showLT('businesses')">
+                    <span class="ov-icon">🏪</span>
+                    <span class="ov-label">Businesses</span>
+                    <span class="ov-value" id="ov-biz-total">—</span>
+                    <span class="ov-sub"><span id="ov-biz-active">—</span> active</span>
+                </div>
+                <div class="ov-stat pending clickable" onclick="showLT('businesses')">
+                    <span class="ov-icon">⏳</span>
+                    <span class="ov-label">Pending Review</span>
+                    <span class="ov-value" id="ov-biz-pending">—</span>
+                    <span class="ov-sub">businesses awaiting approval</span>
+                </div>
+            </div>
+
+            <!-- Recent items per section -->
+            <div class="ov-cols">
+                <div class="ov-card">
+                    <div class="ov-card-hd">
+                        <span class="ov-card-title">Recently updated lakes</span>
+                        <button class="ov-card-cta" onclick="showLT('lakes')">Open Lakes →</button>
+                    </div>
+                    <div class="ov-card-body" id="ov-recent-lakes">
+                        <div class="ov-skeleton">Loading…</div>
+                    </div>
+                </div>
+                <div class="ov-card">
+                    <div class="ov-card-hd">
+                        <span class="ov-card-title">Recently added towns</span>
+                        <button class="ov-card-cta" onclick="showLT('towns')">Open Towns →</button>
+                    </div>
+                    <div class="ov-card-body" id="ov-recent-towns">
+                        <div class="ov-skeleton">Loading…</div>
+                    </div>
+                </div>
+                <div class="ov-card">
+                    <div class="ov-card-hd">
+                        <span class="ov-card-title">Recent businesses</span>
+                        <button class="ov-card-cta" onclick="showLT('businesses')">Open Businesses →</button>
+                    </div>
+                    <div class="ov-card-body" id="ov-recent-biz">
+                        <div class="ov-skeleton">Loading…</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Section tabs (existing admin pages, embed mode) ──────── -->
+        <div id="pane-lakes" class="tab-pane" role="tabpanel">
+            <iframe id="frame-lakes" class="lt-frame" data-src="lakes.html?embed=1" title="Lakes admin"></iframe>
         </div>
         <div id="pane-towns" class="tab-pane" role="tabpanel">
-            <iframe id="frame-towns" class="lt-frame" src="tags.html?embed=1" title="Towns admin"></iframe>
+            <iframe id="frame-towns" class="lt-frame" data-src="tags.html?embed=1" title="Towns admin"></iframe>
+        </div>
+        <div id="pane-businesses" class="tab-pane" role="tabpanel">
+            <iframe id="frame-businesses" class="lt-frame" data-src="businesses.html?embed=1" title="Businesses admin"></iframe>
         </div>
     </main>
 </div>
 
 <script>
-    // Tab switching — initial tab can be set via ?tab=towns or ?tab=lakes.
+    const TABS = ['overview', 'lakes', 'towns', 'businesses'];
     const _params = new URLSearchParams(window.location.search);
-    const _initialTab = _params.get('tab') === 'towns' ? 'towns' : 'lakes';
+    const _initialTab = TABS.includes(_params.get('tab')) ? _params.get('tab') : 'overview';
+
+    // Lazy-load iframes — only set the src the first time their tab is opened
+    // so the page boot doesn't fire three full pages worth of queries up front.
+    function ensureFrameLoaded(name) {
+        if (name === 'overview') return;
+        const frame = document.getElementById('frame-' + name);
+        if (frame && !frame.src) frame.src = frame.dataset.src;
+    }
 
     function showLT(name) {
-        ['lakes', 'towns'].forEach(k => {
+        if (!TABS.includes(name)) name = 'overview';
+        TABS.forEach(k => {
             document.getElementById('tab-btn-' + k).classList.toggle('active', k === name);
             document.getElementById('pane-' + k).classList.toggle('active', k === name);
         });
-        // Keep the URL in sync so deep-links / refresh land on the same tab.
+        ensureFrameLoaded(name);
         const url = new URL(window.location);
-        if (name === 'lakes') url.searchParams.delete('tab');
-        else                  url.searchParams.set('tab', name);
+        if (name === 'overview') url.searchParams.delete('tab');
+        else                     url.searchParams.set('tab', name);
         history.replaceState(null, '', url);
     }
 
-    // Auto-resize each iframe to its content height — the embedded page
-    // posts its scrollHeight as { lt: 'height', frame: 'lakes'|'towns', h: number }.
+    // Iframe auto-resize via postMessage from embed-mode pages.
     window.addEventListener('message', (e) => {
         const m = e.data;
         if (!m || m.lt !== 'height' || typeof m.h !== 'number') return;
-        const target = m.frame === 'towns'
-            ? document.getElementById('frame-towns')
-            : document.getElementById('frame-lakes');
+        const target = document.getElementById('frame-' + m.frame);
         if (target) target.style.height = Math.max(600, m.h + 8) + 'px';
     });
 
+    // ── Overview data ─────────────────────────────────────────────
+    function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    function pill(status) {
+        const s = (status || '').toLowerCase();
+        const cls = s === 'active' || s === 'published'         ? 'ok'
+                  : s === 'pending' || s === 'pending_review'   ? 'pending'
+                  : s === 'draft'                                ? 'draft'
+                  : 'archived';
+        const label = s === 'published' ? 'Published'
+                    : s === 'pending_review' ? 'Pending'
+                    : (s ? s[0].toUpperCase() + s.slice(1) : '—');
+        return `<span class="ov-pill ${cls}">${escHtml(label)}</span>`;
+    }
+
+    function fmtDate(d) {
+        if (!d) return '';
+        return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function recentItems(rows, fmt) {
+        if (!rows || !rows.length) return '<div class="ov-empty">No items yet.</div>';
+        return rows.slice(0, 5).map(fmt).join('');
+    }
+
+    async function loadOverview() {
+        try {
+            // Admin sees all rows (including drafts/archived) — passing the
+            // admin-only query params each endpoint already supports.
+            const [lakesRes, tagsRes, bizRes] = await Promise.all([
+                fetch('/api/lakes').then(r => r.ok ? r.json() : []),
+                fetch('/api/tags').then(r => r.ok ? r.json() : []),
+                fetch('/api/businesses?status=all').then(r => r.ok ? r.json() : []),
+            ]);
+
+            const lakes = Array.isArray(lakesRes) ? lakesRes
+                        : (lakesRes && Array.isArray(lakesRes.rows)) ? lakesRes.rows
+                        : [];
+            const tags  = Array.isArray(tagsRes)  ? tagsRes
+                        : (tagsRes && Array.isArray(tagsRes.rows))  ? tagsRes.rows
+                        : [];
+            const biz   = Array.isArray(bizRes)   ? bizRes
+                        : (bizRes && Array.isArray(bizRes.rows))   ? bizRes.rows
+                        : [];
+
+            // ── Counters ──
+            document.getElementById('ov-lakes-total').textContent = lakes.length;
+            document.getElementById('ov-lakes-pub').textContent   = lakes.filter(l => l.status === 'published').length;
+
+            document.getElementById('ov-towns-total').textContent  = tags.length;
+            document.getElementById('ov-towns-active').textContent = tags.filter(t => t.active !== false).length;
+
+            document.getElementById('ov-biz-total').textContent   = biz.length;
+            document.getElementById('ov-biz-active').textContent  = biz.filter(b => b.status === 'active').length;
+            document.getElementById('ov-biz-pending').textContent = biz.filter(b => b.status === 'pending').length;
+
+            // ── Recent updated lakes ──
+            const recentLakes = [...lakes]
+                .sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0));
+            document.getElementById('ov-recent-lakes').innerHTML = recentItems(recentLakes, l => `
+                <a class="ov-item" href="/lakes/${encodeURIComponent(l.slug)}" target="_blank" rel="noopener" title="View public lake page">
+                    <div class="ov-item-main">
+                        <div class="ov-item-name">${escHtml(l.name)}</div>
+                        <div class="ov-item-meta">${escHtml(l.region || l.county || '')} · updated ${fmtDate(l.updated_at || l.created_at)}</div>
+                    </div>
+                    ${pill(l.status)}
+                </a>
+            `);
+
+            // ── Recent towns ──
+            const recentTowns = [...tags]
+                .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+            document.getElementById('ov-recent-towns').innerHTML = recentItems(recentTowns, t => `
+                <a class="ov-item" href="/towns/${encodeURIComponent(t.slug)}" target="_blank" rel="noopener" title="View public town page">
+                    <div class="ov-item-main">
+                        <div class="ov-item-name">${escHtml(t.name)}</div>
+                        <div class="ov-item-meta">${escHtml(t.region || t.state || '')} · added ${fmtDate(t.created_at)}</div>
+                    </div>
+                    ${pill(t.active === false ? 'archived' : 'active')}
+                </a>
+            `);
+
+            // ── Recent businesses ──
+            const recentBiz = [...biz]
+                .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+            document.getElementById('ov-recent-biz').innerHTML = recentItems(recentBiz, b => `
+                <a class="ov-item" href="/businesses/${encodeURIComponent(b.slug)}" target="_blank" rel="noopener" title="View public business page">
+                    <div class="ov-item-main">
+                        <div class="ov-item-name">${escHtml(b.name)}</div>
+                        <div class="ov-item-meta">${escHtml(b.type || 'business')}${b.city ? ' · ' + escHtml(b.city) : ''} · added ${fmtDate(b.created_at)}</div>
+                    </div>
+                    ${pill(b.status)}
+                </a>
+            `);
+        } catch (err) {
+            console.error('[overview] load failed:', err);
+            ['ov-recent-lakes', 'ov-recent-towns', 'ov-recent-biz'].forEach(id => {
+                document.getElementById(id).innerHTML = '<div class="ov-empty" style="color:#c53030;">Could not load. Try again in a moment.</div>';
+            });
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
-        if (_initialTab !== 'lakes') showLT(_initialTab);
+        showLT(_initialTab);
+        loadOverview();
     });
 </script>
 </body>
