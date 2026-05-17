@@ -180,7 +180,7 @@
             <p style="font-size:0.85rem;color:#718096;margin:0 0 0.75rem;">
                 Mirrors the public lakes-and-towns map. In this admin view, drafts and pending items also appear — they stay hidden from the live site.
             </p>
-            <iframe id="frame-map" class="lt-frame" data-src="/towns?embed=1&amp;admin=1" title="Map (admin view)" style="min-height: 720px;"></iframe>
+            <iframe id="frame-map" class="lt-frame" data-src="/towns?embed=1&amp;admin=1" title="Map (admin view)" style="height: calc(100vh - 220px); min-height: 600px;"></iframe>
         </div>
 
         <!-- ── Section tabs (existing admin pages, embed mode) ──────── -->
@@ -223,9 +223,13 @@
     }
 
     // Iframe auto-resize via postMessage from embed-mode pages.
+    // The map iframe is a fixed-viewport app (its body height tracks the
+    // iframe height), which made auto-resize feed back on itself and drift
+    // upward over time — so the map is sized via CSS instead and skipped here.
     window.addEventListener('message', (e) => {
         const m = e.data;
         if (!m || m.lt !== 'height' || typeof m.h !== 'number') return;
+        if (m.frame === 'map') return;
         const target = document.getElementById('frame-' + m.frame);
         if (target) target.style.height = Math.max(600, m.h + 8) + 'px';
     });

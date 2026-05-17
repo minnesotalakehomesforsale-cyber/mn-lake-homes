@@ -1340,27 +1340,10 @@
         });
     </script>
 
-    <!-- Embed-mode helper. Active only when this page is iframed via
-         ?embed=1 (e.g. inside the admin "Lakes, Towns & Businesses"
-         Map tab). Posts content height to the parent so the iframe
-         can grow with map render, filter changes, pin clicks, etc. -->
-    <script>
-        (function () {
-            if (new URLSearchParams(window.location.search).get('embed') !== '1') return;
-            let lastH = 0;
-            function postHeight() {
-                const h = Math.max(
-                    document.documentElement.scrollHeight,
-                    document.body.scrollHeight
-                );
-                if (h !== lastH) {
-                    lastH = h;
-                    window.parent.postMessage({ lt: 'height', frame: 'map', h }, '*');
-                }
-            }
-            window.addEventListener('load', postHeight);
-            setInterval(postHeight, 500);
-        })();
-    </script>
+    <!-- This page is a fixed-viewport app (body { height: 100%; overflow: hidden }),
+         so its scrollHeight always tracks the iframe height. Auto-resizing would
+         feed back on itself and drift upward over time, so the parent sizes the
+         map iframe via CSS (viewport-relative height) instead of postMessage. -->
+
 </body>
 </html>
