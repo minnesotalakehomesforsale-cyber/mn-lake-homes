@@ -1,7 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/admin.controller');
+const marketingController = require('../controllers/marketing.controller');
 const { verifyToken, requireRole } = require('../middleware/auth');
+
+// ─── MARKETING (admin "Marketing" tab — posts calendar + mailing list) ──────
+// All routes sit before the catch-all /:id agent route at the bottom.
+router.get   ('/marketing/overview',                marketingController.overview);
+router.get   ('/marketing/newsletter/subscribers',  marketingController.listSubscribers);
+router.get   ('/marketing/posts',                   marketingController.listPosts);
+router.post  ('/marketing/posts',                   marketingController.createPost);
+router.patch ('/marketing/posts/:id',               marketingController.updatePost);
+router.delete('/marketing/posts/:id',               marketingController.deletePost);
 
 // ─── AGENT LEDGER ─────────────────────────────────────────────────────────────
 router.get('/', adminController.getLedger);                              // GET /api/admin?search=&status=&membership=&published=

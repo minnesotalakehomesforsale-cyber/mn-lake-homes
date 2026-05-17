@@ -7,6 +7,13 @@
     <link rel="stylesheet" href="../../styles/style.css">
 <style>
         html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: #1a202c; }
+        /* Embed mode (?embed=1) — this page is iframed inside marketing.html.
+           Hide the standalone admin chrome so only the page content shows. */
+        body.lt-embed admin-sidebar,
+        body.lt-embed admin-assistant,
+        body.lt-embed .admin-main > header { display: none !important; }
+        body.lt-embed .admin-wrap { display: block !important; }
+        body.lt-embed .admin-main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
         /* Stats row */
         .stat-row { display: flex; gap: 1rem; margin-bottom: 2rem; }
         .stat-pill { background: #fff; border: 1px solid #edf2f7; border-radius: 99px; padding: 0.5rem 1.25rem; font-size: 0.85rem; font-weight: 700; color: #718096; cursor: pointer; transition: all 0.15s; }
@@ -564,6 +571,26 @@
     document.getElementById('editor-overlay').addEventListener('click', function(e) {
         if (e.target === this) closeEditor();
     });
+</script>
+
+<!-- Embed-mode helper. Active only when iframed via marketing.html?...embed=1.
+     Hides chrome and posts content height to the parent so the iframe
+     auto-grows with table reloads and editor open/close. -->
+<script>
+    (function () {
+        if (new URLSearchParams(window.location.search).get('embed') !== '1') return;
+        document.body.classList.add('lt-embed');
+        let lastH = 0;
+        function postHeight() {
+            const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+            if (h !== lastH) {
+                lastH = h;
+                window.parent.postMessage({ lt: 'height', frame: 'blog', h }, '*');
+            }
+        }
+        window.addEventListener('load', postHeight);
+        setInterval(postHeight, 500);
+    })();
 </script>
 
 </body>

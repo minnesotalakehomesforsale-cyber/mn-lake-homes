@@ -1494,6 +1494,25 @@ async function ensureTables() {
             "Lake Minnetonka isn't just a body of water — it's Minnesota's premier social and recreational playground. 14,528 acres of waterfront living stretch across Wayzata, Orono, Excelsior, and Minnetonka Beach, with a sprawling network of deep-water access, private docks, and transient slips at local institutions like Lord Fletcher's.\n\nOwn a lake home here and you get front-row VIP access to spectacular 4th of July fireworks, quiet morning paddle-boarding coves, and world-class walleye fishing 30 feet from your back patio. From historic generational estates overlooking Gray's Bay to ultra-modern glass marvels along Orono's shoreline, Lake Minnetonka's housing inventory represents the pinnacle of Midwestern architecture.",
         ]);
 
+        // ── Marketing posts (social-media ideation calendar) ────────
+        // Owned by the admin "Marketing" tab. One row per planned post or
+        // idea, with an optional due_date powering the dashboard's 1-week
+        // calendar strip and the Social Media tab's chronological view.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS marketing_posts (
+                id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                title       VARCHAR(300) NOT NULL,
+                description TEXT,
+                due_date    DATE,
+                channel     VARCHAR(40),
+                status      VARCHAR(20) NOT NULL DEFAULT 'idea',
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_marketing_posts_due    ON marketing_posts(due_date);
+            CREATE INDEX IF NOT EXISTS idx_marketing_posts_status ON marketing_posts(status);
+        `);
+
         console.log(' Tables verified.');
 
         // Migrate default seeded cover images from Unsplash URLs to local /assets/images/ paths
