@@ -199,6 +199,56 @@
             .tn-hero h1 { font-size: 4.25rem; letter-spacing: -2px; }
             .ld-facts { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
         }
+
+        /* ── "Discover more around [town]" — auto-populated related block.
+              Mirrors the lake page's .discover styles so the two page
+              types feel like one product. */
+        .discover { background: #f7f9fa; padding: 5rem 2rem; }
+        .discover-inner { max-width: 1200px; margin: 0 auto; }
+        .discover h2 { font-size: 2.4rem; font-weight: 800; letter-spacing: -1px; margin: 0 0 0.65rem; text-align: center; color: #1a202c; line-height: 1.1; }
+        .discover .lead-sub { text-align: center; color: #718096; font-size: 1.05rem; max-width: 640px; margin: 0 auto 3rem; line-height: 1.6; }
+        .discover-row { margin-bottom: 2.5rem; }
+        .discover-row:last-child { margin-bottom: 0; }
+        .discover-row h3 {
+            font-size: 0.78rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+            color: #1d6df2; margin: 0 0 1.1rem; text-align: center;
+        }
+        .discover-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+        .discover-card {
+            background: #fff; border: 1px solid #edf2f7; border-radius: 12px;
+            overflow: hidden; text-decoration: none; color: inherit;
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+            display: flex; flex-direction: column;
+        }
+        .discover-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,0.08); border-color: #cbd5e0; }
+        .discover-card .thumb {
+            width: 100%; aspect-ratio: 16 / 10;
+            background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+            background-size: cover; background-position: center;
+        }
+        .discover-card .body { padding: 0.85rem 1rem 1rem; }
+        .discover-card .name { font-size: 0.95rem; font-weight: 800; color: #1a202c; letter-spacing: -0.2px; line-height: 1.2; }
+        .discover-card .meta { font-size: 0.74rem; color: #718096; margin-top: 0.25rem; }
+        .discover-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        .discover-action {
+            display: flex; flex-direction: column; gap: 0.4rem;
+            padding: 1.6rem 1.5rem;
+            background: #fff; border: 1px solid #edf2f7; border-radius: 14px;
+            text-decoration: none; color: inherit;
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+        }
+        .discover-action:hover { transform: translateY(-3px); box-shadow: 0 14px 32px rgba(0,0,0,0.08); border-color: #1d6df2; }
+        .discover-action .label { font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #1d6df2; }
+        .discover-action .title { font-size: 1.2rem; font-weight: 800; color: #1a202c; letter-spacing: -0.3px; line-height: 1.2; }
+        .discover-action .desc  { font-size: 0.88rem; color: #4a5568; margin-top: 0.2rem; line-height: 1.5; }
+
+        @media (max-width: 800px) {
+            .discover { padding: 3.5rem 1rem; }
+            .discover h2 { font-size: 1.95rem; }
+            .discover .lead-sub { margin-bottom: 2.25rem; font-size: 0.98rem; }
+            .discover-actions { grid-template-columns: 1fr; gap: 0.85rem; }
+            .discover-action { padding: 1.3rem 1.25rem; }
+        }
     </style>
 </head>
 <body style="background-color: #fff;">
@@ -255,6 +305,19 @@
         }
     </style>
 
+    <!-- Editorial: "Life in [TOWN]" — generic editorial copy using
+         {{TOWN_NAME}} / {{TOWN_REGION}} so each town page reads
+         specifically about that town. Always renders. -->
+    <section class="ld-about ld-about-continued">
+        <div class="ld-about-inner">
+            <span class="ld-about-eyebrow">Living here</span>
+            <h2>Life in {{TOWN_NAME}}</h2>
+            <p>There's a particular kind of life that {{TOWN_NAME}} attracts. The pace is slower than the cities — not in a vacant way, but in the deliberate way of a town that knows what it wants to be. Mornings start with the same handful of cars rolling toward the same coffee spot. Conversations on the sidewalk run long. Wave-from-the-car culture is real here.</p>
+            <p>{{TOWN_NAME}} sits in {{TOWN_REGION}}, which gives it a character that's hard to manufacture. After a season or two of weekending or living here, you start to recognize the rhythms — the busiest days at the market, when the marina fills up, which restaurant owns Friday nights. Owning property in town or just outside puts you inside that rhythm in a way that staying short-term doesn't.</p>
+            <p>People who move to {{TOWN_NAME}} from elsewhere — the Twin Cities, the coasts, anywhere — tend to talk about the same things after a year. The light. The quiet at night. How quickly people start to know your name. How much time gets given back to you when you stop spending it stuck in traffic.</p>
+        </div>
+    </section>
+
     <!-- About part 2 — middle chunk of description. -->
     <section class="ld-about ld-about-continued" id="tn-about-2-section" style="display:none;">
         <div class="ld-about-inner">
@@ -291,6 +354,18 @@
         </div>
     </section>
 
+    <!-- Editorial: "The seasons + the community" — generic year-round
+         town-flavored copy. Always renders. -->
+    <section class="ld-about ld-about-continued">
+        <div class="ld-about-inner">
+            <span class="ld-about-eyebrow">Year-round</span>
+            <h2>Seasons + the community in {{TOWN_NAME}}</h2>
+            <p>Like every northern lake town, {{TOWN_NAME}} runs on the calendar in a more honest way than the cities do. Summer is loud and full — markets, festivals, dock parties, weekenders rolling in for the long weekends. Fall sharpens everything; the colors, the light, the air. Winter empties the town down to the regulars who actually live the year round, and there's a particular kind of quiet that goes with it. Spring is the first warming, the first thaw, the first patio Saturday.</p>
+            <p>The community in {{TOWN_NAME}} has the kind of texture that takes generations to build — the diner that's been there forever, the families who've owned cabins in the area for four decades, the new arrivals who fold in faster than they expect to. Owning here puts you in the slipstream of that — not as a tourist, but as a fixture.</p>
+            <p>For people considering a move or a second home: the question isn't really whether {{TOWN_NAME}} is "worth it" as a place. The question is whether you want the kind of life that this town offers. If you've spent a long weekend here and found yourself talking about coming back, you've already half-answered it.</p>
+        </div>
+    </section>
+
     <!-- About part 3 — closing chunk of description + quick-facts strip. -->
     <section class="ld-about ld-about-continued" id="tn-about-3-section" style="display:none;">
         <div class="ld-about-inner">
@@ -305,6 +380,47 @@
             <h2>From the blog — {{TOWN_NAME}}</h2>
             <p class="lead">Guides, market takes, and local stories covering {{TOWN_NAME}} and its lakes.</p>
             <div id="tn-blog" class="tn-blog-grid"></div>
+        </div>
+    </section>
+
+    <!-- "Discover more" — auto-populated related-content block.
+         Three rows: nearby towns in the same region, lakes connected
+         to this town, then three primary-action cards. -->
+    <section class="discover" id="tn-discover">
+        <div class="discover-inner">
+            <h2>Discover more around {{TOWN_NAME}}</h2>
+            <p class="lead-sub">Nearby towns, the lakes that define this part of {{TOWN_REGION}}, and the easiest ways to take a next step.</p>
+
+            <div class="discover-row" id="tn-discover-lakes-row" style="display:none;">
+                <h3>Lakes in or near {{TOWN_NAME}}</h3>
+                <div class="discover-grid" id="tn-discover-lakes"></div>
+            </div>
+
+            <div class="discover-row" id="tn-discover-towns-row" style="display:none;">
+                <h3>Other towns in {{TOWN_REGION}}</h3>
+                <div class="discover-grid" id="tn-discover-towns"></div>
+            </div>
+
+            <div class="discover-row">
+                <h3>Ready to take the next step?</h3>
+                <div class="discover-actions">
+                    <a href="/pages/public/buy.html" class="discover-action">
+                        <span class="label">Browse listings</span>
+                        <span class="title">See {{TOWN_NAME}} homes</span>
+                        <span class="desc">Filter our live MLS feed to lake and near-lake properties around {{TOWN_NAME}} and the rest of {{TOWN_REGION}}.</span>
+                    </a>
+                    <a href="/pages/public/cash-offer.html" class="discover-action">
+                        <span class="label">Sell fast</span>
+                        <span class="title">Get a cash offer</span>
+                        <span class="desc">Instant AVM-backed cash offer on your {{TOWN_NAME}} property — no obligation, takes 90 seconds.</span>
+                    </a>
+                    <a href="/pages/public/agents.html" class="discover-action">
+                        <span class="label">Talk to a local</span>
+                        <span class="title">Find an agent</span>
+                        <span class="desc">Connect with a specialist who actually knows {{TOWN_NAME}} and the surrounding {{TOWN_REGION}} market.</span>
+                    </a>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -636,11 +752,71 @@
             document.head.appendChild(el);
         }
 
+        // ── Discover-more section: load lakes connected to this town +
+        // other towns in the same region. Each row hides gracefully if
+        // there's nothing to render — the action-cards row keeps the
+        // section useful in all cases.
+        async function loadDiscover() {
+            // Lakes connected to this town (reuse existing tag/lakes endpoint)
+            try {
+                const r = await fetch(`/api/tags/${encodeURIComponent(TOWN_SLUG)}/lakes`);
+                if (r.ok) {
+                    const lakes = await r.json();
+                    if (Array.isArray(lakes) && lakes.length) {
+                        document.getElementById('tn-discover-lakes').innerHTML = lakes.slice(0, 4).map(l => {
+                            const img = l.featured_image_url || l.hero_image_url || '';
+                            const style = img ? `style="background-image:url('${escHtml(img)}');"` : '';
+                            return `
+                                <a class="discover-card" href="/lakes/${encodeURIComponent(l.slug)}">
+                                    <div class="thumb" ${style}></div>
+                                    <div class="body">
+                                        <div class="name">${escHtml(l.name)}</div>
+                                        <div class="meta">${escHtml([l.county ? l.county + ' Co.' : '', l.state].filter(Boolean).join(' · '))}</div>
+                                    </div>
+                                </a>`;
+                        }).join('');
+                        document.getElementById('tn-discover-lakes-row').style.display = '';
+                    }
+                }
+            } catch (_) { /* row stays hidden */ }
+
+            // Other towns in this region (exclude self)
+            try {
+                const r = await fetch('/api/tags');
+                if (r.ok) {
+                    const all = await r.json();
+                    const list = Array.isArray(all) ? all : (all.rows || []);
+                    const meta = await fetch(`/api/tags/${encodeURIComponent(TOWN_SLUG)}`).then(x => x.ok ? x.json() : null).catch(() => null);
+                    const myRegion = (meta?.region || '').trim();
+                    const others = list.filter(t =>
+                        t.slug !== TOWN_SLUG && t.active &&
+                        (myRegion ? (t.region || '') === myRegion : true)
+                    ).slice(0, 4);
+                    if (others.length) {
+                        document.getElementById('tn-discover-towns').innerHTML = others.map(t => {
+                            const img = t.hero_image_url || '';
+                            const style = img ? `style="background-image:url('${escHtml(img)}');"` : '';
+                            return `
+                                <a class="discover-card" href="/towns/${encodeURIComponent(t.slug)}">
+                                    <div class="thumb" ${style}></div>
+                                    <div class="body">
+                                        <div class="name">${escHtml(t.name)}</div>
+                                        <div class="meta">${escHtml([t.region, t.state].filter(Boolean).join(' · '))}</div>
+                                    </div>
+                                </a>`;
+                        }).join('');
+                        document.getElementById('tn-discover-towns-row').style.display = '';
+                    }
+                }
+            } catch (_) { /* row stays hidden */ }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             renderTownAbout();
             loadLakes();
             loadAgents();
             loadBlog();
+            loadDiscover();
             // Standalone "Businesses near {town}" row — premium first, ≥3 required.
             renderTaggedBusinesses({
                 endpoint:  `/api/tags/${encodeURIComponent(TOWN_SLUG)}/businesses`,

@@ -223,6 +223,59 @@
             .lm-hero h1 { font-size: 4.25rem; letter-spacing: -2px; }
             .ld-facts { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
         }
+
+        /* ── "Discover more in [region]" — auto-populated related-content
+              block placed before the final CTA. Cards are server-side links
+              to other lakes in the same region + connected towns + the
+              three primary actions (buy/cash/agent). Hidden gracefully if
+              no related entries exist. ───────────────────────────────────*/
+        .discover { background: #f7f9fa; padding: 5rem 2rem; }
+        .discover-inner { max-width: 1200px; margin: 0 auto; }
+        .discover h2 { font-size: 2.4rem; font-weight: 800; letter-spacing: -1px; margin: 0 0 0.65rem; text-align: center; color: #1a202c; line-height: 1.1; }
+        .discover .lead-sub { text-align: center; color: #718096; font-size: 1.05rem; max-width: 640px; margin: 0 auto 3rem; line-height: 1.6; }
+        .discover-row { margin-bottom: 2.5rem; }
+        .discover-row:last-child { margin-bottom: 0; }
+        .discover-row h3 {
+            font-size: 0.78rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+            color: #1d6df2; margin: 0 0 1.1rem; text-align: center;
+        }
+        .discover-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+        .discover-card {
+            background: #fff; border: 1px solid #edf2f7; border-radius: 12px;
+            overflow: hidden; text-decoration: none; color: inherit;
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+            display: flex; flex-direction: column;
+        }
+        .discover-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,0.08); border-color: #cbd5e0; }
+        .discover-card .thumb {
+            width: 100%; aspect-ratio: 16 / 10;
+            background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+            background-size: cover; background-position: center;
+        }
+        .discover-card .body { padding: 0.85rem 1rem 1rem; }
+        .discover-card .name { font-size: 0.95rem; font-weight: 800; color: #1a202c; letter-spacing: -0.2px; line-height: 1.2; }
+        .discover-card .meta { font-size: 0.74rem; color: #718096; margin-top: 0.25rem; }
+        .discover-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        .discover-action {
+            display: flex; flex-direction: column; gap: 0.4rem;
+            padding: 1.6rem 1.5rem;
+            background: #fff; border: 1px solid #edf2f7; border-radius: 14px;
+            text-decoration: none; color: inherit;
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+        }
+        .discover-action:hover { transform: translateY(-3px); box-shadow: 0 14px 32px rgba(0,0,0,0.08); border-color: #1d6df2; }
+        .discover-action .label { font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #1d6df2; }
+        .discover-action .title { font-size: 1.2rem; font-weight: 800; color: #1a202c; letter-spacing: -0.3px; line-height: 1.2; }
+        .discover-action .desc  { font-size: 0.88rem; color: #4a5568; margin-top: 0.2rem; line-height: 1.5; }
+
+        /* Mobile: collapse 3-up action row to single column for tap-target comfort. */
+        @media (max-width: 800px) {
+            .discover { padding: 3.5rem 1rem; }
+            .discover h2 { font-size: 1.95rem; }
+            .discover .lead-sub { margin-bottom: 2.25rem; font-size: 0.98rem; }
+            .discover-actions { grid-template-columns: 1fr; gap: 0.85rem; }
+            .discover-action { padding: 1.3rem 1.25rem; }
+        }
     </style>
 </head>
 <body style="background-color: #fff;">
@@ -278,6 +331,19 @@
         }
     </style>
 
+    <!-- Editorial: "Life on [LAKE]" — generic-but-named editorial copy
+         that uses {{LAKE_NAME}} / {{LAKE_REGION}} so each lake page reads
+         specifically about that lake. Always renders, no DB dependency. -->
+    <section class="ld-about ld-about-continued">
+        <div class="ld-about-inner">
+            <span class="ld-about-eyebrow">Living here</span>
+            <h2>Life on {{LAKE_NAME}}</h2>
+            <p>There's a particular rhythm that takes over once {{LAKE_NAME}} becomes home base. Mornings start earlier than they do in the city — coffee on the deck before the first dock wakes up, the surface flat and reflective. Afternoons stretch wider. By late day the lake fills with skiers, paddleboarders, and the occasional pontoon working its way along the shoreline, and by golden hour everyone's back on a deck somewhere.</p>
+            <p>{{LAKE_NAME}} sits within {{LAKE_REGION}}, which gives it a particular kind of character — close enough to amenities to never feel cut off, far enough from the Twin Cities that life genuinely slows down. The owners we work with on {{LAKE_NAME}} tend to be intentional about being here. After a season or two you know the faces at the marina, the regulars at the breakfast spot in the nearest town, the boats that anchor in the same coves every Saturday.</p>
+            <p>What's hard to convey until you've experienced it: weekends here start to feel like vacations even when nothing about them changes. The drive in becomes muscle memory, then anticipation. And {{LAKE_NAME}} becomes a member of the family in a way that takes a couple of seasons to fully recognize.</p>
+        </div>
+    </section>
+
     <!-- About part 2 — middle chunk of description (lifestyle / on-the-water). -->
     <section class="ld-about ld-about-continued" id="ld-about-2-section" style="display:none;">
         <div class="ld-about-inner">
@@ -302,6 +368,20 @@
         </div>
     </section>
 
+    <!-- Editorial: "What the seasons bring" — generic year-round copy
+         using {{LAKE_NAME}}. Pairs naturally with the businesses section
+         above (the businesses are part of the seasonal cycle described
+         here) and the closing about-3 chunk that follows. -->
+    <section class="ld-about ld-about-continued">
+        <div class="ld-about-inner">
+            <span class="ld-about-eyebrow">Year-round</span>
+            <h2>What the seasons bring on {{LAKE_NAME}}</h2>
+            <p>A Minnesota lake home isn't one thing — it's four. {{LAKE_NAME}} in May is a fully different place from {{LAKE_NAME}} in late August, which is different again from October's quiet and the deep silver stillness of January. Owners who buy here intentionally are usually choosing all four seasons, not just the summer postcard.</p>
+            <p>Spring on {{LAKE_NAME}} is shoulder season — fewer boats, more eagles overhead, the first warm dock-in mornings of the year. Summer is what brings most people here in the first place. Fall is arguably the most underrated season: the colors on the shoreline, the lake going quiet, the best fishing of the entire year. Winter is when second-home owners discover their property's other personality — ice fishing huts on the bay, snowmobile trails leading right off the back, the particular quiet beauty that takes a season to learn how to love.</p>
+            <p>For the more involved owners, that four-season rhythm is the whole point. Each one has its own character, its own routines, its own visitors. Living the year on {{LAKE_NAME}} is less about any one of them and more about cycling through all four, year after year.</p>
+        </div>
+    </section>
+
     <!-- About part 3 — closing chunk of description + quick-facts strip. -->
     <section class="ld-about ld-about-continued" id="ld-about-3-section" style="display:none;">
         <div class="ld-about-inner">
@@ -316,6 +396,47 @@
             <h2>From the blog — {{LAKE_NAME}}</h2>
             <p class="lead">Guides, market takes, and local stories covering this lake.</p>
             <div id="lake-blog-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;"></div>
+        </div>
+    </section>
+
+    <!-- "Discover more" — auto-populated related-content block. Loaded by
+         loadDiscover() below. Three rows: other lakes in the same region,
+         towns connected to this lake, then three primary-action cards. -->
+    <section class="discover" id="ld-discover">
+        <div class="discover-inner">
+            <h2>Discover more in {{LAKE_REGION}}</h2>
+            <p class="lead-sub">More lakes, the towns nearby, and the easiest ways to take a next step on {{LAKE_NAME}}.</p>
+
+            <div class="discover-row" id="ld-discover-lakes-row" style="display:none;">
+                <h3>Other lakes in {{LAKE_REGION}}</h3>
+                <div class="discover-grid" id="ld-discover-lakes"></div>
+            </div>
+
+            <div class="discover-row" id="ld-discover-towns-row" style="display:none;">
+                <h3>Towns connected to {{LAKE_NAME}}</h3>
+                <div class="discover-grid" id="ld-discover-towns"></div>
+            </div>
+
+            <div class="discover-row">
+                <h3>Ready to take the next step?</h3>
+                <div class="discover-actions">
+                    <a href="/pages/public/buy.html" class="discover-action">
+                        <span class="label">Browse listings</span>
+                        <span class="title">See {{LAKE_NAME}} homes</span>
+                        <span class="desc">Filter our live MLS feed to lakefront and near-lake properties in {{LAKE_REGION}}.</span>
+                    </a>
+                    <a href="/pages/public/cash-offer.html" class="discover-action">
+                        <span class="label">Sell fast</span>
+                        <span class="title">Get a cash offer</span>
+                        <span class="desc">Instant AVM-backed cash offer on {{LAKE_NAME}} property — no obligation, takes 90 seconds.</span>
+                    </a>
+                    <a href="/pages/public/agents.html" class="discover-action">
+                        <span class="label">Talk to a local</span>
+                        <span class="title">Find an agent</span>
+                        <span class="desc">Connect with a specialist who actually knows {{LAKE_NAME}} and the surrounding {{LAKE_REGION}} market.</span>
+                    </a>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -627,10 +748,71 @@
             document.head.appendChild(el);
         }
 
+        // ── Discover-more section: load other lakes in this region + the
+        // towns connected to this lake. Both rows hide gracefully if their
+        // data source is empty — the always-on action-cards row keeps the
+        // section useful even when nothing else loads.
+        async function loadDiscover() {
+            // Other lakes in same region (exclude self)
+            try {
+                const r = await fetch('/api/lakes');
+                if (r.ok) {
+                    const all = await r.json();
+                    const list = Array.isArray(all) ? all : (all.rows || []);
+                    const meta = await fetch(`/api/lakes/${encodeURIComponent(LAKE_SLUG)}`).then(x => x.ok ? x.json() : null).catch(() => null);
+                    const myRegion = (meta?.region || '').trim();
+                    const others = list.filter(l =>
+                        l.id !== LAKE_ID && l.slug !== LAKE_SLUG &&
+                        l.status === 'published' &&
+                        (myRegion ? (l.region || '') === myRegion : true)
+                    ).slice(0, 4);
+                    if (others.length) {
+                        document.getElementById('ld-discover-lakes').innerHTML = others.map(l => {
+                            const img = l.featured_image_url || l.hero_image_url || '';
+                            const style = img ? `style="background-image:url('${escHtml(img)}');"` : '';
+                            return `
+                                <a class="discover-card" href="/lakes/${encodeURIComponent(l.slug)}">
+                                    <div class="thumb" ${style}></div>
+                                    <div class="body">
+                                        <div class="name">${escHtml(l.name)}</div>
+                                        <div class="meta">${escHtml([l.county ? l.county + ' Co.' : '', l.state].filter(Boolean).join(' · '))}</div>
+                                    </div>
+                                </a>`;
+                        }).join('');
+                        document.getElementById('ld-discover-lakes-row').style.display = '';
+                    }
+                }
+            } catch (_) { /* row stays hidden */ }
+
+            // Towns connected to this lake
+            try {
+                const r = await fetch(`/api/lakes/${encodeURIComponent(LAKE_ID)}/tags`);
+                if (r.ok) {
+                    const tags = await r.json();
+                    if (Array.isArray(tags) && tags.length) {
+                        document.getElementById('ld-discover-towns').innerHTML = tags.slice(0, 4).map(t => {
+                            const img = t.hero_image_url || '';
+                            const style = img ? `style="background-image:url('${escHtml(img)}');"` : '';
+                            return `
+                                <a class="discover-card" href="/towns/${encodeURIComponent(t.slug)}">
+                                    <div class="thumb" ${style}></div>
+                                    <div class="body">
+                                        <div class="name">${escHtml(t.name)}</div>
+                                        <div class="meta">${escHtml([t.region, t.state].filter(Boolean).join(' · '))}</div>
+                                    </div>
+                                </a>`;
+                        }).join('');
+                        document.getElementById('ld-discover-towns-row').style.display = '';
+                    }
+                }
+            } catch (_) { /* row stays hidden */ }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             loadLake();
             loadLakeAgents();
             loadLakeBlog();
+            loadDiscover();
             renderTaggedBusinesses({
                 endpoint:  `/api/lakes/${encodeURIComponent(LAKE_ID)}/businesses`,
                 anchorName: LAKE_NAME,
