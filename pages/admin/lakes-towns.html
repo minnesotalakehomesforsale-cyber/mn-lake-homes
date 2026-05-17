@@ -3,90 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lakes, Towns &amp; Businesses | MN Lake Homes Admin</title>
+    <title>Lakes, Towns & Businesses | MN Lake Homes Admin</title>
     <link rel="stylesheet" href="../../styles/style.css">
     <style>
         html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: #1a202c; }
 
-        /* Page tab strip */
-        .page-tabs { display: flex; gap: 0.25rem; margin-bottom: 1.5rem; border-bottom: 2px solid #edf2f7; overflow-x: auto; }
-        .page-tab {
-            padding: 0.75rem 1.5rem; font-size: 0.95rem; font-weight: 600;
-            color: #718096; border: none; background: none; cursor: pointer;
-            border-bottom: 2px solid transparent; margin-bottom: -2px;
-            font-family: inherit; transition: color 0.15s, border-color 0.15s;
-            white-space: nowrap;
+        /* ── Page header + tabs ──────────────────────────────────────── */
+        .page-head { margin-bottom: 1.4rem; }
+        .page-head h1 { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.75px; margin: 0 0 0.25rem; }
+        .page-head p  { color: #718096; font-size: 0.95rem; margin: 0; }
+
+        .page-tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid #e2e8f0; margin: 0 0 1.5rem; flex-wrap: wrap; }
+        .page-tab  {
+            background: none; border: none; padding: 0.85rem 1.1rem;
+            font: inherit; font-size: 0.92rem; font-weight: 600; color: #4a5568;
+            cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+            transition: color 0.15s, border-bottom-color 0.15s;
         }
         .page-tab:hover { color: #1a202c; }
         .page-tab.active { color: #1d6df2; border-bottom-color: #1d6df2; }
 
-        /* Each iframe pane auto-grows via postMessage from the embedded page. */
         .tab-pane { display: none; }
         .tab-pane.active { display: block; }
-        .lt-frame {
-            width: 100%; border: 0; display: block;
-            min-height: 600px;
-            background: #f7f9fa;
+
+        /* ── Section toolbar (search + filters + create btn) ─────────── */
+        .sec-bar {
+            display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;
+            margin-bottom: 1.4rem;
+        }
+        .sec-bar input, .sec-bar select {
+            font: inherit; font-size: 0.88rem;
+            padding: 0.55rem 0.85rem;
+            border: 1px solid #e2e8f0; border-radius: 8px;
+            background: #fff; color: #1a202c;
+            outline: none; min-width: 0;
+        }
+        .sec-bar input[type=search] { flex: 1; min-width: 200px; max-width: 320px; }
+        .sec-bar input:focus, .sec-bar select:focus { border-color: #1d6df2; }
+        .sec-bar .spacer { flex: 1; }
+        .sec-bar .btn-primary {
+            padding: 0.6rem 1.1rem; border-radius: 8px; border: 0;
+            background: #1d6df2; color: #fff;
+            font: inherit; font-size: 0.88rem; font-weight: 700;
+            cursor: pointer; transition: background 0.15s, transform 0.15s;
+        }
+        .sec-bar .btn-primary:hover { background: #155bc8; transform: translateY(-1px); }
+
+        /* Status-pill toolbar (used by businesses) */
+        .status-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-right: 0.5rem; }
+        .status-tab {
+            padding: 0.4rem 0.85rem; background: #fff; border: 1px solid #e2e8f0;
+            border-radius: 99px; font: inherit; font-size: 0.78rem; font-weight: 600;
+            color: #4a5568; cursor: pointer;
+        }
+        .status-tab.on { background: #1d6df2; border-color: #1d6df2; color: #fff; }
+
+        /* ── Card grid ──────────────────────────────────────────────── */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1rem;
+        }
+        .ent-card {
+            background: #fff; border: 1px solid #edf2f7; border-radius: 12px;
+            overflow: hidden; cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+            display: flex; flex-direction: column;
+        }
+        .ent-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+            border-color: #cbd5e0;
+        }
+        .ent-thumb {
+            width: 100%; aspect-ratio: 16 / 10;
+            background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+            background-size: cover; background-position: center;
+            position: relative;
+        }
+        .ent-thumb .thumb-fallback {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.4rem; color: rgba(26,32,44,0.35); font-weight: 800;
+            letter-spacing: -1px;
+        }
+        .ent-thumb .status-pill {
+            position: absolute; top: 0.65rem; left: 0.65rem;
+            padding: 0.22rem 0.55rem; border-radius: 99px;
+            font-size: 0.66rem; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 0.6px;
+            background: rgba(0,0,0,0.55); color: #fff;
+            backdrop-filter: blur(4px);
+        }
+        .status-pill.ok      { background: rgba(47,133,90,0.92); }
+        .status-pill.pending { background: rgba(214,158,46,0.92); }
+        .status-pill.draft   { background: rgba(74,85,104,0.85); }
+        .status-pill.archived{ background: rgba(160,174,192,0.85); }
+        .ent-body { padding: 1rem 1.1rem 1.15rem; flex: 1; display: flex; flex-direction: column; gap: 0.4rem; }
+        .ent-body .name { font-size: 1rem; font-weight: 800; color: #1a202c; letter-spacing: -0.3px; line-height: 1.2; }
+        .ent-body .meta { font-size: 0.78rem; color: #718096; }
+        .ent-body .stats {
+            display: flex; gap: 0.6rem; flex-wrap: wrap;
+            margin-top: auto; padding-top: 0.6rem;
+            font-size: 0.72rem; color: #4a5568;
+        }
+        .ent-body .stat-chip {
+            background: #f7f9fa; border: 1px solid #edf2f7; border-radius: 99px;
+            padding: 0.15rem 0.55rem; font-weight: 600;
         }
 
-        /* ── Overview tab ──────────────────────────────────────────── */
+        .empty-grid {
+            grid-column: 1 / -1;
+            background: #fff; border: 1px dashed #e2e8f0; border-radius: 12px;
+            padding: 3rem 1rem; text-align: center;
+            color: #a0aec0; font-size: 0.95rem;
+        }
+
+        /* ── Overview pane (preserved from prior version) ──────────── */
         .ov-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.75rem; }
         @media (max-width: 1000px) { .ov-grid { grid-template-columns: repeat(2, 1fr); } }
         .ov-stat {
             background: #fff; border: 1px solid #edf2f7; border-radius: 12px;
             padding: 1.4rem 1.5rem; display: flex; flex-direction: column; gap: 0.4rem;
             box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
         }
-        .ov-stat.clickable { cursor: pointer; }
-        .ov-stat.clickable:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(0,0,0,0.06); border-color: #cbd5e0; }
-        .ov-stat .ov-icon { font-size: 1.5rem; line-height: 1; }
         .ov-stat .ov-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #a0aec0; }
         .ov-stat .ov-value { font-size: 2.1rem; font-weight: 800; letter-spacing: -1px; color: #1a202c; line-height: 1.05; }
-        .ov-stat .ov-sub { font-size: 0.82rem; color: #718096; }
         .ov-stat.lakes      { border-top: 3px solid #2b6cb0; }
         .ov-stat.towns      { border-top: 3px solid #38a169; }
         .ov-stat.businesses { border-top: 3px solid #c05621; }
         .ov-stat.pending    { border-top: 3px solid #d69e2e; }
 
-        .ov-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-        @media (max-width: 1000px) { .ov-cols { grid-template-columns: 1fr; } }
-        .ov-card {
-            background: #fff; border: 1px solid #edf2f7; border-radius: 12px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.03); overflow: hidden;
+        /* Map iframe (preserved + sized via CSS to avoid feedback loop) */
+        .lt-frame { width: 100%; border: 0; display: block; background: #f7f9fa; border-radius: 12px; }
+
+        /* ── Modal scaffolding ─────────────────────────────────────── */
+        .m-overlay {
+            position: fixed; inset: 0; z-index: 9000;
+            background: rgba(15,23,42,0.55);
+            display: none; align-items: center; justify-content: center;
+            padding: 1.5rem;
         }
-        .ov-card-hd {
-            padding: 1rem 1.4rem; border-bottom: 1px solid #edf2f7;
-            display: flex; justify-content: space-between; align-items: center;
+        .m-overlay.open { display: flex; }
+        .m-shell {
+            background: #fff; border-radius: 16px;
+            width: 100%; max-width: 880px;
+            max-height: 90vh; overflow: hidden;
+            display: flex; flex-direction: column;
+            box-shadow: 0 30px 70px rgba(0,0,0,0.35);
         }
-        .ov-card-title { font-size: 0.74rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #4a5568; }
-        .ov-card-cta {
-            font-size: 0.82rem; font-weight: 700; color: #1d6df2;
-            background: none; border: 0; cursor: pointer; font-family: inherit;
+        .m-shell.narrow { max-width: 540px; }
+        .m-head { padding: 1.25rem 1.5rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+        .m-head .m-type { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #1d6df2; margin: 0 0 0.25rem; }
+        .m-head .m-title { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.5px; margin: 0; color: #1a202c; }
+        .m-head .m-sub   { font-size: 0.82rem; color: #718096; margin: 0.2rem 0 0; }
+        .m-close { background: none; border: 0; font-size: 1.6rem; line-height: 1; color: #718096; cursor: pointer; padding: 0.2rem 0.5rem; }
+        .m-close:hover { color: #1a202c; }
+
+        .m-tabs { display: flex; gap: 0; padding: 0 1.5rem; border-bottom: 1px solid #edf2f7; flex-wrap: wrap; }
+        .m-tab  { background: none; border: none; padding: 0.85rem 0.95rem; font: inherit; font-size: 0.86rem; font-weight: 600; color: #4a5568; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+        .m-tab:hover { color: #1a202c; }
+        .m-tab.active { color: #1d6df2; border-bottom-color: #1d6df2; }
+        .m-tab .count { color: #a0aec0; font-weight: 700; margin-left: 0.25rem; }
+
+        .m-body { padding: 1.5rem; overflow-y: auto; flex: 1; }
+        .m-pane { display: none; }
+        .m-pane.active { display: block; }
+
+        .m-actions { padding: 1rem 1.5rem; border-top: 1px solid #edf2f7; display: flex; gap: 0.6rem; justify-content: space-between; flex-wrap: wrap; }
+        .m-actions .left  { display: flex; gap: 0.5rem; }
+        .m-actions .right { display: flex; gap: 0.5rem; }
+        .m-actions button {
+            font: inherit; font-size: 0.88rem; font-weight: 600;
+            padding: 0.6rem 1.1rem; border-radius: 8px; cursor: pointer;
         }
-        .ov-card-cta:hover { text-decoration: underline; }
-        .ov-card-body { padding: 0.5rem 0.5rem 0.85rem; }
-        .ov-item {
-            display: flex; align-items: center; justify-content: space-between;
-            gap: 0.75rem; padding: 0.7rem 0.95rem; border-radius: 8px;
-            text-decoration: none; color: inherit;
-            transition: background 0.12s;
+        .btn-primary { background: #1d6df2; color: #fff; border: 0; }
+        .btn-primary:hover { background: #155bc8; }
+        .btn-ghost   { background: #fff; color: #1a202c; border: 1px solid #e2e8f0; }
+        .btn-ghost:hover { background: #f7f9fa; }
+        .btn-danger  { background: #fff; color: #c53030; border: 1px solid #fc8181; }
+        .btn-danger:hover  { background: #fff5f5; }
+
+        /* ── Form fields (used in edit + create panes) ─────────────── */
+        .field { display: block; margin-bottom: 1rem; }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        @media (max-width: 640px) { .field-row { grid-template-columns: 1fr; } }
+        .field label { display: block; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: #4a5568; margin-bottom: 0.35rem; }
+        .field input, .field select, .field textarea {
+            width: 100%; box-sizing: border-box;
+            font: inherit; font-size: 0.9rem; padding: 0.55rem 0.75rem;
+            background: #fff; color: #1a202c;
+            border: 1px solid #e2e8f0; border-radius: 8px; outline: none;
         }
-        .ov-item:hover { background: #f7f9fa; }
-        .ov-item .ov-item-main { min-width: 0; flex: 1; }
-        .ov-item .ov-item-name { font-weight: 700; color: #1a202c; font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .ov-item .ov-item-meta { font-size: 0.76rem; color: #718096; margin-top: 0.15rem; }
-        .ov-pill {
-            display: inline-block; padding: 0.18rem 0.55rem; border-radius: 20px;
-            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.4px;
-            text-transform: uppercase; flex-shrink: 0;
+        .field input:focus, .field select:focus, .field textarea:focus { border-color: #1d6df2; }
+        .field textarea { min-height: 88px; resize: vertical; line-height: 1.45; }
+        .field .hint { font-size: 0.72rem; color: #a0aec0; margin-top: 0.3rem; }
+
+        /* ── Related-entities list (in detail modal) ──────────────── */
+        .rel-list { display: flex; flex-direction: column; gap: 0.6rem; }
+        .rel-row {
+            display: grid; grid-template-columns: auto 1fr auto;
+            gap: 0.9rem; align-items: center;
+            background: #fafbfc; border: 1px solid #edf2f7; border-radius: 10px;
+            padding: 0.75rem 0.9rem;
         }
-        .ov-pill.ok       { background: #f0fff4; color: #2f855a; }
-        .ov-pill.draft    { background: #fefcbf; color: #975a16; }
-        .ov-pill.pending  { background: #ebf8ff; color: #2b6cb0; }
-        .ov-pill.archived { background: #edf2f7; color: #4a5568; }
-        .ov-empty { padding: 1.5rem 1rem; text-align: center; color: #a0aec0; font-size: 0.88rem; }
-        .ov-skeleton { padding: 1rem; color: #a0aec0; font-size: 0.85rem; }
+        .rel-row .rel-thumb {
+            width: 38px; height: 38px; border-radius: 8px;
+            background: #ebf8ff; display: flex; align-items: center; justify-content: center;
+            font-weight: 800; color: #2b6cb0; font-size: 0.9rem;
+            background-size: cover; background-position: center;
+        }
+        .rel-row .rel-name  { font-size: 0.9rem; font-weight: 700; color: #1a202c; }
+        .rel-row .rel-meta  { font-size: 0.75rem; color: #718096; margin-top: 2px; }
+        .rel-row a { font-size: 0.78rem; color: #1d6df2; text-decoration: none; font-weight: 600; }
+        .rel-row a:hover { text-decoration: underline; }
+        .rel-empty { padding: 1.4rem; text-align: center; color: #a0aec0; font-size: 0.88rem; }
+
+        .msg { font-size: 0.85rem; padding: 0.7rem 0.9rem; border-radius: 8px; margin-bottom: 0.85rem; display: none; }
+        .msg.ok   { display: block; background: #f0fff4; color: #276749; border: 1px solid #9ae6b4; }
+        .msg.err  { display: block; background: #fff5f5; color: #c53030; border: 1px solid #feb2b2; }
+
+        /* Mobile tweaks */
+        @media (max-width: 700px) {
+            .sec-bar { gap: 0.5rem; }
+            .sec-bar input[type=search] { max-width: none; width: 100%; }
+            .m-shell { max-height: 96vh; border-radius: 12px; }
+            .m-head, .m-body, .m-actions { padding: 1rem 1.1rem; }
+            .m-tabs { padding: 0 0.5rem; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+            .m-tab  { white-space: nowrap; padding: 0.8rem 0.7rem; }
+        }
     </style>
     <script src="../../components/admin-guard.js"></script>
     <script src="../../components/admin-responsive.js" defer></script>
@@ -95,250 +240,826 @@
     <script src="../../components/admin-nav-badges.js" defer></script>
 </head>
 <body>
-<div class="admin-wrap">
-    <admin-sidebar active="lakes-towns"></admin-sidebar>
+    <div class="admin-wrap">
+        <admin-sidebar active="lakes-towns"></admin-sidebar>
 
-    <main class="admin-main">
-        <header style="margin-bottom: 1.5rem;">
-            <h1 style="font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.75px; margin: 0 0 0.25rem;">Lakes, Towns &amp; Businesses</h1>
-            <p style="color: #718096; font-size: 0.95rem; margin: 0;">Every place we publish — lake hub pages, the geo-tag taxonomy that backs them, and the partner businesses tied to each.</p>
-        </header>
+        <main class="admin-main">
+            <header class="page-head">
+                <h1>Lakes, Towns &amp; Businesses</h1>
+                <p>One place to manage the geographic catalog. Click any card for a full editor with related agents, businesses, blog posts and towns.</p>
+            </header>
 
-        <!-- Tab strip -->
-        <div class="page-tabs" role="tablist">
-            <button id="tab-btn-overview"   class="page-tab active" onclick="showLT('overview')"   role="tab">Overview</button>
-            <button id="tab-btn-map"        class="page-tab"        onclick="showLT('map')"        role="tab">Map</button>
-            <button id="tab-btn-lakes"      class="page-tab"        onclick="showLT('lakes')"      role="tab">Lakes</button>
-            <button id="tab-btn-towns"      class="page-tab"        onclick="showLT('towns')"      role="tab">Towns</button>
-            <button id="tab-btn-businesses" class="page-tab"        onclick="showLT('businesses')" role="tab">Businesses</button>
-        </div>
-
-        <!-- ── OVERVIEW (custom dashboard) ───────────────────────────── -->
-        <div id="pane-overview" class="tab-pane active" role="tabpanel">
-            <!-- Headline counters -->
-            <div class="ov-grid">
-                <div class="ov-stat lakes clickable" onclick="showLT('lakes')">
-                    <span class="ov-icon">🌊</span>
-                    <span class="ov-label">Lakes</span>
-                    <span class="ov-value" id="ov-lakes-total">—</span>
-                    <span class="ov-sub"><span id="ov-lakes-pub">—</span> published</span>
-                </div>
-                <div class="ov-stat towns clickable" onclick="showLT('towns')">
-                    <span class="ov-icon">🏘️</span>
-                    <span class="ov-label">Towns</span>
-                    <span class="ov-value" id="ov-towns-total">—</span>
-                    <span class="ov-sub"><span id="ov-towns-active">—</span> active</span>
-                </div>
-                <div class="ov-stat businesses clickable" onclick="showLT('businesses')">
-                    <span class="ov-icon">🏪</span>
-                    <span class="ov-label">Businesses</span>
-                    <span class="ov-value" id="ov-biz-total">—</span>
-                    <span class="ov-sub"><span id="ov-biz-active">—</span> active</span>
-                </div>
-                <div class="ov-stat pending clickable" onclick="showLT('businesses')">
-                    <span class="ov-icon">⏳</span>
-                    <span class="ov-label">Pending Review</span>
-                    <span class="ov-value" id="ov-biz-pending">—</span>
-                    <span class="ov-sub">businesses awaiting approval</span>
-                </div>
+            <div class="page-tabs" role="tablist">
+                <button class="page-tab active" id="tab-btn-overview"   data-tab="overview"   onclick="showLT('overview')">Overview</button>
+                <button class="page-tab"        id="tab-btn-map"        data-tab="map"        onclick="showLT('map')">Map</button>
+                <button class="page-tab"        id="tab-btn-lakes"      data-tab="lakes"      onclick="showLT('lakes')">Lakes</button>
+                <button class="page-tab"        id="tab-btn-towns"      data-tab="towns"      onclick="showLT('towns')">Towns</button>
+                <button class="page-tab"        id="tab-btn-businesses" data-tab="businesses" onclick="showLT('businesses')">Businesses</button>
             </div>
 
-            <!-- Recent items per section -->
-            <div class="ov-cols">
-                <div class="ov-card">
-                    <div class="ov-card-hd">
-                        <span class="ov-card-title">Recently updated lakes</span>
-                        <button class="ov-card-cta" onclick="showLT('lakes')">Open Lakes →</button>
-                    </div>
-                    <div class="ov-card-body" id="ov-recent-lakes">
-                        <div class="ov-skeleton">Loading…</div>
-                    </div>
+            <!-- ── Overview ─────────────────────────────────────── -->
+            <div id="pane-overview" class="tab-pane active">
+                <div class="ov-grid">
+                    <div class="ov-stat lakes">      <div class="ov-label">Lakes</div>      <div class="ov-value" id="ov-lakes">—</div></div>
+                    <div class="ov-stat towns">      <div class="ov-label">Towns</div>      <div class="ov-value" id="ov-towns">—</div></div>
+                    <div class="ov-stat businesses"> <div class="ov-label">Businesses</div> <div class="ov-value" id="ov-biz">—</div></div>
+                    <div class="ov-stat pending">    <div class="ov-label">Pending biz</div><div class="ov-value" id="ov-pending">—</div></div>
                 </div>
-                <div class="ov-card">
-                    <div class="ov-card-hd">
-                        <span class="ov-card-title">Recently added towns</span>
-                        <button class="ov-card-cta" onclick="showLT('towns')">Open Towns →</button>
-                    </div>
-                    <div class="ov-card-body" id="ov-recent-towns">
-                        <div class="ov-skeleton">Loading…</div>
-                    </div>
+                <p style="font-size:0.9rem;color:#718096;margin:0.5rem 0 1rem;">
+                    Use the tabs above to manage each section. Cards are clickable — opening one gives you a full editor plus the related agents / businesses / blog posts / towns for that entity.
+                </p>
+            </div>
+
+            <!-- ── Map ──────────────────────────────────────────── -->
+            <div id="pane-map" class="tab-pane">
+                <p style="font-size:0.85rem;color:#718096;margin:0 0 0.75rem;">
+                    Public lake + town map (admin view — includes drafts and pending items).
+                </p>
+                <iframe id="frame-map" class="lt-frame" data-src="/towns?embed=1&amp;admin=1" title="Map (admin view)"
+                        style="height: calc(100vh - 240px); min-height: 600px;"></iframe>
+            </div>
+
+            <!-- ── Lakes ────────────────────────────────────────── -->
+            <div id="pane-lakes" class="tab-pane">
+                <div class="sec-bar">
+                    <input type="search" id="lk-search"  placeholder="Search lakes…" oninput="renderLakes()">
+                    <select id="lk-region" onchange="renderLakes()"><option value="">All regions</option></select>
+                    <select id="lk-status" onchange="renderLakes()">
+                        <option value="all">All statuses</option>
+                        <option value="published">Published</option>
+                        <option value="draft">Draft</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                    <div class="spacer"></div>
+                    <button class="btn-primary" onclick="openCreate('lake')">+ New lake</button>
                 </div>
-                <div class="ov-card">
-                    <div class="ov-card-hd">
-                        <span class="ov-card-title">Recent businesses</span>
-                        <button class="ov-card-cta" onclick="showLT('businesses')">Open Businesses →</button>
+                <div id="lk-grid" class="card-grid"><div class="empty-grid">Loading…</div></div>
+            </div>
+
+            <!-- ── Towns ────────────────────────────────────────── -->
+            <div id="pane-towns" class="tab-pane">
+                <div class="sec-bar">
+                    <input type="search" id="tw-search" placeholder="Search towns…" oninput="renderTowns()">
+                    <select id="tw-state" onchange="renderTowns()"><option value="">All states</option></select>
+                    <select id="tw-active" onchange="renderTowns()">
+                        <option value="active">Active only</option>
+                        <option value="all">Including archived</option>
+                    </select>
+                    <div class="spacer"></div>
+                    <button class="btn-primary" onclick="openCreate('town')">+ New town</button>
+                </div>
+                <div id="tw-grid" class="card-grid"><div class="empty-grid">Loading…</div></div>
+            </div>
+
+            <!-- ── Businesses ───────────────────────────────────── -->
+            <div id="pane-businesses" class="tab-pane">
+                <div class="sec-bar">
+                    <div class="status-tabs" id="bz-status-tabs">
+                        <button class="status-tab on" data-status="all"      onclick="setBizStatus('all')">All</button>
+                        <button class="status-tab"    data-status="pending"  onclick="setBizStatus('pending')">Pending</button>
+                        <button class="status-tab"    data-status="active"   onclick="setBizStatus('active')">Active</button>
+                        <button class="status-tab"    data-status="draft"    onclick="setBizStatus('draft')">Draft</button>
+                        <button class="status-tab"    data-status="archived" onclick="setBizStatus('archived')">Archived</button>
                     </div>
-                    <div class="ov-card-body" id="ov-recent-biz">
-                        <div class="ov-skeleton">Loading…</div>
-                    </div>
+                    <input type="search" id="bz-search" placeholder="Search businesses…" oninput="renderBiz()">
+                    <select id="bz-type" onchange="renderBiz()"><option value="">All types</option></select>
+                    <div class="spacer"></div>
+                    <button class="btn-primary" onclick="openCreate('business')">+ New business</button>
+                </div>
+                <div id="bz-grid" class="card-grid"><div class="empty-grid">Loading…</div></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ─── Universal entity-detail modal (edit + related entities) ─── -->
+    <div class="m-overlay" id="detail-modal" onclick="if(event.target===this)closeDetail()">
+        <div class="m-shell">
+            <div class="m-head">
+                <div>
+                    <p class="m-type" id="dt-type">—</p>
+                    <h2 class="m-title" id="dt-title">—</h2>
+                    <p class="m-sub" id="dt-sub"></p>
+                </div>
+                <button class="m-close" onclick="closeDetail()">×</button>
+            </div>
+            <div class="m-tabs">
+                <button class="m-tab active" data-mt="edit"       onclick="showDetailTab('edit')">Edit</button>
+                <button class="m-tab"        data-mt="agents"     onclick="showDetailTab('agents')">Agents <span class="count" id="ct-agents"></span></button>
+                <button class="m-tab"        data-mt="businesses" onclick="showDetailTab('businesses')">Businesses <span class="count" id="ct-businesses"></span></button>
+                <button class="m-tab"        data-mt="blog"       onclick="showDetailTab('blog')">Blog <span class="count" id="ct-blog"></span></button>
+                <button class="m-tab"        data-mt="tags"       onclick="showDetailTab('tags')">Towns <span class="count" id="ct-tags"></span></button>
+            </div>
+            <div class="m-body">
+                <div class="msg" id="dt-msg"></div>
+                <div class="m-pane active" id="dt-pane-edit"></div>
+                <div class="m-pane" id="dt-pane-agents"><div class="rel-empty">Loading…</div></div>
+                <div class="m-pane" id="dt-pane-businesses"><div class="rel-empty">Loading…</div></div>
+                <div class="m-pane" id="dt-pane-blog"><div class="rel-empty">Loading…</div></div>
+                <div class="m-pane" id="dt-pane-tags"><div class="rel-empty">Loading…</div></div>
+            </div>
+            <div class="m-actions">
+                <div class="left">
+                    <button class="btn-danger"  id="dt-delete" onclick="deleteEntity()">Delete</button>
+                </div>
+                <div class="right">
+                    <button class="btn-ghost"   onclick="closeDetail()">Close</button>
+                    <button class="btn-primary" id="dt-save" onclick="saveEntity()">Save changes</button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- ── Map (public map page in embed + admin mode) ──────────── -->
-        <div id="pane-map" class="tab-pane" role="tabpanel">
-            <p style="font-size:0.85rem;color:#718096;margin:0 0 0.75rem;">
-                Mirrors the public lakes-and-towns map. In this admin view, drafts and pending items also appear — they stay hidden from the live site.
-            </p>
-            <iframe id="frame-map" class="lt-frame" data-src="/towns?embed=1&amp;admin=1" title="Map (admin view)" style="height: calc(100vh - 220px); min-height: 600px;"></iframe>
+    <!-- ─── Create modal (parameterized by type) ─── -->
+    <div class="m-overlay" id="create-modal" onclick="if(event.target===this)closeCreate()">
+        <div class="m-shell narrow">
+            <div class="m-head">
+                <div>
+                    <p class="m-type" id="cr-type">—</p>
+                    <h2 class="m-title" id="cr-title">—</h2>
+                    <p class="m-sub">Fill in the essentials — you can edit the full profile after it's created.</p>
+                </div>
+                <button class="m-close" onclick="closeCreate()">×</button>
+            </div>
+            <div class="m-body">
+                <div class="msg" id="cr-msg"></div>
+                <div id="cr-form"></div>
+            </div>
+            <div class="m-actions">
+                <div class="left"></div>
+                <div class="right">
+                    <button class="btn-ghost"   onclick="closeCreate()">Cancel</button>
+                    <button class="btn-primary" id="cr-save" onclick="createEntity()">Create</button>
+                </div>
+            </div>
         </div>
+    </div>
 
-        <!-- ── Section tabs (existing admin pages, embed mode) ──────── -->
-        <div id="pane-lakes" class="tab-pane" role="tabpanel">
-            <iframe id="frame-lakes" class="lt-frame" data-src="lakes.html?embed=1" title="Lakes admin"></iframe>
+    <!-- ─── Confirm-delete modal ─── -->
+    <div class="m-overlay" id="confirm-modal" onclick="if(event.target===this)closeConfirm()">
+        <div class="m-shell narrow">
+            <div class="m-head">
+                <div>
+                    <p class="m-type" style="color:#c53030;">Delete</p>
+                    <h2 class="m-title" id="cf-title">—</h2>
+                    <p class="m-sub" id="cf-sub">This cannot be undone.</p>
+                </div>
+                <button class="m-close" onclick="closeConfirm()">×</button>
+            </div>
+            <div class="m-actions">
+                <div class="left"></div>
+                <div class="right">
+                    <button class="btn-ghost"  onclick="closeConfirm()">Cancel</button>
+                    <button class="btn-danger" id="cf-confirm" onclick="confirmDelete()">Yes, delete</button>
+                </div>
+            </div>
         </div>
-        <div id="pane-towns" class="tab-pane" role="tabpanel">
-            <iframe id="frame-towns" class="lt-frame" data-src="tags.html?embed=1" title="Towns admin"></iframe>
-        </div>
-        <div id="pane-businesses" class="tab-pane" role="tabpanel">
-            <iframe id="frame-businesses" class="lt-frame" data-src="businesses.html?embed=1" title="Businesses admin"></iframe>
-        </div>
-    </main>
-</div>
+    </div>
 
 <script>
+    // ── State ──────────────────────────────────────────────────────────
     const TABS = ['overview', 'map', 'lakes', 'towns', 'businesses'];
     const _params = new URLSearchParams(window.location.search);
     const _initialTab = TABS.includes(_params.get('tab')) ? _params.get('tab') : 'overview';
 
-    // Lazy-load iframes — only set the src the first time their tab is opened
-    // so the page boot doesn't fire three full pages worth of queries up front.
-    function ensureFrameLoaded(name) {
-        if (name === 'overview') return;
-        const frame = document.getElementById('frame-' + name);
-        if (frame && !frame.src) frame.src = frame.dataset.src;
-    }
+    const State = {
+        lakes:    [],
+        towns:    [],
+        biz:      [],
+        bizStatus: 'all',
+        loaded:   { lakes: false, towns: false, biz: false },
+        detail:   null, // { type, id, raw }
+        pending:  null, // for delete confirm: { type, id, label }
+    };
 
+    const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const escAttr = s => escHtml(s);
+    const fmtNum  = n => (typeof n === 'number' ? n.toLocaleString('en-US') : String(n ?? ''));
+    const j = (url, opts) => fetch(url, opts).then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)));
+
+    // ── Tab switching ─────────────────────────────────────────────────
     function showLT(name) {
         if (!TABS.includes(name)) name = 'overview';
         TABS.forEach(k => {
             document.getElementById('tab-btn-' + k).classList.toggle('active', k === name);
             document.getElementById('pane-' + k).classList.toggle('active', k === name);
         });
-        ensureFrameLoaded(name);
         const url = new URL(window.location);
         if (name === 'overview') url.searchParams.delete('tab');
         else                     url.searchParams.set('tab', name);
         history.replaceState(null, '', url);
+
+        // Lazy-load data per tab
+        if (name === 'lakes'      && !State.loaded.lakes)  loadLakes();
+        if (name === 'towns'      && !State.loaded.towns)  loadTowns();
+        if (name === 'businesses' && !State.loaded.biz)    loadBiz();
+
+        // Map is the only iframe — lazy-set its src on first open
+        if (name === 'map') {
+            const frame = document.getElementById('frame-map');
+            if (frame && !frame.src) frame.src = frame.dataset.src;
+        }
     }
 
-    // Iframe auto-resize via postMessage from embed-mode pages.
-    // The map iframe is a fixed-viewport app (its body height tracks the
-    // iframe height), which made auto-resize feed back on itself and drift
-    // upward over time — so the map is sized via CSS instead and skipped here.
-    window.addEventListener('message', (e) => {
-        const m = e.data;
-        if (!m || m.lt !== 'height' || typeof m.h !== 'number') return;
-        if (m.frame === 'map') return;
-        const target = document.getElementById('frame-' + m.frame);
-        if (target) target.style.height = Math.max(600, m.h + 8) + 'px';
-    });
-
-    // ── Overview data ─────────────────────────────────────────────
-    function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
-    function pill(status) {
-        const s = (status || '').toLowerCase();
-        const cls = s === 'active' || s === 'published'         ? 'ok'
-                  : s === 'pending' || s === 'pending_review'   ? 'pending'
-                  : s === 'draft'                                ? 'draft'
-                  : 'archived';
-        const label = s === 'published' ? 'Published'
-                    : s === 'pending_review' ? 'Pending'
-                    : (s ? s[0].toUpperCase() + s.slice(1) : '—');
-        return `<span class="ov-pill ${cls}">${escHtml(label)}</span>`;
-    }
-
-    function fmtDate(d) {
-        if (!d) return '';
-        return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
-
-    function recentItems(rows, fmt) {
-        if (!rows || !rows.length) return '<div class="ov-empty">No items yet.</div>';
-        return rows.slice(0, 5).map(fmt).join('');
-    }
-
+    // ── Data loaders ──────────────────────────────────────────────────
     async function loadOverview() {
         try {
-            // Admin sees all rows (including drafts/archived) — passing the
-            // admin-only query params each endpoint already supports.
             const [lakesRes, tagsRes, bizRes] = await Promise.all([
                 fetch('/api/lakes').then(r => r.ok ? r.json() : []),
                 fetch('/api/tags').then(r => r.ok ? r.json() : []),
                 fetch('/api/businesses?status=all').then(r => r.ok ? r.json() : []),
             ]);
+            const lakes = Array.isArray(lakesRes) ? lakesRes : (lakesRes.rows || []);
+            const tags  = Array.isArray(tagsRes)  ? tagsRes  : (tagsRes.rows  || []);
+            const biz   = Array.isArray(bizRes)   ? bizRes   : (bizRes.rows   || []);
+            document.getElementById('ov-lakes').textContent   = fmtNum(lakes.length);
+            document.getElementById('ov-towns').textContent   = fmtNum(tags.length);
+            document.getElementById('ov-biz').textContent     = fmtNum(biz.length);
+            document.getElementById('ov-pending').textContent = fmtNum(biz.filter(b => b.status === 'pending').length);
+        } catch (_) { /* leave counters at — */ }
+    }
 
-            const lakes = Array.isArray(lakesRes) ? lakesRes
-                        : (lakesRes && Array.isArray(lakesRes.rows)) ? lakesRes.rows
-                        : [];
-            const tags  = Array.isArray(tagsRes)  ? tagsRes
-                        : (tagsRes && Array.isArray(tagsRes.rows))  ? tagsRes.rows
-                        : [];
-            const biz   = Array.isArray(bizRes)   ? bizRes
-                        : (bizRes && Array.isArray(bizRes.rows))   ? bizRes.rows
-                        : [];
+    async function loadLakes() {
+        State.loaded.lakes = true;
+        try {
+            const status = document.getElementById('lk-status').value;
+            const url = status === 'all' || !status ? '/api/lakes?status=all' : `/api/lakes?status=${encodeURIComponent(status)}`;
+            const r = await fetch(url, { credentials: 'include' });
+            const data = await r.json();
+            State.lakes = Array.isArray(data) ? data : (data.rows || []);
+        } catch (_) { State.lakes = []; }
 
-            // ── Counters ──
-            document.getElementById('ov-lakes-total').textContent = lakes.length;
-            document.getElementById('ov-lakes-pub').textContent   = lakes.filter(l => l.status === 'published').length;
+        // Populate region filter
+        const regions = [...new Set(State.lakes.map(l => l.region).filter(Boolean))].sort();
+        const sel = document.getElementById('lk-region');
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">All regions</option>' + regions.map(r => `<option value="${escAttr(r)}">${escHtml(r)}</option>`).join('');
+        if (cur && regions.includes(cur)) sel.value = cur;
+        renderLakes();
+    }
 
-            document.getElementById('ov-towns-total').textContent  = tags.length;
-            document.getElementById('ov-towns-active').textContent = tags.filter(t => t.active !== false).length;
+    function renderLakes() {
+        const q      = document.getElementById('lk-search').value.toLowerCase().trim();
+        const region = document.getElementById('lk-region').value;
+        const status = document.getElementById('lk-status').value;
+        const filtered = State.lakes.filter(l => {
+            if (q && !(`${l.name||''} ${l.county||''} ${l.region||''}`.toLowerCase().includes(q))) return false;
+            if (region && l.region !== region) return false;
+            if (status && status !== 'all' && l.status !== status) return false;
+            return true;
+        });
+        renderGrid('lk-grid', filtered, {
+            type: 'lake',
+            empty: 'No lakes match the current filters.',
+            thumb: l => l.featured_image_url || l.hero_image_url,
+            initials: l => (l.name || '?').replace(/^lake\s+/i, '').slice(0, 1).toUpperCase(),
+            status: l => l.status,
+            name:  l => l.name,
+            meta:  l => [l.region, l.county, l.state].filter(Boolean).join(' · '),
+            stats: l => [
+                l.county ? l.county + ' Co.' : null,
+                l.state || null,
+            ].filter(Boolean),
+        });
+    }
 
-            document.getElementById('ov-biz-total').textContent   = biz.length;
-            document.getElementById('ov-biz-active').textContent  = biz.filter(b => b.status === 'active').length;
-            document.getElementById('ov-biz-pending').textContent = biz.filter(b => b.status === 'pending').length;
+    async function loadTowns() {
+        State.loaded.towns = true;
+        try {
+            const r = await fetch('/api/tags?include_archived=1', { credentials: 'include' });
+            const data = await r.json();
+            State.towns = Array.isArray(data) ? data : (data.rows || []);
+        } catch (_) { State.towns = []; }
 
-            // ── Recent updated lakes ──
-            const recentLakes = [...lakes]
-                .sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0));
-            document.getElementById('ov-recent-lakes').innerHTML = recentItems(recentLakes, l => `
-                <a class="ov-item" href="/lakes/${encodeURIComponent(l.slug)}" target="_blank" rel="noopener" title="View public lake page">
-                    <div class="ov-item-main">
-                        <div class="ov-item-name">${escHtml(l.name)}</div>
-                        <div class="ov-item-meta">${escHtml(l.region || l.county || '')} · updated ${fmtDate(l.updated_at || l.created_at)}</div>
+        const states = [...new Set(State.towns.map(t => t.state).filter(Boolean))].sort();
+        const sel = document.getElementById('tw-state');
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">All states</option>' + states.map(s => `<option value="${escAttr(s)}">${escHtml(s)}</option>`).join('');
+        if (cur && states.includes(cur)) sel.value = cur;
+        renderTowns();
+    }
+
+    function renderTowns() {
+        const q       = document.getElementById('tw-search').value.toLowerCase().trim();
+        const state   = document.getElementById('tw-state').value;
+        const visMode = document.getElementById('tw-active').value;
+        const filtered = State.towns.filter(t => {
+            if (visMode === 'active' && !t.active) return false;
+            if (q && !(`${t.name||''} ${t.region||''} ${t.state||''}`.toLowerCase().includes(q))) return false;
+            if (state && t.state !== state) return false;
+            return true;
+        });
+        renderGrid('tw-grid', filtered, {
+            type: 'town',
+            empty: 'No towns match the current filters.',
+            thumb: t => t.hero_image_url,
+            initials: t => (t.name || '?').slice(0, 1).toUpperCase(),
+            status: t => t.active ? 'published' : 'archived',
+            name:  t => t.name,
+            meta:  t => [t.region, t.state].filter(Boolean).join(' · '),
+            stats: t => [
+                t.lake_count != null ? `${t.lake_count} lakes` : null,
+                t.agent_count != null ? `${t.agent_count} agents` : null,
+            ].filter(Boolean),
+        });
+    }
+
+    async function loadBiz() {
+        State.loaded.biz = true;
+        try {
+            const r = await fetch(`/api/businesses?status=all`, { credentials: 'include' });
+            const data = await r.json();
+            State.biz = Array.isArray(data) ? data : (data.rows || []);
+        } catch (_) { State.biz = []; }
+
+        const types = [...new Set(State.biz.map(b => b.type).filter(Boolean))].sort();
+        const sel = document.getElementById('bz-type');
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">All types</option>' + types.map(t => `<option value="${escAttr(t)}">${escHtml(t)}</option>`).join('');
+        if (cur && types.includes(cur)) sel.value = cur;
+        renderBiz();
+    }
+
+    function setBizStatus(s) {
+        State.bizStatus = s;
+        document.querySelectorAll('#bz-status-tabs .status-tab').forEach(b => {
+            b.classList.toggle('on', b.dataset.status === s);
+        });
+        renderBiz();
+    }
+
+    function renderBiz() {
+        const q    = document.getElementById('bz-search').value.toLowerCase().trim();
+        const type = document.getElementById('bz-type').value;
+        const filtered = State.biz.filter(b => {
+            if (State.bizStatus !== 'all' && b.status !== State.bizStatus) return false;
+            if (type && b.type !== type) return false;
+            if (q && !(`${b.name||''} ${b.city||''} ${b.type||''}`.toLowerCase().includes(q))) return false;
+            return true;
+        });
+        renderGrid('bz-grid', filtered, {
+            type: 'business',
+            empty: 'No businesses match the current filters.',
+            thumb: b => b.featured_image_url,
+            initials: b => (b.name || '?').slice(0, 1).toUpperCase(),
+            status: b => b.status,
+            name:  b => b.name,
+            meta:  b => [b.type, b.city, b.state].filter(Boolean).join(' · '),
+            stats: b => [
+                b.lake_count != null ? `${b.lake_count} lakes` : null,
+                b.tier ? b.tier : null,
+            ].filter(Boolean),
+        });
+    }
+
+    function renderGrid(gridId, items, cfg) {
+        const el = document.getElementById(gridId);
+        if (!items.length) {
+            el.innerHTML = `<div class="empty-grid">${escHtml(cfg.empty)}</div>`;
+            return;
+        }
+        const statusClass = s => {
+            const x = String(s || '').toLowerCase();
+            if (x === 'published' || x === 'active') return 'ok';
+            if (x === 'pending'   || x === 'pending_review') return 'pending';
+            if (x === 'draft')    return 'draft';
+            return 'archived';
+        };
+        const statusLabel = s => {
+            const x = String(s || '').toLowerCase();
+            if (x === 'pending_review') return 'Pending';
+            if (!x) return '—';
+            return x[0].toUpperCase() + x.slice(1);
+        };
+        el.innerHTML = items.map(item => {
+            const thumb = cfg.thumb(item);
+            const thumbStyle = thumb ? `background-image:url('${escAttr(thumb)}');` : '';
+            const initials = cfg.initials(item) || '?';
+            const status   = cfg.status(item);
+            const stats    = cfg.stats(item).map(s => `<span class="stat-chip">${escHtml(s)}</span>`).join('');
+            return `
+                <div class="ent-card" onclick='openDetail(${JSON.stringify(cfg.type)}, ${JSON.stringify(item.id)})'>
+                    <div class="ent-thumb" style="${thumbStyle}">
+                        ${thumb ? '' : `<div class="thumb-fallback">${escHtml(initials)}</div>`}
+                        ${status ? `<span class="status-pill ${statusClass(status)}">${escHtml(statusLabel(status))}</span>` : ''}
                     </div>
-                    ${pill(l.status)}
-                </a>
-            `);
-
-            // ── Recent towns ──
-            const recentTowns = [...tags]
-                .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-            document.getElementById('ov-recent-towns').innerHTML = recentItems(recentTowns, t => `
-                <a class="ov-item" href="/towns/${encodeURIComponent(t.slug)}" target="_blank" rel="noopener" title="View public town page">
-                    <div class="ov-item-main">
-                        <div class="ov-item-name">${escHtml(t.name)}</div>
-                        <div class="ov-item-meta">${escHtml(t.region || t.state || '')} · added ${fmtDate(t.created_at)}</div>
+                    <div class="ent-body">
+                        <div class="name">${escHtml(cfg.name(item) || '(unnamed)')}</div>
+                        <div class="meta">${escHtml(cfg.meta(item) || '')}</div>
+                        ${stats ? `<div class="stats">${stats}</div>` : ''}
                     </div>
-                    ${pill(t.active === false ? 'archived' : 'active')}
-                </a>
-            `);
+                </div>`;
+        }).join('');
+    }
 
-            // ── Recent businesses ──
-            const recentBiz = [...biz]
-                .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-            document.getElementById('ov-recent-biz').innerHTML = recentItems(recentBiz, b => `
-                <a class="ov-item" href="/businesses/${encodeURIComponent(b.slug)}" target="_blank" rel="noopener" title="View public business page">
-                    <div class="ov-item-main">
-                        <div class="ov-item-name">${escHtml(b.name)}</div>
-                        <div class="ov-item-meta">${escHtml(b.type || 'business')}${b.city ? ' · ' + escHtml(b.city) : ''} · added ${fmtDate(b.created_at)}</div>
-                    </div>
-                    ${pill(b.status)}
-                </a>
-            `);
-        } catch (err) {
-            console.error('[overview] load failed:', err);
-            ['ov-recent-lakes', 'ov-recent-towns', 'ov-recent-biz'].forEach(id => {
-                document.getElementById(id).innerHTML = '<div class="ov-empty" style="color:#c53030;">Could not load. Try again in a moment.</div>';
+    // ── Universal detail modal ───────────────────────────────────────
+    function openDetail(type, id) {
+        const collection = type === 'lake' ? State.lakes : type === 'town' ? State.towns : State.biz;
+        const raw = collection.find(x => String(x.id) === String(id));
+        if (!raw) return;
+        State.detail = { type, id, raw };
+
+        document.getElementById('dt-type').textContent  = type === 'lake' ? 'Lake' : type === 'town' ? 'Town' : 'Business';
+        document.getElementById('dt-title').textContent = raw.name || '(unnamed)';
+        document.getElementById('dt-sub').textContent   =
+            type === 'lake'     ? [raw.region, raw.county, raw.state].filter(Boolean).join(' · ')
+          : type === 'town'     ? [raw.region, raw.state].filter(Boolean).join(' · ')
+          : /* business */         [raw.type, raw.city, raw.state].filter(Boolean).join(' · ');
+
+        document.getElementById('dt-msg').className = 'msg';
+        document.getElementById('dt-msg').textContent = '';
+        // Hide blog tab for businesses (businesses don't have direct blog posts)
+        document.querySelector('.m-tab[data-mt="blog"]').style.display = (type === 'business') ? 'none' : '';
+        // Hide agents tab for businesses (businesses don't have agents listed by API)
+        document.querySelector('.m-tab[data-mt="agents"]').style.display = (type === 'business') ? 'none' : '';
+
+        document.getElementById('dt-pane-edit').innerHTML = renderEditForm(type, raw);
+        showDetailTab('edit');
+
+        // Counts come from the related-entity fetches; show '…' until they load.
+        ['agents', 'businesses', 'blog', 'tags'].forEach(k => {
+            const el = document.getElementById('ct-' + k); if (el) el.textContent = '';
+        });
+        loadRelated(type, id);
+
+        document.getElementById('detail-modal').classList.add('open');
+    }
+
+    function closeDetail() {
+        document.getElementById('detail-modal').classList.remove('open');
+        State.detail = null;
+    }
+
+    function showDetailTab(name) {
+        document.querySelectorAll('#detail-modal .m-tab').forEach(b => b.classList.toggle('active', b.dataset.mt === name));
+        ['edit','agents','businesses','blog','tags'].forEach(k => {
+            const pane = document.getElementById('dt-pane-' + k);
+            if (pane) pane.classList.toggle('active', k === name);
+        });
+    }
+
+    function renderEditForm(type, x) {
+        if (type === 'lake') {
+            return `
+                <div class="field-row">
+                    <div class="field"><label>Name</label><input id="f-name"   value="${escAttr(x.name || '')}"></div>
+                    <div class="field"><label>Slug</label><input id="f-slug"   value="${escAttr(x.slug || '')}"><div class="hint">URL: /lakes/${escHtml(x.slug || '')}</div></div>
+                </div>
+                <div class="field-row">
+                    <div class="field"><label>Region</label><input id="f-region" value="${escAttr(x.region || '')}"></div>
+                    <div class="field"><label>County</label><input id="f-county" value="${escAttr(x.county || '')}"></div>
+                </div>
+                <div class="field-row">
+                    <div class="field"><label>State</label><input id="f-state"    value="${escAttr(x.state || 'MN')}" maxlength="2"></div>
+                    <div class="field"><label>Status</label><select id="f-status">
+                        <option value="published" ${x.status === 'published' ? 'selected' : ''}>Published</option>
+                        <option value="draft"     ${x.status === 'draft'     ? 'selected' : ''}>Draft</option>
+                        <option value="archived"  ${x.status === 'archived'  ? 'selected' : ''}>Archived</option>
+                    </select></div>
+                </div>
+                <div class="field-row">
+                    <div class="field"><label>Latitude</label> <input id="f-lat"  value="${escAttr(x.latitude  ?? '')}" type="number" step="0.000001"></div>
+                    <div class="field"><label>Longitude</label><input id="f-lng"  value="${escAttr(x.longitude ?? '')}" type="number" step="0.000001"></div>
+                </div>
+                <div class="field"><label>Featured image URL</label><input id="f-img" value="${escAttr(x.featured_image_url || x.hero_image_url || '')}"><div class="hint">Public Cloudinary URL — leave blank for fallback gradient.</div></div>
+                <div class="field"><label>Intro text</label><textarea id="f-intro">${escHtml(x.intro_text || '')}</textarea></div>
+                <div class="field"><label>SEO title</label>      <input id="f-seo-title" value="${escAttr(x.seo_title || '')}"></div>
+                <div class="field"><label>SEO description</label><textarea id="f-seo-desc">${escHtml(x.seo_description || '')}</textarea></div>
+            `;
+        }
+        if (type === 'town') {
+            return `
+                <div class="field-row">
+                    <div class="field"><label>Name</label><input id="f-name" value="${escAttr(x.name || '')}"></div>
+                    <div class="field"><label>Slug</label><input id="f-slug" value="${escAttr(x.slug || '')}"><div class="hint">URL: /towns/${escHtml(x.slug || '')}</div></div>
+                </div>
+                <div class="field-row">
+                    <div class="field"><label>Region</label><input id="f-region" value="${escAttr(x.region || '')}"></div>
+                    <div class="field"><label>State</label> <input id="f-state"  value="${escAttr(x.state || 'MN')}" maxlength="2"></div>
+                </div>
+                <div class="field-row">
+                    <div class="field"><label>Latitude</label> <input id="f-lat" value="${escAttr(x.latitude  ?? '')}" type="number" step="0.000001"></div>
+                    <div class="field"><label>Longitude</label><input id="f-lng" value="${escAttr(x.longitude ?? '')}" type="number" step="0.000001"></div>
+                </div>
+                <div class="field"><label>Hero image URL</label><input id="f-img" value="${escAttr(x.hero_image_url || '')}"></div>
+                <div class="field"><label>Intro text</label>   <textarea id="f-intro">${escHtml(x.intro_text || '')}</textarea></div>
+                <div class="field"><label>SEO title</label>    <input    id="f-seo-title" value="${escAttr(x.seo_title || '')}"></div>
+                <div class="field"><label>SEO description</label><textarea id="f-seo-desc">${escHtml(x.seo_description || '')}</textarea></div>
+                <div class="field"><label>Active</label><select id="f-active">
+                    <option value="true"  ${x.active ? 'selected' : ''}>Active (visible)</option>
+                    <option value="false" ${!x.active ? 'selected' : ''}>Archived</option>
+                </select></div>
+            `;
+        }
+        // business
+        return `
+            <div class="field-row">
+                <div class="field"><label>Name</label><input id="f-name" value="${escAttr(x.name || '')}"></div>
+                <div class="field"><label>Slug</label><input id="f-slug" value="${escAttr(x.slug || '')}"><div class="hint">URL: /businesses/${escHtml(x.slug || '')}</div></div>
+            </div>
+            <div class="field-row">
+                <div class="field"><label>Type</label><select id="f-type">
+                    ${['restaurant','marina','service','photographer','builder','boat_rental','outdoor_recreation','other']
+                        .map(t => `<option value="${t}" ${x.type === t ? 'selected':''}>${t.replace('_',' ')}</option>`).join('')}
+                </select></div>
+                <div class="field"><label>Status</label><select id="f-status">
+                    ${['pending','active','draft','archived'].map(s => `<option value="${s}" ${x.status === s ? 'selected':''}>${s}</option>`).join('')}
+                </select></div>
+            </div>
+            <div class="field-row">
+                <div class="field"><label>Phone</label><input id="f-phone" value="${escAttr(x.phone || '')}"></div>
+                <div class="field"><label>Email</label><input id="f-email" value="${escAttr(x.email || '')}"></div>
+            </div>
+            <div class="field"><label>Website</label><input id="f-website" value="${escAttr(x.website_url || '')}"></div>
+            <div class="field-row">
+                <div class="field"><label>Address</label><input id="f-address" value="${escAttr(x.address || '')}"></div>
+                <div class="field"><label>City</label>   <input id="f-city"    value="${escAttr(x.city || '')}"></div>
+            </div>
+            <div class="field-row">
+                <div class="field"><label>State</label><input id="f-state" value="${escAttr(x.state || 'MN')}" maxlength="2"></div>
+                <div class="field"><label>Zip</label>  <input id="f-zip"   value="${escAttr(x.zip || '')}"></div>
+            </div>
+            <div class="field"><label>Featured image URL</label><input id="f-img" value="${escAttr(x.featured_image_url || '')}"></div>
+            <div class="field"><label>Description</label><textarea id="f-desc">${escHtml(x.description || '')}</textarea></div>
+            <div class="field"><label>Hours</label><input id="f-hours" value="${escAttr(x.hours || '')}"><div class="hint">Free-form, e.g. "Mon-Fri 9-5, Sat 10-2"</div></div>
+        `;
+    }
+
+    function collectEditPayload(type) {
+        const v = id => document.getElementById(id)?.value?.trim() || null;
+        if (type === 'lake') return {
+            name: v('f-name'), slug: v('f-slug'), region: v('f-region'), county: v('f-county'), state: v('f-state'),
+            latitude: parseFloat(v('f-lat'))  || null,
+            longitude: parseFloat(v('f-lng')) || null,
+            featured_image_url: v('f-img'), intro_text: v('f-intro'),
+            seo_title: v('f-seo-title'), seo_description: v('f-seo-desc'),
+            status: v('f-status'),
+        };
+        if (type === 'town') return {
+            name: v('f-name'), slug: v('f-slug'), region: v('f-region'), state: v('f-state'),
+            latitude: parseFloat(v('f-lat'))  || null,
+            longitude: parseFloat(v('f-lng')) || null,
+            hero_image_url: v('f-img'), intro_text: v('f-intro'),
+            seo_title: v('f-seo-title'), seo_description: v('f-seo-desc'),
+            active: v('f-active') === 'true',
+        };
+        // business
+        return {
+            name: v('f-name'), slug: v('f-slug'), type: v('f-type'), status: v('f-status'),
+            phone: v('f-phone'), email: v('f-email'), website_url: v('f-website'),
+            address: v('f-address'), city: v('f-city'), state: v('f-state'), zip: v('f-zip'),
+            featured_image_url: v('f-img'), description: v('f-desc'), hours: v('f-hours'),
+        };
+    }
+
+    async function saveEntity() {
+        if (!State.detail) return;
+        const { type, id } = State.detail;
+        const payload = collectEditPayload(type);
+        const url = type === 'lake'  ? `/api/lakes/${encodeURIComponent(id)}`
+                  : type === 'town'  ? `/api/tags/${encodeURIComponent(id)}`
+                  :                    `/api/businesses/${encodeURIComponent(id)}`;
+        const btn = document.getElementById('dt-save');
+        const msg = document.getElementById('dt-msg');
+        btn.disabled = true; btn.textContent = 'Saving…';
+        msg.className = 'msg';
+        try {
+            const r = await fetch(url, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload),
             });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+            msg.textContent = '✓ Saved.';
+            msg.className = 'msg ok';
+            // Reload the underlying data so cards update
+            if (type === 'lake')  await loadLakes();
+            if (type === 'town')  await loadTowns();
+            if (type === 'business') await loadBiz();
+        } catch (err) {
+            msg.textContent = err.message;
+            msg.className = 'msg err';
+        } finally {
+            btn.disabled = false; btn.textContent = 'Save changes';
         }
     }
 
+    async function loadRelated(type, id) {
+        if (type === 'lake') {
+            const [agents, biz, blog, tags] = await Promise.all([
+                fetch(`/api/lakes/${id}/agents`,     { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+                fetch(`/api/lakes/${id}/businesses`, { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+                fetch(`/api/lakes/${id}/blog-posts`, { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+                fetch(`/api/lakes/${id}/tags`,       { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+            ]);
+            renderRel('dt-pane-agents',     agents, a => ({ name: a.display_name || a.full_name, meta: a.brokerage_name, href: `/pages/admin/agent-review.html?id=${a.id}` }));
+            renderRel('dt-pane-businesses', biz,    b => ({ name: b.name, meta: [b.type, b.city].filter(Boolean).join(' · '), href: `/pages/admin/lakes-towns.html?tab=businesses` }));
+            renderRel('dt-pane-blog',       blog,   p => ({ name: p.title, meta: p.is_published ? 'Published' : 'Draft',     href: `/pages/admin/blog-edit.html?id=${p.id}` }));
+            renderRel('dt-pane-tags',       tags,   t => ({ name: t.name,  meta: [t.region, t.state].filter(Boolean).join(' · '), href: `/pages/admin/lakes-towns.html?tab=towns` }));
+            document.getElementById('ct-agents').textContent     = agents.length ? `(${agents.length})` : '';
+            document.getElementById('ct-businesses').textContent = biz.length    ? `(${biz.length})`    : '';
+            document.getElementById('ct-blog').textContent       = blog.length   ? `(${blog.length})`  : '';
+            document.getElementById('ct-tags').textContent       = tags.length   ? `(${tags.length})`  : '';
+        } else if (type === 'town') {
+            // tags routes use slugOrId, so pass id (UUID) — backend handles both.
+            const slug = State.detail.raw.slug || id;
+            const [agents, biz, blog, lakes] = await Promise.all([
+                fetch(`/api/tags/${slug}/agents`,     { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+                fetch(`/api/tags/${slug}/businesses`, { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+                fetch(`/api/tags/${slug}/blog-posts`, { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+                fetch(`/api/tags/${slug}/lakes`,      { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+            ]);
+            renderRel('dt-pane-agents',     agents, a => ({ name: a.display_name || a.full_name, meta: a.brokerage_name, href: `/pages/admin/agent-review.html?id=${a.id}` }));
+            renderRel('dt-pane-businesses', biz,    b => ({ name: b.name, meta: [b.type, b.city].filter(Boolean).join(' · '), href: `/pages/admin/lakes-towns.html?tab=businesses` }));
+            renderRel('dt-pane-blog',       blog,   p => ({ name: p.title, meta: p.is_published ? 'Published' : 'Draft',     href: `/pages/admin/blog-edit.html?id=${p.id}` }));
+            renderRel('dt-pane-tags',       lakes,  l => ({ name: l.name, meta: [l.region, l.county].filter(Boolean).join(' · '), href: `/pages/admin/lakes-towns.html?tab=lakes` }));
+            // For towns, the "Towns" tab in the detail modal actually shows LAKES related to this town.
+            document.querySelector('.m-tab[data-mt="tags"]').firstChild.textContent = 'Lakes ';
+            document.getElementById('ct-agents').textContent     = agents.length ? `(${agents.length})` : '';
+            document.getElementById('ct-businesses').textContent = biz.length    ? `(${biz.length})`    : '';
+            document.getElementById('ct-blog').textContent       = blog.length   ? `(${blog.length})`  : '';
+            document.getElementById('ct-tags').textContent       = lakes.length  ? `(${lakes.length})` : '';
+        } else {
+            // business: show connected lakes + connected towns
+            const [lakes, tags] = await Promise.all([
+                fetch(`/api/businesses/${id}/lakes`, { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+                fetch(`/api/businesses/${id}/tags`,  { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+            ]);
+            renderRel('dt-pane-businesses', lakes, l => ({ name: l.name, meta: [l.region, l.county].filter(Boolean).join(' · '), href: `/pages/admin/lakes-towns.html?tab=lakes` }));
+            renderRel('dt-pane-tags',       tags,  t => ({ name: t.name, meta: [t.region, t.state].filter(Boolean).join(' · '), href: `/pages/admin/lakes-towns.html?tab=towns` }));
+            // Relabel tabs for businesses: "Businesses" tab actually shows Lakes; "Towns" tab shows Towns.
+            document.querySelector('.m-tab[data-mt="businesses"]').firstChild.textContent = 'Lakes ';
+            document.getElementById('ct-businesses').textContent = lakes.length ? `(${lakes.length})` : '';
+            document.getElementById('ct-tags').textContent       = tags.length  ? `(${tags.length})`  : '';
+        }
+    }
+
+    function renderRel(paneId, items, fmt) {
+        const el = document.getElementById(paneId);
+        if (!items || !items.length) {
+            el.innerHTML = '<div class="rel-empty">Nothing connected yet.</div>';
+            return;
+        }
+        el.innerHTML = `<div class="rel-list">${items.map(item => {
+            const f = fmt(item);
+            const initial = (f.name || '?').slice(0, 1).toUpperCase();
+            return `
+                <div class="rel-row">
+                    <div class="rel-thumb">${escHtml(initial)}</div>
+                    <div>
+                        <div class="rel-name">${escHtml(f.name || '(unnamed)')}</div>
+                        ${f.meta ? `<div class="rel-meta">${escHtml(f.meta)}</div>` : ''}
+                    </div>
+                    ${f.href ? `<a href="${escAttr(f.href)}" target="_blank">Open ↗</a>` : ''}
+                </div>`;
+        }).join('')}</div>`;
+    }
+
+    // ── Create modal ────────────────────────────────────────────────
+    function openCreate(type) {
+        document.getElementById('cr-type').textContent  = type === 'lake' ? 'New Lake' : type === 'town' ? 'New Town' : 'New Business';
+        document.getElementById('cr-title').textContent = type === 'lake' ? 'Create a new lake' : type === 'town' ? 'Create a new town' : 'Create a new business';
+        const slugHint = `Auto-generated from the name if you leave it blank — must be unique.`;
+        if (type === 'lake') {
+            document.getElementById('cr-form').innerHTML = `
+                <div class="field"><label>Lake name</label><input id="cr-name" autofocus placeholder="e.g. Lake Minnetonka"></div>
+                <div class="field-row">
+                    <div class="field"><label>Region</label><input id="cr-region" placeholder="e.g. West Metro"></div>
+                    <div class="field"><label>State</label> <input id="cr-state" value="MN" maxlength="2"></div>
+                </div>
+                <div class="field"><label>Slug</label><input id="cr-slug" placeholder="lake-minnetonka"><div class="hint">${slugHint}</div></div>
+            `;
+        } else if (type === 'town') {
+            document.getElementById('cr-form').innerHTML = `
+                <div class="field"><label>Town name</label><input id="cr-name" autofocus placeholder="e.g. Wayzata"></div>
+                <div class="field-row">
+                    <div class="field"><label>Region</label><input id="cr-region" placeholder="e.g. West Metro"></div>
+                    <div class="field"><label>State</label> <input id="cr-state" value="MN" maxlength="2"></div>
+                </div>
+                <div class="field"><label>Slug</label><input id="cr-slug" placeholder="wayzata"><div class="hint">${slugHint}</div></div>
+            `;
+        } else {
+            document.getElementById('cr-form').innerHTML = `
+                <div class="field"><label>Business name</label><input id="cr-name" autofocus placeholder="e.g. Lord Fletcher's"></div>
+                <div class="field"><label>Type</label><select id="cr-type-field">
+                    ${['restaurant','marina','service','photographer','builder','boat_rental','outdoor_recreation','other']
+                        .map(t => `<option value="${t}">${t.replace('_',' ')}</option>`).join('')}
+                </select></div>
+                <div class="field-row">
+                    <div class="field"><label>City</label> <input id="cr-city" placeholder="e.g. Spring Park"></div>
+                    <div class="field"><label>State</label><input id="cr-state" value="MN" maxlength="2"></div>
+                </div>
+                <div class="field"><label>Slug</label><input id="cr-slug" placeholder="lord-fletchers"><div class="hint">${slugHint}</div></div>
+            `;
+        }
+        document.getElementById('cr-msg').className = 'msg';
+        document.getElementById('cr-msg').textContent = '';
+        document.getElementById('create-modal').dataset.entityType = type;
+        document.getElementById('create-modal').classList.add('open');
+        setTimeout(() => document.getElementById('cr-name')?.focus(), 50);
+    }
+
+    function closeCreate() {
+        document.getElementById('create-modal').classList.remove('open');
+    }
+
+    async function createEntity() {
+        const type = document.getElementById('create-modal').dataset.entityType;
+        const v = id => document.getElementById(id)?.value?.trim() || null;
+        const msg = document.getElementById('cr-msg');
+        const btn = document.getElementById('cr-save');
+        msg.className = 'msg';
+        const name = v('cr-name');
+        if (!name) { msg.textContent = 'Name is required.'; msg.className = 'msg err'; return; }
+        btn.disabled = true; btn.textContent = 'Creating…';
+
+        let url, payload;
+        if (type === 'lake') {
+            payload = { name, slug: v('cr-slug'), region: v('cr-region'), state: v('cr-state') || 'MN', status: 'draft' };
+            url = '/api/lakes';
+        } else if (type === 'town') {
+            payload = { name, slug: v('cr-slug'), region: v('cr-region'), state: v('cr-state') || 'MN', active: true };
+            url = '/api/tags';
+        } else {
+            payload = { name, slug: v('cr-slug'), type: v('cr-type-field'), city: v('cr-city'), state: v('cr-state') || 'MN', status: 'active' };
+            url = '/api/businesses';
+        }
+
+        try {
+            const r = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+            closeCreate();
+
+            // Refresh list + auto-open detail modal on the new entity
+            if (type === 'lake')  { await loadLakes(); showLT('lakes');      openDetail('lake', data.id); }
+            if (type === 'town')  { await loadTowns(); showLT('towns');      openDetail('town', data.id); }
+            if (type === 'business') { await loadBiz();  showLT('businesses'); openDetail('business', data.id); }
+        } catch (err) {
+            msg.textContent = err.message;
+            msg.className = 'msg err';
+        } finally {
+            btn.disabled = false; btn.textContent = 'Create';
+        }
+    }
+
+    // ── Delete (with confirm) ───────────────────────────────────────
+    function deleteEntity() {
+        if (!State.detail) return;
+        const { type, raw } = State.detail;
+        State.pending = { type, id: raw.id, label: raw.name || '(unnamed)' };
+        document.getElementById('cf-title').textContent = `Delete ${type} "${raw.name || ''}"?`;
+        document.getElementById('cf-sub').textContent =
+            type === 'business'
+                ? 'Permanently removes the business + all its lake/town connections. Cannot be undone.'
+                : 'Archives the record (soft-delete). Public site will stop showing it immediately.';
+        document.getElementById('confirm-modal').classList.add('open');
+    }
+    function closeConfirm() { document.getElementById('confirm-modal').classList.remove('open'); State.pending = null; }
+    async function confirmDelete() {
+        if (!State.pending) return;
+        const { type, id } = State.pending;
+        const url = type === 'lake'     ? `/api/lakes/${encodeURIComponent(id)}`
+                  : type === 'town'     ? `/api/tags/${encodeURIComponent(id)}`
+                  : /* business */         `/api/businesses/${encodeURIComponent(id)}/permanent`;
+        const btn = document.getElementById('cf-confirm');
+        btn.disabled = true; btn.textContent = 'Deleting…';
+        try {
+            const r = await fetch(url, { method: 'DELETE', credentials: 'include' });
+            if (!r.ok) {
+                const data = await r.json().catch(() => ({}));
+                throw new Error(data.error || `HTTP ${r.status}`);
+            }
+            closeConfirm();
+            closeDetail();
+            if (type === 'lake')  await loadLakes();
+            if (type === 'town')  await loadTowns();
+            if (type === 'business') await loadBiz();
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            btn.disabled = false; btn.textContent = 'Yes, delete';
+        }
+    }
+
+    // ── Boot ────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
-        showLT(_initialTab);
         loadOverview();
+        showLT(_initialTab);
+
+        // Esc closes any open modal.
+        document.addEventListener('keydown', e => {
+            if (e.key !== 'Escape') return;
+            if (document.getElementById('confirm-modal').classList.contains('open')) return closeConfirm();
+            if (document.getElementById('create-modal').classList.contains('open'))  return closeCreate();
+            if (document.getElementById('detail-modal').classList.contains('open')) return closeDetail();
+        });
     });
 </script>
 </body>
