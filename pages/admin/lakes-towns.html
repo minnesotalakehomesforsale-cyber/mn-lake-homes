@@ -331,52 +331,19 @@
         </main>
     </div>
 
-    <!-- ─── Universal entity-detail modal (edit + related entities) ─── -->
-    <div class="m-overlay" id="detail-modal" onclick="if(event.target===this)closeDetail()">
-        <div class="m-shell">
-            <div class="m-head">
-                <div>
-                    <p class="m-type" id="dt-type">—</p>
-                    <h2 class="m-title" id="dt-title">—</h2>
-                    <p class="m-sub" id="dt-sub"></p>
-                </div>
-                <button class="m-close" onclick="closeDetail()">×</button>
-            </div>
-            <div class="m-tabs">
-                <button class="m-tab active" data-mt="edit"       onclick="showDetailTab('edit')">Edit</button>
-                <button class="m-tab"        data-mt="agents"     onclick="showDetailTab('agents')">Agents <span class="count" id="ct-agents"></span></button>
-                <button class="m-tab"        data-mt="businesses" onclick="showDetailTab('businesses')">Businesses <span class="count" id="ct-businesses"></span></button>
-                <button class="m-tab"        data-mt="blog"       onclick="showDetailTab('blog')">Blog <span class="count" id="ct-blog"></span></button>
-                <button class="m-tab"        data-mt="tags"       onclick="showDetailTab('tags')">Towns <span class="count" id="ct-tags"></span></button>
-            </div>
-            <div class="m-body">
-                <div class="msg" id="dt-msg"></div>
-                <div class="m-pane active" id="dt-pane-edit"></div>
-                <div class="m-pane" id="dt-pane-agents"><div class="rel-empty">Loading…</div></div>
-                <div class="m-pane" id="dt-pane-businesses"><div class="rel-empty">Loading…</div></div>
-                <div class="m-pane" id="dt-pane-blog"><div class="rel-empty">Loading…</div></div>
-                <div class="m-pane" id="dt-pane-tags"><div class="rel-empty">Loading…</div></div>
-            </div>
-            <div class="m-actions">
-                <div class="left">
-                    <button class="btn-danger"  id="dt-delete" onclick="deleteEntity()">Delete</button>
-                </div>
-                <div class="right">
-                    <button class="btn-ghost"   onclick="closeDetail()">Close</button>
-                    <button class="btn-primary" id="dt-save" onclick="saveEntity()">Save changes</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ─── Create modal (parameterized by type) ─── -->
+    <!-- ─── Create modal (parameterized by type) ─────────────────────
+         Note: edit/delete were previously also modals, but those have
+         moved to the full-page entity-edit.html so the UX matches the
+         agent-review.html pattern. Only the lightweight "create" stub
+         lives here — successful creates redirect to entity-edit.html.
+         ────────────────────────────────────────────────────────────── -->
     <div class="m-overlay" id="create-modal" onclick="if(event.target===this)closeCreate()">
         <div class="m-shell narrow">
             <div class="m-head">
                 <div>
                     <p class="m-type" id="cr-type">—</p>
                     <h2 class="m-title" id="cr-title">—</h2>
-                    <p class="m-sub">Fill in the essentials — you can edit the full profile after it's created.</p>
+                    <p class="m-sub">Fill in the essentials — you'll land on the full editor next to fill in the rest.</p>
                 </div>
                 <button class="m-close" onclick="closeCreate()">×</button>
             </div>
@@ -388,28 +355,7 @@
                 <div class="left"></div>
                 <div class="right">
                     <button class="btn-ghost"   onclick="closeCreate()">Cancel</button>
-                    <button class="btn-primary" id="cr-save" onclick="createEntity()">Create</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ─── Confirm-delete modal ─── -->
-    <div class="m-overlay" id="confirm-modal" onclick="if(event.target===this)closeConfirm()">
-        <div class="m-shell narrow">
-            <div class="m-head">
-                <div>
-                    <p class="m-type" style="color:#c53030;">Delete</p>
-                    <h2 class="m-title" id="cf-title">—</h2>
-                    <p class="m-sub" id="cf-sub">This cannot be undone.</p>
-                </div>
-                <button class="m-close" onclick="closeConfirm()">×</button>
-            </div>
-            <div class="m-actions">
-                <div class="left"></div>
-                <div class="right">
-                    <button class="btn-ghost"  onclick="closeConfirm()">Cancel</button>
-                    <button class="btn-danger" id="cf-confirm" onclick="confirmDelete()">Yes, delete</button>
+                    <button class="btn-primary" id="cr-save" onclick="createEntity()">Create &amp; edit</button>
                 </div>
             </div>
         </div>
@@ -427,8 +373,6 @@
         biz:      [],
         bizStatus: 'all',
         loaded:   { lakes: false, towns: false, biz: false },
-        detail:   null, // { type, id, raw }
-        pending:  null, // for delete confirm: { type, id, label }
     };
 
     const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -636,8 +580,9 @@
             const initials = cfg.initials(item) || '?';
             const status   = cfg.status(item);
             const stats    = cfg.stats(item).map(s => `<span class="stat-chip">${escHtml(s)}</span>`).join('');
+            const href = `entity-edit.html?type=${encodeURIComponent(cfg.type)}&id=${encodeURIComponent(item.id)}`;
             return `
-                <div class="ent-card" onclick='openDetail(${JSON.stringify(cfg.type)}, ${JSON.stringify(item.id)})'>
+                <a class="ent-card" href="${href}" style="text-decoration:none;color:inherit;">
                     <div class="ent-thumb" style="${thumbStyle}">
                         ${thumb ? '' : `<div class="thumb-fallback">${escHtml(initials)}</div>`}
                         ${status ? `<span class="status-pill ${statusClass(status)}">${escHtml(statusLabel(status))}</span>` : ''}
@@ -647,280 +592,10 @@
                         <div class="meta">${escHtml(cfg.meta(item) || '')}</div>
                         ${stats ? `<div class="stats">${stats}</div>` : ''}
                     </div>
-                </div>`;
+                </a>`;
         }).join('');
     }
 
-    // ── Universal detail modal ───────────────────────────────────────
-    function openDetail(type, id) {
-        const collection = type === 'lake' ? State.lakes : type === 'town' ? State.towns : State.biz;
-        const raw = collection.find(x => String(x.id) === String(id));
-        if (!raw) return;
-        State.detail = { type, id, raw };
-
-        document.getElementById('dt-type').textContent  = type === 'lake' ? 'Lake' : type === 'town' ? 'Town' : 'Business';
-        document.getElementById('dt-title').textContent = raw.name || '(unnamed)';
-        document.getElementById('dt-sub').textContent   =
-            type === 'lake'     ? [raw.region, raw.county, raw.state].filter(Boolean).join(' · ')
-          : type === 'town'     ? [raw.region, raw.state].filter(Boolean).join(' · ')
-          : /* business */         [raw.type, raw.city, raw.state].filter(Boolean).join(' · ');
-
-        document.getElementById('dt-msg').className = 'msg';
-        document.getElementById('dt-msg').textContent = '';
-        // Hide blog tab for businesses (businesses don't have direct blog posts)
-        document.querySelector('.m-tab[data-mt="blog"]').style.display = (type === 'business') ? 'none' : '';
-        // Hide agents tab for businesses (businesses don't have agents listed by API)
-        document.querySelector('.m-tab[data-mt="agents"]').style.display = (type === 'business') ? 'none' : '';
-
-        document.getElementById('dt-pane-edit').innerHTML = renderEditForm(type, raw);
-        showDetailTab('edit');
-
-        // Counts come from the related-entity fetches; show '…' until they load.
-        ['agents', 'businesses', 'blog', 'tags'].forEach(k => {
-            const el = document.getElementById('ct-' + k); if (el) el.textContent = '';
-        });
-        loadRelated(type, id);
-
-        document.getElementById('detail-modal').classList.add('open');
-    }
-
-    function closeDetail() {
-        document.getElementById('detail-modal').classList.remove('open');
-        State.detail = null;
-    }
-
-    function showDetailTab(name) {
-        document.querySelectorAll('#detail-modal .m-tab').forEach(b => b.classList.toggle('active', b.dataset.mt === name));
-        ['edit','agents','businesses','blog','tags'].forEach(k => {
-            const pane = document.getElementById('dt-pane-' + k);
-            if (pane) pane.classList.toggle('active', k === name);
-        });
-    }
-
-    function renderEditForm(type, x) {
-        if (type === 'lake') {
-            return `
-                <div class="field-row">
-                    <div class="field"><label>Name</label><input id="f-name"   value="${escAttr(x.name || '')}"></div>
-                    <div class="field"><label>Slug</label><input id="f-slug"   value="${escAttr(x.slug || '')}"><div class="hint">URL: /lakes/${escHtml(x.slug || '')}</div></div>
-                </div>
-                <div class="field-row">
-                    <div class="field"><label>Region</label><input id="f-region" value="${escAttr(x.region || '')}"></div>
-                    <div class="field"><label>County</label><input id="f-county" value="${escAttr(x.county || '')}"></div>
-                </div>
-                <div class="field-row">
-                    <div class="field"><label>State</label><input id="f-state"    value="${escAttr(x.state || 'MN')}" maxlength="2"></div>
-                    <div class="field"><label>Status</label><select id="f-status">
-                        <option value="published" ${x.status === 'published' ? 'selected' : ''}>Published</option>
-                        <option value="draft"     ${x.status === 'draft'     ? 'selected' : ''}>Draft</option>
-                        <option value="archived"  ${x.status === 'archived'  ? 'selected' : ''}>Archived</option>
-                    </select></div>
-                </div>
-                <div class="field-row">
-                    <div class="field"><label>Latitude</label> <input id="f-lat"  value="${escAttr(x.latitude  ?? '')}" type="number" step="0.000001"></div>
-                    <div class="field"><label>Longitude</label><input id="f-lng"  value="${escAttr(x.longitude ?? '')}" type="number" step="0.000001"></div>
-                </div>
-                <div class="field"><label>Featured image URL</label><input id="f-img" value="${escAttr(x.featured_image_url || x.hero_image_url || '')}"><div class="hint">Public Cloudinary URL — leave blank for fallback gradient.</div></div>
-                <div class="field"><label>Intro text</label><textarea id="f-intro">${escHtml(x.intro_text || '')}</textarea></div>
-                <div class="field"><label>"Life on this lake" editorial</label><textarea id="f-lifestyle" style="min-height:180px;">${escHtml(x.lifestyle_text || '')}</textarea><div class="hint">Paragraphs separated by blank lines. Leave blank to use the region-aware generated copy.</div></div>
-                <div class="field"><label>"What the seasons bring" editorial</label><textarea id="f-seasons" style="min-height:180px;">${escHtml(x.seasons_text || '')}</textarea><div class="hint">Paragraphs separated by blank lines. Leave blank to use the generated fallback.</div></div>
-                <div class="field"><label>SEO title</label>      <input id="f-seo-title" value="${escAttr(x.seo_title || '')}"></div>
-                <div class="field"><label>SEO description</label><textarea id="f-seo-desc">${escHtml(x.seo_description || '')}</textarea></div>
-            `;
-        }
-        if (type === 'town') {
-            return `
-                <div class="field-row">
-                    <div class="field"><label>Name</label><input id="f-name" value="${escAttr(x.name || '')}"></div>
-                    <div class="field"><label>Slug</label><input id="f-slug" value="${escAttr(x.slug || '')}"><div class="hint">URL: /towns/${escHtml(x.slug || '')}</div></div>
-                </div>
-                <div class="field-row">
-                    <div class="field"><label>Region</label><input id="f-region" value="${escAttr(x.region || '')}"></div>
-                    <div class="field"><label>State</label> <input id="f-state"  value="${escAttr(x.state || 'MN')}" maxlength="2"></div>
-                </div>
-                <div class="field-row">
-                    <div class="field"><label>Latitude</label> <input id="f-lat" value="${escAttr(x.latitude  ?? '')}" type="number" step="0.000001"></div>
-                    <div class="field"><label>Longitude</label><input id="f-lng" value="${escAttr(x.longitude ?? '')}" type="number" step="0.000001"></div>
-                </div>
-                <div class="field"><label>Hero image URL</label><input id="f-img" value="${escAttr(x.hero_image_url || '')}"></div>
-                <div class="field"><label>Intro text</label>   <textarea id="f-intro">${escHtml(x.intro_text || '')}</textarea></div>
-                <div class="field"><label>"Life in this town" editorial</label><textarea id="f-lifestyle" style="min-height:180px;">${escHtml(x.lifestyle_text || '')}</textarea><div class="hint">Paragraphs separated by blank lines. Leave blank to use the region-aware generated copy.</div></div>
-                <div class="field"><label>"Seasons + community" editorial</label><textarea id="f-seasons" style="min-height:180px;">${escHtml(x.seasons_text || '')}</textarea><div class="hint">Paragraphs separated by blank lines. Leave blank to use the generated fallback.</div></div>
-                <div class="field"><label>SEO title</label>    <input    id="f-seo-title" value="${escAttr(x.seo_title || '')}"></div>
-                <div class="field"><label>SEO description</label><textarea id="f-seo-desc">${escHtml(x.seo_description || '')}</textarea></div>
-                <div class="field"><label>Active</label><select id="f-active">
-                    <option value="true"  ${x.active ? 'selected' : ''}>Active (visible)</option>
-                    <option value="false" ${!x.active ? 'selected' : ''}>Archived</option>
-                </select></div>
-            `;
-        }
-        // business
-        return `
-            <div class="field-row">
-                <div class="field"><label>Name</label><input id="f-name" value="${escAttr(x.name || '')}"></div>
-                <div class="field"><label>Slug</label><input id="f-slug" value="${escAttr(x.slug || '')}"><div class="hint">URL: /businesses/${escHtml(x.slug || '')}</div></div>
-            </div>
-            <div class="field-row">
-                <div class="field"><label>Type</label><select id="f-type">
-                    ${['restaurant','marina','service','photographer','builder','boat_rental','outdoor_recreation','other']
-                        .map(t => `<option value="${t}" ${x.type === t ? 'selected':''}>${t.replace('_',' ')}</option>`).join('')}
-                </select></div>
-                <div class="field"><label>Status</label><select id="f-status">
-                    ${['pending','active','draft','archived'].map(s => `<option value="${s}" ${x.status === s ? 'selected':''}>${s}</option>`).join('')}
-                </select></div>
-            </div>
-            <div class="field-row">
-                <div class="field"><label>Phone</label><input id="f-phone" value="${escAttr(x.phone || '')}"></div>
-                <div class="field"><label>Email</label><input id="f-email" value="${escAttr(x.email || '')}"></div>
-            </div>
-            <div class="field"><label>Website</label><input id="f-website" value="${escAttr(x.website_url || '')}"></div>
-            <div class="field-row">
-                <div class="field"><label>Address</label><input id="f-address" value="${escAttr(x.address || '')}"></div>
-                <div class="field"><label>City</label>   <input id="f-city"    value="${escAttr(x.city || '')}"></div>
-            </div>
-            <div class="field-row">
-                <div class="field"><label>State</label><input id="f-state" value="${escAttr(x.state || 'MN')}" maxlength="2"></div>
-                <div class="field"><label>Zip</label>  <input id="f-zip"   value="${escAttr(x.zip || '')}"></div>
-            </div>
-            <div class="field"><label>Featured image URL</label><input id="f-img" value="${escAttr(x.featured_image_url || '')}"></div>
-            <div class="field"><label>Description</label><textarea id="f-desc">${escHtml(x.description || '')}</textarea></div>
-            <div class="field"><label>Hours</label><input id="f-hours" value="${escAttr(x.hours || '')}"><div class="hint">Free-form, e.g. "Mon-Fri 9-5, Sat 10-2"</div></div>
-        `;
-    }
-
-    function collectEditPayload(type) {
-        const v = id => document.getElementById(id)?.value?.trim() || null;
-        if (type === 'lake') return {
-            name: v('f-name'), slug: v('f-slug'), region: v('f-region'), county: v('f-county'), state: v('f-state'),
-            latitude: parseFloat(v('f-lat'))  || null,
-            longitude: parseFloat(v('f-lng')) || null,
-            featured_image_url: v('f-img'), intro_text: v('f-intro'),
-            lifestyle_text: v('f-lifestyle'), seasons_text: v('f-seasons'),
-            seo_title: v('f-seo-title'), seo_description: v('f-seo-desc'),
-            status: v('f-status'),
-        };
-        if (type === 'town') return {
-            name: v('f-name'), slug: v('f-slug'), region: v('f-region'), state: v('f-state'),
-            latitude: parseFloat(v('f-lat'))  || null,
-            longitude: parseFloat(v('f-lng')) || null,
-            hero_image_url: v('f-img'), intro_text: v('f-intro'),
-            lifestyle_text: v('f-lifestyle'), seasons_text: v('f-seasons'),
-            seo_title: v('f-seo-title'), seo_description: v('f-seo-desc'),
-            active: v('f-active') === 'true',
-        };
-        // business
-        return {
-            name: v('f-name'), slug: v('f-slug'), type: v('f-type'), status: v('f-status'),
-            phone: v('f-phone'), email: v('f-email'), website_url: v('f-website'),
-            address: v('f-address'), city: v('f-city'), state: v('f-state'), zip: v('f-zip'),
-            featured_image_url: v('f-img'), description: v('f-desc'), hours: v('f-hours'),
-        };
-    }
-
-    async function saveEntity() {
-        if (!State.detail) return;
-        const { type, id } = State.detail;
-        const payload = collectEditPayload(type);
-        const url = type === 'lake'  ? `/api/lakes/${encodeURIComponent(id)}`
-                  : type === 'town'  ? `/api/tags/${encodeURIComponent(id)}`
-                  :                    `/api/businesses/${encodeURIComponent(id)}`;
-        const btn = document.getElementById('dt-save');
-        const msg = document.getElementById('dt-msg');
-        btn.disabled = true; btn.textContent = 'Saving…';
-        msg.className = 'msg';
-        try {
-            const r = await fetch(url, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(payload),
-            });
-            const data = await r.json().catch(() => ({}));
-            if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
-            msg.textContent = '✓ Saved.';
-            msg.className = 'msg ok';
-            // Reload the underlying data so cards update
-            if (type === 'lake')  await loadLakes();
-            if (type === 'town')  await loadTowns();
-            if (type === 'business') await loadBiz();
-        } catch (err) {
-            msg.textContent = err.message;
-            msg.className = 'msg err';
-        } finally {
-            btn.disabled = false; btn.textContent = 'Save changes';
-        }
-    }
-
-    async function loadRelated(type, id) {
-        if (type === 'lake') {
-            const [agents, biz, blog, tags] = await Promise.all([
-                fetch(`/api/lakes/${id}/agents`,     { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
-                fetch(`/api/lakes/${id}/businesses`, { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
-                fetch(`/api/lakes/${id}/blog-posts`, { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
-                fetch(`/api/lakes/${id}/tags`,       { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
-            ]);
-            renderRel('dt-pane-agents',     agents, a => ({ name: a.display_name || a.full_name, meta: a.brokerage_name, href: `/pages/admin/agent-review.html?id=${a.id}` }));
-            renderRel('dt-pane-businesses', biz,    b => ({ name: b.name, meta: [b.type, b.city].filter(Boolean).join(' · '), href: `/pages/admin/lakes-towns.html?tab=businesses` }));
-            renderRel('dt-pane-blog',       blog,   p => ({ name: p.title, meta: p.is_published ? 'Published' : 'Draft',     href: `/pages/admin/blog-edit.html?id=${p.id}` }));
-            renderRel('dt-pane-tags',       tags,   t => ({ name: t.name,  meta: [t.region, t.state].filter(Boolean).join(' · '), href: `/pages/admin/lakes-towns.html?tab=towns` }));
-            document.getElementById('ct-agents').textContent     = agents.length ? `(${agents.length})` : '';
-            document.getElementById('ct-businesses').textContent = biz.length    ? `(${biz.length})`    : '';
-            document.getElementById('ct-blog').textContent       = blog.length   ? `(${blog.length})`  : '';
-            document.getElementById('ct-tags').textContent       = tags.length   ? `(${tags.length})`  : '';
-        } else if (type === 'town') {
-            // tags routes use slugOrId, so pass id (UUID) — backend handles both.
-            const slug = State.detail.raw.slug || id;
-            const [agents, biz, blog, lakes] = await Promise.all([
-                fetch(`/api/tags/${slug}/agents`,     { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
-                fetch(`/api/tags/${slug}/businesses`, { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
-                fetch(`/api/tags/${slug}/blog-posts`, { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
-                fetch(`/api/tags/${slug}/lakes`,      { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
-            ]);
-            renderRel('dt-pane-agents',     agents, a => ({ name: a.display_name || a.full_name, meta: a.brokerage_name, href: `/pages/admin/agent-review.html?id=${a.id}` }));
-            renderRel('dt-pane-businesses', biz,    b => ({ name: b.name, meta: [b.type, b.city].filter(Boolean).join(' · '), href: `/pages/admin/lakes-towns.html?tab=businesses` }));
-            renderRel('dt-pane-blog',       blog,   p => ({ name: p.title, meta: p.is_published ? 'Published' : 'Draft',     href: `/pages/admin/blog-edit.html?id=${p.id}` }));
-            renderRel('dt-pane-tags',       lakes,  l => ({ name: l.name, meta: [l.region, l.county].filter(Boolean).join(' · '), href: `/pages/admin/lakes-towns.html?tab=lakes` }));
-            // For towns, the "Towns" tab in the detail modal actually shows LAKES related to this town.
-            document.querySelector('.m-tab[data-mt="tags"]').firstChild.textContent = 'Lakes ';
-            document.getElementById('ct-agents').textContent     = agents.length ? `(${agents.length})` : '';
-            document.getElementById('ct-businesses').textContent = biz.length    ? `(${biz.length})`    : '';
-            document.getElementById('ct-blog').textContent       = blog.length   ? `(${blog.length})`  : '';
-            document.getElementById('ct-tags').textContent       = lakes.length  ? `(${lakes.length})` : '';
-        } else {
-            // business: show connected lakes + connected towns
-            const [lakes, tags] = await Promise.all([
-                fetch(`/api/businesses/${id}/lakes`, { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
-                fetch(`/api/businesses/${id}/tags`,  { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
-            ]);
-            renderRel('dt-pane-businesses', lakes, l => ({ name: l.name, meta: [l.region, l.county].filter(Boolean).join(' · '), href: `/pages/admin/lakes-towns.html?tab=lakes` }));
-            renderRel('dt-pane-tags',       tags,  t => ({ name: t.name, meta: [t.region, t.state].filter(Boolean).join(' · '), href: `/pages/admin/lakes-towns.html?tab=towns` }));
-            // Relabel tabs for businesses: "Businesses" tab actually shows Lakes; "Towns" tab shows Towns.
-            document.querySelector('.m-tab[data-mt="businesses"]').firstChild.textContent = 'Lakes ';
-            document.getElementById('ct-businesses').textContent = lakes.length ? `(${lakes.length})` : '';
-            document.getElementById('ct-tags').textContent       = tags.length  ? `(${tags.length})`  : '';
-        }
-    }
-
-    function renderRel(paneId, items, fmt) {
-        const el = document.getElementById(paneId);
-        if (!items || !items.length) {
-            el.innerHTML = '<div class="rel-empty">Nothing connected yet.</div>';
-            return;
-        }
-        el.innerHTML = `<div class="rel-list">${items.map(item => {
-            const f = fmt(item);
-            const initial = (f.name || '?').slice(0, 1).toUpperCase();
-            return `
-                <div class="rel-row">
-                    <div class="rel-thumb">${escHtml(initial)}</div>
-                    <div>
-                        <div class="rel-name">${escHtml(f.name || '(unnamed)')}</div>
-                        ${f.meta ? `<div class="rel-meta">${escHtml(f.meta)}</div>` : ''}
-                    </div>
-                    ${f.href ? `<a href="${escAttr(f.href)}" target="_blank">Open ↗</a>` : ''}
-                </div>`;
-        }).join('')}</div>`;
-    }
 
     // ── Create modal ────────────────────────────────────────────────
     function openCreate(type) {
@@ -1003,10 +678,9 @@
             if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
             closeCreate();
 
-            // Refresh list + auto-open detail modal on the new entity
-            if (type === 'lake')  { await loadLakes(); showLT('lakes');      openDetail('lake', data.id); }
-            if (type === 'town')  { await loadTowns(); showLT('towns');      openDetail('town', data.id); }
-            if (type === 'business') { await loadBiz();  showLT('businesses'); openDetail('business', data.id); }
+            // Navigate straight to the new full-page editor so the rest
+            // of the fields can be filled in there.
+            window.location.href = `entity-edit.html?type=${encodeURIComponent(type)}&id=${encodeURIComponent(data.id)}`;
         } catch (err) {
             msg.textContent = err.message;
             msg.className = 'msg err';
@@ -1015,56 +689,17 @@
         }
     }
 
-    // ── Delete (with confirm) ───────────────────────────────────────
-    function deleteEntity() {
-        if (!State.detail) return;
-        const { type, raw } = State.detail;
-        State.pending = { type, id: raw.id, label: raw.name || '(unnamed)' };
-        document.getElementById('cf-title').textContent = `Delete ${type} "${raw.name || ''}"?`;
-        document.getElementById('cf-sub').textContent =
-            type === 'business'
-                ? 'Permanently removes the business + all its lake/town connections. Cannot be undone.'
-                : 'Archives the record (soft-delete). Public site will stop showing it immediately.';
-        document.getElementById('confirm-modal').classList.add('open');
-    }
-    function closeConfirm() { document.getElementById('confirm-modal').classList.remove('open'); State.pending = null; }
-    async function confirmDelete() {
-        if (!State.pending) return;
-        const { type, id } = State.pending;
-        const url = type === 'lake'     ? `/api/lakes/${encodeURIComponent(id)}`
-                  : type === 'town'     ? `/api/tags/${encodeURIComponent(id)}`
-                  : /* business */         `/api/businesses/${encodeURIComponent(id)}/permanent`;
-        const btn = document.getElementById('cf-confirm');
-        btn.disabled = true; btn.textContent = 'Deleting…';
-        try {
-            const r = await fetch(url, { method: 'DELETE', credentials: 'include' });
-            if (!r.ok) {
-                const data = await r.json().catch(() => ({}));
-                throw new Error(data.error || `HTTP ${r.status}`);
-            }
-            closeConfirm();
-            closeDetail();
-            if (type === 'lake')  await loadLakes();
-            if (type === 'town')  await loadTowns();
-            if (type === 'business') await loadBiz();
-        } catch (err) {
-            alert(err.message);
-        } finally {
-            btn.disabled = false; btn.textContent = 'Yes, delete';
-        }
-    }
 
     // ── Boot ────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
         loadOverview();
         showLT(_initialTab);
 
-        // Esc closes any open modal.
+        // Esc closes the create modal (the only modal still on this page —
+        // edit/delete live on entity-edit.html now).
         document.addEventListener('keydown', e => {
             if (e.key !== 'Escape') return;
-            if (document.getElementById('confirm-modal').classList.contains('open')) return closeConfirm();
-            if (document.getElementById('create-modal').classList.contains('open'))  return closeCreate();
-            if (document.getElementById('detail-modal').classList.contains('open')) return closeDetail();
+            if (document.getElementById('create-modal').classList.contains('open')) return closeCreate();
         });
     });
 </script>

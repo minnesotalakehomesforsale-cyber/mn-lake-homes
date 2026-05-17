@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        /* ── Page chrome ──────────────────────────────────────────── */
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: #1a202c; }
+
+        /* Back link */
+        .back-link {
+            color: #718096; text-decoration: none; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            margin-bottom: 1.5rem; font-size: 0.92rem;
+        }
+        .back-link:hover { color: #1a202c; }
+
+        /* Status badges — match agent-review look */
+        .s-badge { padding: 0.4rem 1rem; border-radius: 99px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; border: 1px solid transparent; display: inline-block; }
+        .s-published { background: #f0fff4; color: #2f855a; border-color: #c6f6d5; }
+        .s-active    { background: #f0fff4; color: #2f855a; border-color: #c6f6d5; }
+        .s-pending   { background: #fffaf0; color: #dd6b20; border-color: #feebc8; }
+        .s-draft     { background: #fefcbf; color: #975a16; border-color: #f6e05e; }
+        .s-archived  { background: #fff5f5; color: #c53030; border-color: #fed7d7; }
+
+        /* ── Profile header card ─────────────────────────────────── */
+        .profile-header {
+            position: relative; display: flex; gap: 1.75rem;
+            background: #fff; border-radius: 12px; border: 1px solid #edf2f7;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            padding: 1.75rem 2rem; margin-bottom: 1.5rem;
+        }
+        .ph-actions { position: absolute; top: 1.25rem; right: 1.5rem; display: flex; gap: 0.5rem; }
+        .ph-action-btn {
+            width: 38px; height: 38px; border-radius: 8px;
+            border: 1px solid #e2e8f0; background: #fff; color: #4a5568;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.15s; padding: 0;
+        }
+        .ph-action-btn:hover { border-color: #1d6df2; color: #1d6df2; background: #f7faff; }
+        .ph-action-btn.danger:hover { border-color: #fc8181; color: #c53030; background: #fff5f5; }
+        .ph-photo {
+            width: 116px; height: 116px; border-radius: 12px;
+            background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+            background-size: cover; background-position: center;
+            border: 1px solid #e2e8f0;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden; flex-shrink: 0;
+            font-size: 2.4rem; font-weight: 800; color: rgba(26,32,44,0.4);
+            letter-spacing: -1px;
+        }
+        .ph-main { flex: 1; min-width: 0; }
+        .ph-name-row { display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap; }
+        .ph-name-row h1 { font-size: 1.75rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; margin: 0; }
+        .ph-sub { color: #718096; font-size: 0.9rem; margin-top: 0.2rem; }
+        .ph-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem 1.5rem; margin-top: 1.35rem; }
+        .ph-field { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+        .ph-label { font-size: 0.68rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; }
+        .ph-value { font-size: 0.9rem; font-weight: 600; color: #1a202c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ph-value .s-badge { font-size: 0.68rem; padding: 0.25rem 0.6rem; }
+
+        /* ── Tabs ────────────────────────────────────────────────── */
+        .page-tabs { display: flex; gap: 0.25rem; margin-bottom: 2rem; border-bottom: 2px solid #edf2f7; padding-bottom: 0; flex-wrap: wrap; }
+        .page-tab { padding: 0.75rem 1.5rem; font-size: 0.9rem; font-weight: 600; color: #718096; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; font-family: inherit; transition: all 0.15s; }
+        .page-tab:hover { color: #1a202c; }
+        .page-tab.active { color: #1d6df2; border-bottom-color: #1d6df2; }
+        .page-tab .tab-count { background: #edf2f7; color: #4a5568; border-radius: 20px; padding: 0.1rem 0.55rem; font-size: 0.7rem; font-weight: 700; margin-left: 0.4rem; }
+        .page-tab.active .tab-count { background: #1d6df2; color: #fff; }
+
+        /* ── Panels (form sections) ──────────────────────────────── */
+        .panel { background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 2px 6px rgba(0,0,0,0.03); margin-bottom: 2rem; overflow: hidden; }
+        .panel-header { padding: 1.25rem 2rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+        .panel-title { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #4a5568; }
+        .panel-body { padding: 2rem; }
+
+        .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+        @media (max-width: 800px) { .field-grid { grid-template-columns: 1fr; } }
+        .field-group { display: flex; flex-direction: column; gap: 0.35rem; }
+        .field-group.full { grid-column: 1 / -1; }
+        .field-label { font-size: 0.72rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; }
+        .field-input {
+            padding: 0.65rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px;
+            font-size: 0.9rem; font-family: inherit; color: #1a202c; background: #fff;
+            width: 100%; box-sizing: border-box;
+        }
+        .field-input:focus { outline: none; border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.08); }
+        textarea.field-input { resize: vertical; min-height: 100px; line-height: 1.5; }
+        .field-hint { font-size: 0.72rem; color: #a0aec0; margin-top: 0.2rem; }
+
+        .save-row { display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; margin-top: 1.5rem; }
+        .btn-save { padding: 0.65rem 1.5rem; background: #1d6df2; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 0.9rem; transition: opacity 0.2s; }
+        .btn-save:hover { opacity: 0.9; }
+        .btn-save:disabled { opacity: 0.6; cursor: default; }
+        .save-msg { font-size: 0.85rem; font-weight: 600; display: none; align-items: center; gap: 0.5rem; }
+        .save-msg.ok  { color: #38a169; display: inline-flex; }
+        .save-msg.err { color: #c53030; display: inline-flex; }
+
+        /* ── Connected-entities list ─────────────────────────────── */
+        .rel-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .rel-row {
+            display: grid; grid-template-columns: auto 1fr auto;
+            gap: 1rem; align-items: center;
+            background: #fafbfc; border: 1px solid #edf2f7; border-radius: 10px;
+            padding: 0.9rem 1.1rem;
+        }
+        .rel-thumb {
+            width: 44px; height: 44px; border-radius: 8px;
+            background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+            background-size: cover; background-position: center;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; color: rgba(26,32,44,0.4); font-size: 1.1rem;
+        }
+        .rel-name  { font-size: 0.95rem; font-weight: 700; color: #1a202c; }
+        .rel-meta  { font-size: 0.78rem; color: #718096; margin-top: 2px; }
+        .rel-row a { font-size: 0.82rem; color: #1d6df2; text-decoration: none; font-weight: 600; padding: 0.4rem 0.85rem; border: 1px solid #bee3f8; border-radius: 8px; background: #f7faff; }
+        .rel-row a:hover { background: #ebf8ff; }
+        .rel-empty { padding: 2.5rem 1rem; text-align: center; color: #a0aec0; font-size: 0.9rem; background: #fafbfc; border: 1px dashed #e2e8f0; border-radius: 10px; }
+
+        /* Conn-overview cards (top of Connected tab) */
+        .conn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .conn-card { background: #fff; border: 1px solid #edf2f7; border-radius: 10px; padding: 1.1rem 1.25rem; }
+        .conn-card .label { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 0.4rem; }
+        .conn-card .value { font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; line-height: 1; }
+
+        /* Confirm-delete modal (reused from prior pattern) */
+        .m-overlay {
+            position: fixed; inset: 0; z-index: 9000;
+            background: rgba(15,23,42,0.55);
+            display: none; align-items: center; justify-content: center;
+            padding: 1.5rem;
+        }
+        .m-overlay.open { display: flex; }
+        .m-shell { background: #fff; border-radius: 14px; width: 100%; max-width: 480px; padding: 1.75rem; box-shadow: 0 30px 70px rgba(0,0,0,0.3); }
+        .m-shell h2 { font-size: 1.2rem; font-weight: 800; color: #c53030; margin: 0 0 0.5rem; }
+        .m-shell p  { font-size: 0.9rem; color: #4a5568; margin: 0 0 1.25rem; line-height: 1.5; }
+        .m-shell .row { display: flex; justify-content: flex-end; gap: 0.6rem; }
+        .btn-ghost   { background: #fff; color: #1a202c; border: 1px solid #e2e8f0; padding: 0.55rem 1.1rem; border-radius: 8px; font: inherit; font-weight: 600; cursor: pointer; }
+        .btn-ghost:hover { background: #f7f9fa; }
+        .btn-danger  { background: #c53030; color: #fff; border: 0; padding: 0.55rem 1.1rem; border-radius: 8px; font: inherit; font-weight: 700; cursor: pointer; }
+        .btn-danger:hover { background: #9b2c2c; }
+
+        /* Page-top toast */
+        .toast { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 9999; padding: 0.8rem 1.1rem; border-radius: 10px; font-size: 0.88rem; font-weight: 600; box-shadow: 0 12px 28px rgba(0,0,0,0.12); display: none; }
+        .toast.ok  { background: #f0fff4; color: #276749; border: 1px solid #9ae6b4; display: block; }
+        .toast.err { background: #fff5f5; color: #9b2c2c; border: 1px solid #feb2b2; display: block; }
+
+        /* Mobile */
+        @media (max-width: 900px) {
+            .profile-header { flex-direction: column; }
+            .ph-grid { grid-template-columns: repeat(2, 1fr); }
+            .panel-body { padding: 1.5rem 1.25rem; }
+        }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-assistant.js" defer></script>
+    <script src="../../components/admin-nav-badges.js" defer></script>
+</head>
+<body>
+
+<div class="admin-wrap">
+    <admin-sidebar active="lakes-towns"></admin-sidebar>
+
+    <main class="admin-main">
+        <a id="back-link" class="back-link" href="lakes-towns.html">← Back to Lakes, Towns &amp; Businesses</a>
+
+        <!-- PROFILE HEADER CARD -->
+        <div class="profile-header" id="profile-header">
+            <div class="ph-photo" id="hdr-photo">?</div>
+            <div class="ph-main">
+                <div class="ph-name-row">
+                    <h1 id="hdr-name">Loading…</h1>
+                    <div id="hdr-status"></div>
+                </div>
+                <div class="ph-sub" id="hdr-sub">Fetching record…</div>
+                <div class="ph-grid" id="hdr-grid"></div>
+            </div>
+            <div class="ph-actions">
+                <button class="ph-action-btn" id="btn-view-public" title="Open the public page in a new tab" onclick="openPublic()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                </button>
+                <button class="ph-action-btn danger" id="btn-delete" title="Delete this record" onclick="openDelete()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Page tabs (built per-type at runtime) -->
+        <div class="page-tabs" id="page-tabs"></div>
+
+        <!-- Tab content (built per-type at runtime) -->
+        <div id="tab-content"></div>
+    </main>
+</div>
+
+<!-- Delete confirm -->
+<div class="m-overlay" id="del-modal" onclick="if(event.target===this)closeDelete()">
+    <div class="m-shell">
+        <h2 id="del-title">Delete?</h2>
+        <p id="del-body">This cannot be undone.</p>
+        <div class="row">
+            <button class="btn-ghost"  onclick="closeDelete()">Cancel</button>
+            <button class="btn-danger" id="del-confirm" onclick="confirmDelete()">Yes, delete</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    // ── State + helpers ──────────────────────────────────────────────
+    const params = new URLSearchParams(window.location.search);
+    const TYPE   = params.get('type'); // 'lake' | 'town' | 'business'
+    const ID     = params.get('id');
+
+    let entity = null;             // raw row
+    let related = {};              // { agents:[], businesses:[], blog:[], tags:[], lakes:[] }
+    let activeTab = 'details';
+
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const fmt = n => (typeof n === 'number' ? n.toLocaleString('en-US') : String(n ?? ''));
+    const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '—';
+
+    const TYPE_META = {
+        lake: {
+            label:    'Lake',
+            backHref: 'lakes-towns.html?tab=lakes',
+            backText: '← Back to Lakes',
+            getUrl:   id => `/api/lakes/${encodeURIComponent(id)}`,
+            saveUrl:  id => `/api/lakes/${encodeURIComponent(id)}`,
+            deleteUrl:id => `/api/lakes/${encodeURIComponent(id)}`,
+            publicUrl:slug => `/lakes/${encodeURIComponent(slug)}`,
+            tabs:     ['details', 'editorial', 'seo', 'connected'],
+            relatedKeys: ['agents','businesses','blog','tags'],
+        },
+        town: {
+            label:    'Town',
+            backHref: 'lakes-towns.html?tab=towns',
+            backText: '← Back to Towns',
+            getUrl:   id => `/api/tags/${encodeURIComponent(id)}`,
+            saveUrl:  id => `/api/tags/${encodeURIComponent(id)}`,
+            deleteUrl:id => `/api/tags/${encodeURIComponent(id)}`,
+            publicUrl:slug => `/towns/${encodeURIComponent(slug)}`,
+            tabs:     ['details', 'editorial', 'seo', 'connected'],
+            relatedKeys: ['lakes','agents','businesses','blog'],
+        },
+        business: {
+            label:    'Business',
+            backHref: 'lakes-towns.html?tab=businesses',
+            backText: '← Back to Businesses',
+            getUrl:   id => `/api/businesses/${encodeURIComponent(id)}`,
+            saveUrl:  id => `/api/businesses/${encodeURIComponent(id)}`,
+            deleteUrl:id => `/api/businesses/${encodeURIComponent(id)}/permanent`,
+            publicUrl:slug => `/businesses/${encodeURIComponent(slug)}`,
+            tabs:     ['details', 'contact', 'connected'],
+            relatedKeys: ['lakes','tags'],
+        },
+    };
+
+    function toast(msg, kind = 'ok') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast ' + kind;
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => { t.className = 'toast'; }, 3500);
+    }
+
+    function statusBadge(s, fallback) {
+        const v = (s || fallback || '').toLowerCase();
+        const cls = (v === 'published' || v === 'active') ? 's-active'
+                  : (v === 'pending'   || v === 'pending_review') ? 's-pending'
+                  : (v === 'draft')    ? 's-draft'
+                  : 's-archived';
+        const label = v === 'pending_review' ? 'Pending'
+                    : (v ? v[0].toUpperCase() + v.slice(1) : '—');
+        return `<span class="s-badge ${cls}">${esc(label)}</span>`;
+    }
+
+    // ── Header card ──────────────────────────────────────────────────
+    function renderHeader() {
+        document.title = `${entity.name || 'Detail'} | MN Lake Homes Admin`;
+        document.getElementById('back-link').href      = TYPE_META[TYPE].backHref;
+        document.getElementById('back-link').textContent = TYPE_META[TYPE].backText;
+
+        // Photo / image
+        const img = entity.featured_image_url || entity.hero_image_url;
+        const photo = document.getElementById('hdr-photo');
+        if (img) {
+            photo.style.backgroundImage = `url('${img}')`;
+            photo.textContent = '';
+        } else {
+            photo.textContent = (entity.name || '?').replace(/^lake\s+/i, '').charAt(0).toUpperCase();
+        }
+
+        document.getElementById('hdr-name').textContent = entity.name || '(unnamed)';
+        document.getElementById('hdr-status').innerHTML =
+            TYPE === 'town'
+                ? statusBadge(entity.active ? 'published' : 'archived')
+                : statusBadge(entity.status);
+
+        document.getElementById('hdr-sub').textContent =
+            TYPE === 'lake'     ? [entity.region, entity.county && entity.county + ' Co.', entity.state].filter(Boolean).join(' · ')
+          : TYPE === 'town'     ? [entity.region, entity.state].filter(Boolean).join(' · ')
+          : /* business */         [entity.type, entity.city, entity.state].filter(Boolean).join(' · ');
+
+        const grid = document.getElementById('hdr-grid');
+        const counts = {
+            agents:     related.agents?.length     || 0,
+            businesses: related.businesses?.length || 0,
+            blog:       related.blog?.length       || 0,
+            tags:       related.tags?.length       || 0,
+            lakes:      related.lakes?.length      || 0,
+        };
+
+        const fields = TYPE === 'lake' ? [
+            { label: 'Region',     value: entity.region  || '—' },
+            { label: 'County',     value: entity.county  || '—' },
+            { label: 'State',      value: entity.state   || '—' },
+            { label: 'Slug',       value: entity.slug    || '—' },
+            { label: 'Agents',     value: fmt(counts.agents) },
+            { label: 'Businesses', value: fmt(counts.businesses) },
+            { label: 'Blog posts', value: fmt(counts.blog) },
+            { label: 'Created',    value: fmtDate(entity.created_at) },
+        ] : TYPE === 'town' ? [
+            { label: 'Region',     value: entity.region  || '—' },
+            { label: 'State',      value: entity.state   || '—' },
+            { label: 'Slug',       value: entity.slug    || '—' },
+            { label: 'Active',     value: entity.active ? 'Yes' : 'No' },
+            { label: 'Lakes',      value: fmt(counts.lakes) },
+            { label: 'Agents',     value: fmt(counts.agents) },
+            { label: 'Businesses', value: fmt(counts.businesses) },
+            { label: 'Blog posts', value: fmt(counts.blog) },
+        ] : [
+            { label: 'Type',       value: entity.type    || '—' },
+            { label: 'City',       value: entity.city    || '—' },
+            { label: 'State',      value: entity.state   || '—' },
+            { label: 'Slug',       value: entity.slug    || '—' },
+            { label: 'Phone',      value: entity.phone   || '—' },
+            { label: 'Email',      value: entity.email   || '—' },
+            { label: 'Lakes',      value: fmt(counts.lakes) },
+            { label: 'Towns',      value: fmt(counts.tags) },
+        ];
+        grid.innerHTML = fields.map(f => `
+            <div class="ph-field">
+                <div class="ph-label">${esc(f.label)}</div>
+                <div class="ph-value">${esc(f.value)}</div>
+            </div>`).join('');
+    }
+
+    // ── Tabs ─────────────────────────────────────────────────────────
+    const TAB_LABELS = {
+        details:   'Details',
+        editorial: 'Editorial',
+        seo:       'SEO',
+        contact:   'Contact &amp; Web',
+        connected: 'Connected',
+    };
+
+    function renderTabs() {
+        const tabs = TYPE_META[TYPE].tabs;
+        const counts = {
+            agents:     related.agents?.length     || 0,
+            businesses: related.businesses?.length || 0,
+            blog:       related.blog?.length       || 0,
+            tags:       related.tags?.length       || 0,
+            lakes:      related.lakes?.length      || 0,
+        };
+        const totalConnected = Object.values(counts).reduce((a, b) => a + b, 0);
+        document.getElementById('page-tabs').innerHTML = tabs.map(t => {
+            let suffix = '';
+            if (t === 'connected' && totalConnected > 0) {
+                suffix = ` <span class="tab-count">${totalConnected}</span>`;
+            }
+            return `<button class="page-tab ${t === activeTab ? 'active' : ''}" data-tab="${t}" onclick="switchTab('${t}')">${TAB_LABELS[t]}${suffix}</button>`;
+        }).join('');
+    }
+
+    function switchTab(t) {
+        activeTab = t;
+        renderTabs();
+        renderTabContent();
+        const url = new URL(window.location);
+        if (t === 'details') url.searchParams.delete('tab');
+        else                 url.searchParams.set('tab', t);
+        history.replaceState(null, '', url);
+    }
+
+    // ── Tab content renderers ────────────────────────────────────────
+    function renderTabContent() {
+        const tc = document.getElementById('tab-content');
+        if (activeTab === 'details')    tc.innerHTML = renderDetailsTab();
+        if (activeTab === 'editorial')  tc.innerHTML = renderEditorialTab();
+        if (activeTab === 'seo')        tc.innerHTML = renderSeoTab();
+        if (activeTab === 'contact')    tc.innerHTML = renderContactTab();
+        if (activeTab === 'connected')  tc.innerHTML = renderConnectedTab();
+    }
+
+    function fieldGroup({ id, label, value, type = 'text', full = false, hint = '', placeholder = '' }) {
+        const cls = `field-group${full ? ' full' : ''}`;
+        const input = type === 'textarea'
+            ? `<textarea class="field-input" id="${id}" placeholder="${esc(placeholder)}">${esc(value || '')}</textarea>`
+            : `<input class="field-input" id="${id}" type="${type}" value="${esc(value ?? '')}" placeholder="${esc(placeholder)}">`;
+        return `
+            <div class="${cls}">
+                <div class="field-label">${esc(label)}</div>
+                ${input}
+                ${hint ? `<div class="field-hint">${esc(hint)}</div>` : ''}
+            </div>`;
+    }
+
+    function selectGroup({ id, label, value, options, full = false, hint = '' }) {
+        const opts = options.map(o => `<option value="${esc(o.value)}" ${String(o.value) === String(value || '') ? 'selected' : ''}>${esc(o.label)}</option>`).join('');
+        return `
+            <div class="field-group${full ? ' full' : ''}">
+                <div class="field-label">${esc(label)}</div>
+                <select class="field-input" id="${id}">${opts}</select>
+                ${hint ? `<div class="field-hint">${esc(hint)}</div>` : ''}
+            </div>`;
+    }
+
+    function panel({ title, badgeHtml = '', body, saveLabel = 'Save Changes', saveId = 'save-details' }) {
+        return `
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">${esc(title)}</div>
+                    ${badgeHtml}
+                </div>
+                <div class="panel-body">
+                    ${body}
+                    <div class="save-row">
+                        <span class="save-msg" id="${saveId}-msg"></span>
+                        <button class="btn-save" id="${saveId}" onclick="save${saveId.replace(/^save-/, '').replace(/(^|-)(\w)/g, (m,_,c) => c.toUpperCase())}()">${esc(saveLabel)}</button>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    // ── DETAILS tab ──────────────────────────────────────────────────
+    function renderDetailsTab() {
+        if (TYPE === 'lake') {
+            const body = `
+                <div class="field-grid">
+                    ${fieldGroup({ id: 'f-name',   label: 'Name',     value: entity.name })}
+                    ${fieldGroup({ id: 'f-slug',   label: 'Slug',     value: entity.slug, hint: `URL: /lakes/${entity.slug || ''}` })}
+                    ${fieldGroup({ id: 'f-region', label: 'Region',   value: entity.region })}
+                    ${fieldGroup({ id: 'f-county', label: 'County',   value: entity.county })}
+                    ${fieldGroup({ id: 'f-state',  label: 'State',    value: entity.state || 'MN' })}
+                    ${selectGroup({ id: 'f-status', label: 'Status', value: entity.status, options: [
+                        { value: 'published', label: 'Published' },
+                        { value: 'draft',     label: 'Draft' },
+                        { value: 'archived',  label: 'Archived' },
+                    ]})}
+                    ${fieldGroup({ id: 'f-lat',    label: 'Latitude',  value: entity.latitude,  type: 'number' })}
+                    ${fieldGroup({ id: 'f-lng',    label: 'Longitude', value: entity.longitude, type: 'number' })}
+                    ${fieldGroup({ id: 'f-img',    label: 'Featured image URL', value: entity.featured_image_url || entity.hero_image_url, full: true, hint: 'Public Cloudinary URL — leave blank for fallback gradient.' })}
+                    ${fieldGroup({ id: 'f-intro',  label: 'Intro text', value: entity.intro_text, type: 'textarea', full: true })}
+                </div>`;
+            return panel({ title: 'Lake Details', badgeHtml: statusBadge(entity.status), body, saveLabel: 'Save Details', saveId: 'save-details' });
+        }
+        if (TYPE === 'town') {
+            const body = `
+                <div class="field-grid">
+                    ${fieldGroup({ id: 'f-name',   label: 'Name',   value: entity.name })}
+                    ${fieldGroup({ id: 'f-slug',   label: 'Slug',   value: entity.slug, hint: `URL: /towns/${entity.slug || ''}` })}
+                    ${fieldGroup({ id: 'f-region', label: 'Region', value: entity.region })}
+                    ${fieldGroup({ id: 'f-state',  label: 'State',  value: entity.state || 'MN' })}
+                    ${fieldGroup({ id: 'f-lat',    label: 'Latitude',  value: entity.latitude,  type: 'number' })}
+                    ${fieldGroup({ id: 'f-lng',    label: 'Longitude', value: entity.longitude, type: 'number' })}
+                    ${selectGroup({ id: 'f-active', label: 'Active', value: String(entity.active), options: [
+                        { value: 'true',  label: 'Active (visible)' },
+                        { value: 'false', label: 'Archived' },
+                    ]})}
+                    ${fieldGroup({ id: 'f-img',    label: 'Hero image URL', value: entity.hero_image_url, full: true })}
+                    ${fieldGroup({ id: 'f-intro',  label: 'Intro text', value: entity.intro_text, type: 'textarea', full: true })}
+                </div>`;
+            return panel({ title: 'Town Details', badgeHtml: statusBadge(entity.active ? 'published' : 'archived'), body, saveLabel: 'Save Details', saveId: 'save-details' });
+        }
+        // business
+        const body = `
+            <div class="field-grid">
+                ${fieldGroup({ id: 'f-name', label: 'Name', value: entity.name })}
+                ${fieldGroup({ id: 'f-slug', label: 'Slug', value: entity.slug, hint: `URL: /businesses/${entity.slug || ''}` })}
+                ${selectGroup({ id: 'f-type', label: 'Type', value: entity.type, options:
+                    ['restaurant','marina','service','photographer','builder','boat_rental','outdoor_recreation','other'].map(t => ({ value: t, label: t.replace('_',' ') }))
+                })}
+                ${selectGroup({ id: 'f-status', label: 'Status', value: entity.status, options: [
+                    { value: 'pending',  label: 'Pending' },
+                    { value: 'active',   label: 'Active (visible)' },
+                    { value: 'draft',    label: 'Draft' },
+                    { value: 'archived', label: 'Archived' },
+                ]})}
+                ${fieldGroup({ id: 'f-address', label: 'Address', value: entity.address, full: true })}
+                ${fieldGroup({ id: 'f-city',  label: 'City',  value: entity.city })}
+                ${fieldGroup({ id: 'f-state', label: 'State', value: entity.state || 'MN' })}
+                ${fieldGroup({ id: 'f-zip',   label: 'Zip',   value: entity.zip })}
+                ${fieldGroup({ id: 'f-hours', label: 'Hours', value: entity.hours, hint: 'Free-form, e.g. "Mon–Fri 9–5, Sat 10–2"' })}
+                ${fieldGroup({ id: 'f-img',   label: 'Featured image URL', value: entity.featured_image_url, full: true })}
+                ${fieldGroup({ id: 'f-desc',  label: 'Description', value: entity.description, type: 'textarea', full: true })}
+            </div>`;
+        return panel({ title: 'Business Details', badgeHtml: statusBadge(entity.status), body, saveLabel: 'Save Details', saveId: 'save-details' });
+    }
+
+    function renderEditorialTab() {
+        const lifestyleLabel = TYPE === 'lake' ? '"Life on this lake" editorial' : '"Life in this town" editorial';
+        const seasonsLabel   = TYPE === 'lake' ? '"What the seasons bring" editorial' : '"Seasons + community" editorial';
+        const body = `
+            <div class="field-grid">
+                ${fieldGroup({ id: 'f-lifestyle', label: lifestyleLabel, value: entity.lifestyle_text, type: 'textarea', full: true, hint: 'Paragraphs separated by blank lines. Leave blank to use the region-aware generated fallback copy.' })}
+                ${fieldGroup({ id: 'f-seasons',   label: seasonsLabel,   value: entity.seasons_text,   type: 'textarea', full: true, hint: 'Same — blank means use the generated fallback.' })}
+            </div>`;
+        return panel({ title: 'Editorial Content', body, saveLabel: 'Save Editorial', saveId: 'save-editorial' });
+    }
+
+    function renderSeoTab() {
+        const body = `
+            <div class="field-grid">
+                ${fieldGroup({ id: 'f-seo-title', label: 'SEO title', value: entity.seo_title, full: true, hint: 'Recommended: 50–60 chars. Overrides the auto-generated <title>.' })}
+                ${fieldGroup({ id: 'f-seo-desc',  label: 'SEO description', value: entity.seo_description, type: 'textarea', full: true, hint: 'Recommended: 150–160 chars. Used in Google snippets + Open Graph.' })}
+            </div>`;
+        return panel({ title: 'Search Engine Optimization', body, saveLabel: 'Save SEO', saveId: 'save-seo' });
+    }
+
+    function renderContactTab() {
+        const body = `
+            <div class="field-grid">
+                ${fieldGroup({ id: 'f-phone',   label: 'Phone',     value: entity.phone })}
+                ${fieldGroup({ id: 'f-email',   label: 'Email',     value: entity.email })}
+                ${fieldGroup({ id: 'f-website', label: 'Website',   value: entity.website_url, full: true })}
+                ${fieldGroup({ id: 'f-ig',      label: 'Instagram', value: entity.instagram_url })}
+                ${fieldGroup({ id: 'f-fb',      label: 'Facebook',  value: entity.facebook_url })}
+            </div>`;
+        return panel({ title: 'Contact &amp; Web', body, saveLabel: 'Save Contact', saveId: 'save-contact' });
+    }
+
+    function renderConnectedTab() {
+        const counts = {
+            agents:     related.agents?.length     || 0,
+            businesses: related.businesses?.length || 0,
+            blog:       related.blog?.length       || 0,
+            tags:       related.tags?.length       || 0,
+            lakes:      related.lakes?.length      || 0,
+        };
+        const keys = TYPE_META[TYPE].relatedKeys;
+        const grid = keys.map(k => `
+            <div class="conn-card">
+                <div class="label">${k === 'tags' ? 'Towns' : k.charAt(0).toUpperCase() + k.slice(1)}</div>
+                <div class="value">${fmt(counts[k] || 0)}</div>
+            </div>`).join('');
+
+        const sections = keys.map(k => {
+            const items = related[k] || [];
+            const heading = k === 'tags' ? 'Towns' : k === 'blog' ? 'Blog Posts' : k.charAt(0).toUpperCase() + k.slice(1);
+            return `
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">${esc(heading)} (${items.length})</div></div>
+                    <div class="panel-body">
+                        ${items.length ? renderRelList(k, items) : `<div class="rel-empty">No ${heading.toLowerCase()} connected yet.</div>`}
+                    </div>
+                </div>`;
+        }).join('');
+
+        return `<div class="conn-grid">${grid}</div>${sections}`;
+    }
+
+    function renderRelList(kind, items) {
+        return `<div class="rel-list">${items.map(item => {
+            let name, meta, href, thumb;
+            if (kind === 'agents') {
+                name = item.display_name || item.full_name;
+                meta = item.brokerage_name;
+                href = `/pages/admin/agent-review.html?id=${item.id}`;
+                thumb = item.profile_photo_url;
+            } else if (kind === 'businesses') {
+                name = item.name;
+                meta = [item.type, item.city].filter(Boolean).join(' · ');
+                href = `/pages/admin/entity-edit.html?type=business&id=${item.id}`;
+                thumb = item.featured_image_url;
+            } else if (kind === 'blog') {
+                name = item.title;
+                meta = item.is_published ? 'Published' : 'Draft';
+                href = `/pages/admin/blog-edit.html?id=${item.id}`;
+                thumb = item.cover_image_url;
+            } else if (kind === 'lakes') {
+                name = item.name;
+                meta = [item.region, item.county && item.county + ' Co.'].filter(Boolean).join(' · ');
+                href = `/pages/admin/entity-edit.html?type=lake&id=${item.id}`;
+                thumb = item.featured_image_url || item.hero_image_url;
+            } else if (kind === 'tags') {
+                name = item.name;
+                meta = [item.region, item.state].filter(Boolean).join(' · ');
+                href = `/pages/admin/entity-edit.html?type=town&id=${item.id}`;
+                thumb = item.hero_image_url;
+            }
+            const initial = (name || '?').charAt(0).toUpperCase();
+            const thumbStyle = thumb ? `style="background-image:url('${esc(thumb)}')"` : '';
+            return `
+                <div class="rel-row">
+                    <div class="rel-thumb" ${thumbStyle}>${thumb ? '' : esc(initial)}</div>
+                    <div>
+                        <div class="rel-name">${esc(name || '(unnamed)')}</div>
+                        ${meta ? `<div class="rel-meta">${esc(meta)}</div>` : ''}
+                    </div>
+                    <a href="${esc(href)}">Open ↗</a>
+                </div>`;
+        }).join('')}</div>`;
+    }
+
+    // ── Save handlers ────────────────────────────────────────────────
+    async function patch(payload, saveId) {
+        const btn = document.getElementById(saveId);
+        const msg = document.getElementById(saveId + '-msg');
+        msg.className = 'save-msg';
+        btn.disabled = true; btn.textContent = 'Saving…';
+        try {
+            const r = await fetch(TYPE_META[TYPE].saveUrl(ID), {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+            msg.textContent = '✓ Saved';
+            msg.className = 'save-msg ok';
+            // refresh local entity copy so header reflects changes
+            Object.assign(entity, payload);
+            renderHeader();
+        } catch (err) {
+            msg.textContent = err.message;
+            msg.className = 'save-msg err';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = saveId === 'save-details'  ? 'Save Details'
+                            : saveId === 'save-editorial' ? 'Save Editorial'
+                            : saveId === 'save-seo'       ? 'Save SEO'
+                            : saveId === 'save-contact'   ? 'Save Contact'
+                            : 'Save Changes';
+        }
+    }
+
+    function v(id) { return (document.getElementById(id)?.value ?? '').trim() || null; }
+
+    function saveDetails() {
+        let payload;
+        if (TYPE === 'lake') {
+            payload = {
+                name: v('f-name'), slug: v('f-slug'), region: v('f-region'), county: v('f-county'), state: v('f-state'),
+                latitude:  parseFloat(v('f-lat')) || null,
+                longitude: parseFloat(v('f-lng')) || null,
+                featured_image_url: v('f-img'),
+                intro_text: v('f-intro'),
+                status: v('f-status'),
+            };
+        } else if (TYPE === 'town') {
+            payload = {
+                name: v('f-name'), slug: v('f-slug'), region: v('f-region'), state: v('f-state'),
+                latitude:  parseFloat(v('f-lat')) || null,
+                longitude: parseFloat(v('f-lng')) || null,
+                hero_image_url: v('f-img'),
+                intro_text: v('f-intro'),
+                active: v('f-active') === 'true',
+            };
+        } else {
+            payload = {
+                name: v('f-name'), slug: v('f-slug'), type: v('f-type'), status: v('f-status'),
+                address: v('f-address'), city: v('f-city'), state: v('f-state'), zip: v('f-zip'),
+                featured_image_url: v('f-img'),
+                description: v('f-desc'),
+                hours: v('f-hours'),
+            };
+        }
+        patch(payload, 'save-details');
+    }
+    function saveEditorial() {
+        patch({ lifestyle_text: v('f-lifestyle'), seasons_text: v('f-seasons') }, 'save-editorial');
+    }
+    function saveSeo() {
+        patch({ seo_title: v('f-seo-title'), seo_description: v('f-seo-desc') }, 'save-seo');
+    }
+    function saveContact() {
+        patch({
+            phone: v('f-phone'), email: v('f-email'),
+            website_url: v('f-website'), instagram_url: v('f-ig'), facebook_url: v('f-fb'),
+        }, 'save-contact');
+    }
+
+    // ── Header actions ───────────────────────────────────────────────
+    function openPublic() {
+        if (!entity?.slug) return;
+        window.open(TYPE_META[TYPE].publicUrl(entity.slug), '_blank');
+    }
+
+    function openDelete() {
+        document.getElementById('del-title').textContent = `Delete ${TYPE_META[TYPE].label.toLowerCase()} "${entity.name}"?`;
+        document.getElementById('del-body').textContent =
+            TYPE === 'business'
+                ? 'Permanently removes the business and all its lake/town connections. Cannot be undone.'
+                : 'Archives the record (soft-delete). Public site will stop showing it immediately.';
+        document.getElementById('del-modal').classList.add('open');
+    }
+    function closeDelete() { document.getElementById('del-modal').classList.remove('open'); }
+    async function confirmDelete() {
+        const btn = document.getElementById('del-confirm');
+        btn.disabled = true; btn.textContent = 'Deleting…';
+        try {
+            const r = await fetch(TYPE_META[TYPE].deleteUrl(ID), { method: 'DELETE', credentials: 'include' });
+            if (!r.ok) {
+                const data = await r.json().catch(() => ({}));
+                throw new Error(data.error || `HTTP ${r.status}`);
+            }
+            window.location.href = TYPE_META[TYPE].backHref;
+        } catch (err) {
+            toast(err.message, 'err');
+            btn.disabled = false; btn.textContent = 'Yes, delete';
+        }
+    }
+
+    // ── Related loaders ──────────────────────────────────────────────
+    async function loadRelated() {
+        if (TYPE === 'lake') {
+            const [agents, biz, blog, tags] = await Promise.all([
+                fetch(`/api/lakes/${ID}/agents`).then(r => r.ok ? r.json() : []).catch(() => []),
+                fetch(`/api/lakes/${ID}/businesses`).then(r => r.ok ? r.json() : []).catch(() => []),
+                fetch(`/api/lakes/${ID}/blog-posts`).then(r => r.ok ? r.json() : []).catch(() => []),
+                fetch(`/api/lakes/${ID}/tags`).then(r => r.ok ? r.json() : []).catch(() => []),
+            ]);
+            related = { agents, businesses: biz, blog, tags };
+        } else if (TYPE === 'town') {
+            const slug = entity.slug || ID;
+            const [lakes, agents, biz, blog] = await Promise.all([
+                fetch(`/api/tags/${encodeURIComponent(slug)}/lakes`).then(r => r.ok ? r.json() : []).catch(() => []),
+                fetch(`/api/tags/${encodeURIComponent(slug)}/agents`).then(r => r.ok ? r.json() : []).catch(() => []),
+                fetch(`/api/tags/${encodeURIComponent(slug)}/businesses`).then(r => r.ok ? r.json() : []).catch(() => []),
+                fetch(`/api/tags/${encodeURIComponent(slug)}/blog-posts`).then(r => r.ok ? r.json() : []).catch(() => []),
+            ]);
+            related = { lakes, agents, businesses: biz, blog };
+        } else {
+            const [lakes, tags] = await Promise.all([
+                fetch(`/api/businesses/${ID}/lakes`).then(r => r.ok ? r.json() : []).catch(() => []),
+                fetch(`/api/businesses/${ID}/tags`).then(r => r.ok ? r.json() : []).catch(() => []),
+            ]);
+            related = { lakes, tags };
+        }
+    }
+
+    // ── Boot ─────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+        if (!TYPE || !TYPE_META[TYPE] || !ID) {
+            document.getElementById('hdr-name').textContent = 'Bad URL';
+            document.getElementById('hdr-sub').textContent = 'Need both ?type= and ?id= query params.';
+            return;
+        }
+        try {
+            const r = await fetch(TYPE_META[TYPE].getUrl(ID), { credentials: 'include' });
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            entity = await r.json();
+        } catch (err) {
+            document.getElementById('hdr-name').textContent = 'Not found';
+            document.getElementById('hdr-sub').textContent  = err.message;
+            return;
+        }
+        await loadRelated();
+        renderHeader();
+        // Honor ?tab= deep-link
+        const t = params.get('tab');
+        if (t && TYPE_META[TYPE].tabs.includes(t)) activeTab = t;
+        renderTabs();
+        renderTabContent();
+    });
+</script>
+</body>
+</html>
