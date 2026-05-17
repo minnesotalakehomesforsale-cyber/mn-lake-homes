@@ -19,9 +19,46 @@
  */
 
 const pool = require('../database/pool');
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
 const { geocodeAddress } = require('../services/geocoder');
 const { matchTagsAndUsers, getDefaultRadiusMiles } = require('../services/tag-matcher');
 const { logActivity } = require('../services/activity-log');
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key:    process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure:     true,
+});
+
+const tagImageUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 8 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (/^image\//.test(file.mimetype)) cb(null, true);
+        else cb(new Error('Please upload an image file.'));
+    },
+}).single('image');
+
+function uploadBufferToCloudinary(buffer, publicId) {
+    return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+            {
+                folder: 'mnlakehomes/towns',
+                public_id: publicId,
+                resource_type: 'image',
+                overwrite: true,
+                transformation: [
+                    { width: 1600, height: 1600, crop: 'limit' },
+                    { quality: 'auto:good' },
+                ],
+            },
+            (err, result) => (err ? reject(err) : resolve(result))
+        );
+        stream.end(buffer);
+    });
+}
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function slugify(s) {
@@ -497,6 +534,39 @@ exports.detachFromUser = async (req, res) => {
 // ─── match ──────────────────────────────────────────────────────────────────
 // Accepts { lat, lng, radiusMiles? } OR { address, radiusMiles? }.
 // Admin-only for now (future: open to lead-routing service with a scoped key).
+// ─── image upload (admin) ───────────────────────────────────────────────────
+// POST /api/tags/upload-image — returns { url, filename, size }. Caller
+// PATCHes the town row with hero_image_url afterward. Mirrors the
+// lakes / businesses / agents upload pattern.
+exports.uploadImage = (req, res) => {
+    tagImageUpload(req, res, async (err) => {
+        if (err) {
+            console.error('[tags.uploadImage multer]', err.message);
+            return res.status(400).json({ error: err.message });
+        }
+        if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
+        if (!req.file || !req.file.buffer) {
+            return res.status(400).json({ error: 'No file uploaded.' });
+        }
+        try {
+            const publicId = `town-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            const result   = await uploadBufferToCloudinary(req.file.buffer, publicId);
+            logActivity({
+                event_type: 'tag.image.upload',
+                event_scope: 'tag',
+                actor: { type: 'user', id: req.user?.userId, label: req.user?.email || req.user?.role },
+                details: { url: result.secure_url, size: req.file.size },
+                req,
+            });
+            res.json({ url: result.secure_url, filename: req.file.originalname, size: req.file.size });
+        } catch (cloudErr) {
+            const msg = cloudErr && (cloudErr.message || cloudErr.error?.message || String(cloudErr));
+            console.error('[tags.uploadImage cloudinary]', msg, cloudErr);
+            res.status(500).json({ error: `Upload failed: ${msg || 'unknown Cloudinary error'}` });
+        }
+    });
+};
+
 exports.match = async (req, res) => {
     try {
         if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });

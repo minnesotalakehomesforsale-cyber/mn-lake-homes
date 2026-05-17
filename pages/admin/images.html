@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Images | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: #1a202c; }
+
+        .page-head { margin-bottom: 1.4rem; }
+        .page-head h1 { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.75px; margin: 0 0 0.25rem; }
+        .page-head p  { color: #718096; font-size: 0.95rem; margin: 0; max-width: 720px; line-height: 1.55; }
+
+        /* Section tabs (Lakes / Towns / Businesses / Agents / Blog / Resources) */
+        .img-tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid #e2e8f0; margin: 0 0 1.5rem; flex-wrap: wrap; }
+        .img-tab  {
+            background: none; border: none; padding: 0.85rem 1.1rem;
+            font: inherit; font-size: 0.92rem; font-weight: 600; color: #4a5568;
+            cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+            transition: color 0.15s, border-bottom-color 0.15s;
+        }
+        .img-tab:hover { color: #1a202c; }
+        .img-tab.active { color: #1d6df2; border-bottom-color: #1d6df2; }
+        .img-tab .count { color: #a0aec0; font-weight: 700; margin-left: 0.35rem; font-size: 0.82rem; }
+        .img-tab.active .count { color: #1d6df2; }
+
+        /* Toolbar */
+        .img-bar { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.4rem; }
+        .img-bar input {
+            font: inherit; font-size: 0.88rem;
+            padding: 0.55rem 0.85rem;
+            border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; color: #1a202c;
+            outline: none; flex: 1; min-width: 220px; max-width: 360px;
+        }
+        .img-bar input:focus { border-color: #1d6df2; }
+        .img-bar .filter-toggle {
+            display: inline-flex; align-items: center; gap: 0.45rem;
+            padding: 0.55rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px;
+            background: #fff; color: #4a5568; font: inherit; font-size: 0.85rem; font-weight: 600;
+            cursor: pointer;
+        }
+        .img-bar .filter-toggle.on { background: #1d6df2; color: #fff; border-color: #1d6df2; }
+        .img-bar .spacer { flex: 1; }
+        .img-bar .legend { font-size: 0.8rem; color: #718096; }
+
+        /* Image grid */
+        .img-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+        .img-card {
+            background: #fff; border: 1px solid #edf2f7; border-radius: 12px;
+            overflow: hidden;
+            display: flex; flex-direction: column;
+            transition: box-shadow 0.15s, border-color 0.15s;
+        }
+        .img-card:hover { box-shadow: 0 10px 24px rgba(0,0,0,0.06); border-color: #cbd5e0; }
+        .img-thumb {
+            position: relative;
+            width: 100%; aspect-ratio: 16 / 10;
+            background-size: cover; background-position: center;
+            background-color: #f7f9fa;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .img-thumb.empty {
+            background: repeating-linear-gradient(45deg, #f7f9fa 0 8px, #edf2f7 8px 16px);
+            color: #a0aec0; font-size: 0.78rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .img-thumb .status-pill {
+            position: absolute; top: 0.65rem; left: 0.65rem;
+            padding: 0.22rem 0.55rem; border-radius: 99px;
+            font-size: 0.66rem; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 0.6px;
+            background: rgba(0,0,0,0.55); color: #fff;
+            backdrop-filter: blur(4px);
+        }
+        .status-pill.ok      { background: rgba(47,133,90,0.92); }
+        .status-pill.pending { background: rgba(214,158,46,0.92); }
+        .status-pill.draft   { background: rgba(74,85,104,0.85); }
+        .status-pill.archived{ background: rgba(160,174,192,0.85); }
+        .img-body { padding: 0.85rem 1rem 0.5rem; flex: 1; display: flex; flex-direction: column; }
+        .img-body .name { font-size: 0.96rem; font-weight: 800; color: #1a202c; letter-spacing: -0.2px; line-height: 1.2; }
+        .img-body .meta { font-size: 0.74rem; color: #718096; margin-top: 0.25rem; flex: 1; }
+        .img-actions {
+            padding: 0.5rem 0.7rem 0.7rem;
+            display: flex; gap: 0.5rem; align-items: center; justify-content: space-between;
+        }
+        .btn-replace, .btn-open {
+            font: inherit; font-size: 0.78rem; font-weight: 700;
+            padding: 0.45rem 0.85rem; border-radius: 7px;
+            cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .btn-replace {
+            background: #1d6df2; color: #fff; border: 0;
+            transition: background 0.15s;
+        }
+        .btn-replace:hover { background: #155bc8; }
+        .btn-replace.uploading { background: #4a5568; cursor: wait; }
+        .btn-open {
+            background: #fff; color: #4a5568; border: 1px solid #e2e8f0;
+        }
+        .btn-open:hover { background: #f7f9fa; color: #1a202c; }
+
+        .empty-grid {
+            grid-column: 1 / -1;
+            background: #fff; border: 1px dashed #e2e8f0; border-radius: 12px;
+            padding: 3rem 1rem; text-align: center;
+            color: #a0aec0; font-size: 0.95rem;
+        }
+
+        .toast { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 9999; padding: 0.8rem 1.1rem; border-radius: 10px; font-size: 0.88rem; font-weight: 600; box-shadow: 0 12px 28px rgba(0,0,0,0.12); display: none; }
+        .toast.ok  { background: #f0fff4; color: #276749; border: 1px solid #9ae6b4; display: block; }
+        .toast.err { background: #fff5f5; color: #9b2c2c; border: 1px solid #feb2b2; display: block; }
+
+        @media (max-width: 700px) {
+            .img-bar input { max-width: none; width: 100%; flex-basis: 100%; }
+        }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-assistant.js" defer></script>
+    <script src="../../components/admin-nav-badges.js" defer></script>
+</head>
+<body>
+<div class="admin-wrap">
+    <admin-sidebar active="images"></admin-sidebar>
+
+    <main class="admin-main">
+        <header class="page-head">
+            <h1>Images</h1>
+            <p>Every image used on the public site, grouped by where it appears. Click <b>Replace</b> on any card to upload a new one — the change is live on the website immediately. Use <b>Edit details</b> for the full record editor.</p>
+        </header>
+
+        <div class="img-tabs" id="tabs"></div>
+
+        <div class="img-bar">
+            <input type="search" id="search" placeholder="Search by name…" oninput="renderGrid()">
+            <button class="filter-toggle" id="missing-toggle" onclick="toggleMissing()">Only missing images</button>
+            <div class="spacer"></div>
+            <span class="legend" id="legend">—</span>
+        </div>
+
+        <div class="img-grid" id="grid"><div class="empty-grid">Loading…</div></div>
+    </main>
+</div>
+
+<!-- One hidden file input we reuse for every Replace button -->
+<input type="file" id="replace-input" accept="image/*" style="display:none;" onchange="onFilePicked(event)">
+
+<div class="toast" id="toast"></div>
+
+<script>
+    // ── State ────────────────────────────────────────────────────────
+    const SECTIONS = [
+        { key: 'lakes',      label: 'Lakes',          field: 'featured_image_url', altFields: ['hero_image_url'],
+          listUrl: '/api/lakes?status=all',
+          patchUrl: id => `/api/lakes/${encodeURIComponent(id)}`,
+          uploadUrl: '/api/lakes/upload-image', uploadField: 'image',
+          editUrl: id => `entity-edit.html?type=lake&id=${encodeURIComponent(id)}`,
+          publicUrl: slug => `/lakes/${encodeURIComponent(slug)}`,
+          metaFor: r => [r.region, r.county && r.county + ' Co.', r.state].filter(Boolean).join(' · '),
+        },
+        { key: 'towns',      label: 'Towns',          field: 'hero_image_url',
+          listUrl: '/api/tags?include_archived=1',
+          patchUrl: id => `/api/tags/${encodeURIComponent(id)}`,
+          uploadUrl: '/api/tags/upload-image', uploadField: 'image',
+          editUrl: id => `entity-edit.html?type=town&id=${encodeURIComponent(id)}`,
+          publicUrl: slug => `/towns/${encodeURIComponent(slug)}`,
+          metaFor: r => [r.region, r.state].filter(Boolean).join(' · '),
+        },
+        { key: 'businesses', label: 'Businesses',     field: 'featured_image_url',
+          listUrl: '/api/businesses?status=all',
+          patchUrl: id => `/api/businesses/${encodeURIComponent(id)}`,
+          uploadUrl: '/api/businesses/upload-image', uploadField: 'image',
+          editUrl: id => `entity-edit.html?type=business&id=${encodeURIComponent(id)}`,
+          publicUrl: slug => `/businesses/${encodeURIComponent(slug)}`,
+          metaFor: r => [r.type, r.city, r.state].filter(Boolean).join(' · '),
+        },
+        { key: 'agents',     label: 'Agents',         field: 'profile_photo_url',
+          listUrl: '/api/admin',
+          patchUrl: id => `/api/admin/${encodeURIComponent(id)}/profile`,
+          uploadUrl: '/api/agents/upload-photo', uploadField: 'photo',
+          editUrl: id => `agent-review.html?id=${encodeURIComponent(id)}`,
+          publicUrl: slug => slug ? `/pages/public/agent-profile.html?slug=${encodeURIComponent(slug)}` : null,
+          nameFor: r => r.display_name || r.full_name || '(unnamed)',
+          metaFor: r => [r.brokerage_name, r.email].filter(Boolean).join(' · '),
+          statusFor: r => r.profile_status,
+        },
+        { key: 'blog',       label: 'Blog Posts',     field: 'cover_image_url',
+          listUrl: '/api/blog/admin/all',
+          patchUrl: id => `/api/blog/admin/${encodeURIComponent(id)}`,
+          uploadUrl: '/api/blog/admin/upload-image', uploadField: 'image',
+          editUrl: id => `blog-edit.html?id=${encodeURIComponent(id)}`,
+          publicUrl: slug => slug ? `/pages/public/blog-post.html?slug=${encodeURIComponent(slug)}` : null,
+          nameFor: r => r.title,
+          metaFor: r => [r.tag, r.is_published ? 'Published' : 'Draft'].filter(Boolean).join(' · '),
+          statusFor: r => r.is_published ? 'published' : 'draft',
+        },
+        { key: 'resources',  label: 'Resources',      field: 'thumbnail_url',
+          listUrl: '/api/resources',
+          patchUrl: id => `/api/resources/${encodeURIComponent(id)}`,
+          uploadUrl: null, // no admin upload endpoint for resources yet
+          editUrl: id => `resources.html`,
+          publicUrl: slug => slug ? `/pages/public/resources.html#${encodeURIComponent(slug)}` : null,
+          nameFor: r => r.title,
+          metaFor: r => [r.category, r.featured ? 'Featured' : null].filter(Boolean).join(' · '),
+        },
+    ];
+
+    const State = {
+        active: 'lakes',
+        rows:   {},   // { lakes: [], towns: [], ... }
+        loaded: {},
+        onlyMissing: false,
+        pending: null, // { sectionKey, id }
+    };
+
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const fmt = n => (typeof n === 'number' ? n.toLocaleString('en-US') : String(n ?? ''));
+
+    function toast(msg, kind = 'ok') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast ' + kind;
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => { t.className = 'toast'; }, 3500);
+    }
+
+    function getImageUrl(section, row) {
+        if (row[section.field]) return row[section.field];
+        for (const alt of (section.altFields || [])) {
+            if (row[alt]) return row[alt];
+        }
+        return null;
+    }
+
+    function getName(section, row) {
+        return section.nameFor ? section.nameFor(row) : (row.name || '(unnamed)');
+    }
+
+    function getStatus(section, row) {
+        if (section.statusFor) return section.statusFor(row);
+        if (row.status) return row.status;
+        if ('active' in row) return row.active ? 'published' : 'archived';
+        return null;
+    }
+
+    function statusClass(s) {
+        const x = String(s || '').toLowerCase();
+        if (x === 'published' || x === 'active') return 'ok';
+        if (x === 'pending'   || x === 'pending_review') return 'pending';
+        if (x === 'draft')    return 'draft';
+        if (x === 'archived' || x === 'inactive') return 'archived';
+        return 'draft';
+    }
+    function statusLabel(s) {
+        const x = String(s || '').toLowerCase();
+        if (x === 'pending_review') return 'Pending';
+        if (!x) return '';
+        return x[0].toUpperCase() + x.slice(1);
+    }
+
+    // ── Tab + grid rendering ─────────────────────────────────────────
+    function renderTabs() {
+        document.getElementById('tabs').innerHTML = SECTIONS.map(s => {
+            const rows = State.rows[s.key] || [];
+            const count = rows.length;
+            return `<button class="img-tab ${s.key === State.active ? 'active' : ''}" data-section="${s.key}" onclick="switchTab('${s.key}')">${esc(s.label)}<span class="count">${count || ''}</span></button>`;
+        }).join('');
+    }
+
+    function switchTab(key) {
+        State.active = key;
+        renderTabs();
+        ensureLoaded(key).then(() => renderGrid());
+        const url = new URL(window.location);
+        url.searchParams.set('section', key);
+        history.replaceState(null, '', url);
+    }
+
+    async function ensureLoaded(key) {
+        if (State.loaded[key]) return;
+        const section = SECTIONS.find(s => s.key === key);
+        try {
+            const r = await fetch(section.listUrl, { credentials: 'include' });
+            const data = await r.json();
+            State.rows[key] = Array.isArray(data) ? data : (data.rows || []);
+        } catch (_) {
+            State.rows[key] = [];
+        }
+        State.loaded[key] = true;
+        renderTabs(); // refresh counts
+    }
+
+    function renderGrid() {
+        const section = SECTIONS.find(s => s.key === State.active);
+        const grid    = document.getElementById('grid');
+        const q       = (document.getElementById('search').value || '').toLowerCase().trim();
+        const rows    = State.rows[State.active] || [];
+
+        const filtered = rows.filter(r => {
+            if (State.onlyMissing && getImageUrl(section, r)) return false;
+            if (!q) return true;
+            const name = getName(section, r).toLowerCase();
+            return name.includes(q);
+        });
+
+        const total   = rows.length;
+        const missing = rows.filter(r => !getImageUrl(section, r)).length;
+        document.getElementById('legend').textContent =
+            `${fmt(filtered.length)} shown · ${fmt(total)} total · ${fmt(missing)} missing image`;
+
+        if (!filtered.length) {
+            grid.innerHTML = `<div class="empty-grid">No items match the current filter.</div>`;
+            return;
+        }
+
+        grid.innerHTML = filtered.map(r => {
+            const url    = getImageUrl(section, r);
+            const name   = getName(section, r);
+            const meta   = section.metaFor(r);
+            const status = getStatus(section, r);
+            const statusBadge = status ? `<span class="status-pill ${statusClass(status)}">${esc(statusLabel(status))}</span>` : '';
+            const thumbStyle = url ? `style="background-image:url('${esc(url)}');"` : '';
+            const thumbBody  = url ? '' : 'No image';
+            const editLink   = section.editUrl(r.id);
+            const publicLink = section.publicUrl ? section.publicUrl(r.slug) : null;
+            const canUpload  = !!section.uploadUrl;
+            return `
+                <div class="img-card" data-id="${esc(r.id)}">
+                    <div class="img-thumb ${url ? '' : 'empty'}" ${thumbStyle}>
+                        ${statusBadge}
+                        ${thumbBody}
+                    </div>
+                    <div class="img-body">
+                        <div class="name">${esc(name)}</div>
+                        <div class="meta">${esc(meta)}</div>
+                    </div>
+                    <div class="img-actions">
+                        ${canUpload
+                            ? `<button class="btn-replace" onclick="startReplace('${State.active}', '${esc(r.id)}')">${url ? 'Replace' : 'Upload'}</button>`
+                            : `<span style="font-size:0.74rem;color:#a0aec0;font-weight:600;">No uploader</span>`}
+                        <div style="display:flex;gap:0.4rem;">
+                            ${publicLink ? `<a class="btn-open" href="${esc(publicLink)}" target="_blank" title="Open on the public site">↗ Live</a>` : ''}
+                            <a class="btn-open" href="${esc(editLink)}">Edit details</a>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    function toggleMissing() {
+        State.onlyMissing = !State.onlyMissing;
+        document.getElementById('missing-toggle').classList.toggle('on', State.onlyMissing);
+        renderGrid();
+    }
+
+    // ── Replace flow ────────────────────────────────────────────────
+    function startReplace(sectionKey, id) {
+        State.pending = { sectionKey, id };
+        document.getElementById('replace-input').click();
+    }
+
+    async function onFilePicked(event) {
+        const file = event.target.files?.[0];
+        if (!file) { State.pending = null; return; }
+        event.target.value = '';
+        if (!State.pending) return;
+        const { sectionKey, id } = State.pending;
+        State.pending = null;
+        const section = SECTIONS.find(s => s.key === sectionKey);
+        if (!section || !section.uploadUrl) { toast('No uploader for this type.', 'err'); return; }
+        if (file.size > 8 * 1024 * 1024) { toast('Image must be 8 MB or smaller.', 'err'); return; }
+        if (!file.type.startsWith('image/')) { toast('Pick an image file.', 'err'); return; }
+
+        // Spinner on the card's Replace button
+        const card = document.querySelector(`.img-card[data-id="${CSS.escape(id)}"]`);
+        const btn  = card?.querySelector('.btn-replace');
+        const origLabel = btn ? btn.textContent : '';
+        if (btn) { btn.textContent = 'Uploading…'; btn.classList.add('uploading'); btn.disabled = true; }
+
+        try {
+            // Step 1: Cloudinary upload via the type-specific endpoint
+            const fd = new FormData();
+            fd.append(section.uploadField, file);
+            const upRes = await fetch(section.uploadUrl, { method: 'POST', body: fd, credentials: 'include' });
+            const upData = await upRes.json().catch(() => ({}));
+            if (!upRes.ok) throw new Error(upData.error || `Upload failed (HTTP ${upRes.status}).`);
+
+            // Step 2: PATCH the entity with the new URL
+            const patchPayload = { [section.field]: upData.url };
+            const saveRes = await fetch(section.patchUrl(id), {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(patchPayload),
+            });
+            const saveData = await saveRes.json().catch(() => ({}));
+            if (!saveRes.ok) throw new Error(saveData.error || `Save failed (HTTP ${saveRes.status}).`);
+
+            // Update local state + re-render (so the new image shows immediately).
+            const row = (State.rows[sectionKey] || []).find(r => String(r.id) === String(id));
+            if (row) row[section.field] = upData.url;
+            renderGrid();
+            toast(`Image saved — now live on the public ${section.label.toLowerCase().replace(/s$/, '')} page.`, 'ok');
+        } catch (err) {
+            console.error('[images]', err);
+            if (btn) { btn.textContent = origLabel; btn.classList.remove('uploading'); btn.disabled = false; }
+            toast(err.message || 'Image replace failed.', 'err');
+        }
+    }
+
+    // ── Boot ────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Honor ?section= deep-link
+        const initial = new URLSearchParams(window.location.search).get('section');
+        if (initial && SECTIONS.some(s => s.key === initial)) State.active = initial;
+
+        // Load every section's counts upfront (parallel) so tabs show
+        // counts immediately. We re-render on each completion so the UI
+        // animates in instead of waiting for the slowest one.
+        SECTIONS.forEach(async s => {
+            await ensureLoaded(s.key);
+            if (s.key === State.active) renderGrid();
+        });
+        renderTabs();
+        renderGrid();
+    });
+</script>
+</body>
+</html>

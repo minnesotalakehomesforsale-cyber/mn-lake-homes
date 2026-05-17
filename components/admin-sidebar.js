@@ -127,6 +127,10 @@
         // are aliased so direct hits on lakes.html / tags.html /
         // businesses.html still highlight this entry in the sidebar.
         { key: 'lakes-towns', href: 'lakes-towns.html', label: 'Lakes, Towns & Businesses', aliases: ['lakes', 'tags', 'businesses'] },
+        // Site-wide image manager — every DB-backed image (lakes/towns/
+        // businesses/agents/blog/resources) in one grid with one-click
+        // replace. Hardcoded HTML/CSS images aren't editable here yet.
+        { key: 'images',      href: 'images.html',     label: 'Images' },
         // Metrics + Database share one page (system.html) with a tab per
         // section. Standalone slugs are aliased so direct hits on
         // metrics.html / database.html still highlight this entry.

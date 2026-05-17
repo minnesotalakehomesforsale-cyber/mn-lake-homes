@@ -42,6 +42,7 @@
         .ph-action-btn:hover { border-color: #1d6df2; color: #1d6df2; background: #f7faff; }
         .ph-action-btn.danger:hover { border-color: #fc8181; color: #c53030; background: #fff5f5; }
         .ph-photo {
+            position: relative;
             width: 116px; height: 116px; border-radius: 12px;
             background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
             background-size: cover; background-position: center;
@@ -50,7 +51,21 @@
             overflow: hidden; flex-shrink: 0;
             font-size: 2.4rem; font-weight: 800; color: rgba(26,32,44,0.4);
             letter-spacing: -1px;
+            cursor: pointer;
         }
+        .ph-photo .ph-photo-overlay {
+            position: absolute; inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            color: #fff;
+            display: none;
+            align-items: center; justify-content: center;
+            font-size: 0.74rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px;
+            text-align: center;
+        }
+        .ph-photo:hover .ph-photo-overlay { display: flex; }
+        .ph-photo.uploading .ph-photo-overlay { display: flex; background: rgba(15,23,42,0.7); }
+        .ph-photo-input { display: none; }
         .ph-main { flex: 1; min-width: 0; }
         .ph-name-row { display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap; }
         .ph-name-row h1 { font-size: 1.75rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; margin: 0; }
@@ -169,7 +184,11 @@
 
         <!-- PROFILE HEADER CARD -->
         <div class="profile-header" id="profile-header">
-            <div class="ph-photo" id="hdr-photo">?</div>
+            <div class="ph-photo" id="hdr-photo" onclick="document.getElementById('hdr-photo-input').click()" title="Click to replace the main image">
+                <span id="hdr-photo-initial">?</span>
+                <div class="ph-photo-overlay" id="hdr-photo-overlay">Replace image</div>
+            </div>
+            <input type="file" id="hdr-photo-input" class="ph-photo-input" accept="image/*" onchange="onHeaderImagePicked(event)">
             <div class="ph-main">
                 <div class="ph-name-row">
                     <h1 id="hdr-name">Loading…</h1>
@@ -233,6 +252,9 @@
             saveUrl:  id => `/api/lakes/${encodeURIComponent(id)}`,
             deleteUrl:id => `/api/lakes/${encodeURIComponent(id)}`,
             publicUrl:slug => `/lakes/${encodeURIComponent(slug)}`,
+            uploadUrl:'/api/lakes/upload-image',
+            uploadField:'image',
+            imageField:'featured_image_url',
             tabs:     ['details', 'editorial', 'seo', 'connected'],
             relatedKeys: ['agents','businesses','blog','tags'],
         },
@@ -244,6 +266,9 @@
             saveUrl:  id => `/api/tags/${encodeURIComponent(id)}`,
             deleteUrl:id => `/api/tags/${encodeURIComponent(id)}`,
             publicUrl:slug => `/towns/${encodeURIComponent(slug)}`,
+            uploadUrl:'/api/tags/upload-image',
+            uploadField:'image',
+            imageField:'hero_image_url',
             tabs:     ['details', 'editorial', 'seo', 'connected'],
             relatedKeys: ['lakes','agents','businesses','blog'],
         },
@@ -255,6 +280,9 @@
             saveUrl:  id => `/api/businesses/${encodeURIComponent(id)}`,
             deleteUrl:id => `/api/businesses/${encodeURIComponent(id)}/permanent`,
             publicUrl:slug => `/businesses/${encodeURIComponent(slug)}`,
+            uploadUrl:'/api/businesses/upload-image',
+            uploadField:'image',
+            imageField:'featured_image_url',
             tabs:     ['details', 'contact', 'connected'],
             relatedKeys: ['lakes','tags'],
         },
@@ -285,14 +313,21 @@
         document.getElementById('back-link').href      = TYPE_META[TYPE].backHref;
         document.getElementById('back-link').textContent = TYPE_META[TYPE].backText;
 
-        // Photo / image
+        // Photo / image. If a URL is set, paint it as the background and
+        // hide the initial-letter fallback; otherwise show the initial.
         const img = entity.featured_image_url || entity.hero_image_url;
-        const photo = document.getElementById('hdr-photo');
+        const photo   = document.getElementById('hdr-photo');
+        const initial = document.getElementById('hdr-photo-initial');
+        const overlay = document.getElementById('hdr-photo-overlay');
         if (img) {
             photo.style.backgroundImage = `url('${img}')`;
-            photo.textContent = '';
+            initial.style.display = 'none';
+            overlay.textContent = 'Replace image';
         } else {
-            photo.textContent = (entity.name || '?').replace(/^lake\s+/i, '').charAt(0).toUpperCase();
+            photo.style.backgroundImage = '';
+            initial.style.display = '';
+            initial.textContent = (entity.name || '?').replace(/^lake\s+/i, '').charAt(0).toUpperCase();
+            overlay.textContent = 'Upload image';
         }
 
         document.getElementById('hdr-name').textContent = entity.name || '(unnamed)';
@@ -685,6 +720,82 @@
             phone: v('f-phone'), email: v('f-email'),
             website_url: v('f-website'), instagram_url: v('f-ig'), facebook_url: v('f-fb'),
         }, 'save-contact');
+    }
+
+    // ── Header image upload ──────────────────────────────────────────
+    // Click the photo → pick file → upload to type-specific Cloudinary
+    // endpoint → PATCH this entity's image field with the returned URL.
+    // The new image is the "main image across the website" because
+    // every public page reads this field at render time.
+    async function onHeaderImagePicked(event) {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        if (file.size > 8 * 1024 * 1024) { toast('Image must be 8 MB or smaller.', 'err'); return; }
+        if (!file.type.startsWith('image/')) { toast('Pick an image file.', 'err'); return; }
+
+        // Local preview immediately for snappy UX
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const photo = document.getElementById('hdr-photo');
+            photo.style.backgroundImage = `url('${e.target.result}')`;
+            document.getElementById('hdr-photo-initial').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+
+        const photo   = document.getElementById('hdr-photo');
+        const overlay = document.getElementById('hdr-photo-overlay');
+        photo.classList.add('uploading');
+        overlay.textContent = 'Uploading…';
+
+        try {
+            // Step 1: upload to Cloudinary via the type-specific endpoint.
+            const fd = new FormData();
+            fd.append(TYPE_META[TYPE].uploadField, file);
+            const upRes = await fetch(TYPE_META[TYPE].uploadUrl, {
+                method: 'POST',
+                body: fd,
+                credentials: 'include',
+            });
+            const upData = await upRes.json().catch(() => ({}));
+            if (!upRes.ok) throw new Error(upData.error || `Upload failed (HTTP ${upRes.status}).`);
+
+            // Step 2: PATCH the entity with the new URL. We pass it through
+            // the same save endpoint so server-side validation / activity
+            // logging are consistent with manual edits in the Details tab.
+            const patchPayload = { [TYPE_META[TYPE].imageField]: upData.url };
+            const saveRes = await fetch(TYPE_META[TYPE].saveUrl(ID), {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(patchPayload),
+            });
+            const saveData = await saveRes.json().catch(() => ({}));
+            if (!saveRes.ok) throw new Error(saveData.error || `Save failed (HTTP ${saveRes.status}).`);
+
+            // Update local copy so re-renders + the Details tab field
+            // reflect the new image.
+            entity[TYPE_META[TYPE].imageField] = upData.url;
+            const detailsImgField = document.getElementById('f-img');
+            if (detailsImgField) detailsImgField.value = upData.url;
+
+            overlay.textContent = 'Replace image';
+            toast('Image saved — now live on the public page.', 'ok');
+        } catch (err) {
+            console.error('[image-upload]', err);
+            overlay.textContent = 'Replace image';
+            toast(err.message || 'Image upload failed.', 'err');
+            // Roll back the preview if the upload failed (so we don't show
+            // an image that isn't actually saved).
+            const url = entity.featured_image_url || entity.hero_image_url;
+            if (url) photo.style.backgroundImage = `url('${url}')`;
+            else {
+                photo.style.backgroundImage = '';
+                document.getElementById('hdr-photo-initial').style.display = '';
+            }
+        } finally {
+            photo.classList.remove('uploading');
+            event.target.value = ''; // allow re-picking the same file
+        }
     }
 
     // ── Header actions ───────────────────────────────────────────────

@@ -21,6 +21,9 @@ router.get('/', c.list);
 // Everything below requires a valid session cookie. Role-level gates
 // (admin-only vs. self-or-admin) live inside each controller.
 router.post  ('/',                      verifyToken, c.create);
+// Static path — must come before /:slugOrId so Express doesn't try to
+// look up a tag with slug "upload-image".
+router.post  ('/upload-image',          verifyToken, c.uploadImage);
 router.get   ('/users/:userId',         verifyToken, c.listForUser);
 router.put   ('/users/:userId',         verifyToken, c.replaceForUser);
 router.post  ('/users/:userId',         verifyToken, c.attachToUser);
