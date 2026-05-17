@@ -107,6 +107,7 @@
         <!-- Tab strip -->
         <div class="page-tabs" role="tablist">
             <button id="tab-btn-overview"   class="page-tab active" onclick="showLT('overview')"   role="tab">Overview</button>
+            <button id="tab-btn-map"        class="page-tab"        onclick="showLT('map')"        role="tab">Map</button>
             <button id="tab-btn-lakes"      class="page-tab"        onclick="showLT('lakes')"      role="tab">Lakes</button>
             <button id="tab-btn-towns"      class="page-tab"        onclick="showLT('towns')"      role="tab">Towns</button>
             <button id="tab-btn-businesses" class="page-tab"        onclick="showLT('businesses')" role="tab">Businesses</button>
@@ -174,6 +175,14 @@
             </div>
         </div>
 
+        <!-- ── Map (public map page in embed + admin mode) ──────────── -->
+        <div id="pane-map" class="tab-pane" role="tabpanel">
+            <p style="font-size:0.85rem;color:#718096;margin:0 0 0.75rem;">
+                Mirrors the public lakes-and-towns map. In this admin view, drafts and pending items also appear — they stay hidden from the live site.
+            </p>
+            <iframe id="frame-map" class="lt-frame" data-src="/towns?embed=1&amp;admin=1" title="Map (admin view)" style="min-height: 720px;"></iframe>
+        </div>
+
         <!-- ── Section tabs (existing admin pages, embed mode) ──────── -->
         <div id="pane-lakes" class="tab-pane" role="tabpanel">
             <iframe id="frame-lakes" class="lt-frame" data-src="lakes.html?embed=1" title="Lakes admin"></iframe>
@@ -188,7 +197,7 @@
 </div>
 
 <script>
-    const TABS = ['overview', 'lakes', 'towns', 'businesses'];
+    const TABS = ['overview', 'map', 'lakes', 'towns', 'businesses'];
     const _params = new URLSearchParams(window.location.search);
     const _initialTab = TABS.includes(_params.get('tab')) ? _params.get('tab') : 'overview';
 

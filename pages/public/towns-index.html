@@ -23,6 +23,26 @@
     <script src="../../components/components.js" defer></script>
 
     <style>
+        /* Embed mode (?embed=1) — page is iframed inside admin
+           lakes-towns.html. Hide the public chrome so only the map +
+           directory show. ?admin=1 paints draft/pending badges on
+           non-published items (data gating is enforced server-side). */
+        body.lt-embed global-header,
+        body.lt-embed global-footer,
+        body.lt-embed lead-modal { display: none !important; }
+        body.lt-embed .db-shell  { padding-top: 0 !important; }
+        .lt-admin-badge {
+            display: inline-block; padding: 0.12rem 0.45rem;
+            border-radius: 4px; font-size: 0.62rem; font-weight: 800;
+            letter-spacing: 0.5px; text-transform: uppercase;
+            margin-left: 0.4rem; vertical-align: middle;
+        }
+        .lt-admin-badge.draft    { background: #fefcbf; color: #975a16; }
+        .lt-admin-badge.pending  { background: #ebf8ff; color: #2b6cb0; }
+        .lt-admin-badge.archived { background: #edf2f7; color: #4a5568; }
+        .lt-admin-badge.inactive { background: #edf2f7; color: #4a5568; }
+    </style>
+    <style>
         html, body { height: 100%; }
         body { background: #f7f9fa; overflow: hidden; }
 
@@ -610,6 +630,21 @@
     <lead-modal></lead-modal>
 
     <script>
+        // ── Mode flags (set from URL on boot) ─────────────────────
+        // ?embed=1 → hosted in an iframe inside an admin page; hide
+        //            global header/footer + post height to parent.
+        // ?admin=1 → broaden API fetches to include drafts/pending/
+        //            inactive. Server-side enforces real admin auth,
+        //            so this flag alone never leaks data.
+        const _urlParams   = new URLSearchParams(window.location.search);
+        const _isEmbedded  = _urlParams.get('embed') === '1';
+        const _isAdminView = _urlParams.get('admin') === '1';
+        if (_isEmbedded) {
+            // Add the class as soon as possible so the chrome doesn't flash in.
+            (document.body || document.documentElement).classList.add('lt-embed');
+            document.addEventListener('DOMContentLoaded', () => document.body.classList.add('lt-embed'));
+        }
+
         // ── Data stores ───────────────────────────────────────────
         let _towns = [];
         let _lakes = [];
@@ -710,12 +745,19 @@
             // generic "couldn't load" message — we let those surface to
             // the console and swallow here only to keep the pins alive.
             try {
+                // Admin mode (?admin=1, only honored after server-side auth
+                // gating) widens each fetch so drafts/pending/inactive items
+                // also land in the directory + map. Public callers without
+                // an admin cookie still get the published-only data — the
+                // API enforces that regardless of what's in the URL.
                 const [townRes, lakeRes, bizRes] = await Promise.all([
-                    fetch('/api/tags?with_lakes=true&active=true'),
-                    fetch('/api/lakes'),
-                    // Explicit status=active so admins visiting this public
-                    // page in the same browser don't accidentally leak drafts.
-                    fetch('/api/businesses?status=active'),
+                    fetch(_isAdminView
+                        ? '/api/tags?with_lakes=true'
+                        : '/api/tags?with_lakes=true&active=true'),
+                    fetch(_isAdminView ? '/api/lakes?status=all' : '/api/lakes'),
+                    fetch(_isAdminView
+                        ? '/api/businesses?status=all'
+                        : '/api/businesses?status=active'),
                 ]);
                 if (!townRes.ok) throw new Error('towns');
                 _towns = await townRes.json();
@@ -1131,6 +1173,28 @@
             return `A ${typeLabel} ${where}. Tap to get in touch.`;
         }
 
+        // Admin-mode badge — shows the status of a non-published item so
+        // the admin can spot drafts/pending/inactive at a glance. No-op
+        // when not in admin mode or when the item is fully live.
+        function adminStatusBadge(item) {
+            if (!_isAdminView) return '';
+            const d = item.data;
+            let label = null, cls = null;
+            if (item.kind === 'biz') {
+                if (d.status && d.status !== 'active') {
+                    label = d.status; cls = d.status;
+                }
+            } else if (item.kind === 'town') {
+                if (d.active === false) { label = 'Inactive'; cls = 'inactive'; }
+            } else if (item.kind === 'lake') {
+                if (d.status && d.status !== 'published') {
+                    label = d.status; cls = d.status;
+                }
+            }
+            if (!label) return '';
+            return ` <span class="lt-admin-badge ${escHtml(cls)}">${escHtml(label)}</span>`;
+        }
+
         function renderGrid(items) {
             const grid = document.getElementById('db-grid');
             if (!items.length) {
@@ -1154,7 +1218,7 @@
                                 <img src="${escHtml(thumb)}" alt="${escHtml(b.name)}" loading="lazy">
                             </div>
                             <div class="db-card-body">
-                                <h3>${escHtml(b.name)}</h3>
+                                <h3>${escHtml(b.name)}${adminStatusBadge(item)}</h3>
                                 <div class="loc">${escHtml(loc)}</div>
                                 <p>${escHtml(bizBlurb(b))}</p>
                                 <span class="db-card-cta">View profile <span aria-hidden="true">→</span></span>
@@ -1173,7 +1237,7 @@
                                 <img src="${escHtml(thumb)}" alt="${escHtml(t.name)}, ${escHtml(t.state || '')}" loading="lazy">
                             </div>
                             <div class="db-card-body">
-                                <h3>${escHtml(t.name)}</h3>
+                                <h3>${escHtml(t.name)}${adminStatusBadge(item)}</h3>
                                 <div class="loc">${escHtml(loc)}</div>
                                 <p>${escHtml(townBlurb(t))}</p>
                                 <span class="db-card-cta">Visit town page <span aria-hidden="true">→</span></span>
@@ -1191,7 +1255,7 @@
                             <img src="${escHtml(thumb)}" alt="${escHtml(l.name)}, ${escHtml(l.state || '')}" loading="lazy">
                         </div>
                         <div class="db-card-body">
-                            <h3>${escHtml(l.name)}</h3>
+                            <h3>${escHtml(l.name)}${adminStatusBadge(item)}</h3>
                             <div class="loc">${escHtml(loc)}</div>
                             <p>${escHtml(lakeBlurb(l))}</p>
                             <span class="db-card-cta">Visit lake page <span aria-hidden="true">→</span></span>
@@ -1274,6 +1338,29 @@
             setTimeout(syncHeaderHeight, 120);
             setTimeout(syncHeaderHeight, 400);
         });
+    </script>
+
+    <!-- Embed-mode helper. Active only when this page is iframed via
+         ?embed=1 (e.g. inside the admin "Lakes, Towns & Businesses"
+         Map tab). Posts content height to the parent so the iframe
+         can grow with map render, filter changes, pin clicks, etc. -->
+    <script>
+        (function () {
+            if (new URLSearchParams(window.location.search).get('embed') !== '1') return;
+            let lastH = 0;
+            function postHeight() {
+                const h = Math.max(
+                    document.documentElement.scrollHeight,
+                    document.body.scrollHeight
+                );
+                if (h !== lastH) {
+                    lastH = h;
+                    window.parent.postMessage({ lt: 'height', frame: 'map', h }, '*');
+                }
+            }
+            window.addEventListener('load', postHeight);
+            setInterval(postHeight, 500);
+        })();
     </script>
 </body>
 </html>
