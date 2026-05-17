@@ -1056,6 +1056,16 @@ async function _lfDoSubmit() {
         });
         if (!res.ok) { const r = await res.json().catch(()=>({})); throw new Error(r.error || 'Submission failed.'); }
 
+        // Fire conversion (GA4 + HubSpot tracking). Helper is a no-op when
+        // no tracking IDs are configured yet, so this is safe pre-launch.
+        if (typeof window.trackConversion === 'function') {
+            window.trackConversion('generate_lead', {
+                form_name: 'lead_modal',
+                lead_source: cfg.source,
+                has_address: !!d.address,
+            });
+        }
+
         document.getElementById('lf-bar').style.width  = '100%';
         document.getElementById('lf-body').style.display = 'none';
         document.getElementById('lf-back').style.visibility = 'hidden';
@@ -1219,5 +1229,70 @@ document.addEventListener('keydown', e => {
             }).catch(() => {});
         }
     } catch (_) { /* analytics must never break a page */ }
+})();
+
+// ─── Launch tracking layer ─────────────────────────────────────────────────
+// Loads GA4 (gtag.js) and HubSpot's first-party tracking script (hs-scripts)
+// driven entirely by /api/config/public — so the snippets activate the moment
+// GA4_MEASUREMENT_ID / HUBSPOT_PORTAL_ID are set in Render and stay dormant
+// otherwise. Also exposes window.trackConversion(eventName, params) which
+// forms call on success to fire GA4 events + HubSpot custom behavioral
+// events at the same time. If neither pixel is loaded, the helper is a
+// no-op — forms keep working unchanged.
+(function loadLaunchTracking() {
+    if (window.__launchTrackingInit) return;
+    window.__launchTrackingInit = true;
+
+    // Helper available immediately even before scripts load — calls queue
+    // into the gtag/hsq globals which buffer until the SDK boots.
+    window.trackConversion = function (eventName, params) {
+        try {
+            if (typeof window.gtag === 'function') {
+                window.gtag('event', eventName, params || {});
+            }
+            if (Array.isArray(window._hsq)) {
+                window._hsq.push(['trackCustomBehavioralEvent', {
+                    name: eventName,
+                    properties: params || {},
+                }]);
+            }
+        } catch (_) { /* tracking must never break a flow */ }
+    };
+
+    // Pre-allocate the gtag/hsq globals so trackConversion calls fired
+    // before the SDKs finish loading are queued and replayed.
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+    window._hsq = window._hsq || [];
+
+    fetch('/api/config/public', { credentials: 'omit' })
+        .then(r => (r.ok ? r.json() : null))
+        .then(cfg => {
+            if (!cfg) return;
+
+            // ── GA4 (gtag.js) ──
+            if (cfg.ga4_id) {
+                const s = document.createElement('script');
+                s.async = true;
+                s.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(cfg.ga4_id)}`;
+                document.head.appendChild(s);
+                window.gtag('js', new Date());
+                // anonymize_ip stays on by default — same posture as Plausible.
+                window.gtag('config', cfg.ga4_id, {
+                    anonymize_ip: true,
+                    send_page_view: true,
+                });
+            }
+
+            // ── HubSpot tracking pixel ──
+            if (cfg.hubspot_portal_id) {
+                const h = document.createElement('script');
+                h.async = true; h.defer = true;
+                h.id = 'hs-script-loader';
+                h.src = `//js.hs-scripts.com/${encodeURIComponent(cfg.hubspot_portal_id)}.js`;
+                document.head.appendChild(h);
+            }
+        })
+        .catch(() => { /* config endpoint unreachable — fall through silently */ });
 })();
 

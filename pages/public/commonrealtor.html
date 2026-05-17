@@ -1107,6 +1107,9 @@
                 status.textContent = '✓ Message sent — we\'ll be in touch within one business day.';
                 status.style.cssText = 'display:block;padding:0.85rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.9rem;font-weight:500;background:#f0fff4;color:#276749;border:1px solid #9ae6b4;';
                 form.reset();
+                if (typeof window.trackConversion === 'function') {
+                    window.trackConversion('generate_lead', { form_name: 'contact_commonrealtor', lead_source: 'commonrealtor_contact' });
+                }
             } catch (err) {
                 status.textContent = err.message || 'Something went wrong. Please try again or email us directly.';
                 status.style.cssText = 'display:block;padding:0.85rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.9rem;font-weight:500;background:#fff5f5;color:#c53030;border:1px solid #feb2b2;';
@@ -1141,6 +1144,9 @@
                 form.reset();
                 status.textContent = 'Subscribed. Welcome aboard.';
                 status.style.color = '#9ae6b4';
+                if (typeof window.trackConversion === 'function') {
+                    window.trackConversion('sign_up', { form_name: 'newsletter', signup_source: 'newsletter_commonrealtor' });
+                }
             } catch (err) {
                 status.textContent = err.message || 'Something went wrong. Please try again.';
                 status.style.color = '#feb2b2';

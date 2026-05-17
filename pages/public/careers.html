@@ -451,6 +451,9 @@
                 status.textContent = '✓ Thanks! Your application is in our inbox — we\'ll get back to you within a few days.';
                 status.style.cssText = 'display:block;padding:0.85rem 1rem;border-radius:10px;margin-bottom:1rem;font-size:0.9rem;font-weight:500;background:#f0fff4;color:#276749;border:1px solid #9ae6b4;';
                 document.getElementById('careers-form').reset();
+                if (typeof window.trackConversion === 'function') {
+                    window.trackConversion('generate_lead', { form_name: 'careers', lead_source: 'careers_application', role });
+                }
                 window.scrollTo({ top: document.querySelector('.careers-form-inner').offsetTop - 40, behavior: 'smooth' });
             } catch (err) {
                 status.textContent = err.message || 'Something went wrong. Please try again or email us directly.';

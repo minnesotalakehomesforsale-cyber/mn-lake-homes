@@ -67,6 +67,21 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// ─── /api/config/public ─────────────────────────────────────────────────────
+// Returns the public tracking IDs the frontend needs to install GA4 +
+// HubSpot tracking and to render the Search Console verification meta tag.
+// All values are env-driven so they can be rotated without a code change;
+// missing values just disable that particular pixel (the page still works).
+app.get('/api/config/public', (req, res) => {
+    res.set('Cache-Control', 'public, max-age=300');
+    res.json({
+        ga4_id:             process.env.GA4_MEASUREMENT_ID || null,
+        hubspot_portal_id:  process.env.HUBSPOT_PORTAL_ID  || null,
+        gsc_verification:   process.env.GSC_VERIFICATION    || null,
+        environment:        process.env.NODE_ENV            || 'local',
+    });
+});
+
 // /api/_diagnostic — quick test of DB connectivity and schema
 app.get('/api/_diagnostic', async (req, res) => {
     const pool = require('./database/pool');
@@ -655,6 +670,30 @@ app.get('/business/dashboard', (req, res) => {
 app.get('/towns', (req, res) => {
     res.sendFile(path.join(PROJECT_ROOT, 'pages/public/towns-index.html'));
 });
+
+// ─── Homepage: inject Google Search Console verification meta tag ─────
+// GoogleBot may not run JS reliably for the verification check, so the
+// `<meta name="google-site-verification" content="...">` tag has to be in
+// the static HTML response. We intercept `/` and `/index.html`, read the
+// real file from disk, and string-substitute the {{GSC_META}} token in
+// the <head> with the env-driven verification value (or empty when no
+// value is configured — the page still renders normally).
+const _injectGscMeta = (filePath) => async (req, res, next) => {
+    try {
+        const fs = require('fs').promises;
+        let html = await fs.readFile(filePath, 'utf8');
+        const tok = process.env.GSC_VERIFICATION
+            ? `<meta name="google-site-verification" content="${process.env.GSC_VERIFICATION.replace(/"/g, '&quot;')}">`
+            : '<!-- GSC_VERIFICATION env var not set -->';
+        html = html.replace('{{GSC_META}}', tok);
+        res.type('html').send(html);
+    } catch (err) {
+        console.error('[gsc-inject]', err.message);
+        next();
+    }
+};
+app.get('/',           _injectGscMeta(path.join(PROJECT_ROOT, 'index.html')));
+app.get('/index.html', _injectGscMeta(path.join(PROJECT_ROOT, 'index.html')));
 
 // ─── Towns: public dynamic page per geo-tag ────────────────────────────
 // Server-renders SEO tokens into the initial HTML (matches the /lakes/:slug
@@ -1513,6 +1552,24 @@ async function ensureTables() {
             );
             CREATE INDEX IF NOT EXISTS idx_marketing_posts_due    ON marketing_posts(due_date);
             CREATE INDEX IF NOT EXISTS idx_marketing_posts_status ON marketing_posts(status);
+        `);
+
+        // Day-0 launch baselines + any subsequent snapshots. Each row is a
+        // frozen JSON blob of counter values for every table that matters,
+        // so the launch team can later say "we had X agents on day-0, Y on
+        // day-30." Indexed by label so multiple named snapshots (e.g.
+        // 'day_0_launch', 'pre_seo_push') can coexist.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS analytics_baselines (
+                id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                label       VARCHAR(80) NOT NULL,
+                note        TEXT,
+                counters    JSONB NOT NULL,
+                created_by  UUID,
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_analytics_baselines_label   ON analytics_baselines(label);
+            CREATE INDEX IF NOT EXISTS idx_analytics_baselines_created ON analytics_baselines(created_at DESC);
         `);
 
         console.log(' Tables verified.');

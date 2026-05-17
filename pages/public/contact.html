@@ -261,6 +261,9 @@
                             status.textContent = '✓ Message sent — a local specialist will reach out within 24 hours.';
                             status.style.cssText = 'display:block;padding:0.85rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.9rem;font-weight:500;background:#f0fff4;color:#276749;border:1px solid #9ae6b4;';
                             form.reset();
+                            if (typeof window.trackConversion === 'function') {
+                                window.trackConversion('generate_lead', { form_name: 'contact_mnlh', lead_source: 'mnlakehomes_contact' });
+                            }
                         } catch (err) {
                             status.textContent = err.message || 'Something went wrong. Please try again or call us directly.';
                             status.style.cssText = 'display:block;padding:0.85rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.9rem;font-weight:500;background:#fff5f5;color:#c53030;border:1px solid #feb2b2;';

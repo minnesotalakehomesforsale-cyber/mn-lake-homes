@@ -315,6 +315,9 @@
                 }
 
                 // Success — JWT cookie is already set. Send them straight to their dashboard.
+                if (typeof window.trackConversion === 'function') {
+                    window.trackConversion('sign_up', { form_name: 'user_signup', signup_source: 'waitlist', method: 'email' });
+                }
                 window.location.href = '/pages/user/dashboard.html';
             } catch (err) {
                 console.error(err);

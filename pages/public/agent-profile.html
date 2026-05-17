@@ -285,6 +285,13 @@
                     if (!res.ok) throw new Error('Failed');
                     btn.style.display = 'none';
                     document.getElementById('form-success-banner').style.display = 'block';
+                    if (typeof window.trackConversion === 'function') {
+                        window.trackConversion('generate_lead', {
+                            form_name: 'agent_profile_inquiry',
+                            lead_source: 'agent_inquiry',
+                            agent_id: document.getElementById('form-agent-id').value || null,
+                        });
+                    }
                 } catch (err) {
                     btn.textContent = 'Send Inquiry';
                     btn.style.opacity = '1';

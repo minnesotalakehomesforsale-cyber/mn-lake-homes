@@ -998,6 +998,16 @@
                 const data = await res.json();
                 S.leadId = data.leadId;
                 if (typeof data.offerAmount === 'number') S.offerAmount = data.offerAmount;
+
+                // Conversion event — highest-intent funnel on the site.
+                if (typeof window.trackConversion === 'function') {
+                    window.trackConversion('generate_lead', {
+                        form_name: 'cash_offer',
+                        lead_source: 'cash_offer',
+                        offer_amount: S.offerAmount || null,
+                        site: payload.source_site || null,
+                    });
+                }
                 return true;
             } catch (err) {
                 console.warn('[cash-offer] submit error', err);

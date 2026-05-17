@@ -320,6 +320,9 @@
                     const data = await res.json().catch(() => ({}));
                     if (!res.ok) throw new Error(data.error || `Registration failed (${res.status}).`);
 
+                    if (typeof window.trackConversion === 'function') {
+                        window.trackConversion('sign_up', { form_name: 'agent_join', signup_source: 'agent_register' });
+                    }
                     setMsg('#f0fff4', '#2f855a', 'Account created! Redirecting to your dashboard…');
                     setTimeout(() => { window.location.href = '/pages/agent/dashboard.html'; }, 1200);
                 } catch (err) {

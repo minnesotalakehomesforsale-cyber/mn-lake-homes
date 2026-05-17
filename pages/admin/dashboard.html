@@ -447,6 +447,23 @@
                 </div>
             </div>
 
+            <!-- ── Launch baseline snapshot ────────────────────── -->
+            <div class="d-card" style="margin-bottom: 1.5rem;">
+                <div class="d-card-hd">
+                    <h3 class="d-card-title">Launch baselines</h3>
+                    <button id="snap-baseline-btn"
+                            style="background:#1d6df2;color:#fff;border:0;border-radius:8px;padding:0.55rem 1.1rem;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;"
+                            onclick="snapshotBaseline()">Snapshot day-0 baseline</button>
+                </div>
+                <div class="d-card-body">
+                    <p style="font-size:0.85rem;color:#718096;margin:0 0 0.85rem;">
+                        Freezes today's platform-wide counters (agents, leads, users, traffic, etc.) so the launch team can later measure deltas. Saved durably in the <code>analytics_baselines</code> table.
+                    </p>
+                    <div id="baseline-list" style="font-size:0.85rem;color:#4a5568;">Loading…</div>
+                    <div id="baseline-status" style="margin-top:0.6rem;font-size:0.82rem;font-weight:600;"></div>
+                </div>
+            </div>
+
             <!-- ── System health pills ─────────────────────────── -->
             <div class="d-card" style="margin-bottom: 1.5rem;">
                 <div class="d-card-hd">
@@ -935,7 +952,68 @@
 
             // ── System health ─────────────────────────────────
             if (activitySummary) renderSysPills(activitySummary);
+
+            // ── Launch baselines ──────────────────────────────
+            loadBaselines();
         });
+
+        // Launch baselines — list prior snapshots + button to snapshot now.
+        async function loadBaselines() {
+            const el = document.getElementById('baseline-list');
+            try {
+                const rows = await j('/api/admin/analytics/baselines');
+                if (!Array.isArray(rows) || !rows.length) {
+                    el.innerHTML = '<span style="color:#a0aec0;">No baselines snapshotted yet — click the button to capture day-0.</span>';
+                    return;
+                }
+                el.innerHTML = rows.slice(0, 6).map(r => {
+                    const c = r.counters || {};
+                    const when = new Date(r.created_at).toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' });
+                    return `
+                        <div style="padding:0.6rem 0;border-top:1px solid #edf2f7;display:flex;flex-wrap:wrap;gap:0.4rem 1.2rem;align-items:baseline;">
+                            <span style="font-weight:700;color:#1a202c;">${esc(r.label)}</span>
+                            <span style="color:#a0aec0;font-size:0.78rem;">${esc(when)}</span>
+                            <span style="color:#718096;font-size:0.8rem;">
+                                ${fmt(c.users || 0)} users · ${fmt(c.leads_total || 0)} leads ·
+                                ${fmt(c.agents_published || 0)} agents · ${fmt(c.page_views_total || 0)} views
+                            </span>
+                        </div>`;
+                }).join('');
+            } catch (_) {
+                el.innerHTML = '<span style="color:#c53030;">Could not load baselines.</span>';
+            }
+        }
+
+        async function snapshotBaseline() {
+            const btn    = document.getElementById('snap-baseline-btn');
+            const status = document.getElementById('baseline-status');
+            const label  = prompt('Label for this baseline (default: day_0_launch):', 'day_0_launch');
+            if (label === null) return;
+            const note   = prompt('Optional note (deploy state, who triggered, etc.):', '') || null;
+            btn.disabled = true;
+            const orig = btn.textContent;
+            btn.textContent = 'Snapshotting…';
+            status.textContent = '';
+            try {
+                const res = await fetch('/api/admin/analytics/baseline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ label: label.trim() || 'day_0_launch', note }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                status.style.color = '#2f855a';
+                status.textContent = `✓ Saved baseline "${data.label}".`;
+                loadBaselines();
+            } catch (err) {
+                status.style.color = '#c53030';
+                status.textContent = err.message || 'Failed to snapshot baseline.';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = orig;
+            }
+        }
     </script>
 </body>
 </html>

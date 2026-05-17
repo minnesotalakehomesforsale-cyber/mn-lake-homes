@@ -630,6 +630,13 @@
                 });
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                if (typeof window.trackConversion === 'function') {
+                    window.trackConversion('sign_up', {
+                        form_name: 'business_signup',
+                        signup_source: 'business_owner',
+                        business_type: payload.business_type || null,
+                    });
+                }
                 if (data.checkout_url) {
                     window.location.href = data.checkout_url;
                 } else {

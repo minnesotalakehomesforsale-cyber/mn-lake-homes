@@ -473,6 +473,13 @@
                 // Show the success state with an immediate download link.
                 document.getElementById('rx-dl-form').style.display = 'none';
                 document.getElementById('rx-dl-success').style.display = 'block';
+                if (typeof window.trackConversion === 'function') {
+                    window.trackConversion('generate_lead', {
+                        form_name: 'resource_download',
+                        lead_source: `resource:${_rxDownloadSlug}`,
+                        resource_title: data.title || null,
+                    });
+                }
                 const dl = document.getElementById('rx-dl-download-link');
                 dl.href = data.url;
                 dl.setAttribute('download', '');

@@ -13,6 +13,10 @@ router.post  ('/marketing/posts',                   marketingController.createPo
 router.patch ('/marketing/posts/:id',               marketingController.updatePost);
 router.delete('/marketing/posts/:id',               marketingController.deletePost);
 
+// ─── ANALYTICS BASELINES (launch-day + future snapshots) ────────────────────
+router.get ('/analytics/baselines', marketingController.listBaselines);
+router.post('/analytics/baseline',  marketingController.snapshotBaseline);
+
 // ─── AGENT LEDGER ─────────────────────────────────────────────────────────────
 router.get('/', adminController.getLedger);                              // GET /api/admin?search=&status=&membership=&published=
 router.post('/', adminController.createAgent);                            // POST /api/admin

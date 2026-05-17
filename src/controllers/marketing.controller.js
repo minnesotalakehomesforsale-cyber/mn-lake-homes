@@ -288,6 +288,92 @@ exports.listSubscribers = async (req, res) => {
 // ─── Marketing dashboard overview ───────────────────────────────────────────
 // Counts + a 7-day strip of upcoming due posts for the dashboard tab.
 
+// ─── Day-0 launch baselines ─────────────────────────────────────────────────
+// One snapshot = a frozen JSON blob of "how big is the platform right now"
+// across every table that matters. Admin clicks the button on the dashboard
+// once on launch day to lock in the day-0 numbers; later snapshots ("day-30",
+// "post-press-release", etc.) let the launch team measure deltas without
+// guessing what the day-0 numbers were.
+
+const BASELINE_COUNT_QUERIES = [
+    ['users',                  `SELECT COUNT(*)::int AS c FROM users  WHERE deleted_at IS NULL`],
+    ['users_clients',          `SELECT COUNT(*)::int AS c FROM users  WHERE deleted_at IS NULL AND role = 'client'`],
+    ['users_agents',           `SELECT COUNT(*)::int AS c FROM users  WHERE deleted_at IS NULL AND role = 'agent'`],
+    ['users_business_owners',  `SELECT COUNT(*)::int AS c FROM users  WHERE deleted_at IS NULL AND role = 'business_owner'`],
+    ['agents_published',       `SELECT COUNT(*)::int AS c FROM agents WHERE is_published = TRUE AND deleted_at IS NULL`],
+    ['agents_pending',         `SELECT COUNT(*)::int AS c FROM agents WHERE profile_status = 'pending_review' AND deleted_at IS NULL`],
+    ['leads_total',            `SELECT COUNT(*)::int AS c FROM leads  WHERE deleted_at IS NULL`],
+    ['leads_unassigned',       `SELECT COUNT(*)::int AS c FROM leads  WHERE deleted_at IS NULL AND assigned_user_id IS NULL`],
+    ['cash_offer_leads_total', `SELECT COUNT(*)::int AS c FROM cash_offer_leads WHERE archived_at IS NULL`],
+    ['contact_inquiries',      `SELECT COUNT(*)::int AS c FROM contact_inquiries WHERE deleted_at IS NULL`],
+    ['businesses_active',      `SELECT COUNT(*)::int AS c FROM businesses WHERE status = 'active'`],
+    ['businesses_pending',     `SELECT COUNT(*)::int AS c FROM businesses WHERE status = 'pending'`],
+    ['blog_posts_total',       `SELECT COUNT(*)::int AS c FROM blog_posts WHERE deleted_at IS NULL`],
+    ['blog_posts_published',   `SELECT COUNT(*)::int AS c FROM blog_posts WHERE deleted_at IS NULL AND is_published = TRUE`],
+    ['lakes_total',            `SELECT COUNT(*)::int AS c FROM lakes`],
+    ['tags_total',             `SELECT COUNT(*)::int AS c FROM tags WHERE active = TRUE`],
+    ['resources_total',        `SELECT COUNT(*)::int AS c FROM resources`],
+    ['page_views_total',       `SELECT COUNT(*)::int AS c FROM page_views`],
+    ['hubspot_synced_users',   `SELECT COUNT(*)::int AS c FROM users  WHERE hs_contact_id IS NOT NULL`],
+    ['hubspot_synced_leads',   `SELECT COUNT(*)::int AS c FROM leads  WHERE hs_contact_id IS NOT NULL`],
+];
+
+exports.snapshotBaseline = async (req, res) => {
+    const label = String(req.body?.label || 'day_0_launch').trim().slice(0, 80) || 'day_0_launch';
+    const note  = req.body?.note ? String(req.body.note).slice(0, 2000) : null;
+
+    const counters = {};
+    for (const [k, sql] of BASELINE_COUNT_QUERIES) {
+        try {
+            const { rows } = await pool.query(sql);
+            counters[k] = rows[0]?.c ?? null;
+        } catch (err) {
+            // A missing table or column shouldn't sink the whole snapshot.
+            // Mark the counter null and continue — admin still gets every
+            // other counter recorded for the launch baseline.
+            counters[k] = null;
+            counters[`_error_${k}`] = err.message;
+        }
+    }
+    counters._env = process.env.NODE_ENV || 'local';
+    counters._commit = process.env.RENDER_GIT_COMMIT || null;
+
+    try {
+        const { rows } = await pool.query(
+            `INSERT INTO analytics_baselines (label, note, counters, created_by)
+             VALUES ($1, $2, $3, $4)
+             RETURNING id, label, note, counters, created_at`,
+            [label, note, counters, req.user?.userId || null]
+        );
+        logActivity({
+            event_type: 'analytics.baseline.snapshot',
+            event_scope: 'analytics',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'analytics_baseline', id: rows[0].id, label },
+            req,
+        });
+        res.status(201).json(rows[0]);
+    } catch (err) {
+        console.error('[marketing.snapshotBaseline]', err.message);
+        res.status(500).json({ error: 'Failed to save baseline.' });
+    }
+};
+
+exports.listBaselines = async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT id, label, note, counters, created_at
+               FROM analytics_baselines
+              ORDER BY created_at DESC
+              LIMIT 50`
+        );
+        res.json(rows);
+    } catch (err) {
+        console.error('[marketing.listBaselines]', err.message);
+        res.status(500).json({ error: 'Failed to load baselines.' });
+    }
+};
+
 exports.overview = async (req, res) => {
     try {
         const [postCounts, weekPosts, mailingCount, blogCount] = await Promise.all([
