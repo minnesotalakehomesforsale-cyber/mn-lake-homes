@@ -154,26 +154,50 @@
         .tn-cta .business-type-container { max-width: 1200px; }
 
         @media (max-width: 900px) {
-            .tn-hero { padding: 7rem 1.25rem 3rem; }
+            .tn-hero { padding: 6.5rem 1.25rem 3rem; }
             .tn-hero-inner { grid-template-columns: 1fr; gap: 2rem; }
-            .tn-hero h1 { font-size: 2.75rem; letter-spacing: -1.25px; }
-            .tn-hero p.lead { font-size: 1.05rem; }
-            .tn-hero-img { height: 240px; }
+            .tn-hero h1 { font-size: 4rem; letter-spacing: -2px; line-height: 1; margin-bottom: 1.2rem; }
+            .tn-hero p.lead { font-size: 1.05rem; max-width: none; }
+            .tn-hero-img { height: 240px; border-radius: 16px; }
             .tn-back-link { top: 4.5rem; left: 1.25rem; font-size: 0.78rem; padding: 0.3rem 0.55rem; }
             .tn-section { padding: 3rem 1.25rem 4rem; }
-            .tn-section h2 { font-size: 1.95rem; letter-spacing: -1px; }
+            .tn-section h2 { font-size: 2.1rem; letter-spacing: -1px; }
             .ld-about { padding: 3rem 1.25rem 4rem; }
             .ld-about.ld-about-continued { padding: 2.5rem 1.25rem 3.25rem; }
-            .ld-about-inner h2 { font-size: 1.95rem; margin-bottom: 1.15rem; letter-spacing: -1px; }
+            .ld-about-inner h2 { font-size: 2.1rem; margin-bottom: 1.15rem; letter-spacing: -1px; }
             .ld-about-inner [id^="tn-description"] p { font-size: 1rem; line-height: 1.7; margin-bottom: 1.15rem; }
             .ld-about-inner #tn-description-1 p:first-of-type { font-size: 1.1rem; line-height: 1.6; margin-bottom: 1.4rem; }
             .ld-facts { grid-template-columns: repeat(2, 1fr); gap: 1.25rem; margin-top: 2.25rem; padding-top: 1.75rem; }
             .ld-fact .value { font-size: 1.25rem; }
             .ld-fact .label { font-size: 0.66rem; }
         }
-        @media (max-width: 480px) {
-            .tn-hero h1 { font-size: 2.25rem; }
-            .tn-section h2 { font-size: 1.7rem; }
+        /* Phones — hero leans BIG (5rem+) per the house pattern, section
+           padding tightens to claw back vertical space. Mirrors lake-detail
+           so the two page types feel like the same product on mobile. */
+        @media (max-width: 600px) {
+            .tn-hero { padding: 5.5rem 1rem 2.5rem; }
+            .tn-hero-inner { gap: 1.75rem; }
+            .tn-hero h1 { font-size: 5rem; line-height: 0.95; letter-spacing: -2.5px; margin-bottom: 1rem; }
+            .tn-hero p.lead { font-size: 1rem; line-height: 1.55; margin-bottom: 1.75rem; }
+            .tn-hero-img { height: 220px; border-radius: 14px; }
+            .tn-back-link { top: 4.25rem; left: 1rem; font-size: 0.74rem; }
+            .tn-section { padding: 2.5rem 1rem 3rem; }
+            .tn-section h2 { font-size: 1.95rem; }
+            .tn-section p.lead { font-size: 0.98rem; margin-bottom: 1.75rem; }
+            .ld-about { padding: 2.5rem 1rem 3rem; }
+            .ld-about.ld-about-continued { padding: 2rem 1rem 2.75rem; }
+            .ld-about-inner h2 { font-size: 1.95rem; margin-bottom: 1rem; }
+            .ld-about-inner [id^="tn-description"] p { font-size: 0.96rem; line-height: 1.65; }
+            .ld-about-inner #tn-description-1 p:first-of-type { font-size: 1.05rem; }
+            .ld-facts { grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem; padding-top: 1.5rem; }
+            .ld-fact { padding: 0.4rem 0.2rem; }
+            .ld-fact .value { font-size: 1.15rem; }
+            .ld-fact .unit  { font-size: 0.78rem; }
+        }
+        /* Smallest devices — keep hero punchy without breaking layout. */
+        @media (max-width: 400px) {
+            .tn-hero h1 { font-size: 4.25rem; letter-spacing: -2px; }
+            .ld-facts { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
         }
     </style>
 </head>
