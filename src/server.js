@@ -538,6 +538,20 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 ],
             });
             const lakeStructuredData = `<script type="application/ld+json">${lakeBreadcrumb}</script>`;
+
+            // Editorial sections — admin-curated text wins; otherwise the
+            // region-aware generated copy from lake-content-templates.js
+            // fills in. Tokens are HTML blobs (paragraph runs), not plain
+            // text, so they bypass escapeHtml — content here is trusted
+            // (admin-authored or hand-templated).
+            const lct = require('./services/lake-content-templates');
+            const lifestyleBody = (lake.lifestyle_text && lake.lifestyle_text.trim())
+                ? lake.lifestyle_text.trim().split(/\n{2,}/).map(p => `<p>${escapeHtml(p)}</p>`).join('')
+                : lct.lifestyleHtmlForLake(lake);
+            const seasonsBody = (lake.seasons_text && lake.seasons_text.trim())
+                ? lake.seasons_text.trim().split(/\n{2,}/).map(p => `<p>${escapeHtml(p)}</p>`).join('')
+                : lct.seasonsHtmlForLake(lake);
+
             const replacements = {
                 '{{LAKE_SEO_TITLE}}':       escapeHtml(title),
                 '{{LAKE_SEO_DESCRIPTION}}': escapeHtml(desc),
@@ -554,6 +568,8 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 '{{LAKE_COUNTY}}':          escapeHtml(lake.county || ''),
                 '{{LAKE_STATE}}':           escapeHtml(lake.state || ''),
                 '{{LAKE_STRUCTURED_DATA}}': lakeStructuredData,
+                '{{LAKE_LIFESTYLE_BODY}}':  lifestyleBody,
+                '{{LAKE_SEASONS_BODY}}':    seasonsBody,
             };
             let out = html;
             for (const [k, v] of Object.entries(replacements)) {
@@ -785,6 +801,16 @@ app.get('/towns/:slug', async (req, res, next) => {
             // a quoted JS-safe string we drop straight into a script tag.
             const descriptionJson = JSON.stringify(tag.description || '');
 
+            // Editorial sections — admin-curated text wins; otherwise the
+            // region-aware generated copy fills in.
+            const lct = require('./services/lake-content-templates');
+            const lifestyleBody = (tag.lifestyle_text && tag.lifestyle_text.trim())
+                ? tag.lifestyle_text.trim().split(/\n{2,}/).map(p => `<p>${escapeHtml(p)}</p>`).join('')
+                : lct.lifestyleHtmlForTown(tag);
+            const seasonsBody = (tag.seasons_text && tag.seasons_text.trim())
+                ? tag.seasons_text.trim().split(/\n{2,}/).map(p => `<p>${escapeHtml(p)}</p>`).join('')
+                : lct.seasonsHtmlForTown(tag);
+
             const replacements = {
                 '{{TOWN_SEO_TITLE}}':        escapeHtml(title),
                 '{{TOWN_SEO_DESCRIPTION}}':  escapeHtml(desc),
@@ -802,6 +828,8 @@ app.get('/towns/:slug', async (req, res, next) => {
                 '{{TOWN_INTRO_TEXT}}':       escapeHtml(introText),
                 '{{TOWN_DESCRIPTION_JSON}}': descriptionJson,
                 '{{TOWN_STRUCTURED_DATA}}':  townStructuredData,
+                '{{TOWN_LIFESTYLE_BODY}}':   lifestyleBody,
+                '{{TOWN_SEASONS_BODY}}':     seasonsBody,
             };
             let out = html;
             for (const [k, v] of Object.entries(replacements)) {
@@ -1213,7 +1241,13 @@ async function ensureTables() {
                 ADD COLUMN IF NOT EXISTS description     TEXT,
                 ADD COLUMN IF NOT EXISTS hero_image_url  TEXT,
                 ADD COLUMN IF NOT EXISTS seo_title       VARCHAR(300),
-                ADD COLUMN IF NOT EXISTS seo_description TEXT;
+                ADD COLUMN IF NOT EXISTS seo_description TEXT,
+                -- Editorial content for the town-detail public page. Both
+                -- nullable; runtime template falls back to region-aware
+                -- generated copy from src/services/lake-content-templates.js
+                -- when these are blank, so the page is never empty.
+                ADD COLUMN IF NOT EXISTS lifestyle_text  TEXT,
+                ADD COLUMN IF NOT EXISTS seasons_text    TEXT;
             CREATE INDEX IF NOT EXISTS idx_tags_state_region ON tags(state, region);
             CREATE INDEX IF NOT EXISTS idx_tags_active_coords ON tags(active, latitude, longitude)
                 WHERE active = TRUE AND latitude IS NOT NULL AND longitude IS NOT NULL;
@@ -1269,6 +1303,13 @@ async function ensureTables() {
             CREATE INDEX IF NOT EXISTS idx_lakes_coords       ON lakes(latitude, longitude)
                 WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
             CREATE INDEX IF NOT EXISTS idx_lakes_name_lower   ON lakes(lower(name));
+            -- Editorial content for the lake-detail public page. Both
+            -- nullable; runtime template falls back to region-aware
+            -- generated copy from src/services/lake-content-templates.js
+            -- when these are blank, so the page is never empty.
+            ALTER TABLE lakes
+                ADD COLUMN IF NOT EXISTS lifestyle_text TEXT,
+                ADD COLUMN IF NOT EXISTS seasons_text   TEXT;
 
             CREATE TABLE IF NOT EXISTS agent_lakes (
                 id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),

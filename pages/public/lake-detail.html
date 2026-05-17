@@ -331,16 +331,14 @@
         }
     </style>
 
-    <!-- Editorial: "Life on [LAKE]" — generic-but-named editorial copy
-         that uses {{LAKE_NAME}} / {{LAKE_REGION}} so each lake page reads
-         specifically about that lake. Always renders, no DB dependency. -->
+    <!-- Editorial: "Life on [LAKE]" — body content is server-injected by
+         lake-content-templates.js via {{LAKE_LIFESTYLE_BODY}}. Admin-edited
+         text wins; otherwise region-aware generated copy fills in. -->
     <section class="ld-about ld-about-continued">
         <div class="ld-about-inner">
             <span class="ld-about-eyebrow">Living here</span>
             <h2>Life on {{LAKE_NAME}}</h2>
-            <p>There's a particular rhythm that takes over once {{LAKE_NAME}} becomes home base. Mornings start earlier than they do in the city — coffee on the deck before the first dock wakes up, the surface flat and reflective. Afternoons stretch wider. By late day the lake fills with skiers, paddleboarders, and the occasional pontoon working its way along the shoreline, and by golden hour everyone's back on a deck somewhere.</p>
-            <p>{{LAKE_NAME}} sits within {{LAKE_REGION}}, which gives it a particular kind of character — close enough to amenities to never feel cut off, far enough from the Twin Cities that life genuinely slows down. The owners we work with on {{LAKE_NAME}} tend to be intentional about being here. After a season or two you know the faces at the marina, the regulars at the breakfast spot in the nearest town, the boats that anchor in the same coves every Saturday.</p>
-            <p>What's hard to convey until you've experienced it: weekends here start to feel like vacations even when nothing about them changes. The drive in becomes muscle memory, then anticipation. And {{LAKE_NAME}} becomes a member of the family in a way that takes a couple of seasons to fully recognize.</p>
+            {{LAKE_LIFESTYLE_BODY}}
         </div>
     </section>
 
@@ -368,17 +366,13 @@
         </div>
     </section>
 
-    <!-- Editorial: "What the seasons bring" — generic year-round copy
-         using {{LAKE_NAME}}. Pairs naturally with the businesses section
-         above (the businesses are part of the seasonal cycle described
-         here) and the closing about-3 chunk that follows. -->
+    <!-- Editorial: "What the seasons bring" — body server-injected via
+         {{LAKE_SEASONS_BODY}}, same admin-wins-otherwise-generated rule. -->
     <section class="ld-about ld-about-continued">
         <div class="ld-about-inner">
             <span class="ld-about-eyebrow">Year-round</span>
             <h2>What the seasons bring on {{LAKE_NAME}}</h2>
-            <p>A Minnesota lake home isn't one thing — it's four. {{LAKE_NAME}} in May is a fully different place from {{LAKE_NAME}} in late August, which is different again from October's quiet and the deep silver stillness of January. Owners who buy here intentionally are usually choosing all four seasons, not just the summer postcard.</p>
-            <p>Spring on {{LAKE_NAME}} is shoulder season — fewer boats, more eagles overhead, the first warm dock-in mornings of the year. Summer is what brings most people here in the first place. Fall is arguably the most underrated season: the colors on the shoreline, the lake going quiet, the best fishing of the entire year. Winter is when second-home owners discover their property's other personality — ice fishing huts on the bay, snowmobile trails leading right off the back, the particular quiet beauty that takes a season to learn how to love.</p>
-            <p>For the more involved owners, that four-season rhythm is the whole point. Each one has its own character, its own routines, its own visitors. Living the year on {{LAKE_NAME}} is less about any one of them and more about cycling through all four, year after year.</p>
+            {{LAKE_SEASONS_BODY}}
         </div>
     </section>
 

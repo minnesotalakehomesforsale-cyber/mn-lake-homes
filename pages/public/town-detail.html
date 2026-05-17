@@ -305,16 +305,14 @@
         }
     </style>
 
-    <!-- Editorial: "Life in [TOWN]" — generic editorial copy using
-         {{TOWN_NAME}} / {{TOWN_REGION}} so each town page reads
-         specifically about that town. Always renders. -->
+    <!-- Editorial: "Life in [TOWN]" — body server-injected via
+         {{TOWN_LIFESTYLE_BODY}}. Admin-curated text wins; otherwise
+         flavor-aware generated copy from lake-content-templates.js. -->
     <section class="ld-about ld-about-continued">
         <div class="ld-about-inner">
             <span class="ld-about-eyebrow">Living here</span>
             <h2>Life in {{TOWN_NAME}}</h2>
-            <p>There's a particular kind of life that {{TOWN_NAME}} attracts. The pace is slower than the cities — not in a vacant way, but in the deliberate way of a town that knows what it wants to be. Mornings start with the same handful of cars rolling toward the same coffee spot. Conversations on the sidewalk run long. Wave-from-the-car culture is real here.</p>
-            <p>{{TOWN_NAME}} sits in {{TOWN_REGION}}, which gives it a character that's hard to manufacture. After a season or two of weekending or living here, you start to recognize the rhythms — the busiest days at the market, when the marina fills up, which restaurant owns Friday nights. Owning property in town or just outside puts you inside that rhythm in a way that staying short-term doesn't.</p>
-            <p>People who move to {{TOWN_NAME}} from elsewhere — the Twin Cities, the coasts, anywhere — tend to talk about the same things after a year. The light. The quiet at night. How quickly people start to know your name. How much time gets given back to you when you stop spending it stuck in traffic.</p>
+            {{TOWN_LIFESTYLE_BODY}}
         </div>
     </section>
 
@@ -354,15 +352,13 @@
         </div>
     </section>
 
-    <!-- Editorial: "The seasons + the community" — generic year-round
-         town-flavored copy. Always renders. -->
+    <!-- Editorial: "Seasons + community" — body server-injected via
+         {{TOWN_SEASONS_BODY}}. -->
     <section class="ld-about ld-about-continued">
         <div class="ld-about-inner">
             <span class="ld-about-eyebrow">Year-round</span>
             <h2>Seasons + the community in {{TOWN_NAME}}</h2>
-            <p>Like every northern lake town, {{TOWN_NAME}} runs on the calendar in a more honest way than the cities do. Summer is loud and full — markets, festivals, dock parties, weekenders rolling in for the long weekends. Fall sharpens everything; the colors, the light, the air. Winter empties the town down to the regulars who actually live the year round, and there's a particular kind of quiet that goes with it. Spring is the first warming, the first thaw, the first patio Saturday.</p>
-            <p>The community in {{TOWN_NAME}} has the kind of texture that takes generations to build — the diner that's been there forever, the families who've owned cabins in the area for four decades, the new arrivals who fold in faster than they expect to. Owning here puts you in the slipstream of that — not as a tourist, but as a fixture.</p>
-            <p>For people considering a move or a second home: the question isn't really whether {{TOWN_NAME}} is "worth it" as a place. The question is whether you want the kind of life that this town offers. If you've spent a long weekend here and found yourself talking about coming back, you've already half-answered it.</p>
+            {{TOWN_SEASONS_BODY}}
         </div>
     </section>
 

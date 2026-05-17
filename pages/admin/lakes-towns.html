@@ -722,6 +722,8 @@
                 </div>
                 <div class="field"><label>Featured image URL</label><input id="f-img" value="${escAttr(x.featured_image_url || x.hero_image_url || '')}"><div class="hint">Public Cloudinary URL — leave blank for fallback gradient.</div></div>
                 <div class="field"><label>Intro text</label><textarea id="f-intro">${escHtml(x.intro_text || '')}</textarea></div>
+                <div class="field"><label>"Life on this lake" editorial</label><textarea id="f-lifestyle" style="min-height:180px;">${escHtml(x.lifestyle_text || '')}</textarea><div class="hint">Paragraphs separated by blank lines. Leave blank to use the region-aware generated copy.</div></div>
+                <div class="field"><label>"What the seasons bring" editorial</label><textarea id="f-seasons" style="min-height:180px;">${escHtml(x.seasons_text || '')}</textarea><div class="hint">Paragraphs separated by blank lines. Leave blank to use the generated fallback.</div></div>
                 <div class="field"><label>SEO title</label>      <input id="f-seo-title" value="${escAttr(x.seo_title || '')}"></div>
                 <div class="field"><label>SEO description</label><textarea id="f-seo-desc">${escHtml(x.seo_description || '')}</textarea></div>
             `;
@@ -742,6 +744,8 @@
                 </div>
                 <div class="field"><label>Hero image URL</label><input id="f-img" value="${escAttr(x.hero_image_url || '')}"></div>
                 <div class="field"><label>Intro text</label>   <textarea id="f-intro">${escHtml(x.intro_text || '')}</textarea></div>
+                <div class="field"><label>"Life in this town" editorial</label><textarea id="f-lifestyle" style="min-height:180px;">${escHtml(x.lifestyle_text || '')}</textarea><div class="hint">Paragraphs separated by blank lines. Leave blank to use the region-aware generated copy.</div></div>
+                <div class="field"><label>"Seasons + community" editorial</label><textarea id="f-seasons" style="min-height:180px;">${escHtml(x.seasons_text || '')}</textarea><div class="hint">Paragraphs separated by blank lines. Leave blank to use the generated fallback.</div></div>
                 <div class="field"><label>SEO title</label>    <input    id="f-seo-title" value="${escAttr(x.seo_title || '')}"></div>
                 <div class="field"><label>SEO description</label><textarea id="f-seo-desc">${escHtml(x.seo_description || '')}</textarea></div>
                 <div class="field"><label>Active</label><select id="f-active">
@@ -791,6 +795,7 @@
             latitude: parseFloat(v('f-lat'))  || null,
             longitude: parseFloat(v('f-lng')) || null,
             featured_image_url: v('f-img'), intro_text: v('f-intro'),
+            lifestyle_text: v('f-lifestyle'), seasons_text: v('f-seasons'),
             seo_title: v('f-seo-title'), seo_description: v('f-seo-desc'),
             status: v('f-status'),
         };
@@ -799,6 +804,7 @@
             latitude: parseFloat(v('f-lat'))  || null,
             longitude: parseFloat(v('f-lng')) || null,
             hero_image_url: v('f-img'), intro_text: v('f-intro'),
+            lifestyle_text: v('f-lifestyle'), seasons_text: v('f-seasons'),
             seo_title: v('f-seo-title'), seo_description: v('f-seo-desc'),
             active: v('f-active') === 'true',
         };

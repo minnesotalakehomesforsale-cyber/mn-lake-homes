@@ -260,6 +260,11 @@ exports.patch = async (req, res) => {
         if ('featured_image_url' in b) push('featured_image_url', b.featured_image_url || null);
         if ('seo_title'          in b) push('seo_title',          b.seo_title || null);
         if ('seo_description'    in b) push('seo_description',    b.seo_description || null);
+        // Editorial blocks rendered into the public lake page (paragraph runs
+        // separated by blank lines). NULL means "fall back to the generated
+        // region-aware copy" — the public template handles both branches.
+        if ('lifestyle_text'     in b) push('lifestyle_text',     b.lifestyle_text || null);
+        if ('seasons_text'       in b) push('seasons_text',       b.seasons_text   || null);
         if ('status' in b) {
             if (!['draft', 'published', 'archived'].includes(b.status)) {
                 return res.status(400).json({ error: 'Invalid status.' });

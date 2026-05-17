@@ -327,6 +327,16 @@ exports.patch = async (req, res) => {
             if (!s) return res.status(400).json({ error: 'Invalid slug.' });
             push('slug', s);
         }
+        // Editorial / page-content fields rendered into the public town
+        // page. Empty strings collapse to NULL so the runtime falls back
+        // to the generated copy in lake-content-templates.js.
+        if ('intro_text'      in b) push('intro_text',      b.intro_text      || null);
+        if ('description'     in b) push('description',     b.description     || null);
+        if ('hero_image_url'  in b) push('hero_image_url',  b.hero_image_url  || null);
+        if ('seo_title'       in b) push('seo_title',       b.seo_title       || null);
+        if ('seo_description' in b) push('seo_description', b.seo_description || null);
+        if ('lifestyle_text'  in b) push('lifestyle_text',  b.lifestyle_text  || null);
+        if ('seasons_text'    in b) push('seasons_text',    b.seasons_text    || null);
 
         if (!fields.length) return res.json({ success: true, noop: true });
 
