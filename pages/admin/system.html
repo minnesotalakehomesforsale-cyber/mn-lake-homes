@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metrics &amp; Database | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: #1a202c; }
+
+        .sys-head { margin-bottom: 1.5rem; }
+        .sys-head h1 { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.75px; margin: 0 0 0.25rem; }
+        .sys-head p  { color: #718096; font-size: 0.9rem; margin: 0; }
+
+        /* Page tab strip — mirrors lakes-towns.html for visual parity. */
+        .page-tabs { display: flex; gap: 0.25rem; margin-bottom: 1.5rem; border-bottom: 2px solid #edf2f7; overflow-x: auto; }
+        .page-tab {
+            padding: 0.75rem 1.5rem; font-size: 0.95rem; font-weight: 600;
+            color: #718096; border: none; background: none; cursor: pointer;
+            border-bottom: 2px solid transparent; margin-bottom: -2px;
+            font-family: inherit; transition: color 0.15s, border-color 0.15s;
+            white-space: nowrap;
+        }
+        .page-tab:hover { color: #1a202c; }
+        .page-tab.active { color: #1d6df2; border-bottom-color: #1d6df2; }
+
+        /* Each iframe pane auto-grows via postMessage from the embedded page. */
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+        .sys-frame {
+            width: 100%; border: 0; display: block;
+            min-height: 600px;
+            background: #f7f9fa;
+        }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-assistant.js" defer></script>
+    <script src="../../components/admin-nav-badges.js" defer></script>
+</head>
+<body>
+<div class="admin-wrap">
+    <admin-sidebar active="system"></admin-sidebar>
+
+    <main class="admin-main">
+        <div class="sys-head">
+            <h1>Metrics &amp; Database</h1>
+            <p>Traffic, agent coverage, system health, table counts, and the full activity audit — all in one place.</p>
+        </div>
+
+        <div class="page-tabs" role="tablist">
+            <button id="tab-btn-metrics"  class="page-tab active" role="tab" onclick="showSys('metrics')">Metrics</button>
+            <button id="tab-btn-database" class="page-tab"        role="tab" onclick="showSys('database')">Database</button>
+        </div>
+
+        <div id="pane-metrics" class="tab-pane active" role="tabpanel">
+            <iframe id="frame-metrics" class="sys-frame" data-src="metrics.html?embed=1" title="Metrics"></iframe>
+        </div>
+
+        <div id="pane-database" class="tab-pane" role="tabpanel">
+            <iframe id="frame-database" class="sys-frame" data-src="database.html?embed=1" title="Database"></iframe>
+        </div>
+    </main>
+</div>
+
+<script>
+    const TABS = ['metrics', 'database'];
+    const _params = new URLSearchParams(window.location.search);
+    const _initialTab = TABS.includes(_params.get('tab')) ? _params.get('tab') : 'metrics';
+
+    // Lazy-load iframes — only set the src the first time their tab is opened
+    // so the page boot doesn't fire two full pages worth of queries up front.
+    function ensureFrameLoaded(name) {
+        const frame = document.getElementById('frame-' + name);
+        if (frame && !frame.src) frame.src = frame.dataset.src;
+    }
+
+    function showSys(name) {
+        if (!TABS.includes(name)) name = 'metrics';
+        TABS.forEach(k => {
+            document.getElementById('tab-btn-' + k).classList.toggle('active', k === name);
+            document.getElementById('pane-' + k).classList.toggle('active', k === name);
+        });
+        ensureFrameLoaded(name);
+        const url = new URL(window.location);
+        if (name === 'metrics') url.searchParams.delete('tab');
+        else                    url.searchParams.set('tab', name);
+        history.replaceState(null, '', url);
+    }
+
+    // Iframe auto-resize via postMessage from embed-mode pages.
+    window.addEventListener('message', (e) => {
+        const m = e.data;
+        if (!m || m.lt !== 'height' || typeof m.h !== 'number') return;
+        const target = document.getElementById('frame-' + m.frame);
+        if (target) target.style.height = Math.max(600, m.h + 8) + 'px';
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        showSys(_initialTab);
+    });
+</script>
+</body>
+</html>

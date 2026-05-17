@@ -109,7 +109,6 @@
     // to every admin page. Add a new item by appending a row below.
     const NAV = [
         { key: 'dashboard',   href: 'dashboard.html',  label: 'Dashboard' },
-        { key: 'metrics',     href: 'metrics.html',    label: 'Metrics' },
         { key: 'agents',      href: 'agents.html',     label: 'Agents Directory' },
         { key: 'leads',       href: 'leads.html',      label: 'Central Leads', badgeId: 'nav-badge-leads' },
         { key: 'inquiries',   href: 'inquiries.html',  label: 'Inquiries', badgeId: 'nav-badge-inquiries' },
@@ -128,7 +127,10 @@
         // are aliased so direct hits on lakes.html / tags.html /
         // businesses.html still highlight this entry in the sidebar.
         { key: 'lakes-towns', href: 'lakes-towns.html', label: 'Lakes, Towns & Businesses', aliases: ['lakes', 'tags', 'businesses'] },
-        { key: 'database',    href: 'database.html',   label: 'Database' },
+        // Metrics + Database share one page (system.html) with a tab per
+        // section. Standalone slugs are aliased so direct hits on
+        // metrics.html / database.html still highlight this entry.
+        { key: 'system',      href: 'system.html',     label: 'Metrics & Database', aliases: ['metrics', 'database'] },
     ];
 
     function renderNav(activeKey) {
