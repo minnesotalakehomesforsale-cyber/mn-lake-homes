@@ -67,6 +67,39 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// ─── /api/analytics/conversion ──────────────────────────────────────────────
+// Public mirror of every conversion event fired by trackConversion() on
+// the frontend. GA4 + HubSpot already see the event via their own pixels;
+// this just appends a row to conversion_events so the admin can show
+// counts and a feed without querying external APIs. Always returns 204
+// — never lets analytics failures surface to the visitor.
+app.post('/api/analytics/conversion', async (req, res) => {
+    const pool = require('./database/pool');
+    res.status(204).end(); // ack immediately, never block the page
+    try {
+        const b = req.body || {};
+        const event_name = String(b.event_name || '').trim().slice(0, 60);
+        if (!event_name) return;
+        const form_name = b.params?.form_name ? String(b.params.form_name).slice(0, 80) : null;
+        await pool.query(
+            `INSERT INTO conversion_events
+                (event_name, form_name, params, path, referrer, session_id, ua)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [
+                event_name,
+                form_name,
+                b.params || null,
+                b.path ? String(b.path).slice(0, 1000) : null,
+                b.referrer ? String(b.referrer).slice(0, 1000) : null,
+                b.session_id ? String(b.session_id).slice(0, 80) : null,
+                (req.headers['user-agent'] || '').slice(0, 500),
+            ]
+        );
+    } catch (err) {
+        console.error('[analytics.conversion]', err.message);
+    }
+});
+
 // ─── /api/config/public ─────────────────────────────────────────────────────
 // Returns the public tracking IDs the frontend needs to install GA4 +
 // HubSpot tracking and to render the Search Console verification meta tag.
@@ -1570,6 +1603,30 @@ async function ensureTables() {
             );
             CREATE INDEX IF NOT EXISTS idx_analytics_baselines_label   ON analytics_baselines(label);
             CREATE INDEX IF NOT EXISTS idx_analytics_baselines_created ON analytics_baselines(created_at DESC);
+        `);
+
+        // Server-side mirror of every conversion event fired by the
+        // frontend trackConversion() helper. GA4 + HubSpot already see
+        // these client-side; this table exists so the admin can show
+        // conversion counts and a live feed without needing to query
+        // GA4 / HubSpot APIs. Rows are append-only and untrimmed — at
+        // ~50 conversions/day this is a few thousand rows/year, well
+        // under any concern threshold.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS conversion_events (
+                id          BIGSERIAL PRIMARY KEY,
+                event_name  VARCHAR(60) NOT NULL,
+                form_name   VARCHAR(80),
+                params      JSONB,
+                path        TEXT,
+                referrer    TEXT,
+                session_id  TEXT,
+                ua          TEXT,
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_conversion_events_created  ON conversion_events(created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_conversion_events_name     ON conversion_events(event_name);
+            CREATE INDEX IF NOT EXISTS idx_conversion_events_formname ON conversion_events(form_name);
         `);
 
         console.log(' Tables verified.');

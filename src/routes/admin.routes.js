@@ -14,8 +14,11 @@ router.patch ('/marketing/posts/:id',               marketingController.updatePo
 router.delete('/marketing/posts/:id',               marketingController.deletePost);
 
 // ─── ANALYTICS BASELINES (launch-day + future snapshots) ────────────────────
-router.get ('/analytics/baselines', marketingController.listBaselines);
-router.post('/analytics/baseline',  marketingController.snapshotBaseline);
+router.get ('/analytics/baselines',   marketingController.listBaselines);
+router.post('/analytics/baseline',    marketingController.snapshotBaseline);
+
+// ─── CONVERSION EVENTS (server-side mirror of GA4 / HubSpot) ────────────────
+router.get ('/analytics/conversions', marketingController.listConversions);
 
 // ─── AGENT LEDGER ─────────────────────────────────────────────────────────────
 router.get('/', adminController.getLedger);                              // GET /api/admin?search=&status=&membership=&published=

@@ -447,6 +447,26 @@
                 </div>
             </div>
 
+            <!-- ── Launch tracking layer status ────────────────── -->
+            <div class="d-card" style="margin-bottom: 1.5rem;">
+                <div class="d-card-hd">
+                    <h3 class="d-card-title">Launch tracking</h3>
+                    <span style="font-size:0.78rem;color:#a0aec0;">GA4 · HubSpot · GSC</span>
+                </div>
+                <div class="d-card-body">
+                    <div id="track-pills" class="sys-pills" style="margin-bottom:0.9rem;">
+                        <div class="sys-pill"><span class="dot warn"></span>Loading…</div>
+                    </div>
+                    <div id="track-conv-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.85rem;margin-bottom:1rem;">
+                        <div class="kpi leads"   style="cursor:default;"><div class="k-top"><span class="k-label">Leads · 7d</span><span class="k-pip">↗</span></div><div class="k-val" id="conv-leads-7d">—</div><div class="k-sub">generate_lead events</div><div class="k-bar"></div></div>
+                        <div class="kpi traffic" style="cursor:default;"><div class="k-top"><span class="k-label">Sign-ups · 7d</span><span class="k-pip">+</span></div><div class="k-val" id="conv-signups-7d">—</div><div class="k-sub">sign_up events</div><div class="k-bar"></div></div>
+                        <div class="kpi inquiries" style="cursor:default;"><div class="k-top"><span class="k-label">Leads · 24h</span><span class="k-pip">·</span></div><div class="k-val" id="conv-leads-1d">—</div><div class="k-sub">last 24 hours</div><div class="k-bar"></div></div>
+                        <div class="kpi cash"    style="cursor:default;"><div class="k-top"><span class="k-label">Sign-ups · 24h</span><span class="k-pip">·</span></div><div class="k-val" id="conv-signups-1d">—</div><div class="k-sub">last 24 hours</div><div class="k-bar"></div></div>
+                    </div>
+                    <div id="track-conv-feed" style="font-size:0.84rem;color:#4a5568;border-top:1px solid #edf2f7;padding-top:0.85rem;">Loading recent conversions…</div>
+                </div>
+            </div>
+
             <!-- ── Launch baseline snapshot ────────────────────── -->
             <div class="d-card" style="margin-bottom: 1.5rem;">
                 <div class="d-card-hd">
@@ -953,9 +973,76 @@
             // ── System health ─────────────────────────────────
             if (activitySummary) renderSysPills(activitySummary);
 
+            // ── Launch tracking + conversions ─────────────────
+            loadTrackingStatus();
+            loadConversions();
+
             // ── Launch baselines ──────────────────────────────
             loadBaselines();
         });
+
+        // ── Launch-tracking status pills + deep-links ─────────────
+        async function loadTrackingStatus() {
+            const el = document.getElementById('track-pills');
+            try {
+                const cfg = await j('/api/config/public');
+                if (!cfg) { el.innerHTML = '<div class="sys-pill"><span class="dot bad"></span>Config endpoint unreachable</div>'; return; }
+                const pills = [];
+                if (cfg.ga4_id) {
+                    pills.push(`<a class="sys-pill" target="_blank" rel="noopener" href="https://analytics.google.com/analytics/web/#/p${esc(cfg.ga4_id.replace(/^G-/, ''))}/reports/realtime"><span class="dot ok"></span>GA4 <b>${esc(cfg.ga4_id)}</b> · Open ↗</a>`);
+                } else {
+                    pills.push(`<div class="sys-pill"><span class="dot bad"></span>GA4 <b>not set</b></div>`);
+                }
+                if (cfg.hubspot_portal_id) {
+                    pills.push(`<a class="sys-pill" target="_blank" rel="noopener" href="https://app-${esc(cfg.environment === 'production' ? 'na2' : 'na2')}.hubspot.com/reports-dashboard/${esc(cfg.hubspot_portal_id)}"><span class="dot ok"></span>HubSpot <b>${esc(cfg.hubspot_portal_id)}</b> · Open ↗</a>`);
+                } else {
+                    pills.push(`<div class="sys-pill"><span class="dot bad"></span>HubSpot <b>not set</b></div>`);
+                }
+                pills.push(`<a class="sys-pill" target="_blank" rel="noopener" href="https://search.google.com/search-console?resource_id=sc-domain%3Aminnesotalakehomesforsale.com"><span class="dot ok"></span>Search Console · Open ↗</a>`);
+                pills.push(`<a class="sys-pill" target="_blank" rel="noopener" href="/sitemap.xml"><span class="dot ok"></span>Sitemap ↗</a>`);
+                pills.push(`<div class="sys-pill"><span class="dot ok"></span>${esc(cfg.environment || 'env')}</div>`);
+                el.innerHTML = pills.join('');
+            } catch (_) {
+                el.innerHTML = '<div class="sys-pill"><span class="dot bad"></span>Could not load tracking status.</div>';
+            }
+        }
+
+        async function loadConversions() {
+            try {
+                const data = await j('/api/admin/analytics/conversions');
+                if (!data) return;
+                // KPI counts pulled out of the per-event rollups
+                const ev = name => (data.by_event || []).find(r => r.event_name === name) || { d1: 0, d7: 0 };
+                document.getElementById('conv-leads-7d').textContent   = fmt(ev('generate_lead').d7);
+                document.getElementById('conv-leads-1d').textContent   = fmt(ev('generate_lead').d1);
+                document.getElementById('conv-signups-7d').textContent = fmt(ev('sign_up').d7);
+                document.getElementById('conv-signups-1d').textContent = fmt(ev('sign_up').d1);
+
+                const feed = document.getElementById('track-conv-feed');
+                const recent = data.recent || [];
+                if (!recent.length) {
+                    feed.innerHTML = '<span style="color:#a0aec0;">No conversions recorded yet — submit any form to see one here within a few seconds.</span>';
+                    return;
+                }
+                feed.innerHTML = `
+                    <div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#a0aec0;margin-bottom:0.55rem;">Recent conversions</div>
+                    ${recent.slice(0, 6).map(r => {
+                        const badge = r.event_name === 'generate_lead'
+                            ? '<span class="s-badge badge-new">Lead</span>'
+                            : '<span class="s-badge badge-buyer">Signup</span>';
+                        const when = new Date(r.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                        return `
+                            <div style="display:grid;grid-template-columns:auto 1fr auto;gap:0.75rem;padding:0.45rem 0;border-top:1px solid #f7f9fa;align-items:center;font-size:0.85rem;">
+                                ${badge}
+                                <span style="color:#1a202c;"><b>${esc(r.form_name || 'unknown')}</b> <span style="color:#a0aec0;">· ${esc(r.path || '')}</span></span>
+                                <span style="color:#a0aec0;font-size:0.78rem;">${esc(when)}</span>
+                            </div>`;
+                    }).join('')}`;
+            } catch (_) {
+                document.getElementById('track-conv-feed').innerHTML =
+                    '<span style="color:#c53030;">Could not load conversions feed.</span>';
+            }
+        }
 
         // Launch baselines — list prior snapshots + button to snapshot now.
         async function loadBaselines() {

@@ -359,6 +359,65 @@ exports.snapshotBaseline = async (req, res) => {
     }
 };
 
+// ─── Conversion events (server-side mirror of GA4 / HubSpot events) ────────
+// Powers the admin dashboard + metrics tab. Returns rollup counters PLUS
+// a recent feed in one round-trip so the admin pages stay snappy.
+exports.listConversions = async (req, res) => {
+    try {
+        const [counts, byForm, recent, daily] = await Promise.all([
+            pool.query(`
+                SELECT
+                    event_name,
+                    COUNT(*)::int                                                                              AS total,
+                    COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '24 hours')::int                    AS d1,
+                    COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')::int                      AS d7,
+                    COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::int                     AS d30
+                  FROM conversion_events
+              GROUP BY event_name
+              ORDER BY total DESC
+            `),
+            pool.query(`
+                SELECT
+                    COALESCE(form_name, 'unknown') AS form_name,
+                    event_name,
+                    COUNT(*)::int                                                                              AS total,
+                    COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')::int                      AS d7,
+                    MAX(created_at)                                                                            AS last_seen
+                  FROM conversion_events
+              GROUP BY form_name, event_name
+              ORDER BY d7 DESC, total DESC
+                 LIMIT 25
+            `),
+            pool.query(`
+                SELECT event_name, form_name, params, path, referrer, created_at
+                  FROM conversion_events
+              ORDER BY created_at DESC
+                 LIMIT 50
+            `),
+            pool.query(`
+                SELECT date_trunc('day', created_at)::date AS day,
+                       COUNT(*)::int AS total,
+                       COUNT(*) FILTER (WHERE event_name = 'generate_lead')::int AS leads,
+                       COUNT(*) FILTER (WHERE event_name = 'sign_up')::int       AS signups
+                  FROM conversion_events
+                 WHERE created_at >= NOW() - INTERVAL '30 days'
+              GROUP BY day
+              ORDER BY day ASC
+            `),
+        ]);
+
+        res.json({
+            by_event:  counts.rows,
+            by_form:   byForm.rows,
+            recent:    recent.rows,
+            daily:     daily.rows,
+        });
+    } catch (err) {
+        console.error('[marketing.listConversions]', err.message);
+        res.status(500).json({ error: 'Failed to load conversions.' });
+    }
+};
+
 exports.listBaselines = async (req, res) => {
     try {
         const { rows } = await pool.query(

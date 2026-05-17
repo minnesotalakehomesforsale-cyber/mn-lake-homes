@@ -119,12 +119,13 @@
         <main class="admin-main">
             <div class="m-head">
                 <h1>Metrics</h1>
-                <p>First-party traffic + activity, last 30 days. No external analytics service — everything is from your own database.</p>
+                <p>First-party traffic + conversion events + agent coverage. All counters are from the platform's own database. GA4 / HubSpot have separate dashboards — deep-links in the Conversions tab.</p>
             </div>
 
             <div class="m-tabs" role="tablist">
-                <button class="m-tab active" data-panel="traffic"  role="tab">Traffic</button>
-                <button class="m-tab"        data-panel="coverage" role="tab">Agent coverage</button>
+                <button class="m-tab active" data-panel="traffic"     role="tab">Traffic</button>
+                <button class="m-tab"        data-panel="conversions" role="tab">Conversions</button>
+                <button class="m-tab"        data-panel="coverage"    role="tab">Agent coverage</button>
             </div>
 
             <!-- TRAFFIC PANEL -->
@@ -149,6 +150,40 @@
                 <div class="m-card">
                     <h2>Top pages · last 30 days</h2>
                     <div id="m-pages" class="m-list"></div>
+                </div>
+            </section>
+
+            <!-- CONVERSIONS PANEL -->
+            <section class="m-panel" id="panel-conversions">
+                <!-- Tracking-layer status pills (GA4 / HubSpot / GSC deep-links) -->
+                <div class="m-card" style="margin-bottom:1rem;">
+                    <h2>Launch tracking</h2>
+                    <div id="conv-track-pills" style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+                        <div class="empty" style="padding:0.5rem;">Loading…</div>
+                    </div>
+                </div>
+
+                <!-- Event-level rollup -->
+                <div id="conv-kpis" class="m-kpis">
+                    <div class="empty" style="grid-column:1/-1;">Loading…</div>
+                </div>
+
+                <div class="m-row">
+                    <div class="m-card">
+                        <h2>Conversions · last 30 days</h2>
+                        <svg id="conv-chart" class="m-chart" viewBox="0 0 600 220" preserveAspectRatio="none"></svg>
+                        <div id="conv-chart-empty" class="empty" style="display:none;">No conversions recorded yet — events will populate as soon as visitors start submitting forms.</div>
+                    </div>
+
+                    <div class="m-card">
+                        <h2>By form · last 7 days</h2>
+                        <div id="conv-by-form" class="m-list"></div>
+                    </div>
+                </div>
+
+                <div class="m-card">
+                    <h2>Recent conversion events</h2>
+                    <div id="conv-recent" class="m-list"></div>
                 </div>
             </section>
 
@@ -290,9 +325,118 @@
                 document.querySelectorAll('.m-panel').forEach(p => p.classList.remove('active'));
                 btn.classList.add('active');
                 document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
-                if (btn.dataset.panel === 'coverage' && !coverageLoaded) loadCoverage();
+                if (btn.dataset.panel === 'coverage'    && !coverageLoaded)    loadCoverage();
+                if (btn.dataset.panel === 'conversions' && !conversionsLoaded) loadConversions();
             });
         });
+
+        // ─── Conversions tab (server-side mirror of GA4 / HubSpot events) ──
+        let conversionsLoaded = false;
+
+        async function loadConversions() {
+            conversionsLoaded = true;
+
+            // 1. Tracking-layer status pills
+            try {
+                const cfg = await fetch('/api/config/public', { credentials: 'omit' }).then(r => r.ok ? r.json() : null);
+                const el = document.getElementById('conv-track-pills');
+                if (!cfg) { el.innerHTML = '<span style="color:#c53030;">Config endpoint unreachable.</span>'; }
+                else {
+                    const pill = (color, label) => `<span style="display:inline-flex;align-items:center;gap:0.4rem;background:#f7f9fa;border:1px solid #edf2f7;border-radius:99px;padding:0.4rem 0.85rem;font-size:0.78rem;font-weight:600;color:#4a5568;"><span style="width:8px;height:8px;border-radius:50%;background:${color};"></span>${label}</span>`;
+                    const link = (href, label) => `<a target="_blank" rel="noopener" href="${href}" style="display:inline-flex;align-items:center;gap:0.4rem;background:#f7f9fa;border:1px solid #edf2f7;border-radius:99px;padding:0.4rem 0.85rem;font-size:0.78rem;font-weight:600;color:#4a5568;text-decoration:none;"><span style="width:8px;height:8px;border-radius:50%;background:#48bb78;"></span>${label}</a>`;
+                    const parts = [];
+                    parts.push(cfg.ga4_id
+                        ? link(`https://analytics.google.com/analytics/web/#/p${esc(cfg.ga4_id.replace(/^G-/, ''))}/reports/realtime`, `GA4 ${esc(cfg.ga4_id)} · Open ↗`)
+                        : pill('#ef4444', 'GA4 not set'));
+                    parts.push(cfg.hubspot_portal_id
+                        ? link(`https://app-na2.hubspot.com/reports-dashboard/${esc(cfg.hubspot_portal_id)}`, `HubSpot ${esc(cfg.hubspot_portal_id)} · Open ↗`)
+                        : pill('#ef4444', 'HubSpot not set'));
+                    parts.push(link('https://search.google.com/search-console?resource_id=sc-domain%3Aminnesotalakehomesforsale.com', 'Search Console · Open ↗'));
+                    parts.push(link('/sitemap.xml', 'sitemap.xml ↗'));
+                    parts.push(pill('#48bb78', esc(cfg.environment || 'env')));
+                    el.innerHTML = parts.join('');
+                }
+            } catch (_) { /* don't block rest of panel */ }
+
+            // 2. Conversion rollups + feed
+            try {
+                const data = await fetch('/api/admin/analytics/conversions', { credentials: 'include' }).then(r => r.ok ? r.json() : null);
+                if (!data) {
+                    document.getElementById('conv-kpis').innerHTML  = '<div class="empty" style="grid-column:1/-1;">Failed to load conversions.</div>';
+                    return;
+                }
+                const ev = name => (data.by_event || []).find(r => r.event_name === name) || { total: 0, d1: 0, d7: 0, d30: 0 };
+                const lead   = ev('generate_lead');
+                const signup = ev('sign_up');
+                document.getElementById('conv-kpis').innerHTML = `
+                    <div class="m-kpi"><p class="label">Leads · 7d</p><div class="big">${lead.d7}</div><div class="sub">${lead.d1} in last 24h · ${lead.d30} in 30d</div></div>
+                    <div class="m-kpi"><p class="label">Sign-ups · 7d</p><div class="big">${signup.d7}</div><div class="sub">${signup.d1} in last 24h · ${signup.d30} in 30d</div></div>
+                    <div class="m-kpi"><p class="label">Total conversions · 7d</p><div class="big">${lead.d7 + signup.d7}</div><div class="sub">all event types</div></div>
+                    <div class="m-kpi"><p class="label">Total conversions · all time</p><div class="big">${lead.total + signup.total}</div><div class="sub">since server-side mirror enabled</div></div>
+                `;
+
+                // Chart — daily totals for the last 30 days
+                drawConvChart(data.daily || []);
+
+                // By-form list
+                const byForm = data.by_form || [];
+                const formEl = document.getElementById('conv-by-form');
+                formEl.innerHTML = byForm.length
+                    ? byForm.slice(0, 12).map(r => `
+                        <div class="m-list-row">
+                            <div class="m-list-label">${esc(r.form_name)} <span style="color:#a0aec0;font-size:0.78rem;">· ${esc(r.event_name)}</span></div>
+                            <div class="m-list-count">${r.d7}</div>
+                        </div>`).join('')
+                    : '<div class="empty">No conversions in the last 7 days.</div>';
+
+                // Recent feed
+                const recent = data.recent || [];
+                const recentEl = document.getElementById('conv-recent');
+                recentEl.innerHTML = recent.length
+                    ? recent.map(r => {
+                        const when = new Date(r.created_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+                        const tag = r.event_name === 'generate_lead' ? 'Lead' : 'Signup';
+                        const tagBg = r.event_name === 'generate_lead' ? '#e6fffa' : '#f0fff4';
+                        const tagFg = r.event_name === 'generate_lead' ? '#319795' : '#2f855a';
+                        return `
+                            <div class="m-list-row">
+                                <div class="m-list-label">
+                                    <span style="display:inline-block;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.66rem;font-weight:700;text-transform:uppercase;background:${tagBg};color:${tagFg};margin-right:0.5rem;">${tag}</span>
+                                    <b>${esc(r.form_name || 'unknown')}</b>
+                                    <span style="color:#a0aec0;font-size:0.78rem;">· ${esc(r.path || '')}</span>
+                                </div>
+                                <div class="m-list-count" style="color:#a0aec0;font-weight:500;font-variant-numeric:tabular-nums;">${esc(when)}</div>
+                            </div>`;
+                    }).join('')
+                    : '<div class="empty">No conversion events recorded yet.</div>';
+            } catch (err) {
+                console.error('[conversions]', err);
+            }
+        }
+
+        function drawConvChart(daily) {
+            const svg   = document.getElementById('conv-chart');
+            const empty = document.getElementById('conv-chart-empty');
+            if (!daily.length) { svg.style.display = 'none'; empty.style.display = 'block'; return; }
+            svg.style.display = 'block'; empty.style.display = 'none';
+            const W = 600, H = 220, padL = 32, padR = 8, padT = 12, padB = 24;
+            const innerW = W - padL - padR, innerH = H - padT - padB;
+            const max = Math.max(...daily.map(d => d.total), 1);
+            const step = daily.length > 1 ? innerW / (daily.length - 1) : 0;
+            const pts = daily.map((d, i) => [padL + i * step, padT + innerH - (d.total / max) * innerH]);
+            const linePath = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+            const areaPath = linePath
+                + ` L${pts[pts.length-1][0].toFixed(1)},${(padT + innerH).toFixed(1)}`
+                + ` L${pts[0][0].toFixed(1)},${(padT + innerH).toFixed(1)} Z`;
+            const ax = (y, label) => `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#edf2f7" stroke-width="1"/><text x="${padL-6}" y="${y+4}" text-anchor="end" class="axis-label">${label}</text>`;
+            const grid = [0, 1, 2, 3, 4].map(i => ax(padT + innerH * i / 4, Math.round(max * (1 - i / 4)))).join('');
+            svg.innerHTML = `
+                <defs><linearGradient id="conv-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1d6df2" stop-opacity="0.4"/><stop offset="100%" stop-color="#1d6df2" stop-opacity="0"/></linearGradient></defs>
+                ${grid}
+                <path d="${areaPath}" fill="url(#conv-grad)"/>
+                <path d="${linePath}" fill="none" stroke="#1d6df2" stroke-width="2.5"/>
+            `;
+        }
 
         // ─── Agent coverage heat map ────────────────────────────────────
         let coverageLoaded = false;

@@ -1244,7 +1244,12 @@ document.addEventListener('keydown', e => {
     window.__launchTrackingInit = true;
 
     // Helper available immediately even before scripts load — calls queue
-    // into the gtag/hsq globals which buffer until the SDK boots.
+    // into the gtag/hsq globals which buffer until the SDK boots. Also
+    // mirrors the event to /api/analytics/conversion so the admin
+    // dashboard can show counts/feed without needing GA4 or HubSpot
+    // API access. The server-side mirror is fire-and-forget (sendBeacon
+    // when available, fetch keepalive otherwise) so it survives a
+    // page navigation that happens immediately after submit.
     window.trackConversion = function (eventName, params) {
         try {
             if (typeof window.gtag === 'function') {
@@ -1256,6 +1261,30 @@ document.addEventListener('keydown', e => {
                     properties: params || {},
                 }]);
             }
+            // Server-side mirror (admin dashboard + metrics tab read from this).
+            try {
+                let sid = null;
+                try { sid = sessionStorage.getItem('lt_sid'); } catch (_) {}
+                const payload = JSON.stringify({
+                    event_name: eventName,
+                    params: params || {},
+                    path: location.pathname + location.search,
+                    referrer: document.referrer || null,
+                    session_id: sid,
+                });
+                const url = '/api/analytics/conversion';
+                if (navigator.sendBeacon) {
+                    navigator.sendBeacon(url, new Blob([payload], { type: 'application/json' }));
+                } else {
+                    fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: payload,
+                        keepalive: true,
+                        credentials: 'omit',
+                    }).catch(() => {});
+                }
+            } catch (_) { /* mirror is best-effort */ }
         } catch (_) { /* tracking must never break a flow */ }
     };
 
