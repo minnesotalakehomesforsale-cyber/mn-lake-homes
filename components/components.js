@@ -1231,6 +1231,94 @@ document.addEventListener('keydown', e => {
     } catch (_) { /* analytics must never break a page */ }
 })();
 
+// ─── Site image resolver ───────────────────────────────────────────────────
+// Reads /api/site-images (cached 60s in sessionStorage) and swaps the src
+// attribute on every <img> + the background-image of every element whose
+// existing URL appears in the admin's override map. Lets the admin replace
+// any image on the entire website from /pages/admin/images.html without
+// modifying the HTML files at all.
+(function siteImageResolver() {
+    if (window.__siteImagesInit) return;
+    window.__siteImagesInit = true;
+
+    const CACHE_KEY = 'site_images_v1';
+    const CACHE_TTL = 60 * 1000; // 60s — admin edits show up within a minute
+
+    function readCache() {
+        try {
+            const raw = sessionStorage.getItem(CACHE_KEY);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed.ts || (Date.now() - parsed.ts) > CACHE_TTL) return null;
+            return parsed.map || {};
+        } catch (_) { return null; }
+    }
+    function writeCache(map) {
+        try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), map })); } catch (_) {}
+    }
+
+    function applyOverrides(map) {
+        if (!map || !Object.keys(map).length) return;
+        // <img src> swap. Compare both the raw attribute and the resolved
+        // currentSrc-style URL to be safe with absolute vs relative paths.
+        document.querySelectorAll('img').forEach(img => {
+            const raw = img.getAttribute('src');
+            if (raw && map[raw]) {
+                img.src = map[raw];
+                img.removeAttribute('srcset'); // srcset would re-fight us
+            }
+        });
+        // background-image swap. Cheap heuristic: only inspect elements
+        // that have an inline style with `background`, or a known class
+        // that uses background-image (we skip the deep CSS-scan path).
+        document.querySelectorAll('[style*="background"]').forEach(el => {
+            const m = el.style.backgroundImage && el.style.backgroundImage.match(/url\(\s*(?:"([^"]+)"|'([^']+)'|([^)]+))\s*\)/);
+            if (!m) return;
+            const src = (m[1] || m[2] || m[3] || '').trim();
+            if (src && map[src]) {
+                el.style.backgroundImage = `url("${map[src]}")`;
+            }
+        });
+    }
+
+    function fetchAndApply() {
+        fetch('/api/site-images', { credentials: 'omit' })
+            .then(r => (r.ok ? r.json() : {}))
+            .then(map => {
+                writeCache(map);
+                applyOverrides(map);
+            })
+            .catch(() => { /* silent — pages keep originals on failure */ });
+    }
+
+    // Run as early as possible. Apply cached overrides synchronously to
+    // catch images that are already in the DOM; then re-apply after
+    // DOMContentLoaded for any lazy-rendered images; then refresh in the
+    // background so admin edits propagate within 60s of a session.
+    const cached = readCache();
+    if (cached) applyOverrides(cached);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            if (cached) applyOverrides(cached);
+            fetchAndApply();
+        });
+    } else {
+        fetchAndApply();
+    }
+
+    // Also rerun when components render new image-containing markup
+    // (global-header / global-footer / lead-modal can inject <img> tags).
+    // Cheap MutationObserver scoped to <body>.
+    if (window.MutationObserver) {
+        const obs = new MutationObserver(() => {
+            const c = readCache();
+            if (c) applyOverrides(c);
+        });
+        if (document.body) obs.observe(document.body, { childList: true, subtree: true });
+        else document.addEventListener('DOMContentLoaded', () => obs.observe(document.body, { childList: true, subtree: true }));
+    }
+})();
+
 // ─── Launch tracking layer ─────────────────────────────────────────────────
 // Loads GA4 (gtag.js) and HubSpot's first-party tracking script (hs-scripts)
 // driven entirely by /api/config/public — so the snippets activate the moment

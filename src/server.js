@@ -100,6 +100,29 @@ app.post('/api/analytics/conversion', async (req, res) => {
     }
 });
 
+// ─── /api/site-images ───────────────────────────────────────────────────────
+// Public, cached. Returns the override map { original_src: override_url }
+// for every site_images row that has an override set. The frontend
+// resolver in components/components.js reads this once per session and
+// swaps any matching <img src> / background-image at page load.
+app.get('/api/site-images', async (req, res) => {
+    const pool = require('./database/pool');
+    res.set('Cache-Control', 'public, max-age=120'); // 2 min — short so admin edits show up quickly
+    try {
+        const { rows } = await pool.query(
+            `SELECT original_src, override_url
+               FROM site_images
+              WHERE override_url IS NOT NULL AND override_url <> ''`
+        );
+        const map = {};
+        for (const r of rows) map[r.original_src] = r.override_url;
+        res.json(map);
+    } catch (err) {
+        console.error('[site-images.public]', err.message);
+        res.json({}); // never fail — pages should keep rendering originals
+    }
+});
+
 // ─── /api/config/public ─────────────────────────────────────────────────────
 // Returns the public tracking IDs the frontend needs to install GA4 +
 // HubSpot tracking and to render the Search Console verification meta tag.
@@ -1670,6 +1693,27 @@ async function ensureTables() {
             CREATE INDEX IF NOT EXISTS idx_conversion_events_formname ON conversion_events(form_name);
         `);
 
+        // Site-wide image catalog — every <img src> + CSS background-image
+        // discovered by scanning the static HTML files. Admin can set an
+        // override_url and the frontend resolver in components.js swaps
+        // any matching src at page load. NULL override = use original_src.
+        // Rebuilt on every server boot by scripts/site-images-scan.js
+        // (which only INSERTs new rows — it never overwrites overrides).
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS site_images (
+                id              SERIAL PRIMARY KEY,
+                original_src    TEXT UNIQUE NOT NULL,
+                override_url    TEXT,
+                page_paths      TEXT[] NOT NULL DEFAULT '{}',
+                description     TEXT,
+                first_seen_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                last_seen_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_site_images_original_src ON site_images(original_src);
+            CREATE INDEX IF NOT EXISTS idx_site_images_has_override ON site_images((override_url IS NOT NULL));
+        `);
+
         console.log(' Tables verified.');
 
         // Migrate default seeded cover images from Unsplash URLs to local /assets/images/ paths
@@ -1773,6 +1817,20 @@ app.listen(PORT, async () => {
             await hubspot.backfillExistingRecords(pool);
         } catch (err) {
             console.error('[hubspot.backfill] failed:', err.message);
+        }
+    })();
+
+    // Site-image discovery — walks every public HTML/CSS file and upserts
+    // each unique <img src> / background-image URL into site_images. Lets
+    // the admin Images page show every image on the site even though the
+    // HTML files are still plain static. Runs as fire-and-forget so a
+    // scan error never delays startup.
+    (async () => {
+        try {
+            const { scanAndSync } = require('./services/site-images-scan');
+            await scanAndSync(pool);
+        } catch (err) {
+            console.error('[site-images.scan] failed:', err.message);
         }
     })();
 });

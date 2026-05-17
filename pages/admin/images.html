@@ -136,6 +136,7 @@
         <div class="img-bar">
             <input type="search" id="search" placeholder="Search by name…" oninput="renderGrid()">
             <button class="filter-toggle" id="missing-toggle" onclick="toggleMissing()">Only missing images</button>
+            <button class="filter-toggle" id="rescan-btn" onclick="rescanSite()" style="display:none;">↻ Rescan site</button>
             <div class="spacer"></div>
             <span class="legend" id="legend">—</span>
         </div>
@@ -152,6 +153,22 @@
 <script>
     // ── State ────────────────────────────────────────────────────────
     const SECTIONS = [
+        // The "site" section is a special case — it lists every <img> the
+        // discovery scan found in static HTML, not a DB-backed entity.
+        // Override flow uses its own dedicated endpoints below.
+        { key: 'site',       label: 'Site Images',    field: '__site__',
+          listUrl: '/api/admin/site-images',
+          patchUrl: id => `/api/admin/site-images/${encodeURIComponent(id)}`,
+          uploadUrl: '/api/admin/site-images/upload', uploadField: 'image',
+          editUrl: id => null, // no detail page — replace is the only action
+          publicUrl: () => null, // multiple pages — handled custom below
+          nameFor: r => (r.original_src.split('/').pop() || r.original_src).split('?')[0].slice(0, 80),
+          metaFor: r => (r.page_paths && r.page_paths.length)
+              ? `Appears on: ${r.page_paths.slice(0, 4).join(', ')}${r.page_paths.length > 4 ? ` +${r.page_paths.length - 4} more` : ''}`
+              : 'Not currently used on any page',
+          statusFor: r => r.has_override ? 'published' : null,
+          _site: true, // marker so renderGrid + onFilePicked know to use override flow
+        },
         { key: 'lakes',      label: 'Lakes',          field: 'featured_image_url', altFields: ['hero_image_url'],
           listUrl: '/api/lakes?status=all',
           patchUrl: id => `/api/lakes/${encodeURIComponent(id)}`,
@@ -208,11 +225,11 @@
     ];
 
     const State = {
-        active: 'lakes',
-        rows:   {},   // { lakes: [], towns: [], ... }
+        active: 'site',   // Site Images is the new high-value tab — land there.
+        rows:   {},       // { site: [], lakes: [], ... }
         loaded: {},
         onlyMissing: false,
-        pending: null, // { sectionKey, id }
+        pending: null,    // { sectionKey, id }
     };
 
     const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -227,6 +244,10 @@
     }
 
     function getImageUrl(section, row) {
+        if (section._site) {
+            // For site images, show the override if set, else the original.
+            return row.override_url || row.original_src;
+        }
         if (row[section.field]) return row[section.field];
         for (const alt of (section.altFields || [])) {
             if (row[alt]) return row[alt];
@@ -272,10 +293,31 @@
     function switchTab(key) {
         State.active = key;
         renderTabs();
+        // Show the Rescan button only on the Site Images tab.
+        document.getElementById('rescan-btn').style.display = (key === 'site') ? '' : 'none';
         ensureLoaded(key).then(() => renderGrid());
         const url = new URL(window.location);
         url.searchParams.set('section', key);
         history.replaceState(null, '', url);
+    }
+
+    async function rescanSite() {
+        const btn = document.getElementById('rescan-btn');
+        btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Scanning…';
+        try {
+            const r = await fetch('/api/admin/site-images/rescan', { method: 'POST', credentials: 'include' });
+            const data = await r.json();
+            if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+            // Force a re-fetch of the list.
+            State.loaded.site = false;
+            await ensureLoaded('site');
+            renderGrid();
+            toast(`Rescan complete · ${data.found} images (${data.inserted} new, ${data.updated} refreshed)`, 'ok');
+        } catch (err) {
+            toast(err.message || 'Rescan failed.', 'err');
+        } finally {
+            btn.disabled = false; btn.textContent = orig;
+        }
     }
 
     async function ensureLoaded(key) {
@@ -341,12 +383,33 @@
                             ? `<button class="btn-replace" onclick="startReplace('${State.active}', '${esc(r.id)}')">${url ? 'Replace' : 'Upload'}</button>`
                             : `<span style="font-size:0.74rem;color:#a0aec0;font-weight:600;">No uploader</span>`}
                         <div style="display:flex;gap:0.4rem;">
+                            ${section._site && r.has_override ? `<button class="btn-open" onclick="resetSiteImage('${esc(r.id)}')">↺ Reset</button>` : ''}
                             ${publicLink ? `<a class="btn-open" href="${esc(publicLink)}" target="_blank" title="Open on the public site">↗ Live</a>` : ''}
-                            <a class="btn-open" href="${esc(editLink)}">Edit details</a>
+                            ${editLink ? `<a class="btn-open" href="${esc(editLink)}">Edit details</a>` : ''}
                         </div>
                     </div>
                 </div>`;
         }).join('');
+    }
+
+    async function resetSiteImage(id) {
+        if (!confirm('Reset this image back to the original file? The override will be removed.')) return;
+        try {
+            const r = await fetch(`/api/admin/site-images/${encodeURIComponent(id)}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ override_url: null }),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+            const row = (State.rows.site || []).find(x => String(x.id) === String(id));
+            if (row) { row.override_url = null; row.has_override = false; }
+            renderGrid();
+            toast('Reset to original — site updates within ~60s.', 'ok');
+        } catch (err) {
+            toast(err.message || 'Reset failed.', 'err');
+        }
     }
 
     function toggleMissing() {
@@ -387,8 +450,11 @@
             const upData = await upRes.json().catch(() => ({}));
             if (!upRes.ok) throw new Error(upData.error || `Upload failed (HTTP ${upRes.status}).`);
 
-            // Step 2: PATCH the entity with the new URL
-            const patchPayload = { [section.field]: upData.url };
+            // Step 2: PATCH. Site images use override_url; everything else
+            // patches the entity's image field directly.
+            const patchPayload = section._site
+                ? { override_url: upData.url }
+                : { [section.field]: upData.url };
             const saveRes = await fetch(section.patchUrl(id), {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -400,9 +466,12 @@
 
             // Update local state + re-render (so the new image shows immediately).
             const row = (State.rows[sectionKey] || []).find(r => String(r.id) === String(id));
-            if (row) row[section.field] = upData.url;
+            if (row) {
+                if (section._site) { row.override_url = upData.url; row.has_override = true; }
+                else { row[section.field] = upData.url; }
+            }
             renderGrid();
-            toast(`Image saved — now live on the public ${section.label.toLowerCase().replace(/s$/, '')} page.`, 'ok');
+            toast(`Image saved — live on the public site within ~60s (resolver cache).`, 'ok');
         } catch (err) {
             console.error('[images]', err);
             if (btn) { btn.textContent = origLabel; btn.classList.remove('uploading'); btn.disabled = false; }
@@ -415,6 +484,7 @@
         // Honor ?section= deep-link
         const initial = new URLSearchParams(window.location.search).get('section');
         if (initial && SECTIONS.some(s => s.key === initial)) State.active = initial;
+        document.getElementById('rescan-btn').style.display = (State.active === 'site') ? '' : 'none';
 
         // Load every section's counts upfront (parallel) so tabs show
         // counts immediately. We re-render on each completion so the UI
@@ -422,6 +492,7 @@
         SECTIONS.forEach(async s => {
             await ensureLoaded(s.key);
             if (s.key === State.active) renderGrid();
+            renderTabs();
         });
         renderTabs();
         renderGrid();

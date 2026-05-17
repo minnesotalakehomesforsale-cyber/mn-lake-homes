@@ -20,6 +20,13 @@ router.post('/analytics/baseline',    marketingController.snapshotBaseline);
 // ─── CONVERSION EVENTS (server-side mirror of GA4 / HubSpot) ────────────────
 router.get ('/analytics/conversions', marketingController.listConversions);
 
+// ─── SITE IMAGES (admin-editable catalog of every public-page image) ────────
+const siteImagesController = require('../controllers/site-images.controller');
+router.get   ('/site-images',         siteImagesController.list);
+router.post  ('/site-images/upload',  siteImagesController.upload);
+router.post  ('/site-images/rescan',  siteImagesController.rescan);
+router.patch ('/site-images/:id',     siteImagesController.patch);
+
 // ─── AGENT LEDGER ─────────────────────────────────────────────────────────────
 router.get('/', adminController.getLedger);                              // GET /api/admin?search=&status=&membership=&published=
 router.post('/', adminController.createAgent);                            // POST /api/admin
