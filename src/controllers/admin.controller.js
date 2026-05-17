@@ -451,6 +451,65 @@ const getUserDetail = async (req, res) => {
 };
 
 /**
+ * GET /api/admin/users/:id/inquiries
+ * Every form submission tied to this user — both regular leads (matched
+ * by user_id, or by email when user_id wasn't backfilled yet) and any
+ * cash-offer leads (no user_id column, matched by email). Each row is
+ * tagged with `kind` so the admin UI knows where clicking it should go
+ * (`/admin/lead-review.html?id=...` vs `/admin/cash-offers.html?id=...`).
+ */
+const getUserInquiries = async (req, res) => {
+    try {
+        const u = await pool.query(
+            'SELECT id, LOWER(email) AS email FROM users WHERE id = $1',
+            [req.params.id]
+        );
+        if (u.rows.length === 0) return res.status(404).json({ error: 'User not found.' });
+        const userId = u.rows[0].id;
+        const email  = u.rows[0].email;
+
+        const [leads, cashOffers] = await Promise.all([
+            pool.query(
+                `SELECT 'lead'::text         AS kind,
+                        l.id, l.created_at, l.full_name, l.email, l.phone,
+                        l.lead_type           AS type,
+                        l.lead_source         AS source,
+                        l.lead_status         AS status,
+                        l.property_address    AS address,
+                        l.message
+                   FROM leads l
+                  WHERE l.user_id = $1
+                     OR (l.user_id IS NULL AND LOWER(l.email) = $2)
+                  ORDER BY l.created_at DESC`,
+                [userId, email]
+            ),
+            pool.query(
+                `SELECT 'cash_offer'::text   AS kind,
+                        c.id, c.created_at, c.full_name, c.email, c.phone,
+                        'cash_offer'::text    AS type,
+                        'cash_offer'::text    AS source,
+                        c.status              AS status,
+                        c.address_raw         AS address,
+                        NULL::text            AS message,
+                        c.offer_amount, c.archived_at
+                   FROM cash_offer_leads c
+                  WHERE LOWER(c.email) = $1
+                  ORDER BY c.created_at DESC`,
+                [email]
+            ),
+        ]);
+
+        const merged = [...leads.rows, ...cashOffers.rows]
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        res.json({ rows: merged, total: merged.length });
+    } catch (err) {
+        console.error('[getUserInquiries]', err.message);
+        res.status(500).json({ error: 'Failed to fetch inquiries.' });
+    }
+};
+
+/**
  * PATCH /api/admin/users/:id
  * Update user's basic info (name, email, role).
  */
@@ -1029,6 +1088,7 @@ module.exports = {
     updateAccountStatus,
     getUsers,
     getUserDetail,
+    getUserInquiries,
     updateUser,
     updateUserStatus,
     resetUserPassword,

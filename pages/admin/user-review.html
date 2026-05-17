@@ -57,6 +57,51 @@
         .meta-row:last-child { border-bottom: none; }
         .meta-label { color: #718096; font-weight: 600; }
         .meta-value { color: #1a202c; font-weight: 500; text-align: right; }
+
+        /* Header card — mirrors the agent-review profile header */
+        .up-header { position: relative; display: flex; gap: 1.5rem; background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 2px 6px rgba(0,0,0,0.03); padding: 1.5rem 1.75rem; margin-bottom: 1.25rem; align-items: center; }
+        .up-photo { width: 92px; height: 92px; border-radius: 12px; background: linear-gradient(135deg,#1d6df2,#155bc8); color: #fff; font-size: 2rem; font-weight: 800; display: flex; align-items: center; justify-content: center; letter-spacing: -1px; flex-shrink: 0; }
+        .up-main { flex: 1; min-width: 0; }
+        .up-name { font-size: 1.5rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; margin: 0 0 0.25rem; }
+        .up-email { color: #4a5568; font-size: 0.95rem; margin: 0 0 0.55rem; }
+        .up-badges { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+
+        /* Page-level tabs */
+        .up-tabs { display: flex; gap: 0.25rem; margin-bottom: 1.5rem; border-bottom: 2px solid #edf2f7; }
+        .up-tab { padding: 0.75rem 1.5rem; font-size: 0.9rem; font-weight: 600; color: #718096; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; font-family: inherit; transition: color 0.15s, border-color 0.15s; }
+        .up-tab:hover { color: #1a202c; }
+        .up-tab.active { color: #1d6df2; border-bottom-color: #1d6df2; }
+        .up-tab .tab-count { background: #1d6df2; color: #fff; border-radius: 20px; padding: 0.1rem 0.55rem; font-size: 0.7rem; font-weight: 700; margin-left: 0.35rem; }
+
+        /* Inquiries tab — list of forms submitted by this user */
+        .iq-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+        .iq-stat { background: #fff; border: 1px solid #edf2f7; border-radius: 10px; padding: 1.1rem 1.4rem; }
+        .iq-stat .iq-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 0.35rem; }
+        .iq-stat .iq-value { font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; }
+        .iq-filter { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+        .iq-chip { padding: 0.35rem 0.9rem; border: 1px solid #e2e8f0; border-radius: 20px; background: #fff; font-size: 0.8rem; font-weight: 600; color: #718096; cursor: pointer; transition: all 0.15s; }
+        .iq-chip:hover { border-color: #1d6df2; color: #1d6df2; }
+        .iq-chip.active { background: #1d6df2; color: #fff; border-color: #1d6df2; }
+        .iq-row { background: #fff; border: 1px solid #edf2f7; border-radius: 10px; padding: 1.1rem 1.4rem; margin-bottom: 0.6rem; cursor: pointer; transition: box-shadow 0.15s, border-color 0.15s; display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center; }
+        .iq-row:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.07); border-color: #cbd5e0; }
+        .iq-row .iq-title { font-weight: 700; color: #1a202c; font-size: 0.95rem; margin-bottom: 0.2rem; }
+        .iq-row .iq-meta { font-size: 0.78rem; color: #718096; }
+        .iq-row .iq-side { display: flex; gap: 0.4rem; align-items: center; flex-shrink: 0; }
+        .iq-badge { display: inline-block; padding: 0.2rem 0.55rem; border-radius: 5px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; }
+        .iq-kind-lead       { background:#ebf4ff; color:#2b6cb0; }
+        .iq-kind-cash_offer { background:#fff5f0; color:#c05621; }
+        .iq-status          { display:inline-block; padding:0.2rem 0.55rem; border-radius:5px; font-size:0.68rem; font-weight:700; text-transform:uppercase; }
+        .iq-st-new          { background:#e6fffa; color:#319795; }
+        .iq-st-unassigned   { background:#fffaf0; color:#dd6b20; }
+        .iq-st-assigned     { background:#ebf8ff; color:#2b6cb0; }
+        .iq-st-in_progress  { background:#ebf4ff; color:#4c51bf; }
+        .iq-st-contacted    { background:#f0fff4; color:#276749; }
+        .iq-st-viewed       { background:#ebf8ff; color:#2b6cb0; }
+        .iq-st-proceeding_cash { background:#fff5f0; color:#c05621; }
+        .iq-st-chose_agent  { background:#ebf4ff; color:#4c51bf; }
+        .iq-st-closed       { background:#edf2f7; color:#4a5568; }
+        .iq-st-archived     { background:#fff5f5; color:#9b2c2c; }
+        .iq-empty { background: #fff; border: 1px dashed #cbd5e0; border-radius: 10px; padding: 3rem 1.5rem; text-align: center; color: #718096; }
     </style>
     <script src="../../components/admin-guard.js"></script>
     <script src="../../components/admin-responsive.js" defer></script>
@@ -71,17 +116,29 @@
     <main class="admin-main">
         <a href="users.html" class="back-link">← Back to Users</a>
 
-        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:2rem; gap:1rem; flex-wrap:wrap;">
-            <div>
-                <h1 id="page-title" style="font-size:2rem; font-weight:800; letter-spacing:-1px; margin:0 0 0.25rem;">Loading...</h1>
-                <p style="color:#718096; margin:0;" id="page-sub">—</p>
-            </div>
-            <div style="display:flex; gap:0.6rem; align-items:center;">
-                <span id="badge-role" class="role-badge" style="display:none;"></span>
-                <span id="badge-status" class="s-badge" style="display:none;"></span>
+        <!-- Header card — name + email + role/status, same shape as agent-review -->
+        <div class="up-header">
+            <div class="up-photo" id="up-photo">U</div>
+            <div class="up-main">
+                <h1 class="up-name" id="page-title">Loading...</h1>
+                <p class="up-email" id="page-sub">—</p>
+                <div class="up-badges">
+                    <span id="badge-role" class="role-badge" style="display:none;"></span>
+                    <span id="badge-status" class="s-badge" style="display:none;"></span>
+                </div>
             </div>
         </div>
 
+        <!-- Page tabs -->
+        <div class="up-tabs">
+            <button class="up-tab active" id="utab-profile" onclick="switchUserTab('profile')">Account &amp; Profile</button>
+            <button class="up-tab" id="utab-inquiries" onclick="switchUserTab('inquiries')">
+                Inquiries <span class="tab-count" id="iq-count">0</span>
+            </button>
+        </div>
+
+        <!-- ─────────────── TAB 1: ACCOUNT & PROFILE ─────────────── -->
+        <div id="tab-profile">
         <div class="detail-grid">
             <!-- LEFT: Editable fields -->
             <div>
@@ -197,6 +254,25 @@
                 </div>
             </div>
         </div>
+        </div><!-- /tab-profile -->
+
+        <!-- ─────────────── TAB 2: INQUIRIES ─────────────── -->
+        <div id="tab-inquiries" style="display:none;">
+            <div class="iq-stats">
+                <div class="iq-stat"><div class="iq-label">Total</div><div class="iq-value" id="iq-stat-total">0</div></div>
+                <div class="iq-stat"><div class="iq-label">Regular leads</div><div class="iq-value" id="iq-stat-leads">0</div></div>
+                <div class="iq-stat"><div class="iq-label">Cash offers</div><div class="iq-value" id="iq-stat-cash">0</div></div>
+                <div class="iq-stat"><div class="iq-label">Open</div><div class="iq-value" id="iq-stat-open">0</div></div>
+            </div>
+            <div class="iq-filter" id="iq-filter">
+                <button class="iq-chip active" data-iq="all" onclick="setIqFilter('all', this)">All</button>
+                <button class="iq-chip" data-iq="lead" onclick="setIqFilter('lead', this)">Leads</button>
+                <button class="iq-chip" data-iq="cash_offer" onclick="setIqFilter('cash_offer', this)">Cash offers</button>
+            </div>
+            <div id="iq-list">
+                <div class="iq-empty">Loading inquiries…</div>
+            </div>
+        </div>
     </main>
 </div>
 
@@ -229,8 +305,14 @@
     }
 
     function hydrate() {
-        document.getElementById('page-title').textContent = user.full_name || user.email || '—';
+        const displayName = user.full_name || user.email || '—';
+        document.getElementById('page-title').textContent = displayName;
         document.getElementById('page-sub').textContent   = user.email || '';
+
+        // Avatar — initials from the display name, falling back to the email's
+        // first letter so something always renders.
+        const initials = (displayName.match(/\b\w/g) || ['U']).slice(0, 2).join('').toUpperCase();
+        document.getElementById('up-photo').textContent = initials;
 
         const roleBadge   = document.getElementById('badge-role');
         const statusBadge = document.getElementById('badge-status');
@@ -377,6 +459,97 @@
         } catch (err) {
             setMsg(document.getElementById('action-msg'), err.message, true);
         }
+    }
+
+    // ── Tabs ────────────────────────────────────────────────────────────
+    function switchUserTab(name) {
+        const tabs = { profile: 'utab-profile', inquiries: 'utab-inquiries' };
+        const panes = { profile: 'tab-profile', inquiries: 'tab-inquiries' };
+        Object.keys(tabs).forEach(k => {
+            document.getElementById(tabs[k]).classList.toggle('active', k === name);
+            document.getElementById(panes[k]).style.display = k === name ? '' : 'none';
+        });
+        if (name === 'inquiries' && !_inquiriesLoaded) loadInquiries();
+    }
+
+    // ── Inquiries (leads + cash-offer leads for this user) ──────────────
+    let _allInquiries = [];
+    let _iqFilter = 'all';
+    let _inquiriesLoaded = false;
+
+    async function loadInquiries() {
+        const list = document.getElementById('iq-list');
+        try {
+            const res = await fetch(`/api/admin/users/${userId}/inquiries`);
+            if (!res.ok) throw new Error('Failed to load inquiries.');
+            const data = await res.json();
+            _allInquiries = data.rows || [];
+            _inquiriesLoaded = true;
+            renderIqStats();
+            renderIqList();
+        } catch (err) {
+            list.innerHTML = `<div class="iq-empty" style="color:#c53030;">${err.message}</div>`;
+        }
+    }
+
+    function renderIqStats() {
+        const all   = _allInquiries;
+        const leads = all.filter(r => r.kind === 'lead');
+        const cash  = all.filter(r => r.kind === 'cash_offer');
+        const open  = all.filter(r => !['closed', 'archived'].includes(r.status));
+        document.getElementById('iq-stat-total').textContent = all.length;
+        document.getElementById('iq-stat-leads').textContent = leads.length;
+        document.getElementById('iq-stat-cash').textContent  = cash.length;
+        document.getElementById('iq-stat-open').textContent  = open.length;
+        document.getElementById('iq-count').textContent      = all.length;
+    }
+
+    function setIqFilter(filter, btn) {
+        _iqFilter = filter;
+        document.querySelectorAll('.iq-chip').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        renderIqList();
+    }
+
+    function renderIqList() {
+        const list = document.getElementById('iq-list');
+        const rows = _allInquiries.filter(r =>
+            _iqFilter === 'all' ? true : r.kind === _iqFilter);
+
+        if (!rows.length) {
+            list.innerHTML = '<div class="iq-empty">No inquiries from this user yet.</div>';
+            return;
+        }
+
+        const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+        const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const kindLabel = k => k === 'cash_offer' ? 'Cash Offer' : 'Lead';
+
+        list.innerHTML = rows.map(r => {
+            const href = r.kind === 'cash_offer'
+                ? `cash-offers.html?id=${encodeURIComponent(r.id)}`
+                : `lead-review.html?id=${encodeURIComponent(r.id)}`;
+            const subtitle = [
+                r.kind === 'lead' ? (r.source || r.type) : null,
+                r.address || null,
+                fmtDate(r.created_at),
+            ].filter(Boolean).map(escHtml).join(' · ');
+            const title = r.kind === 'cash_offer'
+                ? (r.address || 'Cash offer request')
+                : (r.message || `${kindLabel(r.kind)} — ${r.type || 'general'}`);
+            return `
+                <div class="iq-row" onclick="window.location.href='${href}'">
+                    <div>
+                        <div class="iq-title">${escHtml(title)}</div>
+                        <div class="iq-meta">${subtitle}</div>
+                    </div>
+                    <div class="iq-side">
+                        <span class="iq-badge iq-kind-${r.kind}">${escHtml(kindLabel(r.kind))}</span>
+                        <span class="iq-status iq-st-${r.status}">${escHtml(r.status || '—')}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
     document.addEventListener('DOMContentLoaded', load);
