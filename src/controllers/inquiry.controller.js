@@ -107,6 +107,7 @@ exports.createInquiry = async (req, res) => {
                 firstname: first || '',
                 lastname:  rest.join(' '),
                 phone: phone || undefined,
+                lifecyclestage: 'lead',
                 user_type: 'inquiry',
                 signup_source: source === 'commonrealtor' ? 'commonrealtor_contact' : 'mnlakehomes_contact',
             });

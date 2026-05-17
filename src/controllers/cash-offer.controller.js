@@ -196,12 +196,13 @@ exports.submit = async (req, res) => {
             const [first, ...rest] = String(full_name).split(' ');
             const r = await hubspot.syncContact({
                 email,
-                firstname: first || '',
-                lastname:  rest.join(' '),
+                firstname:      first || '',
+                lastname:       rest.join(' '),
                 phone,
-                address: address || undefined,
-                user_type: 'cash_offer_lead',
-                signup_source: sourceSite ? `cash_offer:${sourceSite}` : 'cash_offer',
+                address:        address || undefined,
+                lifecyclestage: 'salesqualifiedlead',
+                user_type:      'cash_offer_lead',
+                signup_source:  sourceSite ? `cash_offer:${sourceSite}` : 'cash_offer',
             });
             if (r?.id) {
                 pool.query(`UPDATE cash_offer_leads SET hs_contact_id = $1 WHERE id = $2`, [r.id, leadId])

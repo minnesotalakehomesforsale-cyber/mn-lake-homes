@@ -84,8 +84,9 @@ exports.subscribeNewsletter = async (req, res) => {
         (async () => {
             const r = await hubspot.syncContact({
                 email,
-                user_type: 'subscriber',
-                signup_source: leadSource,
+                lifecyclestage: 'subscriber',
+                user_type:      'subscriber',
+                signup_source:  leadSource,
             });
             if (r?.id && leadId) {
                 pool.query(`UPDATE leads SET hs_contact_id = $1 WHERE id = $2`, [r.id, leadId])

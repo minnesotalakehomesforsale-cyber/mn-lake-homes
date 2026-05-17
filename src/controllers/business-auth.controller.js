@@ -224,6 +224,7 @@ exports.signup = async (req, res) => {
                 email,
                 firstname: firstName,
                 lastname:  lastName,
+                lifecyclestage: 'lead',
                 user_type: 'business_owner',
                 signup_source: 'business_signup',
                 company:   business_name,

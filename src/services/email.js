@@ -230,16 +230,64 @@ function sendPasswordReset(user, newPassword) {
 /**
  * Lead confirmation — sent after someone submits a contact/buy/sell form,
  * so they know their inquiry was received.
+ *
+ * `lead` shape:
+ *   { email, first_name|full_name, lead_type?, magnet? }
+ * Where magnet (optional) is { title, url, slug } — when present, the
+ * email leads with a "here's your guide" download block tuned to the
+ * lead type, then explains what happens next. When absent, falls back
+ * to the generic copy that's been live since launch.
  */
 function sendLeadConfirmation(lead) {
     if (!lead.email) return { skipped: true };
-    const name = lead.first_name || lead.full_name?.split(' ')[0] || 'there';
-    return sendEmail({
-        to: lead.email,
-        subject: "We got your message — here's what's next",
-        html: layout({
-            title: `Thanks for reaching out, ${name}.`,
-            preheader: "A local lake specialist will be in touch within 24 hours.",
+    const name      = lead.first_name || lead.full_name?.split(' ')[0] || 'there';
+    const leadType  = lead.lead_type || 'general_contact';
+    const magnet    = lead.magnet || null;
+
+    // Per-type copy. Falls back to the original generic body for types
+    // we don't have tailored language for (agent_inquiry, market_report, etc).
+    const copy = (() => {
+        if (leadType === 'buyer') {
+            return {
+                subject: 'Your Minnesota lake-home buying journey starts here',
+                title:   `Welcome, ${name}.`,
+                preheader: magnet
+                    ? `Your buyer guide is attached + a local specialist will reach out within 24 hours.`
+                    : `A local specialist will be in touch within 24 hours.`,
+                body: `
+                    <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                      Thanks for telling us what you're looking for. We've matched your request to our buyer-specialist team — expect a call or email within one business day to start narrowing down lakes, neighborhoods, and listings that actually fit.
+                    </p>
+                    <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                      While you wait, the guide below is the same one our specialists hand to every new buyer client. It covers the realities of MN waterfront — financing nuances, what to look for on a shoreline walk-through, what each lake region is actually like to live on.
+                    </p>`,
+                ctaText: 'Browse Lake Homes',
+                ctaUrl: `${SITE_URL}/pages/public/buy.html`,
+            };
+        }
+        if (leadType === 'seller') {
+            return {
+                subject: 'Your Minnesota lake-home seller toolkit is ready',
+                title:   `Thanks, ${name}.`,
+                preheader: magnet
+                    ? `Your seller toolkit is attached + a listing specialist will be in touch within 24 hours.`
+                    : `A listing specialist will be in touch within 24 hours.`,
+                body: `
+                    <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                      Thanks for considering us for your sale. We've routed your property to one of our local listing specialists — they'll reach out within one business day with comps for your lake, an honest sense of timing, and what we'd do to position the property for a top-end offer.
+                    </p>
+                    <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                      In the meantime, the guide below is the playbook we walk every new seller through — pricing strategy, the prep that actually pays off for waterfront homes, and disclosure questions specific to Minnesota lakeshore.
+                    </p>`,
+                ctaText: 'See your home value',
+                ctaUrl: `${SITE_URL}/pages/public/sell.html`,
+            };
+        }
+        // Generic / agent inquiry / general contact — original copy.
+        return {
+            subject: "We got your message — here's what's next",
+            title:   `Thanks for reaching out, ${name}.`,
+            preheader: 'A local lake specialist will be in touch within 24 hours.',
             body: `
                 <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
                   We received your inquiry and it's now in the hands of our matching team. A local Minnesota lake home specialist will reach out within 24 hours to discuss your goals and next steps.
@@ -252,6 +300,37 @@ function sendLeadConfirmation(lead) {
                 </p>`,
             ctaText: 'Browse Lake Homes',
             ctaUrl: `${SITE_URL}/pages/public/buy.html`,
+        };
+    })();
+
+    // When a magnet is present, the primary CTA becomes the download
+    // button and the original CTA gets demoted into a secondary text link
+    // at the bottom of the email body.
+    let primaryCtaText = copy.ctaText;
+    let primaryCtaUrl  = copy.ctaUrl;
+    let body           = copy.body;
+
+    if (magnet?.url && magnet?.title) {
+        const magnetUrl = magnet.url.startsWith('http') ? magnet.url : `${SITE_URL}${magnet.url}`;
+        primaryCtaText  = `Download "${magnet.title}"`;
+        primaryCtaUrl   = magnetUrl;
+        // Append a secondary footer link pointing at the original CTA
+        // so the buyer/seller can still get to the browse page in one click.
+        body += `
+            <p style="margin:18px 0 0;font-size:13px;line-height:1.6;color:#718096;">
+              Also handy: <a href="${copy.ctaUrl}" style="color:#1d6df2;text-decoration:underline;">${copy.ctaText}</a>.
+            </p>`;
+    }
+
+    return sendEmail({
+        to: lead.email,
+        subject: copy.subject,
+        html: layout({
+            title: copy.title,
+            preheader: copy.preheader,
+            body,
+            ctaText: primaryCtaText,
+            ctaUrl: primaryCtaUrl,
         })
     });
 }

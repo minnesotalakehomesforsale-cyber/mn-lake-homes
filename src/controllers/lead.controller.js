@@ -5,6 +5,7 @@ const { logActivity } = require('../services/activity-log');
 const { geocodeAddress } = require('../services/geocoder');
 const { matchTagsAndUsers } = require('../services/tag-matcher');
 const { routeLead } = require('../services/lead-router');
+const { getLeadMagnetForType } = require('../services/lead-magnet');
 
 const createLead = async (req, res) => {
     let {
@@ -92,9 +93,25 @@ const createLead = async (req, res) => {
             req,
         });
 
+        // Resolve the right lead magnet (PDF) for this lead type before we
+        // fire the confirmation email — the email is tuned to include the
+        // download button when a magnet exists. Falls back gracefully to the
+        // generic confirmation when no magnet is configured / resource is
+        // missing.
+        let magnet = null;
+        if (email) {
+            magnet = await getLeadMagnetForType(enumType).catch(() => null);
+        }
+
         // Fire-and-forget lead confirmation email (only if they provided one)
         if (email) {
-            emailService.sendLeadConfirmation({ email, first_name: firstName, full_name: name });
+            emailService.sendLeadConfirmation({
+                email,
+                first_name: firstName,
+                full_name:  name,
+                lead_type:  enumType,
+                magnet,
+            });
         }
 
         // Fire-and-forget admin notification with full lead details
@@ -110,18 +127,29 @@ const createLead = async (req, res) => {
 
         // Fire-and-forget HubSpot mirror — leads with no email are skipped
         // inside hubspot.syncContact (email is the canonical key).
+        // Field mapping: standard HubSpot contact properties only —
+        // firstname/lastname/phone/email + full address fields (address/city/
+        // state/zip) for sellers + lifecyclestage='lead' so HubSpot
+        // workflows can target form-fill leads. Buyer-specific budget /
+        // timeline + seller-specific timeline currently live in the
+        // `notes` blob; mapping them to dedicated HubSpot custom properties
+        // is documented in docs/launch-tracking-setup.md as a follow-up
+        // step (requires the property to be created in HubSpot first).
         if (newLeadId && email) {
             (async () => {
                 const lastName = name.split(' ').slice(1).join(' ');
                 const r = await hubspot.syncContact({
                     email,
-                    firstname: firstName,
-                    lastname:  lastName,
-                    phone: phone || undefined,
-                    user_type: 'lead',
-                    signup_source: source || enumType,
-                    city: propCity || undefined,
-                    state: propState || undefined,
+                    firstname:      firstName,
+                    lastname:       lastName,
+                    phone:          phone || undefined,
+                    address:        propAddress || propStreet || undefined,
+                    city:           propCity  || undefined,
+                    state:          propState || undefined,
+                    zip:            propZip   || undefined,
+                    lifecyclestage: 'lead',
+                    user_type:      'lead',
+                    signup_source:  source || enumType,
                 });
                 if (r?.id) {
                     pool.query(`UPDATE leads SET hs_contact_id = $1 WHERE id = $2`, [r.id, newLeadId])
@@ -175,13 +203,26 @@ const createLead = async (req, res) => {
 
                     const pick = await routeLead({ lat: geo.lat, lng: geo.lng });
                     if (!pick) {
-                        // No eligible agent in any nearby tag — lead stays unassigned.
+                        // No eligible agent in any nearby tag — lead stays
+                        // unassigned. Log it AND email admin so it doesn't
+                        // sit in the queue silently (matched-area tags
+                        // existed but no active agent claimed them).
                         logActivity({
                             event_type: 'lead.route_unassigned',
                             event_scope: 'lead',
+                            severity: 'warning',
                             actor: { type: 'system', label: 'lead-router' },
                             target: { type: 'lead', id: newLeadId, label: `${name} (${enumType})` },
                             details: { lat: geo.lat, lng: geo.lng, reason: 'no_eligible_agent' },
+                        });
+                        emailService.sendAdminLeadNotification({
+                            name,
+                            first_name: firstName,
+                            email,
+                            phone,
+                            type: enumType,
+                            source: source ? `${source} · UNROUTED` : 'UNROUTED',
+                            notes: `Routing failed — no eligible agent in the matched service areas near "${geo.formattedAddress || addressForRouting}". Lead needs manual assignment from the admin Leads queue.\n\n${notes || ''}`.trim(),
                         });
                         return;
                     }

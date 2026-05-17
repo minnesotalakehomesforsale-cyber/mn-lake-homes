@@ -94,6 +94,7 @@ const waitlist = async (req, res) => {
         (async () => {
             const r = await hubspot.syncContact({
                 email, firstname: first_name, lastname: last_name, phone,
+                lifecyclestage: 'lead',
                 user_type: 'client', signup_source: 'waitlist',
             });
             if (r?.id) {
@@ -233,6 +234,7 @@ const register = async (req, res) => {
                 firstname: display_name.split(' ')[0],
                 lastname:  display_name.split(' ').slice(1).join(' '),
                 phone:     phone || undefined,
+                lifecyclestage: 'lead',
                 user_type: 'agent', signup_source: 'agent_register',
                 company:   brokerage_name || undefined,
             });

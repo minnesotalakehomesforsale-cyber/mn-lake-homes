@@ -124,6 +124,129 @@ Once env vars are set and the deploy is live:
 
 ---
 
+## HubSpot field mapping (current state + optional upgrade)
+
+### What gets pushed to HubSpot today (standard properties only)
+
+The backend syncs only HubSpot's built-in contact fields — this is by
+design so the integration works without requiring any HubSpot setup
+beyond creating the portal:
+
+| HubSpot property | Filled from |
+|---|---|
+| `email`          | always |
+| `firstname` / `lastname` | parsed from the name field |
+| `phone`          | when provided |
+| `address` / `city` / `state` / `zip` | seller leads (from property address); admin-created users via profile edit |
+| `company`        | agent signups (brokerage name); business signups (business name) |
+| `lifecyclestage` | per source: `subscriber` (newsletter), `lead` (everything else), `salesqualifiedlead` (cash offer) |
+
+### Buyer/seller-specific fields that currently land in `notes`
+
+The buyer form collects **budget range** + **timeline**; the seller form
+collects **timeline**. These don't have standard HubSpot equivalents,
+so they're currently captured in the lead's `notes` blob and visible on
+the admin Lead Detail page, but they don't reach HubSpot as queryable
+fields.
+
+### Optional upgrade — create custom HubSpot properties
+
+If Marketing wants to segment HubSpot workflows by budget/timeline
+(e.g. "send the $1M+ buyers a different drip"), create these custom
+properties in HubSpot first, then a one-line code change re-enables
+them on the sync.
+
+1. In HubSpot → **Settings → Properties → Create property** (object
+   type: Contact). Suggested set:
+
+   | Property name | Field type | Used by |
+   |---|---|---|
+   | `mnlh_budget_range` | Dropdown (Under $500K / $500K – $750K / …) | Buyer form |
+   | `mnlh_timeline`     | Dropdown (ASAP / 1–3 months / 3–6 months / Exploring) | Buyer + seller forms |
+   | `mnlh_lead_type`    | Dropdown (buyer / seller / agent_inquiry / …) | All form fills |
+   | `mnlh_signup_source`| Single-line text | All sources |
+
+2. In `src/services/hubspot.js`, extend the `ALLOWED_PROPS` set to
+   include those four new property names.
+
+3. In `src/controllers/lead.controller.js`, add the values to the
+   `hubspot.syncContact({...})` call:
+   ```js
+   mnlh_lead_type:    enumType,
+   mnlh_signup_source: source || enumType,
+   // Parse budget/timeline out of the lead-modal payload — they're
+   // currently dumped into `notes`. Forward as separate top-level
+   // fields from components.js for cleanest mapping.
+   ```
+
+This stays optional because HubSpot rejects POSTs that reference
+custom properties the portal doesn't have, so we don't ship the
+field mapping until the user has created the properties.
+
+---
+
+## End-to-end form flow (buyer + seller)
+
+For the two highest-intent public forms:
+
+```
+Visitor clicks CTA → lead-modal multi-step form
+                          │
+                          ▼
+              POST /api/leads
+                          │
+                          ▼
+              lead.controller.createLead:
+                ├── INSERT into leads (full_name, email, phone, lead_type,
+                │   lead_source, property_*, message, user_id)
+                ├── Auto-link to user account by email if one exists
+                ├── ↓ window.trackConversion('generate_lead', {form_name:…})
+                │   fires from frontend right after the 201 response →
+                │     ↳ GA4 (gtag): event 'generate_lead'
+                │     ↳ HubSpot pixel: trackCustomBehavioralEvent
+                │     ↳ /api/analytics/conversion: server-side mirror row
+                ├── ↓ getLeadMagnetForType(enumType)
+                │     ↳ Looks up LEAD_MAGNET_{BUYER|SELLER}_SLUG env var
+                │     ↳ Joins to resources table → {title, url}
+                ├── ↓ sendLeadConfirmation({email, lead_type, magnet})
+                │     ↳ Branches body copy by lead_type
+                │     ↳ Primary CTA = magnet download button
+                ├── ↓ sendAdminLeadNotification (REPLY_TO inbox)
+                ├── ↓ hubspot.syncContact({email, firstname, lastname,
+                │     phone, address, city, state, zip,
+                │     lifecyclestage:'lead', signup_source})
+                │     ↳ Returns hs_contact_id → saved on leads row
+                └── ↓ IF property_address provided:
+                      geocodeAddress() → matchTagsAndUsers() → routeLead()
+                      ├── Found agent → UPDATE leads SET agent_id,
+                      │   assigned_user_id, status='contacted'
+                      │   → sendMatchedAgentNotification(agent's email)
+                      └── No agent → sendAdminLeadNotification with
+                          subject "UNROUTED — needs manual assignment"
+```
+
+---
+
+## Smoke testing the buyer/seller flow against prod
+
+When you want to verify end-to-end after a deploy that touches forms:
+
+```bash
+BASE_URL=https://minnesotalakehomesforsale.com \
+SMOKE_EMAIL=you+smoketest@yourdomain.com \
+node scripts/smoke-test-forms.js
+```
+
+The script POSTs a buyer lead + seller lead + newsletter subscription
+with the stamped name "Smoke Buyer <ISO>" / "Smoke Seller <ISO>" so
+you can find and delete them later. It prints a verification checklist
+with deep-links to admin, GA4 Realtime, and the HubSpot contact lookup.
+
+Output also includes a one-line SQL hint to clean up the smoke rows
+when you're done verifying.
+
+---
+
 ## What's NOT done by this work (out of scope, follow-ups)
 
 - Google Tag Manager — we wired `gtag.js` directly instead. If marketing

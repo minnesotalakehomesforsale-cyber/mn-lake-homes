@@ -167,6 +167,7 @@ exports.captureDownload = async (req, res) => {
             const r = await hubspot.syncContact({
                 email, firstname: firstName, lastname: lastName || undefined,
                 phone: phone || undefined,
+                lifecyclestage: 'lead',
                 user_type: 'lead', signup_source: `resource:${resource.slug}`,
             });
             if (r?.id && leadId) {
