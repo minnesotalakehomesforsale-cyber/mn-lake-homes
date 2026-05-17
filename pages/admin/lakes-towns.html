@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lakes &amp; Towns | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: #1a202c; }
+
+        .page-tabs { display: flex; gap: 0.25rem; margin-bottom: 1.5rem; border-bottom: 2px solid #edf2f7; }
+        .page-tab {
+            padding: 0.75rem 1.5rem; font-size: 0.95rem; font-weight: 600;
+            color: #718096; border: none; background: none; cursor: pointer;
+            border-bottom: 2px solid transparent; margin-bottom: -2px;
+            font-family: inherit; transition: color 0.15s, border-color 0.15s;
+        }
+        .page-tab:hover { color: #1a202c; }
+        .page-tab.active { color: #1d6df2; border-bottom-color: #1d6df2; }
+
+        /* Each tab pane holds a full-bleed iframe that auto-grows to its
+           content's height via postMessage from the embedded page. */
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+        .lt-frame {
+            width: 100%; border: 0; display: block;
+            min-height: 600px;     /* baseline before postMessage arrives */
+            background: #f7f9fa;
+        }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-assistant.js" defer></script>
+    <script src="../../components/admin-nav-badges.js" defer></script>
+</head>
+<body>
+<div class="admin-wrap">
+    <admin-sidebar active="lakes-towns"></admin-sidebar>
+
+    <main class="admin-main">
+        <header style="margin-bottom: 1.5rem;">
+            <h1 style="font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.75px; margin: 0 0 0.25rem;">Lakes &amp; Towns</h1>
+            <p style="color: #718096; font-size: 0.95rem; margin: 0;">Lake hub pages and the geo-tag taxonomy that backs them.</p>
+        </header>
+
+        <!-- Tab strip -->
+        <div class="page-tabs" role="tablist">
+            <button id="tab-btn-lakes" class="page-tab active" onclick="showLT('lakes')" role="tab">Lakes</button>
+            <button id="tab-btn-towns" class="page-tab" onclick="showLT('towns')" role="tab">Towns</button>
+        </div>
+
+        <!-- Tab panes — each is the full existing admin page loaded in embed mode -->
+        <div id="pane-lakes" class="tab-pane active" role="tabpanel">
+            <iframe id="frame-lakes" class="lt-frame" src="lakes.html?embed=1" title="Lakes admin"></iframe>
+        </div>
+        <div id="pane-towns" class="tab-pane" role="tabpanel">
+            <iframe id="frame-towns" class="lt-frame" src="tags.html?embed=1" title="Towns admin"></iframe>
+        </div>
+    </main>
+</div>
+
+<script>
+    // Tab switching — initial tab can be set via ?tab=towns or ?tab=lakes.
+    const _params = new URLSearchParams(window.location.search);
+    const _initialTab = _params.get('tab') === 'towns' ? 'towns' : 'lakes';
+
+    function showLT(name) {
+        ['lakes', 'towns'].forEach(k => {
+            document.getElementById('tab-btn-' + k).classList.toggle('active', k === name);
+            document.getElementById('pane-' + k).classList.toggle('active', k === name);
+        });
+        // Keep the URL in sync so deep-links / refresh land on the same tab.
+        const url = new URL(window.location);
+        if (name === 'lakes') url.searchParams.delete('tab');
+        else                  url.searchParams.set('tab', name);
+        history.replaceState(null, '', url);
+    }
+
+    // Auto-resize each iframe to its content height — the embedded page
+    // posts its scrollHeight as { lt: 'height', frame: 'lakes'|'towns', h: number }.
+    window.addEventListener('message', (e) => {
+        const m = e.data;
+        if (!m || m.lt !== 'height' || typeof m.h !== 'number') return;
+        const target = m.frame === 'towns'
+            ? document.getElementById('frame-towns')
+            : document.getElementById('frame-lakes');
+        if (target) target.style.height = Math.max(600, m.h + 8) + 'px';
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (_initialTab !== 'lakes') showLT(_initialTab);
+    });
+</script>
+</body>
+</html>

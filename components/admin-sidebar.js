@@ -118,15 +118,21 @@
         { key: 'cash-offers', href: 'cash-offers.html',label: 'Cash Offers', cashBadge: true },
         { key: 'users',       href: 'users.html',      label: 'Users Management' },
         { key: 'tasks',       href: 'tasks.html',      label: 'Tasks', badgeId: 'nav-badge-tasks' },
-        { key: 'tags',        href: 'tags.html',       label: 'Towns' },
-        { key: 'lakes',       href: 'lakes.html',      label: 'Lakes' },
+        // Lakes + Towns share one page with two internal tabs (lakes-towns.html
+        // hosts each old page in an embed-mode iframe so all existing logic
+        // keeps working unchanged). The 'lakes' + 'tags' keys are kept as
+        // aliases below so the active highlight still works if someone
+        // navigates directly to lakes.html or tags.html.
+        { key: 'lakes-towns', href: 'lakes-towns.html', label: 'Lakes & Towns', aliases: ['lakes', 'tags'] },
         { key: 'businesses',  href: 'businesses.html', label: 'Businesses' },
         { key: 'database',    href: 'database.html',   label: 'Database' },
     ];
 
     function renderNav(activeKey) {
         return NAV.map(item => {
-            const activeCls = item.key === activeKey ? ' active' : '';
+            const matches = item.key === activeKey
+                || (Array.isArray(item.aliases) && item.aliases.includes(activeKey));
+            const activeCls = matches ? ' active' : '';
             let badge = '';
             if (item.badgeId) {
                 badge = `<span id="${item.badgeId}" class="side-badge">0</span>`;
