@@ -5,41 +5,222 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | MN Lake Homes</title>
     <link rel="stylesheet" href="../../styles/style.css">
-<style>
+    <style>
         html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: #1a202c; }
-        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 3rem; }
-        .stat-card { background: #fff; border-radius: 12px; padding: 1.75rem; border: 1px solid #edf2f7; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .stat-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 0.75rem; }
-        .stat-value { font-size: 2.5rem; font-weight: 800; color: #1a202c; letter-spacing: -1.5px; line-height: 1; }
-        .stat-sub { font-size: 0.8rem; color: #718096; margin-top: 0.5rem; font-weight: 500; }
-        .stat-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 0.4rem; }
 
-        .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-        .dash-panel { background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow: hidden; }
-        .panel-header { padding: 1.5rem 2rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; }
-        .panel-title { font-size: 1rem; font-weight: 700; color: #1a202c; }
-        .panel-link { font-size: 0.85rem; color: #1d6df2; text-decoration: none; font-weight: 600; }
-        .panel-link:hover { text-decoration: underline; }
-        .panel-body { padding: 0; }
-        .panel-row { display: grid; padding: 1rem 2rem; border-bottom: 1px solid #f7f9fa; align-items: center; font-size: 0.875rem; transition: background 0.1s; }
-        .panel-row:hover { background: #f7f9fa; }
+        /* ── Hero ────────────────────────────────────────────────── */
+        .d-hero {
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 55%, #1d6df2 165%);
+            color: #fff; border-radius: 16px;
+            padding: 2rem 2.25rem;
+            margin-bottom: 1.5rem;
+            display: flex; flex-wrap: wrap; gap: 1.5rem;
+            align-items: flex-end; justify-content: space-between;
+            box-shadow: 0 20px 60px rgba(26, 32, 44, 0.18);
+        }
+        .d-hero h1 { font-size: 2.1rem; font-weight: 800; letter-spacing: -1px; margin: 0 0 0.35rem; line-height: 1.05; }
+        .d-hero .d-sub { color: rgba(255,255,255,0.72); font-size: 0.95rem; margin: 0; }
+        .d-hero .d-tag { display: inline-block; padding: 0.25rem 0.7rem; background: rgba(255,255,255,0.12); border-radius: 99px; font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.85rem; color: #a3bffa; }
+        .d-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+        .d-act {
+            padding: 0.7rem 1.15rem; border-radius: 10px;
+            background: rgba(255,255,255,0.10); color: #fff;
+            font-weight: 600; font-size: 0.85rem;
+            text-decoration: none;
+            border: 1px solid rgba(255,255,255,0.15);
+            transition: background 0.15s, transform 0.15s;
+        }
+        .d-act:hover { background: rgba(255,255,255,0.20); transform: translateY(-1px); }
+        .d-act.primary { background: #1d6df2; border-color: #1d6df2; }
+        .d-act.primary:hover { background: #155bc8; border-color: #155bc8; }
+
+        /* ── KPI strip ───────────────────────────────────────────── */
+        .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.85rem; margin-bottom: 1.5rem; }
+        @media (max-width: 1400px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 720px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+        .kpi {
+            background: #fff; border: 1px solid #edf2f7; border-radius: 12px;
+            padding: 1.1rem 1.2rem;
+            position: relative; overflow: hidden;
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+        }
+        .kpi:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,0.06); border-color: #cbd5e0; }
+        .kpi .k-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.6rem; }
+        .kpi .k-label { font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; }
+        .kpi .k-pip { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; flex-shrink: 0; }
+        .kpi .k-val { font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.6px; line-height: 1; }
+        .kpi .k-delta { font-size: 0.72rem; font-weight: 700; margin-top: 0.4rem; display: inline-flex; align-items: center; gap: 0.25rem; }
+        .kpi .k-delta.up   { color: #2f855a; }
+        .kpi .k-delta.down { color: #c53030; }
+        .kpi .k-delta.flat { color: #718096; }
+        .kpi .k-sub { font-size: 0.72rem; color: #718096; margin-top: 0.3rem; }
+        .kpi .k-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; }
+        .kpi.traffic   .k-bar { background: #1d6df2; }
+        .kpi.traffic   .k-pip { background: #e6effb; color: #1d6df2; }
+        .kpi.leads     .k-bar { background: #2f855a; }
+        .kpi.leads     .k-pip { background: #f0fff4; color: #2f855a; }
+        .kpi.inquiries .k-bar { background: #319795; }
+        .kpi.inquiries .k-pip { background: #e6fffa; color: #319795; }
+        .kpi.cash      .k-bar { background: #d69e2e; }
+        .kpi.cash      .k-pip { background: #fffbeb; color: #b7791f; }
+        .kpi.pending   .k-bar { background: #ed8936; }
+        .kpi.pending   .k-pip { background: #fffaf0; color: #dd6b20; }
+        .kpi.tasks     .k-bar { background: #ef4444; }
+        .kpi.tasks     .k-pip { background: #fff5f5; color: #c53030; }
+
+        /* ── Card framework ─────────────────────────────────────── */
+        .d-card {
+            background: #fff; border: 1px solid #edf2f7; border-radius: 14px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.025);
+            overflow: hidden;
+        }
+        .d-card-hd {
+            padding: 1.1rem 1.4rem;
+            border-bottom: 1px solid #edf2f7;
+            display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+        }
+        .d-card-title { font-size: 0.78rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #4a5568; margin: 0; }
+        .d-card-link  { font-size: 0.82rem; color: #1d6df2; text-decoration: none; font-weight: 600; }
+        .d-card-link:hover { text-decoration: underline; }
+        .d-card-body  { padding: 1.25rem 1.4rem; }
+        .d-card-body.flush { padding: 0; }
+
+        /* ── Grid rows ──────────────────────────────────────────── */
+        .row-21   { display: grid; grid-template-columns: 2fr 1fr;  gap: 1.25rem; margin-bottom: 1.5rem; }
+        .row-11   { display: grid; grid-template-columns: 1fr 1fr;  gap: 1.25rem; margin-bottom: 1.5rem; }
+        .row-12   { display: grid; grid-template-columns: 1fr 2fr;  gap: 1.25rem; margin-bottom: 1.5rem; }
+        @media (max-width: 1050px) {
+            .row-21, .row-11, .row-12 { grid-template-columns: 1fr; }
+        }
+
+        /* ── Traffic chart ──────────────────────────────────────── */
+        .traffic-wrap { padding: 1.25rem 1.4rem; }
+        .traffic-svg  { width: 100%; height: 240px; display: block; }
+        .traffic-svg .axis { fill: #a0aec0; font-size: 10px; }
+        .traffic-svg .grid { stroke: #edf2f7; stroke-width: 1; }
+        .traffic-svg .area { fill: url(#chart-grad); opacity: 0.55; }
+        .traffic-svg .line { stroke: #1d6df2; stroke-width: 2.5; fill: none; }
+        .traffic-svg .dot  { fill: #fff; stroke: #1d6df2; stroke-width: 2; }
+        .traffic-summary { display: flex; flex-wrap: wrap; gap: 1.5rem; padding: 0 1.4rem 1.4rem; }
+        .traffic-summary .ts-item { font-size: 0.82rem; color: #718096; }
+        .traffic-summary .ts-item .v { font-size: 1.35rem; font-weight: 800; color: #1a202c; display: block; letter-spacing: -0.4px; }
+
+        /* ── Lead breakdown donut ───────────────────────────────── */
+        .donut-wrap { display: flex; align-items: center; gap: 1.4rem; padding: 0.4rem 0.5rem 0.6rem; }
+        .donut-svg  { width: 160px; height: 160px; flex-shrink: 0; }
+        .donut-svg .ring { fill: none; stroke-width: 18; }
+        .donut-svg .ring.bg { stroke: #f1f5f9; }
+        .donut-center { text-anchor: middle; font-size: 18px; font-weight: 800; fill: #1a202c; }
+        .donut-center-sub { text-anchor: middle; font-size: 9px; fill: #718096; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        .donut-legend { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+        .leg-row { display: flex; align-items: center; gap: 0.55rem; font-size: 0.85rem; color: #1a202c; }
+        .leg-row .sw { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+        .leg-row .leg-label { flex: 1; text-transform: capitalize; font-weight: 600; }
+        .leg-row .leg-val   { color: #718096; font-variant-numeric: tabular-nums; font-weight: 700; }
+        .donut-empty { padding: 2.5rem 1rem; text-align: center; color: #a0aec0; font-size: 0.9rem; }
+
+        /* ── Lead funnel ────────────────────────────────────────── */
+        .funnel { display: flex; flex-direction: column; gap: 0.55rem; padding: 0.3rem 0 0.1rem; }
+        .funnel-row { display: grid; grid-template-columns: 110px 1fr 50px; align-items: center; gap: 0.75rem; }
+        .funnel-row .fn-label { font-size: 0.82rem; font-weight: 700; color: #4a5568; text-transform: capitalize; }
+        .funnel-row .fn-bar { background: #edf2f7; border-radius: 6px; height: 22px; overflow: hidden; position: relative; }
+        .funnel-row .fn-bar > span {
+            display: block; height: 100%;
+            background: linear-gradient(90deg, #1d6df2 0%, #4299e1 100%);
+            border-radius: 6px;
+            transition: width 0.6s ease;
+        }
+        .funnel-row.new       .fn-bar > span { background: linear-gradient(90deg, #319795 0%, #4fd1c5 100%); }
+        .funnel-row.assigned  .fn-bar > span { background: linear-gradient(90deg, #1d6df2 0%, #4299e1 100%); }
+        .funnel-row.contacted .fn-bar > span { background: linear-gradient(90deg, #6b46c1 0%, #9f7aea 100%); }
+        .funnel-row.closed    .fn-bar > span { background: linear-gradient(90deg, #2f855a 0%, #68d391 100%); }
+        .funnel-row .fn-num { font-size: 1rem; font-weight: 800; color: #1a202c; text-align: right; font-variant-numeric: tabular-nums; }
+
+        /* ── Compact panel rows ─────────────────────────────────── */
+        .panel-row { display: grid; padding: 0.85rem 1.4rem; border-bottom: 1px solid #f7f9fa; align-items: center; gap: 0.85rem; font-size: 0.875rem; transition: background 0.1s; }
+        .panel-row:hover { background: #fafbfc; }
         .panel-row:last-child { border-bottom: none; }
-        .panel-empty { padding: 3rem 2rem; text-align: center; color: #a0aec0; font-size: 0.9rem; }
+        .panel-row .pr-name { font-weight: 700; color: #1a202c; font-size: 0.9rem; }
+        .panel-row .pr-sub  { font-size: 0.76rem; color: #718096; margin-top: 2px; }
+        .panel-empty { padding: 2.25rem 1.4rem; text-align: center; color: #a0aec0; font-size: 0.88rem; }
 
-        .s-badge { padding: 0.3rem 0.55rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; display: inline-block; }
-        .badge-pending { background: #fffaf0; color: #dd6b20; border: 1px solid #feebc8; }
-        .badge-new { background: #e6fffa; color: #319795; border: 1px solid #b2f5ea; }
-        .badge-published { background: #f0fff4; color: #2f855a; border: 1px solid #c6f6d5; }
-        .badge-buyer { background: #f0fff4; color: #2f855a; }
-        .badge-seller { background: #faf5ff; color: #6b46c1; }
-        .badge-agent { background: #fff5f5; color: #c53030; }
-        .badge-general { background: #edf2f7; color: #4a5568; }
+        .s-badge { padding: 0.22rem 0.55rem; border-radius: 6px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; display: inline-block; letter-spacing: 0.3px; white-space: nowrap; }
+        .badge-pending   { background: #fffaf0; color: #dd6b20; border: 1px solid #feebc8; }
+        .badge-new       { background: #e6fffa; color: #319795; border: 1px solid #b2f5ea; }
+        .badge-buyer     { background: #f0fff4; color: #2f855a; }
+        .badge-seller    { background: #faf5ff; color: #6b46c1; }
+        .badge-agent     { background: #fff5f5; color: #c53030; }
+        .badge-general   { background: #edf2f7; color: #4a5568; }
+        .badge-overdue   { background: #fee2e2; color: #c53030; }
+        .badge-today     { background: #fef3c7; color: #b7791f; }
 
-        .quick-actions { display: flex; gap: 1rem; margin-bottom: 3rem; flex-wrap: wrap; }
-        .qa-btn { padding: 0.75rem 1.5rem; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; color: #1a202c; font-weight: 600; font-size: 0.875rem; cursor: pointer; text-decoration: none; transition: all 0.15s; font-family: inherit; }
-        .qa-btn:hover { background: #1a202c; color: #fff; border-color: #1a202c; }
-        .qa-btn.primary { background: #1d6df2; color: #fff; border-color: #1d6df2; }
-        .qa-btn.primary:hover { background: #155bc8; border-color: #155bc8; }
+        /* ── Activity feed ──────────────────────────────────────── */
+        .act-row { display: grid; grid-template-columns: 30px 1fr auto; gap: 0.75rem; padding: 0.7rem 1.4rem; border-bottom: 1px solid #f7f9fa; align-items: start; font-size: 0.82rem; }
+        .act-row:last-child { border-bottom: none; }
+        .act-row .ai { width: 28px; height: 28px; border-radius: 7px; background: #edf2f7; color: #4a5568; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; }
+        .act-row.auth    .ai { background: #e6effb; color: #1d6df2; }
+        .act-row.agent   .ai { background: #faf5ff; color: #6b46c1; }
+        .act-row.lead    .ai { background: #f0fff4; color: #2f855a; }
+        .act-row.inquiry .ai { background: #e6fffa; color: #319795; }
+        .act-row.user    .ai { background: #fff5f5; color: #c53030; }
+        .act-row.blog    .ai { background: #fffaf0; color: #dd6b20; }
+        .act-row.task    .ai { background: #fef3c7; color: #b7791f; }
+        .act-row .am .at  { color: #1a202c; font-weight: 600; }
+        .act-row .am .ad  { color: #718096; font-size: 0.74rem; margin-top: 0.15rem; }
+        .act-row .atime { color: #a0aec0; font-size: 0.72rem; white-space: nowrap; }
+
+        /* ── Content snapshot ───────────────────────────────────── */
+        .snap-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.85rem; }
+        @media (max-width: 900px) { .snap-grid { grid-template-columns: repeat(2, 1fr); } }
+        .snap {
+            background: #fff; border: 1px solid #edf2f7; border-radius: 12px;
+            padding: 1.1rem 1.25rem;
+            display: flex; align-items: center; gap: 1rem;
+            text-decoration: none; color: inherit;
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+        }
+        .snap:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(0,0,0,0.05); border-color: #cbd5e0; }
+        .snap .s-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; font-weight: 800; flex-shrink: 0; }
+        .snap.lakes  .s-icon { background: #ebf8ff; color: #2b6cb0; }
+        .snap.towns  .s-icon { background: #f0fff4; color: #2f855a; }
+        .snap.biz    .s-icon { background: #fffaf0; color: #c05621; }
+        .snap.blog   .s-icon { background: #faf5ff; color: #6b46c1; }
+        .snap .s-num { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; color: #1a202c; line-height: 1.05; }
+        .snap .s-lbl { font-size: 0.74rem; color: #718096; font-weight: 600; margin-top: 0.15rem; }
+
+        /* ── Week strip (marketing) ─────────────────────────────── */
+        .week-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; }
+        .ws-day {
+            background: #fafbfc; border: 1px solid #edf2f7; border-radius: 10px;
+            padding: 0.7rem 0.65rem; min-height: 96px;
+            display: flex; flex-direction: column; gap: 0.35rem;
+        }
+        .ws-day.today { background: #ebf8ff; border-color: #bee3f8; }
+        .ws-day .ws-dow { font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; }
+        .ws-day.today .ws-dow { color: #2b6cb0; }
+        .ws-day .ws-num { font-size: 1.15rem; font-weight: 800; color: #1a202c; line-height: 1; letter-spacing: -0.5px; }
+        .ws-day .ws-post { font-size: 0.7rem; color: #4a5568; background: #fff; border: 1px solid #e2e8f0; border-radius: 5px; padding: 0.2rem 0.35rem; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ws-day.today .ws-post { background: rgba(255,255,255,0.85); border-color: #bee3f8; }
+
+        /* ── Top pages / referrers list ─────────────────────────── */
+        .mini-list { padding: 0.25rem 0 0.4rem; }
+        .mini-row  { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0.75rem; padding: 0.55rem 1.4rem; font-size: 0.85rem; border-bottom: 1px solid #f7f9fa; }
+        .mini-row:last-child { border-bottom: none; }
+        .mini-row .ml { color: #1a202c; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .mini-row .mv { color: #1d6df2; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+        /* ── System health pills ────────────────────────────────── */
+        .sys-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.3rem 0; }
+        .sys-pill {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            background: #f7f9fa; border: 1px solid #edf2f7; border-radius: 99px;
+            padding: 0.4rem 0.85rem; font-size: 0.78rem; font-weight: 600; color: #4a5568;
+        }
+        .sys-pill .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .sys-pill .dot.ok   { background: #48bb78; }
+        .sys-pill .dot.bad  { background: #ef4444; }
+        .sys-pill .dot.warn { background: #ed8936; }
+        .sys-pill b { color: #1a202c; font-weight: 800; }
     </style>
     <script src="../../components/admin-guard.js"></script>
     <script src="../../components/admin-responsive.js" defer></script>
@@ -49,189 +230,711 @@
 </head>
 <body>
     <div class="admin-wrap">
-        <!-- Sidebar -->
         <admin-sidebar active="dashboard"></admin-sidebar>
 
-        <!-- Main Content -->
         <main class="admin-main">
-            <header style="margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: flex-end;">
+            <!-- ── Hero ─────────────────────────────────────────── -->
+            <section class="d-hero">
                 <div>
-                    <h1 id="welcome-msg" style="font-size: 2rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; margin-bottom: 0.25rem;">Dashboard</h1>
-                    <p style="color: #718096; font-size: 1rem;" id="date-line">Platform overview</p>
+                    <span class="d-tag">Platform Admin</span>
+                    <h1 id="welcome-msg">Dashboard</h1>
+                    <p class="d-sub" id="date-line">Loading…</p>
                 </div>
-                <div class="quick-actions" style="margin-bottom: 0;">
-                    <a href="agents.html" class="qa-btn">Manage Agents</a>
-                    <a href="leads.html" class="qa-btn primary">View All Leads</a>
+                <div class="d-actions">
+                    <a href="leads.html"      class="d-act">View Leads</a>
+                    <a href="agents.html?status=pending_review" class="d-act">Pending Agents</a>
+                    <a href="tasks.html"      class="d-act">Tasks</a>
+                    <a href="marketing.html"  class="d-act primary">Marketing</a>
                 </div>
-            </header>
+            </section>
 
-            <!-- Stats Row -->
-            <div class="stat-grid" id="stat-grid">
-                <div class="stat-card">
-                    <div class="stat-label">Total Agents</div>
-                    <div class="stat-value" id="stat-total">—</div>
-                    <div class="stat-sub">on platform</div>
+            <!-- ── KPI strip ───────────────────────────────────── -->
+            <div class="kpi-grid">
+                <a href="system.html" class="kpi traffic" style="text-decoration:none;color:inherit;">
+                    <div class="k-top"><span class="k-label">Visitors · 7d</span><span class="k-pip">↗</span></div>
+                    <div class="k-val" id="kpi-visitors">—</div>
+                    <div class="k-delta" id="kpi-visitors-delta">&nbsp;</div>
+                    <div class="k-bar"></div>
+                </a>
+                <a href="leads.html" class="kpi leads" style="text-decoration:none;color:inherit;">
+                    <div class="k-top"><span class="k-label">New Leads · 7d</span><span class="k-pip">+</span></div>
+                    <div class="k-val" id="kpi-leads">—</div>
+                    <div class="k-delta" id="kpi-leads-delta">&nbsp;</div>
+                    <div class="k-bar"></div>
+                </a>
+                <a href="inquiries.html" class="kpi inquiries" style="text-decoration:none;color:inherit;">
+                    <div class="k-top"><span class="k-label">Inquiries · 7d</span><span class="k-pip">?</span></div>
+                    <div class="k-val" id="kpi-inquiries">—</div>
+                    <div class="k-delta" id="kpi-inquiries-delta">&nbsp;</div>
+                    <div class="k-bar"></div>
+                </a>
+                <a href="cash-offers.html" class="kpi cash" style="text-decoration:none;color:inherit;">
+                    <div class="k-top"><span class="k-label">Cash Offers · 7d</span><span class="k-pip">$</span></div>
+                    <div class="k-val" id="kpi-cash">—</div>
+                    <div class="k-delta" id="kpi-cash-delta">&nbsp;</div>
+                    <div class="k-bar"></div>
+                </a>
+                <a href="agents.html?status=pending_review" class="kpi pending" style="text-decoration:none;color:inherit;">
+                    <div class="k-top"><span class="k-label">Pending Agents</span><span class="k-pip">!</span></div>
+                    <div class="k-val" id="kpi-pending">—</div>
+                    <div class="k-sub" id="kpi-pending-sub">awaiting review</div>
+                    <div class="k-bar"></div>
+                </a>
+                <a href="tasks.html" class="kpi tasks" style="text-decoration:none;color:inherit;">
+                    <div class="k-top"><span class="k-label">Tasks Today</span><span class="k-pip">✓</span></div>
+                    <div class="k-val" id="kpi-tasks">—</div>
+                    <div class="k-sub" id="kpi-tasks-sub">due today + overdue</div>
+                    <div class="k-bar"></div>
+                </a>
+            </div>
+
+            <!-- ── Traffic chart + Lead source donut ───────────── -->
+            <div class="row-21">
+                <div class="d-card">
+                    <div class="d-card-hd">
+                        <h3 class="d-card-title">Daily traffic · last 30 days</h3>
+                        <a href="system.html?tab=metrics" class="d-card-link">Open metrics →</a>
+                    </div>
+                    <div class="traffic-wrap">
+                        <svg class="traffic-svg" id="traffic-chart" viewBox="0 0 600 240" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%"   stop-color="#1d6df2" stop-opacity="0.45"/>
+                                    <stop offset="100%" stop-color="#1d6df2" stop-opacity="0"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <div class="traffic-summary" id="traffic-summary">
+                        <div class="ts-item"><span class="v">—</span>views · 7d</div>
+                        <div class="ts-item"><span class="v">—</span>views · 30d</div>
+                        <div class="ts-item"><span class="v">—</span>unique · 30d</div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">Published</div>
-                    <div class="stat-value" id="stat-published" style="color:#2f855a;">—</div>
-                    <div class="stat-sub"><span class="stat-dot" style="background:#48bb78;"></span>Live profiles</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Pending Review</div>
-                    <div class="stat-value" id="stat-pending" style="color:#dd6b20;">—</div>
-                    <div class="stat-sub"><span class="stat-dot" style="background:#ed8936;"></span>Needs approval</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">New Leads</div>
-                    <div class="stat-value" id="stat-leads" style="color:#1d6df2;">—</div>
-                    <div class="stat-sub"><span class="stat-dot" style="background:#1d6df2;"></span>Unclaimed inbox</div>
+
+                <div class="d-card">
+                    <div class="d-card-hd">
+                        <h3 class="d-card-title">Lead types · last 30 days</h3>
+                        <a href="leads.html" class="d-card-link">All leads →</a>
+                    </div>
+                    <div class="d-card-body" id="donut-body">
+                        <div class="donut-empty">Loading…</div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Two-Panel Row -->
-            <div class="dash-grid">
-                <!-- Pending Agents Panel -->
-                <div class="dash-panel">
-                    <div class="panel-header">
-                        <span class="panel-title">Agents Pending Review</span>
-                        <a href="agents.html?status=pending_review" class="panel-link">See all &rarr;</a>
+            <!-- ── Funnel + Activity feed ──────────────────────── -->
+            <div class="row-12">
+                <div class="d-card">
+                    <div class="d-card-hd">
+                        <h3 class="d-card-title">Lead funnel</h3>
+                        <a href="leads.html" class="d-card-link">Manage →</a>
                     </div>
-                    <div class="panel-body" id="pending-agents-body">
-                        <div class="panel-empty">Loading...</div>
+                    <div class="d-card-body">
+                        <div class="funnel" id="funnel"></div>
                     </div>
                 </div>
 
-                <!-- Recent Leads Panel -->
-                <div class="dash-panel">
-                    <div class="panel-header">
-                        <span class="panel-title">Recent Leads</span>
-                        <a href="leads.html" class="panel-link">See all &rarr;</a>
+                <div class="d-card">
+                    <div class="d-card-hd">
+                        <h3 class="d-card-title">Recent activity</h3>
+                        <a href="system.html?tab=database" class="d-card-link">Full log →</a>
                     </div>
-                    <div class="panel-body" id="recent-leads-body">
-                        <div class="panel-empty">Loading...</div>
+                    <div class="d-card-body flush" id="activity-body">
+                        <div class="panel-empty">Loading…</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Tasks Panel -->
-            <div class="dash-panel" style="margin-top: 2rem;">
-                <div class="panel-header">
-                    <span class="panel-title">Tasks requiring attention</span>
-                    <a href="tasks.html" class="panel-link">Open Tasks &rarr;</a>
+            <!-- ── Pending agents + Recent leads ───────────────── -->
+            <div class="row-11">
+                <div class="d-card">
+                    <div class="d-card-hd">
+                        <h3 class="d-card-title">Agents pending review</h3>
+                        <a href="agents.html?status=pending_review" class="d-card-link">See all →</a>
+                    </div>
+                    <div class="d-card-body flush" id="pending-agents-body">
+                        <div class="panel-empty">Loading…</div>
+                    </div>
                 </div>
-                <div class="panel-body" id="attention-tasks-body">
-                    <div class="panel-empty">Loading...</div>
+
+                <div class="d-card">
+                    <div class="d-card-hd">
+                        <h3 class="d-card-title">Recent leads</h3>
+                        <a href="leads.html" class="d-card-link">See all →</a>
+                    </div>
+                    <div class="d-card-body flush" id="recent-leads-body">
+                        <div class="panel-empty">Loading…</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Tasks + Marketing week strip ────────────────── -->
+            <div class="row-11">
+                <div class="d-card">
+                    <div class="d-card-hd">
+                        <h3 class="d-card-title">Tasks requiring attention</h3>
+                        <a href="tasks.html" class="d-card-link">Open tasks →</a>
+                    </div>
+                    <div class="d-card-body flush" id="attention-tasks-body">
+                        <div class="panel-empty">Loading…</div>
+                    </div>
+                </div>
+
+                <div class="d-card">
+                    <div class="d-card-hd">
+                        <h3 class="d-card-title">Marketing · this week</h3>
+                        <a href="marketing.html?tab=social" class="d-card-link">Calendar →</a>
+                    </div>
+                    <div class="d-card-body">
+                        <div class="week-strip" id="week-strip"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Content snapshot ────────────────────────────── -->
+            <div class="snap-grid" style="margin-bottom: 1.5rem;">
+                <a href="lakes-towns.html?tab=lakes" class="snap lakes">
+                    <div class="s-icon">L</div>
+                    <div>
+                        <div class="s-num" id="snap-lakes">—</div>
+                        <div class="s-lbl">Lakes published</div>
+                    </div>
+                </a>
+                <a href="lakes-towns.html?tab=towns" class="snap towns">
+                    <div class="s-icon">T</div>
+                    <div>
+                        <div class="s-num" id="snap-towns">—</div>
+                        <div class="s-lbl">Towns / tags</div>
+                    </div>
+                </a>
+                <a href="lakes-towns.html?tab=businesses" class="snap biz">
+                    <div class="s-icon">B</div>
+                    <div>
+                        <div class="s-num" id="snap-biz">—</div>
+                        <div class="s-lbl">Businesses</div>
+                    </div>
+                </a>
+                <a href="marketing.html?tab=blog" class="snap blog">
+                    <div class="s-icon">✎</div>
+                    <div>
+                        <div class="s-num" id="snap-blog">—</div>
+                        <div class="s-lbl">Blog posts</div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- ── Top pages + Top referrers ───────────────────── -->
+            <div class="row-11">
+                <div class="d-card">
+                    <div class="d-card-hd">
+                        <h3 class="d-card-title">Top pages · 30 days</h3>
+                        <a href="system.html?tab=metrics" class="d-card-link">Open metrics →</a>
+                    </div>
+                    <div class="d-card-body flush mini-list" id="top-pages-body">
+                        <div class="panel-empty">Loading…</div>
+                    </div>
+                </div>
+
+                <div class="d-card">
+                    <div class="d-card-hd">
+                        <h3 class="d-card-title">Top referrers · 30 days</h3>
+                        <a href="system.html?tab=metrics" class="d-card-link">Open metrics →</a>
+                    </div>
+                    <div class="d-card-body flush mini-list" id="top-refs-body">
+                        <div class="panel-empty">Loading…</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── System health pills ─────────────────────────── -->
+            <div class="d-card" style="margin-bottom: 1.5rem;">
+                <div class="d-card-hd">
+                    <h3 class="d-card-title">System health</h3>
+                    <a href="system.html?tab=database" class="d-card-link">Database →</a>
+                </div>
+                <div class="d-card-body">
+                    <div class="sys-pills" id="sys-pills">
+                        <div class="sys-pill"><span class="dot warn"></span>Loading…</div>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
     <script>
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const fmt = n => (typeof n === 'number' ? n.toLocaleString('en-US') : '—');
+        const fmtSec = s => {
+            if (!s) return '0s';
+            const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+            if (d) return `${d}d ${h}h`;
+            if (h) return `${h}h ${m}m`;
+            return `${m}m`;
+        };
+        const j = url => fetch(url, { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null);
+
+        // ── KPI delta helper ────────────────────────────────────
+        function setDelta(id, curr, prev, suffix = ' vs prior 7d') {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (prev == null || prev === 0) {
+                el.innerHTML = curr > 0 ? `<span>+${fmt(curr)} new${suffix}</span>` : '&nbsp;';
+                el.className = 'k-delta flat';
+                return;
+            }
+            const diff = curr - prev;
+            const pct  = Math.round((diff / prev) * 100);
+            const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '—';
+            el.innerHTML = `<span>${arrow} ${Math.abs(pct)}%${suffix}</span>`;
+            el.className = 'k-delta ' + (diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat');
+        }
+
+        // ── Traffic chart (inline SVG line + area) ─────────────
+        function drawTrafficChart(daily) {
+            const svg = document.getElementById('traffic-chart');
+            // Clear any previous path/dot/grid (keep <defs>)
+            [...svg.querySelectorAll('.area,.line,.dot,.grid,.axis')].forEach(n => n.remove());
+
+            const W = 600, H = 240, padL = 32, padR = 8, padT = 16, padB = 26;
+            const innerW = W - padL - padR, innerH = H - padT - padB;
+
+            if (!daily || !daily.length) {
+                const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                t.setAttribute('x', W / 2); t.setAttribute('y', H / 2);
+                t.setAttribute('text-anchor', 'middle');
+                t.setAttribute('class', 'axis');
+                t.textContent = 'No traffic recorded yet.';
+                svg.appendChild(t);
+                return;
+            }
+
+            const max = Math.max(...daily.map(d => d.views), 1);
+
+            // Grid lines (4 horizontal)
+            for (let i = 0; i <= 4; i++) {
+                const y = padT + (innerH * i / 4);
+                const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                ln.setAttribute('x1', padL); ln.setAttribute('y1', y);
+                ln.setAttribute('x2', W - padR); ln.setAttribute('y2', y);
+                ln.setAttribute('class', 'grid');
+                svg.appendChild(ln);
+                // Y-axis labels
+                const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                t.setAttribute('x', padL - 6); t.setAttribute('y', y + 4);
+                t.setAttribute('text-anchor', 'end');
+                t.setAttribute('class', 'axis');
+                t.textContent = Math.round(max * (1 - i / 4));
+                svg.appendChild(t);
+            }
+
+            const stepX = daily.length > 1 ? innerW / (daily.length - 1) : 0;
+            const pts = daily.map((d, i) => {
+                const x = padL + i * stepX;
+                const y = padT + innerH - (d.views / max) * innerH;
+                return [x, y];
+            });
+
+            // Line + area path
+            const linePath = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+            const areaPath = linePath
+                + ` L${pts[pts.length-1][0].toFixed(1)},${(padT + innerH).toFixed(1)}`
+                + ` L${pts[0][0].toFixed(1)},${(padT + innerH).toFixed(1)} Z`;
+
+            const area = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            area.setAttribute('class', 'area');
+            area.setAttribute('d', areaPath);
+            svg.appendChild(area);
+
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            line.setAttribute('class', 'line');
+            line.setAttribute('d', linePath);
+            svg.appendChild(line);
+
+            // Dots on every ~5th point so the chart breathes
+            const step = Math.max(1, Math.floor(daily.length / 8));
+            pts.forEach((p, i) => {
+                if (i % step !== 0 && i !== pts.length - 1) return;
+                const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                c.setAttribute('cx', p[0]); c.setAttribute('cy', p[1]);
+                c.setAttribute('r', 3.2);
+                c.setAttribute('class', 'dot');
+                svg.appendChild(c);
+            });
+
+            // X-axis labels — first, middle, last
+            const marks = [0, Math.floor(daily.length / 2), daily.length - 1];
+            marks.forEach(i => {
+                if (i < 0 || i >= daily.length) return;
+                const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                t.setAttribute('x', padL + i * stepX);
+                t.setAttribute('y', H - 8);
+                t.setAttribute('text-anchor', 'middle');
+                t.setAttribute('class', 'axis');
+                const d = new Date(daily[i].day);
+                t.textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                svg.appendChild(t);
+            });
+        }
+
+        // ── Lead-type donut ────────────────────────────────────
+        function drawDonut(buckets) {
+            const body = document.getElementById('donut-body');
+            const entries = Object.entries(buckets).filter(([, v]) => v > 0);
+            const total   = entries.reduce((s, [, v]) => s + v, 0);
+            if (!total) {
+                body.innerHTML = '<div class="donut-empty">No leads in the last 30 days.</div>';
+                return;
+            }
+            const palette = { buyer: '#2f855a', seller: '#6b46c1', agent_inquiry: '#c53030', general: '#4a5568', other: '#1d6df2' };
+            const C = 80, R = 64; // center / radius
+            const circ = 2 * Math.PI * R;
+
+            let offset = 0;
+            const rings = entries.map(([k, v]) => {
+                const len = (v / total) * circ;
+                const color = palette[k] || '#1d6df2';
+                const out = `<circle class="ring" cx="${C}" cy="${C}" r="${R}" stroke="${color}"
+                    stroke-dasharray="${len.toFixed(2)} ${circ.toFixed(2)}"
+                    stroke-dashoffset="${(-offset).toFixed(2)}"
+                    transform="rotate(-90 ${C} ${C})"/>`;
+                offset += len;
+                return out;
+            }).join('');
+
+            const legend = entries
+                .sort((a, b) => b[1] - a[1])
+                .map(([k, v]) => `
+                    <div class="leg-row">
+                        <span class="sw" style="background:${palette[k] || '#1d6df2'};"></span>
+                        <span class="leg-label">${esc((k || 'other').replace('_', ' '))}</span>
+                        <span class="leg-val">${fmt(v)}</span>
+                    </div>`).join('');
+
+            body.innerHTML = `
+                <div class="donut-wrap">
+                    <svg class="donut-svg" viewBox="0 0 160 160">
+                        <circle class="ring bg" cx="${C}" cy="${C}" r="${R}"/>
+                        ${rings}
+                        <text class="donut-center" x="${C}" y="${C - 2}">${fmt(total)}</text>
+                        <text class="donut-center-sub" x="${C}" y="${C + 14}">Total · 30d</text>
+                    </svg>
+                    <div class="donut-legend">${legend}</div>
+                </div>`;
+        }
+
+        // ── Funnel ─────────────────────────────────────────────
+        function drawFunnel(leads) {
+            const stages = {
+                new:       leads.filter(l => l.status === 'new' || l.status === 'unassigned').length,
+                assigned:  leads.filter(l => l.status === 'assigned' || l.status === 'in_progress').length,
+                contacted: leads.filter(l => l.status === 'contacted' || l.status === 'qualified').length,
+                closed:    leads.filter(l => l.status === 'closed' || l.status === 'won' || l.status === 'lost').length,
+            };
+            const max = Math.max(...Object.values(stages), 1);
+            const labels = { new: 'New', assigned: 'Assigned', contacted: 'Contacted', closed: 'Closed' };
+            document.getElementById('funnel').innerHTML = Object.entries(stages).map(([k, v]) => {
+                const pct = Math.max((v / max) * 100, v ? 4 : 0);
+                return `
+                    <div class="funnel-row ${k}">
+                        <span class="fn-label">${labels[k]}</span>
+                        <div class="fn-bar"><span style="width:${pct.toFixed(1)}%"></span></div>
+                        <span class="fn-num">${fmt(v)}</span>
+                    </div>`;
+            }).join('');
+        }
+
+        // ── Activity feed ──────────────────────────────────────
+        function renderActivity(rows) {
+            const body = document.getElementById('activity-body');
+            if (!rows || !rows.length) {
+                body.innerHTML = '<div class="panel-empty">No recent activity.</div>';
+                return;
+            }
+            const initials = scope => {
+                const map = { auth: 'AU', agent: 'AG', lead: 'LE', inquiry: 'IN', user: 'US', blog: 'BL', task: 'TA', marketing: 'MK' };
+                return map[scope] || (scope ? scope.slice(0, 2).toUpperCase() : '··');
+            };
+            body.innerHTML = rows.slice(0, 8).map(r => {
+                const when = r.created_at ? new Date(r.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+                const actor  = r.actor_label  || r.actor_type  || '';
+                const target = r.target_label || r.target_type || '';
+                const desc   = [actor, target].filter(Boolean).join(' → ');
+                return `
+                    <div class="act-row ${esc(r.event_scope || '')}">
+                        <div class="ai">${esc(initials(r.event_scope))}</div>
+                        <div class="am">
+                            <div class="at">${esc(r.event_type || 'event')}</div>
+                            ${desc ? `<div class="ad">${esc(desc)}</div>` : ''}
+                        </div>
+                        <div class="atime">${esc(when)}</div>
+                    </div>`;
+            }).join('');
+        }
+
+        // ── Week strip (next 7 days, marketing posts) ─────────
+        function renderWeekStrip(weekPosts) {
+            const ws = document.getElementById('week-strip');
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const by = {};
+            (weekPosts || []).forEach(p => {
+                if (!p.due_date) return;
+                const k = p.due_date.slice(0, 10);
+                (by[k] = by[k] || []).push(p);
+            });
+            const out = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(today); d.setDate(today.getDate() + i);
+                const key = d.toISOString().slice(0, 10);
+                const dow = d.toLocaleDateString('en-US', { weekday: 'short' });
+                const isToday = i === 0;
+                const posts = (by[key] || []).slice(0, 2).map(p => `<div class="ws-post" title="${esc(p.title)}">${esc(p.title)}</div>`).join('');
+                out.push(`
+                    <div class="ws-day${isToday ? ' today' : ''}">
+                        <div class="ws-dow">${dow}</div>
+                        <div class="ws-num">${d.getDate()}</div>
+                        ${posts}
+                    </div>`);
+            }
+            ws.innerHTML = out.join('');
+        }
+
+        // ── Top pages / referrers ──────────────────────────────
+        function renderMiniList(id, rows, labelKey, valKey, emptyMsg) {
+            const body = document.getElementById(id);
+            if (!rows || !rows.length) {
+                body.innerHTML = `<div class="panel-empty">${emptyMsg}</div>`;
+                return;
+            }
+            body.innerHTML = rows.slice(0, 8).map(r => `
+                <div class="mini-row">
+                    <span class="ml" title="${esc(r[labelKey])}">${esc(r[labelKey])}</span>
+                    <span class="mv">${fmt(r[valKey])}</span>
+                </div>`).join('');
+        }
+
+        // ── System pills ───────────────────────────────────────
+        function renderSysPills(sum) {
+            const pills = [];
+            pills.push(`<div class="sys-pill"><span class="dot ${sum.db_connected ? 'ok' : 'bad'}"></span>DB <b>${sum.db_connected ? 'connected' : 'down'}</b></div>`);
+            pills.push(`<div class="sys-pill"><span class="dot ok"></span>Uptime <b>${fmtSec(sum.uptime_seconds)}</b></div>`);
+            pills.push(`<div class="sys-pill"><span class="dot ${sum.last_24h?.errors ? 'bad' : 'ok'}"></span>Errors 24h <b>${fmt(sum.last_24h?.errors || 0)}</b></div>`);
+            pills.push(`<div class="sys-pill"><span class="dot ${sum.last_24h?.warnings ? 'warn' : 'ok'}"></span>Warnings 24h <b>${fmt(sum.last_24h?.warnings || 0)}</b></div>`);
+            pills.push(`<div class="sys-pill"><span class="dot ok"></span>Activity 24h <b>${fmt(sum.last_24h?.total || 0)}</b></div>`);
+            pills.push(`<div class="sys-pill"><span class="dot ok"></span>Memory <b>${fmt(sum.memory_rss_mb)} MB</b></div>`);
+            pills.push(`<div class="sys-pill"><span class="dot ok"></span>${esc(sum.environment || 'env')}</div>`);
+            document.getElementById('sys-pills').innerHTML = pills.join('');
+        }
+
+        // ── Boot ──────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', async () => {
-            // Show name if logged in, otherwise just show default
+            // Welcome message
             try {
-                const sessionRes = await fetch('/api/auth/session');
-                if (sessionRes.ok) {
-                    const session = await sessionRes.json();
+                const session = await j('/api/auth/session');
+                if (session?.display_name) {
                     document.getElementById('welcome-msg').textContent = `Welcome back, ${session.display_name.split(' ')[0]}`;
                 }
-            } catch (e) { /* not logged in, continue */ }
+            } catch (_) {}
+            document.getElementById('date-line').textContent =
+                new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-            document.getElementById('date-line').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-            // Fetch agents + leads + tasks in parallel
-            const [agents, leads, tasks] = await Promise.all([
-                fetch('/api/admin').then(r => r.ok ? r.json() : []).catch(() => []),
-                fetch('/api/leads/admin/inbox').then(r => r.ok ? r.json() : []).catch(() => []),
-                fetch('/api/tasks').then(r => r.ok ? r.json() : []).catch(() => [])
+            // Fire every endpoint in parallel — any failure degrades gracefully.
+            const [
+                agents, leads, tasks, inquiries, cashOffers,
+                analytics, activitySummary, activityFeed,
+                marketing, lakes, tags, businesses,
+            ] = await Promise.all([
+                j('/api/admin'),
+                j('/api/leads/admin/inbox'),
+                j('/api/tasks'),
+                j('/api/inquiries'),
+                j('/api/cash-offers'),
+                j('/api/analytics/summary'),
+                j('/api/activity/summary'),
+                j('/api/activity?limit=15'),
+                j('/api/admin/marketing/overview'),
+                j('/api/lakes'),
+                j('/api/tags'),
+                j('/api/businesses?status=all'),
             ]);
 
-            // Stats
-            const published   = agents.filter(a => a.is_published).length;
-            const pending     = agents.filter(a => a.profile_status === 'pending_review').length;
-            const newLeads    = leads.filter(l => l.status === 'new' || l.status === 'unassigned').length;
+            const agentsArr   = Array.isArray(agents)     ? agents     : (agents?.rows     || []);
+            const leadsArr    = Array.isArray(leads)      ? leads      : (leads?.rows      || []);
+            const tasksArr    = Array.isArray(tasks)      ? tasks      : (tasks?.rows      || []);
+            const inqArr      = Array.isArray(inquiries)  ? inquiries  : (inquiries?.rows  || []);
+            const cashArr     = Array.isArray(cashOffers) ? cashOffers : (cashOffers?.rows || []);
+            const lakesArr    = Array.isArray(lakes)      ? lakes      : (lakes?.rows      || []);
+            const tagsArr     = Array.isArray(tags)       ? tags       : (tags?.rows       || []);
+            const bizArr      = Array.isArray(businesses) ? businesses : (businesses?.rows || []);
+            const actFeedArr  = Array.isArray(activityFeed) ? activityFeed : (activityFeed?.rows || []);
 
-            document.getElementById('stat-total').textContent     = agents.length;
-            document.getElementById('stat-published').textContent  = published;
-            document.getElementById('stat-pending').textContent    = pending;
-            document.getElementById('stat-leads').textContent      = newLeads;
+            // ── KPIs ──────────────────────────────────────────
+            const now = Date.now();
+            const ms7  = 7  * 86400000;
+            const ms14 = 14 * 86400000;
+            const inLast7  = (ts, key = 'created_at') => ts[key] && (now - new Date(ts[key]).getTime() <= ms7);
+            const inPrior7 = (ts, key = 'created_at') => {
+                if (!ts[key]) return false;
+                const d = new Date(ts[key]).getTime();
+                return (now - d > ms7) && (now - d <= ms14);
+            };
 
-            // Pending agents table
-            const pendingAgents = agents.filter(a => a.profile_status === 'pending_review').slice(0, 8);
+            // Visitors (analytics)
+            document.getElementById('kpi-visitors').textContent = fmt(analytics?.views_7d?.visitors || 0);
+            // No prior-7d in analytics endpoint; show "vs 30d/4" estimate
+            if (analytics?.views_30d?.visitors) {
+                const avg7 = Math.round(analytics.views_30d.visitors / 30 * 7);
+                setDelta('kpi-visitors-delta', analytics.views_7d.visitors, avg7, ' vs 7d avg (30d)');
+            }
+
+            // Leads
+            const leads7  = leadsArr.filter(l => inLast7(l, 'created_at')).length;
+            const leadsP7 = leadsArr.filter(l => inPrior7(l, 'created_at')).length;
+            document.getElementById('kpi-leads').textContent = fmt(leads7);
+            setDelta('kpi-leads-delta', leads7, leadsP7);
+
+            // Inquiries
+            const inq7  = inqArr.filter(i => inLast7(i, 'created_at')).length;
+            const inqP7 = inqArr.filter(i => inPrior7(i, 'created_at')).length;
+            document.getElementById('kpi-inquiries').textContent = fmt(inq7);
+            setDelta('kpi-inquiries-delta', inq7, inqP7);
+
+            // Cash offers
+            const cash7  = cashArr.filter(c => inLast7(c, 'created_at') || inLast7(c, 'submitted_at')).length;
+            const cashP7 = cashArr.filter(c => inPrior7(c, 'created_at') || inPrior7(c, 'submitted_at')).length;
+            document.getElementById('kpi-cash').textContent = fmt(cash7);
+            setDelta('kpi-cash-delta', cash7, cashP7);
+
+            // Pending agents
+            const pending = agentsArr.filter(a => a.profile_status === 'pending_review').length;
+            document.getElementById('kpi-pending').textContent = fmt(pending);
+            document.getElementById('kpi-pending-sub').textContent =
+                pending === 0 ? 'all clear' : 'awaiting review';
+
+            // Tasks due today / overdue
+            const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+            const tomorrow0 = new Date(today0); tomorrow0.setDate(today0.getDate() + 1);
+            const tasksToday = tasksArr.filter(t => !t.is_completed && t.due_date && new Date(t.due_date) < tomorrow0);
+            document.getElementById('kpi-tasks').textContent = fmt(tasksToday.length);
+            const overdue = tasksToday.filter(t => new Date(t.due_date) < today0).length;
+            document.getElementById('kpi-tasks-sub').textContent =
+                overdue ? `${overdue} overdue` : 'on track';
+
+            // ── Traffic chart ─────────────────────────────────
+            drawTrafficChart(analytics?.daily || []);
+            const ts = document.getElementById('traffic-summary');
+            ts.innerHTML = `
+                <div class="ts-item"><span class="v">${fmt(analytics?.views_7d?.views  || 0)}</span>views · 7d</div>
+                <div class="ts-item"><span class="v">${fmt(analytics?.views_30d?.views || 0)}</span>views · 30d</div>
+                <div class="ts-item"><span class="v">${fmt(analytics?.views_30d?.visitors || 0)}</span>unique · 30d</div>
+                <div class="ts-item"><span class="v">${fmt((analytics?.new_agents?.c30 || 0))}</span>new agents · 30d</div>`;
+
+            // ── Lead-type donut (last 30d) ────────────────────
+            const ms30 = 30 * 86400000;
+            const buckets = {};
+            leadsArr.forEach(l => {
+                if (!l.created_at) return;
+                if (now - new Date(l.created_at).getTime() > ms30) return;
+                const k = l.type || 'general';
+                buckets[k] = (buckets[k] || 0) + 1;
+            });
+            drawDonut(buckets);
+
+            // ── Funnel ────────────────────────────────────────
+            drawFunnel(leadsArr);
+
+            // ── Activity feed ─────────────────────────────────
+            renderActivity(actFeedArr);
+
+            // ── Pending agents panel ──────────────────────────
+            const pendingAgents = agentsArr.filter(a => a.profile_status === 'pending_review').slice(0, 6);
             const paBody = document.getElementById('pending-agents-body');
-            if (pendingAgents.length === 0) {
+            if (!pendingAgents.length) {
                 paBody.innerHTML = '<div class="panel-empty">No agents awaiting review.</div>';
             } else {
                 paBody.innerHTML = pendingAgents.map(a => `
-                    <div class="panel-row" style="grid-template-columns: 1fr auto; cursor: pointer;" onclick="window.location.href='agent-review.html?id=${a.id}'">
+                    <div class="panel-row" style="grid-template-columns: 1fr auto; cursor: pointer;"
+                         onclick="window.location.href='agent-review.html?id=${esc(a.id)}'">
                         <div>
-                            <div style="font-weight: 700; color: #1a202c; font-size: 0.9rem;">${a.display_name || a.full_name || 'Unnamed'}</div>
-                            <div style="font-size: 0.78rem; color: #718096; margin-top: 2px;">${a.email} &bull; ${a.brokerage_name || 'No Brokerage'}</div>
+                            <div class="pr-name">${esc(a.display_name || a.full_name || 'Unnamed')}</div>
+                            <div class="pr-sub">${esc(a.email || '')} · ${esc(a.brokerage_name || 'No brokerage')}</div>
                         </div>
                         <span class="s-badge badge-pending">Review</span>
-                    </div>
-                `).join('');
+                    </div>`).join('');
             }
 
-            // Attention-tasks panel (overdue + due today)
+            // ── Recent leads panel ────────────────────────────
+            const recentLeads = [...leadsArr]
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, 6);
+            const rlBody = document.getElementById('recent-leads-body');
+            if (!recentLeads.length) {
+                rlBody.innerHTML = '<div class="panel-empty">No leads yet.</div>';
+            } else {
+                const typeBadge = t => {
+                    const map = { buyer: 'badge-buyer', seller: 'badge-seller', agent_inquiry: 'badge-agent' };
+                    return `<span class="s-badge ${map[t] || 'badge-general'}">${esc((t || 'general').replace('_', ' '))}</span>`;
+                };
+                rlBody.innerHTML = recentLeads.map(l => `
+                    <div class="panel-row" style="grid-template-columns: 1fr auto; cursor: pointer;"
+                         onclick="window.location.href='lead-review.html?id=${esc(l.id)}'">
+                        <div>
+                            <div class="pr-name">${esc(l.name || 'Anonymous')}</div>
+                            <div class="pr-sub">${esc(new Date(l.created_at).toLocaleDateString())} · ${esc(l.email || l.phone || '')}</div>
+                        </div>
+                        ${typeBadge(l.type)}
+                    </div>`).join('');
+            }
+
+            // ── Tasks panel ───────────────────────────────────
             const isSameDay = (d1, d2) => d1.getFullYear()===d2.getFullYear() && d1.getMonth()===d2.getMonth() && d1.getDate()===d2.getDate();
-            const now = new Date();
-            const attentionTasks = tasks
+            const nowD = new Date();
+            const attentionTasks = tasksArr
                 .filter(t => !t.is_completed && t.due_date)
                 .filter(t => {
                     const d = new Date(t.due_date);
-                    return d.getTime() < now.getTime() || isSameDay(d, now);
+                    return d.getTime() < nowD.getTime() || isSameDay(d, nowD);
                 })
-                .sort((a,b) => new Date(a.due_date) - new Date(b.due_date))
-                .slice(0, 8);
+                .sort((a, b) => new Date(a.due_date) - new Date(b.due_date))
+                .slice(0, 6);
             const atBody = document.getElementById('attention-tasks-body');
-            if (attentionTasks.length === 0) {
+            if (!attentionTasks.length) {
                 atBody.innerHTML = '<div class="panel-empty">No overdue or due-today tasks. You\'re clear.</div>';
             } else {
                 atBody.innerHTML = attentionTasks.map(t => {
                     const due = new Date(t.due_date);
-                    const isOverdue = due.getTime() < now.getTime() && !isSameDay(due, now);
+                    const isOverdue = due.getTime() < nowD.getTime() && !isSameDay(due, nowD);
                     const badge = isOverdue
-                        ? '<span class="s-badge" style="background:#fee2e2;color:#c53030;">Overdue</span>'
-                        : '<span class="s-badge" style="background:#fef3c7;color:#b7791f;">Today</span>';
+                        ? '<span class="s-badge badge-overdue">Overdue</span>'
+                        : '<span class="s-badge badge-today">Today</span>';
                     const when = due.toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
                     return `
-                        <div class="panel-row" style="grid-template-columns: 1fr auto auto; gap: 1rem; cursor: pointer;" onclick="window.location.href='tasks.html'">
+                        <div class="panel-row" style="grid-template-columns: 1fr auto; cursor: pointer;"
+                             onclick="window.location.href='tasks.html'">
                             <div>
-                                <div style="font-weight: 700; color: #1a202c; font-size: 0.9rem;">${(t.note||'').replace(/</g,'&lt;')}</div>
-                                <div style="font-size: 0.78rem; color: #718096; margin-top: 2px;">Due ${when}</div>
+                                <div class="pr-name">${esc(t.note || '')}</div>
+                                <div class="pr-sub">Due ${esc(when)}</div>
                             </div>
                             ${badge}
                         </div>`;
                 }).join('');
             }
 
-            // Recent leads table
-            const recentLeads = [...leads].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 8);
-            const rlBody = document.getElementById('recent-leads-body');
-            if (recentLeads.length === 0) {
-                rlBody.innerHTML = '<div class="panel-empty">No leads yet.</div>';
-            } else {
-                const typeBadge = t => {
-                    const map = { buyer: 'badge-buyer', seller: 'badge-seller', agent_inquiry: 'badge-agent' };
-                    return `<span class="s-badge ${map[t] || 'badge-general'}">${(t || 'general').replace('_', ' ')}</span>`;
-                };
-                const statusBadge = s => {
-                    if (s === 'new' || s === 'unassigned') return `<span class="s-badge badge-new">${s}</span>`;
-                    return `<span class="s-badge" style="background:#edf2f7;color:#4a5568;">${s}</span>`;
-                };
-                rlBody.innerHTML = recentLeads.map(l => `
-                    <div class="panel-row" style="grid-template-columns: 1fr auto auto; gap: 1rem; cursor: pointer;" onclick="window.location.href='lead-review.html?id=${l.id}'">
-                        <div>
-                            <div style="font-weight: 700; color: #1a202c; font-size: 0.9rem;">${l.name}</div>
-                            <div style="font-size: 0.78rem; color: #718096; margin-top: 2px;">${new Date(l.created_at).toLocaleDateString()}</div>
-                        </div>
-                        ${typeBadge(l.type)}
-                        ${statusBadge(l.status)}
-                    </div>
-                `).join('');
-            }
+            // ── Week strip (next 7 days of marketing posts) ───
+            renderWeekStrip(marketing?.week);
+
+            // ── Content snapshot ──────────────────────────────
+            document.getElementById('snap-lakes').textContent = fmt(lakesArr.length);
+            document.getElementById('snap-towns').textContent = fmt(tagsArr.length);
+            document.getElementById('snap-biz').textContent   = fmt(bizArr.length);
+            document.getElementById('snap-blog').textContent  = fmt(marketing?.blog?.total || 0);
+
+            // ── Top pages / referrers ─────────────────────────
+            renderMiniList('top-pages-body', analytics?.top_pages,     'path', 'views', 'No traffic recorded yet.');
+            renderMiniList('top-refs-body',  analytics?.top_referrers, 'host', 'views', 'No external referrers yet.');
+
+            // ── System health ─────────────────────────────────
+            if (activitySummary) renderSysPills(activitySummary);
         });
     </script>
 </body>
