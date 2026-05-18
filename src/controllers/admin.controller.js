@@ -804,8 +804,11 @@ const getAgentCoverage = async (req, res) => {
 
 /**
  * GET /api/admin/leads/unassigned-count
- * Returns { count } of leads that still need assignment (no agent_id and no
- * assigned_user_id), excluding soft-deleted rows. Powers the admin nav red dot.
+ * Returns { count } of leads that still need attention — no agent_id and no
+ * assigned_user_id AND not closed/archived. Powers the admin nav red dot,
+ * which should only fire for items that actually need admin action. A
+ * lead that's been closed (or archived) but never assigned doesn't count
+ * — it was deflected, ignored, or auto-deduplicated and is done.
  */
 const getUnassignedLeadCount = async (req, res) => {
     try {
@@ -814,7 +817,8 @@ const getUnassignedLeadCount = async (req, res) => {
                FROM leads
               WHERE agent_id IS NULL
                 AND assigned_user_id IS NULL
-                AND deleted_at IS NULL`
+                AND deleted_at IS NULL
+                AND lead_status NOT IN ('closed', 'archived')`
         );
         res.json({ count: rows[0]?.count || 0 });
     } catch (err) {
