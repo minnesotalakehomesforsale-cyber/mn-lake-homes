@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resource | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: #1a202c; }
+
+        .back-link { color: #718096; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem; font-size: 0.92rem; }
+        .back-link:hover { color: #1a202c; }
+
+        .s-badge { padding: 0.4rem 1rem; border-radius: 99px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; border: 1px solid transparent; display: inline-block; }
+        .s-active   { background: #f0fff4; color: #2f855a; border-color: #c6f6d5; }
+        .s-featured { background: #fffaf0; color: #b45309; border-color: #feebc8; }
+        .s-archived { background: #fff5f5; color: #c53030; border-color: #fed7d7; }
+
+        /* Profile header */
+        .profile-header { position: relative; display: flex; gap: 1.75rem; background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 2px 6px rgba(0,0,0,0.03); padding: 1.75rem 2rem; margin-bottom: 1.5rem; }
+        .ph-actions { position: absolute; top: 1.25rem; right: 1.5rem; display: flex; gap: 0.5rem; }
+        .ph-action-btn { width: 38px; height: 38px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; color: #4a5568; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; padding: 0; }
+        .ph-action-btn:hover { border-color: #1d6df2; color: #1d6df2; background: #f7faff; }
+        .ph-action-btn.danger:hover { border-color: #fc8181; color: #c53030; background: #fff5f5; }
+        .ph-photo {
+            position: relative; width: 116px; height: 116px; border-radius: 12px;
+            background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+            background-size: cover; background-position: center;
+            border: 1px solid #e2e8f0;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden; flex-shrink: 0;
+            font-size: 2.4rem; font-weight: 800; color: rgba(26,32,44,0.4);
+            cursor: pointer;
+        }
+        .ph-photo .overlay { position: absolute; inset: 0; background: rgba(15,23,42,0.55); color: #fff; display: none; align-items: center; justify-content: center; font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
+        .ph-photo:hover .overlay { display: flex; }
+        .ph-photo.uploading .overlay { display: flex; background: rgba(15,23,42,0.7); }
+        .ph-input { display: none; }
+        .ph-main { flex: 1; min-width: 0; }
+        .ph-name-row { display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap; }
+        .ph-name-row h1 { font-size: 1.75rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; margin: 0; }
+        .ph-sub { color: #718096; font-size: 0.9rem; margin-top: 0.2rem; }
+        .ph-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem 1.5rem; margin-top: 1.35rem; }
+        @media (max-width: 1100px) { .ph-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 900px)  { .profile-header { flex-direction: column; } }
+        .ph-field { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+        .ph-label { font-size: 0.68rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; }
+        .ph-value { font-size: 0.9rem; font-weight: 600; color: #1a202c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* Tabs */
+        .page-tabs { display: flex; gap: 0.25rem; margin-bottom: 2rem; border-bottom: 2px solid #edf2f7; padding-bottom: 0; flex-wrap: wrap; }
+        .page-tab { padding: 0.75rem 1.5rem; font-size: 0.9rem; font-weight: 600; color: #718096; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; font-family: inherit; transition: all 0.15s; }
+        .page-tab:hover { color: #1a202c; }
+        .page-tab.active { color: #1d6df2; border-bottom-color: #1d6df2; }
+        .page-tab .tab-count { background: #edf2f7; color: #4a5568; border-radius: 20px; padding: 0.1rem 0.55rem; font-size: 0.7rem; font-weight: 700; margin-left: 0.4rem; }
+        .page-tab.active .tab-count { background: #1d6df2; color: #fff; }
+
+        /* Panels */
+        .panel { background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 2px 6px rgba(0,0,0,0.03); margin-bottom: 2rem; overflow: hidden; }
+        .panel-header { padding: 1.25rem 2rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+        .panel-title { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #4a5568; }
+        .panel-body { padding: 2rem; }
+        .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+        @media (max-width: 800px) { .field-grid { grid-template-columns: 1fr; } }
+        .field-group { display: flex; flex-direction: column; gap: 0.35rem; }
+        .field-group.full { grid-column: 1 / -1; }
+        .field-label { font-size: 0.72rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; }
+        .field-input { padding: 0.65rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; font-family: inherit; color: #1a202c; background: #fff; width: 100%; box-sizing: border-box; }
+        .field-input:focus { outline: none; border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.08); }
+        textarea.field-input { resize: vertical; min-height: 100px; line-height: 1.5; }
+        .field-hint { font-size: 0.72rem; color: #a0aec0; margin-top: 0.2rem; }
+
+        .toggle-row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+        .toggle {
+            display: inline-flex; align-items: center; gap: 0.55rem;
+            padding: 0.55rem 0.85rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+            font-size: 0.88rem; font-weight: 600; color: #4a5568; cursor: pointer; user-select: none;
+        }
+        .toggle input { accent-color: #1d6df2; }
+
+        .save-row { display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; margin-top: 1.5rem; }
+        .btn-save { padding: 0.65rem 1.5rem; background: #1d6df2; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 0.9rem; }
+        .btn-save:hover { opacity: 0.9; }
+        .btn-save:disabled { opacity: 0.6; cursor: default; }
+        .save-msg { font-size: 0.85rem; font-weight: 600; display: none; align-items: center; gap: 0.5rem; }
+        .save-msg.ok  { color: #38a169; display: inline-flex; }
+        .save-msg.err { color: #c53030; display: inline-flex; }
+
+        /* Insights */
+        .ins-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+        @media (max-width: 900px) { .ins-grid { grid-template-columns: repeat(2, 1fr); } }
+        .ins-card { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; padding: 1.2rem 1.35rem; position: relative; overflow: hidden; }
+        .ins-card .lbl { font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 0.5rem; }
+        .ins-card .val { font-size: 2rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; line-height: 1; }
+        .ins-card .sub { font-size: 0.75rem; color: #718096; margin-top: 0.4rem; }
+        .ins-card.total { border-top: 3px solid #1d6df2; }
+        .ins-card.d30   { border-top: 3px solid #319795; }
+        .ins-card.d7    { border-top: 3px solid #2f855a; }
+        .ins-card.d1    { border-top: 3px solid #d69e2e; }
+        .ins-chart { width: 100%; height: 220px; display: block; }
+
+        /* Downloads list */
+        .ledger { width: 100%; background: #fff; border: 1px solid #edf2f7; border-radius: 12px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+        .ledger th { text-align: left; padding: 0.9rem 1rem; font-size: 0.72rem; font-weight: 800; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; background: #f7f9fa; border-bottom: 1px solid #edf2f7; white-space: nowrap; }
+        .ledger td { padding: 0.85rem 1rem; font-size: 0.88rem; color: #2d3748; border-bottom: 1px solid #f7f9fa; vertical-align: middle; }
+        .ledger tr:last-child td { border-bottom: none; }
+
+        .empty-state { background:#fff; border:1px dashed #e2e8f0; border-radius:12px; padding:3rem 1rem; text-align:center; color:#a0aec0; }
+
+        /* Confirm-delete modal */
+        .m-overlay { position: fixed; inset: 0; z-index: 9000; background: rgba(15,23,42,0.55); display: none; align-items: center; justify-content: center; padding: 1.5rem; }
+        .m-overlay.open { display: flex; }
+        .m-shell { background: #fff; border-radius: 14px; width: 100%; max-width: 480px; padding: 1.75rem; }
+        .m-shell h2 { font-size: 1.2rem; font-weight: 800; color: #c53030; margin: 0 0 0.5rem; }
+        .m-shell p  { font-size: 0.9rem; color: #4a5568; margin: 0 0 1.25rem; line-height: 1.5; }
+        .m-shell .row { display: flex; justify-content: flex-end; gap: 0.6rem; }
+        .btn-ghost   { background: #fff; color: #1a202c; border: 1px solid #e2e8f0; padding: 0.55rem 1.1rem; border-radius: 8px; font: inherit; font-weight: 600; cursor: pointer; }
+        .btn-danger  { background: #c53030; color: #fff; border: 0; padding: 0.55rem 1.1rem; border-radius: 8px; font: inherit; font-weight: 700; cursor: pointer; }
+
+        .toast { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 9999; padding: 0.8rem 1.1rem; border-radius: 10px; font-size: 0.88rem; font-weight: 600; box-shadow: 0 12px 28px rgba(0,0,0,0.12); display: none; }
+        .toast.ok  { background: #f0fff4; color: #276749; border: 1px solid #9ae6b4; display: block; }
+        .toast.err { background: #fff5f5; color: #9b2c2c; border: 1px solid #feb2b2; display: block; }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-assistant.js" defer></script>
+    <script src="../../components/admin-nav-badges.js" defer></script>
+</head>
+<body>
+<div class="admin-wrap">
+    <admin-sidebar active="resources"></admin-sidebar>
+
+    <main class="admin-main">
+        <a class="back-link" href="resources.html">← Back to Resources</a>
+
+        <!-- Profile header -->
+        <div class="profile-header" id="hdr">
+            <div class="ph-photo" id="hdr-photo" onclick="document.getElementById('hdr-photo-input').click()" title="Click to replace the thumbnail">
+                <span id="hdr-initial">?</span>
+                <div class="overlay" id="hdr-overlay">Replace image</div>
+            </div>
+            <input type="file" id="hdr-photo-input" class="ph-input" accept="image/*" onchange="onThumbPicked(event)">
+            <div class="ph-main">
+                <div class="ph-name-row">
+                    <h1 id="hdr-name">Loading…</h1>
+                    <div id="hdr-status"></div>
+                </div>
+                <div class="ph-sub" id="hdr-sub">Fetching record…</div>
+                <div class="ph-grid" id="hdr-grid"></div>
+            </div>
+            <div class="ph-actions">
+                <button class="ph-action-btn" id="btn-view-public" title="Open on the public resources page" onclick="openPublic()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                </button>
+                <button class="ph-action-btn danger" onclick="openDelete()" title="Delete this resource">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="page-tabs">
+            <button class="page-tab active" data-tab="details"   onclick="switchTab('details')">Details</button>
+            <button class="page-tab"        data-tab="content"   onclick="switchTab('content')">Content</button>
+            <button class="page-tab"        data-tab="insights"  onclick="switchTab('insights')">Insights <span class="tab-count" id="ct-ins"></span></button>
+            <button class="page-tab"        data-tab="downloads" onclick="switchTab('downloads')">Downloads <span class="tab-count" id="ct-dl"></span></button>
+        </div>
+
+        <div id="tab-content-host"></div>
+    </main>
+</div>
+
+<!-- Delete confirm -->
+<div class="m-overlay" id="del-modal" onclick="if(event.target===this)closeDelete()">
+    <div class="m-shell">
+        <h2>Delete this resource?</h2>
+        <p>Permanently removes it from the catalog and every public grid. The download leads it produced stay in the leads inbox. This cannot be undone.</p>
+        <div class="row">
+            <button class="btn-ghost" onclick="closeDelete()">Cancel</button>
+            <button class="btn-danger" id="del-confirm" onclick="confirmDelete()">Yes, delete</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const ID = params.get('id');
+    let entity = null;
+    let insights = null;
+    let downloads = null;
+    let activeTab = 'details';
+
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const fmt = n => (typeof n === 'number' ? n.toLocaleString('en-US') : String(n ?? ''));
+    const fmtDate     = d => d ? new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '—';
+    const fmtDateTime = d => d ? new Date(d).toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' }) : '—';
+
+    function toast(msg, kind = 'ok') {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.className = 'toast ' + kind;
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => { t.className = 'toast'; }, 3500);
+    }
+
+    function statusBadge(r) {
+        if (!r.active)   return `<span class="s-badge s-archived">Inactive</span>`;
+        if (r.featured)  return `<span class="s-badge s-featured">★ Featured</span>`;
+        return `<span class="s-badge s-active">Active</span>`;
+    }
+
+    function renderHeader() {
+        document.title = `${entity.title || 'Resource'} | MN Lake Homes Admin`;
+        const img = entity.thumbnail_url;
+        const photo = document.getElementById('hdr-photo');
+        const initial = document.getElementById('hdr-initial');
+        const overlay = document.getElementById('hdr-overlay');
+        if (img) { photo.style.backgroundImage = `url('${img}')`; initial.style.display = 'none'; overlay.textContent = 'Replace image'; }
+        else { photo.style.backgroundImage = ''; initial.style.display = ''; initial.textContent = (entity.title || '?').charAt(0).toUpperCase(); overlay.textContent = 'Upload image'; }
+
+        document.getElementById('hdr-name').textContent = entity.title || '(untitled)';
+        document.getElementById('hdr-status').innerHTML = statusBadge(entity);
+        document.getElementById('hdr-sub').textContent = [entity.category, entity.resource_type].filter(Boolean).join(' · ');
+
+        const fields = [
+            { label: 'Category',    value: entity.category || '—' },
+            { label: 'Type',        value: entity.resource_type || '—' },
+            { label: 'Slug',        value: entity.slug || '—' },
+            { label: 'Status',      value: entity.active ? (entity.featured ? 'Featured' : 'Active') : 'Inactive' },
+            { label: 'Downloads',   value: insights ? fmt(insights.counts.total) : '…' },
+            { label: 'Last 7 days', value: insights ? fmt(insights.counts.d7) : '…' },
+            { label: 'Went live',   value: fmtDate(entity.created_at) },
+            { label: 'Last edit',   value: fmtDate(entity.updated_at) },
+        ];
+        document.getElementById('hdr-grid').innerHTML = fields.map(f => `
+            <div class="ph-field">
+                <div class="ph-label">${esc(f.label)}</div>
+                <div class="ph-value">${esc(f.value)}</div>
+            </div>`).join('');
+    }
+
+    // ── Tabs ────────────────────────────────────────────────────────
+    function switchTab(t) {
+        activeTab = t;
+        document.querySelectorAll('.page-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
+        const url = new URL(window.location);
+        if (t === 'details') url.searchParams.delete('tab');
+        else                 url.searchParams.set('tab', t);
+        history.replaceState(null, '', url);
+        renderTab();
+    }
+
+    function renderTab() {
+        const host = document.getElementById('tab-content-host');
+        if (activeTab === 'details')   host.innerHTML = renderDetailsTab();
+        if (activeTab === 'content')   host.innerHTML = renderContentTab();
+        if (activeTab === 'insights')  host.innerHTML = renderInsightsTab();
+        if (activeTab === 'downloads') host.innerHTML = renderDownloadsTab();
+
+        // Draw the SVG chart after the HTML is in the DOM
+        if (activeTab === 'insights' && insights) drawInsightsChart(insights.daily || []);
+    }
+
+    function panel(title, badge, body, saveLabel, saveId) {
+        return `
+            <div class="panel">
+                <div class="panel-header"><div class="panel-title">${esc(title)}</div>${badge || ''}</div>
+                <div class="panel-body">
+                    ${body}
+                    ${saveId ? `
+                        <div class="save-row">
+                            <span class="save-msg" id="${saveId}-msg"></span>
+                            <button class="btn-save" id="${saveId}" onclick="save${saveId.replace(/^save-/, '').replace(/(^|-)(\w)/g, (m,_,c) => c.toUpperCase())}()">${esc(saveLabel || 'Save')}</button>
+                        </div>` : ''}
+                </div>
+            </div>`;
+    }
+
+    function fieldGroup({ id, label, value, type = 'text', full = false, hint = '', placeholder = '' }) {
+        const cls = `field-group${full ? ' full' : ''}`;
+        const input = type === 'textarea'
+            ? `<textarea class="field-input" id="${id}" placeholder="${esc(placeholder)}">${esc(value || '')}</textarea>`
+            : `<input class="field-input" id="${id}" type="${type}" value="${esc(value ?? '')}" placeholder="${esc(placeholder)}">`;
+        return `<div class="${cls}"><div class="field-label">${esc(label)}</div>${input}${hint ? `<div class="field-hint">${esc(hint)}</div>` : ''}</div>`;
+    }
+    function selectGroup({ id, label, value, options, full = false, hint = '' }) {
+        const opts = options.map(o => `<option value="${esc(o.value)}" ${String(o.value) === String(value || '') ? 'selected' : ''}>${esc(o.label)}</option>`).join('');
+        return `<div class="field-group${full ? ' full' : ''}"><div class="field-label">${esc(label)}</div><select class="field-input" id="${id}">${opts}</select>${hint ? `<div class="field-hint">${esc(hint)}</div>` : ''}</div>`;
+    }
+
+    function renderDetailsTab() {
+        const tags = Array.isArray(entity.tags) ? entity.tags.join(', ') : '';
+        const body = `
+            <div class="field-grid">
+                ${fieldGroup({ id: 'f-title', label: 'Title', value: entity.title, full: true })}
+                ${fieldGroup({ id: 'f-slug',  label: 'Slug',  value: entity.slug, hint: `URL: /resources#${entity.slug || ''}` })}
+                ${fieldGroup({ id: 'f-cat',   label: 'Category', value: entity.category })}
+                ${selectGroup({ id: 'f-type', label: 'Type', value: entity.resource_type, options:
+                    ['guide','tool','calculator','report','checklist','template','pdf','video','other']
+                        .map(t => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }))
+                })}
+                ${fieldGroup({ id: 'f-tags',  label: 'Tags (comma-separated)', value: tags, full: true, hint: 'Used for filtering on the public resources page.' })}
+            </div>
+            <div class="toggle-row">
+                <label class="toggle"><input type="checkbox" id="f-active"   ${entity.active ? 'checked' : ''}> Active (visible publicly)</label>
+                <label class="toggle"><input type="checkbox" id="f-featured" ${entity.featured ? 'checked' : ''}> Featured (pinned to top)</label>
+            </div>`;
+        return panel('Resource Details', statusBadge(entity), body, 'Save Details', 'save-details');
+    }
+
+    function renderContentTab() {
+        const body = `
+            <div class="field-grid">
+                ${fieldGroup({ id: 'f-desc',    label: 'Description', value: entity.description, type: 'textarea', full: true, hint: 'Plain text. Shown on the public resources page card + the download modal.' })}
+                ${fieldGroup({ id: 'f-url',    label: 'Download URL', value: entity.url, full: true, hint: 'Where the file lives — Cloudinary URL, /assets/pdfs/… path, or any public URL.' })}
+                ${fieldGroup({ id: 'f-thumb',  label: 'Thumbnail URL', value: entity.thumbnail_url, full: true, hint: 'You can also upload a thumbnail by clicking the photo tile at the top of this page.' })}
+            </div>`;
+        return panel('Content', '', body, 'Save Content', 'save-content');
+    }
+
+    function renderInsightsTab() {
+        if (!insights) return `<div class="empty-state">Loading insights…</div>`;
+        const c = insights.counts || {};
+        const grid = `
+            <div class="ins-grid">
+                <div class="ins-card total"><div class="lbl">Total downloads</div><div class="val">${fmt(c.total)}</div><div class="sub">since launch</div></div>
+                <div class="ins-card d30">  <div class="lbl">Last 30 days</div>   <div class="val">${fmt(c.d30)}</div>  <div class="sub">trending</div></div>
+                <div class="ins-card d7">   <div class="lbl">Last 7 days</div>    <div class="val">${fmt(c.d7)}</div>   <div class="sub">this week</div></div>
+                <div class="ins-card d1">   <div class="lbl">Last 24 hours</div>  <div class="val">${fmt(c.d1)}</div>   <div class="sub">today</div></div>
+            </div>`;
+        const chartPanel = `
+            <div class="panel">
+                <div class="panel-header"><div class="panel-title">Downloads · last 30 days</div></div>
+                <div class="panel-body">
+                    ${(insights.daily && insights.daily.length)
+                        ? `<svg id="ins-chart" class="ins-chart" viewBox="0 0 600 220" preserveAspectRatio="none"></svg>`
+                        : `<div class="empty-state">No downloads in the last 30 days.</div>`}
+                </div>
+            </div>`;
+        const refs = (insights.top_referrers || []).slice(0, 6);
+        const refsPanel = `
+            <div class="panel">
+                <div class="panel-header"><div class="panel-title">Top referring pages</div></div>
+                <div class="panel-body">
+                    ${refs.length
+                        ? `<table class="ledger">
+                            <thead><tr><th>Page</th><th style="text-align:right;">Downloads</th></tr></thead>
+                            <tbody>${refs.map(r => `<tr><td style="font-family:monospace;font-size:0.82rem;">${esc(r.path)}</td><td style="text-align:right;font-weight:800;color:#1d6df2;">${fmt(r.hits)}</td></tr>`).join('')}</tbody>
+                          </table>`
+                        : `<div class="empty-state">No referrer data captured yet — referrers are recorded when the download API receives the visit's source page URL.</div>`}
+                </div>
+            </div>`;
+        return grid + chartPanel + refsPanel;
+    }
+
+    function renderDownloadsTab() {
+        if (!downloads) return `<div class="empty-state">Loading downloads…</div>`;
+        if (!downloads.length) return `<div class="empty-state">No one has downloaded this resource yet. The list populates immediately when someone grabs the PDF.</div>`;
+        return `
+            <div class="panel">
+                <div class="panel-header"><div class="panel-title">Everyone who downloaded this (${downloads.length})</div></div>
+                <div class="panel-body" style="padding: 0;">
+                    <table class="ledger" style="border: 0; border-radius: 0;">
+                        <thead><tr>
+                            <th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>Captured</th>
+                        </tr></thead>
+                        <tbody>
+                            ${downloads.map(d => `
+                                <tr>
+                                    <td><strong>${esc(d.name || '—')}</strong></td>
+                                    <td>${d.email ? `<a href="mailto:${esc(d.email)}" style="color:#1d6df2;">${esc(d.email)}</a>` : '—'}</td>
+                                    <td style="color:#a0aec0;">${esc(d.phone || '—')}</td>
+                                    <td>${esc(d.status || 'new')}</td>
+                                    <td style="color:#a0aec0;white-space:nowrap;">${esc(fmtDateTime(d.created_at))}</td>
+                                </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>`;
+    }
+
+    function drawInsightsChart(daily) {
+        const svg = document.getElementById('ins-chart');
+        if (!svg || !daily.length) return;
+        const W = 600, H = 220, padL = 32, padR = 8, padT = 14, padB = 24;
+        const innerW = W - padL - padR, innerH = H - padT - padB;
+        const max = Math.max(...daily.map(d => d.total), 1);
+        const step = daily.length > 1 ? innerW / (daily.length - 1) : 0;
+        const pts = daily.map((d, i) => [padL + i * step, padT + innerH - (d.total / max) * innerH]);
+        const linePath = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+        const areaPath = linePath
+            + ` L${pts[pts.length-1][0].toFixed(1)},${(padT + innerH).toFixed(1)}`
+            + ` L${pts[0][0].toFixed(1)},${(padT + innerH).toFixed(1)} Z`;
+        const ax = (y, label) => `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#edf2f7" stroke-width="1"/><text x="${padL-6}" y="${y+4}" text-anchor="end" font-size="10" fill="#a0aec0">${label}</text>`;
+        const grid = [0,1,2,3,4].map(i => ax(padT + innerH * i / 4, Math.round(max * (1 - i / 4)))).join('');
+        svg.innerHTML = `
+            <defs><linearGradient id="ins-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#319795" stop-opacity="0.45"/>
+                <stop offset="100%" stop-color="#319795" stop-opacity="0"/>
+            </linearGradient></defs>
+            ${grid}
+            <path d="${areaPath}" fill="url(#ins-grad)"/>
+            <path d="${linePath}" fill="none" stroke="#319795" stroke-width="2.5"/>
+        `;
+    }
+
+    // ── Save handlers ───────────────────────────────────────────────
+    async function patch(payload, saveId) {
+        const btn = document.getElementById(saveId);
+        const msg = document.getElementById(saveId + '-msg');
+        msg.className = 'save-msg';
+        btn.disabled = true; btn.textContent = 'Saving…';
+        try {
+            const r = await fetch(`/api/resources/${encodeURIComponent(ID)}`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify(payload),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+            Object.assign(entity, data);
+            renderHeader();
+            msg.textContent = '✓ Saved'; msg.className = 'save-msg ok';
+        } catch (err) {
+            msg.textContent = err.message; msg.className = 'save-msg err';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = saveId === 'save-details' ? 'Save Details' : saveId === 'save-content' ? 'Save Content' : 'Save';
+        }
+    }
+    const v = id => (document.getElementById(id)?.value ?? '').trim() || null;
+
+    function saveDetails() {
+        const tags = (document.getElementById('f-tags').value || '').split(',').map(s => s.trim()).filter(Boolean);
+        patch({
+            title: v('f-title'), slug: v('f-slug'), category: v('f-cat'),
+            resource_type: v('f-type'),
+            tags,
+            active:   document.getElementById('f-active').checked,
+            featured: document.getElementById('f-featured').checked,
+        }, 'save-details');
+    }
+    function saveContent() {
+        patch({
+            description: v('f-desc'),
+            url: v('f-url') || '#',
+            thumbnail_url: v('f-thumb'),
+        }, 'save-content');
+    }
+
+    // ── Header image upload ─────────────────────────────────────────
+    async function onThumbPicked(event) {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        if (file.size > 8 * 1024 * 1024) { toast('Image must be 8 MB or smaller.', 'err'); return; }
+        if (!file.type.startsWith('image/')) { toast('Pick an image file.', 'err'); return; }
+        const photo = document.getElementById('hdr-photo');
+        const overlay = document.getElementById('hdr-overlay');
+        const reader = new FileReader();
+        reader.onload = e => { photo.style.backgroundImage = `url('${e.target.result}')`; document.getElementById('hdr-initial').style.display = 'none'; };
+        reader.readAsDataURL(file);
+        photo.classList.add('uploading'); overlay.textContent = 'Uploading…';
+        try {
+            const fd = new FormData(); fd.append('image', file);
+            const upRes = await fetch('/api/resources/upload-image', { method: 'POST', body: fd, credentials: 'include' });
+            const upData = await upRes.json().catch(() => ({}));
+            if (!upRes.ok) throw new Error(upData.error || 'Upload failed.');
+            const saveRes = await fetch(`/api/resources/${encodeURIComponent(ID)}`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ thumbnail_url: upData.url }),
+            });
+            if (!saveRes.ok) throw new Error('Save failed.');
+            entity.thumbnail_url = upData.url;
+            overlay.textContent = 'Replace image';
+            toast('Thumbnail saved.', 'ok');
+        } catch (err) {
+            toast(err.message, 'err');
+            const url = entity.thumbnail_url;
+            if (url) photo.style.backgroundImage = `url('${url}')`;
+            else { photo.style.backgroundImage = ''; document.getElementById('hdr-initial').style.display = ''; }
+            overlay.textContent = 'Replace image';
+        } finally {
+            photo.classList.remove('uploading');
+            event.target.value = '';
+        }
+    }
+
+    function openPublic() {
+        if (!entity?.slug) return;
+        window.open(`/pages/public/resources.html#${encodeURIComponent(entity.slug)}`, '_blank');
+    }
+
+    // ── Delete ──────────────────────────────────────────────────────
+    function openDelete()  { document.getElementById('del-modal').classList.add('open'); }
+    function closeDelete() { document.getElementById('del-modal').classList.remove('open'); }
+    async function confirmDelete() {
+        const btn = document.getElementById('del-confirm');
+        btn.disabled = true; btn.textContent = 'Deleting…';
+        try {
+            const r = await fetch(`/api/resources/${encodeURIComponent(ID)}`, { method: 'DELETE', credentials: 'include' });
+            if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || `HTTP ${r.status}`); }
+            window.location.href = 'resources.html';
+        } catch (err) {
+            toast(err.message, 'err');
+            btn.disabled = false; btn.textContent = 'Yes, delete';
+        }
+    }
+
+    // ── Boot ────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+        if (!ID) { document.getElementById('hdr-name').textContent = 'Bad URL'; return; }
+
+        try {
+            const r = await fetch(`/api/resources/${encodeURIComponent(ID)}`, { credentials: 'include' });
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            entity = await r.json();
+        } catch (err) {
+            // Resources GET-by-slug doesn't accept UUIDs by default — fall back to admin list.
+            try {
+                const r2 = await fetch('/api/resources?active=all&limit=500', { credentials: 'include' });
+                const d2 = await r2.json();
+                entity = (d2.rows || []).find(x => String(x.id) === String(ID));
+            } catch (_) {}
+            if (!entity) { document.getElementById('hdr-name').textContent = 'Not found'; return; }
+        }
+
+        // Pull insights + downloads in parallel
+        Promise.all([
+            fetch(`/api/resources/admin/${encodeURIComponent(ID)}/insights`,  { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+            fetch(`/api/resources/admin/${encodeURIComponent(ID)}/downloads`, { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+        ]).then(([ins, dls]) => {
+            insights = ins;
+            downloads = dls;
+            document.getElementById('ct-ins').textContent = ins ? `(${ins.counts.total})` : '';
+            document.getElementById('ct-dl').textContent  = dls.length ? `(${dls.length})` : '';
+            renderHeader();
+            if (activeTab === 'insights' || activeTab === 'downloads') renderTab();
+        });
+
+        renderHeader();
+        const t = params.get('tab');
+        if (t && ['details','content','insights','downloads'].includes(t)) activeTab = t;
+        document.querySelectorAll('.page-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === activeTab));
+        renderTab();
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && document.getElementById('del-modal').classList.contains('open')) closeDelete();
+        });
+    });
+</script>
+</body>
+</html>

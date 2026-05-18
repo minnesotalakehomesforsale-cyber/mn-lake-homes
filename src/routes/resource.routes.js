@@ -29,13 +29,22 @@ function softAuth(req, res, next) {
 }
 
 router.get('/categories', softAuth, c.categories);
+
+// Admin write + insight endpoints. Static segments here MUST come before
+// the /:slug catch-all below so Express doesn't try to look up resources
+// with a slug like "upload-image" or "admin".
+router.post ('/',                       verifyToken, c.create);
+router.post ('/upload-image',           verifyToken, c.uploadImage);
+router.get  ('/admin/:id/insights',     verifyToken, c.insights);
+router.get  ('/admin/:id/downloads',    verifyToken, c.downloads);
+
 // Email-gated download capture — public, no account needed. Sits before
 // /:slug so the "download" segment isn't read as a slug.
 router.post('/:slug/download', c.captureDownload);
-router.get('/:slug',      softAuth, c.detail);
-router.get('/',           softAuth, c.list);
+router.get ('/:slug',      softAuth, c.detail);
+router.get ('/',           softAuth, c.list);
 
-// Admin write — hard delete a resource.
+router.patch ('/:id', verifyToken, c.patch);
 router.delete('/:id', verifyToken, c.remove);
 
 module.exports = router;
