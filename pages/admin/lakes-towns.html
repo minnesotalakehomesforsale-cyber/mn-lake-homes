@@ -28,26 +28,46 @@
 
         /* ── Section toolbar (search + filters + create btn) ─────────── */
         .sec-bar {
-            display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;
+            display: flex; gap: 0.65rem; flex-wrap: wrap; align-items: center;
             margin-bottom: 1.4rem;
         }
         .sec-bar input, .sec-bar select {
-            font: inherit; font-size: 0.88rem;
-            padding: 0.55rem 0.85rem;
-            border: 1px solid #e2e8f0; border-radius: 8px;
+            font: inherit; font-size: 0.92rem; font-weight: 500;
+            padding: 0.7rem 1rem; height: 44px; box-sizing: border-box;
+            border: 1px solid #e2e8f0; border-radius: 10px;
             background: #fff; color: #1a202c;
             outline: none; min-width: 0;
+            box-shadow: 0 1px 2px rgba(16,24,40,0.04);
+            transition: border-color 0.15s, box-shadow 0.15s;
         }
-        .sec-bar input[type=search] { flex: 1; min-width: 200px; max-width: 320px; }
-        .sec-bar input:focus, .sec-bar select:focus { border-color: #1d6df2; }
+        .sec-bar input:hover:not(:focus), .sec-bar select:hover:not(:focus) { border-color: #cbd5e0; }
+        .sec-bar input:focus, .sec-bar select:focus {
+            border-color: #1d6df2;
+            box-shadow: 0 0 0 3px rgba(29,109,242,0.12);
+        }
+        .sec-bar input[type=search] {
+            flex: 1; min-width: 220px; max-width: 360px;
+            padding-left: 2.4rem;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a0aec0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='7'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>");
+            background-repeat: no-repeat;
+            background-position: 0.85rem center;
+        }
+        .sec-bar select {
+            appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            padding-right: 2.4rem; cursor: pointer;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 0.9rem center;
+        }
         .sec-bar .spacer { flex: 1; }
         .sec-bar .btn-primary {
-            padding: 0.6rem 1.1rem; border-radius: 8px; border: 0;
+            padding: 0 1.2rem; height: 44px; border-radius: 10px; border: 0;
             background: #1d6df2; color: #fff;
-            font: inherit; font-size: 0.88rem; font-weight: 700;
-            cursor: pointer; transition: background 0.15s, transform 0.15s;
+            font: inherit; font-size: 0.92rem; font-weight: 700;
+            cursor: pointer; transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+            box-shadow: 0 1px 2px rgba(29,109,242,0.18);
         }
-        .sec-bar .btn-primary:hover { background: #155bc8; transform: translateY(-1px); }
+        .sec-bar .btn-primary:hover { background: #155bc8; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(29,109,242,0.25); }
 
         /* Status-pill toolbar (used by businesses) */
         .status-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-right: 0.5rem; }
