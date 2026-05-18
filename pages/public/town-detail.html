@@ -192,12 +192,18 @@
            padding tightens to claw back vertical space. Mirrors lake-detail
            so the two page types feel like the same product on mobile. */
         @media (max-width: 600px) {
-            .tn-hero { padding: 5.5rem 1rem 2.5rem; }
+            /* Top padding pushes the eyebrow well clear of the absolute
+               back-link pill above it — 5.5rem was leaving only ~20px
+               between the two and reading cramped. 8rem gives the
+               back-link its own zone with ~50px of breathing room. */
+            .tn-hero { padding: 8rem 1rem 2.5rem; }
             .tn-hero-inner { gap: 1.75rem; }
             .tn-hero h1 { font-size: 5rem; line-height: 0.95; letter-spacing: -2.5px; margin-bottom: 1rem; }
             .tn-hero p.lead { font-size: 1rem; line-height: 1.55; margin-bottom: 1.75rem; }
             .tn-hero-img { height: 220px; border-radius: 14px; }
-            .tn-back-link { top: 4.25rem; left: 1rem; font-size: 0.74rem; }
+            /* Pull the back-link tight against the navbar bottom so it's
+               clearly its own element above the hero content. */
+            .tn-back-link { top: 4.25rem; left: 1rem; font-size: 0.78rem; padding: 0.4rem 0.7rem; background: rgba(247,249,250,0.85); backdrop-filter: blur(6px); }
             .tn-section { padding: 2.5rem 1rem 3rem; }
             .tn-section h2 { font-size: 1.95rem; }
             .tn-section p.lead { font-size: 0.98rem; margin-bottom: 1.75rem; }
