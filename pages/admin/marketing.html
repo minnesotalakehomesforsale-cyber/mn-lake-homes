@@ -396,7 +396,16 @@
 
     // ── Utils ────────────────────────────────────────────────────
     function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-    function fmtDate(d) { return d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'; }
+    // Defensive: the backend now always returns YYYY-MM-DD via SQL cast,
+    // but historical rows or pg edge cases can still send a full ISO
+    // timestamp. Slice to the first 10 chars (YYYY-MM-DD) before parsing
+    // so the date input + display logic stay consistent.
+    function ymdOnly(d) { return d ? String(d).slice(0, 10) : ''; }
+    function fmtDate(d) {
+        const ymd = ymdOnly(d);
+        if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return '—';
+        return new Date(ymd + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
     function fmtDateLong(d) { return d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'; }
     function ymd(d) { const z = new Date(d); return z.getFullYear() + '-' + String(z.getMonth() + 1).padStart(2, '0') + '-' + String(z.getDate()).padStart(2, '0'); }
 
@@ -601,7 +610,7 @@
             if (!p) return;
             document.getElementById('pm-title').value = p.title || '';
             document.getElementById('pm-description').value = p.description || '';
-            document.getElementById('pm-due').value = p.due_date || '';
+            document.getElementById('pm-due').value = ymdOnly(p.due_date);
             document.getElementById('pm-channel').value = p.channel || '';
             document.getElementById('pm-status').value = p.status || 'idea';
         } else {

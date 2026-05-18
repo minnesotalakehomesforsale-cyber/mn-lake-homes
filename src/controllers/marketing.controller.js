@@ -105,9 +105,14 @@ exports.subscribeNewsletter = async (req, res) => {
 
 exports.listPosts = async (req, res) => {
     try {
+        // DATE columns get deserialized by `pg` as full JS Date objects
+        // → JSON-stringified as ISO timestamps like "2026-05-17T00:00:00.000Z",
+        // which breaks the frontend (date inputs need "YYYY-MM-DD" and
+        // string equality with today's date stops matching). Cast to text
+        // here so the wire format is always plain calendar dates.
         const { rows } = await pool.query(
-            `SELECT id, title, description, due_date, channel, status,
-                    created_at, updated_at
+            `SELECT id, title, description, due_date::text AS due_date,
+                    channel, status, created_at, updated_at
                FROM marketing_posts
               ORDER BY
                   (due_date IS NULL),       -- dated first, undated last
@@ -132,7 +137,8 @@ exports.createPost = async (req, res) => {
         const { rows } = await pool.query(
             `INSERT INTO marketing_posts (title, description, due_date, channel, status)
              VALUES ($1, $2, $3, $4, COALESCE($5, 'idea'))
-             RETURNING id, title, description, due_date, channel, status, created_at, updated_at`,
+             RETURNING id, title, description, due_date::text AS due_date,
+                       channel, status, created_at, updated_at`,
             [title, description || null, due_date || null, channel || null, status || null]
         );
         logActivity({
@@ -178,7 +184,8 @@ exports.updatePost = async (req, res) => {
     try {
         const { rows, rowCount } = await pool.query(
             `UPDATE marketing_posts SET ${sets.join(', ')} WHERE id = $${i}
-             RETURNING id, title, description, due_date, channel, status, created_at, updated_at`,
+             RETURNING id, title, description, due_date::text AS due_date,
+                       channel, status, created_at, updated_at`,
             vals
         );
         if (!rowCount) return res.status(404).json({ error: 'Post not found.' });
@@ -451,7 +458,8 @@ exports.overview = async (req, res) => {
                   FROM marketing_posts
             `),
             pool.query(`
-                SELECT id, title, description, due_date, channel, status
+                SELECT id, title, description, due_date::text AS due_date,
+                       channel, status
                   FROM marketing_posts
                  WHERE due_date IS NOT NULL
                    AND due_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '6 days'
