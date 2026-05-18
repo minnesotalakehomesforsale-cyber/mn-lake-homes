@@ -94,13 +94,42 @@
         }
 
         /* ── Traffic chart ──────────────────────────────────────── */
-        .traffic-wrap { padding: 1.25rem 1.4rem; }
-        .traffic-svg  { width: 100%; height: 240px; display: block; }
-        .traffic-svg .axis { fill: #a0aec0; font-size: 10px; }
-        .traffic-svg .grid { stroke: #edf2f7; stroke-width: 1; }
-        .traffic-svg .area { fill: url(#chart-grad); opacity: 0.55; }
-        .traffic-svg .line { stroke: #1d6df2; stroke-width: 2.5; fill: none; }
+        .traffic-wrap { padding: 1.25rem 1.4rem; position: relative; }
+        .traffic-svg  { width: 100%; height: 260px; display: block; }
+        .traffic-svg .axis { fill: #a0aec0; font-size: 11px; font-weight: 500; }
+        .traffic-svg .grid { stroke: #edf2f7; stroke-width: 1; shape-rendering: crispEdges; }
+        .traffic-svg .area { fill: url(#chart-grad); }
+        .traffic-svg .line { stroke: #1d6df2; stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
         .traffic-svg .dot  { fill: #fff; stroke: #1d6df2; stroke-width: 2; }
+        .traffic-svg .guide { stroke: rgba(29,109,242,0.35); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; transition: opacity 0.12s; }
+        .traffic-svg .hover-dot { fill: #1d6df2; stroke: #fff; stroke-width: 3; opacity: 0; transition: opacity 0.12s; }
+        .traffic-svg.is-hovering .guide,
+        .traffic-svg.is-hovering .hover-dot { opacity: 1; }
+        .traffic-svg .hit-area { fill: transparent; cursor: crosshair; }
+
+        /* Tooltip floats above the chart at the mouse X position */
+        .chart-tip {
+            position: absolute; pointer-events: none;
+            background: #1a202c; color: #fff;
+            padding: 0.55rem 0.85rem; border-radius: 10px;
+            font-size: 0.82rem; font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            transform: translate(-50%, -100%);
+            white-space: nowrap;
+            opacity: 0; transition: opacity 0.12s;
+            z-index: 5;
+        }
+        .chart-tip::after {
+            content: ''; position: absolute;
+            top: 100%; left: 50%; transform: translateX(-50%);
+            border: 6px solid transparent; border-top-color: #1a202c;
+        }
+        .chart-tip.show { opacity: 1; }
+        .chart-tip .tip-date  { display: block; font-size: 0.7rem; font-weight: 600; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 0.15rem; }
+        .chart-tip .tip-row   { display: flex; align-items: center; gap: 0.5rem; }
+        .chart-tip .tip-dot   { width: 8px; height: 8px; border-radius: 50%; background: #1d6df2; }
+        .chart-tip .tip-value { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.3px; }
+        .chart-tip .tip-unit  { font-size: 0.72rem; font-weight: 500; color: #a0aec0; margin-left: 0.15rem; }
         .traffic-summary { display: flex; flex-wrap: wrap; gap: 1.5rem; padding: 0 1.4rem 1.4rem; }
         .traffic-summary .ts-item { font-size: 0.82rem; color: #718096; }
         .traffic-summary .ts-item .v { font-size: 1.35rem; font-weight: 800; color: #1a202c; display: block; letter-spacing: -0.4px; }
@@ -296,14 +325,25 @@
                         <a href="system.html?tab=metrics" class="d-card-link">Open metrics →</a>
                     </div>
                     <div class="traffic-wrap">
-                        <svg class="traffic-svg" id="traffic-chart" viewBox="0 0 600 240" preserveAspectRatio="none">
+                        <svg class="traffic-svg" id="traffic-chart" viewBox="0 0 600 260" preserveAspectRatio="xMidYMid meet">
                             <defs>
                                 <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%"   stop-color="#1d6df2" stop-opacity="0.45"/>
+                                    <stop offset="0%"   stop-color="#1d6df2" stop-opacity="0.28"/>
                                     <stop offset="100%" stop-color="#1d6df2" stop-opacity="0"/>
                                 </linearGradient>
                             </defs>
                         </svg>
+                        <div class="chart-tip" id="traffic-tip">
+                            <span class="tip-date" id="tip-date">—</span>
+                            <span class="tip-row">
+                                <span class="tip-dot"></span>
+                                <span class="tip-value" id="tip-value">0</span>
+                                <span class="tip-unit">views</span>
+                                <span style="color:#a0aec0;margin:0 0.2rem;">·</span>
+                                <span class="tip-value" id="tip-visitors" style="color:#cbd5e0;">0</span>
+                                <span class="tip-unit">unique</span>
+                            </span>
+                        </div>
                     </div>
                     <div class="traffic-summary" id="traffic-summary">
                         <div class="ts-item"><span class="v">—</span>views · 7d</div>
@@ -527,48 +567,55 @@
             el.className = 'k-delta ' + (diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat');
         }
 
-        // ── Traffic chart (inline SVG line + area) ─────────────
+        // ── Traffic chart (inline SVG line + area, with hover tooltip) ─
         function drawTrafficChart(daily) {
             const svg = document.getElementById('traffic-chart');
             // Clear any previous path/dot/grid (keep <defs>)
-            [...svg.querySelectorAll('.area,.line,.dot,.grid,.axis')].forEach(n => n.remove());
+            [...svg.querySelectorAll('.area,.line,.dot,.grid,.axis,.guide,.hover-dot,.hit-area')].forEach(n => n.remove());
 
-            const W = 600, H = 240, padL = 32, padR = 8, padT = 16, padB = 26;
+            // padR bumped from 8 → 32 so the right-edge label doesn't
+            // clip outside the viewBox. padT/padB also adjusted for the
+            // new 260-tall viewBox.
+            const W = 600, H = 260, padL = 36, padR = 32, padT = 18, padB = 30;
             const innerW = W - padL - padR, innerH = H - padT - padB;
+            const NS = 'http://www.w3.org/2000/svg';
+            const mk = (tag, attrs = {}, text) => {
+                const el = document.createElementNS(NS, tag);
+                for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+                if (text != null) el.textContent = text;
+                return el;
+            };
 
             if (!daily || !daily.length) {
-                const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                t.setAttribute('x', W / 2); t.setAttribute('y', H / 2);
-                t.setAttribute('text-anchor', 'middle');
-                t.setAttribute('class', 'axis');
-                t.textContent = 'No traffic recorded yet.';
-                svg.appendChild(t);
+                svg.appendChild(mk('text', { x: W / 2, y: H / 2, 'text-anchor': 'middle', class: 'axis' }, 'No traffic recorded yet.'));
                 return;
             }
 
             const max = Math.max(...daily.map(d => d.views), 1);
 
-            // Grid lines (4 horizontal)
+            // Round the Y-axis ceiling up to a "nice" number so the
+            // gridline labels read cleanly (5, 10, 25, 50, 100, …) instead
+            // of arbitrary ints like 63 / 47 / 32 / 16.
+            const niceCeil = (v) => {
+                if (v <= 5) return 5;
+                const pow = Math.pow(10, Math.floor(Math.log10(v)));
+                const norm = v / pow;
+                return (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * pow;
+            };
+            const yMax = niceCeil(max);
+
+            // Grid lines + Y labels — 4 evenly spaced steps from 0 to yMax.
             for (let i = 0; i <= 4; i++) {
                 const y = padT + (innerH * i / 4);
-                const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                ln.setAttribute('x1', padL); ln.setAttribute('y1', y);
-                ln.setAttribute('x2', W - padR); ln.setAttribute('y2', y);
-                ln.setAttribute('class', 'grid');
-                svg.appendChild(ln);
-                // Y-axis labels
-                const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                t.setAttribute('x', padL - 6); t.setAttribute('y', y + 4);
-                t.setAttribute('text-anchor', 'end');
-                t.setAttribute('class', 'axis');
-                t.textContent = Math.round(max * (1 - i / 4));
-                svg.appendChild(t);
+                svg.appendChild(mk('line', { x1: padL, y1: y, x2: W - padR, y2: y, class: 'grid' }));
+                svg.appendChild(mk('text', { x: padL - 8, y: y + 4, 'text-anchor': 'end', class: 'axis' },
+                    Math.round(yMax * (1 - i / 4)).toLocaleString('en-US')));
             }
 
             const stepX = daily.length > 1 ? innerW / (daily.length - 1) : 0;
             const pts = daily.map((d, i) => {
                 const x = padL + i * stepX;
-                const y = padT + innerH - (d.views / max) * innerH;
+                const y = padT + innerH - (d.views / yMax) * innerH;
                 return [x, y];
             });
 
@@ -577,41 +624,100 @@
             const areaPath = linePath
                 + ` L${pts[pts.length-1][0].toFixed(1)},${(padT + innerH).toFixed(1)}`
                 + ` L${pts[0][0].toFixed(1)},${(padT + innerH).toFixed(1)} Z`;
+            svg.appendChild(mk('path', { class: 'area', d: areaPath }));
+            svg.appendChild(mk('path', { class: 'line', d: linePath }));
 
-            const area = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            area.setAttribute('class', 'area');
-            area.setAttribute('d', areaPath);
-            svg.appendChild(area);
-
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            line.setAttribute('class', 'line');
-            line.setAttribute('d', linePath);
-            svg.appendChild(line);
-
-            // Dots on every ~5th point so the chart breathes
-            const step = Math.max(1, Math.floor(daily.length / 8));
+            // Small base dots — every ~6th point so the chart breathes
+            // without feeling cluttered.
+            const step = Math.max(1, Math.floor(daily.length / 6));
             pts.forEach((p, i) => {
                 if (i % step !== 0 && i !== pts.length - 1) return;
-                const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                c.setAttribute('cx', p[0]); c.setAttribute('cy', p[1]);
-                c.setAttribute('r', 3.2);
-                c.setAttribute('class', 'dot');
-                svg.appendChild(c);
+                svg.appendChild(mk('circle', { cx: p[0], cy: p[1], r: 2.6, class: 'dot' }));
             });
 
-            // X-axis labels — first, middle, last
+            // X-axis labels — first / middle / last. Last uses text-anchor=end
+            // so it tucks against the right edge instead of clipping.
             const marks = [0, Math.floor(daily.length / 2), daily.length - 1];
-            marks.forEach(i => {
+            marks.forEach((i, idx) => {
                 if (i < 0 || i >= daily.length) return;
-                const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                t.setAttribute('x', padL + i * stepX);
-                t.setAttribute('y', H - 8);
-                t.setAttribute('text-anchor', 'middle');
-                t.setAttribute('class', 'axis');
+                const anchor = idx === 0 ? 'start' : idx === marks.length - 1 ? 'end' : 'middle';
+                const x = padL + i * stepX;
                 const d = new Date(daily[i].day);
-                t.textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                svg.appendChild(t);
+                svg.appendChild(mk('text', { x, y: H - 10, 'text-anchor': anchor, class: 'axis' },
+                    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })));
             });
+
+            // ── Hover layer ────────────────────────────────────────
+            // A vertical guide line + a hover dot that snap to the nearest
+            // data point, plus a full-chart invisible rect that captures
+            // pointer events. We append these AFTER the chart geometry so
+            // they paint on top.
+            const guide = mk('line', {
+                x1: padL, y1: padT, x2: padL, y2: padT + innerH,
+                class: 'guide',
+            });
+            svg.appendChild(guide);
+            const hoverDot = mk('circle', { cx: padL, cy: padT, r: 5, class: 'hover-dot' });
+            svg.appendChild(hoverDot);
+            const hit = mk('rect', {
+                x: padL, y: padT, width: innerW, height: innerH,
+                class: 'hit-area',
+            });
+            svg.appendChild(hit);
+
+            const tip      = document.getElementById('traffic-tip');
+            const tipDate  = document.getElementById('tip-date');
+            const tipValue = document.getElementById('tip-value');
+            const tipVis   = document.getElementById('tip-visitors');
+            const wrap     = svg.parentElement; // .traffic-wrap (position:relative)
+
+            // Translate a DOM mouse position to the corresponding SVG
+            // viewBox x, then snap to the nearest data point.
+            function pickByEvent(e) {
+                const rect = svg.getBoundingClientRect();
+                const ratio = W / rect.width;
+                const svgX = (e.clientX - rect.left) * ratio;
+                // Find nearest data point by index
+                const rel = (svgX - padL) / stepX;
+                const i = Math.max(0, Math.min(daily.length - 1, Math.round(rel)));
+                return i;
+            }
+
+            function show(e) {
+                const i = pickByEvent(e);
+                const d = daily[i];
+                const [px, py] = pts[i];
+                // Snap visual elements
+                guide.setAttribute('x1', px); guide.setAttribute('x2', px);
+                hoverDot.setAttribute('cx', px); hoverDot.setAttribute('cy', py);
+                svg.classList.add('is-hovering');
+                // Position the HTML tooltip. Convert svg coords back to
+                // DOM pixels relative to .traffic-wrap.
+                const rect = svg.getBoundingClientRect();
+                const wrapRect = wrap.getBoundingClientRect();
+                const ratio = rect.width / W;
+                const left = (rect.left - wrapRect.left) + px * ratio;
+                const top  = (rect.top  - wrapRect.top)  + py * (rect.height / H) - 14;
+                tip.style.left = left + 'px';
+                tip.style.top  = top  + 'px';
+                const dateObj = new Date(d.day);
+                tipDate.textContent  = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                tipValue.textContent = (d.views || 0).toLocaleString('en-US');
+                tipVis.textContent   = (d.visitors || 0).toLocaleString('en-US');
+                tip.classList.add('show');
+            }
+            function hide() {
+                svg.classList.remove('is-hovering');
+                tip.classList.remove('show');
+            }
+
+            // Bind once per draw — replace any previous listeners by
+            // cloning the hit-area. Cheap and effective.
+            hit.addEventListener('mousemove', show);
+            hit.addEventListener('mouseleave', hide);
+            hit.addEventListener('touchstart', e => { if (e.touches[0]) show(e.touches[0]); }, { passive: true });
+            hit.addEventListener('touchmove',  e => { if (e.touches[0]) show(e.touches[0]); }, { passive: true });
+            hit.addEventListener('touchend',   hide);
         }
 
         // ── Lead-type donut ────────────────────────────────────
