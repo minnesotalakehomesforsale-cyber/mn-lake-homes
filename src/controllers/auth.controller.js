@@ -1,8 +1,10 @@
 const pool = require('../database/pool');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const emailService = require('../services/email');
 const hubspot = require('../services/hubspot');
+const phoneSvc = require('../services/phone');
 const { logActivity } = require('../services/activity-log');
 
 const setAuthCookie = (res, token) => {
@@ -38,36 +40,39 @@ const waitlist = async (req, res) => {
         return res.status(400).json({ error: 'Password must be at least 8 characters.' });
     }
 
-    const digits = phone.replace(/\D/g, '');
-    if (digits.length < 10) {
+    // Normalize phone to dedup-safe digit form (strips +1 / formatting /
+    // country-code variation). The raw `phone` stays as the user typed
+    // it for display; `phone_normalized` is what we compare on.
+    const phoneNorm = phoneSvc.normalize(phone);
+    if (!phoneSvc.isValid(phone)) {
         return res.status(400).json({ error: 'Please enter a valid phone number.' });
     }
 
     try {
         const dup = await pool.query(
-            `SELECT email, phone FROM users
+            `SELECT email, phone, phone_normalized FROM users
               WHERE LOWER(email) = $1
-                 OR REGEXP_REPLACE(COALESCE(phone, ''), '[^0-9]', '', 'g') = $2
+                 OR (phone_normalized IS NOT NULL AND phone_normalized = $2)
               LIMIT 1`,
-            [email, digits]
+            [email, phoneNorm]
         );
         if (dup.rows.length > 0) {
             const existing = dup.rows[0];
             const hitEmail = existing.email && existing.email.toLowerCase() === email;
             return res.status(409).json({
                 error: hitEmail
-                    ? 'An account with that email already exists.'
-                    : 'An account with that phone number already exists.'
+                    ? 'An account with that email already exists. Log in or reset your password.'
+                    : 'That phone number is already in use.'
             });
         }
 
         const passwordHash = await bcrypt.hash(password, 10);
 
         const userRes = await pool.query(
-            `INSERT INTO users (first_name, last_name, full_name, email, phone, password_hash, role, account_status)
-             VALUES ($1, $2, $3, $4, $5, $6, 'client', 'active')
+            `INSERT INTO users (first_name, last_name, full_name, email, phone, phone_normalized, password_hash, role, account_status, password_changed_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'client', 'active', NOW())
              RETURNING id`,
-            [first_name, last_name, `${first_name} ${last_name}`, email, phone, passwordHash]
+            [first_name, last_name, `${first_name} ${last_name}`, email, phone, phoneNorm, passwordHash]
         );
         const userId = userRes.rows[0].id;
 
@@ -83,7 +88,8 @@ const waitlist = async (req, res) => {
         }).catch(e => console.error('[signup] lead backfill failed:', e.message));
 
         // Auto-login: issue JWT cookie so they land in their dashboard
-        const token = jwt.sign({ userId, role: 'client' }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const pwd_iat = Math.floor(Date.now() / 1000);
+        const token = jwt.sign({ userId, role: 'client', pwd_iat }, process.env.JWT_SECRET, { expiresIn: '24h' });
         setAuthCookie(res, token);
 
         // Fire-and-forget welcome email (doesn't block the response)
@@ -159,25 +165,42 @@ const register = async (req, res) => {
         ? service_area_tag_ids.filter(id => typeof id === 'string' && UUID_RE.test(id)).slice(0, signupCap)
         : [];
 
+    const phoneNorm = phoneSvc.normalize(phone);
+
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
-        const userExists = await client.query('SELECT id FROM users WHERE email = $1', [email]);
-        if (userExists.rows.length > 0) throw new Error('An account with that email already exists.');
+        // Case-insensitive email check + phone dedup (case-insensitive
+        // already since email is pre-lowercased; phone uses the
+        // normalized column).
+        const dup = await client.query(
+            `SELECT email FROM users
+              WHERE LOWER(email) = $1
+                 OR (phone_normalized IS NOT NULL AND $2::text IS NOT NULL AND phone_normalized = $2)
+              LIMIT 1`,
+            [email, phoneNorm]
+        );
+        if (dup.rows.length > 0) {
+            const hitEmail = dup.rows[0].email && dup.rows[0].email.toLowerCase() === email;
+            throw new Error(hitEmail
+                ? 'An account with that email already exists. Log in or reset your password.'
+                : 'That phone number is already in use.');
+        }
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Create User record
         const userRes = await client.query(
-            `INSERT INTO users (first_name, last_name, full_name, email, phone, password_hash, role, account_status)
-             VALUES ($1, $2, $3, $4, $5, $6, 'agent', 'active') RETURNING id`,
+            `INSERT INTO users (first_name, last_name, full_name, email, phone, phone_normalized, password_hash, role, account_status, password_changed_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'agent', 'active', NOW()) RETURNING id`,
             [
                 display_name.split(' ')[0],
                 display_name.split(' ').slice(1).join(' ') || '',
                 display_name,
                 email,
                 phone || null,
+                phoneNorm,
                 hashedPassword
             ]
         );
@@ -221,7 +244,8 @@ const register = async (req, res) => {
             if (r.rowCount) console.log(`[register] linked ${r.rowCount} prior lead(s) to ${email}`);
         }).catch(e => console.error('[register] lead backfill failed:', e.message));
 
-        const token = jwt.sign({ userId, role: 'agent' }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const pwd_iat = Math.floor(Date.now() / 1000);
+        const token = jwt.sign({ userId, role: 'agent', pwd_iat }, process.env.JWT_SECRET, { expiresIn: '24h' });
         setAuthCookie(res, token);
 
         // Fire-and-forget agent welcome email
@@ -279,10 +303,11 @@ const login = async (req, res) => {
     try {
         const userRes = await pool.query(
             `SELECT u.id, u.password_hash, u.role, u.account_status, u.full_name, u.email,
+                    EXTRACT(EPOCH FROM u.password_changed_at)::bigint AS pwd_iat,
                     a.display_name, a.slug
              FROM users u
              LEFT JOIN agents a ON a.user_id = u.id
-             WHERE u.email = $1`,
+             WHERE LOWER(u.email) = $1`,
             [email.trim().toLowerCase()]
         );
 
@@ -334,7 +359,11 @@ const login = async (req, res) => {
         // Update last_login_at
         await pool.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [user.id]);
 
-        const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign(
+            { userId: user.id, role: user.role, pwd_iat: user.pwd_iat || null },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
         setAuthCookie(res, token);
 
         logActivity({
@@ -457,21 +486,20 @@ const updateProfile = async (req, res) => {
     if (patch.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(patch.email)) {
         return res.status(400).json({ error: 'Please enter a valid email address.' });
     }
-    if (patch.phone) {
-        const digits = patch.phone.replace(/\D/g, '');
-        if (digits.length < 10) return res.status(400).json({ error: 'Please enter a valid phone number.' });
+    if (patch.phone && !phoneSvc.isValid(patch.phone)) {
+        return res.status(400).json({ error: 'Please enter a valid phone number.' });
     }
+    if (patch.phone) patch.phone_normalized = phoneSvc.normalize(patch.phone);
 
     try {
-        if (patch.email || patch.phone) {
-            const digits = patch.phone ? patch.phone.replace(/\D/g, '') : null;
+        if (patch.email || patch.phone_normalized) {
             const dup = await pool.query(
                 `SELECT id FROM users
                   WHERE id <> $1
                     AND ( ($2::text IS NOT NULL AND LOWER(email) = $2)
-                       OR ($3::text IS NOT NULL AND REGEXP_REPLACE(COALESCE(phone, ''), '[^0-9]', '', 'g') = $3) )
+                       OR ($3::text IS NOT NULL AND phone_normalized = $3) )
                   LIMIT 1`,
-                [req.user.userId, patch.email || null, digits]
+                [req.user.userId, patch.email || null, patch.phone_normalized || null]
             );
             if (dup.rows.length) return res.status(409).json({ error: 'That email or phone is already in use.' });
         }
@@ -551,7 +579,12 @@ const changePassword = async (req, res) => {
         if (!ok) return res.status(401).json({ error: 'Current password is incorrect.' });
 
         const newHash = await bcrypt.hash(new_password, 10);
-        await pool.query(`UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`, [newHash, req.user.userId]);
+        // Stamp password_changed_at = NOW() so every JWT issued before
+        // this moment is rejected by verifyToken on its next call.
+        await pool.query(
+            `UPDATE users SET password_hash = $1, password_changed_at = NOW(), updated_at = NOW() WHERE id = $2`,
+            [newHash, req.user.userId]
+        );
 
         logActivity({
             event_type: 'user.password.change',
@@ -566,4 +599,204 @@ const changePassword = async (req, res) => {
     }
 };
 
-module.exports = { register, login, logout, session, waitlist, me, updateProfile, changePassword };
+// ─── Password reset ────────────────────────────────────────────────────────
+// Two endpoints, anti-enumeration baked in:
+//
+//   POST /api/auth/forgot-password    public; always returns the same
+//                                     "check your email" response so an
+//                                     attacker can't learn which emails
+//                                     are registered. Side effect (if
+//                                     the email matches a user): generate
+//                                     a random token, save SHA-256(token)
+//                                     to password_reset_tokens, and email
+//                                     the user a reset URL with the raw
+//                                     token. Rate-limited per email +
+//                                     per IP via the same table.
+//
+//   POST /api/auth/reset-password     public; takes { token, new_password }.
+//                                     Validates token (single-use, not
+//                                     expired), updates password_hash +
+//                                     password_changed_at (invalidating
+//                                     every prior session), marks the
+//                                     token used_at.
+//
+// Tokens live 1 hour. We store SHA-256(token), not the raw token, so a
+// DB leak doesn't expose live reset links. Anti-enumeration matters
+// because forgot-password is the easiest way to enumerate accounts on
+// most real-estate platforms — "unknown email" responses leak data.
+
+const RESET_TOKEN_TTL_MIN     = 60;    // 1 hour
+const RESET_MAX_PER_EMAIL_1HR = 5;     // throttle per account
+const RESET_MAX_PER_IP_1HR    = 15;    // throttle per IP (abuse defense)
+
+function sha256(s) { return crypto.createHash('sha256').update(String(s)).digest('hex'); }
+
+const forgotPassword = async (req, res) => {
+    let { email } = req.body || {};
+    email = (email || '').trim().toLowerCase();
+
+    // The response is intentionally identical for "unknown email" and
+    // "email sent" — so we always return 200 with the same body.
+    const genericResp = { success: true, message: "If that email is on file, we've sent a reset link." };
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.json(genericResp);
+    }
+
+    const ip = (req.headers['x-forwarded-for'] || req.ip || '').split(',')[0].trim();
+
+    try {
+        // Per-IP throttle (counts attempts to ANY email from this IP in the
+        // last hour). Defends against enumeration sweeps.
+        if (ip) {
+            const ipR = await pool.query(
+                `SELECT COUNT(*)::int AS c FROM password_reset_tokens
+                  WHERE ip = $1 AND created_at >= NOW() - INTERVAL '1 hour'`,
+                [ip]
+            );
+            if ((ipR.rows[0]?.c || 0) >= RESET_MAX_PER_IP_1HR) {
+                // Still 200 + generic body — don't tell the attacker
+                // they're being throttled.
+                return res.json(genericResp);
+            }
+        }
+
+        // Find the user. If no match, fall through and respond generically
+        // — don't reveal whether the email exists.
+        const u = await pool.query(
+            `SELECT id, email, first_name FROM users
+              WHERE LOWER(email) = $1 AND deleted_at IS NULL AND account_status <> 'suspended'
+              LIMIT 1`,
+            [email]
+        );
+        if (!u.rows.length) return res.json(genericResp);
+        const user = u.rows[0];
+
+        // Per-email throttle — max N active tokens in the last hour.
+        const emR = await pool.query(
+            `SELECT COUNT(*)::int AS c FROM password_reset_tokens
+              WHERE user_id = $1 AND created_at >= NOW() - INTERVAL '1 hour'`,
+            [user.id]
+        );
+        if ((emR.rows[0]?.c || 0) >= RESET_MAX_PER_EMAIL_1HR) {
+            return res.json(genericResp);
+        }
+
+        // Mint a 32-byte URL-safe token. Store only the SHA-256 hash.
+        const rawToken = crypto.randomBytes(32).toString('base64url');
+        const tokenHash = sha256(rawToken);
+        await pool.query(
+            `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, ip, ua)
+             VALUES ($1, $2, NOW() + INTERVAL '${RESET_TOKEN_TTL_MIN} minutes', $3, $4)`,
+            [user.id, tokenHash, ip || null, (req.headers['user-agent'] || '').slice(0, 500)]
+        );
+
+        const siteBase = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
+        const resetUrl = `${siteBase}/pages/public/reset-password.html?token=${encodeURIComponent(rawToken)}`;
+
+        // Fire-and-forget email. Always returns the generic response even
+        // if the email queue glitches — we don't want network errors to
+        // be a side-channel.
+        try {
+            emailService.sendPasswordReset({
+                to: user.email,
+                first_name: user.first_name,
+                resetUrl,
+                expiresInMin: RESET_TOKEN_TTL_MIN,
+            });
+        } catch (e) {
+            console.error('[forgot-password] email failed:', e.message);
+        }
+
+        logActivity({
+            event_type: 'auth.password.reset.requested',
+            event_scope: 'auth',
+            actor: { type: 'user', id: user.id, label: user.email },
+            req,
+        });
+
+        res.json(genericResp);
+    } catch (err) {
+        console.error('[forgot-password]', err.message);
+        // Still return the generic response on errors to keep the
+        // anti-enumeration guarantee.
+        res.json(genericResp);
+    }
+};
+
+const resetPassword = async (req, res) => {
+    const { token, new_password } = req.body || {};
+    if (!token || !new_password) {
+        return res.status(400).json({ error: 'Token and new password are required.' });
+    }
+    if (String(new_password).length < 8) {
+        return res.status(400).json({ error: 'New password must be at least 8 characters.' });
+    }
+
+    const tokenHash = sha256(String(token));
+    try {
+        // Look up the token. Must be unused and unexpired.
+        const r = await pool.query(
+            `SELECT t.id, t.user_id, t.used_at, t.expires_at, u.email
+               FROM password_reset_tokens t
+               JOIN users u ON u.id = t.user_id
+              WHERE t.token_hash = $1
+              LIMIT 1`,
+            [tokenHash]
+        );
+        if (!r.rows.length) {
+            return res.status(400).json({ error: 'This reset link is invalid or has already been used.' });
+        }
+        const row = r.rows[0];
+        if (row.used_at) {
+            return res.status(400).json({ error: 'This reset link has already been used. Request a new one.' });
+        }
+        if (new Date(row.expires_at) < new Date()) {
+            return res.status(400).json({ error: 'This reset link has expired. Request a new one.' });
+        }
+
+        const newHash = await bcrypt.hash(new_password, 10);
+
+        // Transaction: update password + mark token used in one shot, so
+        // a token can't be reused if the password update fails.
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            await client.query(
+                `UPDATE users SET password_hash = $1, password_changed_at = NOW(), updated_at = NOW() WHERE id = $2`,
+                [newHash, row.user_id]
+            );
+            await client.query(
+                `UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1`,
+                [row.id]
+            );
+            // Belt + suspenders: invalidate every OTHER unused token for
+            // this user so a leaked second link can't be used.
+            await client.query(
+                `UPDATE password_reset_tokens SET used_at = NOW()
+                  WHERE user_id = $1 AND used_at IS NULL AND id <> $2`,
+                [row.user_id, row.id]
+            );
+            await client.query('COMMIT');
+        } catch (txErr) {
+            await client.query('ROLLBACK').catch(() => {});
+            throw txErr;
+        } finally {
+            client.release();
+        }
+
+        logActivity({
+            event_type: 'auth.password.reset.completed',
+            event_scope: 'auth',
+            actor: { type: 'user', id: row.user_id, label: row.email },
+            req,
+        });
+
+        res.json({ success: true, message: 'Password updated. You can now log in.' });
+    } catch (err) {
+        console.error('[reset-password]', err.message);
+        res.status(500).json({ error: 'Could not reset your password. Please try again.' });
+    }
+};
+
+module.exports = { register, login, logout, session, waitlist, me, updateProfile, changePassword, forgotPassword, resetPassword };

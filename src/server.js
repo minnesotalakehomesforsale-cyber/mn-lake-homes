@@ -998,6 +998,35 @@ async function ensureTables() {
             ALTER TABLE users              ADD COLUMN IF NOT EXISTS hs_contact_id TEXT;
             ALTER TABLE leads              ADD COLUMN IF NOT EXISTS hs_contact_id TEXT;
             ALTER TABLE contact_inquiries  ADD COLUMN IF NOT EXISTS hs_contact_id TEXT;
+
+            -- Password-reset infrastructure. password_changed_at lets the
+            -- JWT middleware reject any session token issued *before* the
+            -- last password change — so a reset effectively invalidates
+            -- old sessions even though we don't have a token blocklist.
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMPTZ;
+            -- Normalized phone column for dedup. Stores the digit-only
+            -- form of the user's phone, with the leading US country code
+            -- (1) stripped if present, so different formats of the same
+            -- number compare equal in a simple index lookup. The raw
+            -- phone column stays as the user typed it for display.
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_normalized VARCHAR(20);
+            CREATE INDEX IF NOT EXISTS idx_users_phone_normalized ON users(phone_normalized) WHERE phone_normalized IS NOT NULL;
+
+            -- Password reset tokens. token_hash stores SHA-256(token) so
+            -- a DB leak doesn't expose live reset links. Tokens are
+            -- single-use (used_at) and expire (expires_at).
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                token_hash  TEXT NOT NULL UNIQUE,
+                expires_at  TIMESTAMPTZ NOT NULL,
+                used_at     TIMESTAMPTZ,
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                ip          TEXT,
+                ua          TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_password_reset_user    ON password_reset_tokens(user_id);
+            CREATE INDEX IF NOT EXISTS idx_password_reset_active  ON password_reset_tokens(expires_at) WHERE used_at IS NULL;
         `);
 
         // ── Lead routing infrastructure (Founder/Premium/Basic tiers + round-robin) ──

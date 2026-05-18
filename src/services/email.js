@@ -149,6 +149,38 @@ function layout({ title, preheader, body, ctaText, ctaUrl }) {
 /**
  * Welcome — sent when someone joins the waitlist or creates an account.
  */
+/**
+ * Password reset link — sent from /api/auth/forgot-password. The reset URL
+ * carries a one-time token that expires in `expiresInMin` minutes. We
+ * intentionally avoid including the user's own email in the body — a
+ * single leaked screenshot otherwise reveals both the email and a live
+ * reset link.
+ */
+function sendPasswordReset({ to, first_name, resetUrl, expiresInMin = 60 }) {
+    if (!to) return { skipped: true };
+    const name = first_name || 'there';
+    return sendEmail({
+        to,
+        subject: 'Reset your MN Lake Homes password',
+        html: layout({
+            title: `Reset your password, ${name}.`,
+            preheader: `One-click reset — link expires in ${expiresInMin} minutes.`,
+            body: `
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Someone (hopefully you) requested a password reset for your MN Lake Homes account. Use the button below to set a new password. The link expires in ${expiresInMin} minutes and can only be used once.
+                </p>
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  If you didn't request this, you can safely ignore this email — your password won't change unless you click the link and choose a new one.
+                </p>
+                <p style="margin:18px 0 0;font-size:13px;line-height:1.6;color:#718096;">
+                  For security, this link won't appear anywhere else. If the button doesn't open, copy and paste the URL from your browser bar after clicking.
+                </p>`,
+            ctaText: 'Reset password',
+            ctaUrl: resetUrl,
+        })
+    });
+}
+
 function sendWelcome(user) {
     const name = user.first_name || user.full_name?.split(' ')[0] || 'there';
     return sendEmail({

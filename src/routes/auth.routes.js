@@ -12,4 +12,9 @@ router.get('/me', verifyToken, authController.me);
 router.patch('/profile', verifyToken, authController.updateProfile);
 router.post('/password', verifyToken, authController.changePassword);
 
+// Password reset (public, anti-enumeration). Forgot accepts {email} and
+// always returns the same generic body. Reset accepts {token, new_password}.
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password',  authController.resetPassword);
+
 module.exports = router;

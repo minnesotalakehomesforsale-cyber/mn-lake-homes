@@ -1051,7 +1051,8 @@ const impersonateAgent = async (req, res) => {
     const { id } = req.params;
     try {
         const { rows } = await pool.query(
-            `SELECT u.id, u.role, u.account_status, u.email
+            `SELECT u.id, u.role, u.account_status, u.email,
+                    EXTRACT(EPOCH FROM u.password_changed_at)::bigint AS pwd_iat
              FROM agents a JOIN users u ON u.id = a.user_id
              WHERE a.id = $1`,
             [id]
@@ -1065,7 +1066,11 @@ const impersonateAgent = async (req, res) => {
         // Short-lived token returned in the body — NOT set as a cookie.
         // The agent dashboard stores it per-tab in sessionStorage so the
         // admin's own cookie session is never touched.
-        const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '8h' });
+        const token = jwt.sign(
+            { userId: user.id, role: user.role, pwd_iat: user.pwd_iat || null },
+            process.env.JWT_SECRET,
+            { expiresIn: '8h' }
+        );
 
         logActivity({
             event_type: 'admin.impersonate',

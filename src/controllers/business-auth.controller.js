@@ -161,8 +161,8 @@ exports.signup = async (req, res) => {
         const lastName  = display_name.split(' ').slice(1).join(' ') || '';
 
         const userRes = await client.query(
-            `INSERT INTO users (first_name, last_name, full_name, email, password_hash, role, account_status)
-             VALUES ($1, $2, $3, $4, $5, 'business_owner', 'active') RETURNING id`,
+            `INSERT INTO users (first_name, last_name, full_name, email, password_hash, role, account_status, password_changed_at)
+             VALUES ($1, $2, $3, $4, $5, 'business_owner', 'active', NOW()) RETURNING id`,
             [firstName, lastName, display_name, email, hash]
         );
         const userId = userRes.rows[0].id;
@@ -190,7 +190,8 @@ exports.signup = async (req, res) => {
 
         // Sign them in immediately so the dashboard loads without a
         // separate login step after Stripe returns.
-        const token = jwt.sign({ userId, role: 'business_owner' }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const pwd_iat = Math.floor(Date.now() / 1000);
+        const token = jwt.sign({ userId, role: 'business_owner', pwd_iat }, process.env.JWT_SECRET, { expiresIn: '24h' });
         setCookie(res, token);
 
         logActivity({
