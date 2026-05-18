@@ -73,8 +73,14 @@
         .post-body-wrap img { max-width: 100%; height: auto; border-radius: 10px; }
 
         @media (max-width: 900px) {
-            .post-hero { height: auto; min-height: 280px; }
-            .post-hero-content { padding: 2rem 1.25rem; }
+            /* On mobile the hero is short enough that bottom-aligning the
+               eyebrow/title can crash into the absolute back-pill at top.
+               Switch the content to top-aligned and reserve enough top
+               padding (8rem) to clear navbar (~70px) + pill (~36px) +
+               breathing room. Hero grows to fit content with min-height as
+               a floor so short titles still feel substantial. */
+            .post-hero { height: auto; min-height: 340px; padding-top: 0; }
+            .post-hero-content { padding: 8rem 1.25rem 2rem; justify-content: flex-start; }
             .post-title { font-size: 2rem; letter-spacing: -1px; line-height: 1.15; }
             .post-tag { margin-bottom: 0.75rem; }
             .post-byline { font-size: 0.82rem; gap: 1rem; }
@@ -88,8 +94,8 @@
             .back-link { margin-bottom: 1.25rem; font-size: 0.85rem; }
         }
         @media (max-width: 480px) {
-            .post-hero { min-height: 240px; }
-            .post-hero-content { padding: 1.5rem 1rem; }
+            .post-hero { min-height: 320px; }
+            .post-hero-content { padding: 7.5rem 1rem 1.75rem; }
             .post-title { font-size: 1.6rem; letter-spacing: -0.5px; }
             .post-body-wrap { padding: 2rem 1rem 3rem; }
             .post-body-wrap p { font-size: 0.98rem; }

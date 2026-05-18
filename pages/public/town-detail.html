@@ -129,6 +129,21 @@
             font-size: 1.25rem; line-height: 1.55; color: #1a202c; font-weight: 500;
             margin-bottom: 1.75rem;
         }
+        /* Server-injected editorial body paragraphs (from
+           {{TOWN_LIFESTYLE_BODY}} / {{TOWN_SEASONS_BODY}}) sit as direct
+           children of .ld-about-inner — they don't have a wrapper with
+           id^="tn-description", so the rules above don't apply. Style them
+           explicitly here so they look identical to the description prose
+           on desktop AND mobile, instead of falling back to anaemic
+           browser defaults. */
+        .ld-about-inner > p {
+            color: #2d3748; font-size: 1.06rem; line-height: 1.8; margin: 0 0 1.35rem;
+        }
+        .ld-about-inner > p:first-of-type {
+            color: #1a202c; font-weight: 500; font-size: 1.18rem; line-height: 1.6;
+            margin-bottom: 1.55rem;
+        }
+        .ld-about-inner > p:last-of-type { margin-bottom: 0; }
         .ld-about-inner [id^="tn-description"] p:last-child { margin-bottom: 0; }
 
         /* Continued about sections — tighter top padding + standard prose. */
@@ -167,6 +182,8 @@
             .ld-about-inner h2 { font-size: 2.1rem; margin-bottom: 1.15rem; letter-spacing: -1px; }
             .ld-about-inner [id^="tn-description"] p { font-size: 1rem; line-height: 1.7; margin-bottom: 1.15rem; }
             .ld-about-inner #tn-description-1 p:first-of-type { font-size: 1.1rem; line-height: 1.6; margin-bottom: 1.4rem; }
+            .ld-about-inner > p { font-size: 1rem; line-height: 1.7; margin-bottom: 1.15rem; }
+            .ld-about-inner > p:first-of-type { font-size: 1.1rem; line-height: 1.6; margin-bottom: 1.4rem; }
             .ld-facts { grid-template-columns: repeat(2, 1fr); gap: 1.25rem; margin-top: 2.25rem; padding-top: 1.75rem; }
             .ld-fact .value { font-size: 1.25rem; }
             .ld-fact .label { font-size: 0.66rem; }
@@ -188,6 +205,8 @@
             .ld-about.ld-about-continued { padding: 2rem 1rem 2.75rem; }
             .ld-about-inner h2 { font-size: 1.95rem; margin-bottom: 1rem; }
             .ld-about-inner [id^="tn-description"] p { font-size: 0.96rem; line-height: 1.65; }
+            .ld-about-inner > p { font-size: 0.96rem; line-height: 1.65; margin-bottom: 1.1rem; }
+            .ld-about-inner > p:first-of-type { font-size: 1.05rem; }
             .ld-about-inner #tn-description-1 p:first-of-type { font-size: 1.05rem; }
             .ld-facts { grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem; padding-top: 1.5rem; }
             .ld-fact { padding: 0.4rem 0.2rem; }
