@@ -20,4 +20,8 @@ router.post('/checkout',         verifyToken, c.checkout);
 router.post('/portal',           verifyToken, c.portal);
 router.post('/change-password',  verifyToken, c.changePassword);
 
+// New: pricing display config (public) + live billing snapshot (auth).
+router.get ('/pricing',          c.getPricing);
+router.get ('/billing',          verifyToken, c.getMyBilling);
+
 module.exports = router;

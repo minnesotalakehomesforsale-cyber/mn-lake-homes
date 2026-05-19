@@ -14,7 +14,10 @@
         :root { --brand: #d97706; --brand-dark: #b45309; --ink: #1a202c; --ink-soft: #4a5568; --muted: #718096; --line: #e5eaf0; }
         body { background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: var(--ink); }
 
-        .bd-shell { max-width: 960px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+        /* Desktop top padding has to clear the fixed global-header (~76px).
+           Mobile already does this at 5.5rem in the ≤900px block below;
+           desktop was only 2.5rem and content rode right under the nav. */
+        .bd-shell { max-width: 960px; margin: 0 auto; padding: 7rem 1.25rem 5rem; }
 
         .bd-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 2rem; }
         .bd-head h1 { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.6px; margin: 0 0 0.25rem; }
@@ -274,9 +277,25 @@
                 <span id="sub-label">—</span>
             </div>
             <p id="sub-copy" class="hint" style="font-size:0.95rem;color:var(--ink-soft);line-height:1.55;"></p>
+
+            <!-- Live billing snapshot — populated by loadBilling() once
+                 /api/business-auth/billing returns. Hidden when there's
+                 no Stripe subscription on file. -->
+            <div id="bill-grid" style="display:none; margin-top:1.5rem; display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem;">
+                <div class="bill-tile"><div class="bill-label">Plan</div><div class="bill-val" id="bill-plan">—</div></div>
+                <div class="bill-tile"><div class="bill-label">Billing</div><div class="bill-val" id="bill-amt">—</div></div>
+                <div class="bill-tile" id="bill-renew-tile"><div class="bill-label">Next renewal</div><div class="bill-val" id="bill-renew">—</div></div>
+                <div class="bill-tile"><div class="bill-label">Status</div><div class="bill-val" id="bill-status">—</div></div>
+            </div>
+            <style>
+                .bill-tile { background: #fafbfc; border: 1px solid #edf2f7; border-radius: 10px; padding: 0.85rem 1rem; }
+                .bill-label { font-size: 0.66rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #a0aec0; margin-bottom: 0.35rem; }
+                .bill-val   { font-size: 1.05rem; font-weight: 700; color: #1a202c; }
+            </style>
+
             <div style="margin-top:1.25rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
-                <button class="btn primary" id="btn-checkout"  onclick="startCheckout()"  style="display:none;">Start subscription →</button>
-                <button class="btn"         id="btn-portal"    onclick="openPortal()"     style="display:none;">Manage billing in Stripe →</button>
+                <a   class="btn primary" id="btn-checkout"  href="/pages/public/business-pricing.html" style="display:none;">Choose a plan →</a>
+                <button class="btn"      id="btn-portal"    onclick="openPortal()" style="display:none;">Manage membership in Stripe →</button>
             </div>
             <p class="hint" style="margin-top:1.25rem;">Your listing only shows on the public directory while your subscription is active and an admin has approved it.</p>
         </section>
@@ -471,20 +490,47 @@
             document.getElementById('sub-label').textContent = label;
             document.getElementById('sub-copy').textContent  = copy;
 
-            // Show checkout if they never started OR subscription is canceled/incomplete.
+            // Show "Choose a plan" link when there's no live subscription;
+            // show the portal button once Stripe knows them as a customer.
             const showCheckout = !_biz.stripe_subscription_id || state === 'canceled' || state === 'incomplete' || state === 'unpaid';
             document.getElementById('btn-checkout').style.display = showCheckout ? '' : 'none';
             document.getElementById('btn-portal').style.display   = _biz.stripe_customer_id ? '' : 'none';
+
+            // Hydrate the live billing tiles from /api/business-auth/billing.
+            loadBilling();
         }
-        async function startCheckout() {
+
+        // Pulls the live subscription snapshot (plan name, $/period,
+        // renewal date, status) and renders the .bill-tile grid. Soft
+        // fails — the basic dot/copy still shows if Stripe is down.
+        async function loadBilling() {
+            const grid = document.getElementById('bill-grid');
             try {
-                const res = await fetch('/api/business-auth/checkout', { method: 'POST', credentials: 'include' });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok || !data.url) throw new Error(data.error || 'Checkout not available.');
-                window.location.href = data.url;
-            } catch (ex) {
-                alert(ex.message);
-            }
+                const r = await fetch('/api/business-auth/billing', { credentials: 'include' });
+                if (!r.ok) return;
+                const data = await r.json();
+                const sub = data.subscription;
+                if (!sub) { grid.style.display = 'none'; return; }
+
+                grid.style.display = '';
+                const dollars = c => c == null ? '—' : `$${(c / 100).toLocaleString('en-US', { minimumFractionDigits: (c % 100 === 0) ? 0 : 2 })}`;
+                const intvl = sub.interval === 'year' ? 'year' : sub.interval === 'month' ? 'month' : sub.interval || 'period';
+
+                document.getElementById('bill-plan').textContent =
+                    sub.product_name || (data.tier ? data.tier.charAt(0).toUpperCase() + data.tier.slice(1) : 'Active');
+                document.getElementById('bill-amt').textContent =
+                    sub.amount_cents != null ? `${dollars(sub.amount_cents)} / ${intvl}` : 'Active';
+                if (sub.current_period_end) {
+                    const d = new Date(sub.current_period_end);
+                    document.getElementById('bill-renew-tile').querySelector('.bill-label').textContent =
+                        sub.cancel_at_period_end ? 'Ends' : 'Next renewal';
+                    document.getElementById('bill-renew').textContent =
+                        d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                }
+                const pretty = (sub.status || '').replace(/_/g, ' ');
+                document.getElementById('bill-status').textContent =
+                    pretty ? pretty.charAt(0).toUpperCase() + pretty.slice(1) : '—';
+            } catch (_) { /* leave the basic dot/copy; tiles stay hidden */ }
         }
         async function openPortal() {
             try {
@@ -628,7 +674,7 @@
             }
             if (cancelled) {
                 b.className = 'bd-banner warn';
-                b.innerHTML = `<span>Checkout was cancelled. Your listing won't be visible until the subscription is active.</span><button onclick="startCheckout()">Resume checkout</button>`;
+                b.innerHTML = `<span>Checkout was cancelled. Your listing won't be visible until the subscription is active.</span><a href="/pages/public/business-pricing.html">Pick a plan →</a>`;
                 b.style.display = '';
                 return;
             }

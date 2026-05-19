@@ -81,7 +81,17 @@ function getStripe() {
     return _stripe;
 }
 
-const BIZ_PRICE_ID = () => process.env.STRIPE_PRICE_BUSINESS_MONTHLY;
+// Tier + period → Stripe price ID. Basic monthly keeps its legacy env
+// var name (STRIPE_PRICE_BUSINESS_MONTHLY) for backward compat with the
+// existing Render config; new variants slot in alongside it.
+function priceIdFor(tier, period) {
+    if (tier === 'premium' && period === 'monthly') return process.env.STRIPE_PRICE_BUSINESS_PREMIUM_MONTHLY;
+    if (tier === 'premium' && period === 'annual')  return process.env.STRIPE_PRICE_BUSINESS_PREMIUM_ANNUAL;
+    if (tier === 'basic'   && period === 'annual')  return process.env.STRIPE_PRICE_BUSINESS_BASIC_ANNUAL;
+    // basic monthly — also the default fallback when only the legacy
+    // env var is set.
+    return process.env.STRIPE_PRICE_BUSINESS_BASIC_MONTHLY || process.env.STRIPE_PRICE_BUSINESS_MONTHLY;
+}
 
 function setCookie(res, token) {
     res.cookie('auth_session', token, {
@@ -104,12 +114,12 @@ const KNOWN_TYPES = new Set([
     'builder', 'boat_rental', 'outdoor_recreation', 'other',
 ]);
 
-async function createCheckoutForBusiness(businessId, customerEmail, existingStripeCustomerId) {
+async function createCheckoutForBusiness(businessId, customerEmail, existingStripeCustomerId, tier = 'basic', period = 'monthly') {
     const stripe  = getStripe();
-    const priceId = BIZ_PRICE_ID();
+    const priceId = priceIdFor(tier, period);
     if (!stripe)  throw new Error('Stripe is not configured on this server.');
     if (!priceId || priceId.startsWith('price_STUB')) {
-        throw new Error('Business plan price ID not configured — set STRIPE_PRICE_BUSINESS_MONTHLY.');
+        throw new Error(`Stripe price not configured for ${tier}/${period}. Set the matching STRIPE_PRICE_BUSINESS_* env var.`);
     }
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     const session = await stripe.checkout.sessions.create({
@@ -122,10 +132,10 @@ async function createCheckoutForBusiness(businessId, customerEmail, existingStri
             ? { customer: existingStripeCustomerId }
             : { customer_email: customerEmail }),
         client_reference_id: businessId,
-        metadata: { kind: 'business', business_id: businessId },
-        subscription_data: { metadata: { kind: 'business', business_id: businessId } },
+        metadata:          { kind: 'business', business_id: businessId, tier, period },
+        subscription_data: { metadata: { kind: 'business', business_id: businessId, tier, period } },
         success_url: `${baseUrl}/business/dashboard?paid=1`,
-        cancel_url:  `${baseUrl}/business/dashboard?paid=0`,
+        cancel_url:  `${baseUrl}/pages/public/business-pricing.html?canceled=1`,
     });
     return session.url;
 }
@@ -237,21 +247,14 @@ exports.signup = async (req, res) => {
             }
         })();
 
-        // Try to produce a Checkout URL. If Stripe isn't set up yet, we
-        // still return success — the dashboard will show a "finish
-        // checkout" nudge when the owner lands.
-        let checkoutUrl = null;
-        let checkoutError = null;
-        try {
-            checkoutUrl = await createCheckoutForBusiness(biz.id, email, null);
-        } catch (err) {
-            checkoutError = err.message;
-        }
+        // Signup no longer auto-creates a Stripe Checkout URL — that
+        // forced everyone into the basic-monthly tier before they ever
+        // saw the plans. Instead the frontend lands on /business-pricing
+        // where the owner picks tier + period, then we mint the
+        // Checkout URL via POST /checkout once they've chosen.
         res.status(201).json({
             success: true,
             business: { id: biz.id, slug: biz.slug },
-            checkout_url: checkoutUrl,
-            checkout_error: checkoutError,
         });
     } catch (err) {
         await client.query('ROLLBACK').catch(() => {});
@@ -295,19 +298,129 @@ exports.me = async (req, res) => {
 };
 
 // ─── POST /checkout ────────────────────────────────────────────────────────
+// Accepts { tier, period } in the body. The pricing page sends both;
+// older callers (e.g. the resume-checkout button before this refactor)
+// can still POST with no body and get basic/monthly as the fallback —
+// which keeps the legacy STRIPE_PRICE_BUSINESS_MONTHLY env var working.
 exports.checkout = async (req, res) => {
+    if (!req.user || req.user.role !== 'business_owner') {
+        return res.status(403).json({ error: 'Business-owner access only.' });
+    }
+    const { tier, period } = req.body || {};
+    const validTiers   = ['basic', 'premium'];
+    const validPeriods = ['monthly', 'annual'];
+    const t = validTiers.includes(tier)     ? tier   : 'basic';
+    const p = validPeriods.includes(period) ? period : 'monthly';
+    try {
+        const biz = await fetchOwnerBusiness(req.user.userId);
+        if (!biz) return res.status(404).json({ error: 'No business found for your account.' });
+        const emailRes = await pool.query('SELECT email FROM users WHERE id = $1', [req.user.userId]);
+        const url = await createCheckoutForBusiness(biz.id, emailRes.rows[0]?.email, biz.stripe_customer_id, t, p);
+        res.json({ url });
+    } catch (err) {
+        console.error('[business-auth.checkout]', err.message);
+        res.status(500).json({ error: err.message || 'Could not start checkout.' });
+    }
+};
+
+// ─── GET /pricing — public display config ─────────────────────────────────
+// Env-driven price labels for the business pricing page. Stripe is the
+// source of truth for actual billing — these are just what we show.
+exports.getPricing = (req, res) => {
+    const num = (v, def) => {
+        const n = Number(v);
+        return Number.isFinite(n) && n > 0 ? n : def;
+    };
+    res.json({
+        currency: 'usd',
+        tiers: [
+            {
+                tier: 'basic',
+                name: 'Local Spotlight',
+                tagline: 'Get your business listed on the lakes you serve.',
+                features: [
+                    'Public business profile + map pin',
+                    'Connected to up to 10 towns',
+                    'Standard placement on lake + town pages',
+                    'Lead-ready contact card with phone / email',
+                    'Cancel anytime, change card anytime',
+                ],
+                monthly_price: num(process.env.STRIPE_PRICING_BUSINESS_BASIC_MONTHLY, 29),
+                annual_price:  num(process.env.STRIPE_PRICING_BUSINESS_BASIC_ANNUAL, 290),
+                stripe_price_monthly: !!(process.env.STRIPE_PRICE_BUSINESS_BASIC_MONTHLY || process.env.STRIPE_PRICE_BUSINESS_MONTHLY),
+                stripe_price_annual:  !!process.env.STRIPE_PRICE_BUSINESS_BASIC_ANNUAL,
+            },
+            {
+                tier: 'premium',
+                name: 'Featured Partner',
+                tagline: 'Top placement, partner badge, and priority on every lake page.',
+                features: [
+                    'Everything in Local Spotlight',
+                    'Featured Partner badge across the network',
+                    'Top placement on lake + town pages',
+                    'Pinned card on related agent profiles',
+                    'Quarterly highlight in regional reports',
+                ],
+                monthly_price: num(process.env.STRIPE_PRICING_BUSINESS_PREMIUM_MONTHLY, 79),
+                annual_price:  num(process.env.STRIPE_PRICING_BUSINESS_PREMIUM_ANNUAL, 790),
+                highlight: true,
+                stripe_price_monthly: !!process.env.STRIPE_PRICE_BUSINESS_PREMIUM_MONTHLY,
+                stripe_price_annual:  !!process.env.STRIPE_PRICE_BUSINESS_PREMIUM_ANNUAL,
+            },
+        ],
+    });
+};
+
+// ─── GET /billing — live Stripe snapshot for the owner's listing ─────────
+// Local row + live subscription state from Stripe (renewal, amount,
+// status, cancel-at-period-end). Used by the dashboard Subscription
+// tab. Stripe lookup soft-fails — local snapshot always returns.
+exports.getMyBilling = async (req, res) => {
     if (!req.user || req.user.role !== 'business_owner') {
         return res.status(403).json({ error: 'Business-owner access only.' });
     }
     try {
         const biz = await fetchOwnerBusiness(req.user.userId);
-        if (!biz) return res.status(404).json({ error: 'No business found for your account.' });
-        const emailRes = await pool.query('SELECT email FROM users WHERE id = $1', [req.user.userId]);
-        const url = await createCheckoutForBusiness(biz.id, emailRes.rows[0]?.email, biz.stripe_customer_id);
-        res.json({ url });
+        if (!biz) return res.status(404).json({ error: 'No business linked to this account.' });
+
+        const out = {
+            has_business:           true,
+            business_id:            biz.id,
+            slug:                   biz.slug,
+            name:                   biz.name,
+            status:                 biz.status,
+            tier:                   biz.tier,
+            subscription_status:    biz.subscription_status,
+            stripe_customer_id:     biz.stripe_customer_id,
+            stripe_subscription_id: biz.stripe_subscription_id,
+            subscription:           null,
+        };
+
+        const stripe = getStripe();
+        if (stripe && biz.stripe_subscription_id) {
+            try {
+                const sub = await stripe.subscriptions.retrieve(biz.stripe_subscription_id, { expand: ['items.data.price.product'] });
+                const item  = sub.items?.data?.[0];
+                const price = item?.price;
+                out.subscription = {
+                    status:               sub.status,
+                    cancel_at_period_end: !!sub.cancel_at_period_end,
+                    current_period_end:   sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
+                    started_at:           sub.start_date         ? new Date(sub.start_date * 1000).toISOString()         : null,
+                    interval:             price?.recurring?.interval || null,
+                    interval_count:       price?.recurring?.interval_count || 1,
+                    amount_cents:         price?.unit_amount || null,
+                    currency:             price?.currency || 'usd',
+                    product_name:         price?.product?.name || null,
+                };
+            } catch (err) {
+                console.warn('[business-auth getMyBilling] subscription lookup failed:', err.message);
+            }
+        }
+        res.json(out);
     } catch (err) {
-        console.error('[business-auth.checkout]', err.message);
-        res.status(500).json({ error: err.message || 'Could not start checkout.' });
+        console.error('[business-auth.getMyBilling]', err.message);
+        res.status(500).json({ error: 'Failed to load billing info.' });
     }
 };
 

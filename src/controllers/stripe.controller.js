@@ -59,9 +59,10 @@ function membershipCodeFromPriceId(priceId) {
 }
 
 // Reverse lookup for business subscriptions: price ID → tier. Premium
-// maps to "Featured Partner"; basic maps to "Local Spotlight". Anything
-// else falls back to basic so a misconfigured price doesn't lock the
-// subscriber out of the directory.
+// maps to "Featured Partner"; basic (monthly or annual, plus the legacy
+// STRIPE_PRICE_BUSINESS_MONTHLY env var) maps to "Local Spotlight".
+// Anything else still defaults to basic so a misconfigured price doesn't
+// silently lock the subscriber out of the directory.
 function businessTierFromPriceId(priceId) {
     if (priceId === process.env.STRIPE_PRICE_BUSINESS_PREMIUM_MONTHLY
      || priceId === process.env.STRIPE_PRICE_BUSINESS_PREMIUM_ANNUAL) return 'premium';

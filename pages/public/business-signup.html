@@ -637,11 +637,10 @@
                         business_type: payload.business_type || null,
                     });
                 }
-                if (data.checkout_url) {
-                    window.location.href = data.checkout_url;
-                } else {
-                    window.location.href = '/business/dashboard';
-                }
+                // Signup no longer hard-redirects to a single Stripe
+                // plan. Land on the pricing page so the owner can pick
+                // tier + period, then check out from there.
+                window.location.href = '/pages/public/business-pricing.html?from=signup';
             } catch (ex) {
                 err.textContent = ex.message || 'Something went wrong.';
                 err.classList.add('show');

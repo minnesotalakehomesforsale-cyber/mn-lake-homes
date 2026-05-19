@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Pricing | MN Lake Homes</title>
+    <meta name="description" content="Get your business in front of Minnesota lake-home buyers and owners. Local Spotlight or Featured Partner. Monthly or annual.">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: #1a202c; }
+
+        .pricing-hero { padding: 7rem 1.5rem 3rem; text-align: center; background: linear-gradient(180deg, #fff 0%, #f7f9fa 100%); }
+        .pricing-hero .eyebrow { font-size: 0.78rem; font-weight: 800; letter-spacing: 1.5px; color: #1d6df2; text-transform: uppercase; margin-bottom: 0.85rem; }
+        .pricing-hero h1 { font-size: 3.4rem; font-weight: 800; letter-spacing: -1.5px; line-height: 1.05; margin: 0 0 1rem; color: #1a202c; }
+        .pricing-hero p.lead { font-size: 1.1rem; color: #4a5568; line-height: 1.55; max-width: 640px; margin: 0 auto 2.5rem; }
+
+        .toggle-row { display: flex; justify-content: center; margin-bottom: 1.25rem; }
+        .period-toggle { display: inline-flex; gap: 0.25rem; background: #edf2f7; padding: 0.35rem; border-radius: 99px; border: 1px solid #e2e8f0; }
+        .period-toggle button { background: none; border: 0; padding: 0.55rem 1.25rem; font: inherit; font-size: 0.88rem; font-weight: 700; color: #4a5568; cursor: pointer; border-radius: 99px; transition: background 0.15s, color 0.15s; }
+        .period-toggle button.on { background: #1a202c; color: #fff; }
+        .save-pill { display: inline-block; margin-left: 0.5rem; background: #f0fff4; color: #2f855a; font-size: 0.66rem; font-weight: 800; padding: 0.18rem 0.5rem; border-radius: 99px; letter-spacing: 0.4px; }
+
+        .tier-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; max-width: 880px; margin: 0 auto 4rem; padding: 0 1.5rem; }
+        @media (max-width: 760px) { .tier-grid { grid-template-columns: 1fr; max-width: 480px; } }
+        .tier { background: #fff; border: 1px solid #edf2f7; border-radius: 18px; padding: 2.25rem 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; flex-direction: column; position: relative; }
+        .tier.highlight { border: 2px solid #1d6df2; box-shadow: 0 20px 50px rgba(29,109,242,0.15); transform: translateY(-4px); }
+        .tier.highlight .tier-badge { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: #1d6df2; color: #fff; font-size: 0.66rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 0.35rem 0.85rem; border-radius: 99px; box-shadow: 0 6px 16px rgba(29,109,242,0.3); }
+        .tier h3 { font-size: 1.55rem; font-weight: 800; letter-spacing: -0.5px; margin: 0 0 0.4rem; color: #1a202c; }
+        .tier .tagline { font-size: 0.95rem; color: #718096; line-height: 1.5; margin: 0 0 1.5rem; min-height: 2.8rem; }
+        .tier .price-row { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .tier .price-amt  { font-size: 2.95rem; font-weight: 800; letter-spacing: -1.5px; color: #1a202c; line-height: 1; }
+        .tier .price-sub  { font-size: 0.95rem; color: #4a5568; font-weight: 600; }
+        .tier .price-note { font-size: 0.78rem; color: #a0aec0; min-height: 1.2rem; margin-bottom: 1.5rem; }
+        .tier ul { list-style: none; padding: 0; margin: 0 0 2rem; flex: 1; }
+        .tier li { padding: 0.55rem 0; font-size: 0.92rem; color: #2d3748; display: flex; gap: 0.6rem; line-height: 1.45; }
+        .tier li svg { flex-shrink: 0; margin-top: 0.2rem; color: #2f855a; }
+        .tier .cta { display: block; width: 100%; padding: 0.95rem 1rem; background: #1a202c; color: #fff; border: 0; border-radius: 10px; font: inherit; font-size: 0.95rem; font-weight: 700; text-align: center; text-decoration: none; cursor: pointer; transition: background 0.15s, transform 0.15s; }
+        .tier .cta:hover { background: #2d3748; transform: translateY(-1px); }
+        .tier.highlight .cta { background: #1d6df2; }
+        .tier.highlight .cta:hover { background: #155bc8; }
+        .tier .cta:disabled { opacity: 0.6; cursor: default; }
+
+        .footnote { text-align: center; color: #718096; font-size: 0.88rem; max-width: 640px; margin: 0 auto 5rem; padding: 0 1.5rem; line-height: 1.55; }
+        .footnote a { color: #1d6df2; font-weight: 600; text-decoration: none; }
+
+        .gate-banner { max-width: 720px; margin: 0 auto 2rem; padding: 1rem 1.25rem; background: #fffaf0; border: 1px solid #feebc8; border-radius: 10px; color: #975a16; font-size: 0.92rem; line-height: 1.5; display: none; }
+        .gate-banner.show { display: block; }
+        .gate-banner a { color: #b7791f; font-weight: 700; text-decoration: underline; }
+
+        @media (max-width: 600px) {
+            .pricing-hero { padding: 5.5rem 1rem 2rem; }
+            .pricing-hero h1 { font-size: 2.4rem; }
+            .pricing-hero p.lead { font-size: 1rem; }
+            .tier-grid { padding: 0 1rem; }
+            .tier { padding: 1.75rem 1.4rem; }
+            .tier.highlight { transform: none; }
+        }
+    </style>
+</head>
+<body>
+    <global-header></global-header>
+
+    <section class="pricing-hero">
+        <div class="eyebrow">Business listings</div>
+        <h1>Get in front of MN lake-home owners.</h1>
+        <p class="lead">Two plans, monthly or annual, cancel anytime. Your listing goes live the moment payment clears + an admin approves your profile.</p>
+
+        <div id="gate-banner" class="gate-banner"></div>
+
+        <div class="toggle-row">
+            <div class="period-toggle" role="tablist" aria-label="Billing period">
+                <button id="btn-monthly" class="on" onclick="setPeriod('monthly')">Monthly</button>
+                <button id="btn-annual"          onclick="setPeriod('annual')">Annual <span class="save-pill">Save ~15%</span></button>
+            </div>
+        </div>
+    </section>
+
+    <div id="tier-grid" class="tier-grid">
+        <div style="grid-column: 1 / -1; text-align: center; color: #a0aec0; padding: 2rem;">Loading plans…</div>
+    </div>
+
+    <p class="footnote">
+        Already have a listing? <a href="/business/dashboard">Open your dashboard</a> — billing, invoices, and cancellation all live in the Stripe Customer Portal linked from there. Questions about plans? <a href="/pages/public/contact.html">Get in touch</a>.
+    </p>
+
+    <global-footer></global-footer>
+    <script src="../../components/components.js" defer></script>
+
+    <script>
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const dollars = n => Number(n).toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 });
+
+        let _pricing = null;
+        let _period  = new URLSearchParams(window.location.search).get('period') === 'annual' ? 'annual' : 'monthly';
+        let _gateState = { kind: 'loading' }; // 'logged_out' | 'wrong_role' | 'ready'
+
+        function setPeriod(p) {
+            _period = p;
+            document.getElementById('btn-monthly').classList.toggle('on', p === 'monthly');
+            document.getElementById('btn-annual').classList.toggle('on', p === 'annual');
+            const url = new URL(window.location);
+            if (p === 'annual') url.searchParams.set('period', 'annual');
+            else                url.searchParams.delete('period');
+            history.replaceState(null, '', url);
+            render();
+        }
+
+        function render() {
+            if (!_pricing) return;
+            const tiers = _pricing.tiers || [];
+            const grid = document.getElementById('tier-grid');
+            grid.innerHTML = tiers.map(t => {
+                const price = _period === 'annual' ? t.annual_price : t.monthly_price;
+                const note  = _period === 'annual'
+                    ? `Billed annually · ${dollars(Math.round(price / 12))} / month`
+                    : 'Billed monthly · cancel anytime';
+                const stripeReady = _period === 'annual' ? t.stripe_price_annual : t.stripe_price_monthly;
+                const features = (t.features || []).map(f => `
+                    <li>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        ${esc(f)}
+                    </li>`).join('');
+                const disabled = !stripeReady || _gateState.kind !== 'ready';
+                const ctaLabel = _gateState.kind === 'logged_out' ? 'Sign in to subscribe'
+                              : _gateState.kind === 'wrong_role'  ? 'Business account required'
+                              : !stripeReady                       ? 'Coming soon'
+                              : `Choose ${t.name}`;
+                return `
+                    <div class="tier ${t.highlight ? 'highlight' : ''}">
+                        ${t.highlight ? '<span class="tier-badge">Most popular</span>' : ''}
+                        <h3>${esc(t.name)}</h3>
+                        <p class="tagline">${esc(t.tagline)}</p>
+                        <div class="price-row">
+                            <span class="price-amt">${dollars(price)}</span>
+                            <span class="price-sub">/ ${_period === 'annual' ? 'year' : 'month'}</span>
+                        </div>
+                        <div class="price-note">${esc(note)}</div>
+                        <ul>${features}</ul>
+                        <button class="cta" ${disabled ? 'disabled' : ''} onclick="subscribe('${esc(t.tier)}')">${ctaLabel}</button>
+                    </div>`;
+            }).join('');
+        }
+
+        async function loadPricing() {
+            try {
+                const r = await fetch('/api/business-auth/pricing');
+                _pricing = await r.json();
+            } catch (_) {
+                document.getElementById('tier-grid').innerHTML =
+                    '<div style="grid-column:1/-1;text-align:center;color:#c53030;padding:2rem;">Could not load plans. Refresh to try again.</div>';
+            }
+        }
+
+        async function loadGate() {
+            let session = null;
+            try { const r = await fetch('/api/auth/session', { credentials: 'include' }); if (r.ok) session = await r.json(); } catch (_) {}
+            const banner = document.getElementById('gate-banner');
+            if (!session) {
+                _gateState = { kind: 'logged_out' };
+                banner.className = 'gate-banner show';
+                banner.innerHTML = `Sign in to your business account to subscribe. <a href="/pages/public/business-login.html?redirect=${encodeURIComponent('/pages/public/business-pricing.html')}">Sign in &rarr;</a> &nbsp;·&nbsp; New to MN Lake Homes? <a href="/pages/public/business-signup.html">Create a business account &rarr;</a>`;
+                return;
+            }
+            if (session.role !== 'business_owner') {
+                _gateState = { kind: 'wrong_role' };
+                banner.className = 'gate-banner show';
+                banner.innerHTML = `You're signed in as <b>${esc(session.role)}</b>, but business plans are only for business owners. <a href="/pages/public/business-signup.html">Create a business account &rarr;</a>`;
+                return;
+            }
+            _gateState = { kind: 'ready' };
+            banner.className = 'gate-banner';
+        }
+
+        async function subscribe(tier) {
+            if (_gateState.kind === 'logged_out') {
+                window.location.href = `/pages/public/business-login.html?redirect=${encodeURIComponent('/pages/public/business-pricing.html')}`;
+                return;
+            }
+            if (_gateState.kind !== 'ready') return;
+            try {
+                const r = await fetch('/api/business-auth/checkout', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ tier, period: _period }),
+                });
+                const data = await r.json().catch(() => ({}));
+                if (!r.ok || !data.url) throw new Error(data.error || `HTTP ${r.status}`);
+                window.location.href = data.url;
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await Promise.all([loadPricing(), loadGate()]);
+            render();
+        });
+    </script>
+</body>
+</html>
