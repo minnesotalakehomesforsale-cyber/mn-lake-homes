@@ -156,7 +156,7 @@ const getAgentBySlug = async (req, res) => {
 const getMyProfile = async (req, res) => {
     try {
         const query = `
-            SELECT a.*, u.email as account_email, u.full_name as account_full_name,
+            SELECT a.*, u.email as account_email, u.phone as account_phone, u.full_name as account_full_name,
                    u.account_status, m.name as membership_name, m.display_badge_label as membership_badge
             FROM agents a
             JOIN users u ON a.user_id = u.id

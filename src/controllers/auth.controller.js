@@ -210,12 +210,16 @@ const register = async (req, res) => {
         const memRes = await client.query(`SELECT id FROM memberships WHERE code = 'basic' LIMIT 1`);
         const basicId = memRes.rows[0]?.id;
 
-        // Create Agent record
+        // Create Agent record. Seed phone_public + email_public from the
+        // account fields so the public profile doesn't start with empty
+        // contact info — the agent's join.html form already collected
+        // phone, and email is always set. They can override either on
+        // the dashboard if they want a different number publicly listed.
         const slugStr = display_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
         await client.query(
-            `INSERT INTO agents (user_id, membership_id, slug, display_name, license_number, brokerage_name, profile_status, is_published)
-             VALUES ($1, $2, $3, $4, $5, $6, 'draft', false)`,
-            [userId, basicId, slugStr, display_name, license_number || null, brokerage_name || null]
+            `INSERT INTO agents (user_id, membership_id, slug, display_name, license_number, brokerage_name, phone_public, email_public, profile_status, is_published)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'draft', false)`,
+            [userId, basicId, slugStr, display_name, license_number || null, brokerage_name || null, phone || null, email || null]
         );
 
         // Attach initial service-area tags. Silently skips any id that

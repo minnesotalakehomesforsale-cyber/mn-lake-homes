@@ -226,10 +226,35 @@
                                 <p class="field-hint">Your home base — the main city or lake town you work out of.</p>
                                 <input type="text" id="f-city" class="input-sys" placeholder="E.g., Wayzata" required oninput="calcProgress()">
                             </div>
-                            <div class="form-group-sys">
-                                <label>Service Areas *</label>
-                                <p class="field-hint">Lakes and towns you cover. Improves matches with buyer searches. Comma-separated.</p>
-                                <input type="text" id="f-areas" class="input-sys" placeholder="Lake Minnetonka, Brainerd" required oninput="calcProgress()">
+                            <div class="form-group-sys" style="grid-column: 1 / -1;">
+                                <label>Service Areas <span style="color:#1d6df2;">*</span></label>
+                                <p class="field-hint">Pick the towns + lake areas you actually work — these drive the geo-match when a buyer or seller submits a lead near them. Max 10.</p>
+                                <style>
+                                    .areas-toolbar { display: flex; gap: 0.6rem; align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap; }
+                                    .areas-search { flex: 1; min-width: 200px; padding: 0.55rem 0.85rem 0.55rem 2.2rem; border: 1px solid #e2e8f0; border-radius: 8px; font: inherit; font-size: 0.9rem; background-color: #fff; background-repeat: no-repeat; background-position: 0.7rem center; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a0aec0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='7'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>"); }
+                                    .areas-search:focus { outline: none; border-color: #1d6df2; }
+                                    .areas-counter { font-size: 0.78rem; font-weight: 700; color: #4a5568; padding: 0.35rem 0.7rem; background: #f7f9fa; border: 1px solid #edf2f7; border-radius: 99px; white-space: nowrap; }
+                                    .areas-counter.full { background: #fffaf0; color: #b7791f; border-color: #feebc8; }
+                                    .areas-box { max-height: 280px; overflow-y: auto; padding: 0.75rem; background: #fafbfc; border: 1px solid #edf2f7; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+                                    .area-chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.85rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 99px; font: inherit; font-size: 0.85rem; font-weight: 600; color: #4a5568; cursor: pointer; transition: all 0.12s; }
+                                    .area-chip:hover { border-color: #cbd5e0; color: #1a202c; }
+                                    .area-chip.on { background: #1d6df2; border-color: #1d6df2; color: #fff; }
+                                    .area-chip.on:hover { background: #155bc8; }
+                                    .area-chip:disabled { opacity: 0.4; cursor: not-allowed; }
+                                    .area-chip .x { font-size: 0.95rem; line-height: 1; opacity: 0.85; }
+                                    .areas-empty { color: #a0aec0; font-size: 0.88rem; padding: 0.4rem 0.6rem; }
+                                    .areas-msg { font-size: 0.82rem; margin-top: 0.5rem; display: none; }
+                                    .areas-msg.ok  { color: #2f855a; display: block; }
+                                    .areas-msg.err { color: #c53030; display: block; }
+                                </style>
+                                <div class="areas-toolbar">
+                                    <input type="search" id="f-areas-search" class="areas-search" placeholder="Search towns…" oninput="renderAreaChips()">
+                                    <span class="areas-counter" id="f-areas-counter">0 / 10</span>
+                                </div>
+                                <div class="areas-box" id="f-areas-chips">
+                                    <span class="areas-empty">Loading service areas…</span>
+                                </div>
+                                <div class="areas-msg" id="f-areas-msg"></div>
                             </div>
                         </div>
                         <div class="form-group-sys" style="margin-bottom: 3rem;">
@@ -438,15 +463,28 @@
 
             document.getElementById('f-name').value      = agent.display_name   || '';
             document.getElementById('f-brokerage').value = agent.brokerage_name  || '';
-            document.getElementById('f-phone').value     = agent.phone_public    || '';
+            // Pre-fill from the public profile fields; fall back to the
+            // account fields the agent gave at signup so the dashboard
+            // form is never blank on first load. They can override either
+            // here without affecting their login account email/phone.
+            document.getElementById('f-phone').value     = agent.phone_public    || agent.account_phone || '';
+            document.getElementById('f-email').value     = agent.email_public    || agent.account_email || '';
+            const setIfPresent = (id, value) => { const el = document.getElementById(id); if (el) el.value = value; };
+            setIfPresent('f-license', agent.license_number  || '');
+            setIfPresent('f-years',   agent.years_experience != null ? agent.years_experience : '');
+            setIfPresent('f-web',     agent.website_url     || '');
             document.getElementById('f-city').value      = agent.city            || '';
 
             try {
-                const areas = Array.isArray(agent.service_areas) ? agent.service_areas : JSON.parse(agent.service_areas || '[]');
                 const specs = Array.isArray(agent.specialties)   ? agent.specialties   : JSON.parse(agent.specialties   || '[]');
-                document.getElementById('f-areas').value = areas.join(', ');
                 document.getElementById('f-specs').value = specs.join(', ');
             } catch(_) {}
+
+            // Service areas now come from the user_tags join, not the
+            // legacy text column on agents. loadServiceAreas() pulls the
+            // catalog + the agent's selected tags and renders the chip
+            // picker independently.
+            loadServiceAreas();
 
             document.getElementById('f-bio').value = agent.bio || '';
 
@@ -708,10 +746,17 @@
 
         // ── Progress Bar ─────────────────────────────────────────────────────────
         function calcProgress() {
-            const reqds = ['f-name', 'f-brokerage', 'f-phone', 'f-city', 'f-areas', 'f-specs', 'f-bio'];
+            // Text-input requireds (f-areas is gone — service areas come
+            // from the chip picker now and count as 1/N when at least
+            // one tag is selected).
+            const reqds = ['f-name', 'f-brokerage', 'f-phone', 'f-city', 'f-specs', 'f-bio'];
             let filled = 0;
             reqds.forEach(id => { const el = document.getElementById(id); if (el && el.value.trim() !== '') filled++; });
-            const pct = Math.round((filled / reqds.length) * 100);
+            // Service-areas counts as filled when the agent has picked at
+            // least one geo tag.
+            const totalSteps = reqds.length + 1;
+            if (window._selectedAreaIds && window._selectedAreaIds.size > 0) filled++;
+            const pct = Math.round((filled / totalSteps) * 100);
             document.getElementById('completion-bar').style.width = pct + '%';
 
             const activateSection = document.getElementById('view-activate');
@@ -730,17 +775,170 @@
         }
 
         // ── Extract Form Payload ─────────────────────────────────────────────────
+        // service_areas is intentionally NOT in this payload anymore — it's
+        // driven by the chip picker, which saves to /api/tags/users/:userId
+        // immediately on toggle (no Save Draft round-trip needed). The
+        // agents.service_areas display column is kept in sync server-side
+        // by syncServiceAreasMirror() below.
         function extractFormPayload() {
-            return {
-                display_name:     document.getElementById('f-name').value.trim(),
-                brokerage_name:   document.getElementById('f-brokerage').value.trim(),
-                phone_public:     document.getElementById('f-phone').value.trim(),
-                city:             document.getElementById('f-city').value.trim(),
-                service_areas:    document.getElementById('f-areas').value.split(',').map(s => s.trim()).filter(Boolean),
-                specialties:      document.getElementById('f-specs').value.split(',').map(s => s.trim()).filter(Boolean),
-                bio:              document.getElementById('f-bio').value.trim(),
-                profile_photo_url: document.getElementById('f-photo-url').value.trim()
+            const years = document.getElementById('f-years')?.value.trim();
+            const payload = {
+                display_name:      document.getElementById('f-name').value.trim(),
+                brokerage_name:    document.getElementById('f-brokerage').value.trim(),
+                phone_public:      document.getElementById('f-phone').value.trim(),
+                email_public:      document.getElementById('f-email')?.value.trim() || null,
+                license_number:    document.getElementById('f-license')?.value.trim() || null,
+                years_experience:  years ? Number(years) : null,
+                website_url:       document.getElementById('f-web')?.value.trim() || null,
+                city:              document.getElementById('f-city').value.trim(),
+                specialties:       document.getElementById('f-specs').value.split(',').map(s => s.trim()).filter(Boolean),
+                bio:               document.getElementById('f-bio').value.trim(),
+                profile_photo_url: document.getElementById('f-photo-url').value.trim(),
             };
+            // Mirror selected tag names into agents.service_areas so any
+            // legacy display code that reads from that column stays in sync.
+            if (window._selectedAreaIds && window._allAreas) {
+                payload.service_areas = [...window._selectedAreaIds]
+                    .map(id => (window._allAreas.find(t => String(t.id) === String(id)) || {}).name)
+                    .filter(Boolean);
+            }
+            return payload;
+        }
+
+        // ── Service Areas chip picker ───────────────────────────────────────────
+        // Source of truth is user_tags via /api/tags/users/:userId. We
+        // also write the chosen tag NAMES back into agents.service_areas
+        // (via saveDraft / mirror) so existing display code stays happy.
+        const AREAS_MAX = 10;
+        window._allAreas       = [];
+        window._selectedAreaIds = new Set();
+        let   _myUserId        = null;
+
+        async function loadServiceAreas() {
+            // Resolve our own userId from the session (cached after first call).
+            if (!_myUserId) {
+                try {
+                    const s = await fetch('/api/auth/session', { credentials: 'include' }).then(r => r.ok ? r.json() : null);
+                    _myUserId = s?.userId || null;
+                } catch (_) {}
+            }
+            if (!_myUserId) {
+                document.getElementById('f-areas-chips').innerHTML =
+                    '<span class="areas-empty" style="color:#c53030;">Session expired — refresh the page.</span>';
+                return;
+            }
+            try {
+                const [catalogRes, mineRes] = await Promise.all([
+                    fetch('/api/tags', { credentials: 'include' }),
+                    fetch(`/api/tags/users/${_myUserId}`, { credentials: 'include' }),
+                ]);
+                const catalog = catalogRes.ok ? await catalogRes.json() : [];
+                const mine    = mineRes.ok    ? await mineRes.json()    : [];
+                window._allAreas        = (Array.isArray(catalog) ? catalog : []).filter(t => t.active !== false);
+                window._selectedAreaIds = new Set((mine || []).map(t => String(t.id)));
+            } catch (_) {
+                window._allAreas        = [];
+                window._selectedAreaIds = new Set();
+            }
+            renderAreaChips();
+            calcProgress();
+        }
+
+        function renderAreaChips() {
+            const el       = document.getElementById('f-areas-chips');
+            const counter  = document.getElementById('f-areas-counter');
+            const q        = (document.getElementById('f-areas-search')?.value || '').toLowerCase().trim();
+            const all      = window._allAreas || [];
+            const selected = window._selectedAreaIds;
+
+            counter.textContent = `${selected.size} / ${AREAS_MAX}`;
+            counter.classList.toggle('full', selected.size >= AREAS_MAX);
+
+            if (!all.length) {
+                el.innerHTML = '<span class="areas-empty">No service areas available yet — check back soon.</span>';
+                return;
+            }
+            // Selected first, then alphabetical by name. Filtered by
+            // search (matches name + region + state) so the picker is
+            // usable at 218 items.
+            const matches = all.filter(t => {
+                if (!q) return true;
+                const hay = `${t.name || ''} ${t.region || ''} ${t.state || ''}`.toLowerCase();
+                return hay.includes(q);
+            });
+            const ordered = matches.sort((a, b) => {
+                const as = selected.has(String(a.id)) ? 0 : 1;
+                const bs = selected.has(String(b.id)) ? 0 : 1;
+                return (as - bs) || a.name.localeCompare(b.name);
+            });
+            if (!ordered.length) {
+                el.innerHTML = `<span class="areas-empty">No towns match "${q}".</span>`;
+                return;
+            }
+            const atCap = selected.size >= AREAS_MAX;
+            el.innerHTML = ordered.map(t => {
+                const on       = selected.has(String(t.id));
+                const disabled = !on && atCap;
+                const region   = (t.region && t.region !== t.name) ? ` · ${t.region}` : '';
+                return `<button type="button" class="area-chip ${on ? 'on' : ''}" ${disabled ? 'disabled' : ''} onclick="toggleArea('${t.id}')">
+                    ${esc(t.name)}${region ? `<span style="opacity:0.7;font-weight:500;">${esc(region)}</span>` : ''}
+                    ${on ? '<span class="x">×</span>' : ''}
+                </button>`;
+            }).join('');
+        }
+
+        // Lightweight HTML escape — borrows the project's pattern.
+        function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+        async function toggleArea(id) {
+            const selected = window._selectedAreaIds;
+            const sid = String(id);
+            if (selected.has(sid)) {
+                selected.delete(sid);
+            } else {
+                if (selected.size >= AREAS_MAX) {
+                    showAreasMsg(`Max ${AREAS_MAX} service areas. Remove one to add another.`, 'err');
+                    return;
+                }
+                selected.add(sid);
+            }
+            renderAreaChips();
+            calcProgress();
+            await persistAreas();
+        }
+
+        // Persist the current selection to user_tags. Debounced lightly —
+        // toggles are quick so a 250ms tail-end save keeps clicks snappy
+        // without flooding the API on rapid selections.
+        let _persistTimer = null;
+        async function persistAreas() {
+            clearTimeout(_persistTimer);
+            _persistTimer = setTimeout(async () => {
+                if (!_myUserId) return;
+                try {
+                    const r = await fetch(`/api/tags/users/${_myUserId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ tagIds: [...window._selectedAreaIds] }),
+                    });
+                    if (!r.ok) {
+                        const d = await r.json().catch(() => ({}));
+                        throw new Error(d.error || `HTTP ${r.status}`);
+                    }
+                    showAreasMsg(`Saved — serving ${window._selectedAreaIds.size} area${window._selectedAreaIds.size === 1 ? '' : 's'}.`, 'ok');
+                } catch (err) {
+                    showAreasMsg(err.message || 'Could not save service areas.', 'err');
+                }
+            }, 250);
+        }
+
+        function showAreasMsg(text, kind) {
+            const el = document.getElementById('f-areas-msg');
+            el.textContent = text;
+            el.className = 'areas-msg ' + kind;
+            clearTimeout(showAreasMsg._t);
+            showAreasMsg._t = setTimeout(() => { el.className = 'areas-msg'; }, 3000);
         }
 
         // ── Save Draft ───────────────────────────────────────────────────────────
