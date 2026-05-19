@@ -247,78 +247,19 @@
                     </form>
                 </div>
 
-                <!-- ── ACTIVATE MEMBERSHIP / GO LIVE ── -->
-                <div id="view-activate" style="display: none; background: #fff; padding: 3rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-top: 2rem;">
-                    <style>
-                        .tier-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2rem; }
-                        .tier-card { border: 2px solid #edf2f7; border-radius: 14px; padding: 2rem 1.75rem; text-align: center; position: relative; transition: border-color 0.2s, box-shadow 0.2s; background: #fff; }
-                        .tier-card:hover { border-color: #cbd5e0; box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
-                        .tier-card.featured { border-color: #1d6df2; box-shadow: 0 8px 24px rgba(29,109,242,0.12); }
-                        .tier-popular-badge { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); background: #1d6df2; color: #fff; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 0.3rem 1rem; border-radius: 20px; white-space: nowrap; }
-                        .tier-name { font-size: 1.25rem; font-weight: 800; color: #1a202c; margin-bottom: 0.25rem; }
-                        .tier-price { font-size: 2.5rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; margin: 0.75rem 0 0.25rem; }
-                        .tier-price-period { font-size: 0.9rem; font-weight: 500; color: #718096; }
-                        .tier-toggle { display: inline-flex; background: #f7f9fa; border-radius: 8px; border: 1px solid #edf2f7; overflow: hidden; margin: 1.25rem 0; }
-                        .tier-toggle-btn { padding: 0.4rem 1rem; font-size: 0.8rem; font-weight: 600; border: none; background: transparent; color: #718096; cursor: pointer; font-family: inherit; transition: all 0.15s; }
-                        .tier-toggle-btn.active { background: #1a202c; color: #fff; border-radius: 6px; }
-                        .tier-get-started { display: inline-block; width: 100%; padding: 0.85rem 1.5rem; border-radius: 10px; font-weight: 700; font-size: 0.95rem; border: none; cursor: pointer; font-family: inherit; transition: all 0.2s; }
-                        .tier-get-started.primary { background: #1d6df2; color: #fff; }
-                        .tier-get-started.primary:hover { background: #155bc8; }
-                        .tier-get-started.outline { background: #fff; color: #1a202c; border: 2px solid #e2e8f0; }
-                        .tier-get-started.outline:hover { border-color: #1a202c; }
-                        .tier-save-label { font-size: 0.75rem; font-weight: 600; color: #38a169; margin-top: 0.5rem; display: none; }
-                        .tier-save-label.visible { display: block; }
-                        @media (max-width: 900px) {
-                            .tier-cards { grid-template-columns: 1fr; max-width: 400px; margin-left: auto; margin-right: auto; }
-                        }
-                    </style>
-
-                    <div style="text-align: center; margin-bottom: 0.5rem;">
-                        <h2 style="font-size: 1.75rem; font-weight: 800; color: #1a202c; margin-bottom: 0.5rem;">Activate your membership</h2>
-                        <p style="color: #718096; font-size: 1rem; max-width: 480px; margin: 0 auto;">Choose a tier to publish your profile and start receiving leads.</p>
-                    </div>
-
-                    <div class="tier-cards">
-
-                        <!-- Standard -->
-                        <div class="tier-card" id="tier-card-standard">
-                            <div class="tier-name">Standard</div>
-                            <div class="tier-price" id="price-standard">$9</div>
-                            <div class="tier-price-period" id="period-standard">/month</div>
-                            <div class="tier-toggle">
-                                <button class="tier-toggle-btn active" onclick="setTierPeriod('standard','monthly',this)">Monthly</button>
-                                <button class="tier-toggle-btn" onclick="setTierPeriod('standard','annual',this)">Annual</button>
-                            </div>
-                            <div class="tier-save-label" id="save-standard">Save 20% with annual</div>
-                            <button class="tier-get-started outline" onclick="activateTier('standard', getTierPeriod('standard'))">Get started</button>
-                        </div>
-
-                        <!-- Prime (Featured) -->
-                        <div class="tier-card featured" id="tier-card-prime">
-                            <div class="tier-popular-badge">Most Popular</div>
-                            <div class="tier-name">Prime</div>
-                            <div class="tier-price" id="price-prime">$19</div>
-                            <div class="tier-price-period" id="period-prime">/month</div>
-                            <div class="tier-toggle">
-                                <button class="tier-toggle-btn active" onclick="setTierPeriod('prime','monthly',this)">Monthly</button>
-                                <button class="tier-toggle-btn" onclick="setTierPeriod('prime','annual',this)">Annual</button>
-                            </div>
-                            <div class="tier-save-label" id="save-prime">Save 21% with annual</div>
-                            <button class="tier-get-started primary" onclick="activateTier('prime', getTierPeriod('prime'))">Get started</button>
-                        </div>
-
-                        <!-- Founder (month-to-month only) -->
-                        <div class="tier-card" id="tier-card-founder">
-                            <div class="tier-name">Founder</div>
-                            <div class="tier-price" id="price-founder">$449</div>
-                            <div class="tier-price-period" id="period-founder">/month</div>
-                            <div style="font-size: 0.78rem; color: #718096; margin: 0.5rem 0 0.25rem;">Month-to-month only</div>
-                            <button class="tier-get-started outline" onclick="activateTier('founder', 'monthly')">Get started</button>
-                        </div>
-
-                    </div>
-
-                    <p style="text-align: center; font-size: 0.85rem; color: #a0aec0; margin-top: 1.75rem;">Your profile will be auto-published once payment is confirmed.</p>
+                <!-- ── ACTIVATE MEMBERSHIP / GO LIVE ──
+                     Profile-complete CTA. The actual plan selection +
+                     monthly/annual toggle + Stripe checkout live on the
+                     standalone pricing page so this card stays focused on
+                     a single decisive action: "pick a plan." -->
+                <div id="view-activate" style="display: none; background: linear-gradient(135deg, #f7faff 0%, #fff 100%); padding: 3rem 2rem; border-radius: 14px; border: 2px solid #1d6df2; box-shadow: 0 10px 30px rgba(29,109,242,0.10); margin-top: 2rem; text-align: center;">
+                    <div style="display: inline-block; padding: 0.35rem 0.85rem; background: rgba(29,109,242,0.10); color: #1d6df2; font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; border-radius: 99px; margin-bottom: 1rem;">Last step</div>
+                    <h2 style="font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.75px; margin: 0 0 0.6rem;">Your profile is ready.</h2>
+                    <p style="color: #4a5568; font-size: 1.02rem; line-height: 1.55; max-width: 520px; margin: 0 auto 2rem;">
+                        Pick a membership plan to publish your profile and start receiving leads in your service area. Monthly or annual — cancel anytime.
+                    </p>
+                    <a href="/pages/public/pricing.html" style="display: inline-block; padding: 1rem 2.25rem; background: #1d6df2; color: #fff; border-radius: 12px; font-weight: 700; text-decoration: none; font-size: 1rem; box-shadow: 0 8px 22px rgba(29,109,242,0.30); transition: background 0.15s, transform 0.15s;" onmouseover="this.style.background='#155bc8';this.style.transform='translateY(-1px)';" onmouseout="this.style.background='#1d6df2';this.style.transform='';">Choose a plan →</a>
+                    <p style="font-size: 0.82rem; color: #a0aec0; margin: 1.25rem 0 0;">Compare plans, toggle monthly vs annual, then check out securely with Stripe. Your profile auto-publishes the moment payment clears.</p>
                 </div>
 
                 <!-- ── LEAD INBOX VIEW ── -->
@@ -374,9 +315,18 @@
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:2.5rem;">
                         <div class="acct-tile"><div class="acct-label">Current tier</div><div id="acct-membership">—</div></div>
                         <div class="acct-tile"><div class="acct-label">Billing</div><div id="acct-billing">—</div></div>
+                        <div class="acct-tile" id="acct-renewal-tile" style="display:none;">
+                            <div class="acct-label">Next renewal</div><div id="acct-renewal">—</div>
+                        </div>
+                        <div class="acct-tile" id="acct-status-tile" style="display:none;">
+                            <div class="acct-label">Subscription status</div><div id="acct-sub-status">—</div>
+                        </div>
                         <div class="acct-tile" style="grid-column:1 / -1;">
-                            <p style="margin:0 0 0.75rem; color:#718096; font-size:0.9rem;">Upgrade or change your tier anytime from the pricing page.</p>
-                            <a href="/pages/public/join.html#pricing" class="btn" style="display:inline-block; background:#1d6df2; color:#fff; font-weight:600; padding:0.6rem 1.1rem; border-radius:8px; text-decoration:none;">Manage membership</a>
+                            <p id="acct-membership-help" style="margin:0 0 0.75rem; color:#718096; font-size:0.9rem;">Upgrade, downgrade, or cancel anytime — your profile stays live through your paid period.</p>
+                            <button id="acct-membership-btn" onclick="openMembership()"
+                                style="display:inline-block; background:#1d6df2; color:#fff; font-weight:600; padding:0.6rem 1.1rem; border-radius:8px; border:0; cursor:pointer; font-family:inherit; font-size:0.92rem;">
+                                Manage membership
+                            </button>
                         </div>
                     </div>
 
@@ -570,9 +520,99 @@
                 agent.membership_badge || agent.membership_name || 'Agent';
             document.getElementById('acct-billing').textContent =
                 agent.stripe_subscription_id ? 'Active subscription' : 'Not subscribed';
+            // Pull the live Stripe snapshot (renewal date, amount, status)
+            // and overwrite the placeholders. Soft-fails — if /billing
+            // 404s or Stripe is misconfigured, the basic tiles above
+            // still render.
+            loadBillingSnapshot();
 
             document.getElementById('acct-email').textContent     = agent.account_email     || '—';
             document.getElementById('acct-full-name').textContent = agent.account_full_name || '—';
+        }
+
+        // Hydrates the Membership tiles with live Stripe data. Called
+        // after loadAccount() — soft-fails if the agent has no
+        // subscription yet (the bare "Not subscribed" placeholder stays).
+        let _billing = null;
+        async function loadBillingSnapshot() {
+            try {
+                const r = await fetch('/api/stripe/billing', { credentials: 'include' });
+                if (!r.ok) return;
+                _billing = await r.json();
+            } catch (_) { return; }
+
+            const m = _billing;
+            if (m?.membership_name) {
+                document.getElementById('acct-membership').textContent =
+                    m.badge_label || m.membership_name;
+            }
+
+            const sub = m?.subscription;
+            const billEl   = document.getElementById('acct-billing');
+            const btn      = document.getElementById('acct-membership-btn');
+            const helpEl   = document.getElementById('acct-membership-help');
+            const renewT   = document.getElementById('acct-renewal-tile');
+            const statusT  = document.getElementById('acct-status-tile');
+
+            if (!sub) {
+                // No subscription on file → CTA points at the pricing page.
+                billEl.textContent = 'Not subscribed';
+                btn.textContent = 'Choose a plan →';
+                helpEl.textContent = 'Pick a plan to publish your profile and start receiving leads.';
+                renewT.style.display = 'none';
+                statusT.style.display = 'none';
+                return;
+            }
+
+            // Active subscription — show $X/interval, renewal, status.
+            const amount = sub.amount_cents != null
+                ? `$${(sub.amount_cents / 100).toLocaleString('en-US', { minimumFractionDigits: (sub.amount_cents % 100 === 0) ? 0 : 2 })}`
+                : null;
+            const interval = sub.interval === 'year' ? 'year' : sub.interval === 'month' ? 'month' : sub.interval || 'period';
+            billEl.textContent = amount ? `${amount} / ${interval}` : 'Active';
+
+            if (sub.current_period_end) {
+                const d = new Date(sub.current_period_end);
+                const label = sub.cancel_at_period_end ? 'Ends' : 'Renews';
+                renewT.querySelector('.acct-label').textContent = label;
+                document.getElementById('acct-renewal').textContent =
+                    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                renewT.style.display = '';
+            }
+
+            if (sub.status) {
+                statusT.style.display = '';
+                const pretty = sub.status.replace(/_/g, ' ');
+                document.getElementById('acct-sub-status').textContent =
+                    pretty.charAt(0).toUpperCase() + pretty.slice(1);
+            }
+
+            btn.textContent = 'Manage membership';
+            helpEl.textContent = sub.cancel_at_period_end
+                ? `Your subscription ends on the renewal date above. Use Manage to re-subscribe or change plan.`
+                : `Update card, view invoices, change plan, or cancel — all from the Stripe billing portal.`;
+        }
+
+        // Membership button is dual-purpose. No subscription → straight to
+        // /pricing. Has subscription → opens the Stripe Customer Portal
+        // in a new tab.
+        async function openMembership() {
+            if (!_billing?.subscription) {
+                window.location.href = '/pages/public/pricing.html';
+                return;
+            }
+            const btn = document.getElementById('acct-membership-btn');
+            const orig = btn.textContent;
+            btn.disabled = true; btn.textContent = 'Opening billing portal…';
+            try {
+                const r = await fetch('/api/stripe/portal', { method: 'POST', credentials: 'include' });
+                const data = await r.json().catch(() => ({}));
+                if (!r.ok || !data.url) throw new Error(data.error || `HTTP ${r.status}`);
+                window.location.href = data.url;
+            } catch (err) {
+                alert(err.message);
+                btn.disabled = false; btn.textContent = orig;
+            }
         }
 
         async function logoutAgent() {
@@ -676,10 +716,13 @@
 
             const activateSection = document.getElementById('view-activate');
             if (pct === 100) {
-                document.getElementById('completion-text').innerText = '100% Complete — Choose a tier below to go live!';
-                if (activateSection && activateSection.style.display !== 'none') {
-                    activateSection.style.display = 'block';
-                }
+                document.getElementById('completion-text').innerText = '100% Complete — choose a plan to publish your profile →';
+                // Only show the "Choose a plan" CTA when the profile-editor
+                // view is the active one — otherwise the agent is on the
+                // lead-inbox / account view and we don't want a card
+                // appearing under it.
+                const editorVisible = document.getElementById('view-profile')?.style.display !== 'none';
+                if (activateSection) activateSection.style.display = editorVisible ? 'block' : 'none';
             } else {
                 document.getElementById('completion-text').innerText = pct + '% Complete';
                 if (activateSection) activateSection.style.display = 'none';

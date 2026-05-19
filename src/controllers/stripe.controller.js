@@ -69,7 +69,10 @@ function businessTierFromPriceId(priceId) {
 }
 
 // ─── POST /api/stripe/checkout ───────────────────────────────────────────────
-// Authenticated agent creates a Stripe Checkout Session
+// Authenticated agent creates a Stripe Checkout Session.
+// Gated: the caller must already have an agents row — no profile, no paid
+// plan. The pricing page never sends payment-less users here, but the
+// server enforces it too so a hand-crafted POST can't bypass it.
 exports.createCheckoutSession = async (req, res) => {
     try {
         const stripe = getStripe();
@@ -97,17 +100,36 @@ exports.createCheckoutSession = async (req, res) => {
             return res.status(500).json({ error: `Price ID not configured for ${priceKey}. Check server environment variables.` });
         }
 
+        // Profile-required gate: an agent who hasn't created an agents row
+        // shouldn't be able to start checkout. Reuse the existing customer
+        // if we have one so receipts stay under a single Stripe customer.
+        const { rows: agentRows } = await pool.query(
+            `SELECT a.id, a.stripe_customer_id, u.email
+               FROM agents a JOIN users u ON u.id = a.user_id
+              WHERE a.user_id = $1 LIMIT 1`,
+            [req.user.userId]
+        );
+        if (!agentRows.length) {
+            return res.status(400).json({ error: 'Create your agent profile before choosing a plan.' });
+        }
+        const agent = agentRows[0];
+
         const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
 
         const session = await stripe.checkout.sessions.create({
             mode: 'subscription',
             payment_method_types: ['card'],
             line_items: [{ price: priceId, quantity: 1 }],
-            metadata: {
-                user_id: req.user.userId,
-            },
+            // Carry the user_id through to the webhook so checkout.session.
+            // completed knows which agents row to flip live.
+            metadata:                  { user_id: req.user.userId, kind: 'agent' },
+            subscription_data: { metadata: { user_id: req.user.userId, kind: 'agent' } },
+            // Reuse existing Stripe customer if we already have one.
+            ...(agent.stripe_customer_id
+                ? { customer: agent.stripe_customer_id }
+                : { customer_email: agent.email }),
             success_url: `${baseUrl}/pages/public/checkout-success.html?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url:  `${baseUrl}/pages/agent/dashboard.html`,
+            cancel_url:  `${baseUrl}/pages/public/pricing.html?canceled=1`,
         });
 
         return res.json({ url: session.url });
@@ -115,6 +137,163 @@ exports.createCheckoutSession = async (req, res) => {
         console.error('[Stripe Checkout] Error creating session:', err.message);
         return res.status(500).json({ error: 'Failed to create checkout session.' });
     }
+};
+
+// ─── POST /api/stripe/portal ─────────────────────────────────────────────────
+// Returns a Stripe Customer Portal URL the agent can use to update their
+// card, view invoices, downgrade, or cancel. Cancellation flows through
+// the webhook (customer.subscription.deleted) and unpublishes the agent.
+exports.createPortalSession = async (req, res) => {
+    try {
+        const stripe = getStripe();
+        if (!stripe) return res.status(503).json({ error: 'Stripe is not configured on this server.' });
+
+        const { rows } = await pool.query(
+            `SELECT stripe_customer_id FROM agents WHERE user_id = $1 LIMIT 1`,
+            [req.user.userId]
+        );
+        const customerId = rows[0]?.stripe_customer_id;
+        if (!customerId) {
+            return res.status(400).json({ error: 'No active subscription yet — start a plan from the pricing page first.' });
+        }
+
+        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const session = await stripe.billingPortal.sessions.create({
+            customer:   customerId,
+            return_url: `${baseUrl}/pages/agent/dashboard.html`,
+        });
+        return res.json({ url: session.url });
+    } catch (err) {
+        console.error('[Stripe Portal] Error creating session:', err.message);
+        return res.status(500).json({ error: 'Could not open billing portal.' });
+    }
+};
+
+// ─── GET /api/agents/me/billing ──────────────────────────────────────────────
+// Returns the agent's current membership snapshot. Pulls the local row +,
+// when a stripe_subscription_id is on file, the live subscription state
+// from Stripe (next renewal date, amount, status). Used by the dashboard
+// to render "Current tier · $X/mo · Renews May 17" without storing those
+// fields locally (Stripe is the source of truth for billing detail).
+exports.getMyBilling = async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT a.id, a.profile_status, a.is_published, a.stripe_customer_id, a.stripe_subscription_id,
+                    m.code AS membership_code, m.name AS membership_name, m.display_badge_label
+               FROM agents a
+               LEFT JOIN memberships m ON m.id = a.membership_id
+              WHERE a.user_id = $1 LIMIT 1`,
+            [req.user.userId]
+        );
+        if (!rows.length) return res.status(404).json({ error: 'No agent profile found for this account.' });
+        const a = rows[0];
+
+        const out = {
+            has_profile:           true,
+            profile_status:        a.profile_status,
+            is_published:          a.is_published,
+            membership_code:       a.membership_code,
+            membership_name:       a.membership_name,
+            badge_label:           a.display_badge_label,
+            stripe_customer_id:    a.stripe_customer_id,
+            stripe_subscription_id:a.stripe_subscription_id,
+            subscription:          null,
+        };
+
+        // Live Stripe lookup when a subscription exists. Failure here is
+        // soft — the dashboard still renders the local snapshot.
+        const stripe = getStripe();
+        if (stripe && a.stripe_subscription_id) {
+            try {
+                const sub = await stripe.subscriptions.retrieve(a.stripe_subscription_id, { expand: ['items.data.price.product'] });
+                const item = sub.items?.data?.[0];
+                const price = item?.price;
+                out.subscription = {
+                    status:               sub.status,                                            // active / past_due / canceled / etc.
+                    cancel_at_period_end: !!sub.cancel_at_period_end,
+                    current_period_end:   sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
+                    started_at:           sub.start_date         ? new Date(sub.start_date * 1000).toISOString()         : null,
+                    interval:             price?.recurring?.interval || null,                    // 'month' / 'year'
+                    interval_count:       price?.recurring?.interval_count || 1,
+                    amount_cents:         price?.unit_amount || null,
+                    currency:             price?.currency || 'usd',
+                    product_name:         price?.product?.name || null,
+                };
+            } catch (err) {
+                console.warn('[Stripe getMyBilling] subscription lookup failed:', err.message);
+            }
+        }
+        res.json(out);
+    } catch (err) {
+        console.error('[Stripe getMyBilling]', err.message);
+        res.status(500).json({ error: 'Failed to load billing info.' });
+    }
+};
+
+// ─── GET /api/pricing/agents ─────────────────────────────────────────────────
+// Returns display-only price labels for each tier × period. Env-driven so
+// Marketing can change the numbers on the pricing page without a deploy.
+// Stripe remains the source of truth for actual billing — these are just
+// what appears on the page.
+exports.getAgentPricing = (req, res) => {
+    const num = (v, def) => {
+        const n = Number(v);
+        return Number.isFinite(n) && n > 0 ? n : def;
+    };
+    const out = {
+        currency: 'usd',
+        tiers: [
+            {
+                tier: 'standard',
+                name: 'Basic',
+                tagline: 'Get your profile live and start receiving leads in your service area.',
+                features: [
+                    'Public agent profile + lake-page placement',
+                    'Lead inbox + email notifications',
+                    'Up to 3 service-area tags',
+                    'Standard listing position on lake pages',
+                ],
+                monthly_price: num(process.env.STRIPE_PRICING_STANDARD_MONTHLY, 49),
+                annual_price:  num(process.env.STRIPE_PRICING_STANDARD_ANNUAL, 490),
+                stripe_price_monthly: !!process.env.STRIPE_PRICE_STANDARD_MONTHLY,
+                stripe_price_annual:  !!process.env.STRIPE_PRICE_STANDARD_ANNUAL,
+            },
+            {
+                tier: 'prime',
+                name: 'MN Lake Specialist',
+                tagline: 'Featured placement on the lakes you specialize in, plus richer profile.',
+                features: [
+                    'Everything in Basic',
+                    'Featured-agent badge on lake pages',
+                    'Up to 10 service-area tags',
+                    'Priority placement in lead routing',
+                    'Direct-inquiry button on your profile',
+                ],
+                monthly_price: num(process.env.STRIPE_PRICING_PRIME_MONTHLY, 99),
+                annual_price:  num(process.env.STRIPE_PRICING_PRIME_ANNUAL, 990),
+                highlight:     true,
+                stripe_price_monthly: !!process.env.STRIPE_PRICE_PRIME_MONTHLY,
+                stripe_price_annual:  !!process.env.STRIPE_PRICE_PRIME_ANNUAL,
+            },
+            {
+                tier: 'founder',
+                name: 'Top Agent',
+                tagline: 'Top-of-page placement, founder badge, and exclusive territory holds.',
+                features: [
+                    'Everything in MN Lake Specialist',
+                    'Founder badge across the network',
+                    'Unlimited service-area tags',
+                    'First pick on new leads in your tagged areas',
+                    'Featured in regional reports + blog roundups',
+                ],
+                monthly_price: num(process.env.STRIPE_PRICING_FOUNDER_MONTHLY, 199),
+                annual_price:  num(process.env.STRIPE_PRICING_FOUNDER_ANNUAL, 1990),
+                stripe_price_monthly: !!process.env.STRIPE_PRICE_FOUNDER_MONTHLY,
+                stripe_price_annual:  !!process.env.STRIPE_PRICE_FOUNDER_ANNUAL,
+            },
+        ],
+    };
+    res.json(out);
 };
 
 // ─── POST /api/stripe/webhook ────────────────────────────────────────────────
@@ -279,51 +458,88 @@ exports.handleWebhook = async (req, res) => {
 
             // ── Subscription state changed (past_due, unpaid, paused) ──
             // Also re-reads the price so tier stays in sync if the owner
-            // upgrades/downgrades between Featured Partner and Local
-            // Spotlight via the Stripe portal.
+            // or agent upgrades/downgrades via the Stripe portal. Same
+            // event covers both businesses and agents; we dispatch by
+            // which table the subscription_id is in.
             case 'customer.subscription.updated': {
                 const sub = event.data.object;
                 const priceId = sub.items?.data?.[0]?.price?.id;
-                const tier    = businessTierFromPriceId(priceId);
-                // Capture the previous state BEFORE the UPDATE so we can
-                // detect the active→past_due transition and only send a
-                // warning once per drop (not on every subsequent event).
-                const prior = await pool.query(
+
+                // Try businesses first
+                const bizPrior = await pool.query(
                     `SELECT subscription_status FROM businesses WHERE stripe_subscription_id = $1 LIMIT 1`,
                     [sub.id]
                 );
-                const priorStatus = prior.rows[0]?.subscription_status;
-                await pool.query(
-                    `UPDATE businesses
-                        SET subscription_status = $1,
-                            tier                = $2,
-                            updated_at          = NOW()
-                      WHERE stripe_subscription_id = $3`,
-                    [sub.status, tier, sub.id]
-                );
-                if (sub.status === 'past_due' && priorStatus !== 'past_due') {
-                    const contact = await fetchBusinessOwnerBySubscriptionId(sub.id);
-                    if (contact) {
-                        emailService.sendBusinessPaymentFailed({
-                            to: contact.email,
-                            name: contact.full_name,
-                            businessName: contact.business_name,
-                        });
+                if (bizPrior.rowCount) {
+                    const tier = businessTierFromPriceId(priceId);
+                    const priorStatus = bizPrior.rows[0]?.subscription_status;
+                    await pool.query(
+                        `UPDATE businesses
+                            SET subscription_status = $1, tier = $2, updated_at = NOW()
+                          WHERE stripe_subscription_id = $3`,
+                        [sub.status, tier, sub.id]
+                    );
+                    if (sub.status === 'past_due' && priorStatus !== 'past_due') {
+                        const contact = await fetchBusinessOwnerBySubscriptionId(sub.id);
+                        if (contact) {
+                            emailService.sendBusinessPaymentFailed({
+                                to: contact.email, name: contact.full_name,
+                                businessName: contact.business_name,
+                            });
+                        }
                     }
+                    break;
                 }
+
+                // Otherwise: agent. Re-map the membership tier in case
+                // they upgraded/downgraded via the portal, and toggle
+                // is_published based on subscription status. past_due /
+                // unpaid keeps them visible (grace period); canceled /
+                // incomplete_expired hides them. The dedicated
+                // customer.subscription.deleted handler below takes
+                // over for full cancellations.
+                const newCode = membershipCodeFromPriceId(priceId);
+                const { rows: agentRows } = await pool.query(
+                    `SELECT user_id FROM agents WHERE stripe_subscription_id = $1 LIMIT 1`,
+                    [sub.id]
+                );
+                if (!agentRows.length) break;
+                const userId = agentRows[0].user_id;
+
+                // Only swap membership_id if the new price maps cleanly.
+                let membershipId = null;
+                if (newCode) {
+                    const mRows = await pool.query(`SELECT id FROM memberships WHERE code = $1`, [newCode]);
+                    membershipId = mRows.rows[0]?.id || null;
+                }
+
+                // Hard-hide on incomplete_expired or unpaid → past grace.
+                // active / past_due / trialing stay published.
+                const visibleStatuses = ['active', 'trialing', 'past_due'];
+                const shouldPublish = visibleStatuses.includes(sub.status);
+
+                await pool.query(
+                    `UPDATE agents
+                        SET membership_id  = COALESCE($1, membership_id),
+                            is_published   = $2,
+                            profile_status = CASE WHEN $2 THEN 'published' ELSE 'unpublished' END
+                      WHERE stripe_subscription_id = $3`,
+                    [membershipId, shouldPublish, sub.id]
+                );
+                console.log(`[Stripe Webhook] Agent ${userId} subscription.updated → ${sub.status} (${newCode || 'membership unchanged'})`);
                 break;
             }
 
             case 'invoice.payment_failed': {
                 const invoice = event.data.object;
-                if (invoice.subscription) {
-                    // Same dedupe trick: only email on the first drop, not
-                    // every subsequent Stripe retry attempt.
-                    const prior = await pool.query(
-                        `SELECT subscription_status FROM businesses WHERE stripe_subscription_id = $1 LIMIT 1`,
-                        [invoice.subscription]
-                    );
-                    const priorStatus = prior.rows[0]?.subscription_status;
+                if (!invoice.subscription) break;
+                // Businesses
+                const bizPrior = await pool.query(
+                    `SELECT subscription_status FROM businesses WHERE stripe_subscription_id = $1 LIMIT 1`,
+                    [invoice.subscription]
+                );
+                if (bizPrior.rowCount) {
+                    const priorStatus = bizPrior.rows[0]?.subscription_status;
                     await pool.query(
                         `UPDATE businesses
                             SET subscription_status = 'past_due', updated_at = NOW()
@@ -334,26 +550,38 @@ exports.handleWebhook = async (req, res) => {
                         const contact = await fetchBusinessOwnerBySubscriptionId(invoice.subscription);
                         if (contact) {
                             emailService.sendBusinessPaymentFailed({
-                                to: contact.email,
-                                name: contact.full_name,
+                                to: contact.email, name: contact.full_name,
                                 businessName: contact.business_name,
                             });
                         }
                     }
+                    break;
                 }
+                // Agent — keep profile visible during grace period.
+                // Stripe retries auto-recover; subscription.deleted only
+                // fires after the retry window expires.
+                console.log(`[Stripe Webhook] Agent invoice.payment_failed for subscription ${invoice.subscription}`);
                 break;
             }
 
             case 'invoice.payment_succeeded': {
                 const invoice = event.data.object;
-                if (invoice.subscription) {
-                    await pool.query(
-                        `UPDATE businesses
-                            SET subscription_status = 'active', updated_at = NOW()
-                          WHERE stripe_subscription_id = $1`,
-                        [invoice.subscription]
-                    );
-                }
+                if (!invoice.subscription) break;
+                // Both tables are best-effort — only one of them owns
+                // this subscription_id, the other UPDATE is a no-op.
+                await pool.query(
+                    `UPDATE businesses
+                        SET subscription_status = 'active', updated_at = NOW()
+                      WHERE stripe_subscription_id = $1`,
+                    [invoice.subscription]
+                );
+                await pool.query(
+                    `UPDATE agents
+                        SET is_published = true,
+                            profile_status = 'published'
+                      WHERE stripe_subscription_id = $1`,
+                    [invoice.subscription]
+                );
                 break;
             }
 
