@@ -148,11 +148,17 @@ class GlobalHeader extends HTMLElement {
             const initials = (user.display_name || user.email || 'U')
                 .split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 
+            // Default landing per role. Business owners get their own
+            // dashboard at /business/dashboard (Express route, not under
+            // /pages/) — falling through to the agent dashboard 403s
+            // them out via the role gate on /api/agents/me.
             let dashLink = rp + 'pages/agent/dashboard.html';
             if (user.role === 'admin' || user.role === 'super_admin') {
                 dashLink = rp + 'pages/admin/dashboard.html';
             } else if (user.role === 'client') {
                 dashLink = rp + 'pages/user/dashboard.html';
+            } else if (user.role === 'business_owner') {
+                dashLink = '/business/dashboard';
             }
 
             authHtml = `
@@ -399,7 +405,7 @@ class GlobalHeader extends HTMLElement {
                 <div class="mobile-menu-footer">
                     ${user ? `
                         <div style="color:#94a3b8;font-size:0.8rem;margin-bottom:0.75rem;">Signed in as <strong style="color:#fff;">${user.display_name || user.email}</strong></div>
-                        <a href="${user.role === 'admin' || user.role === 'super_admin' ? rp + 'pages/admin/dashboard.html' : user.role === 'client' ? rp + 'pages/user/dashboard.html' : rp + 'pages/agent/dashboard.html'}" class="mobile-menu-cta-outline">Dashboard</a>
+                        <a href="${user.role === 'admin' || user.role === 'super_admin' ? rp + 'pages/admin/dashboard.html' : user.role === 'client' ? rp + 'pages/user/dashboard.html' : user.role === 'business_owner' ? '/business/dashboard' : rp + 'pages/agent/dashboard.html'}" class="mobile-menu-cta-outline">Dashboard</a>
                         <a href="#" onclick="window._signOut(event)" class="mobile-menu-cta-outline" style="color:#fc8181;border-color:rgba(252,129,129,0.3);">Sign Out</a>
                     ` : `
                         <a href="${rp}pages/public/login.html" class="mobile-menu-cta-outline">Log In</a>
@@ -428,7 +434,7 @@ class GlobalHeader extends HTMLElement {
                 ${authHtml}
             </div>
             ${user ? `
-                <a href="${user.role === 'admin' || user.role === 'super_admin' ? rp + 'pages/admin/dashboard.html' : user.role === 'client' ? rp + 'pages/user/dashboard.html' : rp + 'pages/agent/dashboard.html'}"
+                <a href="${user.role === 'admin' || user.role === 'super_admin' ? rp + 'pages/admin/dashboard.html' : user.role === 'client' ? rp + 'pages/user/dashboard.html' : user.role === 'business_owner' ? '/business/dashboard' : rp + 'pages/agent/dashboard.html'}"
                    class="mobile-auth-inline" aria-label="Dashboard">Dashboard</a>
             ` : `
                 <a href="${rp}pages/public/login.html" class="mobile-auth-inline">Sign in</a>
