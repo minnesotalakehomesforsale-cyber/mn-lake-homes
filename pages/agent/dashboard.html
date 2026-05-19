@@ -230,37 +230,91 @@
                                 <label>Service Areas <span style="color:#1d6df2;">*</span></label>
                                 <p class="field-hint">Pick the towns + lake areas you actually work — these drive the geo-match when a buyer or seller submits a lead near them. Max 10.</p>
                                 <style>
-                                    .areas-toolbar { display: flex; gap: 0.6rem; align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap; }
-                                    .areas-search { flex: 1; min-width: 200px; padding: 0.55rem 0.85rem 0.55rem 2.2rem; border: 1px solid #e2e8f0; border-radius: 8px; font: inherit; font-size: 0.9rem; background-color: #fff; background-repeat: no-repeat; background-position: 0.7rem center; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a0aec0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='7'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>"); }
-                                    .areas-search:focus { outline: none; border-color: #1d6df2; }
-                                    .areas-counter { font-size: 0.78rem; font-weight: 700; color: #4a5568; padding: 0.35rem 0.7rem; background: #f7f9fa; border: 1px solid #edf2f7; border-radius: 99px; white-space: nowrap; }
-                                    .areas-counter.full { background: #fffaf0; color: #b7791f; border-color: #feebc8; }
-                                    .areas-box { max-height: 280px; overflow-y: auto; padding: 0.75rem; background: #fafbfc; border: 1px solid #edf2f7; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 0.4rem; }
-                                    .area-chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.85rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 99px; font: inherit; font-size: 0.85rem; font-weight: 600; color: #4a5568; cursor: pointer; transition: all 0.12s; }
-                                    .area-chip:hover { border-color: #cbd5e0; color: #1a202c; }
-                                    .area-chip.on { background: #1d6df2; border-color: #1d6df2; color: #fff; }
-                                    .area-chip.on:hover { background: #155bc8; }
-                                    .area-chip:disabled { opacity: 0.4; cursor: not-allowed; }
-                                    .area-chip .x { font-size: 0.95rem; line-height: 1; opacity: 0.85; }
-                                    .areas-empty { color: #a0aec0; font-size: 0.88rem; padding: 0.4rem 0.6rem; }
+                                    /* Picker: shows only the chips the agent has SELECTED. Adding
+                                       a new one is a "type to search → click to add" interaction
+                                       — the full 218-area catalog stays out of the agent's view
+                                       so the box doesn't read as a wall of unchecked options. */
+                                    .picker-wrap { position: relative; }
+                                    .picker-counter { font-size: 0.78rem; font-weight: 700; color: #4a5568; padding: 0.35rem 0.7rem; background: #f7f9fa; border: 1px solid #edf2f7; border-radius: 99px; white-space: nowrap; }
+                                    .picker-counter.full { background: #fffaf0; color: #b7791f; border-color: #feebc8; }
+                                    .picker-counter.over { background: #fff5f5; color: #c53030; border-color: #feb2b2; }
+                                    .picker-selected {
+                                        min-height: 56px;
+                                        padding: 0.6rem; background: #fafbfc;
+                                        border: 1px solid #e2e8f0; border-radius: 10px;
+                                        display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: flex-start;
+                                    }
+                                    .picker-chip { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.85rem; background: #1d6df2; border: 1px solid #1d6df2; border-radius: 99px; font: inherit; font-size: 0.85rem; font-weight: 600; color: #fff; }
+                                    .picker-chip .x { background: rgba(255,255,255,0.18); border: 0; color: #fff; font-size: 0.95rem; line-height: 1; cursor: pointer; padding: 0; width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+                                    .picker-chip .x:hover { background: rgba(255,255,255,0.35); }
+                                    .picker-empty-state { color: #a0aec0; font-size: 0.88rem; padding: 0.5rem 0.6rem; }
+                                    .picker-add-row { display: flex; gap: 0.6rem; align-items: center; margin-top: 0.6rem; flex-wrap: wrap; }
+                                    .picker-search {
+                                        flex: 1; min-width: 200px;
+                                        padding: 0.55rem 0.85rem 0.55rem 2.2rem;
+                                        border: 1px solid #e2e8f0; border-radius: 8px;
+                                        font: inherit; font-size: 0.9rem; background-color: #fff;
+                                        background-repeat: no-repeat; background-position: 0.7rem center;
+                                        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a0aec0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='7'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>");
+                                    }
+                                    .picker-search:focus, .picker-search:not(:placeholder-shown) { outline: none; border-color: #1d6df2; }
+                                    .picker-dropdown {
+                                        position: absolute; left: 0; right: 0; z-index: 5;
+                                        margin-top: 0.4rem;
+                                        max-height: 280px; overflow-y: auto;
+                                        background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+                                        box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+                                        display: none;
+                                    }
+                                    .picker-dropdown.show { display: block; }
+                                    .picker-option {
+                                        display: block; width: 100%; text-align: left;
+                                        padding: 0.6rem 0.95rem; background: none; border: 0;
+                                        font: inherit; font-size: 0.88rem; font-weight: 500; color: #1a202c;
+                                        cursor: pointer; border-bottom: 1px solid #f7f9fa;
+                                    }
+                                    .picker-option:last-child { border-bottom: 0; }
+                                    .picker-option:hover { background: #f7faff; color: #1d6df2; }
+                                    .picker-option .meta { color: #a0aec0; font-weight: 500; font-size: 0.78rem; margin-left: 0.4rem; }
+                                    .picker-option-empty { padding: 0.85rem 0.95rem; color: #a0aec0; font-size: 0.86rem; }
                                     .areas-msg { font-size: 0.82rem; margin-top: 0.5rem; display: none; }
                                     .areas-msg.ok  { color: #2f855a; display: block; }
                                     .areas-msg.err { color: #c53030; display: block; }
                                 </style>
-                                <div class="areas-toolbar">
-                                    <input type="search" id="f-areas-search" class="areas-search" placeholder="Search towns…" oninput="renderAreaChips()">
-                                    <span class="areas-counter" id="f-areas-counter">0 / 10</span>
+                                <div class="picker-wrap">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                                        <span style="font-size:0.82rem; font-weight:600; color:#4a5568;">Your selected areas</span>
+                                        <span class="picker-counter" id="f-areas-counter">0 / 10</span>
+                                    </div>
+                                    <div class="picker-selected" id="f-areas-chips">
+                                        <span class="picker-empty-state">Loading…</span>
+                                    </div>
+                                    <div class="picker-add-row">
+                                        <input type="search" id="f-areas-search" class="picker-search" placeholder="Type to add a town…" autocomplete="off"
+                                               oninput="onAreaSearch()" onfocus="onAreaSearch()" onblur="setTimeout(()=>closeAreaDropdown(),150)">
+                                    </div>
+                                    <div class="picker-dropdown" id="f-areas-dropdown"></div>
+                                    <div class="areas-msg" id="f-areas-msg"></div>
                                 </div>
-                                <div class="areas-box" id="f-areas-chips">
-                                    <span class="areas-empty">Loading service areas…</span>
-                                </div>
-                                <div class="areas-msg" id="f-areas-msg"></div>
                             </div>
                         </div>
                         <div class="form-group-sys" style="margin-bottom: 3rem;">
-                            <label>Specialties *</label>
-                            <p class="field-hint">Your focus areas — helps us route the right leads to you. Comma-separated.</p>
-                            <input type="text" id="f-specs" class="input-sys" placeholder="Luxury Waterfront, Relocation" required oninput="calcProgress()">
+                            <label>Specialties <span style="color:#1d6df2;">*</span></label>
+                            <p class="field-hint">Your focus areas — helps us route the right leads to you. Pick up to 10 from the list, or start typing to filter.</p>
+                            <div class="picker-wrap">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                                    <span style="font-size:0.82rem; font-weight:600; color:#4a5568;">Your selected specialties</span>
+                                    <span class="picker-counter" id="f-specs-counter">0 / 10</span>
+                                </div>
+                                <div class="picker-selected" id="f-specs-chips">
+                                    <span class="picker-empty-state">Loading…</span>
+                                </div>
+                                <div class="picker-add-row">
+                                    <input type="search" id="f-specs-search" class="picker-search" placeholder="Type to add a specialty…" autocomplete="off"
+                                           oninput="onSpecSearch()" onfocus="onSpecSearch()" onblur="setTimeout(()=>closeSpecDropdown(),150)">
+                                </div>
+                                <div class="picker-dropdown" id="f-specs-dropdown"></div>
+                            </div>
                         </div>
 
                         <h3 class="form-section-title">Professional Narrative</h3>
@@ -475,10 +529,16 @@
             setIfPresent('f-web',     agent.website_url     || '');
             document.getElementById('f-city').value      = agent.city            || '';
 
+            // Specialties: hydrate the chip-picker set from the agent
+            // record. The picker UI is rendered immediately so the
+            // agent sees their picks even before they touch search.
             try {
-                const specs = Array.isArray(agent.specialties)   ? agent.specialties   : JSON.parse(agent.specialties   || '[]');
-                document.getElementById('f-specs').value = specs.join(', ');
-            } catch(_) {}
+                const specs = Array.isArray(agent.specialties)
+                    ? agent.specialties
+                    : JSON.parse(agent.specialties || '[]');
+                window._selectedSpecs = new Set((specs || []).filter(Boolean));
+            } catch (_) { window._selectedSpecs = new Set(); }
+            renderSpecChips();
 
             // Service areas now come from the user_tags join, not the
             // legacy text column on agents. loadServiceAreas() pulls the
@@ -746,16 +806,15 @@
 
         // ── Progress Bar ─────────────────────────────────────────────────────────
         function calcProgress() {
-            // Text-input requireds (f-areas is gone — service areas come
-            // from the chip picker now and count as 1/N when at least
-            // one tag is selected).
-            const reqds = ['f-name', 'f-brokerage', 'f-phone', 'f-city', 'f-specs', 'f-bio'];
+            // Text-input requireds. Specialties + service areas are now
+            // chip pickers (not text inputs), so they count toward filled
+            // when their Set has at least one entry.
+            const reqds = ['f-name', 'f-brokerage', 'f-phone', 'f-city', 'f-bio'];
             let filled = 0;
             reqds.forEach(id => { const el = document.getElementById(id); if (el && el.value.trim() !== '') filled++; });
-            // Service-areas counts as filled when the agent has picked at
-            // least one geo tag.
-            const totalSteps = reqds.length + 1;
+            const totalSteps = reqds.length + 2; // + service areas + specialties
             if (window._selectedAreaIds && window._selectedAreaIds.size > 0) filled++;
+            if (window._selectedSpecs    && window._selectedSpecs.size    > 0) filled++;
             const pct = Math.round((filled / totalSteps) * 100);
             document.getElementById('completion-bar').style.width = pct + '%';
 
@@ -791,7 +850,8 @@
                 years_experience:  years ? Number(years) : null,
                 website_url:       document.getElementById('f-web')?.value.trim() || null,
                 city:              document.getElementById('f-city').value.trim(),
-                specialties:       document.getElementById('f-specs').value.split(',').map(s => s.trim()).filter(Boolean),
+                // Specialties come from the chip picker Set, not a text input.
+                specialties:       [...(window._selectedSpecs || [])],
                 bio:               document.getElementById('f-bio').value.trim(),
                 profile_photo_url: document.getElementById('f-photo-url').value.trim(),
             };
@@ -805,17 +865,42 @@
             return payload;
         }
 
-        // ── Service Areas chip picker ───────────────────────────────────────────
-        // Source of truth is user_tags via /api/tags/users/:userId. We
-        // also write the chosen tag NAMES back into agents.service_areas
-        // (via saveDraft / mirror) so existing display code stays happy.
+        // ── Service Areas + Specialties pickers ──────────────────────────────
+        //
+        // UI pattern: "selected chips + searchable dropdown to add".
+        //   - Selected box shows only the agent's chosen items as removable
+        //     chips. This stops the picker from looking like a wall of
+        //     unchecked options to the agent.
+        //   - To add: focus the search input, type to filter, click an
+        //     option in the dropdown. Both add and remove auto-save.
+        //
+        // Service areas writes to user_tags via /api/tags/users/:userId
+        // (which the lead-router uses). Names also mirror into
+        // agents.service_areas on profile save so the existing display
+        // code keeps working. Specialties writes to agents.specialties
+        // via PATCH /api/agents/me.
         const AREAS_MAX = 10;
-        window._allAreas       = [];
+        const SPECS_MAX = 10;
+        const SPECIALTY_CATALOG = [
+            'Luxury Waterfront', 'Lake Cabins', 'First-Time Buyers',
+            'Investment Properties', 'Relocation', 'New Construction',
+            'Buyer Representation', 'Seller Representation',
+            'Year-Round Lake Homes', 'Seasonal Cabins',
+            'Family Compound Properties', 'Boat-Access-Only Properties',
+            'Vacant Lakeshore Land', 'Foreclosure / REO',
+            'Off-Grid / Remote', 'Historic Lake Homes',
+            'Property Management', '1031 Exchange',
+            'Commercial Waterfront', 'Multi-Generational Estates',
+        ];
+        window._allAreas        = [];   // [{id, name, region, state, active}]
         window._selectedAreaIds = new Set();
-        let   _myUserId        = null;
+        window._selectedSpecs   = new Set();
+        let   _myUserId         = null;
+
+        // Lightweight HTML escape — borrows the project's pattern.
+        function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
         async function loadServiceAreas() {
-            // Resolve our own userId from the session (cached after first call).
             if (!_myUserId) {
                 try {
                     const s = await fetch('/api/auth/session', { credentials: 'include' }).then(r => r.ok ? r.json() : null);
@@ -824,7 +909,7 @@
             }
             if (!_myUserId) {
                 document.getElementById('f-areas-chips').innerHTML =
-                    '<span class="areas-empty" style="color:#c53030;">Session expired — refresh the page.</span>';
+                    '<span class="picker-empty-state" style="color:#c53030;">Session expired — refresh the page.</span>';
                 return;
             }
             try {
@@ -844,72 +929,104 @@
             calcProgress();
         }
 
+        // Renders the SELECTED-chips row. The full 218 catalog only
+        // surfaces in the dropdown when the agent types in the search.
         function renderAreaChips() {
             const el       = document.getElementById('f-areas-chips');
             const counter  = document.getElementById('f-areas-counter');
-            const q        = (document.getElementById('f-areas-search')?.value || '').toLowerCase().trim();
-            const all      = window._allAreas || [];
             const selected = window._selectedAreaIds;
+            const all      = window._allAreas || [];
 
             counter.textContent = `${selected.size} / ${AREAS_MAX}`;
-            counter.classList.toggle('full', selected.size >= AREAS_MAX);
+            counter.classList.toggle('full', selected.size === AREAS_MAX);
+            counter.classList.toggle('over', selected.size >  AREAS_MAX);
 
-            if (!all.length) {
-                el.innerHTML = '<span class="areas-empty">No service areas available yet — check back soon.</span>';
+            if (!selected.size) {
+                el.innerHTML = '<span class="picker-empty-state">No service areas yet — start typing below to add up to 10.</span>';
                 return;
             }
-            // Selected first, then alphabetical by name. Filtered by
-            // search (matches name + region + state) so the picker is
-            // usable at 218 items.
-            const matches = all.filter(t => {
-                if (!q) return true;
-                const hay = `${t.name || ''} ${t.region || ''} ${t.state || ''}`.toLowerCase();
-                return hay.includes(q);
-            });
-            const ordered = matches.sort((a, b) => {
-                const as = selected.has(String(a.id)) ? 0 : 1;
-                const bs = selected.has(String(b.id)) ? 0 : 1;
-                return (as - bs) || a.name.localeCompare(b.name);
-            });
-            if (!ordered.length) {
-                el.innerHTML = `<span class="areas-empty">No towns match "${q}".</span>`;
-                return;
-            }
-            const atCap = selected.size >= AREAS_MAX;
-            el.innerHTML = ordered.map(t => {
-                const on       = selected.has(String(t.id));
-                const disabled = !on && atCap;
-                const region   = (t.region && t.region !== t.name) ? ` · ${t.region}` : '';
-                return `<button type="button" class="area-chip ${on ? 'on' : ''}" ${disabled ? 'disabled' : ''} onclick="toggleArea('${t.id}')">
+            // Resolve selected IDs → tag rows for display. Tags that are
+            // somehow no longer in the catalog (deactivated) still render
+            // as ID-labeled chips so the agent can remove them.
+            const byId = new Map(all.map(t => [String(t.id), t]));
+            const rows = [...selected].map(id => byId.get(String(id)) || { id, name: '(unknown area)' })
+                                       .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            el.innerHTML = rows.map(t => {
+                const region = (t.region && t.region !== t.name) ? ` · ${t.region}` : '';
+                return `<span class="picker-chip">
                     ${esc(t.name)}${region ? `<span style="opacity:0.7;font-weight:500;">${esc(region)}</span>` : ''}
-                    ${on ? '<span class="x">×</span>' : ''}
-                </button>`;
+                    <button class="x" type="button" aria-label="Remove" onclick="removeArea('${t.id}')">×</button>
+                </span>`;
             }).join('');
         }
 
-        // Lightweight HTML escape — borrows the project's pattern.
-        function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+        // Dropdown is populated by the search input. Shows up to ~30
+        // matches (so the list isn't a 218-row scroll bomb when the
+        // search is empty).
+        function onAreaSearch() {
+            const dd    = document.getElementById('f-areas-dropdown');
+            const q     = (document.getElementById('f-areas-search')?.value || '').toLowerCase().trim();
+            const all   = window._allAreas || [];
+            const sel   = window._selectedAreaIds;
+            const atCap = sel.size >= AREAS_MAX;
 
-        async function toggleArea(id) {
-            const selected = window._selectedAreaIds;
-            const sid = String(id);
-            if (selected.has(sid)) {
-                selected.delete(sid);
-            } else {
-                if (selected.size >= AREAS_MAX) {
-                    showAreasMsg(`Max ${AREAS_MAX} service areas. Remove one to add another.`, 'err');
-                    return;
-                }
-                selected.add(sid);
+            if (atCap) {
+                dd.innerHTML = `<div class="picker-option-empty">You've hit the 10-area cap. Remove one above to add another.</div>`;
+                dd.classList.add('show');
+                return;
             }
+
+            const matches = all
+                .filter(t => !sel.has(String(t.id)))
+                .filter(t => {
+                    if (!q) return true;
+                    const hay = `${t.name || ''} ${t.region || ''} ${t.state || ''}`.toLowerCase();
+                    return hay.includes(q);
+                })
+                .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+                .slice(0, 30);
+
+            if (!matches.length) {
+                dd.innerHTML = `<div class="picker-option-empty">${q ? `No towns match "${esc(q)}".` : 'All available areas are already selected.'}</div>`;
+            } else {
+                dd.innerHTML = matches.map(t => {
+                    const region = (t.region && t.region !== t.name) ? ` · ${t.region}` : '';
+                    return `<button type="button" class="picker-option" onmousedown="addArea('${t.id}')">
+                        ${esc(t.name)}${region ? `<span class="meta">${esc(region)}</span>` : ''}
+                    </button>`;
+                }).join('');
+            }
+            dd.classList.add('show');
+        }
+        function closeAreaDropdown() {
+            document.getElementById('f-areas-dropdown')?.classList.remove('show');
+        }
+
+        async function addArea(id) {
+            const sel = window._selectedAreaIds;
+            if (sel.has(String(id))) return;
+            if (sel.size >= AREAS_MAX) {
+                showAreasMsg(`Max ${AREAS_MAX} service areas. Remove one to add another.`, 'err');
+                return;
+            }
+            sel.add(String(id));
+            document.getElementById('f-areas-search').value = '';
+            closeAreaDropdown();
             renderAreaChips();
             calcProgress();
             await persistAreas();
         }
+        async function removeArea(id) {
+            window._selectedAreaIds.delete(String(id));
+            renderAreaChips();
+            // If the dropdown is currently open, refresh its options
+            // (the just-removed area is now eligible to re-add).
+            if (document.getElementById('f-areas-dropdown')?.classList.contains('show')) onAreaSearch();
+            calcProgress();
+            await persistAreas();
+        }
 
-        // Persist the current selection to user_tags. Debounced lightly —
-        // toggles are quick so a 250ms tail-end save keeps clicks snappy
-        // without flooding the API on rapid selections.
+        // Persist the current selection to user_tags. Debounced 250ms.
         let _persistTimer = null;
         async function persistAreas() {
             clearTimeout(_persistTimer);
@@ -939,6 +1056,86 @@
             el.className = 'areas-msg ' + kind;
             clearTimeout(showAreasMsg._t);
             showAreasMsg._t = setTimeout(() => { el.className = 'areas-msg'; }, 3000);
+        }
+
+        // ── Specialties chip picker (predefined catalog) ─────────────────────
+        // Mirrors the Service Areas pattern: chips up top, type to add
+        // from the 20-item SPECIALTY_CATALOG below. Saves to
+        // agents.specialties via the normal Save Draft path
+        // (extractFormPayload reads from _selectedSpecs).
+        function renderSpecChips() {
+            const el       = document.getElementById('f-specs-chips');
+            const counter  = document.getElementById('f-specs-counter');
+            const selected = window._selectedSpecs;
+
+            counter.textContent = `${selected.size} / ${SPECS_MAX}`;
+            counter.classList.toggle('full', selected.size === SPECS_MAX);
+            counter.classList.toggle('over', selected.size >  SPECS_MAX);
+
+            if (!selected.size) {
+                el.innerHTML = '<span class="picker-empty-state">No specialties yet — start typing below to add up to 10.</span>';
+                return;
+            }
+            const rows = [...selected].sort((a, b) => a.localeCompare(b));
+            el.innerHTML = rows.map(s => `
+                <span class="picker-chip">
+                    ${esc(s)}
+                    <button class="x" type="button" aria-label="Remove" onclick="removeSpec('${esc(s).replace(/'/g, '&#39;')}')">×</button>
+                </span>`).join('');
+        }
+
+        function onSpecSearch() {
+            const dd    = document.getElementById('f-specs-dropdown');
+            const q     = (document.getElementById('f-specs-search')?.value || '').toLowerCase().trim();
+            const sel   = window._selectedSpecs;
+            const atCap = sel.size >= SPECS_MAX;
+
+            if (atCap) {
+                dd.innerHTML = `<div class="picker-option-empty">You've hit the 10-specialty cap. Remove one above to add another.</div>`;
+                dd.classList.add('show');
+                return;
+            }
+
+            // Include any agent-saved specialty NOT in the catalog so
+            // legacy values stay reachable.
+            const seen = new Set(SPECIALTY_CATALOG);
+            const extras = [...sel].filter(s => !seen.has(s));
+            const all = [...SPECIALTY_CATALOG, ...extras];
+
+            const matches = all
+                .filter(s => !sel.has(s))
+                .filter(s => !q || s.toLowerCase().includes(q))
+                .sort((a, b) => a.localeCompare(b))
+                .slice(0, 30);
+
+            if (!matches.length) {
+                dd.innerHTML = `<div class="picker-option-empty">${q ? `No specialties match "${esc(q)}".` : 'All specialties are already selected.'}</div>`;
+            } else {
+                dd.innerHTML = matches.map(s => `
+                    <button type="button" class="picker-option" onmousedown="addSpec('${esc(s).replace(/'/g, '&#39;')}')">
+                        ${esc(s)}
+                    </button>`).join('');
+            }
+            dd.classList.add('show');
+        }
+        function closeSpecDropdown() {
+            document.getElementById('f-specs-dropdown')?.classList.remove('show');
+        }
+        function addSpec(name) {
+            const sel = window._selectedSpecs;
+            if (sel.has(name)) return;
+            if (sel.size >= SPECS_MAX) return;
+            sel.add(name);
+            document.getElementById('f-specs-search').value = '';
+            closeSpecDropdown();
+            renderSpecChips();
+            calcProgress();
+        }
+        function removeSpec(name) {
+            window._selectedSpecs.delete(name);
+            renderSpecChips();
+            if (document.getElementById('f-specs-dropdown')?.classList.contains('show')) onSpecSearch();
+            calcProgress();
         }
 
         // ── Save Draft ───────────────────────────────────────────────────────────
