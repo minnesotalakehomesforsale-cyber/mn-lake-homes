@@ -269,12 +269,37 @@
                                 <input class="field-input" id="p-state" type="text">
                             </div>
                             <div class="field-group full">
-                                <div class="field-label">Service Areas (comma-separated)</div>
-                                <input class="field-input" id="p-areas" type="text">
+                                <div class="field-label">Service Areas <span style="text-transform:none;color:#a0aec0;font-weight:600;">— shown on the public profile, max 10</span></div>
+                                <p style="font-size:0.78rem;color:#718096;margin:-0.1rem 0 0.5rem;">Auto-fills from what the agent picks on their dashboard. For <strong>additional routing-only areas</strong> that don't show on the public profile, use the <strong>Service Areas tab</strong> — admin can attach unlimited tags there for routing.</p>
+                                <style>
+                                    .picker-toolbar { display: flex; gap: 0.55rem; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; }
+                                    .picker-search { flex: 1; min-width: 200px; padding: 0.5rem 0.85rem 0.5rem 2.1rem; border: 1px solid #e2e8f0; border-radius: 8px; font: inherit; font-size: 0.88rem; background-color: #fff; background-repeat: no-repeat; background-position: 0.7rem center; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a0aec0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='7'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>"); }
+                                    .picker-search:focus { outline: none; border-color: #1d6df2; }
+                                    .picker-counter { font-size: 0.74rem; font-weight: 700; color: #4a5568; padding: 0.3rem 0.65rem; background: #f7f9fa; border: 1px solid #edf2f7; border-radius: 99px; white-space: nowrap; }
+                                    .picker-counter.full { background: #fffaf0; color: #b7791f; border-color: #feebc8; }
+                                    .picker-box { max-height: 260px; overflow-y: auto; padding: 0.7rem; background: #fafbfc; border: 1px solid #edf2f7; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+                                    .picker-chip { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.35rem 0.8rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 99px; font: inherit; font-size: 0.82rem; font-weight: 600; color: #4a5568; cursor: pointer; transition: all 0.12s; }
+                                    .picker-chip:hover { border-color: #cbd5e0; color: #1a202c; }
+                                    .picker-chip.on { background: #1d6df2; border-color: #1d6df2; color: #fff; }
+                                    .picker-chip.on:hover { background: #155bc8; }
+                                    .picker-chip[disabled] { opacity: 0.4; cursor: not-allowed; }
+                                    .picker-chip .x { font-size: 0.95rem; line-height: 1; opacity: 0.85; }
+                                    .picker-empty { color: #a0aec0; font-size: 0.85rem; padding: 0.3rem 0.5rem; }
+                                </style>
+                                <div class="picker-toolbar">
+                                    <input type="search" id="p-areas-search" class="picker-search" placeholder="Search 218 towns…" oninput="renderProfileAreaChips()">
+                                    <span class="picker-counter" id="p-areas-counter">0 / 10</span>
+                                </div>
+                                <div class="picker-box" id="p-areas-chips"><span class="picker-empty">Loading service areas…</span></div>
                             </div>
                             <div class="field-group full">
-                                <div class="field-label">Specialties (comma-separated)</div>
-                                <input class="field-input" id="p-specs" type="text">
+                                <div class="field-label">Specialties <span style="text-transform:none;color:#a0aec0;font-weight:600;">— max 10</span></div>
+                                <p style="font-size:0.78rem;color:#718096;margin:-0.1rem 0 0.5rem;">Pick the focus areas this agent works. Drives lead-routing match scoring and shows on their public card.</p>
+                                <div class="picker-toolbar">
+                                    <input type="search" id="p-specs-search" class="picker-search" placeholder="Search specialties…" oninput="renderProfileSpecChips()">
+                                    <span class="picker-counter" id="p-specs-counter">0 / 10</span>
+                                </div>
+                                <div class="picker-box" id="p-specs-chips"><span class="picker-empty">Loading specialties…</span></div>
                             </div>
                             <div class="field-group full">
                                 <div class="field-label">Agent Bio</div>
@@ -659,10 +684,15 @@
         }
 
         try {
+            // Two multi-select chip pickers replace the comma-separated
+            // text inputs. Service areas use the full geo-tag catalog;
+            // specialties use the predefined catalog below.
             const areas = Array.isArray(a.service_areas) ? a.service_areas : JSON.parse(a.service_areas || '[]');
             const specs = Array.isArray(a.specialties)   ? a.specialties   : JSON.parse(a.specialties   || '[]');
-            document.getElementById('p-areas').value = areas.join(', ');
-            document.getElementById('p-specs').value = specs.join(', ');
+            window._profileAreas = new Set((areas || []).map(s => String(s)));
+            window._profileSpecs = new Set((specs || []).map(s => String(s)));
+            loadProfileAreaCatalog();
+            renderProfileSpecChips();
         } catch(_) {}
 
         // Profile status badge
@@ -861,6 +891,155 @@
         }
     }
 
+    // ── Profile-tab Service Areas chip picker ────────────────────────────────
+    // Mirrors the agent-dashboard picker but writes string NAMES (not tag
+    // IDs) into agents.service_areas so the existing public-profile
+    // display code keeps working. Capped at 10 — admin can attach
+    // additional routing-only tags on the dedicated Service Areas tab.
+    const PROFILE_AREAS_MAX = 10;
+    window._profileAreaCatalog = [];   // [{ id, name, region, state, active }]
+    window._profileAreas       = new Set(); // selected NAMES
+
+    async function loadProfileAreaCatalog() {
+        try {
+            const r = await fetch('/api/tags?active=true');
+            const data = r.ok ? await r.json() : [];
+            window._profileAreaCatalog = (Array.isArray(data) ? data : [])
+                .filter(t => t.active !== false)
+                .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        } catch (_) { window._profileAreaCatalog = []; }
+        renderProfileAreaChips();
+    }
+
+    function renderProfileAreaChips() {
+        const el       = document.getElementById('p-areas-chips');
+        const counter  = document.getElementById('p-areas-counter');
+        const q        = (document.getElementById('p-areas-search')?.value || '').toLowerCase().trim();
+        const catalog  = window._profileAreaCatalog || [];
+        const selected = window._profileAreas;
+
+        counter.textContent = `${selected.size} / ${PROFILE_AREAS_MAX}`;
+        counter.classList.toggle('full', selected.size >= PROFILE_AREAS_MAX);
+
+        if (!catalog.length) {
+            el.innerHTML = '<span class="picker-empty">No service areas found.</span>';
+            return;
+        }
+        // Selected first, then alphabetical.
+        const matches = catalog.filter(t => {
+            if (!q) return true;
+            const hay = `${t.name || ''} ${t.region || ''} ${t.state || ''}`.toLowerCase();
+            return hay.includes(q);
+        });
+        const ordered = matches.sort((a, b) => {
+            const as = selected.has(a.name) ? 0 : 1;
+            const bs = selected.has(b.name) ? 0 : 1;
+            return (as - bs) || (a.name || '').localeCompare(b.name || '');
+        });
+        if (!ordered.length) {
+            el.innerHTML = `<span class="picker-empty">No towns match "${q}".</span>`;
+            return;
+        }
+        const atCap = selected.size >= PROFILE_AREAS_MAX;
+        el.innerHTML = ordered.map(t => {
+            const on       = selected.has(t.name);
+            const disabled = !on && atCap;
+            const region   = (t.region && t.region !== t.name) ? ` · ${t.region}` : '';
+            const nameAttr = String(t.name || '').replace(/"/g, '&quot;');
+            return `<button type="button" class="picker-chip ${on ? 'on' : ''}" ${disabled ? 'disabled' : ''} onclick="toggleProfileArea('${nameAttr}')">
+                ${escAttr(t.name)}${region ? `<span style="opacity:0.7;font-weight:500;">${escAttr(region)}</span>` : ''}
+                ${on ? '<span class="x">×</span>' : ''}
+            </button>`;
+        }).join('');
+    }
+    function escAttr(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    function toggleProfileArea(name) {
+        const sel = window._profileAreas;
+        if (sel.has(name)) { sel.delete(name); }
+        else {
+            if (sel.size >= PROFILE_AREAS_MAX) return;
+            sel.add(name);
+        }
+        renderProfileAreaChips();
+    }
+
+    // ── Profile-tab Specialties chip picker ──────────────────────────────────
+    // Predefined catalog. Admin still saves whatever the agent picked
+    // (or has typed via legacy data) — any specialties in the saved
+    // array that aren't in this catalog still render as chips so we
+    // don't silently drop them.
+    const PROFILE_SPECS_MAX = 10;
+    const SPECIALTY_CATALOG = [
+        'Luxury Waterfront',
+        'Lake Cabins',
+        'First-Time Buyers',
+        'Investment Properties',
+        'Relocation',
+        'New Construction',
+        'Buyer Representation',
+        'Seller Representation',
+        'Year-Round Lake Homes',
+        'Seasonal Cabins',
+        'Family Compound Properties',
+        'Boat-Access-Only Properties',
+        'Vacant Lakeshore Land',
+        'Foreclosure / REO',
+        'Off-Grid / Remote',
+        'Historic Lake Homes',
+        'Property Management',
+        '1031 Exchange',
+        'Commercial Waterfront',
+        'Multi-Generational Estates',
+    ];
+    window._profileSpecs = new Set();
+
+    function renderProfileSpecChips() {
+        const el       = document.getElementById('p-specs-chips');
+        const counter  = document.getElementById('p-specs-counter');
+        const q        = (document.getElementById('p-specs-search')?.value || '').toLowerCase().trim();
+        const selected = window._profileSpecs;
+
+        // Include any agent-saved specialty that's not in the catalog,
+        // so we don't silently lose pre-existing entries.
+        const seen = new Set(SPECIALTY_CATALOG);
+        const extras = [...selected].filter(s => !seen.has(s));
+        const all = [...SPECIALTY_CATALOG, ...extras];
+
+        counter.textContent = `${selected.size} / ${PROFILE_SPECS_MAX}`;
+        counter.classList.toggle('full', selected.size >= PROFILE_SPECS_MAX);
+
+        const matches = all.filter(s => !q || s.toLowerCase().includes(q));
+        const ordered = matches.sort((a, b) => {
+            const as = selected.has(a) ? 0 : 1;
+            const bs = selected.has(b) ? 0 : 1;
+            return (as - bs) || a.localeCompare(b);
+        });
+        if (!ordered.length) {
+            el.innerHTML = `<span class="picker-empty">No specialties match "${q}".</span>`;
+            return;
+        }
+        const atCap = selected.size >= PROFILE_SPECS_MAX;
+        el.innerHTML = ordered.map(s => {
+            const on       = selected.has(s);
+            const disabled = !on && atCap;
+            const nameAttr = String(s).replace(/"/g, '&quot;');
+            return `<button type="button" class="picker-chip ${on ? 'on' : ''}" ${disabled ? 'disabled' : ''} onclick="toggleProfileSpec('${nameAttr}')">
+                ${escAttr(s)}
+                ${on ? '<span class="x">×</span>' : ''}
+            </button>`;
+        }).join('');
+    }
+    function toggleProfileSpec(name) {
+        const sel = window._profileSpecs;
+        if (sel.has(name)) { sel.delete(name); }
+        else {
+            if (sel.size >= PROFILE_SPECS_MAX) return;
+            sel.add(name);
+        }
+        renderProfileSpecChips();
+    }
+
     // ── Save Agent Profile ───────────────────────────────────────────────────
     async function saveAgentProfile() {
         const payload = {
@@ -873,8 +1052,12 @@
             city:            document.getElementById('p-city').value.trim(),
             state:           document.getElementById('p-state').value.trim(),
             bio:             document.getElementById('p-bio').value.trim(),
-            service_areas:   document.getElementById('p-areas').value.split(',').map(s=>s.trim()).filter(Boolean),
-            specialties:     document.getElementById('p-specs').value.split(',').map(s=>s.trim()).filter(Boolean)
+            // service_areas + specialties come from the chip pickers now —
+            // both Sets are kept fresh by toggleProfileArea / toggleProfileSpec.
+            // Falling back to existing arrays if the pickers haven't loaded
+            // yet (e.g. saving very fast before the catalog fetch returns).
+            service_areas:   [...(window._profileAreas || [])],
+            specialties:     [...(window._profileSpecs || [])],
         };
 
         try {
