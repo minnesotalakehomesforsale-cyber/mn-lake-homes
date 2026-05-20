@@ -48,6 +48,16 @@
         .dash-content > #view-leads { margin: 0; }
         .dash-content .status-banner { margin-bottom: 1.75rem; }
 
+        /* Account-section sub-tabs (Account info | Profile editor) */
+        .account-subtabs { display: flex; gap: 0.4rem; margin-bottom: 1.25rem; background: #edf2f7; padding: 0.3rem; border-radius: 12px; width: fit-content; }
+        .account-subtabs .subtab {
+            border: 0; background: transparent; color: #4a5568;
+            font: inherit; font-size: 0.92rem; font-weight: 700; cursor: pointer;
+            padding: 0.55rem 1.4rem; border-radius: 9px; transition: all 0.15s;
+        }
+        .account-subtabs .subtab:hover { color: #1a202c; }
+        .account-subtabs .subtab.active { background: #fff; color: #1d6df2; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
         .lead-card { background: #fff; border: 1px solid #edf2f7; border-radius: 10px; padding: 1.5rem 1.75rem; margin-bottom: 1rem; transition: box-shadow 0.15s; }
         .lead-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.07); }
         .lead-badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
@@ -244,10 +254,6 @@
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                     Dashboard
                 </button>
-                <button class="nav-tab" id="tab-btn-profile" onclick="switchView('profile')">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    Profile Editor
-                </button>
                 <button class="nav-tab" id="tab-btn-leads" onclick="switchView('leads')">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                     Lead Inbox
@@ -324,6 +330,12 @@
                         <h3 id="dash-open-msgs-title">Unread messages</h3>
                         <div id="dash-open-msgs-list"></div>
                     </div>
+                </div>
+
+                <!-- ── ACCOUNT SECTION SUB-TABS (Account info | Profile editor) ── -->
+                <div class="account-subtabs" id="account-subtabs" style="display:none;">
+                    <button class="subtab" id="subtab-account" onclick="setAccountSub('account')">Account</button>
+                    <button class="subtab" id="subtab-profile" onclick="setAccountSub('profile')">Profile Editor</button>
                 </div>
 
                 <!-- ── PROFILE EDITOR VIEW ── -->
@@ -665,24 +677,51 @@
         let currentFilterStatus = 'active';  // default tab hides closed leads
 
         // ── View Switching ───────────────────────────────────────────────────────
+        // The Profile Editor is now a sub-tab of the Account section, so
+        // switchView('profile') is an alias that opens Account → Profile.
+        let _accountSub = 'account';
+
         function switchView(view) {
-            document.getElementById('view-dashboard').style.display = view === 'dashboard' ? 'block' : 'none';
-            document.getElementById('view-profile').style.display  = view === 'profile' ? 'block' : 'none';
-            document.getElementById('view-leads').style.display    = view === 'leads'   ? 'block' : 'none';
-            document.getElementById('view-account').style.display  = view === 'account' ? 'block' : 'none';
-            document.getElementById('view-messages').style.display = view === 'messages' ? 'block' : 'none';
+            let topView = view;
+            if (view === 'profile')      { topView = 'account'; _accountSub = 'profile'; }
+            else if (view === 'account') { _accountSub = 'account'; }  // nav tab → account info
+            const isAccount = topView === 'account';
+
+            document.getElementById('view-dashboard').style.display = topView === 'dashboard' ? 'block' : 'none';
+            document.getElementById('view-leads').style.display     = topView === 'leads'     ? 'block' : 'none';
+            document.getElementById('view-messages').style.display  = topView === 'messages'  ? 'block' : 'none';
+            document.getElementById('account-subtabs').style.display = isAccount ? 'flex' : 'none';
+
+            if (isAccount) {
+                setAccountSub(_accountSub);
+            } else {
+                document.getElementById('view-account').style.display = 'none';
+                document.getElementById('view-profile').style.display = 'none';
+                const activateEl = document.getElementById('view-activate');
+                if (activateEl) activateEl.style.display = 'none';
+            }
+
+            document.getElementById('tab-btn-dashboard').classList.toggle('active', topView === 'dashboard');
+            document.getElementById('tab-btn-leads').classList.toggle('active',     topView === 'leads');
+            document.getElementById('tab-btn-account').classList.toggle('active',   topView === 'account');
+            document.getElementById('tab-btn-messages').classList.toggle('active',  topView === 'messages');
+
+            if (topView === 'leads') loadLeads();
+            if (topView === 'messages') loadMessages();
+        }
+
+        // Account section sub-tabs: Account info vs Profile Editor.
+        function setAccountSub(sub) {
+            _accountSub = sub;
+            document.getElementById('view-account').style.display = sub === 'account' ? 'block' : 'none';
+            document.getElementById('view-profile').style.display = sub === 'profile' ? 'block' : 'none';
+            document.getElementById('subtab-account').classList.toggle('active', sub === 'account');
+            document.getElementById('subtab-profile').classList.toggle('active', sub === 'profile');
             const activateEl = document.getElementById('view-activate');
             if (activateEl) {
-                if (view === 'profile') calcProgress(); // re-evaluate tier visibility
+                if (sub === 'profile') calcProgress(); // re-evaluate tier/plan CTA
                 else activateEl.style.display = 'none';
             }
-            document.getElementById('tab-btn-dashboard').classList.toggle('active', view === 'dashboard');
-            document.getElementById('tab-btn-profile').classList.toggle('active', view === 'profile');
-            document.getElementById('tab-btn-leads').classList.toggle('active',   view === 'leads');
-            document.getElementById('tab-btn-account').classList.toggle('active', view === 'account');
-            document.getElementById('tab-btn-messages').classList.toggle('active', view === 'messages');
-            if (view === 'leads') loadLeads();
-            if (view === 'messages') loadMessages();
         }
 
         // ── Auth Check + Profile Load ────────────────────────────────────────────
