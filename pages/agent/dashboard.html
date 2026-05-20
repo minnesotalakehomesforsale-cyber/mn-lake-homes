@@ -7,6 +7,47 @@
     <link rel="stylesheet" href="../../styles/style.css">
 <script src="../../components/components.js" defer></script>
     <style>
+        /* ── App shell: fixed left rail + scrolling content (mirrors the admin
+              backend). The sidebar stays put; only the right pane changes. ── */
+        :root { --header-h: 84px; }
+        .dashboard-container { max-width: none !important; margin: 0 !important; padding: 0 !important; }
+        .dash-grid {
+            display: grid;
+            grid-template-columns: 284px minmax(0, 1fr);
+            gap: 0;
+            align-items: start;
+            padding-top: var(--header-h);   /* clear the fixed global header */
+        }
+        .dash-sidebar {
+            position: sticky;
+            top: var(--header-h);
+            height: calc(100vh - var(--header-h));
+            overflow-y: auto;
+            background: #fff;
+            border: 0;
+            border-right: 1px solid #edf2f7;
+            border-radius: 0;
+            box-shadow: none;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+        .dash-content {
+            min-height: calc(100vh - var(--header-h));
+            background: #f7f9fa;
+            padding: 2.75rem 3rem 4rem;
+            box-sizing: border-box;
+        }
+        /* One uniform card size for every tab so the page stops resizing as
+           you switch between Dashboard / Profile / Leads / Messages. */
+        .dash-content > .view-card {
+            padding: 2.75rem !important;
+            margin: 0 0 1.5rem;
+            border-radius: 14px;
+        }
+        .dash-content > #view-leads { margin: 0; }
+        .dash-content .status-banner { margin-bottom: 1.75rem; }
+
         .lead-card { background: #fff; border: 1px solid #edf2f7; border-radius: 10px; padding: 1.5rem 1.75rem; margin-bottom: 1rem; transition: box-shadow 0.15s; }
         .lead-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.07); }
         .lead-badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
@@ -121,24 +162,38 @@
         .acct-badge.verified { background: #f0fff4; color: #2f855a; }
         .field-hint { font-size: 0.75rem; color: #718096; margin: 0.15rem 0 0.5rem; line-height: 1.45; }
 
-        /* ── Mobile ≤ 900px: collapse sidebar, single-column forms ────────── */
+        /* ── Tablet ≤ 1100px: narrow the rail a touch ───────────────────────── */
+        @media (max-width: 1100px) {
+            .dash-grid { grid-template-columns: 240px minmax(0, 1fr); }
+            .dash-content { padding: 2.25rem 2rem 3.5rem; }
+        }
+
+        /* ── Mobile ≤ 900px: rail becomes a sticky horizontal tab strip ─────── */
         @media (max-width: 900px) {
-            .dashboard-container { padding: 6rem 1rem 3rem !important; }
-            .dash-grid {
-                grid-template-columns: 1fr !important;
-                gap: 1.25rem !important;
-            }
+            .dash-grid { grid-template-columns: 1fr; padding-top: var(--header-h); }
             .dash-sidebar {
-                position: static !important;
-                padding: 1.25rem !important;
-                top: auto !important;
+                position: sticky;
+                top: var(--header-h);
+                height: auto;
+                z-index: 20;
+                flex-direction: row;
+                align-items: center;
+                gap: 0.4rem;
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                border-right: 0;
+                border-bottom: 1px solid #edf2f7;
+                padding: 0.7rem 1rem;
             }
-            .dash-sidebar h4 { display: none; }
-            .dash-sidebar .nav-tab { width: auto; }
-            .dash-sidebar > div:first-child { margin-bottom: 1rem !important; padding-bottom: 1rem !important; }
-            /* Stack nav tabs in a horizontal scroll row */
-            .dash-sidebar .nav-tab { display: inline-flex; }
-            .view-card { padding: 1.5rem 1.25rem !important; }
+            .dash-sidebar h4,
+            .dash-sidebar > div:first-child { display: none; }
+            .dash-sidebar .nav-tab {
+                width: auto; display: inline-flex; flex-shrink: 0;
+                white-space: nowrap; padding: 0.55rem 0.9rem; font-size: 0.9rem;
+            }
+            .dash-content { padding: 1.5rem 1.1rem 3rem; min-height: 0; }
+            .dash-content > .view-card { padding: 1.5rem 1.25rem !important; }
             .view-card .grid-2 { grid-template-columns: 1fr !important; gap: 0.75rem !important; }
             .profile-card-header {
                 flex-direction: column !important;
@@ -174,24 +229,10 @@
     <global-header></global-header>
 
     <div class="dashboard-container">
+        <div class="dash-grid">
 
-        <!-- Status Banners -->
-        <div id="banner-draft" class="status-banner status-draft">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-            <div style="flex-grow: 1;">
-                <h3 style="font-weight: 700; margin-bottom: 0.25rem;">Complete your profile to go live</h3>
-                <p style="font-size: 0.95rem;">Fill in all required fields below, then choose a membership tier to publish your profile on the directory.</p>
-                <div class="progress-bar-container">
-                    <div id="completion-bar" class="progress-bar"></div>
-                </div>
-                <p id="completion-text" style="font-size: 0.8rem; font-weight: 600; margin-top: 0.4rem;">0% Complete</p>
-            </div>
-        </div>
-
-        <div class="dash-grid" style="display: grid; grid-template-columns: 280px 1fr; gap: 2.5rem; align-items: start;">
-
-            <!-- Sidebar Navigation -->
-            <div class="dash-sidebar" style="background: #fff; padding: 2rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); position: sticky; top: 100px;">
+            <!-- Sidebar Navigation (fixed left rail) -->
+            <div class="dash-sidebar">
 
                 <div style="margin-bottom: 2rem; text-align: center; padding-bottom: 1.5rem; border-bottom: 1px solid #edf2f7;">
                     <div id="sidebar-name" style="font-weight: 800; font-size: 1.1rem; color: #1a202c; margin-bottom: 0.25rem;">Loading...</div>
@@ -223,8 +264,21 @@
                 </button>
             </div>
 
-            <!-- Content Area -->
-            <div>
+            <!-- Content Area (the only thing that changes per tab) -->
+            <div class="dash-content">
+
+                <!-- Onboarding banner — only shown until the profile goes live -->
+                <div id="banner-draft" class="status-banner status-draft">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <div style="flex-grow: 1;">
+                        <h3 style="font-weight: 700; margin-bottom: 0.25rem;">Complete your profile to go live</h3>
+                        <p style="font-size: 0.95rem;">Fill in all required fields below, then choose a membership tier to publish your profile on the directory.</p>
+                        <div class="progress-bar-container">
+                            <div id="completion-bar" class="progress-bar"></div>
+                        </div>
+                        <p id="completion-text" style="font-size: 0.8rem; font-weight: 600; margin-top: 0.4rem;">0% Complete</p>
+                    </div>
+                </div>
 
                 <!-- ── DASHBOARD LANDING VIEW ── -->
                 <div id="view-dashboard" class="view-card" style="background: #fff; padding: 2.5rem 3rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
