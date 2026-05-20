@@ -61,6 +61,50 @@
         .msg-compose button { background: #1d6df2; color: #fff; border: 0; border-radius: 10px; padding: 0.7rem 1.4rem; font: inherit; font-weight: 700; cursor: pointer; }
         .msg-compose button:disabled { opacity: 0.6; cursor: default; }
         .one-way { font-size: 0.74rem; color: #a0aec0; padding: 0 1.25rem 0.9rem; }
+
+        /* Broadcast button + modal */
+        .page-head-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+        .bc-open-btn {
+            flex-shrink: 0; background: #1d6df2; color: #fff; border: 0; border-radius: 10px;
+            padding: 0.65rem 1.1rem; font: inherit; font-weight: 700; font-size: 0.9rem; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 0.5rem;
+        }
+        .bc-open-btn:hover { background: #1559c9; }
+        .bc-overlay {
+            display: none; position: fixed; inset: 0; z-index: 1000;
+            background: rgba(26,32,44,0.55); align-items: center; justify-content: center; padding: 1.5rem;
+        }
+        .bc-overlay.open { display: flex; }
+        .bc-card {
+            background: #fff; border-radius: 16px; width: 100%; max-width: 560px;
+            max-height: calc(100vh - 3rem); display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+        }
+        .bc-head { padding: 1.25rem 1.5rem 0.75rem; }
+        .bc-head h2 { margin: 0; font-size: 1.25rem; font-weight: 800; }
+        .bc-head p { margin: 0.2rem 0 0; color: #718096; font-size: 0.85rem; }
+        .bc-body { padding: 0.5rem 1.5rem 1rem; overflow-y: auto; }
+        .bc-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.6px; color: #718096; font-weight: 700; margin: 1rem 0 0.5rem; }
+        .bc-seg { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .bc-seg button {
+            border: 1px solid #e2e8f0; background: #fff; color: #4a5568; border-radius: 99px;
+            padding: 0.45rem 0.95rem; font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+        }
+        .bc-seg button.active { background: #ebf4ff; border-color: #1d6df2; color: #1d6df2; }
+        .bc-select { width: 100%; box-sizing: border-box; font: inherit; font-size: 0.9rem; padding: 0.6rem 0.7rem; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 0.5rem; }
+        .bc-picklist { border: 1px solid #edf2f7; border-radius: 10px; max-height: 220px; overflow-y: auto; margin-top: 0.5rem; }
+        .bc-pick { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.8rem; border-bottom: 1px solid #f3f6f9; cursor: pointer; font-size: 0.88rem; }
+        .bc-pick:last-child { border-bottom: 0; }
+        .bc-pick:hover { background: #fafbfc; }
+        .bc-pick input { width: 16px; height: 16px; accent-color: #1d6df2; }
+        .bc-pick .e { color: #a0aec0; font-size: 0.78rem; }
+        .bc-count { font-size: 0.82rem; color: #2b6cb0; font-weight: 700; margin-top: 0.75rem; }
+        .bc-textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 110px; font: inherit; font-size: 0.92rem; padding: 0.8rem; border: 1px solid #e2e8f0; border-radius: 10px; margin-top: 0.5rem; outline: none; }
+        .bc-textarea:focus { border-color: #1d6df2; }
+        .bc-foot { padding: 1rem 1.5rem; border-top: 1px solid #edf2f7; display: flex; justify-content: flex-end; gap: 0.6rem; }
+        .bc-foot .ghost { background: #fff; color: #4a5568; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.65rem 1.2rem; font: inherit; font-weight: 600; cursor: pointer; }
+        .bc-foot .send { background: #1d6df2; color: #fff; border: 0; border-radius: 10px; padding: 0.65rem 1.4rem; font: inherit; font-weight: 700; cursor: pointer; }
+        .bc-foot .send:disabled { opacity: 0.6; cursor: default; }
     </style>
     <script src="../../components/admin-guard.js"></script>
     <script src="../../components/admin-responsive.js" defer></script>
@@ -74,8 +118,16 @@
 
     <main class="admin-main">
         <header class="page-head">
-            <h1>Messages</h1>
-            <p>Send in-app messages straight to an agent's portal. One-way — agents see them in their dashboard but can't reply.</p>
+            <div class="page-head-row">
+                <div>
+                    <h1>Messages</h1>
+                    <p>Send in-app messages straight to an agent's portal. One-way — agents see them in their dashboard but can't reply.</p>
+                </div>
+                <button class="bc-open-btn" onclick="openBroadcast()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-7-8-3z"></path></svg>
+                    New broadcast
+                </button>
+            </div>
         </header>
 
         <div class="msg-layout">
@@ -108,6 +160,41 @@
     </main>
 </div>
 
+<!-- Broadcast modal -->
+<div class="bc-overlay" id="bc-overlay" onclick="if(event.target===this)closeBroadcast()">
+    <div class="bc-card">
+        <div class="bc-head">
+            <h2>Send a broadcast</h2>
+            <p>One message, delivered to every agent in the audience below. Lands in each agent's portal just like a direct message.</p>
+        </div>
+        <div class="bc-body">
+            <div class="bc-label">Audience</div>
+            <div class="bc-seg" id="bc-seg">
+                <button class="active" data-aud="all"      onclick="setAudience('all', this)">All agents</button>
+                <button             data-aud="featured" onclick="setAudience('featured', this)">Featured</button>
+                <button             data-aud="tier"     onclick="setAudience('tier', this)">By tier</button>
+                <button             data-aud="selected" onclick="setAudience('selected', this)">Pick agents</button>
+            </div>
+
+            <select class="bc-select" id="bc-tier" style="display:none;" onchange="updateBcCount()"></select>
+
+            <div id="bc-pick-wrap" style="display:none;">
+                <input type="search" class="bc-select" id="bc-pick-search" placeholder="Search agents…" oninput="renderPicklist()">
+                <div class="bc-picklist" id="bc-picklist"></div>
+            </div>
+
+            <div class="bc-count" id="bc-count">All agents</div>
+
+            <div class="bc-label">Message</div>
+            <textarea class="bc-textarea" id="bc-input" placeholder="Write your message…"></textarea>
+        </div>
+        <div class="bc-foot">
+            <button class="ghost" onclick="closeBroadcast()">Cancel</button>
+            <button class="send" id="bc-send" onclick="sendBroadcast()">Send broadcast</button>
+        </div>
+    </div>
+</div>
+
 <script>
     let _agents = [];     // [{ user_id, name, email, unread, last_at }]
     let _threads = {};    // user_id -> thread meta (unread, last)
@@ -134,6 +221,9 @@
                 email: a.email || '',
                 unread: _threads[a.user_id]?.unread_by_agent || 0,
                 last_at: _threads[a.user_id]?.last_at || null,
+                featured: !!a.is_featured,
+                tier_code: a.membership_code || '',
+                tier_name: a.membership_name || a.membership_badge || a.membership_code || '',
             })).filter(a => a.user_id);
             // Threads with no agents-row fallback (in case ledger missed someone)
             (threads || []).forEach(t => {
@@ -243,9 +333,115 @@
         } catch (_) { alert('Could not delete.'); }
     }
 
+    // ── Broadcast (mass message) ─────────────────────────────────────────────
+    let _bcAudience = 'all';
+    const _bcSelected = new Set();
+
+    function openBroadcast() {
+        _bcAudience = 'all';
+        _bcSelected.clear();
+        document.querySelectorAll('#bc-seg button').forEach(b => b.classList.toggle('active', b.dataset.aud === 'all'));
+        document.getElementById('bc-tier').style.display = 'none';
+        document.getElementById('bc-pick-wrap').style.display = 'none';
+        document.getElementById('bc-input').value = '';
+        document.getElementById('bc-pick-search').value = '';
+        populateTierOptions();
+        updateBcCount();
+        document.getElementById('bc-overlay').classList.add('open');
+        document.getElementById('bc-input').focus();
+    }
+    function closeBroadcast() { document.getElementById('bc-overlay').classList.remove('open'); }
+
+    function populateTierOptions() {
+        // Distinct tiers actually present among agents, by code.
+        const seen = new Map();
+        _agents.forEach(a => { if (a.tier_code && !seen.has(a.tier_code)) seen.set(a.tier_code, a.tier_name || a.tier_code); });
+        const sel = document.getElementById('bc-tier');
+        const opts = [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+        sel.innerHTML = opts.length
+            ? opts.map(([code, name]) => `<option value="${esc(code)}">${esc(name)}</option>`).join('')
+            : '<option value="">No tiers found</option>';
+    }
+
+    function setAudience(aud, btn) {
+        _bcAudience = aud;
+        document.querySelectorAll('#bc-seg button').forEach(b => b.classList.toggle('active', b === btn));
+        document.getElementById('bc-tier').style.display      = aud === 'tier'     ? 'block' : 'none';
+        document.getElementById('bc-pick-wrap').style.display = aud === 'selected' ? 'block' : 'none';
+        if (aud === 'selected') renderPicklist();
+        updateBcCount();
+    }
+
+    function renderPicklist() {
+        const q = (document.getElementById('bc-pick-search').value || '').toLowerCase().trim();
+        const list = _agents
+            .filter(a => !q || `${a.name} ${a.email}`.toLowerCase().includes(q))
+            .sort((a, b) => a.name.localeCompare(b.name));
+        const el = document.getElementById('bc-picklist');
+        el.innerHTML = list.length
+            ? list.map(a => `
+                <label class="bc-pick">
+                    <input type="checkbox" ${_bcSelected.has(a.user_id) ? 'checked' : ''}
+                           onchange="togglePick('${a.user_id}', this.checked)">
+                    <span style="min-width:0;flex:1;">${esc(a.name)} <span class="e">${esc(a.email)}</span></span>
+                </label>`).join('')
+            : '<div class="msg-empty">No agents match.</div>';
+    }
+    function togglePick(userId, checked) {
+        if (checked) _bcSelected.add(userId); else _bcSelected.delete(userId);
+        updateBcCount();
+    }
+
+    function bcCount() {
+        if (_bcAudience === 'all')      return _agents.length;
+        if (_bcAudience === 'featured') return _agents.filter(a => a.featured).length;
+        if (_bcAudience === 'tier')     return _agents.filter(a => a.tier_code === document.getElementById('bc-tier').value).length;
+        if (_bcAudience === 'selected') return _bcSelected.size;
+        return 0;
+    }
+    function updateBcCount() {
+        const n = bcCount();
+        const label = { all: 'all agents', featured: 'featured agents', tier: 'agents in this tier', selected: 'selected agents' }[_bcAudience];
+        document.getElementById('bc-count').textContent = `${n} ${n === 1 ? 'recipient' : 'recipients'} — ${label}`;
+    }
+
+    async function sendBroadcast() {
+        const body = document.getElementById('bc-input').value.trim();
+        if (!body) { document.getElementById('bc-input').focus(); return; }
+        if (bcCount() === 0) { alert('No agents match that audience.'); return; }
+
+        const payload = { body, audience: _bcAudience };
+        if (_bcAudience === 'tier')     payload.tier = document.getElementById('bc-tier').value;
+        if (_bcAudience === 'selected') payload.user_ids = [..._bcSelected];
+
+        const btn = document.getElementById('bc-send');
+        btn.disabled = true; btn.textContent = 'Sending…';
+        try {
+            const r = await fetch('/api/admin/messages/broadcast', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify(payload),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+            closeBroadcast();
+            // Refresh threads so the just-messaged agents bubble up + show.
+            await boot();
+            if (_activeUserId) openThread(_activeUserId);
+            alert(`Broadcast sent to ${data.sent} agent${data.sent === 1 ? '' : 's'}.`);
+        } catch (err) {
+            alert(err.message || 'Could not send broadcast.');
+        } finally {
+            btn.disabled = false; btn.textContent = 'Send broadcast';
+        }
+    }
+
     // Cmd/Ctrl+Enter sends.
     document.addEventListener('keydown', e => {
-        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && document.activeElement?.id === 'compose-input') sendMessage();
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            if (document.getElementById('bc-overlay').classList.contains('open')) { sendBroadcast(); return; }
+            if (document.activeElement?.id === 'compose-input') sendMessage();
+        }
+        if (e.key === 'Escape' && document.getElementById('bc-overlay').classList.contains('open')) closeBroadcast();
     });
 
     document.addEventListener('DOMContentLoaded', boot);

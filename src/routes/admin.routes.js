@@ -51,6 +51,7 @@ router.get('/billing/:kind/:id', adminController.getSubscriberBilling);
 // Admin-gated. Static prefixes here sit before the catch-all /:id agent route.
 const messagesController = require('../controllers/messages.controller');
 router.post  ('/messages',               verifyToken, requireRole(['admin', 'super_admin']), messagesController.send);
+router.post  ('/messages/broadcast',     verifyToken, requireRole(['admin', 'super_admin']), messagesController.broadcast);
 router.get   ('/messages/threads',       verifyToken, requireRole(['admin', 'super_admin']), messagesController.threads);
 router.get   ('/messages/agent/:userId', verifyToken, requireRole(['admin', 'super_admin']), messagesController.threadForAgent);
 router.delete('/messages/:id',           verifyToken, requireRole(['admin', 'super_admin']), messagesController.remove);

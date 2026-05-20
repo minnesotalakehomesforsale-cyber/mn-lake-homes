@@ -59,6 +59,73 @@ exports.send = async (req, res) => {
     }
 };
 
+// ─── Admin: broadcast (mass message to an audience) ─────────────────────────
+// Server resolves the audience itself (source of truth) so the client can't
+// over- or under-target. One agent_messages row is written per recipient, so
+// each lands in that agent's individual thread + portal exactly like a 1:1.
+//   body:    { body, audience, tier?, user_ids? }
+//   audience: 'all' | 'featured' | 'tier' | 'selected'
+exports.broadcast = async (req, res) => {
+    const senderId = req.user?.userId || null;
+    const body = (req.body?.body || '').trim();
+    const audience = (req.body?.audience || 'all').toString();
+    const tier = req.body?.tier ? String(req.body.tier) : null;
+    const userIds = Array.isArray(req.body?.user_ids) ? req.body.user_ids : [];
+
+    if (!body) return res.status(400).json({ error: 'Message cannot be empty.' });
+
+    try {
+        let rows;
+        if (audience === 'selected') {
+            if (!userIds.length) return res.status(400).json({ error: 'Select at least one agent.' });
+            rows = (await pool.query(
+                `SELECT u.id FROM users u
+                  WHERE u.role = 'agent' AND u.deleted_at IS NULL AND u.id = ANY($1::uuid[])`,
+                [userIds]
+            )).rows;
+        } else if (audience === 'featured') {
+            rows = (await pool.query(
+                `SELECT u.id FROM users u JOIN agents a ON a.user_id = u.id
+                  WHERE u.role = 'agent' AND u.deleted_at IS NULL AND a.is_featured = TRUE`
+            )).rows;
+        } else if (audience === 'tier') {
+            if (!tier) return res.status(400).json({ error: 'Pick a membership tier.' });
+            rows = (await pool.query(
+                `SELECT u.id FROM users u
+                   JOIN agents a      ON a.user_id = u.id
+                   JOIN memberships m ON m.id = a.membership_id
+                  WHERE u.role = 'agent' AND u.deleted_at IS NULL AND m.code = $1`,
+                [tier]
+            )).rows;
+        } else { // 'all'
+            rows = (await pool.query(
+                `SELECT u.id FROM users u WHERE u.role = 'agent' AND u.deleted_at IS NULL`
+            )).rows;
+        }
+
+        const ids = rows.map(r => r.id);
+        if (!ids.length) return res.status(400).json({ error: 'No agents match that audience.' });
+
+        const ins = await pool.query(
+            `INSERT INTO agent_messages (recipient_user_id, sender_user_id, body)
+             SELECT uid, $2, $3 FROM UNNEST($1::uuid[]) AS uid
+             RETURNING id`,
+            [ids, senderId, body.slice(0, 4000)]
+        );
+        logActivity({
+            event_type: 'agent.message.broadcast',
+            event_scope: 'messages',
+            actor: { type: 'admin', id: senderId, label: req.user?.display_name || 'admin' },
+            details: { audience, tier, recipients: ins.rowCount },
+            req,
+        });
+        res.status(201).json({ success: true, sent: ins.rowCount });
+    } catch (err) {
+        console.error('[messages.broadcast]', err.message);
+        res.status(500).json({ error: 'Failed to send broadcast.' });
+    }
+};
+
 // ─── Admin: thread list (left rail of the Messages tab) ─────────────────────
 // Returns every agent who has at least one message, newest activity first,
 // plus how many the agent hasn't read yet.
