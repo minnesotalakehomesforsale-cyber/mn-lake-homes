@@ -408,6 +408,75 @@ const updateMyLeadStatus = async (req, res) => {
     }
 };
 
+/**
+ * GET  /api/agents/me/leads/:id/notes   list notes on one of my leads
+ * POST /api/agents/me/leads/:id/notes   add a note to one of my leads
+ *
+ * Notes live in the shared lead_notes table, so anything an agent
+ * writes here also surfaces on the admin Lead Review page (and vice
+ * versa) — one timeline, both sides. Both endpoints verify the lead is
+ * assigned to the calling agent before doing anything.
+ */
+async function agentOwnsLead(leadId, userId) {
+    const r = await pool.query(
+        `SELECT 1 FROM leads l JOIN agents a ON l.agent_id = a.id
+          WHERE l.id = $1 AND a.user_id = $2 AND l.deleted_at IS NULL`,
+        [leadId, userId]
+    );
+    return r.rowCount > 0;
+}
+
+const getMyLeadNotes = async (req, res) => {
+    const userId = req.user.userId;
+    const { id }  = req.params;
+    try {
+        if (!(await agentOwnsLead(id, userId))) {
+            return res.status(404).json({ error: 'Lead not found or not assigned to you.' });
+        }
+        const { rows } = await pool.query(`
+            SELECT n.id, n.note_body AS content, n.created_at,
+                   u.full_name AS author_name, u.role AS author_role
+              FROM lead_notes n
+              JOIN users u ON n.user_id = u.id
+             WHERE n.lead_id = $1
+             ORDER BY n.created_at DESC
+        `, [id]);
+        res.json(rows);
+    } catch (err) {
+        console.error('[getMyLeadNotes]', err.message);
+        res.status(500).json({ error: 'Failed to load notes.' });
+    }
+};
+
+const addMyLeadNote = async (req, res) => {
+    const userId  = req.user.userId;
+    const { id }  = req.params;
+    const content = (req.body?.content || '').trim();
+    if (!content) return res.status(400).json({ error: 'Note cannot be empty.' });
+    try {
+        if (!(await agentOwnsLead(id, userId))) {
+            return res.status(404).json({ error: 'Lead not found or not assigned to you.' });
+        }
+        const { rows } = await pool.query(
+            `INSERT INTO lead_notes (lead_id, user_id, note_body) VALUES ($1, $2, $3)
+             RETURNING id, note_body AS content, created_at`,
+            [id, userId, content.slice(0, 4000)]
+        );
+        logActivity({
+            event_type: 'lead.note.add',
+            event_scope: 'lead',
+            actor: { type: 'agent', id: userId },
+            target: { type: 'lead', id },
+            details: { by: 'agent' },
+            req,
+        });
+        res.status(201).json({ success: true, note: rows[0] });
+    } catch (err) {
+        console.error('[addMyLeadNote]', err.message);
+        res.status(500).json({ error: 'Failed to add note.' });
+    }
+};
+
 // Legacy alias for old PATCH /me route used by some admin call paths
 const updateMyProfile = saveDraft;
 
@@ -420,5 +489,7 @@ module.exports = {
     updateMyProfile,
     getMyLeads,
     updateMyLeadStatus,
+    getMyLeadNotes,
+    addMyLeadNote,
     uploadPhoto
 };

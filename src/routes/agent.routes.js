@@ -15,6 +15,8 @@ router.post('/upload-photo', agentController.uploadPhoto);
 router.get('/me', verifyToken, requireRole('agent'), agentController.getMyProfile);
 router.get('/me/leads', verifyToken, requireRole('agent'), agentController.getMyLeads);
 router.patch('/me/leads/:id/status', verifyToken, requireRole('agent'), agentController.updateMyLeadStatus);
+router.get  ('/me/leads/:id/notes',  verifyToken, requireRole('agent'), agentController.getMyLeadNotes);
+router.post ('/me/leads/:id/notes',  verifyToken, requireRole('agent'), agentController.addMyLeadNote);
 router.patch('/me', verifyToken, requireRole('agent'), agentController.saveDraft);
 router.post('/me/submit', verifyToken, requireRole('agent'), agentController.submitForReview);
 

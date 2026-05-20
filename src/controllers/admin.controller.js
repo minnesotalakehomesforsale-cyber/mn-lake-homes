@@ -839,7 +839,8 @@ const getLeadDetail = async (req, res) => {
         if (rows.length === 0) return res.status(404).json({ error: 'Lead not found.' });
 
         const notesRes = await pool.query(`
-            SELECT n.id, n.note_body as content, n.created_at, u.full_name as author_name
+            SELECT n.id, n.note_body as content, n.created_at,
+                   u.full_name as author_name, u.role as author_role
             FROM lead_notes n
             JOIN users u ON n.user_id = u.id
             WHERE n.lead_id = $1 ORDER BY n.created_at DESC
