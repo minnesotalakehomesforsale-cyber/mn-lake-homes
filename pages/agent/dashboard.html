@@ -413,7 +413,7 @@
                             <h2 style="font-size: 1.75rem; font-weight: 700;">Lead Inbox</h2>
                             <button onclick="loadLeads()" style="border: 1px solid #e2e8f0; background: #f7f9fa; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #4a5568;">↺ Refresh</button>
                         </div>
-                        <p style="color: #718096; margin-bottom: 1.5rem;">Your leads from the platform. Click any row to open it, update its status, and reach out. Closed leads are hidden from the active list — find them under <strong>Closed</strong>.</p>
+                        <p style="color: #718096; margin-bottom: 1.5rem;">This is your dashboard.</p>
 
                         <div class="lead-stats" id="lead-stats">
                             <div class="lead-stat"><div class="ls-lbl">Active</div><div class="ls-val" id="stat-active">—</div></div>
@@ -562,7 +562,7 @@
             document.getElementById('tab-btn-leads').classList.toggle('active',   view === 'leads');
             document.getElementById('tab-btn-account').classList.toggle('active', view === 'account');
             document.getElementById('tab-btn-messages').classList.toggle('active', view === 'messages');
-            if (view === 'leads' && allLeads.length === 0) loadLeads();
+            if (view === 'leads') loadLeads();
             if (view === 'messages') loadMessages();
         }
 
