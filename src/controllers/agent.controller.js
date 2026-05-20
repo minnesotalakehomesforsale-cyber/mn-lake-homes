@@ -409,13 +409,17 @@ const updateMyLeadStatus = async (req, res) => {
 };
 
 /**
- * GET  /api/agents/me/leads/:id/notes   list notes on one of my leads
+ * GET  /api/agents/me/leads/:id/notes   list MY notes on one of my leads
  * POST /api/agents/me/leads/:id/notes   add a note to one of my leads
  *
- * Notes live in the shared lead_notes table, so anything an agent
- * writes here also surfaces on the admin Lead Review page (and vice
- * versa) — one timeline, both sides. Both endpoints verify the lead is
- * assigned to the calling agent before doing anything.
+ * Notes live in the shared lead_notes table. An agent's own notes
+ * surface on the admin Lead Review page (so the team sees everything,
+ * tagged by author) — but the reverse is NOT true: an agent only ever
+ * sees notes THEY personally authored (n.user_id = me). This keeps
+ * notes private per-agent, so:
+ *   - reassigning a lead A→B never exposes A's notes to B, and
+ *   - candid internal admin notes never leak to the agent.
+ * Both endpoints verify the lead is currently assigned to the caller.
  */
 async function agentOwnsLead(leadId, userId) {
     const r = await pool.query(
@@ -433,14 +437,15 @@ const getMyLeadNotes = async (req, res) => {
         if (!(await agentOwnsLead(id, userId))) {
             return res.status(404).json({ error: 'Lead not found or not assigned to you.' });
         }
+        // Own notes only — never other agents' or internal admin notes.
         const { rows } = await pool.query(`
             SELECT n.id, n.note_body AS content, n.created_at,
                    u.full_name AS author_name, u.role AS author_role
               FROM lead_notes n
               JOIN users u ON n.user_id = u.id
-             WHERE n.lead_id = $1
+             WHERE n.lead_id = $1 AND n.user_id = $2
              ORDER BY n.created_at DESC
-        `, [id]);
+        `, [id, userId]);
         res.json(rows);
     } catch (err) {
         console.error('[getMyLeadNotes]', err.message);
