@@ -29,6 +29,66 @@
         .inbox-tab { padding: 0.4rem 0.9rem; border: 1px solid #e2e8f0; border-radius: 20px; background: #fff; font-size: 0.8rem; font-weight: 600; color: #718096; cursor: pointer; transition: all 0.15s; }
         .inbox-tab:hover { border-color: #1d6df2; color: #1d6df2; }
         .inbox-tab.active { background: #1d6df2; color: #fff; border-color: #1d6df2; }
+        .inbox-tab .tcount { background: rgba(0,0,0,0.06); border-radius: 99px; padding: 0.05rem 0.4rem; font-size: 0.72rem; margin-left: 0.35rem; font-weight: 800; }
+        .inbox-tab.active .tcount { background: rgba(255,255,255,0.25); }
+
+        /* ── CRM lead table ─────────────────────────────────────────── */
+        .lead-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.85rem; margin-bottom: 1.5rem; }
+        @media (max-width: 720px) { .lead-stats { grid-template-columns: repeat(2, 1fr); } }
+        .lead-stat { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; padding: 1.1rem 1.25rem; }
+        .lead-stat .ls-lbl { font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 0.4rem; }
+        .lead-stat .ls-val { font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; line-height: 1; }
+        .lead-table { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; overflow: hidden; }
+        .lead-tr {
+            display: grid; grid-template-columns: 1.4fr 0.9fr 0.9fr auto;
+            gap: 1rem; align-items: center;
+            padding: 1rem 1.4rem; border-bottom: 1px solid #f3f6f9;
+            cursor: pointer; transition: background 0.12s;
+        }
+        .lead-tr:last-child { border-bottom: none; }
+        .lead-tr:hover { background: #fafbfc; }
+        .lead-tr .lt-name { font-weight: 800; color: #1a202c; font-size: 0.95rem; }
+        .lead-tr .lt-sub  { font-size: 0.78rem; color: #a0aec0; margin-top: 0.15rem; }
+        .lead-tr .lt-date { font-size: 0.8rem; color: #a0aec0; font-weight: 600; text-align: right; white-space: nowrap; }
+        @media (max-width: 720px) {
+            .lead-tr { grid-template-columns: 1fr auto; gap: 0.5rem; }
+            .lead-tr .lt-type-cell, .lead-tr .lt-date { display: none; }
+        }
+
+        /* ── Slide-over detail panel ────────────────────────────────── */
+        .lead-overlay { position: fixed; inset: 0; z-index: 9000; background: rgba(15,23,42,0.45); display: none; }
+        .lead-overlay.open { display: block; }
+        .lead-panel {
+            position: fixed; top: 0; right: 0; bottom: 0; z-index: 9001;
+            width: 460px; max-width: 92vw; background: #fff;
+            box-shadow: -16px 0 48px rgba(0,0,0,0.18);
+            transform: translateX(100%); transition: transform 0.25s ease;
+            display: flex; flex-direction: column;
+        }
+        .lead-panel.open { transform: translateX(0); }
+        .lp-head { padding: 1.5rem 1.75rem 1.25rem; border-bottom: 1px solid #edf2f7; }
+        .lp-head .lp-close { float: right; background: none; border: 0; font-size: 1.5rem; line-height: 1; color: #a0aec0; cursor: pointer; }
+        .lp-head h3 { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; margin: 0 0 0.4rem; color: #1a202c; }
+        .lp-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .lp-body { padding: 1.5rem 1.75rem; overflow-y: auto; flex: 1; }
+        .lp-section-label { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin: 0 0 0.6rem; }
+        .lp-contact { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.75rem; }
+        .lp-contact a, .lp-contact span { display: flex; align-items: center; gap: 0.6rem; font-size: 0.92rem; color: #1a202c; text-decoration: none; font-weight: 500; }
+        .lp-contact a:hover { color: #1d6df2; }
+        .lp-msg { background: #f7f9fa; border-left: 3px solid #cbd5e0; border-radius: 0 8px 8px 0; padding: 0.95rem 1.1rem; font-size: 0.9rem; color: #4a5568; line-height: 1.6; margin-bottom: 1.75rem; white-space: pre-line; }
+        .lp-status-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+        .lp-status-btn {
+            padding: 0.7rem 0.6rem; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #fff;
+            font: inherit; font-size: 0.85rem; font-weight: 700; color: #4a5568; cursor: pointer;
+            transition: all 0.12s; text-align: center;
+        }
+        .lp-status-btn:hover { border-color: #cbd5e0; }
+        .lp-status-btn.on { border-color: #1d6df2; background: #ebf4ff; color: #1d6df2; }
+        .lp-status-btn.on.closed { border-color: #4a5568; background: #edf2f7; color: #1a202c; }
+        .lp-foot { padding: 1.1rem 1.75rem; border-top: 1px solid #edf2f7; font-size: 0.78rem; color: #a0aec0; line-height: 1.5; }
+        .lp-save-note { font-size: 0.82rem; font-weight: 600; min-height: 1.1rem; margin-top: 0.6rem; }
+        .lp-save-note.ok  { color: #2f855a; }
+        .lp-save-note.err { color: #c53030; }
         .detail-row { display: flex; gap: 0.5rem; align-items: center; font-size: 0.82rem; color: #718096; }
         .detail-row svg { flex-shrink: 0; }
         .acct-tile { background: #f7f9fa; border: 1px solid #edf2f7; border-radius: 10px; padding: 1rem 1.1rem; }
@@ -348,14 +408,21 @@
                             <h2 style="font-size: 1.75rem; font-weight: 700;">Lead Inbox</h2>
                             <button onclick="loadLeads()" style="border: 1px solid #e2e8f0; background: #f7f9fa; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #4a5568;">↺ Refresh</button>
                         </div>
-                        <p style="color: #718096; margin-bottom: 1.5rem;">Leads assigned to you from the platform.</p>
+                        <p style="color: #718096; margin-bottom: 1.5rem;">Your leads from the platform. Click any row to open it, update its status, and reach out. Closed leads are hidden from the active list — find them under <strong>Closed</strong>.</p>
+
+                        <div class="lead-stats" id="lead-stats">
+                            <div class="lead-stat"><div class="ls-lbl">Active</div><div class="ls-val" id="stat-active">—</div></div>
+                            <div class="lead-stat"><div class="ls-lbl">New</div><div class="ls-val" id="stat-new">—</div></div>
+                            <div class="lead-stat"><div class="ls-lbl">In progress</div><div class="ls-val" id="stat-progress">—</div></div>
+                            <div class="lead-stat"><div class="ls-lbl">Closed</div><div class="ls-val" id="stat-closed">—</div></div>
+                        </div>
+
                         <div class="inbox-filter">
-                            <button class="inbox-tab active" onclick="filterLeads('all', this)">All</button>
-                            <button class="inbox-tab" onclick="filterLeads('new', this)">New</button>
-                            <button class="inbox-tab" onclick="filterLeads('assigned', this)">Assigned</button>
-                            <button class="inbox-tab" onclick="filterLeads('in_progress', this)">In Progress</button>
-                            <button class="inbox-tab" onclick="filterLeads('contacted', this)">Contacted</button>
-                            <button class="inbox-tab" onclick="filterLeads('closed', this)">Closed</button>
+                            <button class="inbox-tab active" data-status="active"      onclick="filterLeads('active', this)">Active</button>
+                            <button class="inbox-tab"        data-status="new"         onclick="filterLeads('new', this)">New</button>
+                            <button class="inbox-tab"        data-status="contacted"   onclick="filterLeads('contacted', this)">Contacted</button>
+                            <button class="inbox-tab"        data-status="in_progress" onclick="filterLeads('in_progress', this)">In Progress</button>
+                            <button class="inbox-tab"        data-status="closed"      onclick="filterLeads('closed', this)">Closed</button>
                         </div>
                     </div>
 
@@ -461,7 +528,7 @@
         const REDIRECT_FORBIDDEN = '../../pages/public/forbidden.html';
 
         let allLeads = [];
-        let currentFilterStatus = 'all';
+        let currentFilterStatus = 'active';  // default tab hides closed leads
 
         // ── View Switching ───────────────────────────────────────────────────────
         function switchView(view) {
@@ -728,6 +795,21 @@
         }
 
         // ── Leads ────────────────────────────────────────────────────────────────
+        // Agent-editable status set — mirrors AGENT_ALLOWED_STATUSES on the
+        // server. 'closed' hides the lead from the active list.
+        const AGENT_STATUSES = [
+            { key: 'new',         label: 'New' },
+            { key: 'contacted',   label: 'Contacted' },
+            { key: 'in_progress', label: 'In Progress' },
+            { key: 'closed',      label: 'Closed' },
+        ];
+        const LEAD_TYPE_LABEL_A = {
+            buyer: 'Buyer', seller: 'Seller', general_contact: 'General',
+            agent_inquiry: 'Agent request', market_report: 'Market report',
+            property_question: 'Property question', join_request: 'Join request',
+        };
+        function escA(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
         async function loadLeads() {
             document.getElementById('leads-list').innerHTML =
                 '<div style="text-align:center;padding:3rem;color:#a0aec0;">Loading...</div>';
@@ -736,18 +818,44 @@
                 if (res.status === 401) { window.location.href = REDIRECT_LOGIN; return; }
                 if (!res.ok) throw new Error();
                 allLeads = await res.json();
-                renderLeads(allLeads.filter(l => currentFilterStatus === 'all' || l.status === currentFilterStatus));
+                renderStats();
+                applyFilter();
             } catch(err) {
                 document.getElementById('leads-list').innerHTML =
                     '<div style="text-align:center;padding:3rem;color:#fc8181;">Failed to load leads.</div>';
             }
         }
 
+        function renderStats() {
+            const closed = allLeads.filter(l => l.status === 'closed').length;
+            document.getElementById('stat-active').textContent   = allLeads.filter(l => l.status !== 'closed' && l.status !== 'archived').length;
+            document.getElementById('stat-new').textContent      = allLeads.filter(l => l.status === 'new').length;
+            document.getElementById('stat-progress').textContent = allLeads.filter(l => l.status === 'in_progress').length;
+            document.getElementById('stat-closed').textContent   = closed;
+            // Tab counts
+            document.querySelectorAll('.inbox-tab').forEach(b => {
+                const s = b.dataset.status;
+                const n = s === 'active'
+                    ? allLeads.filter(l => l.status !== 'closed' && l.status !== 'archived').length
+                    : allLeads.filter(l => l.status === s).length;
+                let c = b.querySelector('.tcount');
+                if (!c) { c = document.createElement('span'); c.className = 'tcount'; b.appendChild(c); }
+                c.textContent = n;
+            });
+        }
+
         function filterLeads(status, el) {
             currentFilterStatus = status;
             document.querySelectorAll('.inbox-tab').forEach(b => b.classList.remove('active'));
             el.classList.add('active');
-            const filtered = status === 'all' ? allLeads : allLeads.filter(l => l.status === status);
+            applyFilter();
+        }
+
+        function applyFilter() {
+            const s = currentFilterStatus;
+            const filtered = s === 'active'
+                ? allLeads.filter(l => l.status !== 'closed' && l.status !== 'archived')
+                : allLeads.filter(l => l.status === s);
             renderLeads(filtered);
         }
 
@@ -757,52 +865,127 @@
                 container.innerHTML = `
                     <div style="background:#fff;border-radius:12px;border:1px solid #edf2f7;padding:4rem 2rem;text-align:center;">
                         <div style="font-size:2rem;margin-bottom:0.75rem;">📭</div>
-                        <p style="color:#718096;font-weight:500;">No leads in this category yet.</p>
+                        <p style="color:#718096;font-weight:500;">${currentFilterStatus === 'closed' ? 'No closed leads.' : 'No leads in this category yet.'}</p>
                     </div>`;
                 return;
             }
-
-            container.innerHTML = leads.map(l => {
-                const statusClass = `ls-${l.status}`;
+            container.innerHTML = `<div class="lead-table">${leads.map(l => {
                 const typeClass   = `lb-${l.type}`;
-                const typeLabel   = (l.type || 'general').replace(/_/g,' ');
+                const statusClass = `ls-${l.status}`;
+                const typeLabel   = LEAD_TYPE_LABEL_A[l.type] || (l.type || 'General').replace(/_/g,' ');
                 const statusLabel = (l.status || '').replace(/_/g,' ');
                 const date = new Date(l.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
-                const budget = (l.budget_min || l.budget_max)
-                    ? `$${(l.budget_min||0).toLocaleString()} – $${(l.budget_max||0).toLocaleString()}`
-                    : null;
-
-                const details = [
-                    l.email     ? `<span>${l.email}</span>` : null,
-                    l.phone     ? `<span>${l.phone}</span>` : null,
-                    l.location_text  ? `<span>📍 ${l.location_text}</span>` : null,
-                    budget           ? `<span>💰 ${budget}</span>` : null,
-                    l.timeline_text  ? `<span>⏱ ${l.timeline_text}</span>` : null,
-                    l.contact_preference ? `<span>Prefers: ${l.contact_preference}</span>` : null,
-                ].filter(Boolean).join(' <span style="color:#e2e8f0;margin:0 0.2rem;">|</span> ');
-
+                const sub  = l.email || l.phone || l.location_text || '—';
                 return `
-                    <div class="lead-card">
-                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem;">
-                            <div>
-                                <div style="font-size:1.1rem;font-weight:800;color:#1a202c;margin-bottom:0.35rem;">${l.name}</div>
-                                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                                    <span class="lead-badge ${typeClass}">${typeLabel}</span>
-                                    <span class="lead-badge ${statusClass}">${statusLabel}</span>
-                                    ${l.source_page_title ? `<span style="font-size:0.7rem;color:#a0aec0;font-weight:600;align-self:center;">via ${l.source_page_title}</span>` : ''}
-                                </div>
-                            </div>
-                            <span style="font-size:0.78rem;color:#a0aec0;font-weight:600;white-space:nowrap;margin-left:1rem;">${date}</span>
+                    <div class="lead-tr" onclick="openLeadPanel('${l.id}')">
+                        <div>
+                            <div class="lt-name">${escA(l.name || 'Lead')}</div>
+                            <div class="lt-sub">${escA(sub)}</div>
                         </div>
-                        ${details ? `<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1rem;font-size:0.82rem;color:#718096;font-weight:500;">${details}</div>` : ''}
-                        ${l.message ? `
-                            <div style="background:#f7f9fa;border-left:3px solid #e2e8f0;border-radius:0 6px 6px 0;padding:0.85rem 1rem;margin-top:0.75rem;">
-                                <p style="font-size:0.875rem;color:#4a5568;line-height:1.6;margin:0;">"${l.message}"</p>
-                            </div>` : ''}
+                        <div class="lt-type-cell"><span class="lead-badge ${typeClass}">${escA(typeLabel)}</span></div>
+                        <div><span class="lead-badge ${statusClass}">${escA(statusLabel)}</span></div>
+                        <div class="lt-date">${date}</div>
                     </div>`;
+            }).join('')}</div>`;
+        }
+
+        // ── Slide-over detail panel ──────────────────────────────────────────
+        let _activeLeadId = null;
+        function openLeadPanel(id) {
+            const l = allLeads.find(x => String(x.id) === String(id));
+            if (!l) return;
+            _activeLeadId = id;
+
+            document.getElementById('lp-name').textContent = l.name || 'Lead';
+            const typeLabel = LEAD_TYPE_LABEL_A[l.type] || (l.type || 'General').replace(/_/g,' ');
+            document.getElementById('lp-badges').innerHTML =
+                `<span class="lead-badge lb-${l.type}">${escA(typeLabel)}</span>
+                 ${l.source_page_title ? `<span style="font-size:0.72rem;color:#a0aec0;font-weight:700;align-self:center;">via ${escA(l.source_page_title)}</span>` : ''}`;
+
+            // Contact block — email + phone are click-to-act.
+            const contact = [];
+            if (l.email) contact.push(`<a href="mailto:${escA(l.email)}">✉️ ${escA(l.email)}</a>`);
+            if (l.phone) contact.push(`<a href="tel:${escA(l.phone)}">📞 ${escA(l.phone)}</a>`);
+            if (l.contact_preference) contact.push(`<span>⭐ Prefers ${escA(l.contact_preference)}</span>`);
+            contact.push(`<span>🗓 Submitted ${new Date(l.created_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</span>`);
+            document.getElementById('lp-contact').innerHTML = contact.join('');
+
+            // Message
+            const msgWrap = document.getElementById('lp-msg-wrap');
+            if (l.message) { document.getElementById('lp-msg').textContent = l.message; msgWrap.style.display = ''; }
+            else msgWrap.style.display = 'none';
+
+            // Meta (budget / timeline / location)
+            const budget = (l.budget_min || l.budget_max)
+                ? `$${(l.budget_min||0).toLocaleString()} – $${(l.budget_max||0).toLocaleString()}` : null;
+            const meta = [
+                l.location_text ? `📍 ${l.location_text}` : null,
+                budget          ? `💰 ${budget}` : null,
+                l.timeline_text ? `⏱ ${l.timeline_text}` : null,
+            ].filter(Boolean).join('\n');
+            const metaWrap = document.getElementById('lp-meta-wrap');
+            if (meta) { document.getElementById('lp-meta').textContent = meta; metaWrap.style.display = ''; }
+            else metaWrap.style.display = 'none';
+
+            // Status buttons
+            renderStatusButtons(l.status);
+            document.getElementById('lp-save-note').textContent = '';
+            document.getElementById('lp-save-note').className = 'lp-save-note';
+
+            document.getElementById('lead-overlay').classList.add('open');
+            document.getElementById('lead-panel').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function renderStatusButtons(current) {
+            document.getElementById('lp-status-grid').innerHTML = AGENT_STATUSES.map(s => {
+                const on = (current === s.key) ? ` on${s.key === 'closed' ? ' closed' : ''}` : '';
+                return `<button type="button" class="lp-status-btn${on}" onclick="changeLeadStatus('${s.key}')">${s.label}</button>`;
             }).join('');
         }
+
+        function closeLeadPanel() {
+            _activeLeadId = null;
+            document.getElementById('lead-overlay').classList.remove('open');
+            document.getElementById('lead-panel').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        async function changeLeadStatus(status) {
+            if (!_activeLeadId) return;
+            const note = document.getElementById('lp-save-note');
+            note.className = 'lp-save-note';
+            note.textContent = 'Saving…';
+            renderStatusButtons(status); // optimistic
+            try {
+                const r = await fetch(`/api/agents/me/leads/${encodeURIComponent(_activeLeadId)}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ status }),
+                });
+                const data = await r.json().catch(() => ({}));
+                if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+                // Update local copy + the list/stats behind the panel.
+                const l = allLeads.find(x => String(x.id) === String(_activeLeadId));
+                if (l) l.status = data.status;
+                renderStats();
+                applyFilter();
+                note.className = 'lp-save-note ok';
+                note.textContent = status === 'closed'
+                    ? '✓ Closed — hidden from your active list.'
+                    : `✓ Marked ${status.replace(/_/g,' ')}.`;
+            } catch (err) {
+                note.className = 'lp-save-note err';
+                note.textContent = err.message || 'Could not update status.';
+                // Re-sync buttons to the true value on failure.
+                const l = allLeads.find(x => String(x.id) === String(_activeLeadId));
+                renderStatusButtons(l ? l.status : status);
+            }
+        }
+
+        // Esc closes the panel.
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLeadPanel(); });
 
         // ── Progress Bar ─────────────────────────────────────────────────────────
         function calcProgress() {
@@ -1296,6 +1479,38 @@
             }
         }
     </script>
+
+    <!-- ── Lead detail slide-over ──────────────────────────────────── -->
+    <div class="lead-overlay" id="lead-overlay" onclick="closeLeadPanel()"></div>
+    <aside class="lead-panel" id="lead-panel" role="dialog" aria-modal="true" aria-label="Lead detail">
+        <div class="lp-head">
+            <button class="lp-close" onclick="closeLeadPanel()" aria-label="Close">&times;</button>
+            <h3 id="lp-name">—</h3>
+            <div class="lp-badges" id="lp-badges"></div>
+        </div>
+        <div class="lp-body">
+            <p class="lp-section-label">Contact</p>
+            <div class="lp-contact" id="lp-contact"></div>
+
+            <div id="lp-msg-wrap" style="display:none;">
+                <p class="lp-section-label">Their message</p>
+                <div class="lp-msg" id="lp-msg"></div>
+            </div>
+
+            <div id="lp-meta-wrap" style="display:none;">
+                <p class="lp-section-label">Details</p>
+                <div class="lp-msg" id="lp-meta" style="border-left-color:#bee3f8;background:#f7faff;"></div>
+            </div>
+
+            <p class="lp-section-label">Status</p>
+            <div class="lp-status-grid" id="lp-status-grid"></div>
+            <div class="lp-save-note" id="lp-save-note"></div>
+        </div>
+        <div class="lp-foot">
+            Need this lead removed entirely? Only an admin can delete leads — mark it <strong>Closed</strong> to hide it from your active inbox.
+        </div>
+    </aside>
+
     <global-footer></global-footer>
 </body>
 </html>

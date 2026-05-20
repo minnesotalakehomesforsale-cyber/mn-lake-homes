@@ -360,6 +360,54 @@ const getMyLeads = async (req, res) => {
     }
 };
 
+/**
+ * PATCH /api/agents/me/leads/:id/status
+ * Lets an agent move one of THEIR OWN assigned leads through the
+ * pipeline. Scoped via the agents→users join so an agent can never
+ * touch a lead that isn't theirs. Agents can't delete (admin-only) —
+ * the most they can do is mark it 'closed', which hides it from their
+ * active inbox. Writes the same leads.lead_status column the admin
+ * reads, so the change shows up on both sides immediately.
+ */
+const AGENT_ALLOWED_STATUSES = ['new', 'contacted', 'in_progress', 'closed'];
+
+const updateMyLeadStatus = async (req, res) => {
+    const userId = req.user.userId;
+    const { id }  = req.params;
+    const status  = (req.body?.status || '').trim();
+
+    if (!AGENT_ALLOWED_STATUSES.includes(status)) {
+        return res.status(400).json({ error: `Invalid status. Allowed: ${AGENT_ALLOWED_STATUSES.join(', ')}.` });
+    }
+    try {
+        const { rows, rowCount } = await pool.query(`
+            UPDATE leads l
+               SET lead_status = $1, updated_at = NOW()
+              FROM agents a
+             WHERE l.id = $2
+               AND l.agent_id = a.id
+               AND a.user_id = $3
+               AND l.deleted_at IS NULL
+            RETURNING l.id, l.full_name AS name, l.lead_status AS status
+        `, [status, id, userId]);
+
+        if (!rowCount) return res.status(404).json({ error: 'Lead not found or not assigned to you.' });
+
+        logActivity({
+            event_type: 'lead.status.change',
+            event_scope: 'lead',
+            actor: { type: 'agent', id: userId },
+            target: { type: 'lead', id: rows[0].id, label: rows[0].name },
+            details: { new_status: status, by: 'agent' },
+            req,
+        });
+        res.json({ success: true, id: rows[0].id, status: rows[0].status });
+    } catch (err) {
+        console.error('[updateMyLeadStatus]', err.message);
+        res.status(500).json({ error: 'Failed to update lead status.' });
+    }
+};
+
 // Legacy alias for old PATCH /me route used by some admin call paths
 const updateMyProfile = saveDraft;
 
@@ -371,5 +419,6 @@ module.exports = {
     submitForReview,
     updateMyProfile,
     getMyLeads,
+    updateMyLeadStatus,
     uploadPhoto
 };
