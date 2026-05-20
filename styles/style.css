@@ -2484,9 +2484,28 @@ body {
     object-fit: cover;
     border-bottom: 1px solid #edf2f7;
 }
+/* Agent cards — compact treatment on phones. The single-column layout
+   (set at 600px below) was keeping a 260px image + full-size text +
+   2rem gaps, which reads oversized on a handset. Shrink the image,
+   tighten type + spacing, and clamp the bio so cards stay scannable. */
 @media (max-width: 600px) {
-    .agent-image { height: 260px; }
-    .agent-info { padding: 1.25rem; }
+    .agent-image { height: 200px; }
+    .agent-info  { padding: 1.15rem 1.25rem; }
+    .agent-name  { font-size: 1.15rem; margin-bottom: 0.2rem; }
+    .agent-title { font-size: 0.78rem; margin-bottom: 0.85rem; letter-spacing: 0.4px; }
+    .agent-bio   {
+        font-size: 0.88rem; line-height: 1.55; margin-bottom: 1.1rem;
+        display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .agent-contact { padding-top: 1rem; gap: 0.4rem; font-size: 0.85rem; }
+    .agent-card:hover { transform: none; } /* no lift on touch — avoids sticky hover state */
+}
+/* Smallest handsets — a touch tighter still. */
+@media (max-width: 400px) {
+    .agent-image { height: 180px; }
+    .agent-info  { padding: 1rem 1.1rem; }
+    .agent-name  { font-size: 1.08rem; }
+    .agent-bio   { -webkit-line-clamp: 3; }
 }
 
 .agent-info {
