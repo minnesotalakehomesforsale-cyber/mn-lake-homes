@@ -989,6 +989,15 @@ async function ensureTables() {
         await pool.query(`
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT;
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
+            -- Membership = "what they're SET to" (the perks authority, what
+            -- the public profile shows). paid_membership_code = "what they're
+            -- actually PAYING for" per Stripe. tier_comped=true means an admin
+            -- has manually pinned the membership; the Stripe webhook then
+            -- keeps paid_membership_code current but never overwrites the
+            -- comped membership_id. Lets admins comp an agent to a higher
+            -- tier than they pay for.
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS paid_membership_code VARCHAR(50);
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS tier_comped BOOLEAN NOT NULL DEFAULT FALSE;
         `);
 
         // HubSpot mirror id — populated by src/services/hubspot.js after a
@@ -1144,6 +1153,12 @@ async function ensureTables() {
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS subscription_status    VARCHAR(24);
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS tier                   VARCHAR(16);
+            -- tier = "what they are SET to" (perks authority + public badge).
+            -- paid_tier = "what they are actually PAYING for" per Stripe.
+            -- tier_comped=true pins the effective tier so the Stripe webhook
+            -- keeps paid_tier current but never overwrites a comped tier.
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS paid_tier   VARCHAR(16);
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS tier_comped BOOLEAN NOT NULL DEFAULT FALSE;
             CREATE UNIQUE INDEX IF NOT EXISTS idx_businesses_user_id
                 ON businesses(user_id) WHERE user_id IS NOT NULL;
             CREATE INDEX IF NOT EXISTS idx_businesses_stripe_sub

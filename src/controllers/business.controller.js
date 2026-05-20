@@ -97,7 +97,8 @@ const BUSINESS_COLS = `
     instagram_url, facebook_url,
     address, city, state, zip, latitude, longitude, hours, price_range,
     featured_image_url, gallery, status,
-    user_id, subscription_status, tier,
+    user_id, subscription_status, tier, paid_tier, tier_comped,
+    stripe_customer_id, stripe_subscription_id,
     created_at, updated_at
 `;
 
@@ -308,12 +309,17 @@ exports.patch = async (req, res) => {
             push('status', b.status);
         }
         if ('tier'               in b) {
-            // Admin can manually mark admin-seeded rows as premium/basic
-            // since those don't flow through Stripe.
+            // The effective tier — what the business is SET to (perks +
+            // public badge). Admin can comp this above what they pay.
             if (b.tier !== null && !['premium', 'basic'].includes(b.tier)) {
                 return res.status(400).json({ error: 'Invalid tier.' });
             }
             push('tier', b.tier);
+        }
+        if ('tier_comped'        in b) {
+            // When true, the Stripe webhook stops overwriting `tier` on
+            // renewal/upgrade — the admin's chosen tier sticks.
+            push('tier_comped', !!b.tier_comped);
         }
 
         if (!fields.length) return res.json({ success: true, noop: true });

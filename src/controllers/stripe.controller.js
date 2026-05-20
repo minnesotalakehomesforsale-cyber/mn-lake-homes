@@ -336,12 +336,15 @@ exports.handleWebhook = async (req, res) => {
                     const sub = await stripe.subscriptions.retrieve(session.subscription);
                     const priceId = sub.items.data[0]?.price?.id;
                     const tier    = businessTierFromPriceId(priceId);
+                    // Always record what they're paying (paid_tier). Only
+                    // move the effective `tier` when it isn't admin-comped.
                     await pool.query(
                         `UPDATE businesses
                             SET stripe_customer_id     = $1,
                                 stripe_subscription_id = $2,
                                 subscription_status    = 'active',
-                                tier                   = $3,
+                                paid_tier              = $3,
+                                tier                   = CASE WHEN tier_comped THEN tier ELSE $3 END,
                                 updated_at             = NOW()
                           WHERE id = $4`,
                         [session.customer, session.subscription, tier, businessId]
@@ -391,16 +394,19 @@ exports.handleWebhook = async (req, res) => {
 
                 const membershipId = membershipRows[0].id;
 
-                // Update the agent: assign membership, publish profile, store Stripe IDs
+                // Update the agent: publish + store Stripe IDs. Record what
+                // they're paying (paid_membership_code); only move the
+                // effective membership_id when it isn't admin-comped.
                 await pool.query(
                     `UPDATE agents
-                        SET membership_id         = $1,
+                        SET membership_id         = CASE WHEN tier_comped THEN membership_id ELSE $1 END,
+                            paid_membership_code  = $5,
                             profile_status        = 'published',
                             is_published          = true,
                             stripe_customer_id    = $2,
                             stripe_subscription_id = $3
                       WHERE user_id = $4`,
-                    [membershipId, session.customer, session.subscription, userId]
+                    [membershipId, session.customer, session.subscription, userId, membershipCode]
                 );
 
                 console.log(`[Stripe Webhook] Agent ${userId} activated with membership '${membershipCode}'`);
@@ -476,7 +482,10 @@ exports.handleWebhook = async (req, res) => {
                     const priorStatus = bizPrior.rows[0]?.subscription_status;
                     await pool.query(
                         `UPDATE businesses
-                            SET subscription_status = $1, tier = $2, updated_at = NOW()
+                            SET subscription_status = $1,
+                                paid_tier           = $2,
+                                tier                = CASE WHEN tier_comped THEN tier ELSE $2 END,
+                                updated_at          = NOW()
                           WHERE stripe_subscription_id = $3`,
                         [sub.status, tier, sub.id]
                     );
@@ -521,11 +530,12 @@ exports.handleWebhook = async (req, res) => {
 
                 await pool.query(
                     `UPDATE agents
-                        SET membership_id  = COALESCE($1, membership_id),
+                        SET membership_id  = CASE WHEN tier_comped THEN membership_id ELSE COALESCE($1, membership_id) END,
+                            paid_membership_code = COALESCE($4, paid_membership_code),
                             is_published   = $2,
                             profile_status = CASE WHEN $2 THEN 'published' ELSE 'unpublished' END
                       WHERE stripe_subscription_id = $3`,
-                    [membershipId, shouldPublish, sub.id]
+                    [membershipId, shouldPublish, sub.id, newCode]
                 );
                 console.log(`[Stripe Webhook] Agent ${userId} subscription.updated → ${sub.status} (${newCode || 'membership unchanged'})`);
                 break;

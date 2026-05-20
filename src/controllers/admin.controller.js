@@ -316,6 +316,16 @@ const updateStatus = async (req, res) => {
                 if (isPublished) { fields.push(`published_at = $${c++}`); vals.push(publishedAt); }
             }
             if (membershipId) { fields.push(`membership_id = $${c++}`); vals.push(membershipId); }
+            // Comp flag: when an admin sets the membership here, mark it
+            // comped so the Stripe webhook stops overwriting membership_id
+            // on renewal/upgrade. Accepts an explicit tier_comped boolean;
+            // defaults to true whenever a membership_code is supplied
+            // manually (the admin is deliberately pinning the tier).
+            if ('tier_comped' in req.body) {
+                fields.push(`tier_comped = $${c++}`); vals.push(!!req.body.tier_comped);
+            } else if (membershipId) {
+                fields.push(`tier_comped = $${c++}`); vals.push(true);
+            }
             fields.push(`updated_at = $${c++}`); vals.push(new Date().toISOString());
 
             vals.push(id);
@@ -1089,9 +1099,74 @@ const impersonateAgent = async (req, res) => {
     }
 };
 
+/**
+ * GET /api/admin/billing/:kind/:id   (kind = 'agent' | 'business')
+ * Returns the live Stripe billing reality for one subscriber so the
+ * admin can see what they're ACTUALLY paying, alongside the stored
+ * paid_tier / effective tier. Degrades gracefully when Stripe isn't
+ * configured or there's no subscription on file — returns
+ * { configured, subscription: null } instead of erroring.
+ */
+const getSubscriberBilling = async (req, res) => {
+    const { kind, id } = req.params;
+    if (!['agent', 'business'].includes(kind)) {
+        return res.status(400).json({ error: "kind must be 'agent' or 'business'." });
+    }
+    let stripe = null;
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (key) { try { stripe = require('stripe')(key); } catch (_) { stripe = null; } }
+
+    try {
+        // Pull the stored row (effective + paid tier + the subscription id).
+        const row = kind === 'agent'
+            ? (await pool.query(
+                `SELECT a.stripe_subscription_id, a.paid_membership_code, a.tier_comped,
+                        m.code AS effective_code, m.name AS effective_name
+                   FROM agents a LEFT JOIN memberships m ON m.id = a.membership_id
+                  WHERE a.id = $1 LIMIT 1`, [id])).rows[0]
+            : (await pool.query(
+                `SELECT stripe_subscription_id, tier AS effective_tier, paid_tier, tier_comped, subscription_status
+                   FROM businesses WHERE id = $1 LIMIT 1`, [id])).rows[0];
+
+        if (!row) return res.status(404).json({ error: 'Not found.' });
+
+        const out = {
+            configured: !!stripe,
+            kind,
+            comped: !!row.tier_comped,
+            effective: kind === 'agent' ? { code: row.effective_code, name: row.effective_name } : { tier: row.effective_tier },
+            paid:      kind === 'agent' ? { code: row.paid_membership_code } : { tier: row.paid_tier, status: row.subscription_status },
+            subscription: null,
+        };
+
+        // Live Stripe lookup for the dollar amount + renewal date.
+        if (stripe && row.stripe_subscription_id) {
+            try {
+                const sub = await stripe.subscriptions.retrieve(row.stripe_subscription_id, { expand: ['items.data.price'] });
+                const price = sub.items?.data?.[0]?.price;
+                out.subscription = {
+                    status:             sub.status,
+                    cancel_at_period_end: sub.cancel_at_period_end,
+                    current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
+                    amount:             price?.unit_amount != null ? price.unit_amount / 100 : null,
+                    currency:           price?.currency || 'usd',
+                    interval:           price?.recurring?.interval || null,
+                };
+            } catch (e) {
+                out.subscription_error = e.message;
+            }
+        }
+        res.json(out);
+    } catch (err) {
+        console.error('[getSubscriberBilling]', err.message);
+        res.status(500).json({ error: 'Failed to load billing.' });
+    }
+};
+
 module.exports = {
     getLedger,
     getAgentDetail,
+    getSubscriberBilling,
     createAgent,
     updateAgentProfile,
     updateStatus,

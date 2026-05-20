@@ -44,6 +44,9 @@ router.delete('/users/:id', adminController.deleteUser);                   // DE
 // ─── METRICS ─────────────────────────────────────────────────────────────────
 router.get('/metrics/agent-coverage', adminController.getAgentCoverage);
 
+// ─── BILLING (live Stripe view for a subscriber: agent | business) ──────────
+router.get('/billing/:kind/:id', adminController.getSubscriberBilling);
+
 // ─── LEADS (must come before /:id to avoid shadowing) ────────────────────────
 router.get('/leads/unassigned-count', adminController.getUnassignedLeadCount);
 router.get('/leads/:id', adminController.getLeadDetail);
