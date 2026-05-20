@@ -1758,6 +1758,23 @@ async function ensureTables() {
             CREATE INDEX IF NOT EXISTS idx_site_images_has_override ON site_images((override_url IS NOT NULL));
         `);
 
+        // One-way admin → agent in-app messages. Admin sends from the
+        // global Messages tab or from inside an agent's profile; the agent
+        // reads them in their portal but can't reply. read_at powers the
+        // agent's unread badge.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS agent_messages (
+                id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                recipient_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                sender_user_id    UUID REFERENCES users(id) ON DELETE SET NULL,
+                body              TEXT NOT NULL,
+                read_at           TIMESTAMPTZ,
+                created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_agent_messages_recipient ON agent_messages(recipient_user_id, created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_agent_messages_unread    ON agent_messages(recipient_user_id) WHERE read_at IS NULL;
+        `);
+
         console.log(' Tables verified.');
 
         // Migrate default seeded cover images from Unsplash URLs to local /assets/images/ paths

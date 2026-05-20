@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages | MN Lake Homes Admin</title>
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: #1a202c; }
+        .page-head { margin-bottom: 1.4rem; }
+        .page-head h1 { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.75px; margin: 0 0 0.25rem; }
+        .page-head p  { color: #718096; font-size: 0.95rem; margin: 0; }
+
+        .msg-layout { display: grid; grid-template-columns: 320px 1fr; gap: 1.25rem; align-items: start; }
+        @media (max-width: 860px) { .msg-layout { grid-template-columns: 1fr; } }
+
+        .msg-list {
+            background: #fff; border: 1px solid #edf2f7; border-radius: 14px;
+            overflow: hidden; max-height: calc(100vh - 220px); display: flex; flex-direction: column;
+        }
+        .msg-list-search { padding: 0.85rem; border-bottom: 1px solid #edf2f7; }
+        .msg-list-search input {
+            width: 100%; box-sizing: border-box; font: inherit; font-size: 0.88rem;
+            padding: 0.6rem 0.85rem 0.6rem 2.1rem; border: 1px solid #e2e8f0; border-radius: 8px; outline: none;
+            background: #fff no-repeat 0.7rem center;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a0aec0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='7'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>");
+        }
+        .msg-list-search input:focus { border-color: #1d6df2; }
+        .msg-list-scroll { overflow-y: auto; flex: 1; }
+        .msg-agent {
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 1rem;
+            border-bottom: 1px solid #f3f6f9; cursor: pointer; transition: background 0.12s;
+        }
+        .msg-agent:hover { background: #fafbfc; }
+        .msg-agent.active { background: #ebf4ff; }
+        .msg-agent .av { width: 38px; height: 38px; border-radius: 50%; background: #e2e8f0; color: #4a5568; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0; }
+        .msg-agent .nm { font-weight: 700; font-size: 0.9rem; color: #1a202c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .msg-agent .sub { font-size: 0.76rem; color: #a0aec0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .msg-agent .dot { width: 9px; height: 9px; border-radius: 50%; background: #1d6df2; margin-left: auto; flex-shrink: 0; }
+
+        .msg-thread {
+            background: #fff; border: 1px solid #edf2f7; border-radius: 14px;
+            display: flex; flex-direction: column; min-height: calc(100vh - 220px);
+        }
+        .msg-thread-head { padding: 1.25rem 1.5rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+        .msg-thread-head h2 { font-size: 1.15rem; font-weight: 800; margin: 0; }
+        .msg-thread-head .sub { font-size: 0.8rem; color: #718096; margin-top: 0.15rem; }
+        .msg-thread-body { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 0.85rem; }
+        .bubble {
+            align-self: flex-end; max-width: 78%;
+            background: #1d6df2; color: #fff; border-radius: 14px 14px 4px 14px;
+            padding: 0.7rem 1rem; font-size: 0.9rem; line-height: 1.5; white-space: pre-line;
+        }
+        .bubble .meta { font-size: 0.68rem; color: rgba(255,255,255,0.75); margin-top: 0.4rem; display: flex; gap: 0.5rem; align-items: center; }
+        .bubble .meta .read { background: rgba(255,255,255,0.2); border-radius: 99px; padding: 0.02rem 0.4rem; font-weight: 700; }
+        .bubble .del { color: rgba(255,255,255,0.7); cursor: pointer; text-decoration: underline; }
+        .msg-empty { color: #a0aec0; font-size: 0.92rem; text-align: center; margin: auto; padding: 2rem; }
+        .msg-compose { border-top: 1px solid #edf2f7; padding: 1rem 1.25rem; display: flex; gap: 0.6rem; align-items: flex-end; }
+        .msg-compose textarea { flex: 1; resize: vertical; min-height: 46px; max-height: 160px; font: inherit; font-size: 0.92rem; padding: 0.7rem 0.9rem; border: 1px solid #e2e8f0; border-radius: 10px; outline: none; }
+        .msg-compose textarea:focus { border-color: #1d6df2; }
+        .msg-compose button { background: #1d6df2; color: #fff; border: 0; border-radius: 10px; padding: 0.7rem 1.4rem; font: inherit; font-weight: 700; cursor: pointer; }
+        .msg-compose button:disabled { opacity: 0.6; cursor: default; }
+        .one-way { font-size: 0.74rem; color: #a0aec0; padding: 0 1.25rem 0.9rem; }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-assistant.js" defer></script>
+    <script src="../../components/admin-nav-badges.js" defer></script>
+</head>
+<body>
+<div class="admin-wrap">
+    <admin-sidebar active="messages"></admin-sidebar>
+
+    <main class="admin-main">
+        <header class="page-head">
+            <h1>Messages</h1>
+            <p>Send in-app messages straight to an agent's portal. One-way — agents see them in their dashboard but can't reply.</p>
+        </header>
+
+        <div class="msg-layout">
+            <!-- Agent list -->
+            <div class="msg-list">
+                <div class="msg-list-search">
+                    <input type="search" id="agent-search" placeholder="Search agents…" oninput="renderAgentList()">
+                </div>
+                <div class="msg-list-scroll" id="agent-list"><div class="msg-empty">Loading…</div></div>
+            </div>
+
+            <!-- Thread -->
+            <div class="msg-thread">
+                <div class="msg-thread-head">
+                    <div>
+                        <h2 id="thread-name">Select an agent</h2>
+                        <div class="sub" id="thread-sub">Pick someone on the left to start messaging.</div>
+                    </div>
+                </div>
+                <div class="msg-thread-body" id="thread-body">
+                    <div class="msg-empty">No conversation selected.</div>
+                </div>
+                <div class="one-way" id="one-way" style="display:none;">Agents receive these in their portal and can read but not reply.</div>
+                <div class="msg-compose" id="composer" style="display:none;">
+                    <textarea id="compose-input" placeholder="Type a message to this agent…" rows="1"></textarea>
+                    <button id="send-btn" onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    let _agents = [];     // [{ user_id, name, email, unread, last_at }]
+    let _threads = {};    // user_id -> thread meta (unread, last)
+    let _activeUserId = null;
+
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const initials = n => (n || '?').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+    const fmtWhen = d => d ? new Date(d).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : '';
+
+    async function boot() {
+        try {
+            // Full agent roster (so admin can start a thread with anyone) +
+            // existing threads (for unread counts + ordering).
+            const [ledger, threads] = await Promise.all([
+                fetch('/api/admin', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
+                fetch('/api/admin/messages/threads', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
+            ]);
+            _threads = {};
+            (threads || []).forEach(t => { _threads[t.user_id] = t; });
+            const arr = Array.isArray(ledger) ? ledger : (ledger.rows || []);
+            _agents = arr.map(a => ({
+                user_id: a.user_id,
+                name: a.display_name || a.full_name || a.email || 'Agent',
+                email: a.email || '',
+                unread: _threads[a.user_id]?.unread_by_agent || 0,
+                last_at: _threads[a.user_id]?.last_at || null,
+            })).filter(a => a.user_id);
+            // Threads with no agents-row fallback (in case ledger missed someone)
+            (threads || []).forEach(t => {
+                if (!_agents.find(a => a.user_id === t.user_id)) {
+                    _agents.push({ user_id: t.user_id, name: t.name, email: t.email, unread: t.unread_by_agent || 0, last_at: t.last_at });
+                }
+            });
+            renderAgentList();
+        } catch (_) {
+            document.getElementById('agent-list').innerHTML = '<div class="msg-empty" style="color:#c53030;">Could not load agents.</div>';
+        }
+    }
+
+    function renderAgentList() {
+        const q = (document.getElementById('agent-search').value || '').toLowerCase().trim();
+        const list = _agents
+            .filter(a => !q || `${a.name} ${a.email}`.toLowerCase().includes(q))
+            .sort((a, b) => {
+                // Threads with activity first (newest), then the rest alphabetically.
+                if (a.last_at && b.last_at) return new Date(b.last_at) - new Date(a.last_at);
+                if (a.last_at) return -1;
+                if (b.last_at) return 1;
+                return a.name.localeCompare(b.name);
+            });
+        const el = document.getElementById('agent-list');
+        if (!list.length) { el.innerHTML = '<div class="msg-empty">No agents match.</div>'; return; }
+        el.innerHTML = list.map(a => `
+            <div class="msg-agent ${a.user_id === _activeUserId ? 'active' : ''}" onclick="openThread('${a.user_id}')">
+                <div class="av">${esc(initials(a.name))}</div>
+                <div style="min-width:0;flex:1;">
+                    <div class="nm">${esc(a.name)}</div>
+                    <div class="sub">${esc(a.email)}</div>
+                </div>
+                ${a.unread ? '<span class="dot" title="Unread by agent"></span>' : ''}
+            </div>`).join('');
+    }
+
+    async function openThread(userId) {
+        _activeUserId = userId;
+        renderAgentList();
+        const a = _agents.find(x => x.user_id === userId);
+        document.getElementById('thread-name').textContent = a ? a.name : 'Agent';
+        document.getElementById('thread-sub').textContent  = a ? a.email : '';
+        document.getElementById('composer').style.display  = 'flex';
+        document.getElementById('one-way').style.display    = 'block';
+        const body = document.getElementById('thread-body');
+        body.innerHTML = '<div class="msg-empty">Loading…</div>';
+        try {
+            const msgs = await fetch(`/api/admin/messages/agent/${encodeURIComponent(userId)}`, { credentials: 'include' }).then(r => r.ok ? r.json() : []);
+            renderThread(msgs);
+        } catch (_) {
+            body.innerHTML = '<div class="msg-empty" style="color:#c53030;">Could not load.</div>';
+        }
+    }
+
+    function renderThread(msgs) {
+        const body = document.getElementById('thread-body');
+        if (!msgs.length) {
+            body.innerHTML = '<div class="msg-empty">No messages yet. Send the first one below.</div>';
+            return;
+        }
+        body.innerHTML = msgs.map(m => `
+            <div class="bubble">
+                ${esc(m.body)}
+                <div class="meta">
+                    <span>${esc(fmtWhen(m.created_at))}</span>
+                    <span class="read">${m.read_at ? 'Read' : 'Sent'}</span>
+                    <span class="del" onclick="delMessage('${m.id}')">delete</span>
+                </div>
+            </div>`).join('');
+        body.scrollTop = body.scrollHeight;
+    }
+
+    async function sendMessage() {
+        if (!_activeUserId) return;
+        const input = document.getElementById('compose-input');
+        const btn   = document.getElementById('send-btn');
+        const body  = input.value.trim();
+        if (!body) { input.focus(); return; }
+        btn.disabled = true; btn.textContent = 'Sending…';
+        try {
+            const r = await fetch('/api/admin/messages', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ recipient_user_id: _activeUserId, body }),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+            input.value = '';
+            // Refresh the thread + bump this agent to the top of the list.
+            const a = _agents.find(x => x.user_id === _activeUserId);
+            if (a) a.last_at = new Date().toISOString();
+            await openThread(_activeUserId);
+            renderAgentList();
+        } catch (err) {
+            alert(err.message || 'Could not send.');
+        } finally {
+            btn.disabled = false; btn.textContent = 'Send';
+        }
+    }
+
+    async function delMessage(id) {
+        if (!confirm('Delete this message? It will also disappear from the agent\'s portal.')) return;
+        try {
+            const r = await fetch(`/api/admin/messages/${encodeURIComponent(id)}`, { method: 'DELETE', credentials: 'include' });
+            if (!r.ok) throw new Error();
+            openThread(_activeUserId);
+        } catch (_) { alert('Could not delete.'); }
+    }
+
+    // Cmd/Ctrl+Enter sends.
+    document.addEventListener('keydown', e => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && document.activeElement?.id === 'compose-input') sendMessage();
+    });
+
+    document.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>

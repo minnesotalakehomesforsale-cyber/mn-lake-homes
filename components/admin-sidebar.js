@@ -112,6 +112,7 @@
         { key: 'agents',      href: 'agents.html',     label: 'Agents Directory' },
         { key: 'leads',       href: 'leads.html',      label: 'Central Leads', badgeId: 'nav-badge-leads' },
         { key: 'inquiries',   href: 'inquiries.html',  label: 'Inquiries', badgeId: 'nav-badge-inquiries' },
+        { key: 'messages',    href: 'messages.html',   label: 'Messages' },
         // Marketing rolls up Blog & Content along with three new tabs
         // (Dashboard, Newsletter, Social Media). Blog stays accessible at
         // its old URL too — the alias keeps the highlight working.

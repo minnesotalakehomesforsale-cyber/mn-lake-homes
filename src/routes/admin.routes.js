@@ -47,6 +47,14 @@ router.get('/metrics/agent-coverage', adminController.getAgentCoverage);
 // ─── BILLING (live Stripe view for a subscriber: agent | business) ──────────
 router.get('/billing/:kind/:id', adminController.getSubscriberBilling);
 
+// ─── MESSAGES (one-way admin → agent in-app messages) ───────────────────────
+// Admin-gated. Static prefixes here sit before the catch-all /:id agent route.
+const messagesController = require('../controllers/messages.controller');
+router.post  ('/messages',               verifyToken, requireRole(['admin', 'super_admin']), messagesController.send);
+router.get   ('/messages/threads',       verifyToken, requireRole(['admin', 'super_admin']), messagesController.threads);
+router.get   ('/messages/agent/:userId', verifyToken, requireRole(['admin', 'super_admin']), messagesController.threadForAgent);
+router.delete('/messages/:id',           verifyToken, requireRole(['admin', 'super_admin']), messagesController.remove);
+
 // ─── LEADS (must come before /:id to avoid shadowing) ────────────────────────
 router.get('/leads/unassigned-count', adminController.getUnassignedLeadCount);
 router.get('/leads/:id', adminController.getLeadDetail);

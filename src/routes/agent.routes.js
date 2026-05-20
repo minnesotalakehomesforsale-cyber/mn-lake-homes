@@ -17,6 +17,12 @@ router.get('/me/leads', verifyToken, requireRole('agent'), agentController.getMy
 router.patch('/me/leads/:id/status', verifyToken, requireRole('agent'), agentController.updateMyLeadStatus);
 router.get  ('/me/leads/:id/notes',  verifyToken, requireRole('agent'), agentController.getMyLeadNotes);
 router.post ('/me/leads/:id/notes',  verifyToken, requireRole('agent'), agentController.addMyLeadNote);
+
+// ─── In-app messages from admin (read-only on the agent side) ───────────────
+const messagesController = require('../controllers/messages.controller');
+router.get ('/me/messages',              verifyToken, requireRole('agent'), messagesController.myMessages);
+router.get ('/me/messages/unread-count', verifyToken, requireRole('agent'), messagesController.myUnreadCount);
+router.post('/me/messages/mark-read',    verifyToken, requireRole('agent'), messagesController.markAllRead);
 router.patch('/me', verifyToken, requireRole('agent'), agentController.saveDraft);
 router.post('/me/submit', verifyToken, requireRole('agent'), agentController.submitForReview);
 
