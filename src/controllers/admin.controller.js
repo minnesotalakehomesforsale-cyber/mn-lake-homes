@@ -1049,6 +1049,110 @@ const getAgentLeads = async (req, res) => {
     }
 };
 
+// ─── AGENT NOTES (internal CRM notes on an agent, mirrored to HubSpot) ────────
+// Resolve the agent record (:id) to its user + HubSpot contact id, used by
+// every note handler below.
+async function resolveAgentUser(agentId) {
+    const { rows } = await pool.query(
+        `SELECT u.id AS user_id, u.hs_contact_id,
+                COALESCE(a.display_name, u.full_name, u.email) AS name
+           FROM agents a JOIN users u ON u.id = a.user_id
+          WHERE a.id = $1 LIMIT 1`,
+        [agentId]
+    );
+    return rows[0] || null;
+}
+
+/** GET /api/admin/:id/notes — list notes for an agent, newest first. */
+const getAgentNotes = async (req, res) => {
+    try {
+        const agent = await resolveAgentUser(req.params.id);
+        if (!agent) return res.status(404).json({ error: 'Agent not found.' });
+        const { rows } = await pool.query(
+            `SELECT n.id, n.body, n.hs_note_id, n.created_at,
+                    COALESCE(au.full_name, au.email, 'Admin') AS author
+               FROM agent_notes n
+               LEFT JOIN users au ON au.id = n.author_user_id
+              WHERE n.agent_user_id = $1
+           ORDER BY n.created_at DESC`,
+            [agent.user_id]
+        );
+        res.json({
+            notes: rows,
+            hs_contact_url: hubspot.getPortalContactUrl(agent.hs_contact_id),
+            hs_synced: !!agent.hs_contact_id,
+        });
+    } catch (err) {
+        console.error('[getAgentNotes]', err.message);
+        res.status(500).json({ error: 'Failed to load notes.' });
+    }
+};
+
+/** POST /api/admin/:id/notes — add a note + mirror it to HubSpot. */
+const addAgentNote = async (req, res) => {
+    try {
+        const body = (req.body?.body || '').trim();
+        if (!body) return res.status(400).json({ error: 'Note cannot be empty.' });
+
+        const agent = await resolveAgentUser(req.params.id);
+        if (!agent) return res.status(404).json({ error: 'Agent not found.' });
+
+        // Attribute to the authed admin, else the oldest admin (mirrors lead notes).
+        let authorId = req.user?.userId || null;
+        if (!authorId) {
+            const adm = await pool.query(
+                `SELECT id FROM users WHERE role IN ('admin','super_admin') ORDER BY created_at ASC LIMIT 1`
+            );
+            authorId = adm.rows[0]?.id || null;
+        }
+
+        const { rows } = await pool.query(
+            `INSERT INTO agent_notes (agent_user_id, author_user_id, body)
+             VALUES ($1, $2, $3)
+             RETURNING id, body, hs_note_id, created_at`,
+            [agent.user_id, authorId, body.slice(0, 6000)]
+        );
+        const note = rows[0];
+
+        logActivity({
+            event_type: 'agent.note.add',
+            event_scope: 'agents',
+            actor: { type: 'admin', id: authorId, label: req.user?.display_name || 'admin' },
+            target: { type: 'user', id: agent.user_id, label: agent.name },
+            req,
+        });
+
+        // Mirror to HubSpot (fire-and-forget). On success, store the note id.
+        hubspot.createContactNote(agent.hs_contact_id, `[Admin note] ${body}`)
+            .then(r => {
+                if (r?.id) pool.query(`UPDATE agent_notes SET hs_note_id = $1 WHERE id = $2`, [r.id, note.id]);
+            })
+            .catch(() => {});
+
+        res.status(201).json({ success: true, note });
+    } catch (err) {
+        console.error('[addAgentNote]', err.message);
+        res.status(500).json({ error: 'Failed to add note.' });
+    }
+};
+
+/** DELETE /api/admin/:id/notes/:noteId — remove a note (local only). */
+const deleteAgentNote = async (req, res) => {
+    try {
+        const agent = await resolveAgentUser(req.params.id);
+        if (!agent) return res.status(404).json({ error: 'Agent not found.' });
+        const { rowCount } = await pool.query(
+            `DELETE FROM agent_notes WHERE id = $1 AND agent_user_id = $2`,
+            [req.params.noteId, agent.user_id]
+        );
+        if (!rowCount) return res.status(404).json({ error: 'Note not found.' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[deleteAgentNote]', err.message);
+        res.status(500).json({ error: 'Failed to delete note.' });
+    }
+};
+
 /**
  * POST /api/admin/:id/impersonate
  * Admin-only. Mints a short-lived session token for the agent behind :id
@@ -1187,6 +1291,9 @@ module.exports = {
     deleteLead,
     deleteAgent,
     getAgentLeads,
+    getAgentNotes,
+    addAgentNote,
+    deleteAgentNote,
     getUnassignedLeadCount,
     getAgentCoverage
 };

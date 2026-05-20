@@ -1775,6 +1775,21 @@ async function ensureTables() {
             CREATE INDEX IF NOT EXISTS idx_agent_messages_unread    ON agent_messages(recipient_user_id) WHERE read_at IS NULL;
         `);
 
+        // Admin notes about an agent (internal CRM notes on the agent's
+        // backend profile). hs_note_id holds the synced HubSpot note
+        // engagement id once it's pushed to the agent's contact timeline.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS agent_notes (
+                id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                agent_user_id  UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                author_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+                body           TEXT NOT NULL,
+                hs_note_id     TEXT,
+                created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_agent_notes_agent ON agent_notes(agent_user_id, created_at DESC);
+        `);
+
         console.log(' Tables verified.');
 
         // Migrate default seeded cover images from Unsplash URLs to local /assets/images/ paths

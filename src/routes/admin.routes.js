@@ -67,6 +67,11 @@ router.delete('/leads/:id', adminController.deleteLead);                    // D
 // ─── AGENT LEADS (must come before /:id to avoid shadowing) ─────────────────
 router.get('/:id/leads', adminController.getAgentLeads);
 
+// ─── AGENT NOTES (internal CRM notes, mirrored to HubSpot) ───────────────────
+router.get   ('/:id/notes',          verifyToken, requireRole(['admin', 'super_admin']), adminController.getAgentNotes);
+router.post  ('/:id/notes',          verifyToken, requireRole(['admin', 'super_admin']), adminController.addAgentNote);
+router.delete('/:id/notes/:noteId',  verifyToken, requireRole(['admin', 'super_admin']), adminController.deleteAgentNote);
+
 // ─── AGENT DETAIL (generic /:id last, so specific prefixes match first) ──────
 router.get('/:id', adminController.getAgentDetail);                      // GET /api/admin/:id
 router.post('/:id/impersonate', verifyToken, requireRole(['admin', 'super_admin']), adminController.impersonateAgent); // POST log in as agent (admin-only)

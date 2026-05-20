@@ -171,6 +171,39 @@ async function updateContact(hsContactId, props) {
 }
 
 /**
+ * Create a Note engagement on a contact's timeline. Used to mirror admin
+ * notes about an agent into HubSpot so they show up against the contact.
+ * Fire-and-forget like the rest of this module — returns { id } on success,
+ * null on skip/failure. associationTypeId 202 = Note → Contact (HubSpot
+ * default).
+ */
+async function createContactNote(hsContactId, body) {
+    if (!ENABLED)        { logSkip('HUBSPOT_ENABLE_SYNC=false'); return null; }
+    if (!isConfigured()) { logSkip('HUBSPOT_ACCESS_TOKEN/PORTAL_ID not set'); return null; }
+    if (!hsContactId)    { logSkip('no hs_contact_id for note'); return null; }
+    const text = (body || '').trim();
+    if (!text) return null;
+
+    try {
+        const note = await hsFetch('/crm/v3/objects/notes', {
+            method: 'POST',
+            body: {
+                properties: { hs_note_body: text, hs_timestamp: Date.now() },
+                associations: [{
+                    to: { id: String(hsContactId) },
+                    types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 202 }],
+                }],
+            },
+        });
+        console.log(`[hubspot] created note ${note.id} on contact ${hsContactId}`);
+        return { id: note.id };
+    } catch (err) {
+        console.error(`[hubspot] FAILED note on contact ${hsContactId}:`, err.message);
+        return null;
+    }
+}
+
+/**
  * Build a deep link to a specific contact's HubSpot timeline. Honors
  * HUBSPOT_REGION so na2/eu1/etc. accounts don't end up on the wrong
  * subdomain (which 404s instead of redirecting).
@@ -308,6 +341,7 @@ if (!isConfigured()) {
 module.exports = {
     syncContact,
     updateContact,
+    createContactNote,
     getPortalContactUrl,
     isConfigured,
     ping,
