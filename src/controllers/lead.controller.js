@@ -305,15 +305,37 @@ const getAdminLeads = async (req, res) => {
 
 // GET /api/leads/mine — every lead linked to the signed-in user's account.
 // Powers the "Your submissions" section on the user dashboard. Requires auth.
+//
+// Email is the universal identity key, so we match on user_id OR the
+// account's own email — this guarantees the dashboard shows EVERY lead
+// submitted with that email even if the signup-time backfill missed one
+// (e.g. a lead created through a path that didn't link, or a timing gap).
+// We also opportunistically backfill: any matching-email lead whose
+// user_id is still NULL gets claimed for this account on read, so the
+// data self-heals and admin views show the linkage too.
 const getMyLeads = async (req, res) => {
     try {
+        // Resolve the account's canonical (lowercased) email once.
+        const ures = await pool.query(`SELECT LOWER(email) AS email FROM users WHERE id = $1`, [req.user.userId]);
+        const myEmail = ures.rows[0]?.email || null;
+
+        // Self-heal: claim any unlinked leads that share this email.
+        if (myEmail) {
+            pool.query(
+                `UPDATE leads SET user_id = $1, updated_at = NOW()
+                  WHERE LOWER(email) = $2 AND user_id IS NULL AND deleted_at IS NULL`,
+                [req.user.userId, myEmail]
+            ).catch(e => console.error('[leads.getMyLeads] backfill failed:', e.message));
+        }
+
         const { rows } = await pool.query(
             `SELECT id, full_name, email, phone, lead_type, lead_source, lead_status,
                     property_address, message, submitted_at, created_at
                FROM leads
-              WHERE user_id = $1 AND deleted_at IS NULL
+              WHERE deleted_at IS NULL
+                AND (user_id = $1 OR ($2::text IS NOT NULL AND LOWER(email) = $2))
               ORDER BY created_at DESC`,
-            [req.user.userId]
+            [req.user.userId, myEmail]
         );
         res.json(rows);
     } catch (err) {
