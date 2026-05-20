@@ -384,7 +384,12 @@
                 <div class="panel">
                     <div class="panel-header"><div class="panel-title">Membership Tier</div></div>
                     <div class="panel-body" style="padding: 1.5rem;">
-                        <div class="field-label" style="margin-bottom:0.5rem;">Assign Membership</div>
+                        <!-- What they're paying (live Stripe) -->
+                        <div class="field-label" style="margin-bottom:0.5rem;">What they're paying for</div>
+                        <div id="mem-billing" style="background:#f7f9fa;border:1px solid #edf2f7;border-radius:8px;padding:0.85rem 1rem;font-size:0.85rem;color:#4a5568;margin-bottom:1rem;line-height:1.6;">Loading billing…</div>
+
+                        <!-- What they're set to -->
+                        <div class="field-label" style="margin-bottom:0.5rem;">Set them to <span style="text-transform:none;color:#a0aec0;font-weight:600;">— controls perks + public badge</span></div>
                         <select id="membership-select" class="field-input" style="width:100%;margin-bottom:0.75rem;">
                             <option value="founder">Founder</option>
                             <option value="premium">Premium</option>
@@ -392,6 +397,10 @@
                             <option value="mn_lake_specialist">MN Lake Specialist</option>
                             <option value="basic">Basic</option>
                         </select>
+                        <label style="display:flex;align-items:center;gap:0.55rem;font-size:0.85rem;color:#1a202c;cursor:pointer;margin-bottom:0.85rem;">
+                            <input type="checkbox" id="mem-comped" style="width:17px;height:17px;accent-color:#1d6df2;">
+                            Comp this tier — pin it so Stripe renewals don't reset it
+                        </label>
                         <button class="btn-save" style="width:100%;" onclick="changeMembership()">Update Membership</button>
                         <div id="mem-result" class="action-result"></div>
                     </div>
@@ -698,8 +707,11 @@
         // Profile status badge
         document.getElementById('profile-status-badge').innerHTML = statusBadge(a.profile_status);
 
-        // Membership
+        // Membership — effective tier (membership_code) + comp flag, plus
+        // a live "what they're paying" block from Stripe.
         document.getElementById('membership-select').value = a.membership_code || 'basic';
+        document.getElementById('mem-comped').checked = !!a.tier_comped;
+        loadAgentBilling();
 
         // Public profile link
         document.getElementById('link-public-profile').href =
@@ -1115,13 +1127,41 @@
     }
 
     // ── Membership ───────────────────────────────────────────────────────────
+    const AGENT_TIER_LABELS = { founder:'Founder', premium:'Premium', top_agent:'Top Agent', mn_lake_specialist:'MN Lake Specialist', basic:'Basic' };
+
+    async function loadAgentBilling() {
+        const host = document.getElementById('mem-billing');
+        if (!host) return;
+        try {
+            const b = await fetch(`/api/admin/billing/agent/${agentId}`, { credentials: 'include' }).then(r => r.ok ? r.json() : null);
+            if (!b) { host.textContent = 'Could not load billing.'; return; }
+            const paid = b.paid?.code;
+            const sub  = b.subscription;
+            const lines = [];
+            lines.push(`<strong>Paying for:</strong> ${paid ? (AGENT_TIER_LABELS[paid] || paid) : '— no paid plan on file'}`);
+            if (sub) {
+                if (sub.amount != null) lines.push(`<strong>Amount:</strong> $${sub.amount.toFixed(2)} / ${sub.interval || 'period'}`);
+                lines.push(`<strong>Status:</strong> ${sub.status}`);
+                if (sub.current_period_end) lines.push(`<strong>Renews:</strong> ${new Date(sub.current_period_end).toLocaleDateString()}`);
+                if (sub.cancel_at_period_end) lines.push('<strong>Cancels at period end</strong>');
+            } else if (!b.configured) {
+                lines.push('<em>Stripe not configured — showing stored tier only.</em>');
+            } else {
+                lines.push('<em>No active Stripe subscription (comped, admin-set, or never checked out).</em>');
+            }
+            if (b.comped) lines.push('<span style="color:#b45309;font-weight:700;">★ Comped — effective tier is pinned</span>');
+            host.innerHTML = lines.join('<br>');
+        } catch (_) { host.textContent = 'Could not load billing.'; }
+    }
+
     async function changeMembership() {
         const membership_code = document.getElementById('membership-select').value;
+        const tier_comped     = document.getElementById('mem-comped').checked;
         try {
             const res = await fetch(`/api/admin/${agentId}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ membership_code })
+                body: JSON.stringify({ membership_code, tier_comped })
             });
             const d = await res.json();
             const el = document.getElementById('mem-result');

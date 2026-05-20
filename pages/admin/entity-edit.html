@@ -283,7 +283,7 @@
             uploadUrl:'/api/businesses/upload-image',
             uploadField:'image',
             imageField:'featured_image_url',
-            tabs:     ['details', 'contact', 'connected'],
+            tabs:     ['details', 'contact', 'membership', 'connected'],
             relatedKeys: ['lakes','tags'],
         },
     };
@@ -387,11 +387,12 @@
 
     // ── Tabs ─────────────────────────────────────────────────────────
     const TAB_LABELS = {
-        details:   'Details',
-        editorial: 'Editorial',
-        seo:       'SEO',
-        contact:   'Contact &amp; Web',
-        connected: 'Connected',
+        details:    'Details',
+        editorial:  'Editorial',
+        seo:        'SEO',
+        contact:    'Contact &amp; Web',
+        membership: 'Membership',
+        connected:  'Connected',
     };
 
     function renderTabs() {
@@ -430,6 +431,7 @@
         if (activeTab === 'editorial')  tc.innerHTML = renderEditorialTab();
         if (activeTab === 'seo')        tc.innerHTML = renderSeoTab();
         if (activeTab === 'contact')    tc.innerHTML = renderContactTab();
+        if (activeTab === 'membership') { tc.innerHTML = renderMembershipTab(); loadBilling(); }
         if (activeTab === 'connected')  tc.innerHTML = renderConnectedTab();
     }
 
@@ -568,6 +570,93 @@
                 ${fieldGroup({ id: 'f-fb',      label: 'Facebook',  value: entity.facebook_url })}
             </div>`;
         return panel({ title: 'Contact &amp; Web', body, saveLabel: 'Save Contact', saveId: 'save-contact' });
+    }
+
+    // ── Membership tab (business only) ───────────────────────────────
+    // Two panels: "What they're paying" (read-only, from Stripe) and
+    // "What they're set to" (admin-editable effective tier + comp toggle).
+    const BIZ_TIER_LABEL = { premium: 'Featured Partner (Premium)', basic: 'Local Spotlight (Basic)' };
+    function tierPill(tier) {
+        const t = (tier || '').toLowerCase();
+        const label = BIZ_TIER_LABEL[t] || (tier ? tier : '—');
+        const cls = t === 'premium' ? 's-active' : t === 'basic' ? 's-pending' : 's-archived';
+        return `<span class="s-badge ${cls}">${esc(label)}</span>`;
+    }
+    function renderMembershipTab() {
+        const comped = !!entity.tier_comped;
+        return `
+            <div class="panel">
+                <div class="panel-header"><div class="panel-title">What they're paying for</div></div>
+                <div class="panel-body">
+                    <div id="billing-live"><div style="color:#a0aec0;font-size:0.9rem;">Loading billing from Stripe…</div></div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">What they're set to</div>
+                    ${comped ? '<span class="s-badge s-pending">Comped</span>' : ''}
+                </div>
+                <div class="panel-body">
+                    <p class="field-hint" style="margin:-0.5rem 0 1.25rem;">
+                        This is the tier that actually controls their perks + public badge. Set it higher than what they pay to comp them — the comp toggle stops Stripe from resetting it on renewal.
+                    </p>
+                    <div class="field-grid">
+                        ${selectGroup({ id: 'f-eff-tier', label: 'Effective tier', value: entity.tier, options: [
+                            { value: 'basic',   label: BIZ_TIER_LABEL.basic },
+                            { value: 'premium', label: BIZ_TIER_LABEL.premium },
+                        ]})}
+                        <div class="field-group">
+                            <div class="field-label">Comp this tier</div>
+                            <label style="display:flex;align-items:center;gap:0.55rem;padding:0.6rem 0;font-size:0.9rem;color:#1a202c;cursor:pointer;">
+                                <input type="checkbox" id="f-comped" ${comped ? 'checked' : ''} style="width:18px;height:18px;accent-color:#1d6df2;">
+                                Pin this tier — ignore what Stripe bills
+                            </label>
+                            <div class="field-hint">On = renewals/upgrades won't change the tier above. Off = the tier follows their Stripe plan.</div>
+                        </div>
+                    </div>
+                    <div class="save-row">
+                        <span class="save-msg" id="save-membership-msg"></span>
+                        <button class="btn-save" id="save-membership" onclick="saveMembership()">Save Membership</button>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    async function loadBilling() {
+        const host = document.getElementById('billing-live');
+        if (!host) return;
+        try {
+            const b = await fetch(`/api/admin/billing/business/${encodeURIComponent(ID)}`, { credentials: 'include' })
+                .then(r => r.ok ? r.json() : null);
+            if (!b) { host.innerHTML = '<div style="color:#c53030;font-size:0.9rem;">Could not load billing.</div>'; return; }
+            const paidTier = b.paid?.tier;
+            const sub = b.subscription;
+            const rows = [
+                ['Paid tier', paidTier ? BIZ_TIER_LABEL[paidTier] || paidTier : '— (no paid plan on file)'],
+                ['Subscription status', b.paid?.status || sub?.status || 'none'],
+            ];
+            if (sub) {
+                if (sub.amount != null) rows.push(['Amount', `$${sub.amount.toFixed(2)} / ${sub.interval || 'period'}`]);
+                if (sub.current_period_end) rows.push(['Renews', new Date(sub.current_period_end).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})]);
+                if (sub.cancel_at_period_end) rows.push(['Cancels at period end', 'Yes']);
+            } else if (!b.configured) {
+                rows.push(['Note', 'Stripe not configured on this server — showing stored tier only.']);
+            } else {
+                rows.push(['Note', 'No active Stripe subscription. This business is either comped, admin-seeded, or hasn\'t checked out.']);
+            }
+            host.innerHTML = `<div class="ph-grid" style="margin:0;">${rows.map(([k,v]) => `
+                <div class="ph-field"><div class="ph-label">${esc(k)}</div><div class="ph-value" style="white-space:normal;">${esc(v)}</div></div>
+            `).join('')}</div>
+            <div style="margin-top:1rem;">${tierPill(paidTier)} <span style="color:#a0aec0;font-size:0.82rem;margin-left:0.5rem;">is what Stripe is billing</span></div>`;
+        } catch (_) {
+            host.innerHTML = '<div style="color:#c53030;font-size:0.9rem;">Could not load billing.</div>';
+        }
+    }
+
+    async function saveMembership() {
+        const tier   = document.getElementById('f-eff-tier').value;
+        const comped = document.getElementById('f-comped').checked;
+        patch({ tier, tier_comped: comped }, 'save-membership');
     }
 
     function renderConnectedTab() {

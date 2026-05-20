@@ -275,6 +275,7 @@ async function fetchOwnerBusiness(userId) {
                 address, city, state, zip, latitude, longitude, hours, price_range,
                 featured_image_url, status, user_id,
                 stripe_customer_id, stripe_subscription_id, subscription_status,
+                tier, paid_tier, tier_comped,
                 created_at, updated_at
          FROM businesses WHERE user_id = $1 LIMIT 1`,
         [userId]

@@ -272,6 +272,17 @@
 
         <!-- Subscription tab ───────────────────────────────────────── -->
         <section class="bd-card" id="tab-subscription" style="display:none;">
+            <!-- Effective membership level — what the listing is SET to
+                 (which an admin may have comped above what's billed). This
+                 is the level that actually drives placement + the badge. -->
+            <div id="membership-level" style="background:linear-gradient(135deg,#1a202c,#2d3748);color:#fff;border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+                <div>
+                    <div style="font-size:0.7rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#a3bffa;margin-bottom:0.3rem;">Your membership level</div>
+                    <div id="membership-level-name" style="font-size:1.35rem;font-weight:800;letter-spacing:-0.4px;">—</div>
+                </div>
+                <div id="membership-level-note" style="font-size:0.82rem;color:rgba(255,255,255,0.7);max-width:280px;text-align:right;"></div>
+            </div>
+
             <div class="sub-status">
                 <span class="dot" id="sub-dot"></span>
                 <span id="sub-label">—</span>
@@ -482,6 +493,15 @@
                 canceled: 'Your listing is hidden. Start a new subscription to re-list.',
                 incomplete: 'Checkout was cancelled. Restart it below.',
             };
+            // Effective membership level (what they're SET to). Comp-aware.
+            const TIER_NAME = { premium: 'Featured Partner', basic: 'Local Spotlight' };
+            const effTier = _biz.tier || 'basic';
+            document.getElementById('membership-level-name').textContent = TIER_NAME[effTier] || (effTier.charAt(0).toUpperCase() + effTier.slice(1));
+            document.getElementById('membership-level-note').textContent =
+                effTier === 'premium'
+                    ? 'Top placement on lake + town pages and a Featured Partner badge.'
+                    : 'Standard placement in the local business directory.';
+
             const state = s || 'unpaid';
             const label = labelMap[state] || state;
             const copy  = copyMap[state]  || '';
