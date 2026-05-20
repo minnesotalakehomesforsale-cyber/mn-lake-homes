@@ -141,7 +141,10 @@ exports.list = async (req, res) => {
             where.push(`status = $${params.length}`);
         } else {
             where.push(`status = 'active'`);
-            where.push(`(user_id IS NULL OR subscription_status = 'active')`);
+            // Live when: admin-seeded (no owner), paying, OR admin-comped.
+            // tier_comped lets us keep a business public without an active
+            // Stripe sub — same escape the agent side honors.
+            where.push(`(user_id IS NULL OR subscription_status = 'active' OR tier_comped)`);
         }
 
         const sql = `
@@ -177,7 +180,7 @@ exports.getOne = async (req, res) => {
         if (!isAdmin(req)) {
             const visible =
                 b.status === 'active' &&
-                (b.user_id == null || b.subscription_status === 'active');
+                (b.user_id == null || b.subscription_status === 'active' || b.tier_comped);
             if (!visible) return res.status(404).json({ error: 'Business not found.' });
         }
         res.json(b);

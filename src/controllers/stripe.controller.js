@@ -451,15 +451,21 @@ exports.handleWebhook = async (req, res) => {
                     break;
                 }
 
+                // Comped agents are intentionally kept live without payment,
+                // so a cancellation must NOT hide them — leave their status
+                // and publish flag exactly as the admin set them. Everyone
+                // else drops to 'pending_review' (hidden, but it surfaces in
+                // the admin "Pending Review" tab for a one-click re-publish,
+                // rather than the orphaned 'unpublished' state).
                 await pool.query(
                     `UPDATE agents
-                        SET profile_status = 'unpublished',
-                            is_published   = false
+                        SET profile_status = CASE WHEN tier_comped THEN profile_status ELSE 'pending_review' END,
+                            is_published   = CASE WHEN tier_comped THEN is_published   ELSE false END
                       WHERE stripe_subscription_id = $1`,
                     [subscriptionId]
                 );
 
-                console.log(`[Stripe Webhook] Agent ${agentRows[0].user_id} unpublished (subscription cancelled)`);
+                console.log(`[Stripe Webhook] Agent ${agentRows[0].user_id} subscription cancelled (comped agents left live)`);
                 break;
             }
 
@@ -528,12 +534,18 @@ exports.handleWebhook = async (req, res) => {
                 const visibleStatuses = ['active', 'trialing', 'past_due'];
                 const shouldPublish = visibleStatuses.includes(sub.status);
 
+                // Comped agents are pinned: never let a Stripe state change
+                // flip their tier or visibility. For everyone else, visible
+                // statuses stay published; a lapse drops to 'pending_review'
+                // (hidden but recoverable from the admin Pending tab).
                 await pool.query(
                     `UPDATE agents
                         SET membership_id  = CASE WHEN tier_comped THEN membership_id ELSE COALESCE($1, membership_id) END,
                             paid_membership_code = COALESCE($4, paid_membership_code),
-                            is_published   = $2,
-                            profile_status = CASE WHEN $2 THEN 'published' ELSE 'unpublished' END
+                            is_published   = CASE WHEN tier_comped THEN is_published ELSE $2 END,
+                            profile_status = CASE WHEN tier_comped THEN profile_status
+                                                  WHEN $2 THEN 'published'
+                                                  ELSE 'pending_review' END
                       WHERE stripe_subscription_id = $3`,
                     [membershipId, shouldPublish, sub.id, newCode]
                 );

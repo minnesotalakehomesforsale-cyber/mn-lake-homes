@@ -449,7 +449,7 @@ app.get('/sitemap.xml', async (req, res) => {
                                       WHERE lt.tag_id = t.id AND l.status = 'published')`),
             pool.query(`SELECT slug, updated_at FROM businesses
                         WHERE status = 'active'
-                          AND (user_id IS NULL OR subscription_status = 'active')`),
+                          AND (user_id IS NULL OR subscription_status = 'active' OR tier_comped)`),
             pool.query(`SELECT slug, updated_at FROM agents
                         WHERE profile_status = 'published' AND is_published = TRUE AND deleted_at IS NULL`),
             pool.query(`SELECT slug, updated_at, published_at FROM blog_posts

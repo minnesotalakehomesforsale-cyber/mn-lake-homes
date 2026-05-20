@@ -218,7 +218,7 @@ exports.listBusinessesForTag = async (req, res) => {
              JOIN businesses b ON b.id = bt.business_id
              WHERE ${byUuid ? 't.id' : 't.slug'} = $1
                AND b.status = 'active'
-               AND (b.user_id IS NULL OR b.subscription_status = 'active')
+               AND (b.user_id IS NULL OR b.subscription_status = 'active' OR b.tier_comped)
                ${typeClause}
              ORDER BY b.name ASC`,
             params

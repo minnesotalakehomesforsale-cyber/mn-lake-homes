@@ -583,7 +583,7 @@ exports.listBusinesses = async (req, res) => {
         }
         if (!adminCaller) {
             where.push(`b.status = 'active'`);
-            where.push(`(b.user_id IS NULL OR b.subscription_status = 'active')`);
+            where.push(`(b.user_id IS NULL OR b.subscription_status = 'active' OR b.tier_comped)`);
         }
 
         const { rows } = await pool.query(
