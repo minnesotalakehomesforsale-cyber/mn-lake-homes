@@ -204,8 +204,11 @@ exports.create = async (req, res) => {
                 lat, lng,
                 b.intro_text || null,
                 b.description || null,
-                b.hero_image_url || null,
-                b.featured_image_url || null,
+                // One image per lake: store the same URL in both columns so the
+                // hero (reads hero_image_url) and cards (read featured_image_url)
+                // always match. See patch() for the rationale.
+                (b.featured_image_url || b.hero_image_url) || null,
+                (b.featured_image_url || b.hero_image_url) || null,
                 b.seo_title || null,
                 b.seo_description || null,
                 status,
@@ -256,8 +259,16 @@ exports.patch = async (req, res) => {
         if ('longitude'          in b) push('longitude',          numOrNull(b.longitude));
         if ('intro_text'         in b) push('intro_text',         b.intro_text || null);
         if ('description'        in b) push('description',        b.description || null);
-        if ('hero_image_url'     in b) push('hero_image_url',     b.hero_image_url || null);
-        if ('featured_image_url' in b) push('featured_image_url', b.featured_image_url || null);
+        // One image per lake, used everywhere. The hero banner reads
+        // hero_image_url and the cards/listings read featured_image_url, so
+        // we keep both columns in lock-step: whichever surface sets the image
+        // (Images grid, lake profile editor, …), it lands in both and shows
+        // across the whole site. Sending either field updates both.
+        if ('featured_image_url' in b || 'hero_image_url' in b) {
+            const img = (b.featured_image_url || b.hero_image_url) || null;
+            push('hero_image_url',     img);
+            push('featured_image_url', img);
+        }
         if ('seo_title'          in b) push('seo_title',          b.seo_title || null);
         if ('seo_description'    in b) push('seo_description',    b.seo_description || null);
         // Editorial blocks rendered into the public lake page (paragraph runs

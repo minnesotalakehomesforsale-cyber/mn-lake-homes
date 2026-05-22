@@ -1377,6 +1377,18 @@ async function ensureTables() {
             ALTER TABLE lakes
                 ADD COLUMN IF NOT EXISTS lifestyle_text TEXT,
                 ADD COLUMN IF NOT EXISTS seasons_text   TEXT;
+            -- One image per lake, used everywhere: the hero reads
+            -- hero_image_url, cards/listings read featured_image_url, and new
+            -- writes keep both in lock-step (see lake.controller). Reconcile
+            -- existing rows so both columns hold the same URL — preferring
+            -- featured_image_url (the canonical card image), falling back to
+            -- hero. Safe to overwrite divergent rows because no admin surface
+            -- ever set the two columns to different images; divergence only
+            -- ever came from seed data.
+            UPDATE lakes
+               SET hero_image_url     = COALESCE(featured_image_url, hero_image_url),
+                   featured_image_url = COALESCE(featured_image_url, hero_image_url)
+             WHERE featured_image_url IS DISTINCT FROM hero_image_url;
 
             CREATE TABLE IF NOT EXISTS agent_lakes (
                 id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1668,7 +1680,7 @@ async function ensureTables() {
                 intro_text         = 'Discover the pinnacle of Minnesota luxury. Unmatched waterfront estates, private yacht clubs, and elite dining — just 30 minutes from the Twin Cities.',
                 description        = COALESCE(description, $1),
                 hero_image_url     = COALESCE(hero_image_url, '/assets/images/mn-winter-birch-chalet.jpg'),
-                featured_image_url = COALESCE(featured_image_url, '/assets/images/mn-aerial-small-town.jpg')
+                featured_image_url = COALESCE(featured_image_url, hero_image_url, '/assets/images/mn-winter-birch-chalet.jpg')
             WHERE slug = 'lake-minnetonka'
               AND (intro_text IS NULL
                    OR intro_text = 'Minnesota''s premier luxury lake — 14,528 acres of waterfront living across Wayzata, Orono, Excelsior, and Minnetonka Beach.')
