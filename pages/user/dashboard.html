@@ -7,11 +7,13 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="../../styles/style.css">
     <style>
-        /* Reserve the scrollbar gutter so switching between a short tab
-           (Overview) and a tall one (Account settings) doesn't toggle the
-           vertical scrollbar — which would shift this centered layout
-           sideways and make the page look like it "flips" between tabs. */
-        html { scrollbar-gutter: stable; }
+        /* Keep the layout identical between tabs. A short tab (Overview) has
+           no vertical scrollbar while a tall one (Account settings) does;
+           toggling that scrollbar changes the usable width and shifts this
+           centered layout sideways. overflow-y:scroll forces the scrollbar
+           lane to always exist (works on every browser); scrollbar-gutter
+           is the modern equivalent. Together the width never changes. */
+        html { overflow-y: scroll; scrollbar-gutter: stable; }
         html, body { margin: 0; padding: 0; background: #f7f9fa; color: #1a202c; }
         body { min-height: 100vh; }
 
