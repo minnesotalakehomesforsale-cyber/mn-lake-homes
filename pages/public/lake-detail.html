@@ -55,6 +55,11 @@
         .lm-hero p.lead { font-size: 1.25rem; color: #4a5568; line-height: 1.6; margin-bottom: 2.5rem; max-width: 520px; }
         .lm-hero-img { height: 500px; border-radius: 20px; overflow: hidden; box-shadow: 0 22px 50px rgba(16,24,40,0.12); }
         .lm-hero-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        /* Neutral placeholder when a lake has no image yet — matches the lake
+           cards' gradient instead of showing a stock photo. */
+        .lm-hero-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #e8f1ff 0%, #c7ddfa 55%, #a8c8f0 100%); }
+        .lm-hero-ph span { font-size: clamp(4rem, 12vw, 9rem); font-weight: 800; color: rgba(29,109,242,0.30); letter-spacing: -2px; line-height: 1; }
         .lm-hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
 
         /* Small top-left back-link, recolored for the light hero. */
@@ -316,7 +321,7 @@
                 </div>
             </div>
             <div class="lm-hero-img">
-                <img src="{{LAKE_HERO_IMAGE}}" alt="{{LAKE_NAME}} waterfront real estate in {{LAKE_STATE}}" width="1200" height="800" fetchpriority="high">
+                {{LAKE_HERO_BLOCK}}
             </div>
         </div>
     </section>

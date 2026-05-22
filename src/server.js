@@ -548,8 +548,16 @@ app.get('/lakes/:slug', async (req, res, next) => {
             const title = lake.seo_title || `${lake.name} Homes for Sale | ${lake.state} Waterfront Real Estate`;
             const desc  = lake.seo_description || lake.intro_text || `${lake.name} real estate — waterfront homes and cabins on ${lake.name}, ${lake.state}.`;
             const canonical = `/lakes/${lake.slug}`;
-            const hero     = lake.hero_image_url     || '/assets/images/mn-winter-birch-chalet.jpg';
+            // Visible hero shows the real photo when set; otherwise a neutral
+            // gradient placeholder (matching the lake cards) rather than a
+            // stock photo. Meta/preload token keeps a default for og:image.
+            const heroReal = lake.hero_image_url || null;
+            const hero     = heroReal || '/assets/images/mn-winter-birch-chalet.jpg';
             const featured = lake.featured_image_url || lake.hero_image_url || '/assets/images/mn-canoe-shore.webp';
+            const lakeInitial   = escapeHtml((lake.name || '?').trim().charAt(0).toUpperCase());
+            const lakeHeroBlock = heroReal
+                ? `<img src="${escapeHtml(heroReal)}" alt="${escapeHtml(lake.name)} waterfront real estate in ${escapeHtml(lake.state)}" width="1200" height="800" fetchpriority="high">`
+                : `<div class="lm-hero-ph"><span>${lakeInitial}</span></div>`;
             const siteBase = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
             const lakeBreadcrumb = JSON.stringify({
                 '@context': 'https://schema.org',
@@ -583,6 +591,7 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 '{{LAKE_CANONICAL_PATH}}':  escapeHtml(canonical),
                 '{{LAKE_ID}}':              escapeHtml(lake.id),
                 '{{LAKE_HERO_IMAGE}}':      escapeHtml(hero),
+                '{{LAKE_HERO_BLOCK}}':      lakeHeroBlock,
                 '{{LAKE_FEATURED_IMAGE}}':  escapeHtml(featured),
                 '{{LAKE_INTRO_TEXT}}':      escapeHtml(lake.intro_text || desc),
                 '{{LAKE_LATITUDE}}':        escapeHtml(lake.latitude ?? ''),
@@ -796,7 +805,17 @@ app.get('/towns/:slug', async (req, res, next) => {
             const title = tag.seo_title       || `${tag.name}, ${tag.state} — Lake Homes, Agents & Local Businesses`;
             const desc  = tag.seo_description || `Browse lake homes for sale, top local agents, and trusted businesses serving ${tag.name}, ${tag.state}.`;
             const canonical = `/towns/${tag.slug}`;
-            const heroImage = tag.hero_image_url || '/assets/images/mn-aerial-small-town.jpg';
+            // Visible hero shows the real photo when one is set; otherwise a
+            // neutral gradient placeholder (matching the town cards) rather
+            // than a stock photo that looks like a real image. The meta /
+            // preload token keeps a sensible default so og:image and social
+            // cards are never empty.
+            const heroImageReal = tag.hero_image_url || null;
+            const heroImage     = heroImageReal || '/assets/images/mn-aerial-small-town.jpg';
+            const townInitial   = escapeHtml((tag.name || '?').trim().charAt(0).toUpperCase());
+            const townHeroBlock = heroImageReal
+                ? `<img src="${escapeHtml(heroImageReal)}" alt="${escapeHtml(tag.name)}, ${escapeHtml(tag.state)}" width="1200" height="800" fetchpriority="high">`
+                : `<div class="tn-hero-ph"><span>${townInitial}</span></div>`;
             const siteBase = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
             const townBreadcrumb = JSON.stringify({
                 '@context': 'https://schema.org',
@@ -847,6 +866,7 @@ app.get('/towns/:slug', async (req, res, next) => {
                 '{{TOWN_LONGITUDE}}':        escapeHtml(tag.longitude ?? ''),
                 '{{TOWN_COUNTY}}':           escapeHtml(tag.county || ''),
                 '{{TOWN_HERO_IMAGE}}':       escapeHtml(heroImage),
+                '{{TOWN_HERO_BLOCK}}':       townHeroBlock,
                 '{{TOWN_HERO_H1_HTML}}':     heroH1Html,
                 '{{TOWN_INTRO_TEXT}}':       escapeHtml(introText),
                 '{{TOWN_DESCRIPTION_JSON}}': descriptionJson,
