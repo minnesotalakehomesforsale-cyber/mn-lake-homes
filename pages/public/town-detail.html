@@ -100,6 +100,10 @@
         .tn-lake-card:hover .tn-lake-thumb img { transform: scale(1.05); }
         .tn-lake-thumb { height: 200px; background: linear-gradient(135deg, #1d6df2 0%, #155bc8 100%); overflow: hidden; position: relative; }
         .tn-lake-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s; }
+        /* No-image placeholder — same gradient + initial as the lake/town hero,
+           so a lake looks identical here and on its own page. */
+        .tn-lake-thumb.is-empty { background: linear-gradient(135deg, #e8f1ff 0%, #c7ddfa 55%, #a8c8f0 100%); display: flex; align-items: center; justify-content: center; }
+        .tn-lake-thumb .ph-letter { font-size: 3.5rem; font-weight: 800; color: rgba(29,109,242,0.30); line-height: 1; }
         .tn-lake-thumb .chip { position: absolute; top: 14px; left: 14px; z-index: 2; background: rgba(255,255,255,0.95); backdrop-filter: blur(4px); color: #1a202c; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 0.3rem 0.65rem; border-radius: 6px; }
         .tn-lake-body { padding: 1.3rem 1.5rem 1.5rem; flex: 1; display: flex; flex-direction: column; }
         .tn-lake-body h3 { font-size: 1.3rem; font-weight: 700; color: #1a202c; margin: 0 0 0.35rem; letter-spacing: -0.3px; }
@@ -552,21 +556,26 @@
         // ── Lakes in this town (primary section) ─────────────────────────
         async function loadLakes() {
             const el = document.getElementById('tn-lakes');
+            const section = document.getElementById('tn-lakes-section');
             try {
                 const res = await fetch(`/api/tags/${encodeURIComponent(TOWN_SLUG)}/lakes`);
                 if (!res.ok) throw new Error();
                 const lakes = await res.json();
-                if (!lakes.length) {
-                    el.innerHTML = `<div class="tn-empty">No lakes connected to ${escHtml(TOWN_NAME)} yet.</div>`;
-                    return;
-                }
+                // No connected lakes → hide the whole section rather than
+                // showing an empty-state card.
+                if (!lakes.length) { if (section) section.style.display = 'none'; return; }
+                if (section) section.style.display = '';
                 el.innerHTML = lakes.map(l => {
-                    const img = l.featured_image_url || l.hero_image_url || '/assets/images/mn-canoe-shore.webp';
+                    const img     = l.featured_image_url || l.hero_image_url || '';
+                    const initial = (l.name || '?').trim().charAt(0).toUpperCase();
+                    const thumbInner = img
+                        ? `<img src="${escHtml(img)}" alt="${escHtml(l.name)}" loading="lazy">`
+                        : `<span class="ph-letter">${escHtml(initial)}</span>`;
                     return `
                         <a class="tn-lake-card" href="/lakes/${encodeURIComponent(l.slug)}">
-                            <div class="tn-lake-thumb">
+                            <div class="tn-lake-thumb${img ? '' : ' is-empty'}">
                                 ${l.region ? `<span class="chip">${escHtml(l.region)}</span>` : ''}
-                                <img src="${escHtml(img)}" alt="${escHtml(l.name)}" loading="lazy">
+                                ${thumbInner}
                             </div>
                             <div class="tn-lake-body">
                                 <h3>${escHtml(l.name)}</h3>
@@ -577,7 +586,7 @@
                         </a>`;
                 }).join('');
             } catch (_) {
-                el.innerHTML = `<div class="tn-empty">Could not load lakes.</div>`;
+                if (section) section.style.display = 'none';
             }
         }
 

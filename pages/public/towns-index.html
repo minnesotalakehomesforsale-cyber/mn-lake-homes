@@ -289,6 +289,13 @@
         .db-pop-card .thumb { position: relative; height: 145px; background: linear-gradient(135deg, #1d6df2 0%, #155bc8 100%); overflow: hidden; }
         .db-pop-card.lake .thumb { background: linear-gradient(135deg, #0d9488 0%, #0b7b70 100%); }
         .db-pop-card .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        /* No-image placeholder — same gradient + initial as the lake/town hero
+           and detail-page cards, so an entity looks identical everywhere. */
+        .db-pop-card .thumb.is-empty, .db-card-thumb.is-empty {
+            background: linear-gradient(135deg, #e8f1ff 0%, #c7ddfa 55%, #a8c8f0 100%) !important;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .ph-letter { font-size: 2.6rem; font-weight: 800; color: rgba(29,109,242,0.30); line-height: 1; }
         .db-pop-card .thumb .chip {
             position: absolute; top: 10px; left: 10px;
             background: rgba(255,255,255,0.96);
@@ -1048,13 +1055,13 @@
             }
             if (item.kind === 'town') {
                 const t = item.data;
-                const thumb = t.hero_image_url || REGION_IMG[t.region] || DEFAULT_TOWN_IMG;
+                const img = t.hero_image_url || '';
                 const loc = [t.state, t.lake_count ? `${t.lake_count} lake${t.lake_count === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ');
                 return `
                     <div class="db-pop-card town">
-                        <div class="thumb">
+                        <div class="thumb${img ? '' : ' is-empty'}">
                             ${t.region ? `<span class="chip">${escHtml(t.region)}</span>` : ''}
-                            <img src="${escHtml(thumb)}" alt="${escHtml(t.name)}" loading="lazy">
+                            ${img ? `<img src="${escHtml(img)}" alt="${escHtml(t.name)}" loading="lazy">` : `<span class="ph-letter">${escHtml((t.name||'?').trim().charAt(0).toUpperCase())}</span>`}
                         </div>
                         <div class="db-pop-body">
                             <h4>${escHtml(t.name)}</h4>
@@ -1065,13 +1072,13 @@
                 `;
             }
             const l = item.data;
-            const thumb = l.featured_image_url || l.hero_image_url || REGION_IMG[l.region] || DEFAULT_LAKE_IMG;
+            const img = l.featured_image_url || l.hero_image_url || '';
             const loc = [l.county ? `${l.county} County` : null, l.state].filter(Boolean).join(' · ');
             return `
                 <div class="db-pop-card lake">
-                    <div class="thumb">
+                    <div class="thumb${img ? '' : ' is-empty'}">
                         ${l.region ? `<span class="chip">${escHtml(l.region)}</span>` : ''}
-                        <img src="${escHtml(thumb)}" alt="${escHtml(l.name)}" loading="lazy">
+                        ${img ? `<img src="${escHtml(img)}" alt="${escHtml(l.name)}" loading="lazy">` : `<span class="ph-letter">${escHtml((l.name||'?').trim().charAt(0).toUpperCase())}</span>`}
                     </div>
                     <div class="db-pop-body">
                         <h4>${escHtml(l.name)}</h4>
@@ -1227,14 +1234,14 @@
                 }
                 if (item.kind === 'town') {
                     const t = item.data;
-                    const thumb = t.hero_image_url || REGION_IMG[t.region] || DEFAULT_TOWN_IMG;
+                    const img = t.hero_image_url || '';
                     const loc = [t.state, t.lake_count ? `${t.lake_count} lake${t.lake_count === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ');
                     return `
                         <a class="db-card town" href="/towns/${encodeURIComponent(t.slug)}" data-key="${escHtml(keyFor(item))}">
-                            <div class="db-card-thumb">
+                            <div class="db-card-thumb${img ? '' : ' is-empty'}">
                                 ${t.region ? `<span class="chip">${escHtml(t.region)}</span>` : ''}
                                 <span class="type"><span class="dot"></span>Town</span>
-                                <img src="${escHtml(thumb)}" alt="${escHtml(t.name)}, ${escHtml(t.state || '')}" loading="lazy">
+                                ${img ? `<img src="${escHtml(img)}" alt="${escHtml(t.name)}, ${escHtml(t.state || '')}" loading="lazy">` : `<span class="ph-letter">${escHtml((t.name||'?').trim().charAt(0).toUpperCase())}</span>`}
                             </div>
                             <div class="db-card-body">
                                 <h3>${escHtml(t.name)}${adminStatusBadge(item)}</h3>
@@ -1245,14 +1252,14 @@
                         </a>`;
                 }
                 const l = item.data;
-                const thumb = l.featured_image_url || l.hero_image_url || REGION_IMG[l.region] || DEFAULT_LAKE_IMG;
+                const img = l.featured_image_url || l.hero_image_url || '';
                 const loc = [l.county ? `${l.county} County` : null, l.state].filter(Boolean).join(' · ');
                 return `
                     <a class="db-card lake" href="/lakes/${encodeURIComponent(l.slug)}" data-key="${escHtml(keyFor(item))}">
-                        <div class="db-card-thumb">
+                        <div class="db-card-thumb${img ? '' : ' is-empty'}">
                             ${l.region ? `<span class="chip">${escHtml(l.region)}</span>` : ''}
                             <span class="type"><span class="dot"></span>Lake</span>
-                            <img src="${escHtml(thumb)}" alt="${escHtml(l.name)}, ${escHtml(l.state || '')}" loading="lazy">
+                            ${img ? `<img src="${escHtml(img)}" alt="${escHtml(l.name)}, ${escHtml(l.state || '')}" loading="lazy">` : `<span class="ph-letter">${escHtml((l.name||'?').trim().charAt(0).toUpperCase())}</span>`}
                         </div>
                         <div class="db-card-body">
                             <h3>${escHtml(l.name)}${adminStatusBadge(item)}</h3>
