@@ -7,8 +7,17 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="../../styles/style.css">
     <style>
+        /* Reserve the scrollbar gutter so switching between a short tab
+           (Overview) and a tall one (Account settings) doesn't toggle the
+           vertical scrollbar — which would shift this centered layout
+           sideways and make the page look like it "flips" between tabs. */
+        html { scrollbar-gutter: stable; }
         html, body { margin: 0; padding: 0; background: #f7f9fa; color: #1a202c; }
         body { min-height: 100vh; }
+
+        /* Keep the content area a consistent height across tabs so the
+           frame stays put and only the contents change. */
+        .ud-panel.active { display: block; min-height: 60vh; }
 
         .ud-wrap { max-width: 920px; margin: 7.5rem auto 5rem; padding: 0 1.5rem; }
         .ud-header { margin-bottom: 2.5rem; }

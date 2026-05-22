@@ -12,7 +12,15 @@
 
     <style>
         :root { --brand: #d97706; --brand-dark: #b45309; --ink: #1a202c; --ink-soft: #4a5568; --muted: #718096; --line: #e5eaf0; }
+        /* Reserve the scrollbar gutter so switching between tabs of different
+           heights doesn't toggle the vertical scrollbar — which would shift
+           this centered layout sideways and make tabs look like they "flip". */
+        html { scrollbar-gutter: stable; }
         body { background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: var(--ink); }
+
+        /* Keep each tab's content area a consistent height so the frame
+           stays put and only the contents change between tabs. */
+        #tab-profile, #tab-towns, #tab-subscription, #tab-account { min-height: 60vh; }
 
         /* Desktop top padding has to clear the fixed global-header (~76px).
            Mobile already does this at 5.5rem in the ≤900px block below;
