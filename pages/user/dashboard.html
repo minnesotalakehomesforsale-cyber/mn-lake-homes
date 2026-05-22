@@ -7,36 +7,65 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="../../styles/style.css">
     <style>
-        /* Keep the layout identical between tabs. A short tab (Overview) has
-           no vertical scrollbar while a tall one (Account settings) does;
-           toggling that scrollbar changes the usable width and shifts this
-           centered layout sideways. overflow-y:scroll forces the scrollbar
-           lane to always exist (works on every browser); scrollbar-gutter
-           is the modern equivalent. Together the width never changes. */
         html { overflow-y: scroll; scrollbar-gutter: stable; }
         html, body { margin: 0; padding: 0; background: #f7f9fa; color: #1a202c; }
         body { min-height: 100vh; }
+        :root { --header-h: 84px; }
 
-        /* Keep the content area a consistent height across tabs so the
-           frame stays put and only the contents change. */
-        .ud-panel.active { display: block; min-height: 60vh; }
+        /* ── App-shell: fixed left rail + content pane (like the admin backend).
+              The rail stays put; only the right pane changes. The layout is
+              anchored (grid columns), so it never moves or resizes between
+              tabs OR between window sizes. ── */
+        .ud-shell {
+            display: grid;
+            grid-template-columns: 260px minmax(0, 1fr);
+            gap: 0;
+            align-items: start;
+            padding-top: var(--header-h);   /* clear the fixed global header */
+        }
+        .ud-side {
+            position: sticky;
+            top: var(--header-h);
+            height: calc(100vh - var(--header-h));
+            overflow-y: auto;
+            background: #fff;
+            border-right: 1px solid #edf2f7;
+            padding: 2rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+        .ud-side-id { padding: 0 0.5rem 1.25rem; margin-bottom: 0.75rem; border-bottom: 1px solid #edf2f7; }
+        .ud-side-name { font-size: 1.1rem; font-weight: 800; color: #1a202c; margin-top: 0.3rem; word-break: break-word; }
+        .ud-side-signout {
+            margin-top: auto; display: block; text-decoration: none;
+            padding: 0.7rem 0.85rem; border-radius: 9px;
+            font-size: 0.92rem; font-weight: 600; color: #e53e3e;
+            transition: background 0.15s;
+        }
+        .ud-side-signout:hover { background: #fef2f2; }
 
-        .ud-wrap { max-width: 920px; margin: 7.5rem auto 5rem; padding: 0 1.5rem; }
-        .ud-header { margin-bottom: 2.5rem; }
+        .ud-main {
+            min-height: calc(100vh - var(--header-h));
+            padding: 2.75rem 3rem 4rem;
+            box-sizing: border-box;
+        }
+        .ud-header { margin-bottom: 2rem; }
         .ud-eyebrow { font-size: 0.78rem; font-weight: 700; letter-spacing: 1.2px; color: #1d6df2; text-transform: uppercase; margin-bottom: 0.6rem; }
-        .ud-title { font-size: 2.4rem; font-weight: 800; letter-spacing: -1px; color: #1a202c; margin: 0 0 0.45rem; }
+        .ud-title { font-size: 2.1rem; font-weight: 800; letter-spacing: -1px; color: #1a202c; margin: 0 0 0.45rem; }
         .ud-subtitle { color: #4a5568; font-size: 1.05rem; margin: 0; }
 
-        .ud-tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid #e2e8f0; margin-bottom: 2.5rem; }
+        /* Tabs are now vertical nav items in the rail. */
         .ud-tab {
-            background: none; border: none; padding: 0.85rem 1.1rem;
-            font-size: 0.92rem; font-weight: 600; color: #4a5568;
-            cursor: pointer; font-family: inherit;
-            border-bottom: 2px solid transparent; margin-bottom: -1px;
-            transition: color 0.15s, border-color 0.15s;
+            display: flex; align-items: center; gap: 0.6rem;
+            width: 100%; text-align: left;
+            background: none; border: 0; border-radius: 9px;
+            padding: 0.7rem 0.85rem; font-family: inherit;
+            font-size: 0.95rem; font-weight: 600; color: #4a5568;
+            cursor: pointer; transition: all 0.15s;
         }
-        .ud-tab:hover { color: #1a202c; }
-        .ud-tab.active { color: #1d6df2; border-bottom-color: #1d6df2; }
+        .ud-tab:hover { background: #f7f9fa; color: #1a202c; }
+        .ud-tab.active { background: #ebf4ff; color: #2b6cb0; font-weight: 700; }
 
         .ud-panel { display: none; }
         .ud-panel.active { display: block; }
@@ -134,9 +163,29 @@
         .ud-lead-detail { font-size: 0.92rem; color: #1a202c; font-weight: 600; margin: 0 0 0.15rem; }
         .ud-lead-note { font-size: 0.86rem; color: #718096; line-height: 1.5; margin: 0.25rem 0 0; white-space: pre-line; }
 
+        /* ── Tablet ≤ 1100px: narrow the rail a touch ── */
+        @media (max-width: 1100px) {
+            .ud-shell { grid-template-columns: 220px minmax(0, 1fr); }
+            .ud-main { padding: 2.25rem 2rem 3.5rem; }
+        }
+
+        /* ── Mobile ≤ 900px: rail becomes a sticky horizontal tab strip ── */
+        @media (max-width: 900px) {
+            .ud-shell { grid-template-columns: 1fr; }
+            .ud-side {
+                position: sticky; top: var(--header-h); height: auto; z-index: 20;
+                flex-direction: row; align-items: center; gap: 0.4rem;
+                overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
+                border-right: 0; border-bottom: 1px solid #edf2f7; padding: 0.7rem 1rem;
+            }
+            .ud-side-id { display: none; }
+            .ud-side-signout { margin-top: 0; margin-left: auto; flex-shrink: 0; padding: 0.55rem 0.9rem; }
+            .ud-tab { width: auto; flex-shrink: 0; white-space: nowrap; padding: 0.55rem 0.9rem; }
+            .ud-main { padding: 1.75rem 1.25rem 3rem; min-height: 0; }
+        }
+
         @media (max-width: 600px) {
-            .ud-wrap { margin-top: 5rem; padding: 0 1rem; }
-            .ud-title { font-size: 1.75rem; }
+            .ud-title { font-size: 1.6rem; }
             .ud-row { grid-template-columns: 1fr; }
             .ud-card { padding: 1.5rem; }
             .ud-lead-date { margin-left: 0; width: 100%; }
@@ -146,16 +195,25 @@
 <body>
     <global-header></global-header>
 
-    <main class="ud-wrap">
-        <div class="ud-header">
-            <div class="ud-eyebrow">Your account</div>
-            <h1 class="ud-title" id="ud-greeting">Welcome back.</h1>
-            <p class="ud-subtitle">Manage your profile and keep tabs on what's coming to MN Lake Homes.</p>
-        </div>
-
-        <div class="ud-tabs" role="tablist">
+    <div class="ud-shell">
+        <!-- Left rail — fixed nav, stays put while the right pane swaps -->
+        <aside class="ud-side">
+            <div class="ud-side-id">
+                <div class="ud-eyebrow">Your account</div>
+                <div class="ud-side-name" id="ud-sidename">Your account</div>
+            </div>
             <button class="ud-tab active" data-panel="home" role="tab">Overview</button>
             <button class="ud-tab"        data-panel="account" role="tab">Account settings</button>
+            <a href="#" class="ud-side-signout"
+               onclick="event.preventDefault(); fetch('/api/auth/logout',{method:'POST'}).finally(()=>{ window.location.href='/index.html'; });">
+               Sign out
+            </a>
+        </aside>
+
+        <main class="ud-main">
+        <div class="ud-header">
+            <h1 class="ud-title" id="ud-greeting">Welcome back.</h1>
+            <p class="ud-subtitle">Manage your profile and keep tabs on what's coming to MN Lake Homes.</p>
         </div>
 
         <!-- Overview -->
@@ -230,7 +288,8 @@
                 </form>
             </div>
         </section>
-    </main>
+        </main>
+    </div>
 
     <global-footer></global-footer>
 
@@ -244,6 +303,8 @@
                 const u = await r.json();
                 const first = (u.display_name || u.email || '').split(' ')[0];
                 if (first) document.getElementById('ud-greeting').textContent = `Welcome back, ${first}.`;
+                const sideName = document.getElementById('ud-sidename');
+                if (sideName) sideName.textContent = u.display_name || first || 'Your account';
 
                 // Prefill profile form from DB (fetch extended profile)
                 const me = await fetch('/api/auth/me').then(res => res.ok ? res.json() : null).catch(() => null);
