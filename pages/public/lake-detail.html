@@ -376,9 +376,9 @@
         </div>
     </section>
 
-    <!-- Featured Businesses on this lake. Always rendered — empty state
-         shown when no partners are tagged yet. -->
-    <section id="lake-nearby-biz-section" class="lm-expert">
+    <!-- Featured Businesses on this lake. Hidden by default; the loader
+         reveals it only when at least one business is tagged to this lake. -->
+    <section id="lake-nearby-biz-section" class="lm-expert" style="display:none;">
         <div class="lm-expert-inner">
             <h2 id="lake-nearby-biz-heading">Featured {{LAKE_NAME}} Businesses</h2>
             <p class="lead" id="lake-nearby-biz-lead">Resorts, marinas, dock builders, and lake-area pros our community relies on.</p>
@@ -676,34 +676,25 @@
             photographer: 'Photographer', other: 'Local Business',
         };
 
-        // Featured Businesses block. Section is always visible; if no
-        // partners are tagged yet we show an empty-state card with a
-        // "list your business" CTA so the section still feels intentional.
+        // Featured Businesses block. No tagged partners → hide the whole
+        // section rather than showing a blank empty-state card. It reappears
+        // as soon as a business is added for this lake.
         async function renderTaggedBusinesses({ endpoint, anchorName, sectionEl, headingEl, leadEl, gridEl, ctaEl }) {
             injectBizStyles();
-            const emptyEl = document.getElementById('lake-nearby-biz-empty');
             try {
                 const r = await fetch(endpoint);
                 if (!r.ok) throw new Error();
                 const all = await r.json();
 
+                if (all.length === 0) { if (sectionEl) sectionEl.style.display = 'none'; return; }
+
+                if (sectionEl) sectionEl.style.display = '';
                 if (headingEl) headingEl.textContent = `Featured ${anchorName} Businesses`;
                 if (leadEl)    leadEl.textContent    = 'Resorts, marinas, dock builders, and lake-area pros our community relies on.';
-
-                if (all.length === 0) {
-                    gridEl.innerHTML = '';
-                    if (emptyEl) emptyEl.style.display = 'block';
-                    if (ctaEl)   ctaEl.innerHTML = '';
-                    return;
-                }
-                if (emptyEl) emptyEl.style.display = 'none';
                 gridEl.innerHTML = all.slice(0, 6).map(renderBizCard).join('');
                 if (ctaEl) ctaEl.innerHTML = '<a href="/towns?view=biz" class="nb-cta">View all businesses →</a>';
             } catch (_) {
-                // API failure — degrade to the empty state rather than hiding.
-                gridEl.innerHTML = '';
-                if (emptyEl) emptyEl.style.display = 'block';
-                if (ctaEl)   ctaEl.innerHTML = '';
+                if (sectionEl) sectionEl.style.display = 'none';
             }
         }
 

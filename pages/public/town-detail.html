@@ -369,9 +369,9 @@
         </div>
     </section>
 
-    <!-- Featured Businesses near this town — always rendered with empty
-         state when no partners tagged yet. -->
-    <section class="tn-section centered" id="tn-nearby-biz-section">
+    <!-- Featured Businesses near this town. Hidden by default; the loader
+         reveals it only when at least one business is tagged to this town. -->
+    <section class="tn-section centered" id="tn-nearby-biz-section" style="display:none;">
         <div class="inner">
             <h2 id="tn-nearby-biz-heading">Featured {{TOWN_NAME}} Businesses</h2>
             <p class="lead" id="tn-nearby-biz-lead">Resorts, marinas, dock builders, and lake-area pros our community relies on.</p>
@@ -683,34 +683,26 @@
             photographer: 'Photographer', other: 'Local Business',
         };
 
-        // Hard geo rule: only businesses tagged to this lake/town via
-        // Featured Businesses — section is always visible; if no partners
-        // are tagged we show an empty-state card with a "list your business"
-        // CTA so the section feels intentional rather than missing.
+        // Hard geo rule: only businesses tagged to this lake/town show.
+        // No tagged partners → hide the whole section rather than showing a
+        // blank empty-state card. The section reappears as soon as a business
+        // is added for this town.
         async function renderTaggedBusinesses({ endpoint, anchorName, sectionEl, headingEl, leadEl, gridEl, ctaEl }) {
             injectBizStyles();
-            const emptyEl = document.getElementById('tn-nearby-biz-empty');
             try {
                 const r = await fetch(endpoint);
                 if (!r.ok) throw new Error();
                 const all = await r.json();
 
+                if (all.length === 0) { if (sectionEl) sectionEl.style.display = 'none'; return; }
+
+                if (sectionEl) sectionEl.style.display = '';
                 if (headingEl) headingEl.textContent = `Featured ${anchorName} Businesses`;
                 if (leadEl)    leadEl.textContent    = 'Resorts, marinas, dock builders, and lake-area pros our community relies on.';
-
-                if (all.length === 0) {
-                    gridEl.innerHTML = '';
-                    if (emptyEl) emptyEl.style.display = 'block';
-                    if (ctaEl)   ctaEl.innerHTML = '';
-                    return;
-                }
-                if (emptyEl) emptyEl.style.display = 'none';
                 gridEl.innerHTML = all.slice(0, 6).map(renderBizCard).join('');
                 if (ctaEl) ctaEl.innerHTML = '<a href="/towns?view=biz" class="nb-cta">View all businesses →</a>';
             } catch (_) {
-                gridEl.innerHTML = '';
-                if (emptyEl) emptyEl.style.display = 'block';
-                if (ctaEl)   ctaEl.innerHTML = '';
+                if (sectionEl) sectionEl.style.display = 'none';
             }
         }
 
