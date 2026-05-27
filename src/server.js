@@ -124,17 +124,32 @@ app.get('/api/site-images', async (req, res) => {
 });
 
 // ─── /api/config/public ─────────────────────────────────────────────────────
-// Returns the public tracking IDs the frontend needs to install GA4 +
-// HubSpot tracking and to render the Search Console verification meta tag.
-// All values are env-driven so they can be rotated without a code change;
-// missing values just disable that particular pixel (the page still works).
-app.get('/api/config/public', (req, res) => {
+// Single source of truth for public, safe-to-expose env values + tunables
+// the frontend needs (GA4/HubSpot tracking pixels, Search Console meta tag,
+// the Google Places autocomplete key, signup tunables). Missing env values
+// just disable that particular feature — the page still loads. Merged from
+// what used to be two handlers; Express runs the first match, so a duplicate
+// further down silently shadowed the Places key and broke address search.
+app.get('/api/config/public', async (req, res) => {
     res.set('Cache-Control', 'public, max-age=300');
+
+    let signupMaxServiceAreas = 10;
+    try {
+        const pool = require('./database/pool');
+        const { rows } = await pool.query(
+            `SELECT value FROM app_config WHERE key = 'signup_max_service_areas'`
+        );
+        const n = Number(rows[0]?.value);
+        if (Number.isFinite(n) && n > 0) signupMaxServiceAreas = Math.floor(n);
+    } catch (_) { /* degrade to default */ }
+
     res.json({
-        ga4_id:             process.env.GA4_MEASUREMENT_ID || null,
-        hubspot_portal_id:  process.env.HUBSPOT_PORTAL_ID  || null,
-        gsc_verification:   process.env.GSC_VERIFICATION    || null,
-        environment:        process.env.NODE_ENV            || 'local',
+        ga4_id:               process.env.GA4_MEASUREMENT_ID    || null,
+        hubspot_portal_id:    process.env.HUBSPOT_PORTAL_ID     || null,
+        gsc_verification:     process.env.GSC_VERIFICATION      || null,
+        environment:          process.env.NODE_ENV              || 'local',
+        googlePlacesKey:      process.env.GOOGLE_PLACES_API_KEY || '',
+        signupMaxServiceAreas,
     });
 });
 
@@ -263,27 +278,9 @@ app.use('/api', (err, req, res, next) => {
     });
 });
 
-// ==========================================
-// PUBLIC CONFIG (safe-to-expose env values for the frontend)
-// ==========================================
-app.get('/api/config/public', async (req, res) => {
-    // Pull a few admin-tunable knobs from app_config. Safe defaults if
-    // the table doesn't exist yet (first boot on a stale DB).
-    let signupMaxServiceAreas = 10;
-    try {
-        const pool = require('./database/pool');
-        const { rows } = await pool.query(
-            `SELECT value FROM app_config WHERE key = 'signup_max_service_areas'`
-        );
-        const n = Number(rows[0]?.value);
-        if (Number.isFinite(n) && n > 0) signupMaxServiceAreas = Math.floor(n);
-    } catch (_) { /* degrade to default */ }
-
-    res.json({
-        googlePlacesKey: process.env.GOOGLE_PLACES_API_KEY || '',
-        signupMaxServiceAreas,
-    });
-});
+// (Removed duplicate /api/config/public handler — merged into the one
+//  above so the frontend actually receives googlePlacesKey + the signup
+//  tunables alongside the tracking IDs.)
 
 // ==========================================
 // STATIC FRONTEND DELIVERY
