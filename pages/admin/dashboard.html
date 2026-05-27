@@ -700,8 +700,14 @@
                 const top  = (rect.top  - wrapRect.top)  + py * (rect.height / H) - 14;
                 tip.style.left = left + 'px';
                 tip.style.top  = top  + 'px';
-                const dateObj = new Date(d.day);
-                tipDate.textContent  = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                // Use noon-of-day so toLocaleDateString never shifts the day
+                // backward in negative UTC offsets. Tag the rightmost point
+                // as "today" so the partial-day hover reads as intentional.
+                const dateObj = new Date(d.day + 'T12:00:00');
+                const todayKey = (() => { const x = new Date(); return x.getFullYear() + '-' + String(x.getMonth()+1).padStart(2,'0') + '-' + String(x.getDate()).padStart(2,'0'); })();
+                const isToday  = String(d.day).slice(0, 10) === todayKey;
+                const label    = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                tipDate.innerHTML    = label + (isToday ? ' <span style="display:inline-block;margin-left:0.4rem;padding:0.05rem 0.35rem;background:rgba(29,109,242,0.25);color:#93c5fd;border-radius:4px;font-size:0.62rem;font-weight:800;letter-spacing:0.6px;">TODAY · SO FAR</span>' : '');
                 tipValue.textContent = (d.views || 0).toLocaleString('en-US');
                 tipVis.textContent   = (d.visitors || 0).toLocaleString('en-US');
                 tip.classList.add('show');

@@ -35,6 +35,74 @@
         .m-chart { width: 100%; height: 220px; display: block; }
         .m-chart .axis-label { font-size: 10px; fill: #a0aec0; }
 
+        /* ── Interactive traffic chart (matches admin dashboard) ── */
+        .traffic-wrap { position: relative; }
+        .traffic-svg { width: 100%; height: 280px; display: block; }
+        .traffic-svg .axis  { fill: #a0aec0; font-size: 11px; font-weight: 500; }
+        .traffic-svg .grid  { stroke: #edf2f7; stroke-width: 1; shape-rendering: crispEdges; }
+        .traffic-svg .area  { fill: url(#mx-grad); }
+        .traffic-svg .line  { stroke: #1d6df2; stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .traffic-svg .line-v { stroke: #94a3b8; stroke-width: 1.6; fill: none; stroke-dasharray: 4 3; stroke-linecap: round; stroke-linejoin: round; }
+        .traffic-svg .dot   { fill: #fff; stroke: #1d6df2; stroke-width: 2; }
+        .traffic-svg .guide { stroke: rgba(29,109,242,0.35); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; transition: opacity 0.12s; }
+        .traffic-svg .hover-dot { fill: #1d6df2; stroke: #fff; stroke-width: 3; opacity: 0; transition: opacity 0.12s; }
+        .traffic-svg.is-hovering .guide,
+        .traffic-svg.is-hovering .hover-dot { opacity: 1; }
+        .traffic-svg .hit-area { fill: transparent; cursor: crosshair; }
+
+        .chart-tip {
+            position: absolute; pointer-events: none; transform: translate(-50%, -100%);
+            background: #1a202c; color: #fff; padding: 0.6rem 0.85rem; border-radius: 10px;
+            font-size: 0.85rem; box-shadow: 0 12px 28px rgba(0,0,0,0.22);
+            white-space: nowrap; opacity: 0; transition: opacity 0.12s; z-index: 5;
+        }
+        .chart-tip::after {
+            content: ''; position: absolute; left: 50%; bottom: -5px;
+            width: 10px; height: 10px; background: #1a202c; transform: translateX(-50%) rotate(45deg);
+        }
+        .chart-tip.show { opacity: 1; }
+        .chart-tip .tip-date  { display: block; font-size: 0.7rem; font-weight: 600; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 0.15rem; }
+        .chart-tip .tip-today { display: inline-block; margin-left: 0.4rem; padding: 0.05rem 0.35rem; background: rgba(29,109,242,0.25); color: #93c5fd; border-radius: 4px; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.6px; }
+        .chart-tip .tip-row   { display: flex; align-items: center; gap: 0.5rem; }
+        .chart-tip .tip-dot   { width: 8px; height: 8px; border-radius: 50%; background: #1d6df2; }
+        .chart-tip .tip-dot.v { background: #94a3b8; }
+        .chart-tip .tip-value { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.3px; }
+        .chart-tip .tip-unit  { font-size: 0.72rem; font-weight: 500; color: #a0aec0; margin-left: 0.15rem; }
+
+        /* Period toggle + chart legend */
+        .m-period { display: inline-flex; gap: 0.25rem; background: #f1f5f9; padding: 0.25rem; border-radius: 999px; }
+        .m-period button {
+            border: 0; background: transparent; color: #4a5568; cursor: pointer;
+            font: inherit; font-size: 0.8rem; font-weight: 700;
+            padding: 0.35rem 0.85rem; border-radius: 999px; transition: all 0.15s;
+        }
+        .m-period button:hover { color: #1a202c; }
+        .m-period button.active { background: #fff; color: #1d6df2; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .chart-legend { display: inline-flex; gap: 1rem; font-size: 0.78rem; color: #4a5568; margin-left: auto; }
+        .chart-legend span { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 600; }
+        .chart-legend span::before { content: ''; width: 12px; height: 3px; border-radius: 2px; background: #1d6df2; }
+        .chart-legend span.v::before { background: #94a3b8; }
+
+        /* KPI cards with sparkline */
+        .m-kpi { position: relative; overflow: hidden; }
+        .m-kpi .delta { font-size: 0.75rem; font-weight: 700; margin-top: 0.25rem; display: inline-flex; align-items: center; gap: 0.25rem; }
+        .m-kpi .delta.up   { color: #2f855a; }
+        .m-kpi .delta.down { color: #c53030; }
+        .m-kpi .delta.flat { color: #a0aec0; }
+        .m-spark { position: absolute; right: 0.85rem; bottom: 0.85rem; width: 96px; height: 32px; opacity: 0.55; pointer-events: none; }
+        .m-spark path.area { fill: rgba(29,109,242,0.15); }
+        .m-spark path.line { stroke: #1d6df2; stroke-width: 1.5; fill: none; }
+
+        /* Page-sections breakdown */
+        .m-sections-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+        @media (max-width: 900px) { .m-sections-row { grid-template-columns: 1fr; } }
+        .sec-list { display: flex; flex-direction: column; gap: 0.55rem; }
+        .sec-row { display: grid; grid-template-columns: 110px 1fr auto; gap: 0.75rem; align-items: center; font-size: 0.88rem; }
+        .sec-row .lbl { font-weight: 700; color: #1a202c; }
+        .sec-row .bar { height: 8px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
+        .sec-row .bar > span { display: block; height: 100%; background: linear-gradient(90deg, #1d6df2 0%, #4f46e5 100%); border-radius: 999px; }
+        .sec-row .val { font-weight: 800; color: #1a202c; font-variant-numeric: tabular-nums; min-width: 48px; text-align: right; }
+
         /* List-style table for top pages / referrers */
         .m-list { display: table; width: 100%; }
         .m-list-row { display: table-row; }
@@ -134,13 +202,48 @@
                     <div class="empty" style="grid-column:1/-1;">Loading…</div>
                 </div>
 
-                <div class="m-row">
-                    <div class="m-card">
-                        <h2>Daily traffic · last 30 days</h2>
-                        <svg id="m-chart" class="m-chart" viewBox="0 0 600 220" preserveAspectRatio="none"></svg>
-                        <div id="m-chart-empty" class="empty" style="display:none;">No pageviews recorded yet. Hits will start showing up here as soon as the tracker fires on real visits.</div>
+                <div class="m-card" style="margin-bottom:1.25rem;">
+                    <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1.1rem;">
+                        <h2 id="m-chart-title" style="margin:0;">Daily traffic · last 30 days</h2>
+                        <div class="m-period" id="m-period" role="tablist">
+                            <button class="active" data-days="30">30d</button>
+                            <button data-days="7">7d</button>
+                        </div>
+                        <div class="chart-legend">
+                            <span>Pageviews</span>
+                            <span class="v">Unique visitors</span>
+                        </div>
                     </div>
+                    <div class="traffic-wrap" id="m-traffic-wrap">
+                        <svg id="m-chart" class="traffic-svg" viewBox="0 0 600 280" preserveAspectRatio="xMidYMid meet">
+                            <defs>
+                                <linearGradient id="mx-grad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%"   stop-color="#1d6df2" stop-opacity="0.28"/>
+                                    <stop offset="100%" stop-color="#1d6df2" stop-opacity="0"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <div class="chart-tip" id="m-tip">
+                            <span class="tip-date" id="m-tip-date">—</span>
+                            <span class="tip-row">
+                                <span class="tip-dot"></span>
+                                <span class="tip-value" id="m-tip-views">0</span>
+                                <span class="tip-unit">views</span>
+                                <span style="color:#a0aec0;margin:0 0.2rem;">·</span>
+                                <span class="tip-dot v"></span>
+                                <span class="tip-value" id="m-tip-visitors" style="color:#cbd5e0;">0</span>
+                                <span class="tip-unit">unique</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div id="m-chart-empty" class="empty" style="display:none;">No pageviews recorded yet. Hits will start showing up here as soon as the tracker fires on real visits.</div>
+                </div>
 
+                <div class="m-sections-row">
+                    <div class="m-card">
+                        <h2>Pageviews by section · last 30 days</h2>
+                        <div id="m-sections" class="sec-list"></div>
+                    </div>
                     <div class="m-card">
                         <h2>Top referrers · last 30 days</h2>
                         <div id="m-refs" class="m-list"></div>
@@ -217,86 +320,285 @@
     </div>
 
     <script>
+        // ── Module state ─────────────────────────────────────────────────
+        // The /api/analytics/summary endpoint returns the last 30 days of
+        // daily counts. We fill in any silent days client-side, then either
+        // chart the full 30 or slice to the last 7 depending on the toggle.
+        let _summary = null;     // raw API payload
+        let _daily30 = [];       // [{day:'YYYY-MM-DD', views, visitors}] last 30 days, padded
+        let _period  = 30;       // 7 or 30
+
+        // Today's date (local) as 'YYYY-MM-DD' for tagging the rightmost
+        // point as "today" in the tooltip.
+        function todayKey() {
+            const d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+        const TODAY = todayKey();
+
         async function load() {
             try {
                 const res = await fetch('/api/analytics/summary', { credentials: 'include' });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const d = await res.json();
-                renderKpis(d);
-                renderChart(d.daily);
-                renderList('m-pages', d.top_pages, r => ({ label: r.path, count: r.views }));
-                renderList('m-refs',  d.top_referrers, r => ({ label: r.host, count: r.views }));
+                _summary = await res.json();
+                _daily30 = padDays(_summary.daily || [], 30);
+
+                renderKpis(_summary, _daily30);
+                drawTrafficChart(slicePeriod(_daily30, _period));
+                renderList('m-pages', _summary.top_pages, r => ({ label: r.path, count: r.views }));
+                renderList('m-refs',  _summary.top_referrers, r => ({ label: r.host, count: r.views }));
+                renderSections(_summary.top_pages || []);
             } catch (err) {
                 document.getElementById('m-kpis').innerHTML =
                     `<div class="empty" style="grid-column:1/-1;color:#c53030;">Could not load metrics: ${esc(err.message || 'unknown error')}</div>`;
             }
         }
 
-        function renderKpis(d) {
-            const rows = [
-                { label: 'Pageviews · 7d',    big: d.views_7d.views,     sub: `${d.views_7d.visitors} unique visitors` },
-                { label: 'Pageviews · 30d',   big: d.views_30d.views,    sub: `${d.views_30d.visitors} unique visitors` },
-                { label: 'Leads · 7d / 30d',  big: `${d.leads.c7} / ${d.leads.c30}` },
-                { label: 'Inquiries · 7d / 30d', big: `${d.inquiries.c7} / ${d.inquiries.c30}` },
-                { label: 'New businesses · 7d / 30d', big: `${d.new_businesses.c7} / ${d.new_businesses.c30}` },
-                { label: 'New agents · 7d / 30d', big: `${d.new_agents.c7} / ${d.new_agents.c30}` },
+        // Fill missing days with zeros so the chart never visually skips.
+        function padDays(daily, n) {
+            const map = {};
+            daily.forEach(d => {
+                const key = String(d.day).slice(0, 10);
+                map[key] = { views: d.views || 0, visitors: d.visitors || 0 };
+            });
+            const out = [];
+            for (let i = n - 1; i >= 0; i--) {
+                const dt = new Date(); dt.setDate(dt.getDate() - i);
+                const key = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+                const v = map[key] || { views: 0, visitors: 0 };
+                out.push({ day: key, views: v.views, visitors: v.visitors });
+            }
+            return out;
+        }
+
+        function slicePeriod(days, n) {
+            return n >= days.length ? days : days.slice(days.length - n);
+        }
+
+        function sumViews(days)    { return days.reduce((s, d) => s + (d.views    || 0), 0); }
+        function sumVisitors(days) { return days.reduce((s, d) => s + (d.visitors || 0), 0); }
+
+        // KPI cards with a tiny sparkline + a previous-period delta computed
+        // from the daily series we already have (so no extra backend call).
+        function renderKpis(d, days30) {
+            const last7  = slicePeriod(days30, 7);
+            const last30 = days30;
+            // For deltas: compare each period vs the matching window before it.
+            // Last 7d → vs the 7d before that (days 8–14 ago). Last 30d has no
+            // prior window in this payload, so we omit the delta there.
+            const prev7  = days30.slice(Math.max(0, days30.length - 14), Math.max(0, days30.length - 7));
+            const views7 = sumViews(last7),  views7p = sumViews(prev7);
+            const views30 = d.views_30d.views;
+            const visitors30 = d.views_30d.visitors;
+
+            const sparkline = (days) => {
+                if (!days.length) return '';
+                const W = 96, H = 32, pad = 1;
+                const max = Math.max(1, ...days.map(x => x.views));
+                const step = (W - pad * 2) / Math.max(1, days.length - 1);
+                const pts = days.map((x, i) => [
+                    pad + i * step,
+                    H - pad - (x.views / max) * (H - pad * 2),
+                ]);
+                const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+                const area = line + ` L${pts[pts.length-1][0].toFixed(1)},${H-pad} L${pts[0][0].toFixed(1)},${H-pad} Z`;
+                return `<svg class="m-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+                    <path class="area" d="${area}"/><path class="line" d="${line}"/>
+                </svg>`;
+            };
+
+            const delta = (curr, prev) => {
+                if (!prev) return curr ? `<span class="delta up">▲ new</span>` : '';
+                const diff = curr - prev;
+                const pct = Math.round((diff / prev) * 100);
+                const cls = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat';
+                const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '—';
+                return `<span class="delta ${cls}">${arrow} ${Math.abs(pct)}% vs prior 7d</span>`;
+            };
+
+            const cards = [
+                { label: 'Pageviews · 7d',  big: views7.toLocaleString(),  sub: `${sumVisitors(last7).toLocaleString()} unique visitors`, delta: delta(views7, sumViews(prev7)), spark: sparkline(last7) },
+                { label: 'Pageviews · 30d', big: views30.toLocaleString(), sub: `${visitors30.toLocaleString()} unique visitors`, spark: sparkline(last30) },
+                { label: 'Leads',           big: `${d.leads.c7} / ${d.leads.c30}`, sub: '7d / 30d' },
+                { label: 'Inquiries',       big: `${d.inquiries.c7} / ${d.inquiries.c30}`, sub: '7d / 30d' },
+                { label: 'New businesses',  big: `${d.new_businesses.c7} / ${d.new_businesses.c30}`, sub: '7d / 30d' },
+                { label: 'New agents',      big: `${d.new_agents.c7} / ${d.new_agents.c30}`, sub: '7d / 30d' },
             ];
-            document.getElementById('m-kpis').innerHTML = rows.map(r => `
+            document.getElementById('m-kpis').innerHTML = cards.map(c => `
                 <div class="m-kpi">
-                    <div class="label">${esc(r.label)}</div>
-                    <div class="big">${esc(r.big)}</div>
-                    ${r.sub ? `<div class="sub">${esc(r.sub)}</div>` : ''}
+                    <div class="label">${esc(c.label)}</div>
+                    <div class="big">${c.big}</div>
+                    ${c.sub ? `<div class="sub">${esc(c.sub)}</div>` : ''}
+                    ${c.delta || ''}
+                    ${c.spark || ''}
                 </div>
             `).join('');
         }
 
-        function renderChart(daily) {
-            const svg = document.getElementById('m-chart');
-            if (!daily || !daily.length) {
+        // ── Interactive traffic chart (line + area, hover guide + tooltip) ─
+        // Ported from the admin dashboard so both surfaces match. Renders
+        // pageviews (blue) + unique visitors (gray dashed) and tags today.
+        function drawTrafficChart(daily) {
+            const svg   = document.getElementById('m-chart');
+            const empty = document.getElementById('m-chart-empty');
+            // Wipe previous geometry (keep <defs>).
+            [...svg.querySelectorAll('.area,.line,.line-v,.dot,.grid,.axis,.guide,.hover-dot,.hit-area')].forEach(n => n.remove());
+
+            // Update the section title to reflect the period.
+            const title = document.getElementById('m-chart-title');
+            if (title) title.textContent = `Daily traffic · last ${daily.length} days`;
+
+            const totalViews = sumViews(daily);
+            if (!daily.length || totalViews === 0) {
                 svg.style.display = 'none';
-                document.getElementById('m-chart-empty').style.display = '';
+                empty.style.display = '';
                 return;
             }
-            // Fill in any missing days in the 30-day range with zero so the
-            // chart doesn't visually skip over silent days.
-            const days = {};
-            daily.forEach(d => { days[d.day.slice(0, 10)] = d.views; });
-            const out = [];
-            for (let i = 29; i >= 0; i--) {
-                const d = new Date(); d.setDate(d.getDate() - i);
-                const key = d.toISOString().slice(0, 10);
-                out.push({ day: key, views: days[key] || 0 });
+            svg.style.display = '';
+            empty.style.display = 'none';
+
+            const W = 600, H = 280, padL = 36, padR = 32, padT = 18, padB = 30;
+            const innerW = W - padL - padR, innerH = H - padT - padB;
+            const NS = 'http://www.w3.org/2000/svg';
+            const mk = (tag, attrs = {}, text) => {
+                const el = document.createElementNS(NS, tag);
+                for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+                if (text != null) el.textContent = text;
+                return el;
+            };
+
+            const maxRaw = Math.max(...daily.map(d => Math.max(d.views, d.visitors || 0)), 1);
+            const niceCeil = (v) => {
+                if (v <= 5) return 5;
+                const pow = Math.pow(10, Math.floor(Math.log10(v)));
+                const norm = v / pow;
+                return (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * pow;
+            };
+            const yMax = niceCeil(maxRaw);
+
+            for (let i = 0; i <= 4; i++) {
+                const y = padT + (innerH * i / 4);
+                svg.appendChild(mk('line', { x1: padL, y1: y, x2: W - padR, y2: y, class: 'grid' }));
+                svg.appendChild(mk('text', { x: padL - 8, y: y + 4, 'text-anchor': 'end', class: 'axis' },
+                    Math.round(yMax * (1 - i / 4)).toLocaleString('en-US')));
             }
 
-            const W = 600, H = 220, padL = 28, padR = 8, padT = 10, padB = 22;
-            const chartW = W - padL - padR, chartH = H - padT - padB;
-            const max = Math.max(1, ...out.map(o => o.views));
-            const xStep = chartW / Math.max(1, out.length - 1);
+            const stepX = daily.length > 1 ? innerW / (daily.length - 1) : 0;
+            const ptsV  = daily.map((d, i) => [padL + i * stepX, padT + innerH - (d.views / yMax) * innerH]);
+            const ptsU  = daily.map((d, i) => [padL + i * stepX, padT + innerH - ((d.visitors || 0) / yMax) * innerH]);
 
-            const points = out.map((o, i) => {
-                const x = padL + i * xStep;
-                const y = padT + chartH - (o.views / max) * chartH;
-                return `${x.toFixed(1)},${y.toFixed(1)}`;
-            }).join(' ');
-            const areaPath = `M${padL},${padT + chartH} L${points.split(' ').join(' L')} L${padL + chartW},${padT + chartH} Z`;
-            const firstLabel = out[0].day.slice(5);
-            const lastLabel  = out[out.length - 1].day.slice(5);
+            const lineV = ptsV.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+            const areaV = lineV
+                + ` L${ptsV[ptsV.length-1][0].toFixed(1)},${(padT + innerH).toFixed(1)}`
+                + ` L${ptsV[0][0].toFixed(1)},${(padT + innerH).toFixed(1)} Z`;
+            const lineU = ptsU.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
 
-            svg.innerHTML = `
-                <defs>
-                    <linearGradient id="m-grad" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0" stop-color="#1d6df2" stop-opacity="0.25"/>
-                        <stop offset="1" stop-color="#1d6df2" stop-opacity="0"/>
-                    </linearGradient>
-                </defs>
-                <line x1="${padL}" y1="${padT + chartH}" x2="${W - padR}" y2="${padT + chartH}" stroke="#edf2f7" stroke-width="1"/>
-                <path d="${areaPath}" fill="url(#m-grad)"/>
-                <polyline points="${points}" fill="none" stroke="#1d6df2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <text class="axis-label" x="${padL}"   y="${H - 6}" text-anchor="start">${firstLabel}</text>
-                <text class="axis-label" x="${W - padR}" y="${H - 6}" text-anchor="end">${lastLabel}</text>
-                <text class="axis-label" x="${padL - 4}" y="${padT + 6}" text-anchor="end">${max}</text>
-                <text class="axis-label" x="${padL - 4}" y="${padT + chartH}" text-anchor="end">0</text>
-            `;
+            svg.appendChild(mk('path', { class: 'area', d: areaV }));
+            svg.appendChild(mk('path', { class: 'line', d: lineV }));
+            svg.appendChild(mk('path', { class: 'line-v', d: lineU }));
+
+            const step = Math.max(1, Math.floor(daily.length / 6));
+            ptsV.forEach((p, i) => {
+                if (i % step !== 0 && i !== ptsV.length - 1) return;
+                svg.appendChild(mk('circle', { cx: p[0], cy: p[1], r: 2.6, class: 'dot' }));
+            });
+
+            const marks = [0, Math.floor(daily.length / 2), daily.length - 1];
+            marks.forEach((i, idx) => {
+                if (i < 0 || i >= daily.length) return;
+                const anchor = idx === 0 ? 'start' : idx === marks.length - 1 ? 'end' : 'middle';
+                const x = padL + i * stepX;
+                const d = new Date(daily[i].day + 'T12:00:00');
+                svg.appendChild(mk('text', { x, y: H - 10, 'text-anchor': anchor, class: 'axis' },
+                    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })));
+            });
+
+            // ── Hover guide + tooltip ─────────────────────────────────────
+            const guide    = mk('line', { x1: padL, y1: padT, x2: padL, y2: padT + innerH, class: 'guide' });
+            const hoverDot = mk('circle', { cx: padL, cy: padT, r: 5, class: 'hover-dot' });
+            const hit      = mk('rect', { x: padL, y: padT, width: innerW, height: innerH, class: 'hit-area' });
+            svg.appendChild(guide); svg.appendChild(hoverDot); svg.appendChild(hit);
+
+            const tip       = document.getElementById('m-tip');
+            const tipDate   = document.getElementById('m-tip-date');
+            const tipViews  = document.getElementById('m-tip-views');
+            const tipVisits = document.getElementById('m-tip-visitors');
+            const wrap      = document.getElementById('m-traffic-wrap');
+
+            function pickByEvent(e) {
+                const rect = svg.getBoundingClientRect();
+                const ratio = W / rect.width;
+                const svgX = (e.clientX - rect.left) * ratio;
+                const rel = (svgX - padL) / stepX;
+                return Math.max(0, Math.min(daily.length - 1, Math.round(rel)));
+            }
+
+            function show(e) {
+                const i = pickByEvent(e);
+                const d = daily[i];
+                const [px, py] = ptsV[i];
+                guide.setAttribute('x1', px); guide.setAttribute('x2', px);
+                hoverDot.setAttribute('cx', px); hoverDot.setAttribute('cy', py);
+                svg.classList.add('is-hovering');
+
+                const rect = svg.getBoundingClientRect();
+                const wrapRect = wrap.getBoundingClientRect();
+                const left = (rect.left - wrapRect.left) + px * (rect.width / W);
+                const top  = (rect.top  - wrapRect.top)  + py * (rect.height / H) - 14;
+                tip.style.left = left + 'px';
+                tip.style.top  = top  + 'px';
+
+                const dateObj = new Date(d.day + 'T12:00:00');
+                const label   = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                const isToday = d.day === TODAY;
+                tipDate.innerHTML  = esc(label) + (isToday ? ' <span class="tip-today">TODAY · SO FAR</span>' : '');
+                tipViews.textContent  = (d.views || 0).toLocaleString('en-US');
+                tipVisits.textContent = (d.visitors || 0).toLocaleString('en-US');
+                tip.classList.add('show');
+            }
+            function hide() {
+                svg.classList.remove('is-hovering');
+                tip.classList.remove('show');
+            }
+            hit.addEventListener('mousemove', show);
+            hit.addEventListener('mouseleave', hide);
+            hit.addEventListener('touchstart', e => { if (e.touches[0]) show(e.touches[0]); }, { passive: true });
+            hit.addEventListener('touchmove',  e => { if (e.touches[0]) show(e.touches[0]); }, { passive: true });
+        }
+
+        // ── Page sections breakdown (rolls up top_pages by prefix) ────────
+        function renderSections(pages) {
+            const buckets = [
+                { key: 'home',       label: 'Home',        test: p => p === '/' || p === '/index.html' || p === '' },
+                { key: 'lakes',      label: 'Lakes',       test: p => p.startsWith('/lakes') },
+                { key: 'towns',      label: 'Towns',       test: p => p.startsWith('/towns') },
+                { key: 'agents',     label: 'Agents',      test: p => p.startsWith('/agents') || p.includes('agent-profile') },
+                { key: 'businesses', label: 'Businesses',  test: p => p.startsWith('/businesses') },
+                { key: 'blog',       label: 'Blog',        test: p => p.startsWith('/blog') },
+                { key: 'resources',  label: 'Resources',   test: p => p.startsWith('/resources') },
+                { key: 'other',      label: 'Other',       test: () => true },
+            ];
+            const totals = Object.fromEntries(buckets.map(b => [b.key, 0]));
+            (pages || []).forEach(r => {
+                const p = (r.path || '').toLowerCase();
+                const b = buckets.find(b => b.test(p));
+                if (b) totals[b.key] += (r.views || 0);
+            });
+            const sum = Object.values(totals).reduce((a, b) => a + b, 0);
+            const el = document.getElementById('m-sections');
+            if (!sum) { el.innerHTML = '<div class="empty">No pageviews yet.</div>'; return; }
+            const ordered = buckets
+                .map(b => ({ ...b, views: totals[b.key] }))
+                .filter(b => b.views > 0)
+                .sort((a, b) => b.views - a.views);
+            el.innerHTML = ordered.map(b => {
+                const pct = sum ? Math.round((b.views / sum) * 100) : 0;
+                return `<div class="sec-row">
+                    <div class="lbl">${esc(b.label)}</div>
+                    <div class="bar"><span style="width:${pct}%;"></span></div>
+                    <div class="val">${b.views.toLocaleString()} <span style="color:#a0aec0;font-weight:600;font-size:0.78rem;">· ${pct}%</span></div>
+                </div>`;
+            }).join('');
         }
 
         function renderList(id, rows, mapFn) {
@@ -317,6 +619,16 @@
         function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
         document.addEventListener('DOMContentLoaded', load);
+
+        // ─── Chart period toggle (7d / 30d) ───────────────────────────
+        document.querySelectorAll('#m-period button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#m-period button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                _period = parseInt(btn.dataset.days, 10) || 30;
+                if (_daily30.length) drawTrafficChart(slicePeriod(_daily30, _period));
+            });
+        });
 
         // ─── Tabs ──────────────────────────────────────────────────────
         document.querySelectorAll('.m-tab').forEach(btn => {
