@@ -54,6 +54,7 @@ router.post  ('/messages',               verifyToken, requireRole(['admin', 'sup
 router.post  ('/messages/broadcast',     verifyToken, requireRole(['admin', 'super_admin']), messagesController.broadcast);
 router.get   ('/messages/threads',       verifyToken, requireRole(['admin', 'super_admin']), messagesController.threads);
 router.get   ('/messages/agent/:userId', verifyToken, requireRole(['admin', 'super_admin']), messagesController.threadForAgent);
+router.patch ('/messages/:id/read',      verifyToken, requireRole(['admin', 'super_admin']), messagesController.setReadState);
 router.delete('/messages/:id',           verifyToken, requireRole(['admin', 'super_admin']), messagesController.remove);
 
 // ─── LEADS (must come before /:id to avoid shadowing) ────────────────────────

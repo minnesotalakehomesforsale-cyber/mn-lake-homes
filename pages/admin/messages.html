@@ -52,7 +52,8 @@
             padding: 0.7rem 1rem; font-size: 0.9rem; line-height: 1.5; white-space: pre-line;
         }
         .bubble .meta { font-size: 0.68rem; color: rgba(255,255,255,0.75); margin-top: 0.4rem; display: flex; gap: 0.5rem; align-items: center; }
-        .bubble .meta .read { background: rgba(255,255,255,0.2); border-radius: 99px; padding: 0.02rem 0.4rem; font-weight: 700; }
+        .bubble .meta .read { background: rgba(255,255,255,0.2); border-radius: 99px; padding: 0.05rem 0.5rem; font-weight: 700; cursor: pointer; transition: background 0.12s; user-select: none; }
+        .bubble .meta .read:hover { background: rgba(255,255,255,0.35); }
         .bubble .del { color: rgba(255,255,255,0.7); cursor: pointer; text-decoration: underline; }
         .msg-empty { color: #a0aec0; font-size: 0.92rem; text-align: center; margin: auto; padding: 2rem; }
         .msg-compose { border-top: 1px solid #edf2f7; padding: 1rem 1.25rem; display: flex; gap: 0.6rem; align-items: flex-end; }
@@ -290,7 +291,8 @@
                 ${esc(m.body)}
                 <div class="meta">
                     <span>${esc(fmtWhen(m.created_at))}</span>
-                    <span class="read">${m.read_at ? 'Read' : 'Sent'}</span>
+                    <span class="read" onclick="toggleRead('${m.id}', ${m.read_at ? 'true' : 'false'})"
+                          title="Click to mark ${m.read_at ? 'unread' : 'read'}">${m.read_at ? 'Read' : 'Sent'}</span>
                     <span class="del" onclick="delMessage('${m.id}')">delete</span>
                 </div>
             </div>`).join('');
@@ -331,6 +333,22 @@
             if (!r.ok) throw new Error();
             openThread(_activeUserId);
         } catch (_) { alert('Could not delete.'); }
+    }
+
+    // Flip a message's read state from the admin side. Refreshes the thread
+    // and the agent list so the unread dot updates in lockstep.
+    async function toggleRead(id, currentlyRead) {
+        try {
+            const r = await fetch(`/api/admin/messages/${encodeURIComponent(id)}/read`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ read: !currentlyRead }),
+            });
+            if (!r.ok) throw new Error();
+            openThread(_activeUserId);
+            boot();   // refresh the agent list + unread counts
+        } catch (_) { alert('Could not update read state.'); }
     }
 
     // ── Broadcast (mass message) ─────────────────────────────────────────────

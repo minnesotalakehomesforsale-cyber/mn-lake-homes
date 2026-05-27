@@ -170,6 +170,36 @@ exports.threadForAgent = async (req, res) => {
     }
 };
 
+// ─── Admin: flip a message's read state ────────────────────────────────────
+// Body: { read: boolean }. Sets read_at = NOW() (read=true) or NULL
+// (read=false). Lets an admin replay an "unread" notification on the
+// agent's portal or close one out without making the agent open it.
+exports.setReadState = async (req, res) => {
+    const wantRead = !!req.body?.read;
+    try {
+        const { rows, rowCount } = await pool.query(
+            `UPDATE agent_messages
+                SET read_at = ${wantRead ? 'COALESCE(read_at, NOW())' : 'NULL'}
+              WHERE id = $1
+              RETURNING id, recipient_user_id, read_at`,
+            [req.params.id]
+        );
+        if (!rowCount) return res.status(404).json({ error: 'Message not found.' });
+        logActivity({
+            event_type: 'agent.message.read_state',
+            event_scope: 'messages',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'user', id: rows[0].recipient_user_id, label: 'message' },
+            details: { message_id: rows[0].id, read: !!rows[0].read_at },
+            req,
+        });
+        res.json({ success: true, id: rows[0].id, read_at: rows[0].read_at });
+    } catch (err) {
+        console.error('[messages.setReadState]', err.message);
+        res.status(500).json({ error: 'Failed to update read state.' });
+    }
+};
+
 // ─── Admin: delete a message ────────────────────────────────────────────────
 exports.remove = async (req, res) => {
     try {

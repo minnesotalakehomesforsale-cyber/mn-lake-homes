@@ -1381,13 +1381,36 @@
         try {
             const msgs = await fetch(`/api/admin/messages/agent/${encodeURIComponent(uid)}`, { credentials: 'include' }).then(r => r.ok ? r.json() : []);
             if (!msgs.length) { host.innerHTML = '<div style="color:#a0aec0;font-size:0.9rem;">No messages yet. Send the first one below.</div>'; return; }
-            host.innerHTML = msgs.map(m => `
+            host.innerHTML = msgs.map(m => {
+                const isRead = !!m.read_at;
+                const tip    = isRead ? 'Click to mark unread' : 'Click to mark read';
+                return `
                 <div style="align-self:flex-end;max-width:80%;background:#1d6df2;color:#fff;border-radius:14px 14px 4px 14px;padding:0.7rem 1rem;font-size:0.9rem;line-height:1.5;white-space:pre-line;">
                     ${m.body.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
-                    <div style="font-size:0.68rem;color:rgba(255,255,255,0.75);margin-top:0.4rem;">${fmtMsgWhen(m.created_at)} · ${m.read_at ? 'Read' : 'Sent'}</div>
-                </div>`).join('');
+                    <div style="font-size:0.68rem;color:rgba(255,255,255,0.75);margin-top:0.4rem;">
+                        ${fmtMsgWhen(m.created_at)}
+                        <span style="margin-left:0.4rem;background:rgba(255,255,255,0.2);border-radius:99px;padding:0.05rem 0.5rem;font-weight:700;cursor:pointer;user-select:none;"
+                              title="${tip}"
+                              onclick="toggleAgentMsgRead('${m.id}', ${isRead ? 'true' : 'false'})">${isRead ? 'Read' : 'Sent'}</span>
+                    </div>
+                </div>`;
+            }).join('');
             host.scrollTop = host.scrollHeight;
         } catch (_) { host.innerHTML = '<div style="color:#c53030;font-size:0.9rem;">Could not load messages.</div>'; }
+    }
+
+    // Same read/unread toggle from the per-agent thread.
+    async function toggleAgentMsgRead(id, currentlyRead) {
+        try {
+            const r = await fetch(`/api/admin/messages/${encodeURIComponent(id)}/read`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ read: !currentlyRead }),
+            });
+            if (!r.ok) throw new Error();
+            loadAgentMessages();
+        } catch (_) { alert('Could not update read state.'); }
     }
     async function sendAgentMessage() {
         const uid = agentData?.user_id_ref;
