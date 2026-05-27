@@ -109,6 +109,14 @@ const createPost = async (req, res) => {
             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
             RETURNING *
         `, [title, slug, excerpt||null, body||null, cover_image_url||null, tag||'General', read_time_minutes||4, author_name||'MN Lake Homes Team', !!is_published, published_at]);
+        logActivity({
+            event_type: 'blog.create',
+            event_scope: 'blog',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'blog_post', id: rows[0].id, label: rows[0].title },
+            details: { slug: rows[0].slug, is_published: rows[0].is_published },
+            req,
+        });
         res.status(201).json(rows[0]);
     } catch (err) {
         console.error('[blog.createPost]', err.message);
@@ -160,6 +168,14 @@ const updatePost = async (req, res) => {
             `UPDATE blog_posts SET ${fields.join(', ')} WHERE id = $${i} RETURNING *`,
             vals
         );
+        logActivity({
+            event_type: 'blog.update',
+            event_scope: 'blog',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'blog_post', id: rows[0].id, label: rows[0].title },
+            details: { changed: Object.keys(body), is_published: rows[0].is_published },
+            req,
+        });
         res.json(rows[0]);
     } catch (err) {
         console.error('[blog.updatePost]', err.message);

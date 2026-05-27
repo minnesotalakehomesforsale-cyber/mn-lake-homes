@@ -1,5 +1,6 @@
 const pool = require('../database/pool');
 const emailService = require('../services/email');
+const { logActivity } = require('../services/activity-log');
 
 // Fetch owner email + display name for business lifecycle emails. Bundled
 // here because every webhook branch that emails the owner needs the same
@@ -361,6 +362,18 @@ exports.handleWebhook = async (req, res) => {
                             businessName: contact.business_name,
                         });
                     }
+                    // Audit trail — surfaces in the admin activity log + the
+                    // business's per-entity Activity tab.
+                    const ownerLookup = await pool.query(
+                        `SELECT user_id FROM businesses WHERE id = $1 LIMIT 1`, [businessId]
+                    );
+                    logActivity({
+                        event_type: 'business.subscription.activated',
+                        event_scope: 'billing',
+                        actor: { type: 'stripe', label: 'Stripe' },
+                        target: { type: 'business', id: businessId, label: contact?.business_name || businessId },
+                        details: { tier, subscription_id: session.subscription, owner_user_id: ownerLookup.rows[0]?.user_id || null },
+                    });
                     break;
                 }
 
@@ -410,6 +423,13 @@ exports.handleWebhook = async (req, res) => {
                 );
 
                 console.log(`[Stripe Webhook] Agent ${userId} activated with membership '${membershipCode}'`);
+                logActivity({
+                    event_type: 'agent.subscription.activated',
+                    event_scope: 'billing',
+                    actor: { type: 'stripe', label: 'Stripe' },
+                    target: { type: 'user', id: userId, label: membershipCode },
+                    details: { membership_code: membershipCode, subscription_id: session.subscription },
+                });
                 break;
             }
 
@@ -437,6 +457,14 @@ exports.handleWebhook = async (req, res) => {
                             businessName: contact.business_name,
                         });
                     }
+                    logActivity({
+                        event_type: 'business.subscription.canceled',
+                        event_scope: 'billing',
+                        severity: 'warning',
+                        actor: { type: 'stripe', label: 'Stripe' },
+                        target: { type: 'business', id: bizHit.rows[0].id, label: contact?.business_name || bizHit.rows[0].id },
+                        details: { subscription_id: subscriptionId },
+                    });
                     break;
                 }
 
@@ -466,6 +494,14 @@ exports.handleWebhook = async (req, res) => {
                 );
 
                 console.log(`[Stripe Webhook] Agent ${agentRows[0].user_id} subscription cancelled (comped agents left live)`);
+                logActivity({
+                    event_type: 'agent.subscription.canceled',
+                    event_scope: 'billing',
+                    severity: 'warning',
+                    actor: { type: 'stripe', label: 'Stripe' },
+                    target: { type: 'user', id: agentRows[0].user_id, label: 'agent' },
+                    details: { subscription_id: subscriptionId },
+                });
                 break;
             }
 
@@ -503,6 +539,20 @@ exports.handleWebhook = async (req, res) => {
                                 businessName: contact.business_name,
                             });
                         }
+                    }
+                    if (sub.status !== priorStatus) {
+                        const bizRow = await pool.query(
+                            `SELECT id, name FROM businesses WHERE stripe_subscription_id = $1 LIMIT 1`,
+                            [sub.id]
+                        );
+                        logActivity({
+                            event_type: 'business.subscription.updated',
+                            event_scope: 'billing',
+                            severity: sub.status === 'past_due' ? 'warning' : 'info',
+                            actor: { type: 'stripe', label: 'Stripe' },
+                            target: { type: 'business', id: bizRow.rows[0]?.id || null, label: bizRow.rows[0]?.name || null },
+                            details: { from: priorStatus, to: sub.status, tier, subscription_id: sub.id },
+                        });
                     }
                     break;
                 }
@@ -550,6 +600,14 @@ exports.handleWebhook = async (req, res) => {
                     [membershipId, shouldPublish, sub.id, newCode]
                 );
                 console.log(`[Stripe Webhook] Agent ${userId} subscription.updated → ${sub.status} (${newCode || 'membership unchanged'})`);
+                logActivity({
+                    event_type: 'agent.subscription.updated',
+                    event_scope: 'billing',
+                    severity: sub.status === 'past_due' ? 'warning' : 'info',
+                    actor: { type: 'stripe', label: 'Stripe' },
+                    target: { type: 'user', id: userId, label: newCode || 'agent' },
+                    details: { stripe_status: sub.status, membership_code: newCode, subscription_id: sub.id },
+                });
                 break;
             }
 
@@ -578,12 +636,38 @@ exports.handleWebhook = async (req, res) => {
                             });
                         }
                     }
+                    const bizRow = await pool.query(
+                        `SELECT id, name FROM businesses WHERE stripe_subscription_id = $1 LIMIT 1`,
+                        [invoice.subscription]
+                    );
+                    logActivity({
+                        event_type: 'business.payment.failed',
+                        event_scope: 'billing',
+                        severity: 'warning',
+                        actor: { type: 'stripe', label: 'Stripe' },
+                        target: { type: 'business', id: bizRow.rows[0]?.id || null, label: bizRow.rows[0]?.name || null },
+                        details: { subscription_id: invoice.subscription, amount_due: invoice.amount_due, attempt: invoice.attempt_count },
+                    });
                     break;
                 }
                 // Agent — keep profile visible during grace period.
                 // Stripe retries auto-recover; subscription.deleted only
                 // fires after the retry window expires.
                 console.log(`[Stripe Webhook] Agent invoice.payment_failed for subscription ${invoice.subscription}`);
+                const agentRow = await pool.query(
+                    `SELECT user_id FROM agents WHERE stripe_subscription_id = $1 LIMIT 1`,
+                    [invoice.subscription]
+                );
+                if (agentRow.rowCount) {
+                    logActivity({
+                        event_type: 'agent.payment.failed',
+                        event_scope: 'billing',
+                        severity: 'warning',
+                        actor: { type: 'stripe', label: 'Stripe' },
+                        target: { type: 'user', id: agentRow.rows[0].user_id, label: 'agent' },
+                        details: { subscription_id: invoice.subscription, amount_due: invoice.amount_due, attempt: invoice.attempt_count },
+                    });
+                }
                 break;
             }
 
@@ -592,19 +676,42 @@ exports.handleWebhook = async (req, res) => {
                 if (!invoice.subscription) break;
                 // Both tables are best-effort — only one of them owns
                 // this subscription_id, the other UPDATE is a no-op.
-                await pool.query(
+                const bizRes = await pool.query(
                     `UPDATE businesses
                         SET subscription_status = 'active', updated_at = NOW()
-                      WHERE stripe_subscription_id = $1`,
+                      WHERE stripe_subscription_id = $1
+                      RETURNING id, name`,
                     [invoice.subscription]
                 );
-                await pool.query(
+                const agentRes = await pool.query(
                     `UPDATE agents
                         SET is_published = true,
                             profile_status = 'published'
-                      WHERE stripe_subscription_id = $1`,
+                      WHERE stripe_subscription_id = $1
+                      RETURNING user_id`,
                     [invoice.subscription]
                 );
+                // Log against whichever table owned the subscription. Only
+                // billing_reason=subscription_cycle (renewals) and =subscription_create
+                // (first charge) are worth logging; ignore proration adjustments.
+                const reason = invoice.billing_reason || 'manual';
+                if (bizRes.rowCount) {
+                    logActivity({
+                        event_type: 'business.payment.succeeded',
+                        event_scope: 'billing',
+                        actor: { type: 'stripe', label: 'Stripe' },
+                        target: { type: 'business', id: bizRes.rows[0].id, label: bizRes.rows[0].name },
+                        details: { subscription_id: invoice.subscription, amount_paid: invoice.amount_paid, reason },
+                    });
+                } else if (agentRes.rowCount) {
+                    logActivity({
+                        event_type: 'agent.payment.succeeded',
+                        event_scope: 'billing',
+                        actor: { type: 'stripe', label: 'Stripe' },
+                        target: { type: 'user', id: agentRes.rows[0].user_id, label: 'agent' },
+                        details: { subscription_id: invoice.subscription, amount_paid: invoice.amount_paid, reason },
+                    });
+                }
                 break;
             }
 

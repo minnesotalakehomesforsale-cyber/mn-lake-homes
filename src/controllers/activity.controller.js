@@ -35,6 +35,17 @@ const getActivity = async (req, res) => {
         params.push(req.query.actor_id);
         clauses.push(`actor_id = $${params.length}`);
     }
+    // entity_id — match rows where the entity appears as EITHER actor or
+    // target. Accepts a single id or a comma-separated list (e.g. for a
+    // business profile we pass [business_id, owner_user_id] so the feed
+    // catches actions by the owner AND actions against the business row).
+    if (req.query.entity_id) {
+        const ids = String(req.query.entity_id).split(',').map(s => s.trim()).filter(Boolean);
+        if (ids.length) {
+            params.push(ids);
+            clauses.push(`(actor_id = ANY($${params.length}::uuid[]) OR target_id = ANY($${params.length}::uuid[]))`);
+        }
+    }
     if (req.query.before) {
         params.push(req.query.before);
         clauses.push(`created_at < $${params.length}`);

@@ -283,7 +283,7 @@
             uploadUrl:'/api/businesses/upload-image',
             uploadField:'image',
             imageField:'featured_image_url',
-            tabs:     ['details', 'contact', 'membership', 'connected'],
+            tabs:     ['details', 'contact', 'membership', 'connected', 'activity'],
             relatedKeys: ['lakes','tags'],
         },
     };
@@ -393,6 +393,7 @@
         contact:    'Contact &amp; Web',
         membership: 'Membership',
         connected:  'Connected',
+        activity:   'Activity',
     };
 
     function renderTabs() {
@@ -433,6 +434,53 @@
         if (activeTab === 'contact')    tc.innerHTML = renderContactTab();
         if (activeTab === 'membership') { tc.innerHTML = renderMembershipTab(); loadBilling(); }
         if (activeTab === 'connected')  tc.innerHTML = renderConnectedTab();
+        if (activeTab === 'activity')   { tc.innerHTML = renderActivityTab(); loadEntityActivity(); }
+    }
+
+    // ── Activity tab (per-business feed; queries actor=owner OR target=biz) ─
+    function renderActivityTab() {
+        // Don't use panel() — it appends a Save button which this tab has
+        // nothing to save against. Mirror the same panel chrome inline.
+        return `
+            <div class="panel">
+                <div class="panel-header"><div class="panel-title">Activity</div></div>
+                <div class="panel-body">
+                    <p class="hint" style="margin:0 0 1rem;">Everything logged for this business — actions by the owner (logins, profile updates, image uploads) plus events on the business itself (Stripe webhooks, admin edits). Internal only.</p>
+                    <div id="ent-activity-list" style="display:flex;flex-direction:column;gap:0.5rem;">
+                        <div style="color:#a0aec0;font-size:0.9rem;">Loading…</div>
+                    </div>
+                </div>
+            </div>`;
+    }
+    async function loadEntityActivity() {
+        const host = document.getElementById('ent-activity-list');
+        if (!host) return;
+        // Match either the business id OR the owner's user_id.
+        const ids = [entity.id, entity.user_id].filter(Boolean).join(',');
+        try {
+            const rows = await fetch(`/api/activity?entity_id=${encodeURIComponent(ids)}&limit=200`, { credentials: 'include' })
+                .then(r => r.ok ? r.json() : []);
+            if (!rows.length) { host.innerHTML = '<div style="color:#a0aec0;font-size:0.9rem;padding:1rem 0;">No activity yet.</div>'; return; }
+            const sevColor = s => s === 'error' ? '#c53030' : s === 'warning' ? '#b45309' : '#4a5568';
+            const idSet = new Set(ids.split(','));
+            host.innerHTML = rows.map(r => {
+                const when = r.created_at ? new Date(r.created_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : '';
+                const dir  = idSet.has(r.actor_id) ? 'did' : 'received';
+                const details = r.details ? `<pre style="margin:0.4rem 0 0;background:#f7f9fa;border:1px solid #edf2f7;border-radius:6px;padding:0.5rem 0.7rem;font-size:0.72rem;color:#4a5568;overflow:auto;max-height:120px;">${esc(JSON.stringify(r.details, null, 2))}</pre>` : '';
+                return `<div style="border:1px solid #edf2f7;border-radius:10px;padding:0.7rem 0.95rem;background:#fff;">
+                    <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;flex-wrap:wrap;">
+                        <code style="font-size:0.78rem;color:${sevColor(r.severity)};font-weight:700;background:#f7f9fa;padding:0.1rem 0.4rem;border-radius:4px;">${esc(r.event_type)}</code>
+                        <span style="color:#a0aec0;font-size:0.74rem;">${dir}</span>
+                        ${r.actor_label ? `<span style="color:#4a5568;font-weight:600;">${esc(r.actor_label)}</span>` : ''}
+                        ${r.target_label ? `<span style="color:#a0aec0;">→</span><span style="color:#4a5568;">${esc(r.target_label)}</span>` : ''}
+                        <span style="margin-left:auto;color:#a0aec0;font-size:0.74rem;font-variant-numeric:tabular-nums;white-space:nowrap;">${esc(when)}</span>
+                    </div>
+                    ${details}
+                </div>`;
+            }).join('');
+        } catch (_) {
+            host.innerHTML = '<div style="color:#c53030;font-size:0.9rem;">Could not load activity.</div>';
+        }
     }
 
     function fieldGroup({ id, label, value, type = 'text', full = false, hint = '', placeholder = '' }) {

@@ -135,6 +135,7 @@
             <button class="up-tab" id="utab-inquiries" onclick="switchUserTab('inquiries')">
                 Inquiries <span class="tab-count" id="iq-count">0</span>
             </button>
+            <button class="up-tab" id="utab-activity" onclick="switchUserTab('activity')">Activity</button>
         </div>
 
         <!-- ─────────────── TAB 1: ACCOUNT & PROFILE ─────────────── -->
@@ -271,6 +272,14 @@
             </div>
             <div id="iq-list">
                 <div class="iq-empty">Loading inquiries…</div>
+            </div>
+        </div>
+
+        <!-- ─────────────── TAB 3: ACTIVITY ─────────────── -->
+        <div id="tab-activity" style="display:none;">
+            <p style="color:#718096;font-size:0.92rem;margin:0 0 1rem;">Everything logged for this user — their own actions (logins, profile updates, password changes) plus actions taken on them by admins or system events. Internal only.</p>
+            <div id="user-activity-list" style="display:flex;flex-direction:column;gap:0.5rem;">
+                <div style="color:#a0aec0;font-size:0.9rem;">Loading…</div>
             </div>
         </div>
     </main>
@@ -463,13 +472,45 @@
 
     // ── Tabs ────────────────────────────────────────────────────────────
     function switchUserTab(name) {
-        const tabs = { profile: 'utab-profile', inquiries: 'utab-inquiries' };
-        const panes = { profile: 'tab-profile', inquiries: 'tab-inquiries' };
+        const tabs  = { profile: 'utab-profile', inquiries: 'utab-inquiries', activity: 'utab-activity' };
+        const panes = { profile: 'tab-profile',  inquiries: 'tab-inquiries',  activity: 'tab-activity' };
         Object.keys(tabs).forEach(k => {
             document.getElementById(tabs[k]).classList.toggle('active', k === name);
             document.getElementById(panes[k]).style.display = k === name ? '' : 'none';
         });
         if (name === 'inquiries' && !_inquiriesLoaded) loadInquiries();
+        if (name === 'activity'  && !_activityLoaded)  loadUserActivity();
+    }
+
+    // ── Activity tab (per-user feed) ────────────────────────────────────
+    let _activityLoaded = false;
+    async function loadUserActivity() {
+        _activityLoaded = true;
+        const host = document.getElementById('user-activity-list');
+        try {
+            const rows = await fetch(`/api/activity?entity_id=${encodeURIComponent(userId)}&limit=200`)
+                .then(r => r.ok ? r.json() : []);
+            if (!rows.length) { host.innerHTML = '<div style="color:#a0aec0;font-size:0.9rem;padding:1rem 0;">No activity yet.</div>'; return; }
+            const ehtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const sevColor = s => s === 'error' ? '#c53030' : s === 'warning' ? '#b45309' : '#4a5568';
+            host.innerHTML = rows.map(r => {
+                const when = r.created_at ? new Date(r.created_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : '';
+                const dir = (r.actor_id === userId) ? 'did' : 'received';
+                const details = r.details ? `<pre style="margin:0.4rem 0 0;background:#f7f9fa;border:1px solid #edf2f7;border-radius:6px;padding:0.5rem 0.7rem;font-size:0.72rem;color:#4a5568;overflow:auto;max-height:120px;">${ehtml(JSON.stringify(r.details, null, 2))}</pre>` : '';
+                return `<div style="border:1px solid #edf2f7;border-radius:10px;padding:0.7rem 0.95rem;background:#fff;">
+                    <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;flex-wrap:wrap;">
+                        <code style="font-size:0.78rem;color:${sevColor(r.severity)};font-weight:700;background:#f7f9fa;padding:0.1rem 0.4rem;border-radius:4px;">${ehtml(r.event_type)}</code>
+                        <span style="color:#a0aec0;font-size:0.74rem;">${dir}</span>
+                        ${r.actor_label ? `<span style="color:#4a5568;font-weight:600;">${ehtml(r.actor_label)}</span>` : ''}
+                        ${r.target_label ? `<span style="color:#a0aec0;">→</span><span style="color:#4a5568;">${ehtml(r.target_label)}</span>` : ''}
+                        <span style="margin-left:auto;color:#a0aec0;font-size:0.74rem;font-variant-numeric:tabular-nums;white-space:nowrap;">${ehtml(when)}</span>
+                    </div>
+                    ${details}
+                </div>`;
+            }).join('');
+        } catch (_) {
+            host.innerHTML = '<div style="color:#c53030;font-size:0.9rem;">Could not load activity.</div>';
+        }
     }
 
     // ── Inquiries (leads + cash-offer leads for this user) ──────────────

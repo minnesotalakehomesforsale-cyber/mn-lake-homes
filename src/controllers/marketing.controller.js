@@ -189,6 +189,14 @@ exports.updatePost = async (req, res) => {
             vals
         );
         if (!rowCount) return res.status(404).json({ error: 'Post not found.' });
+        logActivity({
+            event_type: 'marketing.post.update',
+            event_scope: 'marketing',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'marketing_post', id: rows[0].id, label: rows[0].title },
+            details: { changed: Object.keys(req.body || {}), status: rows[0].status, channel: rows[0].channel },
+            req,
+        });
         res.json(rows[0]);
     } catch (err) {
         console.error('[marketing.updatePost]', err.message);

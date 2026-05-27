@@ -160,6 +160,7 @@
             </button>
             <button class="page-tab" id="ptab-messages" onclick="switchPageTab('messages')">Messages</button>
             <button class="page-tab" id="ptab-notes" onclick="switchPageTab('notes')">Notes</button>
+            <button class="page-tab" id="ptab-activity" onclick="switchPageTab('activity')">Activity</button>
         </div>
 
         <!-- TAB: Details -->
@@ -530,6 +531,22 @@
                 </div>
             </div>
         </div><!-- end tab-content-notes -->
+
+        <!-- TAB: Activity (everything this agent did + everything done to them) -->
+        <div id="tab-content-activity" style="display:none;">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Activity</div>
+                    <a href="system.html?tab=database" class="panel-link" style="font-size:0.8rem;color:#1d6df2;text-decoration:none;font-weight:600;">Open full log →</a>
+                </div>
+                <div class="panel-body" style="padding:1.25rem 1.5rem;">
+                    <p style="font-size:0.82rem;color:#718096;margin:0 0 1.25rem;">Everything logged for this agent — actions they took (logins, lead updates, profile saves) and actions taken on them (admin edits, billing webhook events). Internal — the agent never sees this.</p>
+                    <div id="agt-activity-list" style="display:flex;flex-direction:column;gap:0.5rem;">
+                        <div style="color:#a0aec0;font-size:0.9rem;">Loading…</div>
+                    </div>
+                </div>
+            </div>
+        </div><!-- end tab-content-activity -->
 
     </main>
 </div>
@@ -1235,7 +1252,7 @@
 
     // ── Page Tab Switching ───────────────────────────────────────────────────
     function switchPageTab(tab) {
-        const tabs = ['details', 'profile', 'areas', 'controls', 'leads', 'messages', 'notes'];
+        const tabs = ['details', 'profile', 'areas', 'controls', 'leads', 'messages', 'notes', 'activity'];
         tabs.forEach(t => {
             document.getElementById('tab-content-' + t).style.display = (t === tab) ? 'block' : 'none';
             document.getElementById('ptab-' + t).classList.toggle('active', t === tab);
@@ -1243,6 +1260,45 @@
         if (tab === 'leads'    && agentLeadsAll === null) loadAgentLeads();
         if (tab === 'messages') loadAgentMessages();
         if (tab === 'notes')    loadAgentNotes();
+        if (tab === 'activity') loadAgentActivity();
+    }
+
+    // ── Activity (per-agent feed from /api/activity?entity_id=user_id) ──
+    async function loadAgentActivity() {
+        const host = document.getElementById('agt-activity-list');
+        const uid  = agentData?.user_id_ref;
+        if (!uid) { host.innerHTML = '<div style="color:#c53030;font-size:0.9rem;">Agent account not loaded yet.</div>'; return; }
+        try {
+            const rows = await fetch(`/api/activity?entity_id=${encodeURIComponent(uid)}&limit=200`, { credentials: 'include' })
+                .then(r => r.ok ? r.json() : []);
+            host.innerHTML = renderActivityFeed(rows, uid);
+        } catch (_) {
+            host.innerHTML = '<div style="color:#c53030;font-size:0.9rem;">Could not load activity.</div>';
+        }
+    }
+
+    // Shared feed renderer — used by every per-entity Activity tab.
+    function renderActivityFeed(rows, entityId) {
+        if (!rows || !rows.length) {
+            return '<div style="color:#a0aec0;font-size:0.9rem;padding:1rem 0;">No activity yet.</div>';
+        }
+        const sevColor = s => s === 'error' ? '#c53030' : s === 'warning' ? '#b45309' : '#4a5568';
+        return rows.map(r => {
+            const when = r.created_at ? new Date(r.created_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : '';
+            const isActor = entityId && r.actor_id === entityId;
+            const dir = isActor ? 'did' : 'received';
+            const details = r.details ? `<pre style="margin:0.4rem 0 0;background:#f7f9fa;border:1px solid #edf2f7;border-radius:6px;padding:0.5rem 0.7rem;font-size:0.72rem;color:#4a5568;overflow:auto;max-height:120px;">${escHtml(JSON.stringify(r.details, null, 2))}</pre>` : '';
+            return `<div style="border:1px solid #edf2f7;border-radius:10px;padding:0.7rem 0.95rem;background:#fff;">
+                <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;">
+                    <code style="font-size:0.78rem;color:${sevColor(r.severity)};font-weight:700;background:#f7f9fa;padding:0.1rem 0.4rem;border-radius:4px;">${escHtml(r.event_type)}</code>
+                    <span style="color:#a0aec0;font-size:0.74rem;">${dir}</span>
+                    ${r.actor_label ? `<span style="color:#4a5568;font-weight:600;">${escHtml(r.actor_label)}</span>` : ''}
+                    ${r.target_label ? `<span style="color:#a0aec0;">→</span><span style="color:#4a5568;">${escHtml(r.target_label)}</span>` : ''}
+                    <span style="margin-left:auto;color:#a0aec0;font-size:0.74rem;font-variant-numeric:tabular-nums;white-space:nowrap;">${escHtml(when)}</span>
+                </div>
+                ${details}
+            </div>`;
+        }).join('');
     }
 
     // ── Notes about this agent (internal CRM, mirrored to HubSpot) ───────────
