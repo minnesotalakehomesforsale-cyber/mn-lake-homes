@@ -70,6 +70,51 @@
         .ud-panel { display: none; }
         .ud-panel.active { display: block; }
 
+        /* ── Welcome panel (sales-page landing) ──────────────────────── */
+        .ud-section-h { font-size: 1.15rem; font-weight: 800; color: #1a202c; letter-spacing: -0.3px; margin: 0 0 1rem; }
+        .ud-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.85rem; margin-bottom: 2rem; }
+        .ud-stat { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.1rem 1.25rem; }
+        .ud-stat-num { font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+        .ud-stat-lbl { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-top: 0.35rem; }
+
+        .ud-action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 0.85rem;
+        }
+        .ud-action {
+            position: relative; display: block; text-align: left;
+            background: #fff; border: 1px solid #edf2f7; border-radius: 14px;
+            padding: 1.35rem 1.4rem 1.5rem; cursor: pointer;
+            text-decoration: none; color: inherit; font: inherit;
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+            overflow: hidden;
+        }
+        .ud-action::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: var(--ac, #1d6df2);
+            opacity: 0.85;
+        }
+        .ud-action:hover { transform: translateY(-3px); border-color: var(--ac, #1d6df2); box-shadow: 0 14px 30px rgba(16,24,40,0.08); }
+        .ud-action-ic { font-size: 1.6rem; line-height: 1; margin-bottom: 0.7rem; }
+        .ud-action-t  { font-size: 1.02rem; font-weight: 800; color: #1a202c; margin-bottom: 0.35rem; letter-spacing: -0.2px; }
+        .ud-action-d  { font-size: 0.86rem; color: #4a5568; line-height: 1.5; }
+
+        .ud-articles { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+        .ud-article {
+            display: flex; flex-direction: column;
+            background: #fff; border: 1px solid #edf2f7; border-radius: 14px;
+            overflow: hidden; text-decoration: none; color: inherit;
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+        }
+        .ud-article:hover { transform: translateY(-3px); border-color: #1d6df2; box-shadow: 0 14px 30px rgba(16,24,40,0.08); }
+        .ud-article .thumb { height: 160px; background: linear-gradient(135deg, #e8f1ff 0%, #c7ddfa 55%, #a8c8f0 100%); background-size: cover; background-position: center; }
+        .ud-article .body  { padding: 1rem 1.15rem 1.2rem; flex: 1; display: flex; flex-direction: column; gap: 0.4rem; }
+        .ud-article .tag   { font-size: 0.66rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #1d6df2; }
+        .ud-article h4     { font-size: 0.98rem; font-weight: 800; color: #1a202c; margin: 0; letter-spacing: -0.2px; line-height: 1.3; }
+        .ud-article p      { font-size: 0.85rem; color: #4a5568; line-height: 1.5; margin: 0; flex: 1; }
+        .ud-article .meta  { font-size: 0.74rem; color: #a0aec0; margin-top: 0.15rem; }
+
         .ud-card {
             background: #fff; border: 1px solid #edf2f7; border-radius: 16px;
             padding: 2.25rem 2.25rem 2.5rem; box-shadow: 0 2px 10px rgba(16,24,40,0.04);
@@ -189,6 +234,8 @@
             .ud-row { grid-template-columns: 1fr; }
             .ud-card { padding: 1.5rem; }
             .ud-lead-date { margin-left: 0; width: 100%; }
+            .ud-stats { grid-template-columns: 1fr; }
+            .ud-stat-num { font-size: 1.5rem; }
         }
     </style>
 </head>
@@ -202,7 +249,10 @@
                 <div class="ud-eyebrow">Your account</div>
                 <div class="ud-side-name" id="ud-sidename">Your account</div>
             </div>
-            <button class="ud-tab active" data-panel="home" role="tab">Overview</button>
+            <button class="ud-tab active" data-panel="welcome" role="tab">
+                <span id="ud-welcome-label">Welcome</span>
+            </button>
+            <button class="ud-tab"        data-panel="home"    role="tab">Submissions</button>
             <button class="ud-tab"        data-panel="account" role="tab">Account settings</button>
             <a href="#" class="ud-side-signout"
                onclick="event.preventDefault(); fetch('/api/auth/logout',{method:'POST'}).finally(()=>{ window.location.href='/index.html'; });">
@@ -213,11 +263,62 @@
         <main class="ud-main">
         <div class="ud-header">
             <h1 class="ud-title" id="ud-greeting">Welcome back.</h1>
-            <p class="ud-subtitle">Manage your profile and keep tabs on what's coming to MN Lake Homes.</p>
+            <p class="ud-subtitle" id="ud-subtitle">What can we help you find next?</p>
         </div>
 
-        <!-- Overview -->
-        <section class="ud-panel active" id="panel-home">
+        <!-- ─────────────── Welcome (default landing) ─────────────── -->
+        <section class="ud-panel active" id="panel-welcome">
+            <!-- Quick stat strip — submissions roll-up + status -->
+            <div class="ud-stats" id="ud-welcome-stats">
+                <div class="ud-stat"><div class="ud-stat-num" id="ws-total">—</div><div class="ud-stat-lbl">Total submissions</div></div>
+                <div class="ud-stat"><div class="ud-stat-num" id="ws-open">—</div><div class="ud-stat-lbl">Open</div></div>
+                <div class="ud-stat"><div class="ud-stat-num" id="ws-recent">—</div><div class="ud-stat-lbl">Most recent</div></div>
+            </div>
+
+            <!-- Action card grid — sales-page style next steps -->
+            <h3 class="ud-section-h">What are you looking to do?</h3>
+            <div class="ud-action-grid">
+                <a class="ud-action" href="/pages/public/buy.html" style="--ac:#1d6df2;">
+                    <div class="ud-action-ic">🏡</div>
+                    <div class="ud-action-t">Find your lake home</div>
+                    <div class="ud-action-d">Browse lake homes, cabins, and waterfront listings across Minnesota.</div>
+                </a>
+                <a class="ud-action" href="/pages/public/sell.html" style="--ac:#0d9488;">
+                    <div class="ud-action-ic">🏷️</div>
+                    <div class="ud-action-t">Sell your property</div>
+                    <div class="ud-action-d">Get a no-obligation estimate or list with a top lake-area agent.</div>
+                </a>
+                <button type="button" class="ud-action" onclick="if(window.openForm){window.openForm('agent');}else{location.href='/pages/public/agents.html';}" style="--ac:#7c3aed;">
+                    <div class="ud-action-ic">👋</div>
+                    <div class="ud-action-t">Talk to a specialist</div>
+                    <div class="ud-action-d">Connect with a vetted Minnesota lake-area expert today.</div>
+                </button>
+                <a class="ud-action" href="/towns" style="--ac:#d97706;">
+                    <div class="ud-action-ic">📍</div>
+                    <div class="ud-action-t">Explore lakes & towns</div>
+                    <div class="ud-action-d">Lake Minnetonka, Gull, Mille Lacs, and 200+ communities to dive into.</div>
+                </a>
+                <button type="button" class="ud-action" onclick="document.querySelector('.ud-tab[data-panel=&quot;home&quot;]').click()" style="--ac:#059669;">
+                    <div class="ud-action-ic">📬</div>
+                    <div class="ud-action-t">My submissions</div>
+                    <div class="ud-action-d" id="ud-action-sub-desc">Review every form you've sent us and track its status.</div>
+                </button>
+                <a class="ud-action" href="/pages/public/resources.html" style="--ac:#dc2626;">
+                    <div class="ud-action-ic">📚</div>
+                    <div class="ud-action-t">Guides & resources</div>
+                    <div class="ud-action-d">Tax estimators, buyer's guides, and lake-living essentials.</div>
+                </a>
+            </div>
+
+            <!-- Articles you may like (fetches /api/blog) -->
+            <h3 class="ud-section-h" style="margin-top:2.5rem;">Articles you may like</h3>
+            <div class="ud-articles" id="ud-articles">
+                <div style="grid-column:1/-1;color:#a0aec0;font-size:0.92rem;padding:1rem 0;">Loading…</div>
+            </div>
+        </section>
+
+        <!-- ─────────────── Submissions ─────────────── -->
+        <section class="ud-panel" id="panel-home">
             <div class="ud-card">
                 <h2>Your submissions</h2>
                 <p class="ud-lead">Every form you've sent us with this email — buying, selling, renting, and agent requests. Anything you submitted before creating this account shows up here too.</p>
@@ -305,6 +406,8 @@
                 if (first) document.getElementById('ud-greeting').textContent = `Welcome back, ${first}.`;
                 const sideName = document.getElementById('ud-sidename');
                 if (sideName) sideName.textContent = u.display_name || first || 'Your account';
+                const welcomeLabel = document.getElementById('ud-welcome-label');
+                if (welcomeLabel) welcomeLabel.textContent = first ? `Welcome, ${first}` : 'Welcome';
 
                 // Prefill profile form from DB (fetch extended profile)
                 const me = await fetch('/api/auth/me').then(res => res.ok ? res.json() : null).catch(() => null);
@@ -321,6 +424,7 @@
                     document.getElementById('f-email').value = u.email || '';
                 }
                 loadMySubmissions();
+                loadWelcomeArticles();
             } catch (_) {
                 window.location.href = '/pages/public/login.html?redirect=/pages/user/dashboard.html';
             }
@@ -348,6 +452,9 @@
                 const res = await fetch('/api/leads/mine');
                 if (!res.ok) throw new Error('load failed');
                 const leads = await res.json();
+                // Roll-up for the Welcome panel stat strip (runs every time we
+                // load submissions so the count is always fresh).
+                updateWelcomeStats(leads);
                 if (!leads.length) {
                     host.innerHTML = '<div class="ud-leads-state">No submissions yet. When you submit a form on the site with this email, it\'ll show up here.</div>';
                     return;
@@ -373,6 +480,64 @@
                 }).join('')}</div>`;
             } catch (_) {
                 host.innerHTML = '<div class="ud-leads-state">Couldn\'t load your submissions right now. Refresh to try again.</div>';
+            }
+        }
+
+        // ── Welcome panel: stat strip + suggested articles ─────────────
+        function updateWelcomeStats(leads) {
+            const total = leads.length;
+            const open  = leads.filter(l => {
+                const s = (l.lead_status || 'new').toLowerCase();
+                return s !== 'closed' && s !== 'archived';
+            }).length;
+            const latest = leads
+                .map(l => new Date(l.created_at || l.submitted_at))
+                .filter(d => !isNaN(d))
+                .sort((a, b) => b - a)[0];
+            const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+            setText('ws-total', total);
+            setText('ws-open',  open);
+            setText('ws-recent', latest ? latest.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—');
+            const subDesc = document.getElementById('ud-action-sub-desc');
+            if (subDesc) {
+                subDesc.textContent = total
+                    ? `${total} submission${total === 1 ? '' : 's'} on file. Click to review and follow up.`
+                    : `Review every form you've sent us and track its status.`;
+            }
+        }
+
+        async function loadWelcomeArticles() {
+            const host = document.getElementById('ud-articles');
+            if (!host) return;
+            try {
+                const r = await fetch('/api/blog');
+                if (!r.ok) throw new Error();
+                const posts = await r.json();
+                if (!Array.isArray(posts) || !posts.length) {
+                    host.innerHTML = '<div style="grid-column:1/-1;color:#a0aec0;font-size:0.92rem;padding:1rem 0;">No articles yet — check back soon.</div>';
+                    return;
+                }
+                const top = posts.slice(0, 3);
+                host.innerHTML = top.map(p => {
+                    const thumb = p.cover_image_url
+                        ? `style="background-image:url('${esc(p.cover_image_url)}');background-size:cover;background-position:center;"`
+                        : '';
+                    const when = (p.published_at || p.created_at)
+                        ? new Date(p.published_at || p.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+                        : '';
+                    return `
+                        <a class="ud-article" href="/blog/${esc(p.slug)}">
+                            <div class="thumb" ${thumb}></div>
+                            <div class="body">
+                                ${p.tag ? `<div class="tag">${esc(p.tag)}</div>` : ''}
+                                <h4>${esc(p.title)}</h4>
+                                ${p.excerpt ? `<p>${esc(p.excerpt.length > 130 ? p.excerpt.slice(0, 130).trimEnd() + '…' : p.excerpt)}</p>` : ''}
+                                <div class="meta">${esc([p.author_name, when].filter(Boolean).join(' · '))}</div>
+                            </div>
+                        </a>`;
+                }).join('');
+            } catch (_) {
+                host.innerHTML = '<div style="grid-column:1/-1;color:#a0aec0;font-size:0.92rem;padding:1rem 0;">Couldn\'t load articles right now.</div>';
             }
         }
 
