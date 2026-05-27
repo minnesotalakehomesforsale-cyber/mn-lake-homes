@@ -83,14 +83,37 @@
         .dash-status.green  { background: #f0fff4; color: #276749; } .dash-status.green  .dot { background: #38a169; }
         .dash-status.yellow { background: #fffbea; color: #b45309; } .dash-status.yellow .dot { background: #d69e2e; }
         .dash-status.red    { background: #fff5f5; color: #c53030; } .dash-status.red    .dot { background: #e53e3e; }
-        .dash-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1rem; margin-top: 2rem; }
-        .dash-card { position: relative; display: flex; flex-direction: column; gap: 0.45rem; text-align: left; background: #f7f9fa; border: 1px solid #edf2f7; border-radius: 12px; padding: 1.3rem; cursor: pointer; font: inherit; transition: all 0.15s; text-decoration: none; color: inherit; }
-        .dash-card:hover { border-color: #1d6df2; background: #fff; box-shadow: 0 6px 16px rgba(29,109,242,0.10); transform: translateY(-1px); }
+        .dash-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+        .dash-card { position: relative; display: flex; flex-direction: column; gap: 0.45rem; text-align: left; background: #fff; border: 1px solid #edf2f7; border-radius: 12px; padding: 1.35rem 1.4rem 1.5rem; cursor: pointer; font: inherit; transition: all 0.15s; text-decoration: none; color: inherit; overflow: hidden; }
+        .dash-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: var(--ac, #1d6df2); opacity: 0.85;
+        }
+        .dash-card:hover { border-color: var(--ac, #1d6df2); background: #fff; box-shadow: 0 14px 30px rgba(16,24,40,0.08); transform: translateY(-2px); }
         .dash-card.disabled { opacity: 0.55; cursor: default; pointer-events: none; }
         .dash-card .ic { color: #1d6df2; }
         .dash-card .t { font-weight: 700; font-size: 1rem; color: #1a202c; }
         .dash-card .d { font-size: 0.82rem; color: #718096; line-height: 1.4; }
         .dash-card .pill { position: absolute; top: 1rem; right: 1rem; background: #1d6df2; color: #fff; border-radius: 99px; padding: 0.1rem 0.55rem; font-size: 0.72rem; font-weight: 800; }
+        /* Stat strip on the Dashboard landing */
+        .dash-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.85rem; margin-top: 2rem; }
+        .dash-stat { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.1rem 1.25rem; }
+        .dash-stat-num { font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+        .dash-stat-lbl { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-top: 0.35rem; }
+        @media (max-width: 600px) { .dash-stats { grid-template-columns: 1fr; } .dash-stat-num { font-size: 1.5rem; } }
+
+        /* Articles section */
+        .dash-section-h { font-size: 1.1rem; font-weight: 800; color: #1a202c; letter-spacing: -0.3px; margin: 2.25rem 0 1rem; }
+        .dash-articles { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+        .dash-article { display: flex; flex-direction: column; background: #fff; border: 1px solid #edf2f7; border-radius: 14px; overflow: hidden; text-decoration: none; color: inherit; transition: all 0.15s; }
+        .dash-article:hover { transform: translateY(-3px); border-color: #1d6df2; box-shadow: 0 14px 30px rgba(16,24,40,0.08); }
+        .dash-article .thumb { height: 160px; background: linear-gradient(135deg, #e8f1ff 0%, #c7ddfa 55%, #a8c8f0 100%); background-size: cover; background-position: center; }
+        .dash-article .body { padding: 1rem 1.15rem 1.2rem; flex: 1; display: flex; flex-direction: column; gap: 0.4rem; }
+        .dash-article .tag { font-size: 0.66rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #1d6df2; }
+        .dash-article h4 { font-size: 0.98rem; font-weight: 800; color: #1a202c; margin: 0; letter-spacing: -0.2px; line-height: 1.3; }
+        .dash-article p { font-size: 0.85rem; color: #4a5568; line-height: 1.5; margin: 0; flex: 1; }
+        .dash-article .meta { font-size: 0.74rem; color: #a0aec0; margin-top: 0.15rem; }
+
         .dash-open-msgs { margin-top: 2rem; border: 1px solid #bcd6ff; background: #f0f6ff; border-radius: 12px; padding: 1.25rem 1.5rem; }
         .dash-open-msgs h3 { margin: 0 0 0.75rem; font-size: 1rem; font-weight: 800; color: #1a3a6b; }
         .dash-open-msgs .om { background: #fff; border: 1px solid #dbe9ff; border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 0.6rem; }
@@ -296,34 +319,51 @@
                         <span id="dash-status" class="dash-status yellow"><span class="dot"></span><span id="dash-status-label">Loading…</span></span>
                     </div>
 
+                    <!-- Stat strip — at-a-glance numbers populated by updateDashLeads / refreshMsgBadge -->
+                    <div class="dash-stats">
+                        <div class="dash-stat"><div class="dash-stat-num" id="dash-stat-leads">—</div><div class="dash-stat-lbl">Active leads</div></div>
+                        <div class="dash-stat"><div class="dash-stat-num" id="dash-stat-msgs">—</div><div class="dash-stat-lbl">Unread messages</div></div>
+                        <div class="dash-stat"><div class="dash-stat-num" id="dash-stat-tier">—</div><div class="dash-stat-lbl">Membership tier</div></div>
+                    </div>
+
                     <div class="dash-links">
-                        <a id="dash-link-public" class="dash-card" href="#" target="_blank" rel="noopener">
+                        <a id="dash-link-public" class="dash-card" href="#" target="_blank" rel="noopener" style="--ac:#d97706;">
                             <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></span>
                             <span class="t">View my public page</span>
                             <span class="d" id="dash-public-desc">See how buyers see your profile</span>
                         </a>
-                        <button class="dash-card" onclick="switchView('leads')">
+                        <button class="dash-card" onclick="switchView('leads')" style="--ac:#1d6df2;">
                             <span class="pill" id="dash-leads-pill" style="display:none;">0</span>
                             <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></span>
                             <span class="t">Lead Inbox</span>
                             <span class="d" id="dash-leads-desc">Your active leads from the platform</span>
                         </button>
-                        <button class="dash-card" onclick="switchView('messages')">
+                        <button class="dash-card" onclick="switchView('messages')" style="--ac:#7c3aed;">
                             <span class="pill" id="dash-msgs-pill" style="display:none;">0</span>
                             <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></span>
                             <span class="t">Messages</span>
                             <span class="d" id="dash-msgs-desc">Updates from the MN Lake Homes team</span>
                         </button>
-                        <button class="dash-card" onclick="switchView('profile')">
+                        <button class="dash-card" onclick="switchView('profile')" style="--ac:#0d9488;">
                             <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></span>
                             <span class="t">Edit my profile</span>
                             <span class="d">Photo, bio, service areas & specialties</span>
                         </button>
-                        <button class="dash-card" onclick="switchView('account')">
+                        <button class="dash-card" onclick="switchView('account')" style="--ac:#059669;">
                             <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span>
                             <span class="t">Account & membership</span>
                             <span class="d" id="dash-acct-desc">Your tier, billing & login</span>
                         </button>
+                        <a class="dash-card" href="/pages/public/resources.html" style="--ac:#dc2626;">
+                            <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg></span>
+                            <span class="t">Guides for agents</span>
+                            <span class="d">Lead-conversion tips, listing how-tos, and seasonal updates.</span>
+                        </a>
+                    </div>
+
+                    <h3 class="dash-section-h">Articles you may like</h3>
+                    <div class="dash-articles" id="dash-articles">
+                        <div style="grid-column:1/-1;color:#a0aec0;font-size:0.92rem;padding:1rem 0;">Loading…</div>
                     </div>
 
                     <div class="dash-open-msgs" id="dash-open-msgs" style="display:none;">
@@ -757,6 +797,7 @@
             // Unread message badge + dashboard messages card/preview
             refreshMsgBadge();
             hydrateDashboardMessages();
+            loadAgentArticles();
         });
 
         // ── Messages (read-only, one-way from the MNLH team) ──────────────────────
@@ -768,7 +809,45 @@
                 const badge = document.getElementById('msg-count');
                 if (count > 0) { badge.textContent = count; badge.style.display = 'inline-block'; }
                 else { badge.style.display = 'none'; }
+                const sm = document.getElementById('dash-stat-msgs');
+                if (sm) sm.textContent = count || 0;
             } catch(_) {}
+        }
+
+        // Fetch a few recent blog posts for the landing's articles row.
+        async function loadAgentArticles() {
+            const host = document.getElementById('dash-articles');
+            if (!host) return;
+            try {
+                const r = await fetch('/api/blog');
+                if (!r.ok) throw new Error();
+                const posts = await r.json();
+                if (!Array.isArray(posts) || !posts.length) {
+                    host.innerHTML = '<div style="grid-column:1/-1;color:#a0aec0;font-size:0.92rem;padding:1rem 0;">No articles yet — check back soon.</div>';
+                    return;
+                }
+                host.innerHTML = posts.slice(0, 3).map(p => {
+                    const thumb = p.cover_image_url
+                        ? `style="background-image:url('${escMsg(p.cover_image_url)}');background-size:cover;background-position:center;"`
+                        : '';
+                    const when = (p.published_at || p.created_at)
+                        ? new Date(p.published_at || p.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+                        : '';
+                    const ex = p.excerpt && p.excerpt.length > 130 ? p.excerpt.slice(0, 130).trimEnd() + '…' : (p.excerpt || '');
+                    return `
+                        <a class="dash-article" href="/blog/${escMsg(p.slug)}">
+                            <div class="thumb" ${thumb}></div>
+                            <div class="body">
+                                ${p.tag ? `<div class="tag">${escMsg(p.tag)}</div>` : ''}
+                                <h4>${escMsg(p.title)}</h4>
+                                ${ex ? `<p>${escMsg(ex)}</p>` : ''}
+                                <div class="meta">${escMsg([p.author_name, when].filter(Boolean).join(' · '))}</div>
+                            </div>
+                        </a>`;
+                }).join('');
+            } catch (_) {
+                host.innerHTML = '<div style="grid-column:1/-1;color:#a0aec0;font-size:0.92rem;padding:1rem 0;">Couldn\'t load articles right now.</div>';
+            }
         }
 
         function escMsg(s) {
@@ -882,6 +961,8 @@
         function renderDashboard(agent) {
             const first = (agent.display_name || agent.account_full_name || '').trim().split(/\s+/)[0];
             document.getElementById('dash-firstname').textContent = first ? `, ${first}` : '';
+            const tierStat = document.getElementById('dash-stat-tier');
+            if (tierStat) tierStat.textContent = agent.membership_badge || agent.membership_name || 'Agent';
 
             const pill  = document.getElementById('dash-status');
             const label = document.getElementById('dash-status-label');
@@ -917,6 +998,8 @@
             const active = (allLeads || []).filter(l => l.status !== 'closed' && l.status !== 'archived').length;
             const pill = document.getElementById('dash-leads-pill');
             const desc = document.getElementById('dash-leads-desc');
+            const stat = document.getElementById('dash-stat-leads');
+            if (stat) stat.textContent = active;
             if (!pill || !desc) return;
             if (active > 0) {
                 pill.textContent = active; pill.style.display = '';

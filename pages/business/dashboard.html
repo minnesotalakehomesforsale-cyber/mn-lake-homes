@@ -11,28 +11,52 @@
     <script src="../../components/places-autocomplete.js" defer></script>
 
     <style>
-        :root { --brand: #d97706; --brand-dark: #b45309; --ink: #1a202c; --ink-soft: #4a5568; --muted: #718096; --line: #e5eaf0; }
-        /* Keep the layout identical between tabs of different heights:
-           overflow-y:scroll forces the scrollbar lane to always exist (every
-           browser), scrollbar-gutter is the modern equivalent. The usable
-           width never changes, so the centered content never shifts. */
+        :root { --brand: #d97706; --brand-dark: #b45309; --brand-soft: #fef3c7; --ink: #1a202c; --ink-soft: #4a5568; --muted: #718096; --line: #e5eaf0; --header-h: 84px; }
         html { overflow-y: scroll; scrollbar-gutter: stable; }
+        html, body { margin: 0; padding: 0; }
         body { background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: var(--ink); }
 
-        /* Keep each tab's content area a consistent height so the frame
-           stays put and only the contents change between tabs. */
-        #tab-profile, #tab-towns, #tab-subscription, #tab-account { min-height: 60vh; }
+        /* Each panel keeps a consistent min height so the frame stays put. */
+        #tab-welcome, #tab-profile, #tab-towns, #tab-subscription, #tab-account { min-height: 60vh; }
 
-        /* Desktop top padding has to clear the fixed global-header (~76px).
-           Mobile already does this at 5.5rem in the ≤900px block below;
-           desktop was only 2.5rem and content rode right under the nav. */
-        .bd-shell { max-width: 960px; margin: 0 auto; padding: 7rem 1.25rem 5rem; }
+        /* ── App-shell: fixed left rail + content pane, like the user dashboard.
+              Tabs live in the rail; content swaps on the right. Layout is grid-
+              anchored so nothing shifts between tabs or between window sizes. ── */
+        .bd-shell {
+            display: grid;
+            grid-template-columns: 260px minmax(0, 1fr);
+            gap: 0;
+            align-items: start;
+            padding-top: var(--header-h);
+        }
+        .bd-side {
+            position: sticky; top: var(--header-h);
+            height: calc(100vh - var(--header-h)); overflow-y: auto;
+            background: #fff; border-right: 1px solid var(--line);
+            padding: 2rem 1.25rem;
+            display: flex; flex-direction: column; gap: 0.3rem;
+        }
+        .bd-side-id { padding: 0 0.5rem 1.25rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--line); }
+        .bd-side-eyebrow { font-size: 0.78rem; font-weight: 700; letter-spacing: 1.2px; color: var(--brand); text-transform: uppercase; margin-bottom: 0.6rem; }
+        .bd-side-name { font-size: 1.1rem; font-weight: 800; color: var(--ink); word-break: break-word; }
+        .bd-side-signout {
+            margin-top: auto; display: block; text-decoration: none;
+            padding: 0.7rem 0.85rem; border-radius: 9px;
+            font-size: 0.92rem; font-weight: 600; color: #e53e3e;
+            background: none; border: 0; cursor: pointer; font-family: inherit; text-align: left;
+            transition: background 0.15s;
+        }
+        .bd-side-signout:hover { background: #fef2f2; }
+
+        .bd-main {
+            min-height: calc(100vh - var(--header-h));
+            padding: 2.75rem 3rem 4rem; box-sizing: border-box;
+        }
 
         .bd-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 2rem; }
         .bd-head h1 { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.6px; margin: 0 0 0.25rem; }
         .bd-head p { color: var(--muted); font-size: 0.95rem; margin: 0; }
-        .bd-head .signout { font-size: 0.85rem; font-weight: 700; color: var(--muted); background: none; border: 0; cursor: pointer; }
-        .bd-head .signout:hover { color: var(--brand); }
+        .bd-head-actions { display: none; }   /* sign-out moved into the rail */
 
         /* Status banner — explains live vs waiting vs paid gates */
         .bd-banner {
@@ -54,17 +78,18 @@
         }
         .bd-banner a:hover, .bd-banner button:hover { background: #000; }
 
-        /* Tabs */
-        .bd-tabs { display: flex; gap: 0.4rem; border-bottom: 1px solid var(--line); margin-bottom: 1.5rem; flex-wrap: wrap; }
+        /* Tabs — vertical nav items inside the rail (was a top tab bar). */
+        .bd-tabs { display: flex; flex-direction: column; gap: 0.25rem; }
         .bd-tab {
-            background: none; border: 0; padding: 0.85rem 1.1rem;
-            font-family: inherit; font-weight: 700; font-size: 0.92rem;
-            color: var(--muted); cursor: pointer;
-            border-bottom: 2px solid transparent;
-            margin-bottom: -1px;
+            display: flex; align-items: center; gap: 0.6rem;
+            width: 100%; text-align: left;
+            background: none; border: 0; border-radius: 9px;
+            padding: 0.7rem 0.85rem; font-family: inherit;
+            font-size: 0.95rem; font-weight: 600; color: var(--ink-soft);
+            cursor: pointer; transition: all 0.15s;
         }
-        .bd-tab:hover { color: var(--ink); }
-        .bd-tab.on { color: var(--brand); border-bottom-color: var(--brand); }
+        .bd-tab:hover { background: #f7f9fa; color: var(--ink); }
+        .bd-tab.on { background: var(--brand-soft); color: var(--brand-dark); font-weight: 700; }
 
         .bd-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 1.75rem; box-shadow: 0 10px 30px rgba(16,24,40,0.04); }
         .section-label { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: var(--muted); margin: 1.25rem 0 0.6rem; }
@@ -85,21 +110,29 @@
         }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
         .grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem; }
-        @media (max-width: 760px) {
-            .bd-shell { padding: 5.5rem 1rem 4rem; }
+        /* ── Tablet ≤ 1100px: narrow the rail ── */
+        @media (max-width: 1100px) {
+            .bd-shell { grid-template-columns: 220px minmax(0, 1fr); }
+            .bd-main  { padding: 2.25rem 2rem 3.5rem; }
+        }
+
+        /* ── Mobile ≤ 900px: rail becomes a sticky horizontal tab strip ── */
+        @media (max-width: 900px) {
+            .bd-shell { grid-template-columns: 1fr; }
+            .bd-side {
+                position: sticky; top: var(--header-h); height: auto; z-index: 20;
+                flex-direction: row; align-items: center; gap: 0.4rem;
+                overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
+                border-right: 0; border-bottom: 1px solid var(--line);
+                padding: 0.7rem 1rem;
+            }
+            .bd-side-id { display: none; }
+            .bd-side-signout { margin-top: 0; margin-left: auto; flex-shrink: 0; padding: 0.55rem 0.9rem; }
+            .bd-tabs { flex-direction: row; gap: 0.4rem; }
+            .bd-tab { width: auto; flex-shrink: 0; white-space: nowrap; padding: 0.55rem 0.9rem; }
+            .bd-main { padding: 1.75rem 1.25rem 3rem; min-height: 0; }
             .bd-head { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
             .bd-head h1 { font-size: 1.5rem; }
-            /* Tabs scroll horizontally if they overflow rather than wrapping
-               to an awkward second line. */
-            .bd-tabs {
-                overflow-x: auto; flex-wrap: nowrap;
-                scrollbar-width: none;
-                padding-bottom: 0;
-                margin-left: -1rem; margin-right: -1rem;
-                padding-left: 1rem; padding-right: 1rem;
-            }
-            .bd-tabs::-webkit-scrollbar { display: none; }
-            .bd-tab { white-space: nowrap; padding: 0.75rem 0.9rem; font-size: 0.88rem; }
             .bd-card { padding: 1.25rem; }
             .bd-banner { flex-direction: column; align-items: flex-start; }
             .bd-banner a, .bd-banner button { width: 100%; text-align: center; }
@@ -137,6 +170,47 @@
         .thumb { width: 100%; height: 150px; background: #f7f9fa; border: 1px dashed var(--line); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; }
         .thumb img { width: 100%; height: 100%; object-fit: cover; }
 
+        /* ── Welcome panel (sales-page landing) ── */
+        .bd-section-h { font-size: 1.15rem; font-weight: 800; color: var(--ink); letter-spacing: -0.3px; margin: 0 0 1rem; }
+        .bd-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.85rem; margin-bottom: 2rem; }
+        .bd-stat { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 1.1rem 1.25rem; }
+        .bd-stat-num { font-size: 1.85rem; font-weight: 800; color: var(--ink); letter-spacing: -0.5px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+        .bd-stat-lbl { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 0.35rem; }
+        @media (max-width: 600px) { .bd-stats { grid-template-columns: 1fr; } .bd-stat-num { font-size: 1.5rem; } }
+
+        .bd-action-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.85rem; }
+        .bd-action {
+            position: relative; display: block; text-align: left;
+            background: #fff; border: 1px solid var(--line); border-radius: 14px;
+            padding: 1.35rem 1.4rem 1.5rem; cursor: pointer;
+            text-decoration: none; color: inherit; font: inherit;
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+            overflow: hidden;
+        }
+        .bd-action::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: var(--ac, var(--brand)); opacity: 0.85;
+        }
+        .bd-action:hover { transform: translateY(-3px); border-color: var(--ac, var(--brand)); box-shadow: 0 14px 30px rgba(16,24,40,0.08); }
+        .bd-action-ic { font-size: 1.6rem; line-height: 1; margin-bottom: 0.7rem; }
+        .bd-action-t  { font-size: 1.02rem; font-weight: 800; color: var(--ink); margin-bottom: 0.35rem; letter-spacing: -0.2px; }
+        .bd-action-d  { font-size: 0.86rem; color: var(--ink-soft); line-height: 1.5; }
+
+        .bd-articles { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+        .bd-article {
+            display: flex; flex-direction: column;
+            background: #fff; border: 1px solid var(--line); border-radius: 14px;
+            overflow: hidden; text-decoration: none; color: inherit;
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+        }
+        .bd-article:hover { transform: translateY(-3px); border-color: var(--brand); box-shadow: 0 14px 30px rgba(16,24,40,0.08); }
+        .bd-article .thumb { height: 160px; background: linear-gradient(135deg, #fff8e1 0%, #fcd9a3 55%, #f3b878 100%); background-size: cover; background-position: center; border: 0; border-radius: 0; margin: 0; display: block; }
+        .bd-article .body  { padding: 1rem 1.15rem 1.2rem; flex: 1; display: flex; flex-direction: column; gap: 0.4rem; }
+        .bd-article .tag   { font-size: 0.66rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--brand); }
+        .bd-article h4     { font-size: 0.98rem; font-weight: 800; color: var(--ink); margin: 0; letter-spacing: -0.2px; line-height: 1.3; }
+        .bd-article p      { font-size: 0.85rem; color: var(--ink-soft); line-height: 1.5; margin: 0; flex: 1; }
+        .bd-article .meta  { font-size: 0.74rem; color: var(--muted); margin-top: 0.15rem; }
+
         .upload-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-top: 0.35rem; }
         .upload-btn { font-family: inherit; font-size: 0.82rem; font-weight: 700; padding: 0.55rem 0.9rem; border: 1px solid var(--line); background: #f7f9fa; color: var(--ink); border-radius: 8px; cursor: pointer; }
         .upload-btn:hover { border-color: var(--brand); color: var(--brand); }
@@ -171,30 +245,90 @@
 </head>
 <body>
     <global-header></global-header>
-    <main class="bd-shell">
+    <div class="bd-shell">
+        <!-- Left rail — fixed nav, stays put while the content pane swaps -->
+        <aside class="bd-side">
+            <div class="bd-side-id">
+                <div class="bd-side-eyebrow">Your business</div>
+                <div class="bd-side-name" id="bd-sidename">Loading…</div>
+            </div>
+            <div class="bd-tabs" role="tablist">
+                <button class="bd-tab on" data-tab="welcome"      role="tab" onclick="showTab('welcome')">
+                    <span id="bd-welcome-label">Welcome</span>
+                </button>
+                <button class="bd-tab"    data-tab="profile"      role="tab" onclick="showTab('profile')">Profile</button>
+                <button class="bd-tab"    data-tab="towns"        role="tab" onclick="showTab('towns')">Towns served</button>
+                <button class="bd-tab"    data-tab="subscription" role="tab" onclick="showTab('subscription')">Subscription</button>
+                <button class="bd-tab"    data-tab="account"      role="tab" onclick="showTab('account')">Account</button>
+            </div>
+            <button class="bd-side-signout" onclick="signOut()">Sign out</button>
+        </aside>
+
+        <main class="bd-main">
         <div class="bd-head">
             <div>
                 <h1 id="bd-name">Your dashboard</h1>
-                <p id="bd-sub">Manage your listing, payment, and account.</p>
+                <p id="bd-sub" style="display:none;"></p>
+                <p id="bd-welcome-sub" style="color:var(--muted);font-size:0.95rem;margin:0;">What can we help you do today?</p>
             </div>
             <div class="bd-head-actions">
                 <a id="bd-view-live" class="bd-view-live" href="#" target="_blank" rel="noopener">
                     <span aria-hidden="true">↗</span> View live listing
                 </a>
-                <button class="signout" onclick="signOut()">Sign out</button>
             </div>
         </div>
 
         <div id="bd-banner" class="bd-banner" style="display:none;"></div>
 
-        <div class="bd-tabs" role="tablist">
-            <button class="bd-tab on" data-tab="profile"      role="tab" onclick="showTab('profile')">Profile</button>
-            <button class="bd-tab"    data-tab="towns"        role="tab" onclick="showTab('towns')">Towns served</button>
-            <button class="bd-tab"    data-tab="subscription" role="tab" onclick="showTab('subscription')">Subscription</button>
-            <button class="bd-tab"    data-tab="account"      role="tab" onclick="showTab('account')">Account</button>
-        </div>
-
         <div id="loading" class="loading">Loading your dashboard…</div>
+
+        <!-- ─────────────── Welcome (default landing) ─────────────── -->
+        <section class="bd-card" id="tab-welcome" style="background:transparent;border:0;padding:0;box-shadow:none;">
+            <div class="bd-stats">
+                <div class="bd-stat"><div class="bd-stat-num" id="bws-status">—</div><div class="bd-stat-lbl">Subscription</div></div>
+                <div class="bd-stat"><div class="bd-stat-num" id="bws-tier">—</div><div class="bd-stat-lbl">Tier</div></div>
+                <div class="bd-stat"><div class="bd-stat-num" id="bws-towns">—</div><div class="bd-stat-lbl">Towns served</div></div>
+            </div>
+
+            <h3 class="bd-section-h">What would you like to do?</h3>
+            <div class="bd-action-grid">
+                <a class="bd-action" id="bw-action-public" href="#" target="_blank" rel="noopener" style="--ac:#d97706;">
+                    <div class="bd-action-ic">↗</div>
+                    <div class="bd-action-t">View my public page</div>
+                    <div class="bd-action-d" id="bw-public-desc">See how buyers see your listing</div>
+                </a>
+                <button type="button" class="bd-action" onclick="showTab('profile')" style="--ac:#1d6df2;">
+                    <div class="bd-action-ic">✏️</div>
+                    <div class="bd-action-t">Edit my profile</div>
+                    <div class="bd-action-d">Name, description, image, hours, contact info.</div>
+                </button>
+                <button type="button" class="bd-action" onclick="showTab('towns')" style="--ac:#0d9488;">
+                    <div class="bd-action-ic">📍</div>
+                    <div class="bd-action-t">Towns I serve</div>
+                    <div class="bd-action-d" id="bw-towns-desc">Pick the lake areas you want to be found in.</div>
+                </button>
+                <button type="button" class="bd-action" onclick="showTab('subscription')" style="--ac:#7c3aed;">
+                    <div class="bd-action-ic">💳</div>
+                    <div class="bd-action-t">Manage subscription</div>
+                    <div class="bd-action-d" id="bw-sub-desc">Update payment, change tier, or open the billing portal.</div>
+                </button>
+                <button type="button" class="bd-action" onclick="showTab('account')" style="--ac:#059669;">
+                    <div class="bd-action-ic">⚙️</div>
+                    <div class="bd-action-t">Account settings</div>
+                    <div class="bd-action-d">Login email, password, and admin contact.</div>
+                </button>
+                <a class="bd-action" href="/pages/public/resources.html" style="--ac:#dc2626;">
+                    <div class="bd-action-ic">📚</div>
+                    <div class="bd-action-t">Guides & resources</div>
+                    <div class="bd-action-d">Tips, checklists, and seasonal updates for lake businesses.</div>
+                </a>
+            </div>
+
+            <h3 class="bd-section-h" style="margin-top:2.5rem;">Articles you may like</h3>
+            <div class="bd-articles" id="bd-articles">
+                <div style="grid-column:1/-1;color:var(--muted);font-size:0.92rem;padding:1rem 0;">Loading…</div>
+            </div>
+        </section>
 
         <!-- Profile tab ────────────────────────────────────────────── -->
         <section class="bd-card" id="tab-profile" style="display:none;">
@@ -337,7 +471,8 @@
                 <button class="btn primary" type="button" onclick="changePassword()">Update password</button>
             </div>
         </section>
-    </main>
+        </main>
+    </div>
 
     <script>
         let _biz = null;
@@ -368,14 +503,26 @@
                 const user = userRes.ok ? await userRes.json() : null;
 
                 document.getElementById('loading').style.display = 'none';
-                document.getElementById('tab-profile').style.display = '';
+                // Default landing is the new Welcome tab. Everything else
+                // renders into hidden panels behind it so it's ready when
+                // the user clicks through.
+                showTab('welcome');
+
+                // Personalize the rail (business name + Welcome tab label).
+                const sidename = document.getElementById('bd-sidename');
+                if (sidename) sidename.textContent = _biz.name || 'Your business';
+                const welcomeLabel = document.getElementById('bd-welcome-label');
+                const ownerFirst = (user?.display_name || user?.email || '').split(' ')[0];
+                if (welcomeLabel) welcomeLabel.textContent = ownerFirst ? `Welcome, ${ownerFirst}` : 'Welcome';
 
                 fillProfile(_biz);
                 fillAccount(user);
                 renderBanner(justPaid, cancelled);
                 renderSubscription();
                 renderHeaderViewLive();
+                renderWelcome();
                 loadTowns();
+                loadBusinessArticles();
                 wirePlacesAutocomplete();
             } catch (err) {
                 document.getElementById('loading').textContent = 'Could not load your dashboard. Try refreshing.';
@@ -384,10 +531,109 @@
 
         function showTab(tab) {
             document.querySelectorAll('.bd-tab').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
-            ['profile','towns','subscription','account'].forEach(t => {
+            ['welcome','profile','towns','subscription','account'].forEach(t => {
                 document.getElementById(`tab-${t}`).style.display = t === tab ? '' : 'none';
             });
+            // Header sub-line: Welcome shows the inviting copy; everything
+            // else shows the slug/status line.
+            const subA = document.getElementById('bd-sub');
+            const subW = document.getElementById('bd-welcome-sub');
+            if (subA && subW) {
+                subA.style.display = (tab === 'welcome') ? 'none' : '';
+                subW.style.display = (tab === 'welcome') ? '' : 'none';
+            }
             if (tab === 'subscription') renderSubscription();
+            if (tab === 'welcome')      renderWelcome();
+        }
+
+        // ── Welcome panel: stat strip + action card descriptions ─────────
+        function renderWelcome() {
+            if (!_biz) return;
+            const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+
+            // Subscription status pill text
+            const sub = (_biz.subscription_status || 'none').toLowerCase();
+            const subLabel = sub === 'active'   ? 'Active'
+                          : sub === 'past_due'  ? 'Past due'
+                          : sub === 'canceled'  ? 'Canceled'
+                          : sub === 'trialing'  ? 'Trialing'
+                          : 'Not set';
+            setText('bws-status', subLabel);
+
+            // Tier (premium / basic / —)
+            const tier = (_biz.tier || _biz.paid_tier || '—').replace(/_/g, ' ');
+            setText('bws-tier', tier.charAt(0).toUpperCase() + tier.slice(1));
+
+            // Public-page action: enable + populate href once we know the slug.
+            const pub = document.getElementById('bw-action-public');
+            const desc = document.getElementById('bw-public-desc');
+            if (_biz.slug && _biz.status === 'active' && sub === 'active') {
+                pub.href = `/businesses/${encodeURIComponent(_biz.slug)}`;
+                pub.classList.remove('disabled');
+                if (desc) desc.textContent = 'See how buyers see your listing';
+            } else {
+                pub.href = '#';
+                pub.style.pointerEvents = 'none';
+                pub.style.opacity = '0.55';
+                if (desc) desc.textContent = 'Available once your listing is live';
+            }
+
+            // Subscription card description reflects the current state.
+            const subDesc = document.getElementById('bw-sub-desc');
+            if (subDesc) {
+                subDesc.textContent = sub === 'active'
+                    ? 'Update payment, change tier, or open the billing portal.'
+                    : sub === 'past_due'
+                        ? 'Payment failed — update your card to keep your listing live.'
+                        : 'Start your subscription to publish your listing.';
+            }
+        }
+
+        // Towns count comes from /api/businesses/:id/tags — wire it from the
+        // existing town loader so we don't double-fetch. Called by loadTowns().
+        function setWelcomeTownsCount(count) {
+            const el = document.getElementById('bws-towns');
+            if (el) el.textContent = count || 0;
+            const desc = document.getElementById('bw-towns-desc');
+            if (desc) desc.textContent = count
+                ? `${count} town${count === 1 ? '' : 's'} selected — add or remove anytime.`
+                : 'Pick the lake areas you want to be found in.';
+        }
+
+        async function loadBusinessArticles() {
+            const host = document.getElementById('bd-articles');
+            if (!host) return;
+            try {
+                const r = await fetch('/api/blog');
+                if (!r.ok) throw new Error();
+                const posts = await r.json();
+                if (!Array.isArray(posts) || !posts.length) {
+                    host.innerHTML = '<div style="grid-column:1/-1;color:var(--muted);font-size:0.92rem;padding:1rem 0;">No articles yet — check back soon.</div>';
+                    return;
+                }
+                const escA = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+                host.innerHTML = posts.slice(0, 3).map(p => {
+                    const thumb = p.cover_image_url
+                        ? `style="background-image:url('${escA(p.cover_image_url)}');background-size:cover;background-position:center;"`
+                        : '';
+                    const when = (p.published_at || p.created_at)
+                        ? new Date(p.published_at || p.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+                        : '';
+                    const ex = p.excerpt && p.excerpt.length > 130 ? p.excerpt.slice(0, 130).trimEnd() + '…' : (p.excerpt || '');
+                    return `
+                        <a class="bd-article" href="/blog/${escA(p.slug)}">
+                            <div class="thumb" ${thumb}></div>
+                            <div class="body">
+                                ${p.tag ? `<div class="tag">${escA(p.tag)}</div>` : ''}
+                                <h4>${escA(p.title)}</h4>
+                                ${ex ? `<p>${escA(ex)}</p>` : ''}
+                                <div class="meta">${escA([p.author_name, when].filter(Boolean).join(' · '))}</div>
+                            </div>
+                        </a>`;
+                }).join('');
+            } catch (_) {
+                host.innerHTML = '<div style="grid-column:1/-1;color:var(--muted);font-size:0.92rem;padding:1rem 0;">Couldn\'t load articles right now.</div>';
+            }
         }
 
         // Profile ─────────────────────────────────────────────────────
@@ -631,6 +877,8 @@
             const el = document.getElementById('tag-chips');
             const counter = document.getElementById('tag-counter');
             if (counter) counter.textContent = `${_selectedTagIds.size} / ${TOWNS_MAX}`;
+            // Keep the Welcome stat strip in sync whenever the chip set changes.
+            if (typeof setWelcomeTownsCount === 'function') setWelcomeTownsCount(_selectedTagIds.size);
             if (!_allTowns.length) {
                 el.innerHTML = '<span class="hint" style="padding:0.3rem 0.5rem;">No towns available.</span>';
                 return;
