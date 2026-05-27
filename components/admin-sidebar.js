@@ -174,6 +174,28 @@
                     </a>
                 </aside>
             `;
+            // Apply per-admin tab permissions. super_admin (owner) sees all
+            // tabs; a regular admin with admin_tab_permissions = [...keys]
+            // only sees those nav items. allowed_tabs === null means full
+            // access (default for existing admins — no breakage). Fail open
+            // on a network error so an admin never gets locked out of the UI.
+            this.applyPermissions();
+        }
+
+        async applyPermissions() {
+            try {
+                const r = await fetch('/api/auth/session', { credentials: 'include' });
+                if (!r.ok) return;
+                const sess = await r.json();
+                if (sess.role === 'super_admin') return;            // owner: all tabs
+                if (!Array.isArray(sess.allowed_tabs)) return;       // null: all tabs
+                const allow = new Set(sess.allowed_tabs);
+                this.querySelectorAll('.side-link').forEach(link => {
+                    const id = link.id || '';                        // nav-link-<key>
+                    const key = id.replace(/^nav-link-/, '');
+                    if (key && !allow.has(key)) link.style.display = 'none';
+                });
+            } catch (_) { /* keep everything visible on failure */ }
         }
     }
 

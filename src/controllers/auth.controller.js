@@ -421,6 +421,7 @@ const session = async (req, res) => {
     try {
         const userRes = await pool.query(
             `SELECT u.id, u.role, u.full_name, u.email, u.account_status,
+                    u.admin_tab_permissions,
                     a.display_name, a.slug
              FROM users u
              LEFT JOIN agents a ON a.user_id = u.id
@@ -438,12 +439,21 @@ const session = async (req, res) => {
             return res.status(403).json({ error: 'Account suspended.' });
         }
 
+        // allowed_tabs: null means full access (super_admin always; admin
+        // when no specific permissions have been set). An array means
+        // restricted — the sidebar filters its NAV to those keys.
+        let allowed_tabs = null;
+        if (user.role === 'admin' && Array.isArray(user.admin_tab_permissions)) {
+            allowed_tabs = user.admin_tab_permissions;
+        }
+
         res.json({
             userId: user.id,
             role: user.role,
             display_name: user.display_name || user.full_name,
             email: user.email,
-            slug: user.slug || null
+            slug: user.slug || null,
+            allowed_tabs,
         });
     } catch (err) {
         console.error('[session]', err.message);

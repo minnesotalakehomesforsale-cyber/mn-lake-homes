@@ -35,11 +35,16 @@ router.post('/', adminController.createAgent);                            // POS
 router.get('/users', adminController.getUsers);                            // GET /api/admin/users
 router.get('/users/:id', adminController.getUserDetail);                   // GET /api/admin/users/:id
 router.get('/users/:id/inquiries', adminController.getUserInquiries);      // GET leads + cash-offer leads for this user
+router.post ('/users',                  verifyToken, requireRole(['super_admin']), adminController.createAdminUser);     // POST create new admin user (owner-only)
 router.patch('/users/:id', adminController.updateUser);                    // PATCH name/email/role
+router.patch('/users/:id/permissions',  verifyToken, requireRole(['super_admin']), adminController.setUserPermissions); // PATCH sidebar tab permissions (owner-only)
 router.patch('/users/:id/status', adminController.updateUserStatus);       // PATCH account status
 router.patch('/users/:id/password', adminController.resetUserPassword);    // PATCH password reset
 router.post('/users/:id/hubspot-sync', adminController.syncUserToHubspot); // POST manual HubSpot sync
 router.delete('/users/:id', adminController.deleteUser);                   // DELETE user
+
+// ─── ADMIN TABS (canonical list — powers the permission picker) ──────────────
+router.get('/admin-tabs', adminController.listAdminTabs);
 
 // ─── METRICS ─────────────────────────────────────────────────────────────────
 router.get('/metrics/agent-coverage', adminController.getAgentCoverage);

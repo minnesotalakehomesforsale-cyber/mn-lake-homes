@@ -56,12 +56,44 @@
 
     <!-- Main -->
     <main class="admin-main">
-        <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end;">
+        <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; gap:1rem; flex-wrap:wrap;">
             <div>
                 <h1 style="font-size: 2rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 0.25rem;">Users Management</h1>
                 <p style="color: #718096;">All registered accounts on the platform.</p>
             </div>
+            <button id="new-admin-btn" style="display:none; background:#1d6df2; color:#fff; border:0; border-radius:10px; padding:0.7rem 1.2rem; font:inherit; font-weight:700; cursor:pointer;" onclick="openNewAdmin()">+ New admin user</button>
         </header>
+
+        <!-- New-admin modal — appears only when the viewer is super_admin -->
+        <div id="na-overlay" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(26,32,44,0.55); align-items:center; justify-content:center; padding:1.5rem;" onclick="if(event.target===this)closeNewAdmin()">
+            <div style="background:#fff; border-radius:16px; width:100%; max-width:560px; max-height:calc(100vh - 3rem); display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+                <div style="padding:1.25rem 1.5rem 0.75rem;">
+                    <h2 style="margin:0; font-size:1.25rem; font-weight:800;">New admin user</h2>
+                    <p style="margin:0.2rem 0 0; color:#718096; font-size:0.85rem;">Create an employee account and pick which sidebar tabs they can see. They'll be able to log in with the email + password you set.</p>
+                </div>
+                <div style="padding:0.75rem 1.5rem 1rem; overflow-y:auto;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                        <label><div style="font-size:0.78rem;font-weight:700;color:#4a5568;margin-bottom:0.3rem;">First name</div><input id="na-first" style="width:100%;box-sizing:border-box;padding:0.6rem 0.7rem;border:1px solid #e2e8f0;border-radius:8px;font-size:0.92rem;"></label>
+                        <label><div style="font-size:0.78rem;font-weight:700;color:#4a5568;margin-bottom:0.3rem;">Last name</div><input id="na-last" style="width:100%;box-sizing:border-box;padding:0.6rem 0.7rem;border:1px solid #e2e8f0;border-radius:8px;font-size:0.92rem;"></label>
+                    </div>
+                    <label style="display:block; margin-top:0.75rem;"><div style="font-size:0.78rem;font-weight:700;color:#4a5568;margin-bottom:0.3rem;">Email</div><input type="email" id="na-email" style="width:100%;box-sizing:border-box;padding:0.6rem 0.7rem;border:1px solid #e2e8f0;border-radius:8px;font-size:0.92rem;"></label>
+                    <label style="display:block; margin-top:0.75rem;"><div style="font-size:0.78rem;font-weight:700;color:#4a5568;margin-bottom:0.3rem;">Password <span style="color:#a0aec0;font-weight:500;">(min 8 chars)</span></div><input type="password" id="na-pass" style="width:100%;box-sizing:border-box;padding:0.6rem 0.7rem;border:1px solid #e2e8f0;border-radius:8px;font-size:0.92rem;"></label>
+
+                    <div style="margin-top:1rem;display:flex;justify-content:space-between;align-items:center;">
+                        <div style="font-size:0.78rem;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:0.5px;">Allowed sidebar tabs</div>
+                        <label style="display:inline-flex;align-items:center;gap:0.4rem;font-size:0.82rem;font-weight:700;color:#4a5568;cursor:pointer;">
+                            <input type="checkbox" id="na-full" checked style="width:15px;height:15px;accent-color:#1d6df2;"> Full access
+                        </label>
+                    </div>
+                    <div id="na-tabs-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:0.4rem; margin-top:0.55rem;"></div>
+                </div>
+                <div style="padding:1rem 1.5rem; border-top:1px solid #edf2f7; display:flex; justify-content:flex-end; gap:0.6rem; align-items:center;">
+                    <span id="na-msg" style="margin-right:auto; font-size:0.85rem; color:#c53030;"></span>
+                    <button onclick="closeNewAdmin()" style="background:#fff;color:#4a5568;border:1px solid #e2e8f0;border-radius:10px;padding:0.55rem 1.1rem;font:inherit;font-weight:600;cursor:pointer;">Cancel</button>
+                    <button id="na-save" onclick="createNewAdmin()" style="background:#1d6df2;color:#fff;border:0;border-radius:10px;padding:0.55rem 1.3rem;font:inherit;font-weight:700;cursor:pointer;">Create admin</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Filter tabs. Agents live on their own page (/admin/agents) — this
              ledger covers everyone else (clients, admins, super admins). -->
@@ -234,6 +266,94 @@
     }
 
     init();
+
+    // ── "+ New admin user" (super_admin only) ─────────────────────────
+    // Show the button + modal only if the viewer is the platform owner.
+    // The endpoint also enforces this, but hiding the UI keeps the page
+    // tidy for ordinary admins.
+    let _adminTabsCache = null;
+    (async function setupNewAdminButton() {
+        try {
+            const r = await fetch('/api/auth/session', { credentials: 'include' });
+            if (!r.ok) return;
+            const sess = await r.json();
+            if (sess.role !== 'super_admin') return;
+            const btn = document.getElementById('new-admin-btn');
+            if (btn) btn.style.display = '';
+        } catch (_) {}
+    })();
+
+    async function openNewAdmin() {
+        const overlay = document.getElementById('na-overlay');
+        const full    = document.getElementById('na-full');
+        const grid    = document.getElementById('na-tabs-grid');
+        const msg     = document.getElementById('na-msg');
+        ['na-first','na-last','na-email','na-pass'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        full.checked = true;
+        msg.textContent = '';
+
+        if (!_adminTabsCache) {
+            try {
+                const r = await fetch('/api/admin/admin-tabs', { credentials: 'include' });
+                _adminTabsCache = r.ok ? await r.json() : [];
+            } catch (_) { _adminTabsCache = []; }
+        }
+        const ehtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        grid.innerHTML = _adminTabsCache.map(t => `
+            <label style="display:flex; align-items:center; gap:0.5rem; padding:0.45rem 0.7rem; border:1px solid #edf2f7; border-radius:8px; background:#fafbfc; opacity:0.5;">
+                <input type="checkbox" class="na-tab-cb" data-key="${ehtml(t.key)}" checked disabled style="width:15px;height:15px;accent-color:#1d6df2;">
+                <span style="font-size:0.86rem; color:#1a202c; font-weight:600;">${ehtml(t.label)}</span>
+            </label>
+        `).join('');
+        full.onchange = () => {
+            const off = full.checked;
+            document.querySelectorAll('.na-tab-cb').forEach(cb => {
+                cb.disabled = off;
+                if (off) cb.checked = true;
+            });
+            document.querySelectorAll('#na-tabs-grid label').forEach(l => l.style.opacity = off ? 0.5 : 1);
+        };
+        overlay.style.display = 'flex';
+    }
+
+    function closeNewAdmin() {
+        document.getElementById('na-overlay').style.display = 'none';
+    }
+
+    async function createNewAdmin() {
+        const msg = document.getElementById('na-msg');
+        const btn = document.getElementById('na-save');
+        msg.style.color = '#c53030'; msg.textContent = '';
+        const first    = document.getElementById('na-first').value.trim();
+        const last     = document.getElementById('na-last').value.trim();
+        const email    = document.getElementById('na-email').value.trim().toLowerCase();
+        const password = document.getElementById('na-pass').value;
+        const full     = document.getElementById('na-full').checked;
+        const allowed_tabs = full
+            ? null
+            : Array.from(document.querySelectorAll('.na-tab-cb:checked')).map(cb => cb.dataset.key);
+
+        if (!first || !email || !password) { msg.textContent = 'First name, email, and password are required.'; return; }
+
+        btn.disabled = true; btn.textContent = 'Creating…';
+        try {
+            const r = await fetch('/api/admin/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ first_name: first, last_name: last, email, password, allowed_tabs }),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+            closeNewAdmin();
+            // Refresh the table so the new admin shows immediately.
+            await init();
+        } catch (err) {
+            msg.textContent = err.message || 'Failed to create admin.';
+        } finally {
+            btn.disabled = false; btn.textContent = 'Create admin';
+        }
+    }
 </script>
 </body>
 </html>

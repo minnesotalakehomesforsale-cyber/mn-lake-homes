@@ -255,6 +255,29 @@
                 </div>
             </div>
         </div>
+
+        <!-- ─────────────── Admin tab permissions (admin role only) ─────────────── -->
+        <div id="perm-card" style="display:none; background:#fff; border:1px solid #edf2f7; border-radius:14px; padding:1.75rem; margin-top:1.5rem; box-shadow:0 4px 14px rgba(0,0,0,0.04);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; flex-wrap:wrap; margin-bottom:1rem;">
+                <div>
+                    <h2 style="font-size:1.05rem; font-weight:800; margin:0 0 0.2rem;">Admin tab permissions</h2>
+                    <p style="color:#718096; font-size:0.88rem; margin:0;">Pick which sidebar tabs this employee can see. The list auto-extends as new tabs ship.</p>
+                </div>
+                <label style="display:inline-flex; align-items:center; gap:0.5rem; font-size:0.85rem; font-weight:700; color:#4a5568; cursor:pointer;">
+                    <input type="checkbox" id="perm-full-access" style="width:16px;height:16px;accent-color:#1d6df2;">
+                    Full access (all tabs)
+                </label>
+            </div>
+            <div id="perm-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:0.45rem; margin-bottom:1.2rem;">
+                <div style="color:#a0aec0;font-size:0.88rem;">Loading tabs…</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <button class="btn btn-primary" id="perm-save-btn" onclick="savePermissions()">Save permissions</button>
+                <span id="perm-msg" style="font-size:0.85rem; color:#718096;"></span>
+            </div>
+            <p id="perm-owner-note" style="display:none; font-size:0.85rem; color:#4a5568; margin:0.75rem 0 0;">This account has the <b>Super Admin</b> (owner) role — it always sees every tab and can't be restricted.</p>
+        </div>
+
         </div><!-- /tab-profile -->
 
         <!-- ─────────────── TAB 2: INQUIRIES ─────────────── -->
@@ -357,6 +380,13 @@
         } else {
             hsLink.style.display = 'none';
             hsPending.style.display = 'block';
+        }
+
+        // Admin tab permissions — only relevant for admin / super_admin
+        // accounts. Renders a checkbox per canonical tab; super_admin gets
+        // the owner note instead of the picker.
+        if (user.role === 'admin' || user.role === 'super_admin') {
+            renderPermissionsCard();
         }
 
         // Linked agent profile
@@ -483,6 +513,94 @@
     }
 
     // ── Activity tab (per-user feed) ────────────────────────────────────
+    // ── Admin tab permissions picker ──────────────────────────────────
+    // For role=super_admin we just show the owner note. For role=admin we
+    // render a checkbox per canonical tab (fetched from /api/admin/admin-tabs
+    // so new tabs auto-appear) and let the owner save the picked set.
+    let _adminTabs = null;
+    async function renderPermissionsCard() {
+        const card  = document.getElementById('perm-card');
+        const grid  = document.getElementById('perm-grid');
+        const full  = document.getElementById('perm-full-access');
+        const note  = document.getElementById('perm-owner-note');
+        const save  = document.getElementById('perm-save-btn');
+        card.style.display = '';
+
+        if (user.role === 'super_admin') {
+            grid.style.display = 'none';
+            full.parentElement.style.display = 'none';
+            save.style.display = 'none';
+            note.style.display = '';
+            return;
+        }
+        grid.style.display = '';
+        full.parentElement.style.display = '';
+        save.style.display = '';
+        note.style.display = 'none';
+
+        // Fetch the canonical list once per page.
+        if (!_adminTabs) {
+            try {
+                const r = await fetch('/api/admin/admin-tabs', { credentials: 'include' });
+                _adminTabs = r.ok ? await r.json() : [];
+            } catch (_) { _adminTabs = []; }
+        }
+        if (!_adminTabs.length) {
+            grid.innerHTML = '<div style="color:#c53030;font-size:0.88rem;">Could not load tab list.</div>';
+            return;
+        }
+
+        const allowed   = Array.isArray(user.admin_tab_permissions) ? user.admin_tab_permissions : null;
+        const fullAccess = allowed === null;
+        full.checked = fullAccess;
+        const ehtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const allowSet = new Set(allowed || _adminTabs.map(t => t.key));
+        grid.innerHTML = _adminTabs.map(t => `
+            <label style="display:flex; align-items:center; gap:0.55rem; padding:0.55rem 0.75rem; border:1px solid #edf2f7; border-radius:9px; cursor:pointer; background:#fafbfc;">
+                <input type="checkbox" class="perm-tab-cb" data-key="${ehtml(t.key)}" ${allowSet.has(t.key) ? 'checked' : ''} ${fullAccess ? 'disabled' : ''} style="width:16px;height:16px;accent-color:#1d6df2;">
+                <span style="font-size:0.9rem; color:#1a202c; font-weight:600;">${ehtml(t.label)}</span>
+            </label>
+        `).join('');
+        full.onchange = () => {
+            const off = full.checked;
+            document.querySelectorAll('.perm-tab-cb').forEach(cb => {
+                cb.disabled = off;
+                if (off) cb.checked = true;
+            });
+        };
+    }
+
+    async function savePermissions() {
+        const full  = document.getElementById('perm-full-access');
+        const msg   = document.getElementById('perm-msg');
+        const btn   = document.getElementById('perm-save-btn');
+        const allowed_tabs = full.checked
+            ? null
+            : Array.from(document.querySelectorAll('.perm-tab-cb:checked')).map(cb => cb.dataset.key);
+        msg.textContent = ''; btn.disabled = true; btn.textContent = 'Saving…';
+        try {
+            const r = await fetch(`/api/admin/users/${userId}/permissions`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ allowed_tabs }),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+            msg.style.color = '#2f855a';
+            msg.textContent = allowed_tabs === null
+                ? 'Saved — full access.'
+                : `Saved — ${allowed_tabs.length} tab${allowed_tabs.length === 1 ? '' : 's'} allowed.`;
+            // Update local user so re-renders reflect the new state.
+            user.admin_tab_permissions = allowed_tabs;
+        } catch (err) {
+            msg.style.color = '#c53030';
+            msg.textContent = err.message || 'Failed to save.';
+        } finally {
+            btn.disabled = false; btn.textContent = 'Save permissions';
+        }
+    }
+
     let _activityLoaded = false;
     async function loadUserActivity() {
         _activityLoaded = true;

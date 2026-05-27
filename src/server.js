@@ -1038,6 +1038,14 @@ async function ensureTables() {
             ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_normalized VARCHAR(20);
             CREATE INDEX IF NOT EXISTS idx_users_phone_normalized ON users(phone_normalized) WHERE phone_normalized IS NOT NULL;
 
+            -- Per-admin sidebar permissions. NULL = full access (backward
+            -- compatible default — every existing admin still sees every
+            -- tab). When non-null, must be a JSON array of tab keys
+            -- (e.g. ["dashboard","messages","marketing"]) — the sidebar
+            -- only renders nav items whose key is in the array. Always
+            -- ignored for role='super_admin' (the owner) — they see all.
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS admin_tab_permissions JSONB;
+
             -- Password reset tokens. token_hash stores SHA-256(token) so
             -- a DB leak doesn't expose live reset links. Tokens are
             -- single-use (used_at) and expire (expires_at).

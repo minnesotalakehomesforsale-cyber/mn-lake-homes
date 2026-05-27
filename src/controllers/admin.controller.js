@@ -440,7 +440,7 @@ const getUserDetail = async (req, res) => {
         const { rows } = await pool.query(
             `SELECT u.id, u.first_name, u.last_name, u.full_name, u.email, u.role,
                     u.account_status, u.last_login_at, u.created_at, u.updated_at,
-                    u.hs_contact_id,
+                    u.hs_contact_id, u.admin_tab_permissions,
                     (u.password_hash IS NOT NULL) AS has_password,
                     a.id as agent_id, a.display_name, a.brokerage_name, a.profile_status,
                     a.is_published, a.slug, m.name as membership_name, m.code as membership_code
@@ -736,6 +736,143 @@ const resetUserPassword = async (req, res) => {
     } catch (err) {
         console.error('[resetUserPassword]', err.message);
         res.status(500).json({ error: 'Failed to reset password.' });
+    }
+};
+
+// ─── ADMIN PERMISSIONS (per-employee sidebar access) ────────────────────────
+const { ADMIN_TABS, ADMIN_TAB_KEYS } = require('../services/admin-tabs');
+
+/**
+ * GET /api/admin/admin-tabs — canonical list of admin sidebar tabs.
+ * Used by the per-admin permission picker on user-review.html. Adding a
+ * tab to src/services/admin-tabs.js makes it appear here automatically.
+ */
+const listAdminTabs = (req, res) => {
+    res.json(ADMIN_TABS);
+};
+
+/**
+ * PATCH /api/admin/users/:id/permissions
+ * Body: { allowed_tabs: string[] | null }
+ *   - null      → full access (sees every tab; default for existing admins).
+ *   - []        → no tabs (effectively locked out of the admin UI).
+ *   - [keys]    → only those tabs render in their sidebar.
+ *
+ * Restricted to super_admin so an employee can't loosen their own perms.
+ * Always a no-op on super_admin targets — the owner role is non-editable.
+ */
+const setUserPermissions = async (req, res) => {
+    // Only the platform owner can grant/revoke tabs.
+    if (req.user?.role !== 'super_admin') {
+        return res.status(403).json({ error: 'Only the owner can change permissions.' });
+    }
+    const { id } = req.params;
+    let { allowed_tabs } = req.body || {};
+
+    // Validate the payload: null OR array of known keys.
+    if (allowed_tabs !== null && !Array.isArray(allowed_tabs)) {
+        return res.status(400).json({ error: 'allowed_tabs must be null or an array of tab keys.' });
+    }
+    let value = null;
+    if (Array.isArray(allowed_tabs)) {
+        const unknown = allowed_tabs.filter(k => !ADMIN_TAB_KEYS.has(String(k)));
+        if (unknown.length) return res.status(400).json({ error: `Unknown tab keys: ${unknown.join(', ')}` });
+        // Dedupe + sort for stable storage.
+        value = [...new Set(allowed_tabs.map(String))].sort();
+    }
+
+    try {
+        const target = await pool.query(`SELECT id, role, email FROM users WHERE id = $1`, [id]);
+        if (!target.rowCount) return res.status(404).json({ error: 'User not found.' });
+        const u = target.rows[0];
+        if (u.role === 'super_admin') {
+            return res.status(400).json({ error: 'The owner role cannot be restricted.' });
+        }
+        if (u.role !== 'admin') {
+            return res.status(400).json({ error: 'Permissions only apply to admin users.' });
+        }
+
+        await pool.query(
+            `UPDATE users SET admin_tab_permissions = $1::jsonb, updated_at = NOW() WHERE id = $2`,
+            [value === null ? null : JSON.stringify(value), id]
+        );
+
+        logActivity({
+            event_type: 'admin.permissions.update',
+            event_scope: 'admin',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'owner' },
+            target: { type: 'user', id, label: u.email },
+            details: { allowed_tabs: value },
+            req,
+        });
+
+        res.json({ success: true, allowed_tabs: value });
+    } catch (err) {
+        console.error('[setUserPermissions]', err.message);
+        res.status(500).json({ error: 'Failed to update permissions.' });
+    }
+};
+
+/**
+ * POST /api/admin/users — create a new admin user (employee).
+ * Body: { first_name, last_name, email, password, allowed_tabs? }
+ * Super-admin only. The new user lands with role='admin' and the chosen
+ * tab set. allowed_tabs omitted → full access by default.
+ */
+const createAdminUser = async (req, res) => {
+    if (req.user?.role !== 'super_admin') {
+        return res.status(403).json({ error: 'Only the owner can create admin users.' });
+    }
+    const bcrypt = require('bcrypt');
+    let { first_name, last_name, email, password, allowed_tabs } = req.body || {};
+    first_name = (first_name || '').trim();
+    last_name  = (last_name  || '').trim();
+    email      = (email      || '').trim().toLowerCase();
+    if (!email || !password || !first_name) {
+        return res.status(400).json({ error: 'First name, email, and password are required.' });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ error: 'Invalid email.' });
+    }
+    if (String(password).length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+    }
+
+    // Validate permissions if provided.
+    let perms = null;
+    if (Array.isArray(allowed_tabs)) {
+        const unknown = allowed_tabs.filter(k => !ADMIN_TAB_KEYS.has(String(k)));
+        if (unknown.length) return res.status(400).json({ error: `Unknown tab keys: ${unknown.join(', ')}` });
+        perms = [...new Set(allowed_tabs.map(String))].sort();
+    }
+
+    try {
+        const dup = await pool.query(`SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL`, [email]);
+        if (dup.rowCount) return res.status(409).json({ error: 'A user with that email already exists.' });
+
+        const hash = await bcrypt.hash(String(password), 10);
+        const full = `${first_name} ${last_name}`.trim();
+        const { rows } = await pool.query(
+            `INSERT INTO users (first_name, last_name, full_name, email, password_hash,
+                                role, account_status, admin_tab_permissions, password_changed_at)
+             VALUES ($1, $2, $3, $4, $5, 'admin', 'active', $6::jsonb, NOW())
+             RETURNING id, email, role`,
+            [first_name, last_name, full, email, hash, perms === null ? null : JSON.stringify(perms)]
+        );
+
+        logActivity({
+            event_type: 'admin.user.create',
+            event_scope: 'admin',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'owner' },
+            target: { type: 'user', id: rows[0].id, label: email },
+            details: { allowed_tabs: perms },
+            req,
+        });
+
+        res.status(201).json({ success: true, user: rows[0] });
+    } catch (err) {
+        console.error('[createAdminUser]', err.message);
+        res.status(500).json({ error: 'Failed to create admin user.' });
     }
 };
 
@@ -1295,5 +1432,8 @@ module.exports = {
     addAgentNote,
     deleteAgentNote,
     getUnassignedLeadCount,
-    getAgentCoverage
+    getAgentCoverage,
+    listAdminTabs,
+    setUserPermissions,
+    createAdminUser,
 };
