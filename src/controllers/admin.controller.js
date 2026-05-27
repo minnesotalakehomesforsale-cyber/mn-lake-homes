@@ -739,6 +739,25 @@ const resetUserPassword = async (req, res) => {
     }
 };
 
+// ─── SYSTEM HEALTH (powers the sidebar System badge) ────────────────────────
+// Counts error + warning rows in the activity log over the last 24 hours
+// so something failing (HubSpot sync, Stripe webhook, image upload, etc.)
+// surfaces in the sidebar without the admin having to open the log first.
+const getSystemAlertsCount = async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT COUNT(*)::int AS count
+               FROM activity_log
+              WHERE severity IN ('error', 'warning')
+                AND created_at >= NOW() - INTERVAL '24 hours'`
+        );
+        res.json({ count: rows[0].count });
+    } catch (_) {
+        // Activity log table may not exist yet on a brand-new deploy.
+        res.json({ count: 0 });
+    }
+};
+
 // ─── ADMIN PERMISSIONS (per-employee sidebar access) ────────────────────────
 const { ADMIN_TABS, ADMIN_TAB_KEYS } = require('../services/admin-tabs');
 
@@ -1433,6 +1452,7 @@ module.exports = {
     deleteAgentNote,
     getUnassignedLeadCount,
     getAgentCoverage,
+    getSystemAlertsCount,
     listAdminTabs,
     setUserPermissions,
     createAdminUser,

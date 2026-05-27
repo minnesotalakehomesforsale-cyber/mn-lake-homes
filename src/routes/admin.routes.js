@@ -49,6 +49,9 @@ router.get('/admin-tabs', adminController.listAdminTabs);
 // ─── METRICS ─────────────────────────────────────────────────────────────────
 router.get('/metrics/agent-coverage', adminController.getAgentCoverage);
 
+// ─── SYSTEM (powers the sidebar System badge — errors/warnings in last 24h) ─
+router.get('/system/alerts-count', adminController.getSystemAlertsCount);
+
 // ─── BILLING (live Stripe view for a subscriber: agent | business) ──────────
 router.get('/billing/:kind/:id', adminController.getSubscriberBilling);
 
@@ -57,6 +60,7 @@ router.get('/billing/:kind/:id', adminController.getSubscriberBilling);
 const messagesController = require('../controllers/messages.controller');
 router.post  ('/messages',               verifyToken, requireRole(['admin', 'super_admin']), messagesController.send);
 router.post  ('/messages/broadcast',     verifyToken, requireRole(['admin', 'super_admin']), messagesController.broadcast);
+router.get   ('/messages/unread-total',  verifyToken, requireRole(['admin', 'super_admin']), messagesController.unreadTotal);
 router.get   ('/messages/threads',       verifyToken, requireRole(['admin', 'super_admin']), messagesController.threads);
 router.get   ('/messages/agent/:userId', verifyToken, requireRole(['admin', 'super_admin']), messagesController.threadForAgent);
 router.patch ('/messages/:id/read',      verifyToken, requireRole(['admin', 'super_admin']), messagesController.setReadState);

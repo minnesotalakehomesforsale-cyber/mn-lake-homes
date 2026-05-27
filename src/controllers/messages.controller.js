@@ -230,6 +230,23 @@ exports.myMessages = async (req, res) => {
     }
 };
 
+// ─── Admin: total unread across every agent ────────────────────────────────
+// Powers the sidebar Messages badge — sum of all agent_messages still
+// unread by their recipient (read_at IS NULL).
+exports.unreadTotal = async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT COUNT(*)::int AS count
+               FROM agent_messages
+              WHERE read_at IS NULL`
+        );
+        res.json({ count: rows[0].count });
+    } catch (err) {
+        console.error('[messages.unreadTotal]', err.message);
+        res.json({ count: 0 });
+    }
+};
+
 exports.myUnreadCount = async (req, res) => {
     try {
         const { rows } = await pool.query(

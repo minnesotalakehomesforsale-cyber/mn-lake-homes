@@ -41,6 +41,7 @@ const getTaskCounts = async (req, res) => {
         const { rows } = await pool.query(`
             SELECT
                 COUNT(*) FILTER (WHERE is_completed = false AND due_date IS NOT NULL AND due_date < NOW())              AS overdue,
+                COUNT(*) FILTER (WHERE is_completed = false AND due_date IS NULL)                                       AS no_date,
                 COUNT(*) FILTER (WHERE is_completed = false AND due_date IS NOT NULL
                                   AND due_date >= date_trunc('day', NOW())
                                   AND due_date <  date_trunc('day', NOW()) + INTERVAL '1 day')                        AS due_today,
@@ -49,9 +50,13 @@ const getTaskCounts = async (req, res) => {
         `);
         const r = rows[0];
         const overdue   = parseInt(r.overdue, 10)   || 0;
+        const no_date   = parseInt(r.no_date, 10)   || 0;
         const due_today = parseInt(r.due_today, 10) || 0;
         const pending   = parseInt(r.pending, 10)   || 0;
-        res.json({ overdue, due_today, pending, attention: overdue + due_today });
+        // Sidebar badge: "needs attention" = past-due OR missing a due date.
+        // Tasks scheduled for the future stay quiet until they actually hit
+        // their date — admin wants the badge actionable, not noisy.
+        res.json({ overdue, no_date, due_today, pending, attention: overdue + no_date });
     } catch (err) {
         console.error('[getTaskCounts]', err.message);
         res.status(500).json({ error: 'Failed to fetch task counts.' });

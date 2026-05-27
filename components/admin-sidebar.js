@@ -14,8 +14,9 @@
  * components/admin-responsive.js — which target .admin-side /
  * .side-link selectors — keep working unchanged.
  *
- * Also keeps parity with the badge elements the rest of the admin
- * relies on: #nav-badge-inquiries, #nav-badge-tasks, .cash-offer-badge.
+ * Also keeps parity with the badge elements the rest of the admin relies on:
+ *   #nav-badge-leads, #nav-badge-inquiries, #nav-badge-messages,
+ *   #nav-badge-tasks, #nav-badge-system, .cash-offer-badge.
  * admin-nav-badges.js continues to poll and toggle them.
  */
 
@@ -112,7 +113,7 @@
         { key: 'agents',      href: 'agents.html',     label: 'Agents Directory' },
         { key: 'leads',       href: 'leads.html',      label: 'Central Leads', badgeId: 'nav-badge-leads' },
         { key: 'inquiries',   href: 'inquiries.html',  label: 'Inquiries', badgeId: 'nav-badge-inquiries' },
-        { key: 'messages',    href: 'messages.html',   label: 'Messages' },
+        { key: 'messages',    href: 'messages.html',   label: 'Messages', badgeId: 'nav-badge-messages' },
         // Marketing rolls up Blog & Content along with three new tabs
         // (Dashboard, Newsletter, Social Media). Blog stays accessible at
         // its old URL too — the alias keeps the highlight working.
@@ -135,7 +136,7 @@
         // Metrics + Database share one page (system.html) with a tab per
         // section. Standalone slugs are aliased so direct hits on
         // metrics.html / database.html still highlight this entry.
-        { key: 'system',      href: 'system.html',     label: 'Metrics & Database', aliases: ['metrics', 'database'] },
+        { key: 'system',      href: 'system.html',     label: 'Metrics & Database', aliases: ['metrics', 'database'], badgeId: 'nav-badge-system' },
     ];
 
     function renderNav(activeKey) {
