@@ -112,6 +112,7 @@ exports.list = async (req, res) => {
 
         const sql = `
             SELECT t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude,
+                   t.hero_image_url,
                    t.active, t.created_at, t.updated_at,
                    (SELECT COUNT(*) FROM lake_tags lt WHERE lt.tag_id = t.id)::int AS lake_count
             FROM tags t
@@ -137,6 +138,7 @@ exports.getOne = async (req, res) => {
         const byUuid = UUID_RE.test(key);
         const { rows } = await pool.query(
             `SELECT t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude, t.active,
+                    t.hero_image_url,
                     (SELECT COUNT(*) FROM lake_tags lt WHERE lt.tag_id = t.id) AS lake_count,
                     (SELECT COUNT(*) FROM user_tags ut WHERE ut.tag_id = t.id) AS agent_count
              FROM tags t

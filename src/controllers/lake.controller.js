@@ -688,7 +688,8 @@ exports.replaceBusinesses = async (req, res) => {
 exports.listTags = async (req, res) => {
     try {
         const { rows } = await pool.query(
-            `SELECT t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude
+            `SELECT t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude,
+                    t.hero_image_url
              FROM lake_tags lt
              JOIN tags t ON t.id = lt.tag_id
              WHERE lt.lake_id = $1 AND t.active = TRUE

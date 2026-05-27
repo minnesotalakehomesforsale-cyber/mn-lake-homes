@@ -644,7 +644,8 @@ const BUSINESS_TAGS_MAX = 10;
 exports.listTags = async (req, res) => {
     try {
         const { rows } = await pool.query(
-            `SELECT t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude
+            `SELECT t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude,
+                    t.hero_image_url
              FROM business_tags bt
              JOIN tags t ON t.id = bt.tag_id
              WHERE bt.business_id = $1 AND t.active = TRUE
