@@ -90,6 +90,7 @@ const LAKE_COLS = `
     latitude, longitude,
     intro_text, description,
     hero_image_url, featured_image_url,
+    gallery,
     seo_title, seo_description,
     status, created_at, updated_at
 `;
@@ -271,6 +272,13 @@ exports.patch = async (req, res) => {
         }
         if ('seo_title'          in b) push('seo_title',          b.seo_title || null);
         if ('seo_description'    in b) push('seo_description',    b.seo_description || null);
+        // Public photo gallery — JSON array of image URLs (or {url} objects).
+        // Empty array hides the public gallery section entirely.
+        if ('gallery'            in b) {
+            const g = Array.isArray(b.gallery) ? b.gallery : [];
+            fields.push(`gallery = $${i++}::jsonb`);
+            vals.push(JSON.stringify(g));
+        }
         // Editorial blocks rendered into the public lake page (paragraph runs
         // separated by blank lines). NULL means "fall back to the generated
         // region-aware copy" — the public template handles both branches.

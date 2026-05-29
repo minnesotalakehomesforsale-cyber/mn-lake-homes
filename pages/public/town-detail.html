@@ -478,6 +478,12 @@
         </div>
     </section>
 
+    <!-- Optional photo gallery — server-rendered as either a populated
+         <section class="mn-photo-gallery"> or an empty string when the
+         admin hasn't uploaded any gallery images for this town. See
+         buildGalleryHtml() in src/server.js. -->
+    {{TOWN_GALLERY_HTML}}
+
     <global-footer></global-footer>
     <lead-modal></lead-modal>
 

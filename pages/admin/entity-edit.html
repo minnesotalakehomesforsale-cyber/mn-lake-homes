@@ -255,7 +255,7 @@
             uploadUrl:'/api/lakes/upload-image',
             uploadField:'image',
             imageField:'featured_image_url',
-            tabs:     ['details', 'editorial', 'seo', 'connected'],
+            tabs:     ['details', 'editorial', 'gallery', 'seo', 'connected'],
             relatedKeys: ['agents','businesses','blog','tags'],
         },
         town: {
@@ -269,7 +269,7 @@
             uploadUrl:'/api/tags/upload-image',
             uploadField:'image',
             imageField:'hero_image_url',
-            tabs:     ['details', 'editorial', 'seo', 'connected'],
+            tabs:     ['details', 'editorial', 'gallery', 'seo', 'connected'],
             relatedKeys: ['lakes','agents','businesses','blog'],
         },
         business: {
@@ -394,6 +394,7 @@
         membership: 'Membership',
         connected:  'Connected',
         activity:   'Activity',
+        gallery:    'Gallery',
     };
 
     function renderTabs() {
@@ -435,6 +436,121 @@
         if (activeTab === 'membership') { tc.innerHTML = renderMembershipTab(); loadBilling(); }
         if (activeTab === 'connected')  tc.innerHTML = renderConnectedTab();
         if (activeTab === 'activity')   { tc.innerHTML = renderActivityTab(); loadEntityActivity(); }
+        if (activeTab === 'gallery')    { tc.innerHTML = renderGalleryTab(); initGalleryControls(); }
+    }
+
+    // ── Gallery tab (lake/town optional photo grid for the public page) ──
+    // Local edit buffer; saveGallery() persists it back to the entity. We
+    // operate on URL strings to match the SSR's flexible reader (which also
+    // accepts {url} objects). The public section is hidden when empty.
+    let _galleryWorking = [];
+
+    function renderGalleryTab() {
+        _galleryWorking = (Array.isArray(entity.gallery) ? entity.gallery : [])
+            .map(it => typeof it === 'string' ? it : (it && it.url) || null)
+            .filter(Boolean);
+        const hint = TYPE === 'lake'
+            ? "Photos here appear in a gallery section at the bottom of this lake's public page. Empty = no gallery section."
+            : "Photos here appear in a gallery section at the bottom of this town's public page. Empty = no gallery section.";
+        return `
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Photo Gallery</div>
+                    <button class="btn-save" id="save-gallery" onclick="saveGallery()">Save Gallery</button>
+                </div>
+                <div class="panel-body">
+                    <p class="hint" style="margin:0 0 1rem;">${hint}</p>
+                    <div id="gallery-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.75rem;margin-bottom:1rem;"></div>
+                    <label class="btn-save" id="gallery-upload-btn" style="display:inline-block;cursor:pointer;">
+                        <span id="gallery-upload-label">+ Upload photo(s)</span>
+                        <input type="file" id="gallery-upload" accept="image/*" multiple style="display:none;">
+                    </label>
+                    <div id="gallery-status" class="hint" style="margin-top:0.6rem;min-height:1.1rem;"></div>
+                </div>
+            </div>`;
+    }
+
+    function renderGalleryGrid() {
+        const grid = document.getElementById('gallery-grid');
+        if (!grid) return;
+        if (!_galleryWorking.length) {
+            grid.innerHTML = `<div class="hint" style="grid-column:1/-1;color:#a0aec0;padding:1rem 0;">No photos yet. Upload one to start the gallery.</div>`;
+            return;
+        }
+        grid.innerHTML = _galleryWorking.map((url, i) => `
+            <div style="position:relative;border:1px solid #edf2f7;border-radius:10px;overflow:hidden;background:#f7f9fa;aspect-ratio:4/3;">
+                <img src="${esc(url)}" alt="Gallery ${i + 1}" style="width:100%;height:100%;object-fit:cover;display:block;">
+                <button onclick="removeGalleryImage(${i})" title="Remove" style="position:absolute;top:6px;right:6px;background:rgba(255,255,255,0.94);border:0;border-radius:99px;padding:0.25rem 0.6rem;font-size:0.7rem;font-weight:800;cursor:pointer;color:#c53030;">Remove</button>
+            </div>`).join('');
+    }
+
+    function removeGalleryImage(idx) {
+        _galleryWorking.splice(idx, 1);
+        renderGalleryGrid();
+        const status = document.getElementById('gallery-status');
+        if (status) { status.textContent = "Removed. Click Save Gallery to persist."; status.style.color = '#b45309'; }
+    }
+
+    function initGalleryControls() {
+        renderGalleryGrid();
+        const input = document.getElementById('gallery-upload');
+        if (!input) return;
+        input.addEventListener('change', async (e) => {
+            const files = [...(e.target.files || [])];
+            if (!files.length) return;
+            const status = document.getElementById('gallery-status');
+            const label  = document.getElementById('gallery-upload-label');
+            const orig   = label.textContent;
+            label.textContent = `Uploading ${files.length} photo${files.length === 1 ? '' : 's'}…`;
+            status.style.color = '#4a5568';
+            status.textContent = '';
+            let uploaded = 0, failed = 0;
+            for (const f of files) {
+                const fd = new FormData();
+                fd.append(TYPE_META[TYPE].uploadField, f);
+                try {
+                    const r = await fetch(TYPE_META[TYPE].uploadUrl, { method: 'POST', body: fd, credentials: 'include' });
+                    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                    const data = await r.json();
+                    if (data && data.url) { _galleryWorking.push(data.url); uploaded++; }
+                    else failed++;
+                } catch (_) { failed++; }
+            }
+            input.value = '';
+            renderGalleryGrid();
+            label.textContent = orig;
+            if (failed) {
+                status.style.color = '#c53030';
+                status.textContent = `Uploaded ${uploaded}, failed ${failed}. Click Save Gallery to persist what worked.`;
+            } else {
+                status.style.color = '#2f855a';
+                status.textContent = `Uploaded ${uploaded}. Click Save Gallery to persist.`;
+            }
+        });
+    }
+
+    async function saveGallery() {
+        const btn = document.getElementById('save-gallery');
+        const status = document.getElementById('gallery-status');
+        btn.disabled = true; btn.textContent = 'Saving…';
+        try {
+            const r = await fetch(TYPE_META[TYPE].saveUrl(ID), {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ gallery: _galleryWorking }),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+            entity.gallery = _galleryWorking.slice();
+            status.style.color = '#2f855a';
+            status.textContent = `Saved. ${_galleryWorking.length ? 'Gallery now visible on the public page.' : 'Gallery section hidden (no photos).'}`;
+            toast('Gallery saved.', 'ok');
+        } catch (err) {
+            status.style.color = '#c53030';
+            status.textContent = err.message || 'Save failed.';
+            toast(err.message || 'Save failed.', 'err');
+        } finally {
+            btn.disabled = false; btn.textContent = 'Save Gallery';
+        }
     }
 
     // ── Activity tab (per-business feed; queries actor=owner OR target=biz) ─

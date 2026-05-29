@@ -138,7 +138,7 @@ exports.getOne = async (req, res) => {
         const byUuid = UUID_RE.test(key);
         const { rows } = await pool.query(
             `SELECT t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude, t.active,
-                    t.hero_image_url,
+                    t.hero_image_url, t.gallery,
                     (SELECT COUNT(*) FROM lake_tags lt WHERE lt.tag_id = t.id) AS lake_count,
                     (SELECT COUNT(*) FROM user_tags ut WHERE ut.tag_id = t.id) AS agent_count
              FROM tags t
@@ -376,6 +376,13 @@ exports.patch = async (req, res) => {
         if ('seo_description' in b) push('seo_description', b.seo_description || null);
         if ('lifestyle_text'  in b) push('lifestyle_text',  b.lifestyle_text  || null);
         if ('seasons_text'    in b) push('seasons_text',    b.seasons_text    || null);
+        // Public photo gallery — JSON array of image URLs (or {url} objects).
+        // Empty array hides the public gallery section entirely.
+        if ('gallery'         in b) {
+            const g = Array.isArray(b.gallery) ? b.gallery : [];
+            fields.push(`gallery = $${i++}::jsonb`);
+            vals.push(JSON.stringify(g));
+        }
 
         if (!fields.length) return res.json({ success: true, noop: true });
 

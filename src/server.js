@@ -517,6 +517,51 @@ function escapeHtml(s) {
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
     }[c]));
 }
+
+/**
+ * Build the optional photo-gallery section for a lake or town SSR page.
+ * Reuses the existing .mn-photo-gallery styles from styles/style.css so it
+ * matches the index/buy/sell galleries. Returns '' when there are no images
+ * so the entire <section> is omitted from the page — no padding, no header,
+ * nothing to fall back to. Each card links to `href` (typically the same
+ * lake/town page) with `label` as the visible caption.
+ *
+ *   images   — JSONB array. Each entry is either a URL string or an object
+ *              like { url, alt }. Anything else is skipped.
+ *   title    — h2 inside the section header.
+ *   eyebrow  — tiny label above the title.
+ *   subtitle — short paragraph below the title.
+ *   href     — link target for every card (e.g. `/lakes/<slug>`).
+ *   label    — caption shown over each card (e.g. lake name).
+ */
+function buildGalleryHtml({ images, title, eyebrow, subtitle, href, label }) {
+    const list = Array.isArray(images) ? images : [];
+    const urls = list.map(it => {
+        if (typeof it === 'string') return it;
+        if (it && typeof it === 'object' && typeof it.url === 'string') return it.url;
+        return null;
+    }).filter(Boolean);
+    if (!urls.length) return '';
+
+    const cards = urls.map((url, idx) => `
+                <a class="gallery-card" href="${escapeHtml(href)}">
+                    <img src="${escapeHtml(url)}" alt="${escapeHtml(label)} photo ${idx + 1}" loading="lazy" width="400" height="300">
+                    <span class="gallery-label">${escapeHtml(label)}</span>
+                </a>`).join('');
+
+    return `
+    <section class="mn-photo-gallery" aria-label="${escapeHtml(label)} photo gallery">
+        <div class="mn-photo-gallery-container">
+            <div class="mn-photo-gallery-header">
+                <div class="mn-photo-gallery-eyebrow">${escapeHtml(eyebrow)}</div>
+                <h2 class="mn-photo-gallery-title">${escapeHtml(title)}</h2>
+                <p class="mn-photo-gallery-subtitle">${escapeHtml(subtitle)}</p>
+            </div>
+            <div class="mn-photo-gallery-grid">${cards}
+            </div>
+        </div>
+    </section>`;
+}
 // /lakes was consolidated into /towns — that page is now the unified
 // lake + town database, so send any inbound traffic there permanently.
 app.get('/lakes', (req, res) => {
@@ -527,7 +572,7 @@ app.get('/lakes/:slug', async (req, res, next) => {
         const { rows } = await pool.query(
             `SELECT id, slug, name, state, region, county, latitude, longitude,
                     intro_text, description, hero_image_url, featured_image_url,
-                    seo_title, seo_description, status
+                    seo_title, seo_description, status, gallery
              FROM lakes WHERE slug = $1 LIMIT 1`,
             [req.params.slug]
         );
@@ -580,6 +625,20 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 ? lake.seasons_text.trim().split(/\n{2,}/).map(p => `<p>${escapeHtml(p)}</p>`).join('')
                 : lct.seasonsHtmlForLake(lake);
 
+            // Public gallery — only rendered when the admin has uploaded at
+            // least one image beyond the hero. Empty array (the default)
+            // collapses to an empty string and the section disappears
+            // entirely. Each card links back to this same lake page (so the
+            // grid mirrors how the index/buy/sell galleries link out).
+            const lakeGalleryHtml = buildGalleryHtml({
+                images: lake.gallery,
+                title: `Around ${lake.name}`,
+                eyebrow: 'Photo Gallery',
+                subtitle: `A closer look at ${lake.name}${lake.state ? ', ' + lake.state : ''} — added by our team.`,
+                href: `/lakes/${lake.slug}`,
+                label: lake.name,
+            });
+
             const replacements = {
                 '{{LAKE_SEO_TITLE}}':       escapeHtml(title),
                 '{{LAKE_SEO_DESCRIPTION}}': escapeHtml(desc),
@@ -599,6 +658,7 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 '{{LAKE_STRUCTURED_DATA}}': lakeStructuredData,
                 '{{LAKE_LIFESTYLE_BODY}}':  lifestyleBody,
                 '{{LAKE_SEASONS_BODY}}':    seasonsBody,
+                '{{LAKE_GALLERY_HTML}}':    lakeGalleryHtml,
             };
             let out = html;
             for (const [k, v] of Object.entries(replacements)) {
@@ -781,7 +841,7 @@ app.get('/towns/:slug', async (req, res, next) => {
         const { rows } = await pool.query(
             `SELECT t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude,
                     t.intro_text, t.description,
-                    t.hero_image_url, t.seo_title, t.seo_description
+                    t.hero_image_url, t.seo_title, t.seo_description, t.gallery
              FROM tags t
              WHERE t.slug = $1 AND t.active = TRUE
              LIMIT 1`,
@@ -850,6 +910,20 @@ app.get('/towns/:slug', async (req, res, next) => {
                 ? tag.seasons_text.trim().split(/\n{2,}/).map(p => `<p>${escapeHtml(p)}</p>`).join('')
                 : lct.seasonsHtmlForTown(tag);
 
+            // Public gallery — only rendered when the admin has uploaded at
+            // least one image beyond the hero. Empty array (the default)
+            // collapses to an empty string and the section disappears.
+            // Each card links back to this town page (matches how the
+            // index/buy/sell galleries link to their source location).
+            const townGalleryHtml = buildGalleryHtml({
+                images: tag.gallery,
+                title: `Around ${tag.name}`,
+                eyebrow: 'Photo Gallery',
+                subtitle: `A closer look at ${tag.name}${tag.state ? ', ' + tag.state : ''} — added by our team.`,
+                href: `/towns/${tag.slug}`,
+                label: tag.name,
+            });
+
             const replacements = {
                 '{{TOWN_SEO_TITLE}}':        escapeHtml(title),
                 '{{TOWN_SEO_DESCRIPTION}}':  escapeHtml(desc),
@@ -870,6 +944,7 @@ app.get('/towns/:slug', async (req, res, next) => {
                 '{{TOWN_STRUCTURED_DATA}}':  townStructuredData,
                 '{{TOWN_LIFESTYLE_BODY}}':   lifestyleBody,
                 '{{TOWN_SEASONS_BODY}}':     seasonsBody,
+                '{{TOWN_GALLERY_HTML}}':     townGalleryHtml,
             };
             let out = html;
             for (const [k, v] of Object.entries(replacements)) {
@@ -1401,7 +1476,15 @@ async function ensureTables() {
             -- when these are blank, so the page is never empty.
             ALTER TABLE lakes
                 ADD COLUMN IF NOT EXISTS lifestyle_text TEXT,
-                ADD COLUMN IF NOT EXISTS seasons_text   TEXT;
+                ADD COLUMN IF NOT EXISTS seasons_text   TEXT,
+                -- Public page gallery — JSON array of Cloudinary image URLs.
+                -- The lake-detail SSR renders these as a photo grid below the
+                -- hero. Empty array (the default) hides the section entirely
+                -- so a lake with just the one hero shot doesn't look padded.
+                ADD COLUMN IF NOT EXISTS gallery JSONB NOT NULL DEFAULT '[]'::jsonb;
+            -- Same gallery story for towns (tags table).
+            ALTER TABLE tags
+                ADD COLUMN IF NOT EXISTS gallery JSONB NOT NULL DEFAULT '[]'::jsonb;
             -- One image per lake, used everywhere: the hero reads
             -- hero_image_url, cards/listings read featured_image_url, and new
             -- writes keep both in lock-step (see lake.controller). Reconcile
