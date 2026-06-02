@@ -60,6 +60,24 @@
             background-position: right 0.9rem center;
         }
         .sec-bar .spacer { flex: 1; }
+        /* Filter-aware count chip — "X of Y showing" — sits to the right of
+           the filter selects so the admin can see at a glance how many
+           rows the current view is producing (and how many exist overall). */
+        .sec-bar .lt-count {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            padding: 0.45rem 0.85rem; background: #ebf4ff; color: #1d6df2;
+            border: 1px solid #bcd4f6; border-radius: 99px;
+            font-size: 0.82rem; font-weight: 700; white-space: nowrap;
+        }
+        .sec-bar .lt-count.muted { background: #f7f9fa; color: #718096; border-color: #e2e8f0; }
+        .sec-bar .btn-ghost {
+            background: #fff; color: #4a5568; border: 1px solid #e2e8f0;
+            border-radius: 8px; padding: 0.5rem 0.9rem;
+            font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            transition: all 0.15s;
+        }
+        .sec-bar .btn-ghost:hover { border-color: #1d6df2; color: #1d6df2; background: #f7faff; }
+        .sec-bar .btn-ghost:disabled { opacity: 0.5; cursor: default; }
         .sec-bar .btn-primary {
             padding: 0 1.2rem; height: 44px; border-radius: 10px; border: 0;
             background: #1d6df2; color: #fff;
@@ -310,6 +328,7 @@
                         <option value="draft">Draft</option>
                         <option value="archived">Archived</option>
                     </select>
+                    <span id="lk-count" class="lt-count" title="Showing in the grid below / total in the database">—</span>
                     <div class="spacer"></div>
                     <button class="btn-primary" onclick="openCreate('lake')">+ New lake</button>
                 </div>
@@ -325,7 +344,9 @@
                         <option value="active">Active only</option>
                         <option value="all">Including archived</option>
                     </select>
+                    <span id="tw-count" class="lt-count" title="Showing in the grid below / total in the database">—</span>
                     <div class="spacer"></div>
+                    <button class="btn-ghost" id="tw-launch-preset" onclick="activateTop20MnCities()" title="Sets active = TRUE for the top 20 Minnesota cities by population and deactivates every other MN town. Useful for launch.">★ Top 20 MN cities only</button>
                     <button class="btn-primary" onclick="openCreate('town')">+ New town</button>
                 </div>
                 <div id="tw-grid" class="card-grid"><div class="empty-grid">Loading…</div></div>
@@ -343,6 +364,7 @@
                     </div>
                     <input type="search" id="bz-search" placeholder="Search businesses…" oninput="renderBiz()">
                     <select id="bz-type" onchange="renderBiz()"><option value="">All types</option></select>
+                    <span id="bz-count" class="lt-count" title="Showing in the grid below / total in the database">—</span>
                     <div class="spacer"></div>
                     <button class="btn-primary" onclick="openCreate('business')">+ New business</button>
                 </div>
@@ -399,6 +421,72 @@
     const escAttr = s => escHtml(s);
     const fmtNum  = n => (typeof n === 'number' ? n.toLocaleString('en-US') : String(n ?? ''));
     const j = (url, opts) => fetch(url, opts).then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)));
+
+    // Fill the "X of Y" count chip next to a toolbar's filters. Optional
+    // third arg surfaces the actively-active count when filtered view is
+    // hiding it (e.g. towns: "20 of 218 · 20 active" vs "218 of 218").
+    function updateCount(id, shown, total, activeOf) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const muted = !total || shown === total;
+        el.classList.toggle('muted', muted && activeOf == null);
+        let txt = `${fmtNum(shown)} of ${fmtNum(total)}`;
+        if (typeof activeOf === 'number' && activeOf !== total) txt += ` · ${fmtNum(activeOf)} active`;
+        el.textContent = txt;
+        el.title = activeOf != null
+            ? `Showing ${fmtNum(shown)} of ${fmtNum(total)} loaded · ${fmtNum(activeOf)} of those are active on the public site.`
+            : `Showing ${fmtNum(shown)} of ${fmtNum(total)} loaded.`;
+    }
+
+    // Top 20 Minnesota cities by population (US Census 2020). Both spelling
+    // variants (Saint vs. St.) included so the match catches whichever form
+    // your tags table uses. Matches are case-insensitive.
+    const TOP_20_MN_CITIES = [
+        'Minneapolis', 'Saint Paul', 'St. Paul', 'St Paul',
+        'Rochester', 'Duluth', 'Bloomington', 'Brooklyn Park', 'Plymouth',
+        'Maple Grove', 'Woodbury', 'Saint Cloud', 'St. Cloud', 'St Cloud',
+        'Eagan', 'Eden Prairie', 'Coon Rapids', 'Burnsville', 'Blaine',
+        'Lakeville', 'Minnetonka', 'Apple Valley', 'Edina',
+        'Saint Louis Park', 'St. Louis Park', 'St Louis Park',
+    ];
+
+    async function activateTop20MnCities() {
+        const btn = document.getElementById('tw-launch-preset');
+        if (!btn) return;
+        // Preview which towns the server will activate / deactivate before
+        // confirming, so the admin sees the exact impact (counts pulled
+        // from the loaded State, MN-only).
+        const wanted = new Set(TOP_20_MN_CITIES.map(s => s.toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim()));
+        const norm = (n) => String(n || '').toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
+        const mn = State.towns.filter(t => t.state === 'MN');
+        const willActivate   = mn.filter(t => wanted.has(norm(t.name)));
+        const willDeactivate = mn.filter(t => !wanted.has(norm(t.name)) && t.active);
+        const msg =
+            `Launch preset for Minnesota:\n` +
+            `• ${willActivate.length} towns will be active (top 20 MN cities by population)\n` +
+            `• ${willDeactivate.length} other MN towns currently active will be DEACTIVATED\n\n` +
+            `Inactive towns disappear from the public site immediately (no delete). Continue?`;
+        if (!confirm(msg)) return;
+        btn.disabled = true; btn.textContent = 'Applying…';
+        try {
+            const res = await fetch('/api/admin/tags/launch-preset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ preset: 'top-20-mn-cities' }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+            alert(`Done. Activated ${data.activated || 0}, deactivated ${data.deactivated || 0}.`);
+            // Reload so the grid reflects the new active flags.
+            State.loaded.towns = false;
+            await loadTowns();
+        } catch (err) {
+            alert(err.message || 'Failed to apply preset.');
+        } finally {
+            btn.disabled = false; btn.textContent = '★ Top 20 MN cities only';
+        }
+    }
 
     // ── Tab switching ─────────────────────────────────────────────────
     function showLT(name) {
@@ -471,6 +559,7 @@
             if (status && status !== 'all' && l.status !== status) return false;
             return true;
         });
+        updateCount('lk-count', filtered.length, State.lakes.length);
         renderGrid('lk-grid', filtered, {
             type: 'lake',
             empty: 'No lakes match the current filters.',
@@ -489,7 +578,10 @@
     async function loadTowns() {
         State.loaded.towns = true;
         try {
-            const r = await fetch('/api/tags?include_archived=1', { credentials: 'include' });
+            // ?active=all is the tag controller's "skip the default-active
+            // filter" knob. (include_archived=1 was a typo that silently fell
+            // through to active-only, hiding every deactivated town.)
+            const r = await fetch('/api/tags?active=all', { credentials: 'include' });
             const data = await r.json();
             State.towns = Array.isArray(data) ? data : (data.rows || []);
         } catch (_) { State.towns = []; }
@@ -512,6 +604,11 @@
             if (state && t.state !== state) return false;
             return true;
         });
+        // Show "X of Y" — filtered/total — plus a second pill telling the
+        // admin how many of all loaded towns are currently active (matches
+        // exactly what the public site will surface).
+        const activeTotal = State.towns.filter(t => t.active).length;
+        updateCount('tw-count', filtered.length, State.towns.length, activeTotal);
         renderGrid('tw-grid', filtered, {
             type: 'town',
             empty: 'No towns match the current filters.',
@@ -560,6 +657,7 @@
             if (q && !(`${b.name||''} ${b.city||''} ${b.type||''}`.toLowerCase().includes(q))) return false;
             return true;
         });
+        updateCount('bz-count', filtered.length, State.biz.length);
         renderGrid('bz-grid', filtered, {
             type: 'business',
             empty: 'No businesses match the current filters.',

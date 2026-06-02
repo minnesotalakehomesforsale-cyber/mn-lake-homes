@@ -1423,6 +1423,82 @@ const getSubscriberBilling = async (req, res) => {
     }
 };
 
+// ─── Tag launch presets ──────────────────────────────────────────────────────
+// One-shot bulk active flip on the tags table. Currently supports the
+// 'top-20-mn-cities' preset — activates the 20 largest MN cities by 2020
+// census population and deactivates every other MN tag. Both spelling
+// variants (Saint vs. St.) are matched case-insensitively. Lakes outside
+// MN and lake/county tags are left untouched.
+const TAG_PRESETS = {
+    'top-20-mn-cities': {
+        state: 'MN',
+        names: [
+            'Minneapolis', 'Saint Paul', 'St. Paul', 'St Paul',
+            'Rochester', 'Duluth', 'Bloomington', 'Brooklyn Park', 'Plymouth',
+            'Maple Grove', 'Woodbury', 'Saint Cloud', 'St. Cloud', 'St Cloud',
+            'Eagan', 'Eden Prairie', 'Coon Rapids', 'Burnsville', 'Blaine',
+            'Lakeville', 'Minnetonka', 'Apple Valley', 'Edina',
+            'Saint Louis Park', 'St. Louis Park', 'St Louis Park',
+        ],
+    },
+};
+
+// Normalize on the SQL side too — lowercase, strip dots, collapse whitespace.
+// Lets the IN clause match "St. Paul" / "St Paul" / "Saint Paul" as one row.
+const normalizeForMatch = (s) => String(s || '').toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
+
+const applyTagLaunchPreset = async (req, res) => {
+    if (req.user?.role !== 'super_admin' && req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Admin only.' });
+    }
+    const presetKey = String(req.body?.preset || '');
+    const preset = TAG_PRESETS[presetKey];
+    if (!preset) return res.status(400).json({ error: `Unknown preset "${presetKey}".` });
+
+    const wantedNorm = [...new Set(preset.names.map(normalizeForMatch))];
+
+    try {
+        // Single statement — activate matching names, deactivate every
+        // other tag in the same state. Normalizes both sides so spelling
+        // variants collide. Returns rows so we can count what flipped.
+        const { rows } = await pool.query(
+            `WITH wanted AS (SELECT UNNEST($2::text[]) AS n),
+             flips AS (
+                 UPDATE tags
+                    SET active = (
+                        SELECT EXISTS (
+                            SELECT 1 FROM wanted w
+                             WHERE w.n = regexp_replace(regexp_replace(lower(tags.name), '\\.', '', 'g'), '\\s+', ' ', 'g')
+                        )
+                    ),
+                    updated_at = NOW()
+                  WHERE tags.state = $1
+                  RETURNING id, active
+             )
+             SELECT
+                 SUM(CASE WHEN active     THEN 1 ELSE 0 END)::int AS activated,
+                 SUM(CASE WHEN NOT active THEN 1 ELSE 0 END)::int AS deactivated
+             FROM flips`,
+            [preset.state, wantedNorm]
+        );
+        const activated   = rows[0]?.activated   || 0;
+        const deactivated = rows[0]?.deactivated || 0;
+
+        logActivity({
+            event_type: 'tag.launch_preset.apply',
+            event_scope: 'system',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            details: { preset: presetKey, activated, deactivated },
+            req,
+        });
+
+        res.json({ success: true, preset: presetKey, activated, deactivated });
+    } catch (err) {
+        console.error('[applyTagLaunchPreset]', err.message);
+        res.status(500).json({ error: 'Failed to apply preset.' });
+    }
+};
+
 module.exports = {
     getLedger,
     getAgentDetail,
@@ -1456,4 +1532,5 @@ module.exports = {
     listAdminTabs,
     setUserPermissions,
     createAdminUser,
+    applyTagLaunchPreset,
 };

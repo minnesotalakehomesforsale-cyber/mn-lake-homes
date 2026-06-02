@@ -46,6 +46,16 @@ router.delete('/users/:id', adminController.deleteUser);                   // DE
 // ─── ADMIN TABS (canonical list — powers the permission picker) ──────────────
 router.get('/admin-tabs', adminController.listAdminTabs);
 
+// ─── TAG LAUNCH PRESETS ─────────────────────────────────────────────────────
+// One-shot bulk activate/deactivate on the tags table — used to clean up
+// the town directory before launch by keeping only the named top-N cities
+// active. Admin-gated.
+router.post('/tags/launch-preset',
+    verifyToken,
+    requireRole(['admin', 'super_admin']),
+    adminController.applyTagLaunchPreset
+);
+
 // ─── METRICS ─────────────────────────────────────────────────────────────────
 router.get('/metrics/agent-coverage', adminController.getAgentCoverage);
 
