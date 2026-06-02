@@ -1567,6 +1567,11 @@
                         yearBuilt: toNum($('coo-yearBuilt').value),
                         lotSize: toNum($('coo-lotSize').value),
                         condition: $('coo-condition').value,
+                        // RentCast AVM (if any) + sqft go to the generator
+                        // so the server can fall back to sqft × $/sqft on
+                        // properties without RentCast coverage. Without
+                        // these the funnel returned $0.
+                        avm: S.propertyData?.avm ?? null,
                         propertyData: S.propertyData,
                     };
                     S.step = 3;

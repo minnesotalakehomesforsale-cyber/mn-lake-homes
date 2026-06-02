@@ -73,17 +73,47 @@ exports.lookup = async (req, res) => {
 };
 
 // ─── 2. POST /api/cash-offer/generate ───────────────────────────────────────
+// Computes an effective AVM (RentCast value if available, otherwise sqft ×
+// admin-configured price-per-sqft fallback) and runs it through the offer
+// math. RentCast has thin coverage outside metro areas, and rural lake
+// addresses are exactly where the funnel must NEVER return $0 — so a
+// sqft-based fallback is mandatory, not a nice-to-have.
 exports.generate = async (req, res) => {
     try {
-        const avm       = numOrNull(req.body?.avm);
+        const rawAvm    = numOrNull(req.body?.avm);
+        const sqft      = numOrNull(req.body?.sqft);
         const condition = sanitizeStr(req.body?.condition, 40);
 
-        if (!avm || avm <= 0) {
-            return res.status(400).json({ error: 'A valid AVM is required to generate an offer.' });
+        const config = await loadConfig();
+        const fallbackPpsf = Number(config?.fallback_price_per_sqft) || 300;
+
+        let effectiveAvm = rawAvm && rawAvm > 0 ? rawAvm : null;
+        let avmSource    = effectiveAvm ? 'rentcast' : null;
+
+        if (!effectiveAvm && sqft && sqft > 0) {
+            // Round to nearest $5k so the fallback doesn't read like a
+            // false-precision computer estimate to the user.
+            effectiveAvm = Math.round((sqft * fallbackPpsf) / 5000) * 5000;
+            avmSource    = 'sqft_fallback';
         }
 
-        const config = await loadConfig();
-        const { offerAmount, offerFactors } = calculateOffer({ avm, condition, config });
+        if (!effectiveAvm || effectiveAvm <= 0) {
+            return res.status(400).json({
+                error: 'Need either a property value or square footage to estimate the offer.',
+            });
+        }
+
+        const { offerAmount, offerFactors } = calculateOffer({
+            avm: effectiveAvm,
+            condition,
+            config,
+        });
+        offerFactors.avm                     = effectiveAvm;
+        offerFactors.avmSource               = avmSource;
+        if (avmSource === 'sqft_fallback') {
+            offerFactors.fallbackPricePerSqft = fallbackPpsf;
+            offerFactors.fallbackSqft         = sqft;
+        }
         const offerGeneratedAt = new Date().toISOString();
 
         return res.json({ offerAmount, offerFactors, offerGeneratedAt });
@@ -125,14 +155,28 @@ exports.submit = async (req, res) => {
         const lastSaleDate    = sanitizeStr(b.lastSaleDate, 40);
         const offerAmount     = numOrNull(b.offerAmount);
 
-        // Re-compute if the client didn't send an offer (defensive).
+        // Re-compute if the client didn't send an offer (defensive). Use
+        // the same RentCast→sqft fallback the /generate endpoint uses so a
+        // rural property with no AVM but a known sqft still produces a
+        // real number rather than $0.
         let finalOffer  = offerAmount;
         let finalFactors = b.offerFactors && typeof b.offerFactors === 'object' ? b.offerFactors : null;
         if (!finalOffer || !finalFactors) {
             const config = await loadConfig();
-            const calc = calculateOffer({ avm, condition, config });
+            const fallbackPpsf = Number(config?.fallback_price_per_sqft) || 300;
+            let effAvm = avm && avm > 0 ? avm : null;
+            let effSource = effAvm ? 'rentcast' : null;
+            if (!effAvm && sqft && sqft > 0) {
+                effAvm    = Math.round((sqft * fallbackPpsf) / 5000) * 5000;
+                effSource = 'sqft_fallback';
+            }
+            const calc = calculateOffer({ avm: effAvm, condition, config });
             finalOffer   = calc.offerAmount;
-            finalFactors = calc.offerFactors;
+            finalFactors = { ...calc.offerFactors, avm: effAvm, avmSource: effSource };
+            if (effSource === 'sqft_fallback') {
+                finalFactors.fallbackPricePerSqft = fallbackPpsf;
+                finalFactors.fallbackSqft         = sqft;
+            }
         }
 
         const propertyDataJson = (b.propertyDataJson && typeof b.propertyDataJson === 'object')

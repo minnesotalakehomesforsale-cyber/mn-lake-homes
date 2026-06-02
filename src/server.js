@@ -1378,6 +1378,13 @@ async function ensureTables() {
                 CONSTRAINT single_row CHECK (id = 1)
             );
             INSERT INTO cash_offer_config (id) VALUES (1) ON CONFLICT DO NOTHING;
+            -- Fallback price per sqft for properties RentCast cannot value
+            -- (rural lakefront, off-the-grid acreage, etc.). Without this,
+            -- the cash-offer funnel returned 0 whenever RentCast had no
+            -- coverage. Set to a conservative MN-lake-area baseline; admin
+            -- can override per-row from /system Database tab.
+            ALTER TABLE cash_offer_config
+                ADD COLUMN IF NOT EXISTS fallback_price_per_sqft NUMERIC NOT NULL DEFAULT 300;
         `);
 
         // Geographic tag system (see docs/geo-tags.md — lead routing by
