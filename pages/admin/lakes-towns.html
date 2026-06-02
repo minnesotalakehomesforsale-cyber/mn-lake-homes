@@ -191,6 +191,16 @@
             box-shadow: 0 30px 70px rgba(0,0,0,0.35);
         }
         .m-shell.narrow { max-width: 540px; }
+        /* Invite-business modal form fields — minimal, reuses the same
+           visual language as the other admin modals. */
+        .ib-field { display: flex; flex-direction: column; gap: 0.3rem; }
+        .ib-field label { font-size: 0.78rem; font-weight: 700; color: #4a5568; }
+        .ib-field input, .ib-field select {
+            font-family: inherit; font-size: 0.95rem;
+            padding: 0.6rem 0.8rem; border: 1px solid #e2e8f0;
+            border-radius: 8px; background: #fff; color: #1a202c; outline: none;
+        }
+        .ib-field input:focus, .ib-field select:focus { border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.12); }
         .m-head { padding: 1.25rem 1.5rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
         .m-head .m-type { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #1d6df2; margin: 0 0 0.25rem; }
         .m-head .m-title { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.5px; margin: 0; color: #1a202c; }
@@ -367,6 +377,7 @@
                     <select id="bz-type" onchange="renderBiz()"><option value="">All types</option></select>
                     <span id="bz-count" class="lt-count" title="Showing in the grid below / total in the database">—</span>
                     <div class="spacer"></div>
+                    <button class="btn-ghost" onclick="openInviteBusiness()" title="Create a comped business listing and email the owner login credentials so they can finish their profile.">✉ Invite business</button>
                     <button class="btn-primary" onclick="openCreate('business')">+ New business</button>
                 </div>
                 <div id="bz-grid" class="card-grid"><div class="empty-grid">Loading…</div></div>
@@ -399,6 +410,59 @@
                 <div class="right">
                     <button class="btn-ghost"   onclick="closeCreate()">Cancel</button>
                     <button class="btn-primary" id="cr-save" onclick="createEntity()">Create &amp; edit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Invite-business modal ──────────────────────────────────────────
+         Creates a comped business listing + owner account + emails them
+         login credentials. Distinct from the "+ New business" modal above
+         (that one creates an unowned listing only — no user account). -->
+    <div class="m-overlay" id="invite-modal" onclick="if(event.target===this)closeInviteBusiness()">
+        <div class="m-shell narrow">
+            <div class="m-head">
+                <div>
+                    <p class="m-type">Invite business</p>
+                    <h2 class="m-title">Comped listing + login email</h2>
+                    <p class="m-sub">Creates the listing live and paid for, then emails the owner login credentials and a setup walkthrough.</p>
+                </div>
+                <button class="m-close" onclick="closeInviteBusiness()">×</button>
+            </div>
+            <div class="m-body">
+                <div class="msg" id="inv-msg"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;">
+                    <div class="ib-field"><label>Owner first name *</label><input type="text" id="inv-first" placeholder="Jane"></div>
+                    <div class="ib-field"><label>Owner last name</label><input type="text" id="inv-last" placeholder="Smith"></div>
+                    <div class="ib-field" style="grid-column:1/-1;"><label>Owner email *</label><input type="email" id="inv-email" placeholder="owner@business.com"></div>
+                    <div class="ib-field" style="grid-column:1/-1;"><label>Business name *</label><input type="text" id="inv-bizname" placeholder="Smith's Marina"></div>
+                    <div class="ib-field">
+                        <label>Business type *</label>
+                        <select id="inv-biztype">
+                            <option value="restaurant">Restaurant</option>
+                            <option value="marina">Marina</option>
+                            <option value="service">Service provider</option>
+                            <option value="photographer">Photographer</option>
+                            <option value="builder">Builder / contractor</option>
+                            <option value="boat_rental">Boat rental</option>
+                            <option value="outdoor_recreation">Outdoor recreation</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="ib-field">
+                        <label>Comp them at this tier *</label>
+                        <select id="inv-tier">
+                            <option value="basic">Basic</option>
+                            <option value="premium" selected>Premium (featured)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="m-actions">
+                <div class="left"></div>
+                <div class="right">
+                    <button class="btn-ghost"   onclick="closeInviteBusiness()">Cancel</button>
+                    <button class="btn-primary" id="inv-send" onclick="sendBusinessInvite()">Send invite email</button>
                 </div>
             </div>
         </div>
@@ -454,6 +518,61 @@
     // One-click seed of the top-25 MN lakes (Winnie, Rainy, Pepin, Bemidji,
     // Whitefish Chain, Bde Maka Ska, etc.) — populates lakes + auto-links to
     // matching town tags. Idempotent so re-running just skips dupes.
+    // ── Invite business (comped account + credentials email) ────────────────
+    function openInviteBusiness() {
+        document.getElementById('inv-msg').textContent = '';
+        document.getElementById('inv-msg').style.display = 'none';
+        ['inv-first','inv-last','inv-email','inv-bizname'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('inv-modal').classList.add('open');
+        document.getElementById('inv-first').focus();
+    }
+    function closeInviteBusiness() {
+        document.getElementById('inv-modal').classList.remove('open');
+    }
+    async function sendBusinessInvite() {
+        const btn = document.getElementById('inv-send');
+        const msg = document.getElementById('inv-msg');
+        msg.style.display = 'none';
+        const payload = {
+            first_name:    document.getElementById('inv-first').value.trim(),
+            last_name:     document.getElementById('inv-last').value.trim(),
+            email:         document.getElementById('inv-email').value.trim(),
+            business_name: document.getElementById('inv-bizname').value.trim(),
+            business_type: document.getElementById('inv-biztype').value,
+            comp_tier:     document.getElementById('inv-tier').value,
+        };
+        if (!payload.first_name || !payload.email || !payload.business_name) {
+            msg.textContent = 'First name, email, and business name are required.';
+            msg.style.display = 'block';
+            return;
+        }
+        btn.disabled = true; btn.textContent = 'Sending…';
+        try {
+            const res = await fetch('/api/admin/invite-business', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+            closeInviteBusiness();
+            alert(
+                `Invite sent to ${data.email}.\n\n` +
+                `Login URL: ${data.login_url}\n` +
+                `Temporary password: ${data.tempPassword}\n\n` +
+                `(Save this in case the email fails — you can share it manually.)`
+            );
+            State.loaded.biz = false;
+            await loadBiz();
+        } catch (err) {
+            msg.textContent = err.message || 'Failed to invite business.';
+            msg.style.display = 'block';
+        } finally {
+            btn.disabled = false; btn.textContent = 'Send invite email';
+        }
+    }
+
     async function seedTop25MnLakes() {
         const btn = document.getElementById('lk-launch-seed');
         if (!btn) return;

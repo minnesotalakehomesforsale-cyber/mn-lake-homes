@@ -753,6 +753,74 @@ function sendBusinessSubscriptionCancelled({ to, name, businessName }) {
     });
 }
 
+// ─── Admin-initiated invites (comped accounts) ─────────────────────────────
+// Both invites surface the temp password in a copyable monospace block
+// rather than a CTA-button URL. The agent/business is supposed to log in,
+// change it, then finish their profile — so credential visibility matters
+// more than first-click optimization.
+
+function credBlock(loginUrl, email, tempPassword) {
+    return `
+        <div style="background:#f7f9fa;border:1px solid #e2e8f0;border-radius:10px;padding:18px 20px;margin:18px 0;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;line-height:1.7;color:#1a202c;">
+            <div style="color:#718096;font-size:12px;letter-spacing:0.6px;text-transform:uppercase;font-weight:700;margin-bottom:8px;">Your Login</div>
+            <div><strong>URL:&nbsp;&nbsp;&nbsp;&nbsp;</strong><a href="${loginUrl}" style="color:#1d6df2;text-decoration:none;">${loginUrl}</a></div>
+            <div><strong>Email:&nbsp;&nbsp;</strong>${email}</div>
+            <div><strong>Password:</strong> <span style="background:#fff;border:1px solid #cbd5e0;border-radius:6px;padding:2px 8px;font-weight:700;">${tempPassword}</span></div>
+        </div>`;
+}
+
+function sendAgentInvite({ to, first_name, tier_label, tempPassword }) {
+    const name = first_name || 'there';
+    const loginUrl = `${SITE_URL}/pages/public/agent-login.html`;
+    return sendEmail({
+        to,
+        subject: `You're invited to MN Lake Homes — your ${tier_label} profile is ready`,
+        html: layout({
+            title: `Welcome to the network, ${name}.`,
+            preheader: `Your ${tier_label} agent profile is comped and ready to set up.`,
+            body: `
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Our team set up a complimentary <strong>${tier_label}</strong> agent profile for you on Minnesota Lake Homes. Your account is live and the membership is fully paid for — you just need to log in and fill in your details so buyers and sellers can find you.
+                </p>
+                ${credBlock(loginUrl, to, tempPassword)}
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Once you're in, the dashboard walks you through adding your photo, bio, service areas, and specialties. Profiles typically take 10–15 minutes. Change your password at the bottom of the Account tab.
+                </p>
+                <p style="margin:0;font-size:14px;line-height:1.6;color:#718096;">
+                  Questions? Just reply to this email.
+                </p>`,
+            ctaText: 'Log in and finish setup',
+            ctaUrl: loginUrl,
+        })
+    });
+}
+
+function sendBusinessInvite({ to, first_name, business_name, tier_label, tempPassword }) {
+    const name = first_name || 'there';
+    const loginUrl = `${SITE_URL}/pages/public/business-login.html`;
+    return sendEmail({
+        to,
+        subject: `You're invited to MN Lake Homes — ${business_name}'s ${tier_label} profile is ready`,
+        html: layout({
+            title: `Welcome, ${name}.`,
+            preheader: `${business_name}'s ${tier_label} listing is comped and ready to set up.`,
+            body: `
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Our team set up a complimentary <strong>${tier_label}</strong> listing for <strong>${business_name}</strong> on Minnesota Lake Homes. Your subscription is fully paid for — you just need to log in and fill in the details so lake-home owners in your service area can find you.
+                </p>
+                ${credBlock(loginUrl, to, tempPassword)}
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Once you're in, the dashboard walks you through adding your description, photos, hours, and the lakes/towns you serve. Most listings take 10–15 minutes to complete. Change your password at the bottom of the Account tab.
+                </p>
+                <p style="margin:0;font-size:14px;line-height:1.6;color:#718096;">
+                  Questions? Just reply to this email.
+                </p>`,
+            ctaText: 'Log in and finish setup',
+            ctaUrl: loginUrl,
+        })
+    });
+}
+
 module.exports = {
     sendEmail,
     sendWelcome,
@@ -770,6 +838,8 @@ module.exports = {
     sendBusinessApproved,
     sendBusinessPaymentFailed,
     sendBusinessSubscriptionCancelled,
+    sendAgentInvite,
+    sendBusinessInvite,
     sendCustom,
     layout,
 };

@@ -65,6 +65,20 @@ router.post('/lakes/launch-seed',
     adminController.applyLakeLaunchSeed
 );
 
+// ─── ADMIN INVITES (comped account + credentials email) ────────────────────
+// Creates a comped agent/business account with a generated temp password
+// and emails the invitee login URL + credentials + setup walkthrough.
+router.post('/invite-agent',
+    verifyToken,
+    requireRole(['admin', 'super_admin']),
+    adminController.inviteAgent
+);
+router.post('/invite-business',
+    verifyToken,
+    requireRole(['admin', 'super_admin']),
+    adminController.inviteBusiness
+);
+
 // ─── METRICS ─────────────────────────────────────────────────────────────────
 router.get('/metrics/agent-coverage', adminController.getAgentCoverage);
 

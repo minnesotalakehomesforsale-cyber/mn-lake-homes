@@ -76,6 +76,14 @@
         .modal-input { padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; font-family: inherit; width: 100%; box-sizing: border-box; }
         .modal-input:focus { outline: none; border-color: #1d6df2; }
         .modal-actions { display: flex; gap: 1rem; margin-top: 2rem; justify-content: flex-end; }
+        .mode-tab {
+            flex: 1; padding: 0.65rem 0.9rem; background: #f7f9fa;
+            border: 1px solid #e2e8f0; border-radius: 8px;
+            font: inherit; font-size: 0.88rem; font-weight: 700; color: #4a5568;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .mode-tab:hover { color: #1a202c; border-color: #cbd5e0; }
+        .mode-tab.on    { background: #ebf4ff; border-color: #1d6df2; color: #1d6df2; }
         .btn-cancel { padding: 0.75rem 1.5rem; border: 1px solid #e2e8f0; background: #fff; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: inherit; }
         .btn-save { padding: 0.75rem 1.5rem; background: #1d6df2; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: inherit; }
         .modal-error { display: none; color: #c53030; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.875rem; margin-bottom: 1rem; }
@@ -151,7 +159,14 @@
 <div class="modal-overlay-admin" id="add-agent-modal">
     <div class="modal-box">
         <h2>Add New Agent</h2>
-        <p>Create a new user account and agent profile. You can set their initial membership and publish status.</p>
+        <p>Create a new user account and agent profile. Use <strong>Invite</strong> to send them a comped account with login credentials by email — they'll log in and finish their profile.</p>
+        <!-- Mode toggle: "Create" leaves the existing flow alone; "Invite"
+             swaps the modal to the new admin-invite endpoint (auto-generated
+             password, comped tier, walkthrough email). -->
+        <div class="modal-field full" style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+            <button type="button" id="mode-create" class="mode-tab on"   onclick="setAddMode('create')">Create directly</button>
+            <button type="button" id="mode-invite" class="mode-tab"      onclick="setAddMode('invite')">Send invite email</button>
+        </div>
         <div id="modal-error" class="modal-error"></div>
         <div class="modal-grid">
             <div class="modal-field">
@@ -166,7 +181,7 @@
                 <label>Work Email *</label>
                 <input type="email" id="a-email" class="modal-input" placeholder="jane@brokerage.com">
             </div>
-            <div class="modal-field full">
+            <div class="modal-field full" id="a-pass-wrap">
                 <label>Temporary Password *</label>
                 <input type="password" id="a-pass" class="modal-input" placeholder="Minimum 8 characters">
             </div>
@@ -179,14 +194,14 @@
                 <input type="text" id="a-license" class="modal-input" placeholder="MN-12345">
             </div>
             <div class="modal-field">
-                <label>Membership Tier</label>
+                <label id="a-membership-label">Membership Tier</label>
                 <select id="a-membership" class="modal-input">
                     <option value="basic">Basic</option>
                     <option value="mn_lake_specialist">MN Lake Specialist</option>
                     <option value="top_agent">Top Agent</option>
                 </select>
             </div>
-            <div class="modal-field">
+            <div class="modal-field" id="a-status-wrap">
                 <label>Initial Profile Status</label>
                 <select id="a-status" class="modal-input">
                     <option value="draft">Draft</option>
@@ -196,7 +211,7 @@
         </div>
         <div class="modal-actions">
             <button class="btn-cancel" onclick="closeAddModal()">Cancel</button>
-            <button class="btn-save" id="save-agent-btn" onclick="createAgent()">Create Agent</button>
+            <button class="btn-save" id="save-agent-btn" onclick="submitAgentForm()">Create Agent</button>
         </div>
     </div>
 </div>
@@ -317,40 +332,92 @@
         document.getElementById('modal-error').style.display = 'none';
     }
 
-    async function createAgent() {
+    // ── Modal mode: "create" vs "invite" ─────────────────────────────────────
+    let _addMode = 'create';
+    function setAddMode(mode) {
+        _addMode = mode;
+        document.getElementById('mode-create').classList.toggle('on', mode === 'create');
+        document.getElementById('mode-invite').classList.toggle('on', mode === 'invite');
+        // Invite mode hides the password (auto-generated) and profile-status
+        // (always 'draft' so the invitee finishes setup themselves), and
+        // relabels the tier as the comped tier.
+        document.getElementById('a-pass-wrap').style.display    = mode === 'invite' ? 'none' : '';
+        document.getElementById('a-status-wrap').style.display  = mode === 'invite' ? 'none' : '';
+        document.getElementById('a-membership-label').textContent = mode === 'invite' ? 'Comp them at this tier' : 'Membership Tier';
+        document.getElementById('save-agent-btn').textContent     = mode === 'invite' ? 'Send Invite Email' : 'Create Agent';
+    }
+
+    async function submitAgentForm() {
         const btn = document.getElementById('save-agent-btn');
         const errBox = document.getElementById('modal-error');
         errBox.style.display = 'none';
 
-        const payload = {
-            first_name:      document.getElementById('a-first').value.trim(),
-            last_name:       document.getElementById('a-last').value.trim(),
-            email:           document.getElementById('a-email').value.trim(),
-            password:        document.getElementById('a-pass').value,
-            brokerage_name:  document.getElementById('a-brokerage').value.trim(),
-            license_number:  document.getElementById('a-license').value.trim(),
-            membership_code: document.getElementById('a-membership').value,
-            profile_status:  document.getElementById('a-status').value,
-            is_published:    document.getElementById('a-status').value === 'published'
-        };
+        const first_name = document.getElementById('a-first').value.trim();
+        const last_name  = document.getElementById('a-last').value.trim();
+        const email      = document.getElementById('a-email').value.trim();
 
-        if (!payload.first_name || !payload.email || !payload.password) {
-            errBox.textContent = 'First name, email, and password are required.';
+        if (!first_name || !email) {
+            errBox.textContent = 'First name and email are required.';
             errBox.style.display = 'block';
             return;
         }
 
-        btn.textContent = 'Creating...';
         btn.disabled = true;
 
         try {
+            if (_addMode === 'invite') {
+                btn.textContent = 'Sending…';
+                const payload = {
+                    first_name, last_name, email,
+                    brokerage_name:  document.getElementById('a-brokerage').value.trim(),
+                    license_number:  document.getElementById('a-license').value.trim(),
+                    comp_tier:       document.getElementById('a-membership').value,
+                };
+                const res = await fetch('/api/admin/invite-agent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    errBox.textContent = data.error || 'Failed to invite agent.';
+                    errBox.style.display = 'block';
+                    return;
+                }
+                closeAddModal();
+                alert(
+                    `Invite sent to ${data.email}.\n\n` +
+                    `Login URL: ${data.login_url}\n` +
+                    `Temporary password: ${data.tempPassword}\n\n` +
+                    `(Save this in case the email fails — you can share it manually.)`
+                );
+                await loadAgents();
+                return;
+            }
+
+            // Default: direct create
+            btn.textContent = 'Creating…';
+            const password = document.getElementById('a-pass').value;
+            if (!password) {
+                errBox.textContent = 'Password is required when creating directly.';
+                errBox.style.display = 'block';
+                return;
+            }
+            const payload = {
+                first_name, last_name, email, password,
+                brokerage_name:  document.getElementById('a-brokerage').value.trim(),
+                license_number:  document.getElementById('a-license').value.trim(),
+                membership_code: document.getElementById('a-membership').value,
+                profile_status:  document.getElementById('a-status').value,
+                is_published:    document.getElementById('a-status').value === 'published',
+            };
             const res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
             const data = await res.json();
-
             if (!res.ok) {
                 errBox.textContent = data.error || 'Failed to create agent.';
                 errBox.style.display = 'block';

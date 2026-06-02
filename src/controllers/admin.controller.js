@@ -1609,6 +1609,236 @@ async function applyLakeLaunchSeed(req, res) {
     res.json({ success: true, total: lakes.length, inserted, skipped, geocoded, tag_links: tagLinks, slugs: insertedSlugs });
 }
 
+// ─── ADMIN INVITES (comped agent / business with credentialed email) ────────
+// Used when an admin wants to onboard a partner without making them sign
+// up + pay. Generates a strong-but-typeable temp password, creates the
+// user account fully comped (tier_comped = TRUE), and emails the login
+// URL + credentials + a "finish your profile" walkthrough.
+const emailService = require('../services/email');
+
+const VALID_AGENT_TIERS = new Set(['basic', 'mn_lake_specialist', 'top_agent', 'premium', 'founder']);
+const VALID_BUSINESS_TIERS = new Set(['basic', 'premium']);
+const VALID_BUSINESS_TYPES = new Set([
+    'restaurant', 'marina', 'service', 'photographer',
+    'builder', 'boat_rental', 'outdoor_recreation', 'other',
+]);
+
+const TIER_LABEL = {
+    basic: 'Basic',
+    mn_lake_specialist: 'MN Lake Specialist',
+    top_agent: 'Top Agent',
+    premium: 'Premium',
+    founder: 'Founder',
+};
+
+// Mixed-case + digits, 12 chars, no easily-confused glyphs (no O/0, l/1).
+function generateTempPassword() {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    let out = '';
+    const buf = require('crypto').randomBytes(12);
+    for (let i = 0; i < 12; i++) out += alphabet[buf[i] % alphabet.length];
+    return out;
+}
+
+function slugifyName(s) {
+    return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 100);
+}
+
+/**
+ * POST /api/admin/invite-agent
+ * Body: { first_name, last_name, email, brokerage_name?, license_number?, comp_tier }
+ * Creates a comped agent account, sends them a credentials email, and
+ * returns the temp password so the admin can re-share if the email failed.
+ */
+const inviteAgent = async (req, res) => {
+    let { first_name, last_name, email, brokerage_name, license_number, comp_tier } = req.body || {};
+    first_name = String(first_name || '').trim();
+    last_name  = String(last_name  || '').trim();
+    email      = String(email      || '').trim().toLowerCase();
+    comp_tier  = String(comp_tier || 'mn_lake_specialist').trim();
+
+    if (!first_name || !email) return res.status(400).json({ error: 'First name and email are required.' });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email format.' });
+    if (!VALID_AGENT_TIERS.has(comp_tier)) return res.status(400).json({ error: `Unknown comp tier "${comp_tier}".` });
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const dup = await client.query('SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL', [email]);
+        if (dup.rowCount) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({ error: 'A user with that email already exists.' });
+        }
+
+        const tempPassword = generateTempPassword();
+        const hash = await bcrypt.hash(tempPassword, 10);
+        const display_name = `${first_name} ${last_name}`.trim();
+
+        const userRes = await client.query(
+            `INSERT INTO users (first_name, last_name, full_name, email, password_hash,
+                                role, account_status, password_changed_at)
+             VALUES ($1, $2, $3, $4, $5, 'agent', 'active', NOW())
+             RETURNING id`,
+            [first_name, last_name, display_name, email, hash]
+        );
+        const userId = userRes.rows[0].id;
+
+        const memRes = await client.query(`SELECT id FROM memberships WHERE code = $1 LIMIT 1`, [comp_tier]);
+        if (!memRes.rowCount) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: `Membership tier "${comp_tier}" not found in the DB.` });
+        }
+        const membershipId = memRes.rows[0].id;
+
+        // Unique slug — append numeric suffix on collision.
+        let slug = slugifyName(display_name) || `agent-${userId.slice(0, 8)}`;
+        const slugCheck = await client.query(`SELECT slug FROM agents WHERE slug LIKE $1`, [`${slug}%`]);
+        if (slugCheck.rowCount) slug = `${slug}-${slugCheck.rowCount}`;
+
+        await client.query(
+            `INSERT INTO agents (user_id, membership_id, slug, display_name, brokerage_name,
+                                 license_number, profile_status, is_published, tier_comped)
+             VALUES ($1, $2, $3, $4, $5, $6, 'draft', false, TRUE)`,
+            [userId, membershipId, slug, display_name,
+             brokerage_name?.trim() || null, license_number?.trim() || null]
+        );
+
+        await client.query('COMMIT');
+
+        // Fire-and-forget email — surfaces a degradation if the transport
+        // is misconfigured but never blocks the response.
+        emailService.sendAgentInvite({
+            to: email,
+            first_name,
+            tier_label: TIER_LABEL[comp_tier] || comp_tier,
+            tempPassword,
+        }).catch(err => console.error('[inviteAgent] email failed:', err.message));
+
+        logActivity({
+            event_type: 'agent.invite.send',
+            event_scope: 'agents',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'user', id: userId, label: email },
+            details: { comp_tier, brokerage_name: brokerage_name || null },
+            req,
+        });
+
+        res.status(201).json({
+            success: true,
+            user_id: userId,
+            email,
+            comp_tier,
+            tempPassword,     // returned so admin can copy/paste if email fails
+            login_url: `${process.env.SITE_URL || ''}/pages/public/agent-login.html`,
+        });
+    } catch (err) {
+        await client.query('ROLLBACK').catch(() => {});
+        console.error('[inviteAgent]', err.message);
+        res.status(500).json({ error: 'Failed to invite agent.' });
+    } finally {
+        client.release();
+    }
+};
+
+/**
+ * POST /api/admin/invite-business
+ * Body: { first_name, last_name, email, business_name, business_type, comp_tier }
+ * Creates a comped business listing + owner account, sends the credentials
+ * email, and returns the temp password.
+ */
+const inviteBusiness = async (req, res) => {
+    let { first_name, last_name, email, business_name, business_type, comp_tier } = req.body || {};
+    first_name    = String(first_name    || '').trim();
+    last_name     = String(last_name     || '').trim();
+    email         = String(email         || '').trim().toLowerCase();
+    business_name = String(business_name || '').trim().slice(0, 200);
+    business_type = String(business_type || '').trim().toLowerCase().slice(0, 40);
+    comp_tier     = String(comp_tier || 'basic').trim();
+
+    if (!first_name || !email)   return res.status(400).json({ error: 'First name and email are required.' });
+    if (!business_name)          return res.status(400).json({ error: 'Business name is required.' });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email format.' });
+    if (!VALID_BUSINESS_TYPES.has(business_type))  return res.status(400).json({ error: `Unknown business type "${business_type}".` });
+    if (!VALID_BUSINESS_TIERS.has(comp_tier))      return res.status(400).json({ error: `Unknown comp tier "${comp_tier}".` });
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const dup = await client.query('SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL', [email]);
+        if (dup.rowCount) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({ error: 'A user with that email already exists.' });
+        }
+
+        const tempPassword = generateTempPassword();
+        const hash = await bcrypt.hash(tempPassword, 10);
+        const display_name = `${first_name} ${last_name}`.trim() || business_name;
+
+        const userRes = await client.query(
+            `INSERT INTO users (first_name, last_name, full_name, email, password_hash,
+                                role, account_status, password_changed_at)
+             VALUES ($1, $2, $3, $4, $5, 'business_owner', 'active', NOW())
+             RETURNING id`,
+            [first_name, last_name, display_name, email, hash]
+        );
+        const userId = userRes.rows[0].id;
+
+        // Unique slug — append short random suffix on collision.
+        let slug = slugifyName(`${business_type}-${business_name}`) || `business-${userId.slice(0, 8)}`;
+        const slugCheck = await client.query(`SELECT 1 FROM businesses WHERE slug = $1`, [slug]);
+        if (slugCheck.rowCount) slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
+
+        // Comped: status = 'active', subscription_status = 'active',
+        // tier_comped = TRUE so the Stripe webhook can't downgrade them on
+        // a future cancel/lapse (they have no real subscription).
+        await client.query(
+            `INSERT INTO businesses
+               (user_id, slug, name, type, state, status,
+                subscription_status, tier, tier_comped)
+             VALUES ($1, $2, $3, $4, 'MN', 'active',
+                     'active', $5, TRUE)`,
+            [userId, slug, business_name, business_type, comp_tier]
+        );
+
+        await client.query('COMMIT');
+
+        emailService.sendBusinessInvite({
+            to: email,
+            first_name,
+            business_name,
+            tier_label: TIER_LABEL[comp_tier] || comp_tier,
+            tempPassword,
+        }).catch(err => console.error('[inviteBusiness] email failed:', err.message));
+
+        logActivity({
+            event_type: 'business.invite.send',
+            event_scope: 'business',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'user', id: userId, label: email },
+            details: { comp_tier, business_name, business_type, slug },
+            req,
+        });
+
+        res.status(201).json({
+            success: true,
+            user_id: userId,
+            email,
+            comp_tier,
+            business_slug: slug,
+            tempPassword,
+            login_url: `${process.env.SITE_URL || ''}/pages/public/business-login.html`,
+        });
+    } catch (err) {
+        await client.query('ROLLBACK').catch(() => {});
+        console.error('[inviteBusiness]', err.message);
+        res.status(500).json({ error: 'Failed to invite business.' });
+    } finally {
+        client.release();
+    }
+};
+
 module.exports = {
     getLedger,
     getAgentDetail,
@@ -1644,4 +1874,6 @@ module.exports = {
     createAdminUser,
     applyTagLaunchPreset,
     applyLakeLaunchSeed,
+    inviteAgent,
+    inviteBusiness,
 };
