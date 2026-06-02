@@ -56,6 +56,15 @@ router.post('/tags/launch-preset',
     adminController.applyTagLaunchPreset
 );
 
+// ─── LAKE LAUNCH SEED ───────────────────────────────────────────────────────
+// One-click seed of the top-25 MN lakes not already in the database.
+// Idempotent — safe to re-run. See src/data/top-25-mn-lakes.json.
+router.post('/lakes/launch-seed',
+    verifyToken,
+    requireRole(['admin', 'super_admin']),
+    adminController.applyLakeLaunchSeed
+);
+
 // ─── METRICS ─────────────────────────────────────────────────────────────────
 router.get('/metrics/agent-coverage', adminController.getAgentCoverage);
 

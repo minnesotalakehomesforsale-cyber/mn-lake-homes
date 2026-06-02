@@ -330,6 +330,7 @@
                     </select>
                     <span id="lk-count" class="lt-count" title="Showing in the grid below / total in the database">—</span>
                     <div class="spacer"></div>
+                    <button class="btn-ghost" id="lk-launch-seed" onclick="seedTop25MnLakes()" title="Add 25 curated top MN lakes (Winnie, Rainy, Pepin, Bemidji, Whitefish Chain, Bde Maka Ska, etc.) that aren't already in the database. Idempotent — safe to re-run.">★ Seed top 25 MN lakes</button>
                     <button class="btn-primary" onclick="openCreate('lake')">+ New lake</button>
                 </div>
                 <div id="lk-grid" class="card-grid"><div class="empty-grid">Loading…</div></div>
@@ -449,6 +450,47 @@
         'Lakeville', 'Minnetonka', 'Apple Valley', 'Edina',
         'Saint Louis Park', 'St. Louis Park', 'St Louis Park',
     ];
+
+    // One-click seed of the top-25 MN lakes (Winnie, Rainy, Pepin, Bemidji,
+    // Whitefish Chain, Bde Maka Ska, etc.) — populates lakes + auto-links to
+    // matching town tags. Idempotent so re-running just skips dupes.
+    async function seedTop25MnLakes() {
+        const btn = document.getElementById('lk-launch-seed');
+        if (!btn) return;
+        if (!confirm(
+            'Seed up to 25 top Minnesota lakes (Winnie, Rainy, Pepin, Bemidji, Whitefish Chain, Bde Maka Ska, etc.) into the database?\n\n' +
+            '• Each lake lands as published with intro + SEO copy already written.\n' +
+            '• Lakes that already exist (by slug) are skipped — safe to re-run.\n' +
+            '• Lat/lng auto-geocoded if missing.\n' +
+            '• Lakes auto-link to matching town tags; missing tags are skipped (link them later from the lake\'s Connected tab).\n\n' +
+            'Continue?'
+        )) return;
+        btn.disabled = true; btn.textContent = 'Seeding…';
+        try {
+            const res = await fetch('/api/admin/lakes/launch-seed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({}),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+            alert(
+                `Done.\n` +
+                `Inserted: ${data.inserted || 0}\n` +
+                `Skipped (already in DB): ${data.skipped || 0}\n` +
+                `Auto-geocoded: ${data.geocoded || 0}\n` +
+                `Tag links made: ${data.tag_links || 0}` +
+                (data.slugs?.length ? `\n\nNew lakes:\n• ${data.slugs.join('\n• ')}` : '')
+            );
+            State.loaded.lakes = false;
+            await loadLakes();
+        } catch (err) {
+            alert(err.message || 'Seed failed.');
+        } finally {
+            btn.disabled = false; btn.textContent = '★ Seed top 25 MN lakes';
+        }
+    }
 
     async function activateTop20MnCities() {
         const btn = document.getElementById('tw-launch-preset');

@@ -1499,6 +1499,116 @@ const applyTagLaunchPreset = async (req, res) => {
     }
 };
 
+// ─── Lake launch seed ────────────────────────────────────────────────────────
+// Bulk-inserts a curated list of "top 25 MN lakes not already in the DB"
+// from src/data/top-25-mn-lakes.json. Each lake is processed independently:
+//   - INSERT … ON CONFLICT (slug) DO NOTHING so re-running is safe (no dupes).
+//   - If lat/lng are omitted, geocodes from "<name>, MN" via the existing
+//     geocoder service (same pattern lake.controller.create uses).
+//   - After insert, attaches the lake to any town tags whose name matches
+//     one of the lake's tag_towns list (case-insensitive, normalized). Tags
+//     that don't exist yet are simply skipped — the admin can wire them
+//     later from the Connected tab in entity-edit.
+// Returns counts for inserted / skipped / tagged so the caller can render
+// "X added, Y already existed, Z tag links made" in a toast.
+const { geocodeAddress } = require('../services/geocoder');
+const fs = require('fs');
+const path = require('path');
+
+const normalizeTagName = (s) => String(s || '').toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
+
+async function applyLakeLaunchSeed(req, res) {
+    if (req.user?.role !== 'super_admin' && req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Admin only.' });
+    }
+
+    let lakes;
+    try {
+        const file = path.join(__dirname, '..', 'data', 'top-25-mn-lakes.json');
+        lakes = JSON.parse(fs.readFileSync(file, 'utf8'));
+    } catch (err) {
+        console.error('[applyLakeLaunchSeed] load failed:', err.message);
+        return res.status(500).json({ error: 'Failed to load lake seed file.' });
+    }
+
+    let inserted = 0, skipped = 0, geocoded = 0, tagLinks = 0;
+    const insertedSlugs = [];
+
+    for (const lake of lakes) {
+        try {
+            let lat = lake.latitude, lng = lake.longitude;
+            if (lat == null || lng == null) {
+                const g = await geocodeAddress(`${lake.name}, ${lake.state || 'MN'}`).catch(() => null);
+                if (g) { lat = g.lat; lng = g.lng; geocoded++; }
+            }
+
+            // INSERT … ON CONFLICT skips the row if the slug already exists,
+            // but still returns rowCount = 0 so we can distinguish first-time
+            // inserts from re-runs.
+            const { rows } = await pool.query(
+                `INSERT INTO lakes
+                   (slug, name, state, region, county, latitude, longitude,
+                    intro_text, seo_title, seo_description, status)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'published')
+                 ON CONFLICT (slug) DO NOTHING
+                 RETURNING id, slug, name`,
+                [
+                    lake.slug, lake.name, lake.state || 'MN',
+                    lake.region || null, lake.county || null,
+                    lat, lng,
+                    lake.intro_text || null,
+                    lake.seo_title || null,
+                    lake.seo_description || null,
+                ]
+            );
+
+            if (!rows.length) { skipped++; continue; }
+            inserted++;
+            insertedSlugs.push(rows[0].slug);
+
+            // Best-effort tag linking — match the lake's tag_towns list
+            // against existing town tags by normalized name. Existing tags
+            // get linked; missing ones are silently dropped so an admin can
+            // add them later via the Connected tab.
+            const wantTowns = Array.isArray(lake.tag_towns) ? lake.tag_towns : [];
+            for (const town of wantTowns) {
+                const norm = normalizeTagName(town);
+                if (!norm) continue;
+                const tagRes = await pool.query(
+                    `SELECT id FROM tags
+                      WHERE state = $1
+                        AND regexp_replace(regexp_replace(lower(name), '\\.', '', 'g'), '\\s+', ' ', 'g') = $2
+                        AND active = TRUE
+                      LIMIT 1`,
+                    [lake.state || 'MN', norm]
+                );
+                if (!tagRes.rowCount) continue;
+                const linkRes = await pool.query(
+                    `INSERT INTO lake_tags (lake_id, tag_id)
+                     VALUES ($1, $2)
+                     ON CONFLICT (lake_id, tag_id) DO NOTHING
+                     RETURNING id`,
+                    [rows[0].id, tagRes.rows[0].id]
+                );
+                if (linkRes.rowCount) tagLinks++;
+            }
+        } catch (err) {
+            console.error(`[applyLakeLaunchSeed] ${lake.slug} failed:`, err.message);
+            // Move on — one bad row shouldn't take down the whole seed.
+        }
+    }
+
+    logActivity({
+        event_type: 'lake.launch_seed.apply',
+        event_scope: 'system',
+        actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+        details: { inserted, skipped, geocoded, tag_links: tagLinks, total: lakes.length, slugs: insertedSlugs },
+        req,
+    });
+
+    res.json({ success: true, total: lakes.length, inserted, skipped, geocoded, tag_links: tagLinks, slugs: insertedSlugs });
+}
+
 module.exports = {
     getLedger,
     getAgentDetail,
@@ -1533,4 +1643,5 @@ module.exports = {
     setUserPermissions,
     createAdminUser,
     applyTagLaunchPreset,
+    applyLakeLaunchSeed,
 };
