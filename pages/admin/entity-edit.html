@@ -705,14 +705,64 @@
     }
 
     function renderEditorialTab() {
-        const lifestyleLabel = TYPE === 'lake' ? '"Life on this lake" editorial' : '"Life in this town" editorial';
-        const seasonsLabel   = TYPE === 'lake' ? '"What the seasons bring" editorial' : '"Seasons + community" editorial';
+        const isLake = TYPE === 'lake';
+        const lifestyleLabel = isLake ? '"Life on this lake" editorial' : '"Life in this town" editorial';
+        const seasonsLabel   = isLake ? '"What the seasons bring" editorial' : '"Seasons + community" editorial';
+
+        // The public page already renders something — either the admin
+        // override or, when that's blank, an auto-generated region-aware
+        // fallback. Show the live copy in the textarea either way so the
+        // admin sees what's actually on the page and can edit it directly.
+        const lifestyleGen = entity.lifestyle_generated || '';
+        const seasonsGen   = entity.seasons_generated   || '';
+        const lifestyleHas = !!(entity.lifestyle_text && entity.lifestyle_text.trim());
+        const seasonsHas   = !!(entity.seasons_text   && entity.seasons_text.trim());
+        const lifestyleVal = lifestyleHas ? entity.lifestyle_text : lifestyleGen;
+        const seasonsVal   = seasonsHas   ? entity.seasons_text   : seasonsGen;
+
+        const block = (id, label, value, isCustom, generated, hint) => `
+            <div class="field-group full">
+                <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.45rem;flex-wrap:wrap;">
+                    <div class="field-label" style="margin:0;">${esc(label)}</div>
+                    <span id="${id}-status" class="s-badge ${isCustom ? 's-pending' : 's-draft'}" style="font-size:0.62rem;padding:0.22rem 0.6rem;letter-spacing:0.5px;">
+                        ${isCustom ? 'Custom override' : 'Auto-generated'}
+                    </span>
+                    <button type="button" id="${id}-reset" onclick="resetEditorial('${id}')"
+                            style="margin-left:auto;font:inherit;font-size:0.78rem;font-weight:600;color:#4a5568;background:none;border:0;cursor:pointer;text-decoration:underline;">
+                        Reset to auto-generated
+                    </button>
+                </div>
+                <textarea class="field-input" id="${id}" rows="12" oninput="editorialChanged('${id}')"
+                          data-generated="${esc(generated)}">${esc(value)}</textarea>
+                <div class="field-hint">${esc(hint)}</div>
+            </div>`;
+
         const body = `
+            <p class="hint" style="margin:0 0 1.25rem;">These textareas show the copy currently rendering on the public page. Edit to override; click <strong>Reset to auto-generated</strong> to drop back to the region-aware default.</p>
             <div class="field-grid">
-                ${fieldGroup({ id: 'f-lifestyle', label: lifestyleLabel, value: entity.lifestyle_text, type: 'textarea', full: true, hint: 'Paragraphs separated by blank lines. Leave blank to use the region-aware generated fallback copy.' })}
-                ${fieldGroup({ id: 'f-seasons',   label: seasonsLabel,   value: entity.seasons_text,   type: 'textarea', full: true, hint: 'Same — blank means use the generated fallback.' })}
+                ${block('f-lifestyle', lifestyleLabel, lifestyleVal, lifestyleHas, lifestyleGen, 'Paragraphs separated by blank lines.')}
+                ${block('f-seasons',   seasonsLabel,   seasonsVal,   seasonsHas,   seasonsGen,   'Same — paragraphs separated by blank lines.')}
             </div>`;
         return panel({ title: 'Editorial Content', body, saveLabel: 'Save Editorial', saveId: 'save-editorial' });
+    }
+
+    // Editorial status toggling — flip the pill between Auto-generated and
+    // Custom override based on whether the textarea matches the stored
+    // generated copy verbatim.
+    function editorialChanged(id) {
+        const ta     = document.getElementById(id);
+        const status = document.getElementById(id + '-status');
+        if (!ta || !status) return;
+        const gen = ta.dataset.generated || '';
+        const isCustom = ta.value.trim() !== gen.trim();
+        status.textContent = isCustom ? 'Custom override' : 'Auto-generated';
+        status.className   = 's-badge ' + (isCustom ? 's-pending' : 's-draft');
+    }
+    function resetEditorial(id) {
+        const ta = document.getElementById(id);
+        if (!ta) return;
+        ta.value = ta.dataset.generated || '';
+        editorialChanged(id);
     }
 
     function renderSeoTab() {
@@ -963,7 +1013,20 @@
         patch(payload, 'save-details');
     }
     function saveEditorial() {
-        patch({ lifestyle_text: v('f-lifestyle'), seasons_text: v('f-seasons') }, 'save-editorial');
+        // Save the textarea content as the override UNLESS it still matches
+        // the auto-generated copy verbatim — in which case clear the override
+        // (send ''  → patch handler maps to NULL → public page resumes
+        // using the live generated copy on future template changes).
+        const collect = (id) => {
+            const ta = document.getElementById(id);
+            if (!ta) return '';
+            const gen = ta.dataset.generated || '';
+            return ta.value.trim() === gen.trim() ? '' : ta.value;
+        };
+        patch({
+            lifestyle_text: collect('f-lifestyle'),
+            seasons_text:   collect('f-seasons'),
+        }, 'save-editorial');
     }
     function saveSeo() {
         patch({ seo_title: v('f-seo-title'), seo_description: v('f-seo-desc') }, 'save-seo');

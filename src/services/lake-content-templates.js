@@ -196,6 +196,26 @@ function seasonsHtmlForTown(tag) {
     `.trim();
 }
 
+// Strip the generator's HTML down to the same plain-text shape the admin
+// textareas use — paragraphs separated by a blank line. Used by the lake /
+// tag GET endpoints so the admin Editorial tab can prefill with the same
+// copy the public page is actually rendering.
+function htmlToParagraphs(html) {
+    return String(html || '')
+        .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
+        .replace(/^\s*<p[^>]*>/i, '')
+        .replace(/<\/p>\s*$/i, '')
+        .split('\n\n')
+        .map(s => s.replace(/\s+/g, ' ').trim())
+        .filter(Boolean)
+        .join('\n\n');
+}
+
+const lifestyleTextForLake = (lake) => htmlToParagraphs(lifestyleHtmlForLake(lake));
+const seasonsTextForLake   = (lake) => htmlToParagraphs(seasonsHtmlForLake(lake));
+const lifestyleTextForTown = (tag)  => htmlToParagraphs(lifestyleHtmlForTown(tag));
+const seasonsTextForTown   = (tag)  => htmlToParagraphs(seasonsHtmlForTown(tag));
+
 module.exports = {
     pickLakeFlavor,
     pickTownFlavor,
@@ -203,4 +223,8 @@ module.exports = {
     seasonsHtmlForLake,
     lifestyleHtmlForTown,
     seasonsHtmlForTown,
+    lifestyleTextForLake,
+    seasonsTextForLake,
+    lifestyleTextForTown,
+    seasonsTextForTown,
 };

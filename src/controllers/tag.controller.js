@@ -138,6 +138,9 @@ exports.getOne = async (req, res) => {
         const byUuid = UUID_RE.test(key);
         const { rows } = await pool.query(
             `SELECT t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude, t.active,
+                    t.intro_text, t.description,
+                    t.lifestyle_text, t.seasons_text,
+                    t.seo_title, t.seo_description,
                     t.hero_image_url, t.gallery,
                     (SELECT COUNT(*) FROM lake_tags lt WHERE lt.tag_id = t.id) AS lake_count,
                     (SELECT COUNT(*) FROM user_tags ut WHERE ut.tag_id = t.id) AS agent_count
@@ -150,6 +153,14 @@ exports.getOne = async (req, res) => {
         if (!tag || !tag.active) return res.status(404).json({ error: 'Tag not found.' });
         tag.lake_count  = Number(tag.lake_count)  || 0;
         tag.agent_count = Number(tag.agent_count) || 0;
+        // Same prefill-friendly fallback as lakes — admin needs to see the
+        // copy that's actually rendering on the public page so editing
+        // doesn't start from an empty box.
+        if (isAdmin(req)) {
+            const lct = require('../services/lake-content-templates');
+            tag.lifestyle_generated = lct.lifestyleTextForTown(tag);
+            tag.seasons_generated   = lct.seasonsTextForTown(tag);
+        }
         res.json(tag);
     } catch (err) {
         console.error('[tags.getOne]', err.message);

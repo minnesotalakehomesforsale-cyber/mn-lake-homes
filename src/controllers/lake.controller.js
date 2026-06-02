@@ -89,6 +89,7 @@ const LAKE_COLS = `
     id, slug, name, state, region, county,
     latitude, longitude,
     intro_text, description,
+    lifestyle_text, seasons_text,
     hero_image_url, featured_image_url,
     gallery,
     seo_title, seo_description,
@@ -160,6 +161,15 @@ exports.getOne = async (req, res) => {
         if (!lake) return res.status(404).json({ error: 'Lake not found.' });
         if (lake.status !== 'published' && !isAdmin(req)) {
             return res.status(404).json({ error: 'Lake not found.' });
+        }
+        // Admin Editorial tab needs to see what's actually rendering on the
+        // public page so the textareas aren't misleadingly empty. Attach the
+        // region-aware generated copy as a sibling so the admin can prefill
+        // when no override is stored. Public callers don't need this.
+        if (isAdmin(req)) {
+            const lct = require('../services/lake-content-templates');
+            lake.lifestyle_generated = lct.lifestyleTextForLake(lake);
+            lake.seasons_generated   = lct.seasonsTextForLake(lake);
         }
         res.json(lake);
     } catch (err) {
