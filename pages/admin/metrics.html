@@ -34,6 +34,10 @@
         /* Daily traffic chart — SVG-rendered inline, no external library */
         .m-chart { width: 100%; height: 220px; display: block; }
         .m-chart .axis-label { font-size: 10px; fill: #a0aec0; }
+        /* The headline Daily-traffic chart on the metrics page is the
+           page's centerpiece — give it real room to breathe (vs the
+           smaller conversions chart that shares .m-chart). */
+        #m-chart.traffic-svg { height: 460px; }
 
         /* ── Interactive traffic chart (matches admin dashboard) ── */
         .traffic-wrap { position: relative; }
@@ -215,7 +219,7 @@
                         </div>
                     </div>
                     <div class="traffic-wrap" id="m-traffic-wrap">
-                        <svg id="m-chart" class="traffic-svg" viewBox="0 0 600 280" preserveAspectRatio="xMidYMid meet">
+                        <svg id="m-chart" class="traffic-svg" viewBox="0 0 600 280" preserveAspectRatio="none">
                             <defs>
                                 <linearGradient id="mx-grad" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="0%"   stop-color="#1d6df2" stop-opacity="0.28"/>
@@ -508,7 +512,10 @@
                 if (i < 0 || i >= daily.length) return;
                 const anchor = idx === 0 ? 'start' : idx === marks.length - 1 ? 'end' : 'middle';
                 const x = padL + i * stepX;
-                const d = new Date(daily[i].day + 'T12:00:00');
+                // Slice to date part — pg ::date columns serialize as full
+                // ISO strings, and bare concatenation produces "Invalid Date".
+                const dayKey = String(daily[i].day || '').slice(0, 10);
+                const d = new Date(dayKey + 'T12:00:00');
                 svg.appendChild(mk('text', { x, y: H - 10, 'text-anchor': anchor, class: 'axis' },
                     d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })));
             });
@@ -525,11 +532,19 @@
             const tipVisits = document.getElementById('m-tip-visitors');
             const wrap      = document.getElementById('m-traffic-wrap');
 
+            // Pick via the SVG's screen CTM — preserveAspectRatio-agnostic,
+            // works whether the chart is letterboxed or stretched. The
+            // older (rect.width-based) formula shifted picks on the right
+            // half whenever the element was wider than the viewBox aspect.
+            function svgPointFromEvent(e) {
+                const pt = svg.createSVGPoint();
+                pt.x = e.clientX; pt.y = e.clientY;
+                const ctm = svg.getScreenCTM();
+                return ctm ? pt.matrixTransform(ctm.inverse()) : { x: 0, y: 0 };
+            }
             function pickByEvent(e) {
-                const rect = svg.getBoundingClientRect();
-                const ratio = W / rect.width;
-                const svgX = (e.clientX - rect.left) * ratio;
-                const rel = (svgX - padL) / stepX;
+                const sp = svgPointFromEvent(e);
+                const rel = (sp.x - padL) / stepX;
                 return Math.max(0, Math.min(daily.length - 1, Math.round(rel)));
             }
 
@@ -541,16 +556,24 @@
                 hoverDot.setAttribute('cx', px); hoverDot.setAttribute('cy', py);
                 svg.classList.add('is-hovering');
 
-                const rect = svg.getBoundingClientRect();
-                const wrapRect = wrap.getBoundingClientRect();
-                const left = (rect.left - wrapRect.left) + px * (rect.width / W);
-                const top  = (rect.top  - wrapRect.top)  + py * (rect.height / H) - 14;
-                tip.style.left = left + 'px';
-                tip.style.top  = top  + 'px';
+                // Position the tooltip by round-tripping the viewBox point
+                // through the screen CTM — always lines up with the dot.
+                const ctm = svg.getScreenCTM();
+                if (ctm) {
+                    const sp = svg.createSVGPoint(); sp.x = px; sp.y = py;
+                    const screen = sp.matrixTransform(ctm);
+                    const wrapRect = wrap.getBoundingClientRect();
+                    tip.style.left = (screen.x - wrapRect.left) + 'px';
+                    tip.style.top  = (screen.y - wrapRect.top - 14) + 'px';
+                }
 
-                const dateObj = new Date(d.day + 'T12:00:00');
+                // Slice d.day to its date part before constructing — pg
+                // ::date columns serialize as full ISO strings, and naive
+                // 'T12:00:00' concatenation produces "Invalid Date".
+                const dayKey  = String(d.day || '').slice(0, 10);
+                const dateObj = new Date(dayKey + 'T12:00:00');
                 const label   = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-                const isToday = d.day === TODAY;
+                const isToday = dayKey === TODAY;
                 tipDate.innerHTML  = esc(label) + (isToday ? ' <span class="tip-today">TODAY · SO FAR</span>' : '');
                 tipViews.textContent  = (d.views || 0).toLocaleString('en-US');
                 tipVisits.textContent = (d.visitors || 0).toLocaleString('en-US');

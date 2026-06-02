@@ -325,7 +325,7 @@
                         <a href="system.html?tab=metrics" class="d-card-link">Open metrics →</a>
                     </div>
                     <div class="traffic-wrap">
-                        <svg class="traffic-svg" id="traffic-chart" viewBox="0 0 600 260" preserveAspectRatio="xMidYMid meet">
+                        <svg class="traffic-svg" id="traffic-chart" viewBox="0 0 600 260" preserveAspectRatio="none">
                             <defs>
                                 <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="0%"   stop-color="#1d6df2" stop-opacity="0.28"/>
@@ -642,7 +642,10 @@
                 if (i < 0 || i >= daily.length) return;
                 const anchor = idx === 0 ? 'start' : idx === marks.length - 1 ? 'end' : 'middle';
                 const x = padL + i * stepX;
-                const d = new Date(daily[i].day);
+                // Same day-key slicing as the tooltip — the API may hand us
+                // full ISO strings from a ::date column.
+                const dayKey = String(daily[i].day || '').slice(0, 10);
+                const d = new Date(dayKey + 'T12:00:00');
                 svg.appendChild(mk('text', { x, y: H - 10, 'text-anchor': anchor, class: 'axis' },
                     d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })));
             });
@@ -671,16 +674,22 @@
             const tipVis   = document.getElementById('tip-visitors');
             const wrap     = svg.parentElement; // .traffic-wrap (position:relative)
 
-            // Translate a DOM mouse position to the corresponding SVG
-            // viewBox x, then snap to the nearest data point.
+            // Use the SVG's own screen CTM to translate DOM events to
+            // viewBox coords — this is preserveAspectRatio-agnostic so it
+            // works no matter how the chart is letterboxed. The previous
+            // (rect.width-based) formula falsely shifted picks on the right
+            // half of a 'meet'-aspect SVG and made the last few points
+            // unreachable. Same CTM also positions the tooltip.
+            function svgPointFromEvent(e) {
+                const pt = svg.createSVGPoint();
+                pt.x = e.clientX; pt.y = e.clientY;
+                const ctm = svg.getScreenCTM();
+                return ctm ? pt.matrixTransform(ctm.inverse()) : { x: 0, y: 0 };
+            }
             function pickByEvent(e) {
-                const rect = svg.getBoundingClientRect();
-                const ratio = W / rect.width;
-                const svgX = (e.clientX - rect.left) * ratio;
-                // Find nearest data point by index
-                const rel = (svgX - padL) / stepX;
-                const i = Math.max(0, Math.min(daily.length - 1, Math.round(rel)));
-                return i;
+                const sp = svgPointFromEvent(e);
+                const rel = (sp.x - padL) / stepX;
+                return Math.max(0, Math.min(daily.length - 1, Math.round(rel)));
             }
 
             function show(e) {
@@ -691,21 +700,27 @@
                 guide.setAttribute('x1', px); guide.setAttribute('x2', px);
                 hoverDot.setAttribute('cx', px); hoverDot.setAttribute('cy', py);
                 svg.classList.add('is-hovering');
-                // Position the HTML tooltip. Convert svg coords back to
-                // DOM pixels relative to .traffic-wrap.
-                const rect = svg.getBoundingClientRect();
-                const wrapRect = wrap.getBoundingClientRect();
-                const ratio = rect.width / W;
-                const left = (rect.left - wrapRect.left) + px * ratio;
-                const top  = (rect.top  - wrapRect.top)  + py * (rect.height / H) - 14;
-                tip.style.left = left + 'px';
-                tip.style.top  = top  + 'px';
+                // Position the HTML tooltip by round-tripping the viewBox
+                // point through the SVG's CTM back to screen coords; that
+                // way the tooltip always lines up with the dot even when
+                // the SVG is being letterboxed.
+                const ctm = svg.getScreenCTM();
+                if (ctm) {
+                    const sp = svg.createSVGPoint(); sp.x = px; sp.y = py;
+                    const screen = sp.matrixTransform(ctm);
+                    const wrapRect = wrap.getBoundingClientRect();
+                    tip.style.left = (screen.x - wrapRect.left) + 'px';
+                    tip.style.top  = (screen.y - wrapRect.top - 14) + 'px';
+                }
                 // Use noon-of-day so toLocaleDateString never shifts the day
-                // backward in negative UTC offsets. Tag the rightmost point
-                // as "today" so the partial-day hover reads as intentional.
-                const dateObj = new Date(d.day + 'T12:00:00');
+                // backward in negative UTC offsets. Slice d.day to its date
+                // part first — Postgres ::date columns round-trip through
+                // JSON as full ISO strings, and concatenating 'T12:00:00'
+                // onto one would otherwise produce "Invalid Date".
+                const dayKey  = String(d.day || '').slice(0, 10);
+                const dateObj = new Date(dayKey + 'T12:00:00');
                 const todayKey = (() => { const x = new Date(); return x.getFullYear() + '-' + String(x.getMonth()+1).padStart(2,'0') + '-' + String(x.getDate()).padStart(2,'0'); })();
-                const isToday  = String(d.day).slice(0, 10) === todayKey;
+                const isToday  = dayKey === todayKey;
                 const label    = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
                 tipDate.innerHTML    = label + (isToday ? ' <span style="display:inline-block;margin-left:0.4rem;padding:0.05rem 0.35rem;background:rgba(29,109,242,0.25);color:#93c5fd;border-radius:4px;font-size:0.62rem;font-weight:800;letter-spacing:0.6px;">TODAY · SO FAR</span>' : '');
                 tipValue.textContent = (d.views || 0).toLocaleString('en-US');
