@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    MN Lake Homes favicon.
+
+    Pure stroke (no fill) house with a stepped-top chimney. The shape
+    matches the official MNLH home mark. Designed at viewBox 0 0 100 100
+    with stroke-width 8 so it stays bold and legible at favicon sizes
+    (16×16, 32×32) without anti-alias mush.
+
+    Auto-flips to white in dark UI so it stays visible in Safari's pinned-
+    tab strip and any browser that honors prefers-color-scheme on icons.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="MN Lake Homes">
+    <style>
+        .mnlh-mark { stroke: #1a202c; fill: none; stroke-width: 8;
+                     stroke-linecap: round; stroke-linejoin: round; }
+        @media (prefers-color-scheme: dark) {
+            .mnlh-mark { stroke: #f7fafc; }
+        }
+    </style>
+    <g class="mnlh-mark">
+        <!-- Roof: outside-left up to peak, back down to outside-right. -->
+        <polyline points="6,52 50,12 94,52"/>
+        <!-- Stepped chimney on the right side of the roof. -->
+        <polyline points="72,28 72,16 84,16 84,42"/>
+        <!-- House body: left wall, floor, right wall (open at the top
+             so the roof line reads as the only top edge). -->
+        <polyline points="17,52 17,82 83,82 83,52"/>
+    </g>
+</svg>

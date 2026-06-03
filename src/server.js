@@ -957,6 +957,12 @@ app.get('/towns/:slug', async (req, res, next) => {
     }
 });
 
+// Default-browser favicon path → SVG. Even though every page now references
+// /favicon.svg explicitly via <link rel="icon">, older browsers and some
+// social-share crawlers still probe /favicon.ico unconditionally. Redirect
+// so they get a usable icon instead of a 404 line in the server logs.
+app.get('/favicon.ico', (req, res) => res.redirect(301, '/favicon.svg'));
+
 app.use(express.static(PROJECT_ROOT));
 
 // Fallback for Next.js-style clean URL resolution. Most public pages
