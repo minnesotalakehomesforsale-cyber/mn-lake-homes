@@ -62,16 +62,17 @@
             background-position: right 0.9rem center;
         }
         .sec-bar .spacer { flex: 1; }
-        /* Filter-aware count chip — "X of Y showing" — sits to the right of
-           the filter selects so the admin can see at a glance how many
-           rows the current view is producing (and how many exist overall). */
-        .sec-bar .lt-count {
+        /* Filter-aware count chip — "X of Y showing". Lives in a centered
+           row beneath each section's grid so the admin sees a running
+           total without it competing with the toolbar buttons up top. */
+        .lt-count-row { display: flex; justify-content: center; margin: 1.5rem 0 0.5rem; }
+        .lt-count {
             display: inline-flex; align-items: center; gap: 0.35rem;
             padding: 0.45rem 0.85rem; background: #ebf4ff; color: #1d6df2;
             border: 1px solid #bcd4f6; border-radius: 99px;
             font-size: 0.82rem; font-weight: 700; white-space: nowrap;
         }
-        .sec-bar .lt-count.muted { background: #f7f9fa; color: #718096; border-color: #e2e8f0; }
+        .lt-count.muted { background: #f7f9fa; color: #718096; border-color: #e2e8f0; }
         .sec-bar .btn-ghost {
             background: #fff; color: #4a5568; border: 1px solid #e2e8f0;
             border-radius: 8px; padding: 0.5rem 0.9rem;
@@ -340,11 +341,11 @@
                         <option value="draft">Draft</option>
                         <option value="archived">Archived</option>
                     </select>
-                    <span id="lk-count" class="lt-count" title="Showing in the grid below / total in the database">—</span>
                     <div class="spacer"></div>
                     <button class="btn-primary" onclick="openCreate('lake')">+ New lake</button>
                 </div>
                 <div id="lk-grid" class="card-grid"><div class="empty-grid">Loading…</div></div>
+                <div class="lt-count-row"><span id="lk-count" class="lt-count" title="Showing in the grid above / total in the database">—</span></div>
             </div>
 
             <!-- ── Towns ────────────────────────────────────────── -->
@@ -356,11 +357,11 @@
                         <option value="active">Active only</option>
                         <option value="all">Including archived</option>
                     </select>
-                    <span id="tw-count" class="lt-count" title="Showing in the grid below / total in the database">—</span>
                     <div class="spacer"></div>
                     <button class="btn-primary" onclick="openCreate('town')">+ New town</button>
                 </div>
                 <div id="tw-grid" class="card-grid"><div class="empty-grid">Loading…</div></div>
+                <div class="lt-count-row"><span id="tw-count" class="lt-count" title="Showing in the grid above / total in the database">—</span></div>
             </div>
 
             <!-- ── Businesses ───────────────────────────────────── -->
@@ -375,12 +376,12 @@
                     </div>
                     <input type="search" id="bz-search" placeholder="Search businesses…" oninput="renderBiz()">
                     <select id="bz-type" onchange="renderBiz()"><option value="">All types</option></select>
-                    <span id="bz-count" class="lt-count" title="Showing in the grid below / total in the database">—</span>
                     <div class="spacer"></div>
                     <button class="btn-ghost" onclick="openInviteBusiness()" title="Create a comped business listing and email the owner login credentials so they can finish their profile.">✉ Invite business</button>
                     <button class="btn-primary" onclick="openCreate('business')">+ New business</button>
                 </div>
                 <div id="bz-grid" class="card-grid"><div class="empty-grid">Loading…</div></div>
+                <div class="lt-count-row"><span id="bz-count" class="lt-count" title="Showing in the grid above / total in the database">—</span></div>
             </div>
         </main>
     </div>
