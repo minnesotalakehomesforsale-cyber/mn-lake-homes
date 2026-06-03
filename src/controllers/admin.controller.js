@@ -1899,6 +1899,86 @@ const getPaymentsForBusiness = async (req, res) => {
     }
 };
 
+// ─── LAUNCH TOWNS (one-time-button equivalent of the seed script) ──────────
+// Same logic as scripts/apply-launch-towns.js, exposed as an admin endpoint
+// so the user can run it once from the Towns toolbar without needing the
+// Render shell. Pulls the curated list from src/data/launch-towns.json so
+// the script + the button stay in lockstep. After launch, the button is
+// expected to be removed; the script can stay as a re-runnable backup.
+async function applyLaunchTowns(req, res) {
+    if (req.user?.role !== 'super_admin' && req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Admin only.' });
+    }
+    let towns;
+    try {
+        towns = require('../data/launch-towns.json');
+    } catch (err) {
+        return res.status(500).json({ error: 'Could not load launch-towns.json.' });
+    }
+
+    let inserted = 0, reactivated = 0;
+    const insertedNames = [], reactivatedNames = [], deactivatedNames = [];
+
+    try {
+        for (const t of towns) {
+            const result = await pool.query(
+                `INSERT INTO tags (slug, name, state, region, latitude, longitude, active)
+                 VALUES ($1, $2, 'MN', $3, $4, $5, TRUE)
+                 ON CONFLICT (slug) DO UPDATE
+                     SET name       = EXCLUDED.name,
+                         region     = COALESCE(NULLIF(tags.region, ''), EXCLUDED.region),
+                         latitude   = COALESCE(tags.latitude,  EXCLUDED.latitude),
+                         longitude  = COALESCE(tags.longitude, EXCLUDED.longitude),
+                         active     = TRUE,
+                         updated_at = NOW()
+                 RETURNING (xmax = 0) AS inserted`,
+                [t.slug, t.name, t.region, t.lat, t.lng]
+            );
+            if (result.rows[0]?.inserted) {
+                inserted++;
+                insertedNames.push(t.name);
+            } else {
+                reactivated++;
+                reactivatedNames.push(t.name);
+            }
+        }
+
+        const wantedSlugs = towns.map(t => t.slug);
+        const deactivated = await pool.query(
+            `UPDATE tags
+                SET active = FALSE, updated_at = NOW()
+              WHERE state = 'MN'
+                AND active = TRUE
+                AND slug <> ALL ($1::text[])
+              RETURNING name`,
+            [wantedSlugs]
+        );
+        for (const r of deactivated.rows) deactivatedNames.push(r.name);
+
+        logActivity({
+            event_type: 'tag.launch_towns.apply',
+            event_scope: 'system',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            details: { inserted, reactivated, deactivated: deactivated.rowCount, total: towns.length },
+            req,
+        });
+
+        res.json({
+            success: true,
+            total: towns.length,
+            inserted,
+            reactivated,
+            deactivated: deactivated.rowCount,
+            inserted_names: insertedNames,
+            reactivated_names: reactivatedNames,
+            deactivated_names: deactivatedNames,
+        });
+    } catch (err) {
+        console.error('[applyLaunchTowns]', err.message);
+        res.status(500).json({ error: 'Failed to apply launch towns.' });
+    }
+}
+
 module.exports = {
     getLedger,
     getAgentDetail,
@@ -1939,4 +2019,5 @@ module.exports = {
     getPaymentsForUser,
     getPaymentsForAgent,
     getPaymentsForBusiness,
+    applyLaunchTowns,
 };

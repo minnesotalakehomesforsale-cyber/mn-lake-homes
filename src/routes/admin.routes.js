@@ -58,6 +58,15 @@ router.post('/tags/launch-preset',
     adminController.applyTagLaunchPreset
 );
 
+// One-time launch-day curation (29 specific MN towns). Same logic as
+// scripts/apply-launch-towns.js, exposed so it can be triggered from the
+// admin Towns toolbar instead of the Render shell. Idempotent.
+router.post('/tags/apply-launch',
+    verifyToken,
+    requireRole(['admin', 'super_admin']),
+    adminController.applyLaunchTowns
+);
+
 // ─── LAKE LAUNCH SEED ───────────────────────────────────────────────────────
 // One-click seed of the top-25 MN lakes not already in the database.
 // Idempotent — safe to re-run. See src/data/top-25-mn-lakes.json.
