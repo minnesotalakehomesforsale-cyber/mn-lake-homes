@@ -821,6 +821,94 @@ function sendBusinessInvite({ to, first_name, business_name, tier_label, tempPas
     });
 }
 
+// Local HTML-escape — admin-supplied prose (message body, lead notes)
+// goes into templates here, so we have to neutralise <, >, &, ", '. The
+// rest of the file already trusts its caller, but these two helpers
+// surface free-form text from the admin / lead form.
+function _esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
+}
+
+// ─── Admin manual lead assignment ──────────────────────────────────────────
+// Sibling of sendMatchedAgentNotification but for the case where the admin
+// hand-picked the agent (no proximity / tag match). Slightly different
+// opening prose so the agent knows why they got it.
+function sendAgentLeadAssigned({ to, agentFirstName, lead, assignedBy }) {
+    if (!to || !lead) return { skipped: true };
+    const typeLabel = (lead.type || 'General').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const detailRows = [
+        { label: 'Name',     value: _esc(lead.name) || '—' },
+        { label: 'Email',    value: lead.email ? `<a href="mailto:${_esc(lead.email)}" style="color:#1d6df2;text-decoration:none;">${_esc(lead.email)}</a>` : 'Not provided' },
+        { label: 'Phone',    value: lead.phone ? `<a href="tel:${_esc(String(lead.phone).replace(/[^\d+]/g,''))}" style="color:#1d6df2;text-decoration:none;">${_esc(lead.phone)}</a>` : 'Not provided' },
+        { label: 'Type',     value: typeLabel },
+        { label: 'Property', value: _esc(lead.address) || '—' },
+    ].map(r => `
+        <tr>
+            <td style="padding:8px 12px;font-size:13px;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.5px;vertical-align:top;white-space:nowrap;">${r.label}</td>
+            <td style="padding:8px 12px;font-size:15px;color:#1a202c;">${r.value}</td>
+        </tr>`).join('');
+    const notesHtml = lead.notes
+        ? `<div style="margin:20px 0 0;padding:16px;background:#f7f9fa;border-left:3px solid #1d6df2;border-radius:0 8px 8px 0;">
+               <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:0.5px;">Notes</p>
+               <p style="margin:0;font-size:14px;color:#2d3748;line-height:1.65;white-space:pre-line;">${_esc(lead.notes)}</p>
+           </div>`
+        : '';
+    return sendEmail({
+        to,
+        replyTo: lead.email || undefined,
+        subject: `📍 New lead assigned to you — ${lead.name || 'Unknown'}`,
+        html: layout({
+            title: 'New lead assigned to you',
+            preheader: `${lead.name || ''} · ${lead.address || typeLabel}`,
+            body: `
+                <p style="margin:0 0 12px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Hi ${_esc(agentFirstName) || 'there'} — our team just assigned a new lead to you${assignedBy ? ` (assigned by ${_esc(assignedBy)})` : ''}. Details below.
+                </p>
+                <table style="width:100%;border-collapse:collapse;margin:0 0 8px;">
+                    ${detailRows}
+                </table>
+                ${notesHtml}
+                <p style="margin:20px 0 0;font-size:13px;color:#718096;line-height:1.5;">
+                  Reach out promptly — most leads convert fastest with a same-day response.
+                </p>`,
+            ctaText: 'View in Agent Dashboard',
+            ctaUrl: `${SITE_URL}/pages/agent/dashboard.html`,
+        })
+    });
+}
+
+// ─── New in-app message arrived from MN Lake Homes ─────────────────────────
+// Fires whenever the admin sends a 1:1 message OR the agent is in the
+// audience of a broadcast. The email is the wake-up; the actual thread
+// + reply UX lives in the agent dashboard.
+function sendAgentMessageNotification({ to, agentFirstName, body, senderName }) {
+    if (!to || !body) return { skipped: true };
+    const preview = body.length > 280 ? body.slice(0, 280).trim() + '…' : body;
+    const senderLabel = senderName || 'the MN Lake Homes team';
+    return sendEmail({
+        to,
+        subject: `New message from ${senderLabel}`,
+        html: layout({
+            title: 'You have a new message',
+            preheader: preview.replace(/\s+/g, ' ').slice(0, 100),
+            body: `
+                <p style="margin:0 0 12px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Hi ${_esc(agentFirstName) || 'there'}, ${_esc(senderLabel)} just sent you a new message in your MN Lake Homes portal:
+                </p>
+                <div style="margin:18px 0;padding:18px 20px;background:#f7f9fa;border-left:3px solid #1d6df2;border-radius:0 8px 8px 0;">
+                    <p style="margin:0;font-size:14px;color:#2d3748;line-height:1.65;white-space:pre-line;">${_esc(preview)}</p>
+                </div>
+                <p style="margin:18px 0 0;font-size:13px;color:#718096;line-height:1.5;">
+                  Open your dashboard to read the full message — replies happen there too.
+                </p>`,
+            ctaText: 'Open Messages',
+            ctaUrl: `${SITE_URL}/pages/agent/dashboard.html`,
+        })
+    });
+}
+
 module.exports = {
     sendEmail,
     sendWelcome,
@@ -832,6 +920,8 @@ module.exports = {
     sendInquiryNotification,
     sendInquiryConfirmation,
     sendMatchedAgentNotification,
+    sendAgentLeadAssigned,
+    sendAgentMessageNotification,
     sendBusinessWelcome,
     sendBusinessAdminNotification,
     sendBusinessPaymentReceived,

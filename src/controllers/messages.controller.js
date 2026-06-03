@@ -18,7 +18,24 @@
  */
 
 const pool = require('../database/pool');
+const emailService = require('../services/email');
 const { logActivity } = require('../services/activity-log');
+
+// Resolve a recipient user → email + first name for the wake-up email.
+// Used by send() (single recipient) and broadcast() (loop). Returns null
+// silently if the user can't be found / has no email so the message itself
+// still lands in the in-app inbox even when the email path is blocked.
+async function resolveRecipientForEmail(userId) {
+    try {
+        const { rows } = await pool.query(
+            `SELECT u.email, u.first_name, COALESCE(a.display_name, u.full_name) AS display_name
+               FROM users u LEFT JOIN agents a ON a.user_id = u.id
+              WHERE u.id = $1 LIMIT 1`,
+            [userId]
+        );
+        return rows[0] || null;
+    } catch (_) { return null; }
+}
 
 // ─── Admin: send ────────────────────────────────────────────────────────────
 exports.send = async (req, res) => {
@@ -52,6 +69,20 @@ exports.send = async (req, res) => {
             target: { type: 'user', id: recipientUserId, label: u.rows[0].name },
             req,
         });
+
+        // Fire-and-forget wake-up email — gets the agent off the in-app
+        // inbox dependency and into their actual mail client.
+        (async () => {
+            const r = await resolveRecipientForEmail(recipientUserId);
+            if (!r?.email) return;
+            emailService.sendAgentMessageNotification({
+                to: r.email,
+                agentFirstName: r.first_name || (r.display_name || '').split(' ')[0] || 'there',
+                body,
+                senderName: req.user?.display_name || 'the MN Lake Homes team',
+            });
+        })().catch(err => console.error('[messages.send] notify failed:', err.message));
+
         res.status(201).json({ success: true, message: rows[0] });
     } catch (err) {
         console.error('[messages.send]', err.message);
@@ -119,6 +150,29 @@ exports.broadcast = async (req, res) => {
             details: { audience, tier, recipients: ins.rowCount },
             req,
         });
+
+        // Fan out wake-up emails — one per recipient, fire-and-forget. A
+        // 50-agent broadcast is well within Gmail SMTP / Resend limits;
+        // if we ever exceed those we can switch to BCC batching, but for
+        // launch volumes individual sends keep the inbox previews honest.
+        (async () => {
+            const senderName = req.user?.display_name || 'the MN Lake Homes team';
+            for (const userId of ids) {
+                try {
+                    const r = await resolveRecipientForEmail(userId);
+                    if (!r?.email) continue;
+                    emailService.sendAgentMessageNotification({
+                        to: r.email,
+                        agentFirstName: r.first_name || (r.display_name || '').split(' ')[0] || 'there',
+                        body,
+                        senderName,
+                    });
+                } catch (err) {
+                    console.error('[messages.broadcast] notify failed for', userId, err.message);
+                }
+            }
+        })();
+
         res.status(201).json({ success: true, sent: ins.rowCount });
     } catch (err) {
         console.error('[messages.broadcast]', err.message);

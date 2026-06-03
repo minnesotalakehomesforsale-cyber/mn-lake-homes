@@ -1068,6 +1068,59 @@ const assignLead = async (req, res) => {
             req,
         });
 
+        // Notify the newly-assigned agent by email (fire-and-forget). Skip
+        // when the admin is CLEARING the assignment (both ids null) or
+        // when we can't resolve a user_id to email. The auto-router has
+        // its own email path (sendMatchedAgentNotification); this is the
+        // manual-assign equivalent.
+        if (agentId || userId) {
+            (async () => {
+                try {
+                    const emailSvc = require('../services/email');
+                    // Resolve agent user → email + first name. agentId points
+                    // to the agents table row; assigned_user_id is the user.
+                    const agentRes = await pool.query(
+                        `SELECT u.email, u.first_name, COALESCE(a.display_name, u.full_name) AS display_name
+                           FROM users u
+                           LEFT JOIN agents a ON a.user_id = u.id
+                          WHERE u.id = $1 OR a.id = $2
+                          LIMIT 1`,
+                        [userId || null, agentId || null]
+                    );
+                    const agent = agentRes.rows[0];
+                    if (!agent?.email) return;
+
+                    const leadRes = await pool.query(
+                        `SELECT id, full_name, email, phone, message AS notes,
+                                lead_type AS type, location_text AS address
+                           FROM leads
+                          WHERE id = $1
+                          LIMIT 1`,
+                        [req.params.id]
+                    );
+                    const lead = leadRes.rows[0];
+                    if (!lead) return;
+
+                    emailSvc.sendAgentLeadAssigned({
+                        to: agent.email,
+                        agentFirstName: agent.first_name || (agent.display_name || '').split(' ')[0] || 'there',
+                        lead: {
+                            id:      lead.id,
+                            name:    lead.full_name,
+                            email:   lead.email,
+                            phone:   lead.phone,
+                            notes:   lead.notes,
+                            type:    lead.type,
+                            address: lead.address,
+                        },
+                        assignedBy: req.user?.display_name || 'the MN Lake Homes team',
+                    });
+                } catch (err) {
+                    console.error('[assignLead] notify failed:', err.message);
+                }
+            })();
+        }
+
         res.json({ success: true, lead: result.rows[0] });
     } catch (err) {
         console.error('[assignLead]', err.message, '| code:', err.code, '| detail:', err.detail, '| body:', req.body);
