@@ -1003,16 +1003,14 @@
         return `<div class="conn-grid">${grid}</div>${sections}`;
     }
 
-    // ── Business connections: editable chip pickers ──────────────────
-    // Towns and lakes a featured business serves. Identical UX to the
-    // agent service-areas picker on agent-review.html — pick chips,
-    // hit save, the business then surfaces on each picked town/lake's
-    // public page via the featured-businesses block.
+    // ── Business connections: editable Towns chip picker ─────────────
+    // Towns a featured business serves. Identical UX to the agent
+    // service-areas picker on agent-review.html — pick chips, hit save,
+    // the business surfaces on each picked town's public page AND on
+    // every lake linked to that town (via lake_tags).
     const BIZ_TOWN_MAX = 10;
     let _bizAllTowns = [];
-    let _bizAllLakes = [];
     let _bizAttachedTownIds = new Set();
-    let _bizAttachedLakeIds = new Set();
 
     function renderBizConnectionsTab() {
         return `
@@ -1037,55 +1035,24 @@
                     </div>
                 </div>
             </div>
-            <div class="panel">
-                <div class="panel-header"><div class="panel-title">Lakes This Business Serves</div></div>
-                <div class="panel-body">
-                    <p class="hint" style="margin:0 0 1rem;color:#718096;font-size:0.85rem;">Pick the lakes this business serves. It will appear as a featured business on each lake's public page.</p>
-                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;margin-bottom:0.75rem;">
-                        <input id="biz-lake-filter" type="search" placeholder="Filter lakes…"
-                            oninput="renderBizLakeGrid()"
-                            style="flex:1;min-width:200px;padding:0.5rem 0.85rem;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;font-family:inherit;outline:none;">
-                        <button type="button" onclick="selectAllBizLakes()"
-                            style="padding:0.5rem 0.9rem;background:#fff;color:#2d3748;border:1px solid #e2e8f0;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;">Select visible</button>
-                        <button type="button" onclick="clearBizLakes()"
-                            style="padding:0.5rem 0.9rem;background:#fff;color:#2d3748;border:1px solid #e2e8f0;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;">Clear all</button>
-                    </div>
-                    <div id="biz-lake-count" style="font-size:0.78rem;color:#718096;margin-bottom:0.6rem;">Loading…</div>
-                    <div id="biz-lake-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:0.45rem;"></div>
-                    <div style="display:flex;justify-content:flex-end;align-items:center;gap:1rem;margin-top:1.25rem;">
-                        <span class="save-msg" id="save-biz-lakes-msg"></span>
-                        <button class="btn-save" id="save-biz-lakes" onclick="saveBizLakes()">Save Lakes</button>
-                    </div>
-                </div>
-            </div>
         `;
     }
 
     async function loadBusinessConnections() {
         try {
-            const [townsRes, lakesRes, attTownsRes, attLakesRes] = await Promise.all([
-                fetch('/api/tags?active=true',                                       { credentials: 'include' }),
-                fetch('/api/lakes?status=published&limit=2000',                       { credentials: 'include' }),
-                fetch(`/api/businesses/${encodeURIComponent(ID)}/tags`,              { credentials: 'include' }),
-                fetch(`/api/businesses/${encodeURIComponent(ID)}/lakes`,             { credentials: 'include' }),
+            const [townsRes, attTownsRes] = await Promise.all([
+                fetch('/api/tags?active=true',                          { credentials: 'include' }),
+                fetch(`/api/businesses/${encodeURIComponent(ID)}/tags`, { credentials: 'include' }),
             ]);
             const allTowns = townsRes.ok ? await townsRes.json() : [];
-            const lakesPayload = lakesRes.ok ? await lakesRes.json() : [];
-            const allLakes = Array.isArray(lakesPayload) ? lakesPayload : (lakesPayload.lakes || lakesPayload.rows || []);
             const attTowns = attTownsRes.ok ? await attTownsRes.json() : [];
-            const attLakes = attLakesRes.ok ? await attLakesRes.json() : [];
 
             _bizAllTowns = allTowns.slice().sort((a, b) =>
                 (a.state || '').localeCompare(b.state || '') ||
                 (a.name  || '').localeCompare(b.name  || ''));
-            _bizAllLakes = allLakes.slice().sort((a, b) =>
-                (a.region || '').localeCompare(b.region || '') ||
-                (a.name   || '').localeCompare(b.name   || ''));
             _bizAttachedTownIds = new Set(attTowns.map(t => t.id));
-            _bizAttachedLakeIds = new Set(attLakes.map(l => l.id));
 
             renderBizTownGrid();
-            renderBizLakeGrid();
         } catch (e) {
             console.warn('[biz connections] load failed', e);
         }
@@ -1098,15 +1065,6 @@
             (t.name   || '').toLowerCase().includes(q) ||
             (t.state  || '').toLowerCase().includes(q) ||
             (t.region || '').toLowerCase().includes(q));
-    }
-
-    function _bizFilterLakes() {
-        const q = (document.getElementById('biz-lake-filter')?.value || '').toLowerCase().trim();
-        if (!q) return _bizAllLakes;
-        return _bizAllLakes.filter(l =>
-            (l.name   || '').toLowerCase().includes(q) ||
-            (l.region || '').toLowerCase().includes(q) ||
-            (l.county || '').toLowerCase().includes(q));
     }
 
     function renderBizTownGrid() {
@@ -1134,32 +1092,6 @@
         }).join('');
     }
 
-    function renderBizLakeGrid() {
-        const host = document.getElementById('biz-lake-grid');
-        const counter = document.getElementById('biz-lake-count');
-        if (!host || !counter) return;
-        const visible = _bizFilterLakes();
-        counter.textContent = `${_bizAttachedLakeIds.size} selected · ${visible.length} shown · ${_bizAllLakes.length} total`;
-        if (!visible.length) {
-            host.innerHTML = '<div style="grid-column:1/-1;color:#a0aec0;font-size:0.85rem;padding:0.75rem;">No matches.</div>';
-            return;
-        }
-        host.innerHTML = visible.map(l => {
-            const on = _bizAttachedLakeIds.has(l.id);
-            const style = on
-                ? 'background:#1d6df2;color:#fff;border:1px solid #1d6df2;'
-                : 'background:#fff;color:#2d3748;border:1px solid #e2e8f0;';
-            const sub = on ? 'rgba(255,255,255,0.75)' : '#a0aec0';
-            const subTxt = [l.region, l.county && (l.county + ' Co.')].filter(Boolean).join(' · ');
-            return `
-                <button type="button" onclick="toggleBizLake('${l.id}')"
-                    style="display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:0.55rem 0.8rem;border-radius:10px;cursor:pointer;font-family:inherit;font-size:0.82rem;font-weight:600;transition:background 0.15s,border-color 0.15s;${style}">
-                    <span>${esc(l.name)}</span>
-                    <span style="font-size:0.7rem;font-weight:500;color:${sub};">${esc(subTxt)}</span>
-                </button>`;
-        }).join('');
-    }
-
     function toggleBizTown(id) {
         if (_bizAttachedTownIds.has(id)) {
             _bizAttachedTownIds.delete(id);
@@ -1172,11 +1104,6 @@
         }
         renderBizTownGrid();
     }
-    function toggleBizLake(id) {
-        if (_bizAttachedLakeIds.has(id)) _bizAttachedLakeIds.delete(id);
-        else _bizAttachedLakeIds.add(id);
-        renderBizLakeGrid();
-    }
     function selectAllBizTowns() {
         const visible = _bizFilterTowns();
         for (const t of visible) {
@@ -1185,12 +1112,7 @@
         }
         renderBizTownGrid();
     }
-    function selectAllBizLakes() {
-        _bizFilterLakes().forEach(l => _bizAttachedLakeIds.add(l.id));
-        renderBizLakeGrid();
-    }
     function clearBizTowns() { _bizAttachedTownIds.clear(); renderBizTownGrid(); }
-    function clearBizLakes() { _bizAttachedLakeIds.clear(); renderBizLakeGrid(); }
 
     async function _bizSavePicker({ url, body, btnId, msgId, label }) {
         const btn = document.getElementById(btnId);
@@ -1225,15 +1147,6 @@
             btnId: 'save-biz-towns',
             msgId: 'save-biz-towns-msg',
             label: 'Save Towns',
-        });
-    }
-    async function saveBizLakes() {
-        return _bizSavePicker({
-            url: `/api/businesses/${encodeURIComponent(ID)}/lakes`,
-            body: { lakeIds: [..._bizAttachedLakeIds] },
-            btnId: 'save-biz-lakes',
-            msgId: 'save-biz-lakes-msg',
-            label: 'Save Lakes',
         });
     }
 
