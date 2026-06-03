@@ -162,6 +162,7 @@
             </button>
             <button class="page-tab" id="ptab-messages" onclick="switchPageTab('messages')">Messages</button>
             <button class="page-tab" id="ptab-notes" onclick="switchPageTab('notes')">Notes</button>
+            <button class="page-tab" id="ptab-payments" onclick="switchPageTab('payments')">Payments</button>
             <button class="page-tab" id="ptab-activity" onclick="switchPageTab('activity')">Activity</button>
         </div>
 
@@ -533,6 +534,23 @@
                 </div>
             </div>
         </div><!-- end tab-content-notes -->
+
+        <!-- TAB: Payments (Stripe invoices, mirrored to HubSpot notes) -->
+        <div id="tab-content-payments" style="display:none;">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Payments</div>
+                    <a id="agt-payments-hslink" href="#" target="_blank" rel="noopener"
+                       style="display:none;font-size:0.8rem;color:#ff7a59;text-decoration:none;font-weight:600;">View contact in HubSpot →</a>
+                </div>
+                <div class="panel-body" style="padding:1.25rem 1.5rem;">
+                    <p class="hint" style="margin:0 0 1rem;font-size:0.82rem;color:#718096;">Every Stripe invoice on this agent's subscription — paid or failed. Each one is mirrored to the contact's HubSpot timeline as a note when it lands.</p>
+                    <div id="agt-payments-list">
+                        <div style="color:#a0aec0;font-size:0.9rem;">Loading…</div>
+                    </div>
+                </div>
+            </div>
+        </div><!-- end tab-content-payments -->
 
         <!-- TAB: Activity (everything this agent did + everything done to them) -->
         <div id="tab-content-activity" style="display:none;">
@@ -1254,7 +1272,7 @@
 
     // ── Page Tab Switching ───────────────────────────────────────────────────
     function switchPageTab(tab) {
-        const tabs = ['details', 'profile', 'areas', 'controls', 'leads', 'messages', 'notes', 'activity'];
+        const tabs = ['details', 'profile', 'areas', 'controls', 'leads', 'messages', 'notes', 'payments', 'activity'];
         tabs.forEach(t => {
             document.getElementById('tab-content-' + t).style.display = (t === tab) ? 'block' : 'none';
             document.getElementById('ptab-' + t).classList.toggle('active', t === tab);
@@ -1262,7 +1280,78 @@
         if (tab === 'leads'    && agentLeadsAll === null) loadAgentLeads();
         if (tab === 'messages') loadAgentMessages();
         if (tab === 'notes')    loadAgentNotes();
+        if (tab === 'payments') loadAgentPayments();
         if (tab === 'activity') loadAgentActivity();
+    }
+
+    // ── Payments tab (Stripe invoices mirrored locally + to HubSpot) ────────
+    async function loadAgentPayments() {
+        const host = document.getElementById('agt-payments-list');
+        const hsLink = document.getElementById('agt-payments-hslink');
+        try {
+            const data = await fetch(`/api/admin/${encodeURIComponent(agentId)}/payments`, { credentials: 'include' })
+                .then(r => r.ok ? r.json() : { payments: [] });
+            if (data.hs_contact_url) {
+                hsLink.href = data.hs_contact_url;
+                hsLink.style.display = 'inline';
+            } else {
+                hsLink.style.display = 'none';
+            }
+            host.innerHTML = renderPaymentsTable(data.payments || []);
+        } catch (_) {
+            host.innerHTML = '<div style="color:#c53030;font-size:0.9rem;">Could not load payments.</div>';
+        }
+    }
+
+    function renderPaymentsTable(payments) {
+        if (!payments.length) {
+            return '<div style="color:#a0aec0;font-size:0.9rem;padding:1.5rem 0;">No payments yet — this user hasn\'t been charged by Stripe.</div>';
+        }
+        const fmtMoney = (cents, currency) =>
+            new Intl.NumberFormat('en-US', { style: 'currency', currency: (currency || 'USD').toUpperCase() })
+                .format((cents || 0) / 100);
+        const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+        const totalPaid = payments.filter(p => p.status === 'paid').reduce((a, p) => a + (p.amount_cents || 0), 0);
+        const headerCurrency = payments[0]?.currency || 'usd';
+
+        const rowsHtml = payments.map(p => {
+            const statusCls   = p.status === 'paid' ? 's-active' : p.status === 'failed' ? 's-archived' : 's-pending';
+            const statusLabel = (p.status || '—').charAt(0).toUpperCase() + (p.status || '').slice(1);
+            const period = (p.period_start && p.period_end)
+                ? `${fmtDate(p.period_start)} → ${fmtDate(p.period_end)}`
+                : '—';
+            return `
+                <tr>
+                    <td style="white-space:nowrap;">${escHtml(fmtDate(p.created_at))}</td>
+                    <td style="font-weight:700;color:#1a202c;white-space:nowrap;">${escHtml(fmtMoney(p.amount_cents, p.currency))}</td>
+                    <td><span class="s-badge ${statusCls}" style="font-size:0.66rem;padding:0.18rem 0.5rem;">${escHtml(statusLabel)}</span></td>
+                    <td>${escHtml(p.description || '—')}</td>
+                    <td style="font-size:0.78rem;color:#718096;white-space:nowrap;">${escHtml(period)}</td>
+                    <td style="text-align:right;white-space:nowrap;font-size:0.78rem;">
+                        ${p.invoice_url ? `<a href="${escAttr(p.invoice_url)}" target="_blank" rel="noopener" style="color:#1d6df2;text-decoration:none;font-weight:600;">Stripe ↗</a>` : ''}
+                        ${p.hs_note_id ? '<span style="color:#ff7a59;font-weight:700;margin-left:0.6rem;">✓ HubSpot</span>' : ''}
+                    </td>
+                </tr>`;
+        }).join('');
+
+        return `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:0.85rem;border-bottom:1px solid #edf2f7;">
+                <div style="font-size:0.82rem;color:#718096;">${payments.length} invoice${payments.length === 1 ? '' : 's'}</div>
+                <div style="font-size:0.95rem;font-weight:800;color:#1a202c;">Total paid: ${escHtml(fmtMoney(totalPaid, headerCurrency))}</div>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+                <thead>
+                    <tr style="text-align:left;color:#a0aec0;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.6px;font-weight:800;">
+                        <th style="padding:0.5rem 0.5rem 0.5rem 0;">Date</th>
+                        <th style="padding:0.5rem;">Amount</th>
+                        <th style="padding:0.5rem;">Status</th>
+                        <th style="padding:0.5rem;">Description</th>
+                        <th style="padding:0.5rem;">Period</th>
+                        <th style="padding:0.5rem 0 0.5rem 0.5rem;text-align:right;">Links</th>
+                    </tr>
+                </thead>
+                <tbody>${rowsHtml}</tbody>
+            </table>`;
     }
 
     // ── Activity (per-agent feed from /api/activity?entity_id=user_id) ──

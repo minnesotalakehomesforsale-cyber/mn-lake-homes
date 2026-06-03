@@ -35,6 +35,8 @@ router.post('/', adminController.createAgent);                            // POS
 router.get('/users', adminController.getUsers);                            // GET /api/admin/users
 router.get('/users/:id', adminController.getUserDetail);                   // GET /api/admin/users/:id
 router.get('/users/:id/inquiries', adminController.getUserInquiries);      // GET leads + cash-offer leads for this user
+router.get('/users/:id/payments',  adminController.getPaymentsForUser);    // GET Stripe payment history (by user id)
+router.get('/businesses/:id/payments', adminController.getPaymentsForBusiness); // GET Stripe payment history (by business id)
 router.post ('/users',                  verifyToken, requireRole(['super_admin']), adminController.createAdminUser);     // POST create new admin user (owner-only)
 router.patch('/users/:id', adminController.updateUser);                    // PATCH name/email/role
 router.patch('/users/:id/permissions',  verifyToken, requireRole(['super_admin']), adminController.setUserPermissions); // PATCH sidebar tab permissions (owner-only)
@@ -114,6 +116,10 @@ router.get('/:id/leads', adminController.getAgentLeads);
 router.get   ('/:id/notes',          verifyToken, requireRole(['admin', 'super_admin']), adminController.getAgentNotes);
 router.post  ('/:id/notes',          verifyToken, requireRole(['admin', 'super_admin']), adminController.addAgentNote);
 router.delete('/:id/notes/:noteId',  verifyToken, requireRole(['admin', 'super_admin']), adminController.deleteAgentNote);
+
+// Agent payment history (by agent PK, not user_id) — used by the
+// Payments tab on agent-review.html.
+router.get   ('/:id/payments',       verifyToken, requireRole(['admin', 'super_admin']), adminController.getPaymentsForAgent);
 
 // ─── AGENT DETAIL (generic /:id last, so specific prefixes match first) ──────
 router.get('/:id', adminController.getAgentDetail);                      // GET /api/admin/:id

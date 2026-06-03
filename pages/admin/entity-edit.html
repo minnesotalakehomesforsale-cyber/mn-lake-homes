@@ -285,7 +285,7 @@
             uploadUrl:'/api/businesses/upload-image',
             uploadField:'image',
             imageField:'featured_image_url',
-            tabs:     ['details', 'contact', 'membership', 'connected', 'activity'],
+            tabs:     ['details', 'contact', 'membership', 'payments', 'connected', 'activity'],
             relatedKeys: ['lakes','tags'],
         },
     };
@@ -394,6 +394,7 @@
         seo:        'SEO',
         contact:    'Contact &amp; Web',
         membership: 'Membership',
+        payments:   'Payments',
         connected:  'Connected',
         activity:   'Activity',
         gallery:    'Gallery',
@@ -439,6 +440,102 @@
         if (activeTab === 'connected')  tc.innerHTML = renderConnectedTab();
         if (activeTab === 'activity')   { tc.innerHTML = renderActivityTab(); loadEntityActivity(); }
         if (activeTab === 'gallery')    { tc.innerHTML = renderGalleryTab(); initGalleryControls(); }
+        if (activeTab === 'payments')   { tc.innerHTML = renderPaymentsTab(); loadEntityPayments(); }
+    }
+
+    // ── Payments tab (Stripe invoice history + HubSpot mirror) ──
+    // Only used for businesses today (agents have their own Payments tab
+    // on agent-review.html). The endpoint takes a business id; the panel
+    // links straight to the contact's HubSpot timeline so admins can
+    // jump to the synced notes.
+    function renderPaymentsTab() {
+        return `
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Payments</div>
+                    <a id="ent-payments-hslink" href="#" target="_blank" rel="noopener"
+                       style="display:none;font-size:0.8rem;color:#ff7a59;text-decoration:none;font-weight:600;">View contact in HubSpot →</a>
+                </div>
+                <div class="panel-body">
+                    <p class="hint" style="margin:0 0 1rem;">Every Stripe invoice on this business's subscription — paid or failed. Each one is mirrored to the contact's HubSpot timeline as a note when it lands.</p>
+                    <div id="ent-payments-list">
+                        <div style="color:#a0aec0;font-size:0.9rem;">Loading…</div>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    async function loadEntityPayments() {
+        const host = document.getElementById('ent-payments-list');
+        const hsLink = document.getElementById('ent-payments-hslink');
+        if (TYPE !== 'business') {
+            host.innerHTML = '<div style="color:#a0aec0;font-size:0.9rem;">Payments are only tracked on businesses.</div>';
+            return;
+        }
+        try {
+            const data = await fetch(`/api/admin/businesses/${encodeURIComponent(ID)}/payments`, { credentials: 'include' })
+                .then(r => r.ok ? r.json() : { payments: [] });
+            if (data.hs_contact_url) {
+                hsLink.href = data.hs_contact_url;
+                hsLink.style.display = 'inline';
+            } else {
+                hsLink.style.display = 'none';
+            }
+            host.innerHTML = renderEntityPaymentsTable(data.payments || []);
+        } catch (_) {
+            host.innerHTML = '<div style="color:#c53030;font-size:0.9rem;">Could not load payments.</div>';
+        }
+    }
+
+    function renderEntityPaymentsTable(payments) {
+        if (!payments.length) {
+            return '<div style="color:#a0aec0;font-size:0.9rem;padding:1.5rem 0;">No payments yet — this business has no Stripe charges on file.</div>';
+        }
+        const fmtMoney = (cents, currency) =>
+            new Intl.NumberFormat('en-US', { style: 'currency', currency: (currency || 'USD').toUpperCase() })
+                .format((cents || 0) / 100);
+        const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+        const totalPaid = payments.filter(p => p.status === 'paid').reduce((a, p) => a + (p.amount_cents || 0), 0);
+        const headerCurrency = payments[0]?.currency || 'usd';
+
+        const rowsHtml = payments.map(p => {
+            const statusCls   = p.status === 'paid' ? 's-active' : p.status === 'failed' ? 's-archived' : 's-pending';
+            const statusLabel = (p.status || '—').charAt(0).toUpperCase() + (p.status || '').slice(1);
+            const period = (p.period_start && p.period_end)
+                ? `${fmtDate(p.period_start)} → ${fmtDate(p.period_end)}`
+                : '—';
+            return `
+                <tr>
+                    <td style="white-space:nowrap;padding:0.6rem 0.5rem 0.6rem 0;">${esc(fmtDate(p.created_at))}</td>
+                    <td style="font-weight:700;color:#1a202c;white-space:nowrap;padding:0.6rem 0.5rem;">${esc(fmtMoney(p.amount_cents, p.currency))}</td>
+                    <td style="padding:0.6rem 0.5rem;"><span class="s-badge ${statusCls}" style="font-size:0.66rem;padding:0.18rem 0.5rem;">${esc(statusLabel)}</span></td>
+                    <td style="padding:0.6rem 0.5rem;">${esc(p.description || '—')}</td>
+                    <td style="font-size:0.78rem;color:#718096;white-space:nowrap;padding:0.6rem 0.5rem;">${esc(period)}</td>
+                    <td style="text-align:right;white-space:nowrap;font-size:0.78rem;padding:0.6rem 0 0.6rem 0.5rem;">
+                        ${p.invoice_url ? `<a href="${esc(p.invoice_url)}" target="_blank" rel="noopener" style="color:#1d6df2;text-decoration:none;font-weight:600;">Stripe ↗</a>` : ''}
+                        ${p.hs_note_id ? '<span style="color:#ff7a59;font-weight:700;margin-left:0.6rem;">✓ HubSpot</span>' : ''}
+                    </td>
+                </tr>`;
+        }).join('');
+
+        return `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:0.85rem;border-bottom:1px solid #edf2f7;">
+                <div style="font-size:0.82rem;color:#718096;">${payments.length} invoice${payments.length === 1 ? '' : 's'}</div>
+                <div style="font-size:0.95rem;font-weight:800;color:#1a202c;">Total paid: ${esc(fmtMoney(totalPaid, headerCurrency))}</div>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+                <thead>
+                    <tr style="text-align:left;color:#a0aec0;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.6px;font-weight:800;border-bottom:1px solid #edf2f7;">
+                        <th style="padding:0.5rem 0.5rem 0.5rem 0;">Date</th>
+                        <th style="padding:0.5rem;">Amount</th>
+                        <th style="padding:0.5rem;">Status</th>
+                        <th style="padding:0.5rem;">Description</th>
+                        <th style="padding:0.5rem;">Period</th>
+                        <th style="padding:0.5rem 0 0.5rem 0.5rem;text-align:right;">Links</th>
+                    </tr>
+                </thead>
+                <tbody>${rowsHtml}</tbody>
+            </table>`;
     }
 
     // ── Gallery tab (lake/town optional photo grid for the public page) ──

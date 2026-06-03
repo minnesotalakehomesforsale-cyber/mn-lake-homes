@@ -1,6 +1,131 @@
 const pool = require('../database/pool');
 const emailService = require('../services/email');
+const hubspot = require('../services/hubspot');
 const { logActivity } = require('../services/activity-log');
+
+// Persist a Stripe invoice as a row in `payments` and mirror it to HubSpot
+// as a Note on the contact's timeline. Idempotent on stripe_invoice_id so
+// Stripe retries don't create duplicates. Used by both
+// invoice.payment_succeeded ('paid') and invoice.payment_failed ('failed').
+async function persistPaymentAndMirrorToHubspot(invoice, status) {
+    if (!invoice || !invoice.id) return null;
+
+    // The subscription belongs to either a business or an agent (never both).
+    // Resolve the local user_id by subscription_id so the payment row anchors
+    // to a user that's already in our DB.
+    let userId = null;
+    if (invoice.subscription) {
+        const bizRow = await pool.query(
+            `SELECT user_id FROM businesses WHERE stripe_subscription_id = $1 LIMIT 1`,
+            [invoice.subscription]
+        );
+        userId = bizRow.rows[0]?.user_id || null;
+        if (!userId) {
+            const agentRow = await pool.query(
+                `SELECT user_id FROM agents WHERE stripe_subscription_id = $1 LIMIT 1`,
+                [invoice.subscription]
+            );
+            userId = agentRow.rows[0]?.user_id || null;
+        }
+    }
+
+    // Stripe always sends an integer in the smallest currency unit. Use
+    // amount_paid on success, amount_due on failure (paid is 0 if the
+    // charge bounced).
+    const amountCents = status === 'paid'
+        ? (invoice.amount_paid || 0)
+        : (invoice.amount_due  || 0);
+
+    // Description: prefer the first line item's description ("Premium - Apr 2026"
+    // etc.), fall back to invoice description, then the billing_reason.
+    const line = invoice.lines?.data?.[0];
+    const description = line?.description || invoice.description || invoice.billing_reason || null;
+
+    // period_start / period_end come back as Unix seconds.
+    const periodStart = line?.period?.start
+        ? new Date(line.period.start * 1000)
+        : (invoice.period_start ? new Date(invoice.period_start * 1000) : null);
+    const periodEnd = line?.period?.end
+        ? new Date(line.period.end * 1000)
+        : (invoice.period_end ? new Date(invoice.period_end * 1000) : null);
+
+    let paymentRow = null;
+    try {
+        const upsert = await pool.query(
+            `INSERT INTO payments
+                (user_id, stripe_customer_id, stripe_subscription_id, stripe_invoice_id,
+                 stripe_charge_id, amount_cents, currency, status, description,
+                 invoice_url, invoice_pdf, period_start, period_end)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+             ON CONFLICT (stripe_invoice_id) DO UPDATE
+                SET status = EXCLUDED.status,
+                    amount_cents = EXCLUDED.amount_cents,
+                    stripe_charge_id = COALESCE(EXCLUDED.stripe_charge_id, payments.stripe_charge_id)
+             RETURNING id, hs_note_id`,
+            [
+                userId,
+                invoice.customer || null,
+                invoice.subscription || null,
+                invoice.id,
+                invoice.charge || null,
+                amountCents,
+                (invoice.currency || 'usd').toLowerCase(),
+                status,
+                description,
+                invoice.hosted_invoice_url || null,
+                invoice.invoice_pdf || null,
+                periodStart,
+                periodEnd,
+            ]
+        );
+        paymentRow = upsert.rows[0];
+    } catch (err) {
+        console.error('[Stripe Webhook] persistPayment failed:', err.message);
+        return null;
+    }
+
+    // Mirror to HubSpot — only if we know the user AND they have an
+    // hs_contact_id (the contact has already been synced). Re-mirror on
+    // status changes (e.g. a failed payment that later cleared) so the
+    // contact timeline reflects the final state, but never duplicate the
+    // initial note for the same invoice.
+    if (userId && paymentRow && !paymentRow.hs_note_id) {
+        try {
+            const { rows } = await pool.query(
+                `SELECT hs_contact_id, email FROM users WHERE id = $1`,
+                [userId]
+            );
+            const hsId = rows[0]?.hs_contact_id;
+            if (hsId) {
+                const dollars = (amountCents / 100).toFixed(2);
+                const currency = (invoice.currency || 'usd').toUpperCase();
+                const periodStr = (periodStart && periodEnd)
+                    ? `${periodStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} → ${periodEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                    : '';
+                const statusLabel = status === 'paid' ? '✓ Payment received' : '⚠ Payment failed';
+                const body = [
+                    `${statusLabel}: $${dollars} ${currency}`,
+                    description ? `Item: ${description}` : '',
+                    periodStr ? `Period: ${periodStr}` : '',
+                    `Invoice: ${invoice.id}`,
+                    invoice.hosted_invoice_url ? `View: ${invoice.hosted_invoice_url}` : '',
+                ].filter(Boolean).join('\n');
+                const note = await hubspot.createContactNote(hsId, body);
+                if (note?.id) {
+                    await pool.query(
+                        `UPDATE payments SET hs_note_id = $1 WHERE id = $2`,
+                        [note.id, paymentRow.id]
+                    );
+                }
+            }
+        } catch (err) {
+            // Never let HubSpot break the webhook path.
+            console.error('[Stripe Webhook] hubspot note mirror failed:', err.message);
+        }
+    }
+
+    return paymentRow;
+}
 
 // Fetch owner email + display name for business lifecycle emails. Bundled
 // here because every webhook branch that emails the owner needs the same
@@ -614,6 +739,10 @@ exports.handleWebhook = async (req, res) => {
             case 'invoice.payment_failed': {
                 const invoice = event.data.object;
                 if (!invoice.subscription) break;
+                // Persist payment row + mirror to HubSpot timeline. Runs
+                // first so the row exists even if the table-update branches
+                // below fail.
+                await persistPaymentAndMirrorToHubspot(invoice, 'failed');
                 // Businesses
                 const bizPrior = await pool.query(
                     `SELECT subscription_status FROM businesses WHERE stripe_subscription_id = $1 LIMIT 1`,
@@ -674,6 +803,10 @@ exports.handleWebhook = async (req, res) => {
             case 'invoice.payment_succeeded': {
                 const invoice = event.data.object;
                 if (!invoice.subscription) break;
+                // Persist payment row + mirror to HubSpot timeline. Runs
+                // first so the row exists regardless of the publish updates
+                // that follow.
+                await persistPaymentAndMirrorToHubspot(invoice, 'paid');
                 // Both tables are best-effort — only one of them owns
                 // this subscription_id, the other UPDATE is a no-op.
                 const bizRes = await pool.query(

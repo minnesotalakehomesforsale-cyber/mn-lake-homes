@@ -1839,6 +1839,66 @@ const inviteBusiness = async (req, res) => {
     }
 };
 
+// ─── PAYMENT HISTORY (Stripe invoices mirrored locally + to HubSpot) ────────
+// Three lookup shapes — by user_id (the canonical key in the payments
+// table), by agent_id (used by agent-review.html which holds the agent
+// PK, not the user_id), and by business_id (used by entity-edit.html for
+// businesses). All return the same shape so the UI can stay simple.
+async function loadPaymentsForUser(userId) {
+    if (!userId) return { payments: [], hs_contact_url: null };
+    const [paymentsRes, userRes] = await Promise.all([
+        pool.query(
+            `SELECT id, amount_cents, currency, status, description,
+                    invoice_url, invoice_pdf, period_start, period_end,
+                    stripe_invoice_id, hs_note_id, created_at
+               FROM payments
+              WHERE user_id = $1
+           ORDER BY created_at DESC`,
+            [userId]
+        ),
+        pool.query(`SELECT hs_contact_id FROM users WHERE id = $1`, [userId]),
+    ]);
+    return {
+        payments: paymentsRes.rows,
+        hs_contact_url: hubspot.getPortalContactUrl(userRes.rows[0]?.hs_contact_id),
+        hs_synced: !!userRes.rows[0]?.hs_contact_id,
+    };
+}
+
+const getPaymentsForUser = async (req, res) => {
+    try {
+        const data = await loadPaymentsForUser(req.params.id);
+        res.json(data);
+    } catch (err) {
+        console.error('[getPaymentsForUser]', err.message);
+        res.status(500).json({ error: 'Failed to load payments.' });
+    }
+};
+
+const getPaymentsForAgent = async (req, res) => {
+    try {
+        const { rows } = await pool.query(`SELECT user_id FROM agents WHERE id = $1 LIMIT 1`, [req.params.id]);
+        if (!rows.length) return res.status(404).json({ error: 'Agent not found.' });
+        const data = await loadPaymentsForUser(rows[0].user_id);
+        res.json(data);
+    } catch (err) {
+        console.error('[getPaymentsForAgent]', err.message);
+        res.status(500).json({ error: 'Failed to load payments.' });
+    }
+};
+
+const getPaymentsForBusiness = async (req, res) => {
+    try {
+        const { rows } = await pool.query(`SELECT user_id FROM businesses WHERE id = $1 LIMIT 1`, [req.params.id]);
+        if (!rows.length) return res.status(404).json({ error: 'Business not found.' });
+        const data = await loadPaymentsForUser(rows[0].user_id);
+        res.json(data);
+    } catch (err) {
+        console.error('[getPaymentsForBusiness]', err.message);
+        res.status(500).json({ error: 'Failed to load payments.' });
+    }
+};
+
 module.exports = {
     getLedger,
     getAgentDetail,
@@ -1876,4 +1936,7 @@ module.exports = {
     applyLakeLaunchSeed,
     inviteAgent,
     inviteBusiness,
+    getPaymentsForUser,
+    getPaymentsForAgent,
+    getPaymentsForBusiness,
 };

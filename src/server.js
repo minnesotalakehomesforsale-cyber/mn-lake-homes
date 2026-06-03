@@ -1393,6 +1393,38 @@ async function ensureTables() {
                 ADD COLUMN IF NOT EXISTS fallback_price_per_sqft NUMERIC NOT NULL DEFAULT 300;
         `);
 
+        // Payment history mirror — one row per Stripe invoice (succeeded
+        // or failed) for both agents and businesses. The Stripe webhook
+        // inserts on invoice.payment_succeeded / invoice.payment_failed,
+        // dedup by stripe_invoice_id so retries are idempotent. hs_note_id
+        // tracks the mirrored entry on the contact's HubSpot timeline so
+        // admins can deep-link to it from the Payments tab. amount_cents
+        // is the Stripe integer (no float drift); convert to dollars at
+        // display time only.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS payments (
+                id                     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id                UUID REFERENCES users(id) ON DELETE SET NULL,
+                stripe_customer_id     TEXT,
+                stripe_subscription_id TEXT,
+                stripe_invoice_id      TEXT UNIQUE,
+                stripe_charge_id       TEXT,
+                amount_cents           INTEGER NOT NULL DEFAULT 0,
+                currency               VARCHAR(8) NOT NULL DEFAULT 'usd',
+                status                 VARCHAR(40) NOT NULL,   -- 'paid' | 'failed' | 'refunded'
+                description            TEXT,
+                invoice_url            TEXT,
+                invoice_pdf            TEXT,
+                period_start           TIMESTAMPTZ,
+                period_end             TIMESTAMPTZ,
+                hs_note_id             TEXT,
+                created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_payments_user      ON payments(user_id, created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_payments_invoice   ON payments(stripe_invoice_id);
+            CREATE INDEX IF NOT EXISTS idx_payments_status    ON payments(status);
+        `);
+
         // Geographic tag system (see docs/geo-tags.md — lead routing by
         // proximity to a tagged service area). Tables are idempotent and
         // safe to re-run on every boot.
