@@ -67,6 +67,14 @@ router.post('/tags/apply-launch',
     adminController.applyLaunchTowns
 );
 
+// Sibling for lakes — applies the curated 53 from src/data/launch-lakes.json.
+// Curated set → published; every other published MN lake → draft.
+router.post('/lakes/apply-launch',
+    verifyToken,
+    requireRole(['admin', 'super_admin']),
+    adminController.applyLaunchLakes
+);
+
 // ─── LAKE LAUNCH SEED ───────────────────────────────────────────────────────
 // One-click seed of the top-25 MN lakes not already in the database.
 // Idempotent — safe to re-run. See src/data/top-25-mn-lakes.json.

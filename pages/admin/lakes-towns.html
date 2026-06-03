@@ -353,6 +353,12 @@
                     </select>
                     <span id="lk-count" class="lt-count" title="Showing in the grid below / total in the database">—</span>
                     <div class="spacer"></div>
+                    <!-- One-shot launch button for lakes — same throwaway pattern as
+                         the Towns "Apply launch towns" button. -->
+                    <button class="btn-launch-once" id="lk-apply-launch" onclick="applyLaunchLakes()"
+                            title="Publish the 53 curated launch lakes (Minnetonka, Gull, Whitefish Chain, Mille Lacs, Vermilion, …) and demote every other published MN lake to draft. Nothing deleted — re-publishing is one click.">
+                        ★ Apply launch lakes (53)
+                    </button>
                     <button class="btn-primary" onclick="openCreate('lake')">+ New lake</button>
                 </div>
                 <div id="lk-grid" class="card-grid"><div class="empty-grid">Loading…</div></div>
@@ -612,6 +618,51 @@
     // Confirms, calls POST /api/admin/tags/apply-launch, reloads the grid.
     // Same logic as scripts/apply-launch-towns.js. Slated to be removed
     // from the toolbar after launch.
+    // ── One-shot: apply curated launch LAKES ─────────────────────────────
+    // Mirrors applyLaunchTowns() — posts to /api/admin/lakes/apply-launch,
+    // refreshes the Lakes grid. Same throwaway intent.
+    async function applyLaunchLakes() {
+        const btn = document.getElementById('lk-apply-launch');
+        if (!btn) return;
+        if (!confirm(
+            'Apply the 53 curated launch lakes?\n\n' +
+            '• The 53 (Minnetonka, Gull, Whitefish Chain, Mille Lacs, Vermilion, Leech, …) will be set to PUBLISHED.\n' +
+            '• Missing ones are inserted with name + region + county + lat/lng.\n' +
+            '• Every other currently-published MN lake is set to DRAFT (admin intent on existing drafts + archived is preserved).\n' +
+            '• Nothing is deleted; content stays intact and re-publishing is one click.\n\n' +
+            'Idempotent — safe to re-run. Continue?'
+        )) return;
+        btn.disabled = true; btn.textContent = 'Applying…';
+        try {
+            const res = await fetch('/api/admin/lakes/apply-launch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({}),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+            const lines = [
+                'Done.',
+                `  Inserted:     ${data.inserted || 0}`,
+                `  Re-published: ${data.republished || 0}`,
+                `  Drafted:      ${data.drafted || 0}`,
+            ];
+            if (data.inserted_names?.length) {
+                lines.push('', 'Newly inserted:', '  • ' + data.inserted_names.join('\n  • '));
+            }
+            alert(lines.join('\n'));
+
+            State.loaded.lakes = false;
+            await loadLakes();
+        } catch (err) {
+            alert(err.message || 'Failed to apply launch lakes.');
+        } finally {
+            btn.disabled = false; btn.textContent = '★ Apply launch lakes (53)';
+        }
+    }
+
     async function applyLaunchTowns() {
         const btn = document.getElementById('tw-apply-launch');
         if (!btn) return;

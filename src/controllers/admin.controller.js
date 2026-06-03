@@ -1979,6 +1979,91 @@ async function applyLaunchTowns(req, res) {
     }
 }
 
+// ─── LAUNCH LAKES (curated 53 — sibling of applyLaunchTowns) ──────────────
+// UPSERTs each entry from src/data/launch-lakes.json with status='published'.
+// Every other MN lake that's currently 'published' gets bumped to 'draft'
+// so the public site shows only the curated set. NOTHING is deleted; all
+// content (intro, description, lifestyle/seasons, gallery, hero image)
+// stays intact, and re-publishing is one click. Drafts that already
+// existed and archived lakes are left alone to preserve admin intent.
+async function applyLaunchLakes(req, res) {
+    if (req.user?.role !== 'super_admin' && req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Admin only.' });
+    }
+    let lakes;
+    try {
+        lakes = require('../data/launch-lakes.json');
+    } catch (err) {
+        return res.status(500).json({ error: 'Could not load launch-lakes.json.' });
+    }
+
+    let inserted = 0, republished = 0;
+    const insertedNames = [], republishedNames = [], draftedNames = [];
+
+    try {
+        for (const l of lakes) {
+            const result = await pool.query(
+                `INSERT INTO lakes (slug, name, state, region, county, latitude, longitude, status)
+                 VALUES ($1, $2, 'MN', $3, $4, $5, $6, 'published')
+                 ON CONFLICT (slug) DO UPDATE
+                     SET name       = EXCLUDED.name,
+                         region     = COALESCE(NULLIF(lakes.region, ''), EXCLUDED.region),
+                         county     = COALESCE(NULLIF(lakes.county, ''), EXCLUDED.county),
+                         latitude   = COALESCE(lakes.latitude,  EXCLUDED.latitude),
+                         longitude  = COALESCE(lakes.longitude, EXCLUDED.longitude),
+                         status     = 'published',
+                         updated_at = NOW()
+                 RETURNING (xmax = 0) AS inserted`,
+                [l.slug, l.name, l.region, l.county, l.lat, l.lng]
+            );
+            if (result.rows[0]?.inserted) {
+                inserted++;
+                insertedNames.push(l.name);
+            } else {
+                republished++;
+                republishedNames.push(l.name);
+            }
+        }
+
+        // Drop every OTHER currently-published MN lake to 'draft'. Lakes
+        // that are already 'draft' or 'archived' stay where they are so we
+        // don't trample previous admin intent.
+        const wantedSlugs = lakes.map(l => l.slug);
+        const drafted = await pool.query(
+            `UPDATE lakes
+                SET status = 'draft', updated_at = NOW()
+              WHERE state = 'MN'
+                AND status = 'published'
+                AND slug <> ALL ($1::text[])
+              RETURNING name`,
+            [wantedSlugs]
+        );
+        for (const r of drafted.rows) draftedNames.push(r.name);
+
+        logActivity({
+            event_type: 'lake.launch_lakes.apply',
+            event_scope: 'system',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            details: { inserted, republished, drafted: drafted.rowCount, total: lakes.length },
+            req,
+        });
+
+        res.json({
+            success: true,
+            total: lakes.length,
+            inserted,
+            republished,
+            drafted: drafted.rowCount,
+            inserted_names: insertedNames,
+            republished_names: republishedNames,
+            drafted_names: draftedNames,
+        });
+    } catch (err) {
+        console.error('[applyLaunchLakes]', err.message);
+        res.status(500).json({ error: 'Failed to apply launch lakes.' });
+    }
+}
+
 module.exports = {
     getLedger,
     getAgentDetail,
@@ -2020,4 +2105,5 @@ module.exports = {
     getPaymentsForAgent,
     getPaymentsForBusiness,
     applyLaunchTowns,
+    applyLaunchLakes,
 };
