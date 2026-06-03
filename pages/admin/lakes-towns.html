@@ -342,7 +342,6 @@
                     </select>
                     <span id="lk-count" class="lt-count" title="Showing in the grid below / total in the database">—</span>
                     <div class="spacer"></div>
-                    <button class="btn-ghost" id="lk-launch-seed" onclick="seedTop25MnLakes()" title="Add 25 curated top MN lakes (Winnie, Rainy, Pepin, Bemidji, Whitefish Chain, Bde Maka Ska, etc.) that aren't already in the database. Idempotent — safe to re-run.">★ Seed top 25 MN lakes</button>
                     <button class="btn-primary" onclick="openCreate('lake')">+ New lake</button>
                 </div>
                 <div id="lk-grid" class="card-grid"><div class="empty-grid">Loading…</div></div>
@@ -359,7 +358,6 @@
                     </select>
                     <span id="tw-count" class="lt-count" title="Showing in the grid below / total in the database">—</span>
                     <div class="spacer"></div>
-                    <button class="btn-ghost" id="tw-launch-preset" onclick="activateTop20MnCities()" title="Sets active = TRUE for the top 20 Minnesota cities by population and deactivates every other MN town. Useful for launch.">★ Top 20 MN cities only</button>
                     <button class="btn-primary" onclick="openCreate('town')">+ New town</button>
                 </div>
                 <div id="tw-grid" class="card-grid"><div class="empty-grid">Loading…</div></div>
@@ -505,151 +503,6 @@
             : `Showing ${fmtNum(shown)} of ${fmtNum(total)} loaded.`;
     }
 
-    // Top 20 Minnesota cities by population (US Census 2020). Both spelling
-    // variants (Saint vs. St.) included so the match catches whichever form
-    // your tags table uses. Matches are case-insensitive.
-    const TOP_20_MN_CITIES = [
-        'Minneapolis', 'Saint Paul', 'St. Paul', 'St Paul',
-        'Rochester', 'Duluth', 'Bloomington', 'Brooklyn Park', 'Plymouth',
-        'Maple Grove', 'Woodbury', 'Saint Cloud', 'St. Cloud', 'St Cloud',
-        'Eagan', 'Eden Prairie', 'Coon Rapids', 'Burnsville', 'Blaine',
-        'Lakeville', 'Minnetonka', 'Apple Valley', 'Edina',
-        'Saint Louis Park', 'St. Louis Park', 'St Louis Park',
-    ];
-
-    // One-click seed of the top-25 MN lakes (Winnie, Rainy, Pepin, Bemidji,
-    // Whitefish Chain, Bde Maka Ska, etc.) — populates lakes + auto-links to
-    // matching town tags. Idempotent so re-running just skips dupes.
-    // ── Invite business (comped account + credentials email) ────────────────
-    function openInviteBusiness() {
-        document.getElementById('inv-msg').textContent = '';
-        document.getElementById('inv-msg').style.display = 'none';
-        ['inv-first','inv-last','inv-email','inv-bizname'].forEach(id => document.getElementById(id).value = '');
-        document.getElementById('inv-modal').classList.add('open');
-        document.getElementById('inv-first').focus();
-    }
-    function closeInviteBusiness() {
-        document.getElementById('inv-modal').classList.remove('open');
-    }
-    async function sendBusinessInvite() {
-        const btn = document.getElementById('inv-send');
-        const msg = document.getElementById('inv-msg');
-        msg.style.display = 'none';
-        const payload = {
-            first_name:    document.getElementById('inv-first').value.trim(),
-            last_name:     document.getElementById('inv-last').value.trim(),
-            email:         document.getElementById('inv-email').value.trim(),
-            business_name: document.getElementById('inv-bizname').value.trim(),
-            business_type: document.getElementById('inv-biztype').value,
-            comp_tier:     document.getElementById('inv-tier').value,
-        };
-        if (!payload.first_name || !payload.email || !payload.business_name) {
-            msg.textContent = 'First name, email, and business name are required.';
-            msg.style.display = 'block';
-            return;
-        }
-        btn.disabled = true; btn.textContent = 'Sending…';
-        try {
-            const res = await fetch('/api/admin/invite-business', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(payload),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-            closeInviteBusiness();
-            alert(
-                `Invite sent to ${data.email}.\n\n` +
-                `Login URL: ${data.login_url}\n` +
-                `Temporary password: ${data.tempPassword}\n\n` +
-                `(Save this in case the email fails — you can share it manually.)`
-            );
-            State.loaded.biz = false;
-            await loadBiz();
-        } catch (err) {
-            msg.textContent = err.message || 'Failed to invite business.';
-            msg.style.display = 'block';
-        } finally {
-            btn.disabled = false; btn.textContent = 'Send invite email';
-        }
-    }
-
-    async function seedTop25MnLakes() {
-        const btn = document.getElementById('lk-launch-seed');
-        if (!btn) return;
-        if (!confirm(
-            'Seed up to 25 top Minnesota lakes (Winnie, Rainy, Pepin, Bemidji, Whitefish Chain, Bde Maka Ska, etc.) into the database?\n\n' +
-            '• Each lake lands as published with intro + SEO copy already written.\n' +
-            '• Lakes that already exist (by slug) are skipped — safe to re-run.\n' +
-            '• Lat/lng auto-geocoded if missing.\n' +
-            '• Lakes auto-link to matching town tags; missing tags are skipped (link them later from the lake\'s Connected tab).\n\n' +
-            'Continue?'
-        )) return;
-        btn.disabled = true; btn.textContent = 'Seeding…';
-        try {
-            const res = await fetch('/api/admin/lakes/launch-seed', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({}),
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-            alert(
-                `Done.\n` +
-                `Inserted: ${data.inserted || 0}\n` +
-                `Skipped (already in DB): ${data.skipped || 0}\n` +
-                `Auto-geocoded: ${data.geocoded || 0}\n` +
-                `Tag links made: ${data.tag_links || 0}` +
-                (data.slugs?.length ? `\n\nNew lakes:\n• ${data.slugs.join('\n• ')}` : '')
-            );
-            State.loaded.lakes = false;
-            await loadLakes();
-        } catch (err) {
-            alert(err.message || 'Seed failed.');
-        } finally {
-            btn.disabled = false; btn.textContent = '★ Seed top 25 MN lakes';
-        }
-    }
-
-    async function activateTop20MnCities() {
-        const btn = document.getElementById('tw-launch-preset');
-        if (!btn) return;
-        // Preview which towns the server will activate / deactivate before
-        // confirming, so the admin sees the exact impact (counts pulled
-        // from the loaded State, MN-only).
-        const wanted = new Set(TOP_20_MN_CITIES.map(s => s.toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim()));
-        const norm = (n) => String(n || '').toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
-        const mn = State.towns.filter(t => t.state === 'MN');
-        const willActivate   = mn.filter(t => wanted.has(norm(t.name)));
-        const willDeactivate = mn.filter(t => !wanted.has(norm(t.name)) && t.active);
-        const msg =
-            `Launch preset for Minnesota:\n` +
-            `• ${willActivate.length} towns will be active (top 20 MN cities by population)\n` +
-            `• ${willDeactivate.length} other MN towns currently active will be DEACTIVATED\n\n` +
-            `Inactive towns disappear from the public site immediately (no delete). Continue?`;
-        if (!confirm(msg)) return;
-        btn.disabled = true; btn.textContent = 'Applying…';
-        try {
-            const res = await fetch('/api/admin/tags/launch-preset', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ preset: 'top-20-mn-cities' }),
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-            alert(`Done. Activated ${data.activated || 0}, deactivated ${data.deactivated || 0}.`);
-            // Reload so the grid reflects the new active flags.
-            State.loaded.towns = false;
-            await loadTowns();
-        } catch (err) {
-            alert(err.message || 'Failed to apply preset.');
-        } finally {
-            btn.disabled = false; btn.textContent = '★ Top 20 MN cities only';
-        }
-    }
 
     // ── Tab switching ─────────────────────────────────────────────────
     function showLT(name) {

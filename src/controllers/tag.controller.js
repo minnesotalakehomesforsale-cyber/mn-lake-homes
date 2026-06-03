@@ -150,7 +150,14 @@ exports.getOne = async (req, res) => {
             [key]
         );
         const tag = rows[0];
-        if (!tag || !tag.active) return res.status(404).json({ error: 'Tag not found.' });
+        if (!tag) return res.status(404).json({ error: 'Tag not found.' });
+        // Inactive (archived) tags are hidden from the public site, but
+        // admins must still be able to open them in entity-edit — otherwise
+        // archiving a town becomes irreversible from the UI. Mirrors how
+        // lake.getOne handles draft/archived lakes.
+        if (!tag.active && !isAdmin(req)) {
+            return res.status(404).json({ error: 'Tag not found.' });
+        }
         tag.lake_count  = Number(tag.lake_count)  || 0;
         tag.agent_count = Number(tag.agent_count) || 0;
         // Same prefill-friendly fallback as lakes — admin needs to see the
