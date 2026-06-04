@@ -909,6 +909,79 @@ function sendAgentMessageNotification({ to, agentFirstName, body, senderName }) 
     });
 }
 
+// ─── Forward a cash-offer lead to a partner ────────────────────────────────
+// Fires when the admin clicks "Send" on a cash offer and picks a partner
+// from the network. The body bundles the seller contact + offer details
+// + property facts and lets the admin (us) inject a custom note up top.
+// replyTo is the admin's own email so the partner can hit reply-all and
+// loop us in.
+function sendCashOfferToPartner({ to, partnerName, customMessage, offer, fromName, fromEmail }) {
+    if (!to || !offer) return { skipped: true };
+    const property = offer.property || {};
+    const beds  = offer.beds  ?? property.beds;
+    const baths = offer.baths ?? property.baths;
+    const sqft  = offer.sqft  ?? property.sqft;
+    const yearBuilt = offer.year_built ?? property.yearBuilt;
+    const lotSize   = offer.lot_size   ?? property.lotSize;
+
+    const fmtMoney = (n) => (n == null || isNaN(Number(n))) ? '—'
+        : '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
+    const propFacts = [
+        beds  ? `${beds} bd`  : null,
+        baths ? `${baths} ba` : null,
+        sqft  ? `${Number(sqft).toLocaleString()} sqft` : null,
+        yearBuilt ? `built ${yearBuilt}` : null,
+        lotSize ? `${lotSize} ac lot` : null,
+        offer.condition ? `${offer.condition} condition` : null,
+    ].filter(Boolean).join(' · ') || '—';
+
+    const sellerRows = [
+        { label: 'Name',     value: _esc(offer.full_name) || '—' },
+        { label: 'Email',    value: offer.email ? `<a href="mailto:${_esc(offer.email)}" style="color:#1d6df2;text-decoration:none;">${_esc(offer.email)}</a>` : '—' },
+        { label: 'Phone',    value: offer.phone ? `<a href="tel:${_esc(String(offer.phone).replace(/[^\d+]/g,''))}" style="color:#1d6df2;text-decoration:none;">${_esc(offer.phone)}</a>` : '—' },
+        { label: 'Property', value: _esc(offer.address_raw) || '—' },
+        { label: 'Facts',    value: _esc(propFacts) },
+        { label: 'Our offer',value: `<strong>${_esc(fmtMoney(offer.offer_amount))}</strong>` },
+        offer.avm ? { label: 'AVM', value: _esc(fmtMoney(offer.avm)) } : null,
+        offer.last_sale_price ? { label: 'Last sale', value: _esc(fmtMoney(offer.last_sale_price)) } : null,
+    ].filter(Boolean);
+
+    const detailTable = sellerRows.map(r => `
+        <tr>
+            <td style="padding:7px 14px 7px 0;font-size:13px;color:#718096;font-weight:600;white-space:nowrap;vertical-align:top;">${r.label}</td>
+            <td style="padding:7px 0;font-size:14px;color:#1a202c;vertical-align:top;">${r.value}</td>
+        </tr>`).join('');
+
+    const customBlock = (customMessage || '').trim()
+        ? `<div style="margin:18px 0;padding:16px 18px;background:#fef3c7;border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;">
+               <p style="margin:0;font-size:14px;color:#1a202c;line-height:1.65;white-space:pre-line;">${_esc(customMessage)}</p>
+           </div>`
+        : '';
+
+    const senderLabel = fromName || 'MN Lake Homes';
+
+    return sendEmail({
+        to,
+        replyTo: fromEmail || undefined,
+        subject: `Cash offer lead — ${offer.address_raw || offer.full_name || 'new property'}`,
+        html: layout({
+            title: 'Cash offer lead for your review',
+            preheader: `${offer.address_raw || ''} — our offer ${fmtMoney(offer.offer_amount)}`,
+            body: `
+                <p style="margin:0 0 12px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Hi ${_esc(partnerName) || 'there'}, ${_esc(senderLabel)} is forwarding a fresh cash-offer lead for your review.
+                </p>
+                ${customBlock}
+                <table cellspacing="0" cellpadding="0" border="0" style="margin:18px 0 12px;border-collapse:collapse;">${detailTable}</table>
+                <p style="margin:14px 0 0;font-size:13px;color:#718096;line-height:1.5;">
+                  Reply to this email to coordinate with us, or reach out to the seller directly using the contact info above.
+                </p>`,
+            ctaText: offer.email ? 'Email the seller' : null,
+            ctaUrl:  offer.email ? `mailto:${offer.email}` : null,
+        })
+    });
+}
+
 module.exports = {
     sendEmail,
     sendWelcome,
@@ -922,6 +995,7 @@ module.exports = {
     sendMatchedAgentNotification,
     sendAgentLeadAssigned,
     sendAgentMessageNotification,
+    sendCashOfferToPartner,
     sendBusinessWelcome,
     sendBusinessAdminNotification,
     sendBusinessPaymentReceived,

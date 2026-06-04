@@ -14,10 +14,12 @@ const ctrl = require('../controllers/admin-cash-offer.controller');
 
 const adminOnly = [verifyToken, requireRole(['admin', 'super_admin'])];
 
-router.get('/new-count',  ...adminOnly, ctrl.newCount);
-router.get('/',           ...adminOnly, ctrl.list);
-router.get('/:id',        ...adminOnly, ctrl.detail);
-router.patch('/:id',      ...adminOnly, ctrl.patch);
-router.delete('/:id',     ...adminOnly, ctrl.remove);   // hard delete (irreversible)
+router.get('/new-count',     ...adminOnly, ctrl.newCount);
+router.get('/',              ...adminOnly, ctrl.list);
+router.get('/:id',           ...adminOnly, ctrl.detail);
+router.get('/:id/sends',     ...adminOnly, ctrl.listSends);
+router.post('/:id/send',     ...adminOnly, ctrl.sendToPartner);
+router.patch('/:id',         ...adminOnly, ctrl.patch);
+router.delete('/:id',        ...adminOnly, ctrl.remove);   // hard delete (irreversible)
 
 module.exports = router;

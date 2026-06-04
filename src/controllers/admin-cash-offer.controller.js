@@ -11,6 +11,8 @@
 
 const pool = require('../database/pool');
 const { logActivity } = require('../services/activity-log');
+const emailSvc = require('../services/email');
+const hubspot  = require('../services/hubspot');
 
 const VALID_STATUSES = new Set([
     'new',
@@ -193,6 +195,165 @@ exports.patch = async (req, res) => {
     } catch (err) {
         console.error('[cash-offer] admin patch failed:', err.message);
         res.status(500).json({ error: 'Failed to update lead.' });
+    }
+};
+
+// ─── GET /api/admin/cash-offers/:id/sends ──────────────────────────────────
+// Send history for the timeline view in the drawer.
+exports.listSends = async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT s.id, s.partner_id, s.subject, s.message, s.sent_at,
+                   p.name AS partner_name, p.email AS partner_email,
+                   p.company AS partner_company
+              FROM cash_offer_sends s
+              JOIN cash_offer_partners p ON p.id = s.partner_id
+             WHERE s.offer_id = $1
+             ORDER BY s.sent_at DESC
+        `, [req.params.id]);
+        res.json(rows);
+    } catch (err) {
+        console.error('[cash-offer] listSends failed:', err.message);
+        res.status(500).json({ error: 'Failed to load send history.' });
+    }
+};
+
+// ─── POST /api/admin/cash-offers/:id/send ──────────────────────────────────
+// Forward a cash-offer lead to one of our partners. The compose UI lets
+// the admin override subject + custom message; the seller contact +
+// property facts + offer amount are baked into the body server-side from
+// the cash_offer_leads row so they can't drift. We log the send to
+// cash_offer_sends + the activity log + a HubSpot note on the partner's
+// contact (so HubSpot reflects the outreach too).
+exports.sendToPartner = async (req, res) => {
+    const offerId = req.params.id;
+    const body    = req.body || {};
+    const partnerId = String(body.partnerId || '').trim();
+    const customMessage = String(body.customMessage || '').trim();
+    const overrideSubject = String(body.subject || '').trim();
+
+    if (!partnerId) return res.status(400).json({ error: 'partnerId is required.' });
+
+    try {
+        const { rows: oRows } = await pool.query(
+            `SELECT * FROM cash_offer_leads WHERE id = $1`, [offerId]
+        );
+        if (!oRows.length) return res.status(404).json({ error: 'Cash offer not found.' });
+        const offer = oRows[0];
+
+        const { rows: pRows } = await pool.query(
+            `SELECT id, name, email, phone, company, hs_contact_id
+               FROM cash_offer_partners
+              WHERE id = $1 AND archived_at IS NULL`,
+            [partnerId]
+        );
+        if (!pRows.length) return res.status(404).json({ error: 'Partner not found.' });
+        const partner = pRows[0];
+        if (!partner.email) return res.status(400).json({ error: 'Partner has no email on file.' });
+
+        // Resolve the admin's email + display name so the partner's reply
+        // lands in their inbox (replyTo) and the email body uses their name.
+        // JWT only carries userId/role, so we do a quick lookup.
+        let adminEmail = null, adminName = 'MN Lake Homes';
+        if (req.user?.userId) {
+            const { rows: uRows } = await pool.query(
+                `SELECT email, full_name FROM users WHERE id = $1`,
+                [req.user.userId]
+            );
+            if (uRows.length) {
+                adminEmail = uRows[0].email || null;
+                adminName  = uRows[0].full_name || adminEmail || adminName;
+            }
+        }
+
+        // Send the email synchronously so the admin sees a success/failure
+        // immediately. Email transports can swallow errors quietly so we
+        // surface a sane fallback message either way.
+        const subject = overrideSubject ||
+            `Cash offer lead — ${offer.address_raw || offer.full_name || 'new property'}`;
+
+        const sendResult = await emailSvc.sendCashOfferToPartner({
+            to: partner.email,
+            partnerName: partner.name,
+            customMessage,
+            offer: {
+                full_name:        offer.full_name,
+                email:            offer.email,
+                phone:            offer.phone,
+                address_raw:      offer.address_raw,
+                beds:             offer.beds,
+                baths:            offer.baths,
+                sqft:             offer.sqft,
+                year_built:       offer.year_built,
+                lot_size:         offer.lot_size,
+                condition:        offer.condition,
+                offer_amount:     offer.offer_amount,
+                avm:              offer.avm,
+                last_sale_price:  offer.last_sale_price,
+                property:         offer.property_data_json || {},
+            },
+            fromName:  adminName,
+            fromEmail: adminEmail,
+        });
+        if (sendResult?.skipped) {
+            return res.status(500).json({ error: 'Email transport rejected the message.' });
+        }
+
+        // Record the send. The message column stores the admin's custom
+        // note (not the full HTML body) so it stays readable in the
+        // timeline.
+        const { rows: sRows } = await pool.query(`
+            INSERT INTO cash_offer_sends (offer_id, partner_id, sent_by_user_id, subject, message)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id, sent_at
+        `, [offerId, partnerId, req.user?.userId || null, subject, customMessage || null]);
+        const sendId = sRows[0].id;
+
+        // HubSpot notes — fire-and-forget. One on the partner's contact
+        // timeline, one on the cash-offer's contact timeline (if mirrored).
+        (async () => {
+            try {
+                const noteBody = `
+                    <p><strong>Cash offer forwarded</strong></p>
+                    <p>Subject: ${subject}</p>
+                    <p>Property: ${offer.address_raw || '—'}</p>
+                    <p>Offer: $${Number(offer.offer_amount || 0).toLocaleString('en-US')}</p>
+                    ${customMessage ? `<p><em>${customMessage.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</em></p>` : ''}
+                `.trim();
+
+                const targets = [];
+                if (partner.hs_contact_id) targets.push(partner.hs_contact_id);
+                if (offer.hs_contact_id)   targets.push(offer.hs_contact_id);
+
+                const noteIds = [];
+                for (const hsId of targets) {
+                    const r = await hubspot.createContactNote(hsId, noteBody);
+                    if (r?.id) noteIds.push(r.id);
+                }
+                if (noteIds.length) {
+                    await pool.query(
+                        `UPDATE cash_offer_sends SET hs_note_id = $1 WHERE id = $2`,
+                        [noteIds.join(','), sendId]
+                    );
+                }
+            } catch (err) {
+                console.error('[cash-offer.sendToPartner] hubspot mirror failed:', err.message);
+            }
+        })();
+
+        logActivity({
+            event_type: 'cash_offer.sent_to_partner',
+            event_scope: 'cash_offer',
+            actor: { type: 'user', id: req.user?.userId, label: req.user?.email || 'admin' },
+            target: { type: 'cash_offer_lead', id: offerId, label: `${offer.full_name || ''} · ${offer.address_raw || ''}`.trim() },
+            details: { partner_id: partnerId, partner_name: partner.name, subject },
+            req,
+        });
+
+        res.json({ success: true, send_id: sendId });
+    } catch (err) {
+        console.error('[cash-offer] sendToPartner failed:', err.message);
+        res.status(500).json({ error: 'Failed to send offer to partner.' });
     }
 };
 

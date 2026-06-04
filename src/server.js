@@ -41,6 +41,7 @@ app.use('/api/agents', require('./routes/agent.routes'));
 // More-specific /api/admin/cash-offers must mount BEFORE the general /api/admin
 // router, which has a catch-all /:id route that would otherwise shadow us.
 app.use('/api/admin/cash-offers', require('./routes/admin-cash-offer.routes'));
+app.use('/api/admin/cash-offer-partners', require('./routes/admin-cash-offer-partner.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
 app.use('/api/leads', require('./routes/lead.routes'));
 app.use('/api/blog', require('./routes/blog.routes'));
@@ -1391,6 +1392,45 @@ async function ensureTables() {
             -- can override per-row from /system Database tab.
             ALTER TABLE cash_offer_config
                 ADD COLUMN IF NOT EXISTS fallback_price_per_sqft NUMERIC NOT NULL DEFAULT 300;
+        `);
+
+        // Cash-offer partner network — investors / iBuyers / wholesalers the
+        // admin forwards inbound cash-offer leads to. One contact per row,
+        // with a HubSpot mirror so the partner shows up in HubSpot too. Sends
+        // are tracked in cash_offer_sends so the offer's timeline knows who's
+        // been pitched and when.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS cash_offer_partners (
+                id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                name          TEXT NOT NULL,
+                email         TEXT NOT NULL,
+                phone         TEXT,
+                company       TEXT,
+                notes         TEXT,
+                hs_contact_id TEXT,
+                created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                archived_at   TIMESTAMPTZ
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_cash_offer_partners_email_unique
+                ON cash_offer_partners (lower(email));
+            CREATE INDEX IF NOT EXISTS idx_cash_offer_partners_active
+                ON cash_offer_partners (created_at DESC) WHERE archived_at IS NULL;
+
+            CREATE TABLE IF NOT EXISTS cash_offer_sends (
+                id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                offer_id        UUID NOT NULL REFERENCES cash_offer_leads(id) ON DELETE CASCADE,
+                partner_id      UUID NOT NULL REFERENCES cash_offer_partners(id) ON DELETE CASCADE,
+                sent_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+                subject         TEXT,
+                message         TEXT,
+                hs_note_id      TEXT,
+                sent_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_cash_offer_sends_offer
+                ON cash_offer_sends(offer_id, sent_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_cash_offer_sends_partner
+                ON cash_offer_sends(partner_id, sent_at DESC);
         `);
 
         // Payment history mirror — one row per Stripe invoice (succeeded
