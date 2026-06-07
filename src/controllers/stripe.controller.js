@@ -167,13 +167,16 @@ function getStripe() {
 }
 
 // ─── Price ID mapping ────────────────────────────────────────────────────────
+// Note: the public "founder" pricing tier uses the slug `founder_public`
+// to avoid colliding with the DB `founder` membership tier, which is
+// admin-only and used by the 70/30 lead-routing split (not for sale).
 const PRICE_MAP = {
-    standard_monthly: process.env.STRIPE_PRICE_STANDARD_MONTHLY,
-    standard_annual:  process.env.STRIPE_PRICE_STANDARD_ANNUAL,
-    prime_monthly:    process.env.STRIPE_PRICE_PRIME_MONTHLY,
-    prime_annual:     process.env.STRIPE_PRICE_PRIME_ANNUAL,
-    founder_monthly:  process.env.STRIPE_PRICE_FOUNDER_MONTHLY,
-    founder_annual:   process.env.STRIPE_PRICE_FOUNDER_ANNUAL,
+    standard_monthly:      process.env.STRIPE_PRICE_STANDARD_MONTHLY,
+    standard_annual:       process.env.STRIPE_PRICE_STANDARD_ANNUAL,
+    prime_monthly:         process.env.STRIPE_PRICE_PRIME_MONTHLY,
+    prime_annual:          process.env.STRIPE_PRICE_PRIME_ANNUAL,
+    founder_public_monthly: process.env.STRIPE_PRICE_FOUNDER_MONTHLY,
+    founder_public_annual:  process.env.STRIPE_PRICE_FOUNDER_ANNUAL,
 };
 
 // Reverse lookup: Stripe price ID → membership code
@@ -210,7 +213,7 @@ exports.createCheckoutSession = async (req, res) => {
         const { tier, period } = req.body;
 
         // Validate inputs
-        const validTiers   = ['standard', 'prime', 'founder'];
+        const validTiers   = ['standard', 'prime', 'founder_public'];
         const validPeriods = ['monthly', 'annual'];
 
         if (!validTiers.includes(tier)) {
@@ -372,49 +375,47 @@ exports.getAgentPricing = (req, res) => {
         tiers: [
             {
                 tier: 'standard',
-                name: 'Basic',
-                tagline: 'Get your profile live and start receiving leads in your service area.',
+                name: 'Standard',
+                tagline: 'Get your profile on one lake page — directory-style, no lead routing.',
                 features: [
-                    'Public agent profile + lake-page placement',
-                    'Lead inbox + email notifications',
-                    'Up to 3 service-area tags',
-                    'Standard listing position on lake pages',
+                    'Basic agent profile on one lake page',
+                    'Listed below founding / Prime agents',
+                    'No lead routing (directory listing only)',
                 ],
-                monthly_price: num(process.env.STRIPE_PRICING_STANDARD_MONTHLY, 49),
-                annual_price:  num(process.env.STRIPE_PRICING_STANDARD_ANNUAL, 490),
+                monthly_price: num(process.env.STRIPE_PRICING_STANDARD_MONTHLY, 9),
+                annual_price:  num(process.env.STRIPE_PRICING_STANDARD_ANNUAL, 90),
                 stripe_price_monthly: !!process.env.STRIPE_PRICE_STANDARD_MONTHLY,
                 stripe_price_annual:  !!process.env.STRIPE_PRICE_STANDARD_ANNUAL,
             },
             {
                 tier: 'prime',
-                name: 'MN Lake Specialist',
-                tagline: 'Featured placement on the lakes you specialize in, plus richer profile.',
+                name: 'Prime',
+                tagline: 'One founding spot per lake — featured at the top, first look at leads.',
                 features: [
-                    'Everything in Basic',
-                    'Featured-agent badge on lake pages',
-                    'Up to 10 service-area tags',
-                    'Priority placement in lead routing',
-                    'Direct-inquiry button on your profile',
+                    'Featured profile, top of one lake page',
+                    'First look at qualified leads for that lake',
+                    'One founding spot per lake',
+                    'Founding rate locked as long as you stay subscribed',
+                    'Direct line to the founder / feedback on the product',
                 ],
-                monthly_price: num(process.env.STRIPE_PRICING_PRIME_MONTHLY, 99),
-                annual_price:  num(process.env.STRIPE_PRICING_PRIME_ANNUAL, 990),
+                monthly_price: num(process.env.STRIPE_PRICING_PRIME_MONTHLY, 39),
+                annual_price:  num(process.env.STRIPE_PRICING_PRIME_ANNUAL, 390),
                 highlight:     true,
                 stripe_price_monthly: !!process.env.STRIPE_PRICE_PRIME_MONTHLY,
                 stripe_price_annual:  !!process.env.STRIPE_PRICE_PRIME_ANNUAL,
             },
             {
-                tier: 'founder',
-                name: 'Top Agent',
-                tagline: 'Top-of-page placement, founder badge, and exclusive territory holds.',
+                tier: 'founder_public',
+                name: 'Founder',
+                tagline: 'Hold up to 5 lakes across a region — top placement everywhere.',
                 features: [
-                    'Everything in MN Lake Specialist',
-                    'Founder badge across the network',
-                    'Unlimited service-area tags',
-                    'First pick on new leads in your tagged areas',
-                    'Featured in regional reports + blog roundups',
+                    'Everything in Prime, across up to 5 lakes / a region',
+                    'First look at leads on every lake you hold',
+                    'Top placement across your region + homepage region slot',
+                    'Founding rate locked',
                 ],
-                monthly_price: num(process.env.STRIPE_PRICING_FOUNDER_MONTHLY, 199),
-                annual_price:  num(process.env.STRIPE_PRICING_FOUNDER_ANNUAL, 1990),
+                monthly_price: num(process.env.STRIPE_PRICING_FOUNDER_MONTHLY, 149),
+                annual_price:  num(process.env.STRIPE_PRICING_FOUNDER_ANNUAL, 1490),
                 stripe_price_monthly: !!process.env.STRIPE_PRICE_FOUNDER_MONTHLY,
                 stripe_price_annual:  !!process.env.STRIPE_PRICE_FOUNDER_ANNUAL,
             },
