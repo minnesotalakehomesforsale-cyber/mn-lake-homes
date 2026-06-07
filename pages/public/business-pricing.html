@@ -22,8 +22,8 @@
         .period-toggle button.on { background: #1a202c; color: #fff; }
         .save-pill { display: inline-block; margin-left: 0.5rem; background: #f0fff4; color: #2f855a; font-size: 0.66rem; font-weight: 800; padding: 0.18rem 0.5rem; border-radius: 99px; letter-spacing: 0.4px; }
 
-        .tier-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; max-width: 880px; margin: 0 auto 4rem; padding: 0 1.5rem; }
-        @media (max-width: 760px) { .tier-grid { grid-template-columns: 1fr; max-width: 480px; } }
+        .tier-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; max-width: 1100px; margin: 0 auto 4rem; padding: 0 1.5rem; }
+        @media (max-width: 980px) { .tier-grid { grid-template-columns: 1fr; max-width: 480px; } }
         .tier { background: #fff; border: 1px solid #edf2f7; border-radius: 18px; padding: 2.25rem 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; flex-direction: column; position: relative; }
         .tier.highlight { border: 2px solid #1d6df2; box-shadow: 0 20px 50px rgba(29,109,242,0.15); transform: translateY(-4px); }
         .tier.highlight .tier-badge { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: #1d6df2; color: #fff; font-size: 0.66rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 0.35rem 0.85rem; border-radius: 99px; box-shadow: 0 6px 16px rgba(29,109,242,0.3); }
@@ -112,19 +112,23 @@
             const tiers = _pricing.tiers || [];
             const grid = document.getElementById('tier-grid');
             grid.innerHTML = tiers.map(t => {
+                const isFree = !!t.free;
                 const price = _period === 'annual' ? t.annual_price : t.monthly_price;
-                const note  = _period === 'annual'
-                    ? `Billed annually · ${dollars(Math.round(price / 12))} / month`
-                    : 'Billed monthly · cancel anytime';
+                const note  = isFree
+                    ? 'Free forever · no card required'
+                    : (_period === 'annual'
+                        ? `Billed annually · ${dollars(Math.round(price / 12))} / month`
+                        : 'Billed monthly · cancel anytime');
                 const stripeReady = _period === 'annual' ? t.stripe_price_annual : t.stripe_price_monthly;
                 const features = (t.features || []).map(f => `
                     <li>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         ${esc(f)}
                     </li>`).join('');
-                const disabled = !stripeReady || _gateState.kind !== 'ready';
+                const disabled = (!isFree && !stripeReady) || _gateState.kind !== 'ready';
                 const ctaLabel = _gateState.kind === 'logged_out' ? 'Sign in to subscribe'
                               : _gateState.kind === 'wrong_role'  ? 'Business account required'
+                              : isFree                            ? 'Get listed for free'
                               : !stripeReady                       ? 'Coming soon'
                               : `Choose ${t.name}`;
                 return `
@@ -179,10 +183,13 @@
                 return;
             }
             if (_gateState.kind !== 'ready') return;
+            const isFree = tier === 'free';
+            const endpoint = isFree ? '/api/business-auth/select-free' : '/api/business-auth/checkout';
+            const body     = isFree ? {} : { tier, period: _period };
             try {
-                const r = await fetch('/api/business-auth/checkout', {
+                const r = await fetch(endpoint, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-                    body: JSON.stringify({ tier, period: _period }),
+                    body: JSON.stringify(body),
                 });
                 const data = await r.json().catch(() => ({}));
                 if (!r.ok || !data.url) throw new Error(data.error || `HTTP ${r.status}`);

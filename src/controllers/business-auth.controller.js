@@ -324,6 +324,53 @@ exports.checkout = async (req, res) => {
     }
 };
 
+// ─── POST /select-free ────────────────────────────────────────────────────
+// Activates the caller's business on the Free tier — no Stripe checkout.
+// Sets tier_comped = TRUE so the listing passes the existing public
+// visibility filter ("status='active' AND (subscription_status='active'
+// OR tier_comped)"). Admin still has to flip status='active' the same
+// way they do for paid signups; this just means no paywall in between.
+exports.selectFree = async (req, res) => {
+    try {
+        if (req.user.role !== 'business_owner') {
+            return res.status(403).json({ error: 'Business account required.' });
+        }
+        const { rows } = await pool.query(
+            `SELECT id, stripe_subscription_id, subscription_status
+               FROM businesses WHERE user_id = $1 LIMIT 1`,
+            [req.user.userId]
+        );
+        if (!rows.length) return res.status(404).json({ error: 'No business found for this account.' });
+        const biz = rows[0];
+        if (biz.stripe_subscription_id && biz.subscription_status === 'active') {
+            return res.status(400).json({
+                error: 'You already have an active paid subscription. Cancel it via the customer portal first.',
+            });
+        }
+        await pool.query(
+            `UPDATE businesses
+                SET tier                = 'free',
+                    paid_tier           = 'free',
+                    subscription_status = 'free',
+                    tier_comped         = TRUE,
+                    updated_at          = NOW()
+              WHERE id = $1`,
+            [biz.id]
+        );
+        logActivity({
+            event_type: 'business_owner.select_free',
+            event_scope: 'business',
+            actor: { type: 'user', id: req.user.userId, label: 'business_owner' },
+            target: { type: 'business', id: biz.id },
+            req,
+        });
+        res.json({ success: true, url: '/pages/business/dashboard.html' });
+    } catch (err) {
+        console.error('[business-auth.selectFree]', err.message);
+        res.status(500).json({ error: 'Could not activate the free plan.' });
+    }
+};
+
 // ─── GET /pricing — public display config ─────────────────────────────────
 // Env-driven price labels for the business pricing page. Stripe is the
 // source of truth for actual billing — these are just what we show.

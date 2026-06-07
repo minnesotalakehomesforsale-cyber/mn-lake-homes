@@ -17,6 +17,7 @@ router.post('/upload-image',     verifyToken, c.uploadImage);
 router.get ('/tags',             verifyToken, c.listMyTags);
 router.put ('/tags',             verifyToken, c.replaceMyTags);
 router.post('/checkout',         verifyToken, c.checkout);
+router.post('/select-free',      verifyToken, c.selectFree);
 router.post('/portal',           verifyToken, c.portal);
 router.post('/change-password',  verifyToken, c.changePassword);
 
