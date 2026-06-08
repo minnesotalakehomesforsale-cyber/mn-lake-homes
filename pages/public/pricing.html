@@ -98,10 +98,19 @@
             .tier { padding: 1.5rem 1.4rem; }
             .tier.highlight { transform: none; }
         }
+
+        /* Checkout-mode minimal chrome — strip the site header/footer so the
+           visitor is focused on a single decision: pick a tier and check out. */
+        .cko-hdr { display: flex; align-items: center; padding: 1rem 2rem; background: #fff; border-bottom: 1px solid #edf2f7; }
+        .cko-logo { font-size: 1.05rem; font-weight: 800; color: #1a202c; text-decoration: none; letter-spacing: -0.3px; }
+        .cko-logo:hover { color: #1d6df2; }
+        .cko-ftr { text-align: center; padding: 2rem 1rem 2.5rem; color: #a0aec0; font-size: 0.82rem; margin-top: 2rem; }
+        .cko-ftr a { color: #718096; text-decoration: none; font-weight: 600; }
+        .cko-ftr a:hover { color: #1d6df2; }
     </style>
 </head>
 <body>
-    <global-header></global-header>
+    <header class="cko-hdr"><a href="/" class="cko-logo">MN Lake Homes</a></header>
 
     <section class="pricing-hero">
         <div class="eyebrow">Agent membership</div>
@@ -126,7 +135,9 @@
         Need to manage an existing plan? <a href="/pages/agent/dashboard.html">Open your dashboard</a> — billing, invoices, and cancellation all live in the Stripe Customer Portal linked from there. Questions about plan differences? <a href="/pages/public/contact.html">Get in touch</a>.
     </p>
 
-    <global-footer></global-footer>
+    <footer class="cko-ftr">
+        Secure checkout via Stripe · Cancel anytime · <a href="/pages/public/terms.html">Terms</a>
+    </footer>
     <script src="../../components/components.js" defer></script>
 
     <script>
