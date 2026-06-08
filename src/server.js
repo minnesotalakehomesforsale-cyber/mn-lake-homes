@@ -206,18 +206,29 @@ app.get('/api/_diagnostic', async (req, res) => {
     // actually sees, plus a live API ping. Makes "Stripe is not configured"
     // debuggable without tailing logs.
     const stripeKey = process.env.STRIPE_SECRET_KEY || '';
+    // Show the actual Stripe price ID stored in each env var (price IDs
+    // are not secrets — they show up in Stripe Checkout URLs). Lets us see
+    // at a glance which env vars are pointing where, including whether
+    // any are stuck on archived/legacy IDs.
+    const priceHint = (v) => {
+        const s = String(v || '').trim();
+        if (!s) return 'MISSING';
+        return s.length > 24 ? `${s.slice(0, 24)}… (${s.length} chars)` : s;
+    };
     out.checks.stripe_env = {
         STRIPE_SECRET_KEY:              stripeKey ? `set (${stripeKey.slice(0, 8)}…, ${stripeKey.length} chars)` : 'MISSING',
         STRIPE_WEBHOOK_SECRET:          process.env.STRIPE_WEBHOOK_SECRET ? 'set' : 'MISSING',
-        STRIPE_PRICE_BUSINESS_MONTHLY:  process.env.STRIPE_PRICE_BUSINESS_MONTHLY ? 'set' : 'MISSING',
-        STRIPE_PRICE_BUSINESS_PREMIUM_MONTHLY: process.env.STRIPE_PRICE_BUSINESS_PREMIUM_MONTHLY ? 'set' : 'MISSING',
-        STRIPE_PRICE_BUSINESS_PREMIUM_ANNUAL:  process.env.STRIPE_PRICE_BUSINESS_PREMIUM_ANNUAL ? 'set' : 'MISSING',
-        STRIPE_PRICE_STANDARD_MONTHLY:  process.env.STRIPE_PRICE_STANDARD_MONTHLY ? 'set' : 'MISSING',
-        STRIPE_PRICE_STANDARD_ANNUAL:   process.env.STRIPE_PRICE_STANDARD_ANNUAL ? 'set' : 'MISSING',
-        STRIPE_PRICE_PRIME_MONTHLY:     process.env.STRIPE_PRICE_PRIME_MONTHLY ? 'set' : 'MISSING',
-        STRIPE_PRICE_PRIME_ANNUAL:      process.env.STRIPE_PRICE_PRIME_ANNUAL ? 'set' : 'MISSING',
-        STRIPE_PRICE_FOUNDER_MONTHLY:   process.env.STRIPE_PRICE_FOUNDER_MONTHLY ? 'set' : 'MISSING',
-        STRIPE_PRICE_FOUNDER_ANNUAL:    process.env.STRIPE_PRICE_FOUNDER_ANNUAL ? 'set' : 'MISSING',
+        STRIPE_PRICE_BUSINESS_MONTHLY:  priceHint(process.env.STRIPE_PRICE_BUSINESS_MONTHLY),
+        STRIPE_PRICE_BUSINESS_BASIC_MONTHLY: priceHint(process.env.STRIPE_PRICE_BUSINESS_BASIC_MONTHLY),
+        STRIPE_PRICE_BUSINESS_BASIC_ANNUAL:  priceHint(process.env.STRIPE_PRICE_BUSINESS_BASIC_ANNUAL),
+        STRIPE_PRICE_BUSINESS_PREMIUM_MONTHLY: priceHint(process.env.STRIPE_PRICE_BUSINESS_PREMIUM_MONTHLY),
+        STRIPE_PRICE_BUSINESS_PREMIUM_ANNUAL:  priceHint(process.env.STRIPE_PRICE_BUSINESS_PREMIUM_ANNUAL),
+        STRIPE_PRICE_STANDARD_MONTHLY:  priceHint(process.env.STRIPE_PRICE_STANDARD_MONTHLY),
+        STRIPE_PRICE_STANDARD_ANNUAL:   priceHint(process.env.STRIPE_PRICE_STANDARD_ANNUAL),
+        STRIPE_PRICE_PRIME_MONTHLY:     priceHint(process.env.STRIPE_PRICE_PRIME_MONTHLY),
+        STRIPE_PRICE_PRIME_ANNUAL:      priceHint(process.env.STRIPE_PRICE_PRIME_ANNUAL),
+        STRIPE_PRICE_FOUNDER_MONTHLY:   priceHint(process.env.STRIPE_PRICE_FOUNDER_MONTHLY),
+        STRIPE_PRICE_FOUNDER_ANNUAL:    priceHint(process.env.STRIPE_PRICE_FOUNDER_ANNUAL),
         BASE_URL:                       process.env.BASE_URL || 'MISSING (falls back to localhost:3000)',
     };
     try {
