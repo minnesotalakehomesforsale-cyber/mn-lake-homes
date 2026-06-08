@@ -2048,6 +2048,28 @@ body {
 /* Agent grid mobile tuning */
 @media (max-width: 600px) {
     .agents-grid { grid-template-columns: 1fr !important; gap: 1.5rem !important; padding: 0 !important; max-width: 440px; margin: 0 auto !important; }
+
+    /* Homepage Featured Agents — switch to a compact horizontal card on
+       mobile. The full-bleed 200px portrait was eating most of a phone
+       viewport; a small left-side photo + info on the right reads much
+       more like a contact card and lets multiple featured agents fit
+       in a scroll without dominating the page. Scoped to the homepage
+       section so the full /agents directory keeps its stacked layout. */
+    .featured-agents-section .agent-card { flex-direction: row; align-items: stretch; }
+    .featured-agents-section .agent-image {
+        width: 130px; height: auto; min-height: 140px;
+        border-bottom: 0; border-right: 1px solid #edf2f7;
+        flex-shrink: 0;
+    }
+    .featured-agents-section .agent-info  { flex: 1; min-width: 0; padding: 1rem 1.1rem; }
+    .featured-agents-section .agent-bio   { -webkit-line-clamp: 3; margin-bottom: 0.5rem; }
+    .featured-agents-section .agent-name  { font-size: 1.08rem; margin-bottom: 0.15rem; }
+    .featured-agents-section .agent-title { font-size: 0.72rem; margin-bottom: 0.6rem; letter-spacing: 0.4px; }
+}
+@media (max-width: 400px) {
+    .featured-agents-section .agent-image { width: 110px; min-height: 130px; }
+    .featured-agents-section .agent-info  { padding: 0.85rem 1rem; }
+    .featured-agents-section .agent-bio   { -webkit-line-clamp: 2; }
 }
 
 /* sp-dark-section on homepage (We know MN Lakes) */
