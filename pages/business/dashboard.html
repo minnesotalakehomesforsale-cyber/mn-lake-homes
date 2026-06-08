@@ -957,30 +957,33 @@
                 b.style.display = '';
                 return;
             }
-            // Live
-            if (approved && s === 'active') {
+            // Live (paid OR free — both publish the listing once admin approves)
+            if (approved && (s === 'active' || s === 'free')) {
                 b.className = 'bd-banner ok';
                 b.innerHTML = `<span>✓ Your listing is live.</span><a href="/businesses/${encodeURIComponent(_biz.slug)}" target="_blank" rel="noopener">View it</a>`;
                 b.style.display = '';
                 return;
             }
-            // Paid but awaiting admin approval
-            if (!approved && s === 'active') {
+            // Plan selected (paid or free) but awaiting admin approval
+            if (!approved && (s === 'active' || s === 'free')) {
                 b.className = 'bd-banner warn';
-                b.innerHTML = `<span>⏳ Subscription active — waiting on admin approval. We'll reach out if we need anything.</span>`;
+                const msg = s === 'free'
+                    ? '⏳ Free listing pending — waiting on admin approval. We\'ll reach out if we need anything.'
+                    : '⏳ Subscription active — waiting on admin approval. We\'ll reach out if we need anything.';
+                b.innerHTML = `<span>${msg}</span>`;
                 b.style.display = '';
                 return;
             }
             // Approved but not paying (legacy)
-            if (approved && s !== 'active') {
+            if (approved && s !== 'active' && s !== 'free') {
                 b.className = 'bd-banner warn';
-                b.innerHTML = `<span>Your listing is approved but your subscription isn't active.</span><button onclick="showTab('subscription')">Fix billing</button>`;
+                b.innerHTML = `<span>Your listing is approved but you haven't picked a plan yet.</span><a href="/pages/public/business-pricing.html">Choose a plan →</a>`;
                 b.style.display = '';
                 return;
             }
             // Neither paid nor approved
             b.className = 'bd-banner warn';
-            b.innerHTML = `<span>Your listing is hidden. Finish Stripe checkout and we'll review your profile.</span><button onclick="showTab('subscription')">Go to subscription</button>`;
+            b.innerHTML = `<span>Your listing is hidden. Pick a plan (Free, Standard, or Premium) and we'll review your profile.</span><a href="/pages/public/business-pricing.html">Choose a plan →</a>`;
             b.style.display = '';
         }
 
