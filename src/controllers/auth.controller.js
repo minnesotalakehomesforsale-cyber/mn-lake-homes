@@ -252,8 +252,17 @@ const register = async (req, res) => {
         const token = jwt.sign({ userId, role: 'agent', pwd_iat }, process.env.JWT_SECRET, { expiresIn: '24h' });
         setAuthCookie(res, token);
 
-        // Fire-and-forget agent welcome email
+        // Fire-and-forget agent welcome email + admin notification
         try { emailService.sendAgentWelcome({ email, display_name }); } catch (_) {}
+        try {
+            emailService.sendAgentAdminNotification({
+                display_name,
+                email,
+                phone:          phone || null,
+                brokerage_name: brokerage_name || null,
+                license_number: license_number || null,
+            });
+        } catch (_) {}
 
         // Fire-and-forget HubSpot mirror for the new agent.
         (async () => {

@@ -645,6 +645,41 @@ function sendBusinessWelcome({ to, name, businessName, businessType }) {
 }
 
 /**
+ * Sent to the admin inbox the moment a new agent signs up — so Hunter
+ * knows someone joined and can reach out if it's worth a personal note.
+ * (Agents don't need admin approval — Stripe auto-publishes — so this is
+ * informational, not a queue notification.)
+ */
+function sendAgentAdminNotification({ display_name, email, phone, brokerage_name, license_number }) {
+    const row = (k, v) => v ? `<tr><td style="padding:8px 12px;font-size:13px;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.5px;vertical-align:top;white-space:nowrap;">${k}</td><td style="padding:8px 12px;font-size:15px;color:#1a202c;">${v}</td></tr>` : '';
+    return sendEmail({
+        to: REPLY_TO,
+        replyTo: email,
+        subject: `🆕 New agent signup — ${display_name}`,
+        html: layout({
+            title: 'A new agent just joined',
+            preheader: `${display_name}${brokerage_name ? ' · ' + brokerage_name : ''}`,
+            body: `
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  <strong>${display_name}</strong> just created an agent account. They'll go live in the directory once they complete their profile and pick a plan.
+                </p>
+                <table style="width:100%;border-collapse:collapse;margin:0 0 8px;">
+                  ${row('Name', display_name)}
+                  ${row('Email', `<a href="mailto:${email}" style="color:#1d6df2;text-decoration:none;">${email}</a>`)}
+                  ${row('Phone', phone || '—')}
+                  ${row('Brokerage', brokerage_name || '—')}
+                  ${row('License', license_number || '—')}
+                </table>
+                <p style="margin:18px 0 0;font-size:13px;color:#718096;line-height:1.5;">
+                  Open the admin agents ledger to see their profile progress, or reply to this email — it goes straight to them.
+                </p>`,
+            ctaText: 'Open admin agents',
+            ctaUrl: `${SITE_URL}/pages/admin/agents.html`,
+        })
+    });
+}
+
+/**
  * Sent to the admin inbox the moment a new owner signs up — so the
  * approval queue never goes stale.
  */
@@ -1029,6 +1064,7 @@ module.exports = {
     sendWelcome,
     sendAgentWelcome,
     sendAgentProfileLive,
+    sendAgentAdminNotification,
     sendPasswordReset,
     sendLeadConfirmation,
     sendContactConfirmation,
