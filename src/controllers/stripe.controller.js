@@ -556,6 +556,28 @@ exports.handleWebhook = async (req, res) => {
                     target: { type: 'user', id: userId, label: membershipCode },
                     details: { membership_code: membershipCode, subscription_id: session.subscription },
                 });
+
+                // "Your profile is live" email — fires once on first payment.
+                // Renewals come through invoice.payment_succeeded and don't
+                // hit this branch, so this email won't double-send.
+                try {
+                    const { rows: liveRows } = await pool.query(
+                        `SELECT u.email, a.display_name, a.slug
+                           FROM agents a
+                           JOIN users u ON u.id = a.user_id
+                          WHERE a.user_id = $1`,
+                        [userId]
+                    );
+                    if (liveRows[0]?.email) {
+                        emailService.sendAgentProfileLive({
+                            email:        liveRows[0].email,
+                            display_name: liveRows[0].display_name,
+                            slug:         liveRows[0].slug,
+                        });
+                    }
+                } catch (e) {
+                    console.warn('[Stripe Webhook] sendAgentProfileLive failed:', e.message);
+                }
                 break;
             }
 

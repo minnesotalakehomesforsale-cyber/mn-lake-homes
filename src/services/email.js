@@ -212,22 +212,64 @@ function sendAgentWelcome(user) {
     const name = user.display_name?.split(' ')[0] || user.first_name || 'there';
     return sendEmail({
         to: user.email,
-        subject: 'Your MN Lake Homes agent account is live',
+        subject: 'Your MN Lake Homes agent account is set up',
         html: layout({
             title: `Welcome to the network, ${name}.`,
-            preheader: 'Complete your profile to go live in the directory.',
+            preheader: 'Complete your profile and pick a plan — your profile publishes the moment payment clears.',
             body: `
                 <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
-                  Your agent account has been created. The next step is completing your public profile — that's what appears in our directory and generates introductions from serious lake-home buyers and sellers.
+                  Your agent account is ready. Two more steps and you're on the directory:
                 </p>
+                <ol style="margin:0 0 18px;padding-left:1.25rem;font-size:15px;line-height:1.7;color:#2d3748;">
+                  <li><strong>Complete your profile</strong> — bio, photo, service areas, specialties.</li>
+                  <li><strong>Pick a plan</strong> — Standard, Prime, or Founder.</li>
+                </ol>
                 <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
-                  Head to your dashboard to add your bio, service areas, specialties, and photo. Once your profile is complete, our team reviews it within 24 hours and publishes it to the live site.
+                  Your profile publishes automatically the moment Stripe confirms payment. No team review, no waiting room — once payment clears, you're on the lake pages.
                 </p>
                 <p style="margin:0;font-size:15px;line-height:1.65;color:#2d3748;">
                   Questions? Just reply to this email — we read every one.
                 </p>`,
             ctaText: 'Complete Your Profile',
             ctaUrl: `${SITE_URL}/pages/agent/dashboard.html`,
+        })
+    });
+}
+
+/**
+ * Agent profile published — fires from the Stripe webhook
+ * (checkout.session.completed) right after the agent's first payment
+ * flips their profile to published. Sender already knows their profile
+ * is live (Stripe redirected them back), but the email gives them a
+ * shareable link to the public profile and a short "what to do this week"
+ * nudge so they get something out of the network on day one.
+ */
+function sendAgentProfileLive({ email, display_name, slug }) {
+    const name = display_name?.split(' ')[0] || 'there';
+    const profileUrl = slug
+        ? `${SITE_URL}/pages/public/agent-profile.html?slug=${slug}`
+        : `${SITE_URL}/pages/agent/dashboard.html`;
+    return sendEmail({
+        to: email,
+        subject: 'Your MN Lake Homes profile is live',
+        html: layout({
+            title: `You're live, ${name}.`,
+            preheader: 'Your profile is now on the directory and lake pages.',
+            body: `
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Payment received, profile published. Buyers and sellers searching your area on MinnesotaLakeHomesForSale.com can now find your profile on the lake pages.
+                </p>
+                <p style="margin:0 0 8px;font-size:14px;color:#4a5568;font-weight:600;">A few things worth doing this week:</p>
+                <ul style="margin:0 0 18px;padding-left:1.25rem;font-size:15px;line-height:1.7;color:#2d3748;">
+                  <li>Open your public profile and share the link with existing clients.</li>
+                  <li>Double-check your service areas in the dashboard so matched leads route to you correctly.</li>
+                  <li>Watch your inbox — matched buyer and seller leads come straight to the email on file.</li>
+                </ul>
+                <p style="margin:0;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Questions or feedback? Just reply — we read every one.
+                </p>`,
+            ctaText: 'View Your Live Profile',
+            ctaUrl: profileUrl,
         })
     });
 }
@@ -986,6 +1028,7 @@ module.exports = {
     sendEmail,
     sendWelcome,
     sendAgentWelcome,
+    sendAgentProfileLive,
     sendPasswordReset,
     sendLeadConfirmation,
     sendContactConfirmation,
