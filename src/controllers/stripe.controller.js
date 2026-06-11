@@ -570,9 +570,10 @@ exports.handleWebhook = async (req, res) => {
                     );
                     if (liveRows[0]?.email) {
                         emailService.sendAgentProfileLive({
-                            email:        liveRows[0].email,
-                            display_name: liveRows[0].display_name,
-                            slug:         liveRows[0].slug,
+                            email:           liveRows[0].email,
+                            display_name:    liveRows[0].display_name,
+                            slug:            liveRows[0].slug,
+                            membership_code: membershipCode,
                         });
                     }
                 } catch (e) {
