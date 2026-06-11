@@ -251,22 +251,37 @@ function sendAgentProfileLive({ email, display_name, slug }) {
         : `${SITE_URL}/pages/agent/dashboard.html`;
     return sendEmail({
         to: email,
-        subject: 'Your MN Lake Homes profile is live',
+        subject: 'Welcome to MN Lake Homes — your profile is live',
         html: layout({
             title: `You're live, ${name}.`,
             preheader: 'Your profile is now on the directory and lake pages.',
             body: `
-                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
-                  Payment received, profile published. Buyers and sellers searching your area on MinnesotaLakeHomesForSale.com can now find your profile on the lake pages.
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Welcome to MinnesotaLakeHomesForSale.com. Payment cleared, your profile is published, and buyers and sellers searching your service area can now find you on the lake pages.
                 </p>
-                <p style="margin:0 0 8px;font-size:14px;color:#4a5568;font-weight:600;">A few things worth doing this week:</p>
+
+                <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">A quick intro to who we are</h3>
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  We're a Minnesota-only lake real estate platform. We don't try to list every house in the state &mdash; we build a dedicated page for each lake (shoreline, docks, the actual local feel) and match the buyers and sellers who land on those pages with vetted local agents like you. No commissions, no referral fees &mdash; just a flat subscription so your client stays your client.
+                </p>
+
+                <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">Want to get featured on our social media?</h3>
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  We're building out our <a href="https://www.instagram.com/mnlakehomes/" style="color:#1d6df2;text-decoration:none;">Instagram</a> and <a href="https://www.facebook.com/mnlakehomesforsale" style="color:#1d6df2;text-decoration:none;">Facebook</a> presence and we'd love to spotlight the agents who make the network work. If you'd like an intro post, a Q&amp;A about your lake, or a listing highlight, just reply to this email with <strong>"feature me"</strong> and a couple of high-quality photos (a portrait of you + 1&ndash;2 lake or listing shots). No charge &mdash; we just want to make the agents on the network visible.
+                </p>
+
+                <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">A few things worth doing this week</h3>
                 <ul style="margin:0 0 18px;padding-left:1.25rem;font-size:15px;line-height:1.7;color:#2d3748;">
                   <li>Open your public profile and share the link with existing clients.</li>
                   <li>Double-check your service areas in the dashboard so matched leads route to you correctly.</li>
-                  <li>Watch your inbox — matched buyer and seller leads come straight to the email on file.</li>
+                  <li>Watch your inbox &mdash; matched buyer and seller leads come straight to the email on file.</li>
                 </ul>
-                <p style="margin:0;font-size:15px;line-height:1.65;color:#2d3748;">
-                  Questions or feedback? Just reply — we read every one.
+
+                <p style="margin:0 0 6px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Questions, feedback, or just want to chat? Reply to this email and we'll get back to you.
+                </p>
+                <p style="margin:18px 0 0;font-size:15px;line-height:1.65;color:#2d3748;">
+                  &mdash; The team at MinnesotaLakeHomesForSale.com
                 </p>`,
             ctaText: 'View Your Live Profile',
             ctaUrl: profileUrl,
