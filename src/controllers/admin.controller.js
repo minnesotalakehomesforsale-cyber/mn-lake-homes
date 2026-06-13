@@ -721,7 +721,7 @@ const resetUserPassword = async (req, res) => {
         if (!rowCount) return res.status(404).json({ error: 'User not found.' });
 
         // Fire-and-forget reset notification with the new password
-        email.sendPasswordReset(rows[0], new_password);
+        email.sendAdminPasswordReset(rows[0], new_password);
 
         logActivity({
             event_type: 'user.password.reset',

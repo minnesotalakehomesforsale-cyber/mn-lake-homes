@@ -250,32 +250,21 @@ function sendAgentProfileLive({ email, display_name, slug, membership_code }) {
         ? `${SITE_URL}/pages/public/agent-profile.html?slug=${slug}`
         : `${SITE_URL}/pages/agent/dashboard.html`;
 
-    // Founder tier (public 'founder_public' pricing slug maps to membership
-    // 'top_agent' in the DB) gets a premium-flavored welcome with the
-    // personalized blog + featured listings perks called out explicitly.
-    const isFounder = membership_code === 'top_agent';
+    // Each public tier (Standard/Prime/Founder) maps to a DB membership code
+    // and gets its own welcome. Anything unrecognized falls back to Standard.
+    //   Standard ($9)  → membership_code 'basic'
+    //   Prime ($39)    → membership_code 'mn_lake_specialist'
+    //   Founder ($149) → membership_code 'top_agent'
+    const tier =
+        membership_code === 'top_agent'           ? 'founder' :
+        membership_code === 'mn_lake_specialist'  ? 'prime'   :
+        'standard';
 
     const intro = `
         <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">A quick intro to who we are</h3>
         <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
           We're a Minnesota-only lake real estate platform. We don't try to list every house in the state &mdash; we build a dedicated page for each lake (shoreline, docks, the actual local feel) and match the buyers and sellers who land on those pages with vetted local agents like you. No commissions, no referral fees &mdash; just a flat subscription so your client stays your client.
         </p>`;
-
-    const checklistStandard = `
-        <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">A few things worth doing this week</h3>
-        <ul style="margin:0 0 18px;padding-left:1.25rem;font-size:15px;line-height:1.7;color:#2d3748;">
-          <li>Open your public profile and share the link with existing clients.</li>
-          <li>Double-check your service areas in the dashboard so matched leads route to you correctly.</li>
-          <li>Watch your inbox &mdash; matched buyer and seller leads come straight to the email on file.</li>
-        </ul>`;
-
-    const checklistFounder = `
-        <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">A few things worth doing this week</h3>
-        <ul style="margin:0 0 18px;padding-left:1.25rem;font-size:15px;line-height:1.7;color:#2d3748;">
-          <li>Open your public profile and share the link with existing clients.</li>
-          <li>Double-check your service areas and listings in the dashboard so featured placement points at the right properties.</li>
-          <li>Watch your inbox &mdash; matched buyer and seller leads come straight to the email on file, and we'll reach out within 7 days to schedule your feature-blog interview.</li>
-        </ul>`;
 
     const signoff = `
         <p style="margin:0 0 6px;font-size:15px;line-height:1.65;color:#2d3748;">
@@ -285,7 +274,8 @@ function sendAgentProfileLive({ email, display_name, slug, membership_code }) {
           &mdash; The team at MinnesotaLakeHomesForSale.com
         </p>`;
 
-    if (isFounder) {
+    // ─── Founder ($149) ────────────────────────────────────────────────────
+    if (tier === 'founder') {
         return sendEmail({
             to: email,
             subject: 'Welcome to MN Lake Homes — your Founder profile is live',
@@ -311,7 +301,13 @@ function sendAgentProfileLive({ email, display_name, slug, membership_code }) {
                       Founder agents are the first we spotlight on our <a href="https://www.instagram.com/mnlakehomes/" style="color:#1d6df2;text-decoration:none;">Instagram</a> and <a href="https://www.facebook.com/mnlakehomesforsale" style="color:#1d6df2;text-decoration:none;">Facebook</a>. We'll reach out about a feature post &mdash; usually a portrait + lake/listing shots + a short Q&amp;A &mdash; within the next two weeks. If you'd rather kick it off sooner, just reply to this email with <strong>"feature me"</strong> and 2&ndash;3 high-quality photos.
                     </p>
 
-                    ${checklistFounder}
+                    <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">A few things worth doing this week</h3>
+                    <ul style="margin:0 0 18px;padding-left:1.25rem;font-size:15px;line-height:1.7;color:#2d3748;">
+                      <li>Open your public profile and share the link with existing clients.</li>
+                      <li>Double-check your service areas and listings in the dashboard so featured placement points at the right properties.</li>
+                      <li>Watch your inbox &mdash; matched buyer and seller leads come straight to the email on file, and we'll reach out within 7 days to schedule your feature-blog interview.</li>
+                    </ul>
+
                     ${signoff}`,
                 ctaText: 'View Your Live Profile',
                 ctaUrl: profileUrl,
@@ -319,26 +315,85 @@ function sendAgentProfileLive({ email, display_name, slug, membership_code }) {
         });
     }
 
-    // Standard / Prime — the original welcome.
+    // ─── Prime ($39) ───────────────────────────────────────────────────────
+    if (tier === 'prime') {
+        return sendEmail({
+            to: email,
+            subject: 'Welcome to MN Lake Homes — your Prime profile is live',
+            html: layout({
+                title: `You're live, ${name}. Welcome to Prime.`,
+                preheader: 'Featured at the top of your lake page, with first look at matched leads.',
+                body: `
+                    <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
+                      Welcome to MinnesotaLakeHomesForSale.com. Payment cleared, and your Prime profile is now featured at the top of your lake page.
+                    </p>
+
+                    <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">Your Prime perks</h3>
+                    <ol style="margin:0 0 18px;padding-left:1.25rem;font-size:15px;line-height:1.7;color:#2d3748;">
+                      <li style="margin-bottom:0.6rem;"><strong>Featured placement at the top of your lake page.</strong> Buyers and sellers searching that lake see you above standard agents.</li>
+                      <li style="margin-bottom:0.6rem;"><strong>First look at matched leads.</strong> New buyer and seller inquiries from your lake page route to you before they go to standard agents on the same lake.</li>
+                      <li><strong>A direct line to the founder.</strong> You're one of the first agents in. Your feedback shapes how matching, routing, and the lake pages actually work.</li>
+                    </ol>
+
+                    ${intro}
+
+                    <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">Get featured on our social media</h3>
+                    <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
+                      We'd love to spotlight you on our <a href="https://www.instagram.com/mnlakehomes/" style="color:#1d6df2;text-decoration:none;">Instagram</a> and <a href="https://www.facebook.com/mnlakehomesforsale" style="color:#1d6df2;text-decoration:none;">Facebook</a>. Reply to this email with <strong>"feature me"</strong> and 2&ndash;3 high-quality photos (a portrait of you + 1&ndash;2 lake or listing shots) and we'll get an intro post or a Q&amp;A about your lake up.
+                    </p>
+
+                    <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">A few things worth doing this week</h3>
+                    <ul style="margin:0 0 18px;padding-left:1.25rem;font-size:15px;line-height:1.7;color:#2d3748;">
+                      <li>Open your public profile and share the link with existing clients.</li>
+                      <li>Double-check the lake you're tagged on in the dashboard so matched leads route to you correctly.</li>
+                      <li>Watch your inbox &mdash; matched buyer and seller leads come straight to the email on file.</li>
+                    </ul>
+
+                    ${signoff}`,
+                ctaText: 'View Your Live Profile',
+                ctaUrl: profileUrl,
+            })
+        });
+    }
+
+    // ─── Standard ($9) ─────────────────────────────────────────────────────
     return sendEmail({
         to: email,
-        subject: 'Welcome to MN Lake Homes — your profile is live',
+        subject: 'Welcome to MN Lake Homes — your Standard profile is live',
         html: layout({
-            title: `You're live, ${name}.`,
-            preheader: 'Your profile is now on the directory and lake pages.',
+            title: `You're on the directory, ${name}.`,
+            preheader: 'Your Standard profile is now visible on your lake page.',
             body: `
                 <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
-                  Welcome to MinnesotaLakeHomesForSale.com. Payment cleared, your profile is published, and buyers and sellers searching your service area can now find you on the lake pages.
+                  Welcome to MinnesotaLakeHomesForSale.com. Payment cleared, and your Standard profile is now listed on your lake page in our directory.
                 </p>
+
+                <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">What Standard includes</h3>
+                <ul style="margin:0 0 18px;padding-left:1.25rem;font-size:15px;line-height:1.7;color:#2d3748;">
+                  <li>Your agent profile listed on one lake page (directory style).</li>
+                  <li>Buyers and sellers searching that lake can find you and reach out directly through your contact info.</li>
+                  <li>Standard is a directory listing &mdash; matched lead routing is a Prime / Founder benefit.</li>
+                </ul>
 
                 ${intro}
 
-                <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">Want to get featured on our social media?</h3>
+                <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">Want more visibility? Upgrade anytime</h3>
                 <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
-                  We're building out our <a href="https://www.instagram.com/mnlakehomes/" style="color:#1d6df2;text-decoration:none;">Instagram</a> and <a href="https://www.facebook.com/mnlakehomesforsale" style="color:#1d6df2;text-decoration:none;">Facebook</a> presence and we'd love to spotlight the agents who make the network work. If you'd like an intro post, a Q&amp;A about your lake, or a listing highlight, just reply to this email with <strong>"feature me"</strong> and a couple of high-quality photos (a portrait of you + 1&ndash;2 lake or listing shots). No charge &mdash; we just want to make the agents on the network visible.
+                  If you want featured placement at the top of your lake page and first look at matched buyer and seller leads, you can upgrade to Prime ($39/mo) or Founder ($149/mo) right from your dashboard. Your existing profile, photo, and contact info all carry over instantly.
                 </p>
 
-                ${checklistStandard}
+                <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">Want to get featured on our social media?</h3>
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  We're building out our <a href="https://www.instagram.com/mnlakehomes/" style="color:#1d6df2;text-decoration:none;">Instagram</a> and <a href="https://www.facebook.com/mnlakehomesforsale" style="color:#1d6df2;text-decoration:none;">Facebook</a> presence and we'd love to spotlight agents on the network. Reply to this email with <strong>"feature me"</strong> and a couple of high-quality photos (a portrait of you + 1&ndash;2 lake or listing shots) and we'll put an intro post together.
+                </p>
+
+                <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">A few things worth doing this week</h3>
+                <ul style="margin:0 0 18px;padding-left:1.25rem;font-size:15px;line-height:1.7;color:#2d3748;">
+                  <li>Open your public profile and share the link with existing clients.</li>
+                  <li>Make sure your bio, photo, and contact info are crisp &mdash; Standard tier is all about being findable, so the profile itself does the work.</li>
+                  <li>Keep an eye on your profile for direct buyer / seller outreach.</li>
+                </ul>
+
                 ${signoff}`,
             ctaText: 'View Your Live Profile',
             ctaUrl: profileUrl,
@@ -347,10 +402,14 @@ function sendAgentProfileLive({ email, display_name, slug, membership_code }) {
 }
 
 /**
- * Password reset — sent when an admin resets a user's password.
- * Includes the new password so the user can log in immediately.
+ * Admin-initiated password reset — sent when an admin manually resets a
+ * user's password from the admin dashboard. Includes the new temporary
+ * password so the user can log in immediately. Renamed from
+ * sendPasswordReset to sendAdminPasswordReset because the original name
+ * collided with the forgot-password reset-link version above and silently
+ * shadowed it, breaking the forgot-password flow.
  */
-function sendPasswordReset(user, newPassword) {
+function sendAdminPasswordReset(user, newPassword) {
     const name = user.first_name || user.full_name?.split(' ')[0] || 'there';
     return sendEmail({
         to: user.email,
@@ -1138,6 +1197,7 @@ module.exports = {
     sendAgentProfileLive,
     sendAgentAdminNotification,
     sendPasswordReset,
+    sendAdminPasswordReset,
     sendLeadConfirmation,
     sendContactConfirmation,
     sendAdminLeadNotification,
