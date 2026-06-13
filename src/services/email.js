@@ -541,13 +541,6 @@ function sendLeadConfirmation(lead) {
 }
 
 /**
- * Contact form confirmation — same as lead confirmation, tuned for the contact page.
- */
-function sendContactConfirmation(lead) {
-    return sendLeadConfirmation(lead);
-}
-
-/**
  * Admin lead notification — sent to the team when a new lead comes in.
  * Includes full lead details and a direct link to the admin leads page.
  */
@@ -1199,7 +1192,6 @@ module.exports = {
     sendPasswordReset,
     sendAdminPasswordReset,
     sendLeadConfirmation,
-    sendContactConfirmation,
     sendAdminLeadNotification,
     sendInquiryNotification,
     sendInquiryConfirmation,
