@@ -1,0 +1,33 @@
+{
+  "_about": "19 ND/WI towns + Whitefish Chain lake. Verified free-license real photos (Wikimedia Commons, except Whitefish Chain = Flickr CC). Merge towns[] into place-images.json towns array and lakes[] into its lakes array, then run download-place-images.js + apply-place-images.js. CONFIRM each slug matches the tag/lake slug in your DB before running.",
+  "lakes": [
+    {
+      "slug": "whitefish-chain",
+      "source_url": "https://live.staticflickr.com/1202/1047045746_9c1fd44d46_b.jpg",
+      "credit_name": "pmarkham (Flickr)",
+      "license": "CC BY-SA 2.0",
+      "credit_url": "https://www.flickr.com/photos/9197427@N06/1047045746"
+    }
+  ],
+  "towns": [
+    { "slug": "bismarck",     "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/8b/North_Dakota_State_Capitol.jpg", "credit_name": "Quintin Soloviev", "license": "CC BY 4.0", "credit_url": "https://commons.wikimedia.org/wiki/File:North_Dakota_State_Capitol.jpg" },
+    { "slug": "mandan",       "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/39/Mandan_Commercial_Historic_District_3.jpg", "credit_name": "Greg Gjerdingen", "license": "CC BY 2.0", "credit_url": "https://commons.wikimedia.org/wiki/File:Mandan_Commercial_Historic_District_3.jpg" },
+    { "slug": "jamestown",    "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/3a/JamestownND_Downtown.jpg", "credit_name": "Richie Diesterheft", "license": "CC BY 2.0", "credit_url": "https://commons.wikimedia.org/wiki/File:JamestownND_Downtown.jpg" },
+    { "slug": "valley-city",  "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/ca/The_Sheyenne_River_as_it_flows_through_Valley_City%2C_July%2C_2023.jpg", "credit_name": "Richard N Horne", "license": "CC BY-SA 4.0", "credit_url": "https://commons.wikimedia.org/wiki/File:The_Sheyenne_River_as_it_flows_through_Valley_City,_July,_2023.jpg" },
+    { "slug": "devils-lake",  "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e5/Downtown_Devils_Lake.jpg", "credit_name": "Andrew Filer", "license": "CC BY-SA 2.0", "credit_url": "https://commons.wikimedia.org/wiki/File:Downtown_Devils_Lake.jpg" },
+    { "slug": "dickinson",    "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/6e/DickinsonND_Downtown_2008.jpg", "credit_name": "Andrew Filer", "license": "CC BY-SA 2.0", "credit_url": "https://commons.wikimedia.org/wiki/File:DickinsonND_Downtown_2008.jpg" },
+    { "slug": "minot",        "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/0e/Minot%2C_North_Dakota_%282022%29.jpg", "credit_name": "WeaponizingArchitecture", "license": "CC BY-SA 4.0", "credit_url": "https://commons.wikimedia.org/wiki/File:Minot,_North_Dakota_(2022).jpg" },
+    { "slug": "fargo",        "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Fargo_downtown_N_Broadway_Drive_IMG_0654.JPG", "credit_name": "Bjoertvedt", "license": "CC BY-SA 3.0", "credit_url": "https://commons.wikimedia.org/wiki/File:Fargo_downtown_N_Broadway_Drive_IMG_0654.JPG" },
+    { "slug": "horace",       "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/cf/Main_Street_Horace%2C_North_Dakota_on_June_3%2C_2024.jpg", "credit_name": "Billybob2002", "license": "CC BY 4.0", "credit_url": "https://commons.wikimedia.org/wiki/File:Main_Street_Horace,_North_Dakota_on_June_3,_2024.jpg" },
+    { "slug": "mapleton",     "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c6/Mapleton%2C_North_Dakota.jpg", "credit_name": "Andrew Filer", "license": "CC BY-SA 2.0", "credit_url": "https://commons.wikimedia.org/wiki/File:Mapleton,_North_Dakota.jpg" },
+    { "slug": "grand-forks",  "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f6/Grand_Forks_County_Courthouse_Grand_Forks_ND.jpg", "credit_name": "Glorioussandwich", "license": "Public Domain", "credit_url": "https://commons.wikimedia.org/wiki/File:Grand_Forks_County_Courthouse_Grand_Forks_ND.jpg" },
+    { "slug": "wahpeton",     "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/fb/Dakota_Avenue_Wahpeton_ND.jpg", "credit_name": "Jane Priebe", "license": "CC BY-SA 4.0", "credit_url": "https://commons.wikimedia.org/wiki/File:Dakota_Avenue_Wahpeton_ND.jpg" },
+    { "slug": "hudson",       "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f9/St._Croix_River%2C_Hudson%2C_Wisconsin_Aug_2018.jpg", "credit_name": "Thomson200", "license": "CC0", "credit_url": "https://commons.wikimedia.org/wiki/File:St._Croix_River,_Hudson,_Wisconsin_Aug_2018.jpg" },
+    { "slug": "new-richmond", "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/6f/New_Richmond%2C_Wisconsin.jpg", "credit_name": "Wikideas1", "license": "CC0", "credit_url": "https://commons.wikimedia.org/wiki/File:New_Richmond,_Wisconsin.jpg" },
+    { "slug": "ashland",      "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e2/Ashland_Wisconsin_Looking_East_US2.jpg", "credit_name": "Royalbroil", "license": "CC BY-SA 3.0", "credit_url": "https://commons.wikimedia.org/wiki/File:Ashland_Wisconsin_Looking_East_US2.jpg" },
+    { "slug": "hayward",      "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/31/Big_Muskie%2C_National_Freshwater_Fishing_Hall_of_Fame%2C_Hayward%2C_WI.jpg", "credit_name": "TheCatalyst31", "license": "CC BY-SA 4.0", "credit_url": "https://commons.wikimedia.org/wiki/File:Big_Muskie,_National_Freshwater_Fishing_Hall_of_Fame,_Hayward,_WI.jpg" },
+    { "slug": "rice-lake",    "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/87/Rice_Lake%2C_Wisconsin.jpg", "credit_name": "Wikideas1", "license": "CC0", "credit_url": "https://commons.wikimedia.org/wiki/File:Rice_Lake,_Wisconsin.jpg" },
+    { "slug": "spooner",      "source_url": "https://upload.wikimedia.org/wikipedia/commons/2/24/20160123_41_Spooner%2C_Wisconsin.jpg", "credit_name": "David Wilson", "license": "CC BY 2.0", "credit_url": "https://commons.wikimedia.org/wiki/File:20160123_41_Spooner,_Wisconsin.jpg" },
+    { "slug": "superior",     "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/59/Downtown_Superior_Wisconsin_in_Winter_%2850962517486%29.jpg", "credit_name": "Tony Webster", "license": "CC BY 2.0", "credit_url": "https://commons.wikimedia.org/wiki/File:Downtown_Superior_Wisconsin_in_Winter_(50962517486).jpg" }
+  ]
+}
