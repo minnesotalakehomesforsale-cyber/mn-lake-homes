@@ -243,22 +243,17 @@
     <section class="testimonial-section">
         <div class="testimonial-top">
             <h2 class="testimonial-main-title">
-                Expert guidance, smooth<br>closings, and finding the<br>perfect lakeview.
+                Three generations<br>on Minnesota<br>lakes.
             </h2>
-            <div class="testimonial-controls">
-                <span class="slide-count">01 / 04</span>
-                <button class="slide-nav-btn" onclick="prevTestimonial()">&larr;</button>
-                <button class="slide-nav-btn" onclick="nextTestimonial()">&rarr;</button>
-            </div>
         </div>
 
         <div class="testimonial-bottom">
             <div class="testimonial-info">
-                <p class="testimonial-category">First-Time Lake Home Buyer</p>
-                <h3 class="testimonial-brand">The Johnson Family</h3>
-                <p class="testimonial-quote">"By working with MN Lake Homes, we found our dream cabin on Lake Minnetonka. They guided us through shoreline regulations and helped us negotiate a great price."</p>
+                <p class="testimonial-category">From our founder</p>
+                <p class="testimonial-quote">"My family has spent every summer on Minnesota lakes for three generations. This platform is what I wish existed when we first started looking for our own place — a real network of local agents and businesses, honest data on the lakes themselves, and zero of the algorithmic nonsense you get from national sites."</p>
+                <h3 class="testimonial-brand" style="margin-top:1.5rem;">— Hunter Burnside, Founder &amp; CEO</h3>
             </div>
-            
+
         </div>
     </section>
 
@@ -365,48 +360,6 @@
     <lead-modal></lead-modal>
 
     <script>
-        const testimonials = [
-            {
-                category: "First-Time Lake Home Buyer",
-                brand: "The Johnson Family",
-                quote: '"By working with MN Lake Homes, we found our dream cabin on Lake Minnetonka. They guided us through shoreline regulations and helped us negotiate a great price."'
-            },
-            {
-                category: "Seller near Nisswa",
-                brand: "Sarah & Mike T.",
-                quote: '"The marketing team at MN Lake Homes was phenomenal. They highlighted the best features of our property, and we had multiple offers within the first week on the market."'
-            },
-            {
-                category: "Luxury Lakeside Estate",
-                brand: "The Robertsons",
-                quote: '"We appreciated their attention to detail and extensive network of luxury buyers. MN Lake Homes handled the sale of our Brainerd estate with absolute professionalism."'
-            },
-            {
-                category: "Local Investor",
-                brand: "David M.",
-                quote: '"As someone who invests in vacation rentals, the data and insights provided by MN Lake Homes are invaluable. They know exactly which lakes yield the best ROI."'
-            }
-        ];
-
-        let currentTestimonial = 0;
-
-        function updateTestimonialUI() {
-            const t = testimonials[currentTestimonial];
-            document.querySelector('.testimonial-category').textContent = t.category;
-            document.querySelector('.testimonial-brand').textContent = t.brand;
-            document.querySelector('.testimonial-quote').textContent = t.quote;
-            document.querySelector('.slide-count').textContent = `0${currentTestimonial + 1} / 04`;
-        }
-
-        function nextTestimonial() {
-            currentTestimonial = (currentTestimonial + 1) % testimonials.length;
-            updateTestimonialUI();
-        }
-
-        function prevTestimonial() {
-            currentTestimonial = (currentTestimonial - 1 + testimonials.length) % testimonials.length;
-            updateTestimonialUI();
-        }
 
         function openModal() {
             document.getElementById('lead-modal').classList.add('active');
