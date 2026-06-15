@@ -1,0 +1,41 @@
+# Image credits — required attribution
+
+Place each line near the image or in a site-wide credits page. CC BY / CC BY-SA require visible attribution; CC0 / Public Domain do not (included for completeness).
+
+- Gull Lake (Lake): photo by James Postema, CC BY 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:The_island_in_East_Gull_Lake,_Minnesota.jpg
+- Leech Lake (Lake): photo by Tony Webster, CC BY-SA 2.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Leech_Lake_-_Walker,_Minnesota_(28652808757).jpg
+- Mille Lacs Lake (Lake): photo by Tony Webster, CC BY 2.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:A_beautiful,_scenic_sunset_on_Mille_Lacs_Lake,_Minnesota_(28982171863).jpg
+- Lake Vermilion (Lake): photo by Tony Webster, CC BY-SA 2.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Everett_Bay_-_Lake_Vermilion,_Minnesota_(36766022173).jpg
+- Lake of the Woods (Lake): photo by Tony Webster, CC BY 2.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Lake_of_the_Woods_Beach_at_Zippel_Bay_State_Park,_Minnesota_(38845944862).jpg
+- Pelican Lake (Lake): photo by Richard N Horne, CC BY-SA 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Pelican_Lake,_Minnesota_July_3,_2022.jpg
+- Cass Lake (Lake): photo by McGhiever, CC BY-SA 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:South_Pike_Bay.jpg
+- White Bear Lake (Lake): photo by Tony Webster, CC BY 2.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Matoska_Park_-_White_Bear_Lake,_Minnesota_(30670681208).jpg
+- Brainerd (Lake Town): photo by Jjmusgrove, CC BY-SA 3.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Laurel_District.JPG
+- Baxter (Lake Town): photo by McGhiever, CC BY-SA 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Minnesota_Fishing_Hall_of_Fame.jpg
+- Alexandria (Lake Town): photo by Beachie2k, Public Domain, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Big_Ole_Statue_2.jpg
+- Detroit Lakes (Lake Town): photo by Bjoertvedt, CC BY-SA 3.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Becker_county_Detroit_Lakes_MN_IMG_1268.JPG
+- Bemidji (Lake Town): photo by Doc Searls, CC BY 2.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Bemidji,_Minnesota_aerial.jpg
+- Fergus Falls (Lake Town): photo by Farragutful, CC BY-SA 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Fergus_Falls,_Minnesota_Montage.jpg
+- Grand Rapids (Lake Town): photo by Myotus, CC BY 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:3rd_Street,_Grand_Rapids,_MN-02.jpg
+- Willmar (Lake Town): photo by Myotus, CC BY 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Litchfield_Avenue,_Willmar,_MN.jpg
+- Spicer (Lake Town): photo by Tony Webster, CC BY-SA 2.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Green_Lake_-_Spicer,_Minnesota_(35386515466).jpg
+- New London (Lake Town): photo by Dorian Wallender, CC BY-SA 2.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:New_London_spillway_in_Minnesota_(6149421170).jpg
+- Forest Lake (Lake Town): photo by Lectrician2, CC BY-SA 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Downtown_Forest_Lake.jpg
+- White Bear Lake (Lake Town): photo by Myotus, CC BY 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Business_district,_White_Bear_Lake,_Minnesota-01.jpg
+- Prior Lake (Lake Town): photo by Jeanqueq, CC BY-SA 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Priorlakebridge.jpg
+- Waconia (Lake Town): photo by McGhiever, CC BY-SA 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Coney_Island_of_the_West.jpg
+- Fairmont (Lake Town): photo by Jon Platek, CC BY-SA 3.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Downtown_Fairmont_-_panoramio.jpg
+- Albert Lea (Lake Town): photo by Wikideas1, CC0 / Public Domain, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Albert_Lea,_Minnesota.jpg
+- Buffalo (Lake Town): photo by Myotus, CC BY 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Central_Ave_at_1st_Street_NE,_Buffalo,_MN-01.jpg
+- Chisago City (Lake Town): photo by Hyby2015, CC BY-SA 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Chisago_City_1996.jpg
+- Lindstrom (Lake Town): photo by Tony Webster, CC BY-SA 2.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:V%C3%A4lkommen_till_Lindstr%C3%B6m_-_Swedish_Coffee_Pot_Water_Tower_(24721592494).jpg
+- Lakeville (Lake Town): photo by William Wesen (User:Appraiser), CC BY-SA 3.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Lakevillestores.jpg
+- Chanhassen (Lake Town): photo by Chris.Schiemann, CC BY-SA 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Paisley_Park-Pano.jpg
+- Mound (Lake Town): photo by TheRoadDudeMN, CC BY-SA 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Dakota_Rail_Regional_Trail_in_Mound.jpg
+- Lino Lakes (Lake Town): photo by Tony Webster, CC BY-SA 2.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Centerville_Lake_Dock_Lino_Lakes_Minnesota_(28980931634).jpg
+- Big Lake (Lake Town): photo by KAM32296, CC BY-SA 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Lakeside_Park_2018.jpg
+- Hutchinson (Lake Town): photo by Myotus, CC BY 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Main_Street_businesses,_Hutchinson,_MN.jpg
+- Faribault (Lake Town): photo by Myotus, CC BY 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Central_Avenue_N._and_Second_Street_NE.,_looking_south_west,_Faribault,_MN.jpg
+- Shoreview (Lake Town): photo by Gabriel Vanslette, CC BY 3.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Shoreview,_MN_-_panoramio.jpg
+- Monticello (Lake Town): photo by Myotus, CC BY 4.0, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Businesses_on_Broadway_Street,_Monticello,_Minnesota.jpg
+- Worthington (Lake Town): photo by Tim Kiser (User:Malepheasant), CC BY-SA 2.5, via Wikimedia Commons - https://commons.wikimedia.org/wiki/File:Worthington_Minnesota.jpg

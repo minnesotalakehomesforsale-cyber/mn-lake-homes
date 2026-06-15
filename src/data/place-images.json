@@ -1,0 +1,259 @@
+{
+  "_about": "Verified free-license photos for 7 launch lakes + 29 launch towns. Sourced from Wikimedia Commons via Lake-Town-Image-Pack. Pelican Lake intentionally skipped — only available free photo is the Otter Tail County lake, but our curated row is the Crow Wing/Brainerd Lakes one. License text follows CC BY / CC BY-SA visible-attribution requirements; rendered on every detail page as a small caption under the hero.",
+  "lakes": [
+    {
+      "slug": "gull-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/93/The_island_in_East_Gull_Lake%2C_Minnesota.jpg",
+      "credit_name": "James Postema",
+      "license": "CC BY 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:The_island_in_East_Gull_Lake,_Minnesota.jpg"
+    },
+    {
+      "slug": "leech-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Leech_Lake_-_Walker%2C_Minnesota_%2828652808757%29.jpg",
+      "credit_name": "Tony Webster",
+      "license": "CC BY-SA 2.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Leech_Lake_-_Walker,_Minnesota_(28652808757).jpg"
+    },
+    {
+      "slug": "mille-lacs-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e1/A_beautiful%2C_scenic_sunset_on_Mille_Lacs_Lake%2C_Minnesota_%2828982171863%29.jpg",
+      "credit_name": "Tony Webster",
+      "license": "CC BY 2.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:A_beautiful,_scenic_sunset_on_Mille_Lacs_Lake,_Minnesota_(28982171863).jpg"
+    },
+    {
+      "slug": "lake-vermilion",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/54/Everett_Bay_-_Lake_Vermilion%2C_Minnesota_%2836766022173%29.jpg",
+      "credit_name": "Tony Webster",
+      "license": "CC BY-SA 2.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Everett_Bay_-_Lake_Vermilion,_Minnesota_(36766022173).jpg"
+    },
+    {
+      "slug": "lake-of-the-woods",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/34/Lake_of_the_Woods_Beach_at_Zippel_Bay_State_Park%2C_Minnesota_%2838845944862%29.jpg",
+      "credit_name": "Tony Webster",
+      "license": "CC BY 2.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Lake_of_the_Woods_Beach_at_Zippel_Bay_State_Park,_Minnesota_(38845944862).jpg"
+    },
+    {
+      "slug": "cass-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/67/South_Pike_Bay.jpg",
+      "credit_name": "McGhiever",
+      "license": "CC BY-SA 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:South_Pike_Bay.jpg"
+    },
+    {
+      "slug": "white-bear-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/64/Matoska_Park_-_White_Bear_Lake%2C_Minnesota_%2830670681208%29.jpg",
+      "credit_name": "Tony Webster",
+      "license": "CC BY 2.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Matoska_Park_-_White_Bear_Lake,_Minnesota_(30670681208).jpg"
+    }
+  ],
+  "towns": [
+    {
+      "slug": "brainerd",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e0/Laurel_District.JPG",
+      "credit_name": "Jjmusgrove",
+      "license": "CC BY-SA 3.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Laurel_District.JPG"
+    },
+    {
+      "slug": "baxter",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c4/Minnesota_Fishing_Hall_of_Fame.jpg",
+      "credit_name": "McGhiever",
+      "license": "CC BY-SA 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Minnesota_Fishing_Hall_of_Fame.jpg"
+    },
+    {
+      "slug": "alexandria",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/fd/Big_Ole_Statue_2.jpg",
+      "credit_name": "Beachie2k",
+      "license": "Public Domain",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Big_Ole_Statue_2.jpg"
+    },
+    {
+      "slug": "detroit-lakes",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/3a/Becker_county_Detroit_Lakes_MN_IMG_1268.JPG",
+      "credit_name": "Bjoertvedt",
+      "license": "CC BY-SA 3.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Becker_county_Detroit_Lakes_MN_IMG_1268.JPG"
+    },
+    {
+      "slug": "bemidji",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/cd/Bemidji%2C_Minnesota_aerial.jpg",
+      "credit_name": "Doc Searls",
+      "license": "CC BY 2.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Bemidji,_Minnesota_aerial.jpg"
+    },
+    {
+      "slug": "fergus-falls",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d8/Fergus_Falls%2C_Minnesota_Montage.jpg",
+      "credit_name": "Farragutful",
+      "license": "CC BY-SA 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Fergus_Falls,_Minnesota_Montage.jpg"
+    },
+    {
+      "slug": "grand-rapids",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/52/3rd_Street%2C_Grand_Rapids%2C_MN-02.jpg",
+      "credit_name": "Myotus",
+      "license": "CC BY 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:3rd_Street,_Grand_Rapids,_MN-02.jpg"
+    },
+    {
+      "slug": "willmar",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/9b/Litchfield_Avenue%2C_Willmar%2C_MN.jpg",
+      "credit_name": "Myotus",
+      "license": "CC BY 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Litchfield_Avenue,_Willmar,_MN.jpg"
+    },
+    {
+      "slug": "spicer",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/b5/Green_Lake_-_Spicer%2C_Minnesota_%2835386515466%29.jpg",
+      "credit_name": "Tony Webster",
+      "license": "CC BY-SA 2.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Green_Lake_-_Spicer,_Minnesota_(35386515466).jpg"
+    },
+    {
+      "slug": "new-london",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/68/New_London_spillway_in_Minnesota_%286149421170%29.jpg",
+      "credit_name": "Dorian Wallender",
+      "license": "CC BY-SA 2.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:New_London_spillway_in_Minnesota_(6149421170).jpg"
+    },
+    {
+      "slug": "forest-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/69/Downtown_Forest_Lake.jpg",
+      "credit_name": "Lectrician2",
+      "license": "CC BY-SA 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Downtown_Forest_Lake.jpg"
+    },
+    {
+      "slug": "white-bear-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/75/Business_district%2C_White_Bear_Lake%2C_Minnesota-01.jpg",
+      "credit_name": "Myotus",
+      "license": "CC BY 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Business_district,_White_Bear_Lake,_Minnesota-01.jpg"
+    },
+    {
+      "slug": "prior-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/34/Priorlakebridge.jpg",
+      "credit_name": "Jeanqueq",
+      "license": "CC BY-SA 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Priorlakebridge.jpg"
+    },
+    {
+      "slug": "waconia",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/94/Coney_Island_of_the_West.jpg",
+      "credit_name": "McGhiever",
+      "license": "CC BY-SA 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Coney_Island_of_the_West.jpg"
+    },
+    {
+      "slug": "fairmont",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/63/Downtown_Fairmont_-_panoramio.jpg",
+      "credit_name": "Jon Platek",
+      "license": "CC BY-SA 3.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Downtown_Fairmont_-_panoramio.jpg"
+    },
+    {
+      "slug": "albert-lea",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c2/Albert_Lea%2C_Minnesota.jpg",
+      "credit_name": "Wikideas1",
+      "license": "CC0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Albert_Lea,_Minnesota.jpg"
+    },
+    {
+      "slug": "buffalo",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c6/Central_Ave_at_1st_Street_NE%2C_Buffalo%2C_MN-01.jpg",
+      "credit_name": "Myotus",
+      "license": "CC BY 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Central_Ave_at_1st_Street_NE,_Buffalo,_MN-01.jpg"
+    },
+    {
+      "slug": "chisago-city",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/64/Chisago_City_1996.jpg",
+      "credit_name": "Hyby2015",
+      "license": "CC BY-SA 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Chisago_City_1996.jpg"
+    },
+    {
+      "slug": "lindstrom",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/ee/V%C3%A4lkommen_till_Lindstr%C3%B6m_-_Swedish_Coffee_Pot_Water_Tower_%2824721592494%29.jpg",
+      "credit_name": "Tony Webster",
+      "license": "CC BY-SA 2.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:V%C3%A4lkommen_till_Lindstr%C3%B6m_-_Swedish_Coffee_Pot_Water_Tower_(24721592494).jpg"
+    },
+    {
+      "slug": "lakeville",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/34/Lakevillestores.jpg",
+      "credit_name": "William Wesen",
+      "license": "CC BY-SA 3.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Lakevillestores.jpg"
+    },
+    {
+      "slug": "chanhassen",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/1/19/Paisley_Park-Pano.jpg",
+      "credit_name": "Chris Schiemann",
+      "license": "CC BY-SA 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Paisley_Park-Pano.jpg"
+    },
+    {
+      "slug": "mound",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/40/Dakota_Rail_Regional_Trail_in_Mound.jpg",
+      "credit_name": "TheRoadDudeMN",
+      "license": "CC BY-SA 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Dakota_Rail_Regional_Trail_in_Mound.jpg"
+    },
+    {
+      "slug": "lino-lakes",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a7/Centerville_Lake_Dock_Lino_Lakes_Minnesota_%2828980931634%29.jpg",
+      "credit_name": "Tony Webster",
+      "license": "CC BY-SA 2.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Centerville_Lake_Dock_Lino_Lakes_Minnesota_(28980931634).jpg"
+    },
+    {
+      "slug": "big-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/2/28/Lakeside_Park_2018.jpg",
+      "credit_name": "KAM32296",
+      "license": "CC BY-SA 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Lakeside_Park_2018.jpg"
+    },
+    {
+      "slug": "hutchinson",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d5/Main_Street_businesses%2C_Hutchinson%2C_MN.jpg",
+      "credit_name": "Myotus",
+      "license": "CC BY 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Main_Street_businesses,_Hutchinson,_MN.jpg"
+    },
+    {
+      "slug": "faribault",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/42/Central_Avenue_N._and_Second_Street_NE.%2C_looking_south_west%2C_Faribault%2C_MN.jpg",
+      "credit_name": "Myotus",
+      "license": "CC BY 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Central_Avenue_N._and_Second_Street_NE.,_looking_south_west,_Faribault,_MN.jpg"
+    },
+    {
+      "slug": "shoreview",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/1/1a/Shoreview%2C_MN_-_panoramio.jpg",
+      "credit_name": "Gabriel Vanslette",
+      "license": "CC BY 3.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Shoreview,_MN_-_panoramio.jpg"
+    },
+    {
+      "slug": "monticello",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/44/Businesses_on_Broadway_Street%2C_Monticello%2C_Minnesota.jpg",
+      "credit_name": "Myotus",
+      "license": "CC BY 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Businesses_on_Broadway_Street,_Monticello,_Minnesota.jpg"
+    },
+    {
+      "slug": "worthington",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/88/Worthington_Minnesota.jpg",
+      "credit_name": "Tim Kiser",
+      "license": "CC BY-SA 2.5",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Worthington_Minnesota.jpg"
+    }
+  ]
+}

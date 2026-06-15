@@ -546,6 +546,24 @@ function escapeHtml(s) {
  *   href     — link target for every card (e.g. `/lakes/<slug>`).
  *   label    — caption shown over each card (e.g. lake name).
  */
+/**
+ * Hero photo credit caption. Renders a small "Photo: Name, LICENSE" line
+ * with a link to the source page. Returns empty string when no credit is
+ * stored — locally-uploaded images get no caption, Wikimedia-sourced
+ * ones get visible attribution as CC BY / CC BY-SA require.
+ */
+function buildPhotoCreditHtml(row) {
+    const name = row && row.hero_image_credit_name;
+    if (!name) return '';
+    const url     = row.hero_image_credit_url || '';
+    const license = row.hero_image_license   || '';
+    const nameLink = url
+        ? `<a href="${escapeHtml(url)}" rel="noopener" target="_blank">${escapeHtml(name)}</a>`
+        : escapeHtml(name);
+    const licenseText = license ? `, ${escapeHtml(license)}` : '';
+    return `<div class="photo-credit" style="font-size:0.72rem;color:#94a3b8;margin-top:0.6rem;text-align:right;line-height:1.4;">Photo: ${nameLink}${licenseText}</div>`;
+}
+
 function buildGalleryHtml({ images, title, eyebrow, subtitle, href, label }) {
     const list = Array.isArray(images) ? images : [];
     const urls = list.map(it => {
@@ -584,7 +602,8 @@ app.get('/lakes/:slug', async (req, res, next) => {
         const { rows } = await pool.query(
             `SELECT id, slug, name, state, region, county, latitude, longitude,
                     intro_text, description, hero_image_url, featured_image_url,
-                    seo_title, seo_description, status, gallery
+                    seo_title, seo_description, status, gallery,
+                    hero_image_credit_name, hero_image_credit_url, hero_image_license
              FROM lakes WHERE slug = $1 LIMIT 1`,
             [req.params.slug]
         );
@@ -612,6 +631,10 @@ app.get('/lakes/:slug', async (req, res, next) => {
             const lakeHeroBlock = heroReal
                 ? `<img src="${escapeHtml(heroReal)}" alt="${escapeHtml(lake.name)} waterfront real estate in ${escapeHtml(lake.state)}" width="1200" height="800" fetchpriority="high">`
                 : `<div class="lm-hero-ph"><span>${lakeInitial}</span></div>`;
+            // Hero photo credit — required for CC BY / CC BY-SA, shown for all
+            // licenses for consistency. Collapses to empty string when the
+            // image is locally uploaded (no Wikimedia metadata).
+            const lakeHeroCredit = buildPhotoCreditHtml(lake);
             const siteBase = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
             const lakeBreadcrumb = JSON.stringify({
                 '@context': 'https://schema.org',
@@ -660,6 +683,7 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 '{{LAKE_ID}}':              escapeHtml(lake.id),
                 '{{LAKE_HERO_IMAGE}}':      escapeHtml(hero),
                 '{{LAKE_HERO_BLOCK}}':      lakeHeroBlock,
+                '{{LAKE_HERO_CREDIT}}':     lakeHeroCredit,
                 '{{LAKE_FEATURED_IMAGE}}':  escapeHtml(featured),
                 '{{LAKE_INTRO_TEXT}}':      escapeHtml(lake.intro_text || desc),
                 '{{LAKE_LATITUDE}}':        escapeHtml(lake.latitude ?? ''),
@@ -853,7 +877,8 @@ app.get('/towns/:slug', async (req, res, next) => {
         const { rows } = await pool.query(
             `SELECT t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude,
                     t.intro_text, t.description,
-                    t.hero_image_url, t.seo_title, t.seo_description, t.gallery
+                    t.hero_image_url, t.seo_title, t.seo_description, t.gallery,
+                    t.hero_image_credit_name, t.hero_image_credit_url, t.hero_image_license
              FROM tags t
              WHERE t.slug = $1 AND t.active = TRUE
              LIMIT 1`,
@@ -885,6 +910,7 @@ app.get('/towns/:slug', async (req, res, next) => {
             const townHeroBlock = heroImageReal
                 ? `<img src="${escapeHtml(heroImageReal)}" alt="${escapeHtml(tag.name)}, ${escapeHtml(tag.state)}" width="1200" height="800" fetchpriority="high">`
                 : `<div class="tn-hero-ph"><span>${townInitial}</span></div>`;
+            const townHeroCredit = buildPhotoCreditHtml(tag);
             const siteBase = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
             const townBreadcrumb = JSON.stringify({
                 '@context': 'https://schema.org',
@@ -950,6 +976,7 @@ app.get('/towns/:slug', async (req, res, next) => {
                 '{{TOWN_COUNTY}}':           escapeHtml(tag.county || ''),
                 '{{TOWN_HERO_IMAGE}}':       escapeHtml(heroImage),
                 '{{TOWN_HERO_BLOCK}}':       townHeroBlock,
+                '{{TOWN_HERO_CREDIT}}':      townHeroCredit,
                 '{{TOWN_HERO_H1_HTML}}':     heroH1Html,
                 '{{TOWN_INTRO_TEXT}}':       escapeHtml(introText),
                 '{{TOWN_DESCRIPTION_JSON}}': descriptionJson,
@@ -1510,7 +1537,14 @@ async function ensureTables() {
                 -- generated copy from src/services/lake-content-templates.js
                 -- when these are blank, so the page is never empty.
                 ADD COLUMN IF NOT EXISTS lifestyle_text  TEXT,
-                ADD COLUMN IF NOT EXISTS seasons_text    TEXT;
+                ADD COLUMN IF NOT EXISTS seasons_text    TEXT,
+                -- Wikimedia-sourced hero photos legally require visible
+                -- attribution for CC BY / CC BY-SA. We render a small
+                -- caption under the hero on town-detail when these are set;
+                -- if blank (or for CC0/PD), nothing renders.
+                ADD COLUMN IF NOT EXISTS hero_image_credit_name TEXT,
+                ADD COLUMN IF NOT EXISTS hero_image_credit_url  TEXT,
+                ADD COLUMN IF NOT EXISTS hero_image_license     VARCHAR(40);
             CREATE INDEX IF NOT EXISTS idx_tags_state_region ON tags(state, region);
             CREATE INDEX IF NOT EXISTS idx_tags_active_coords ON tags(active, latitude, longitude)
                 WHERE active = TRUE AND latitude IS NOT NULL AND longitude IS NOT NULL;
@@ -1577,7 +1611,12 @@ async function ensureTables() {
                 -- The lake-detail SSR renders these as a photo grid below the
                 -- hero. Empty array (the default) hides the section entirely
                 -- so a lake with just the one hero shot doesn't look padded.
-                ADD COLUMN IF NOT EXISTS gallery JSONB NOT NULL DEFAULT '[]'::jsonb;
+                ADD COLUMN IF NOT EXISTS gallery JSONB NOT NULL DEFAULT '[]'::jsonb,
+                -- Same Wikimedia-attribution columns as tags: rendered as a
+                -- small caption under the hero on lake-detail when set.
+                ADD COLUMN IF NOT EXISTS hero_image_credit_name TEXT,
+                ADD COLUMN IF NOT EXISTS hero_image_credit_url  TEXT,
+                ADD COLUMN IF NOT EXISTS hero_image_license     VARCHAR(40);
             -- Same gallery story for towns (tags table).
             ALTER TABLE tags
                 ADD COLUMN IF NOT EXISTS gallery JSONB NOT NULL DEFAULT '[]'::jsonb;
@@ -1816,8 +1855,8 @@ async function ensureTables() {
             const values = [];
             const params = [];
             LAKES_SEED.forEach((l, i) => {
-                const base = i * 14;
-                values.push(`($${base+1}, $${base+2}, $${base+3}, $${base+4}, $${base+5}, $${base+6}, $${base+7}, $${base+8}, $${base+9}, $${base+10}, $${base+11}, $${base+12}, $${base+13}, $${base+14})`);
+                const base = i * 17;
+                values.push(`($${base+1}, $${base+2}, $${base+3}, $${base+4}, $${base+5}, $${base+6}, $${base+7}, $${base+8}, $${base+9}, $${base+10}, $${base+11}, $${base+12}, $${base+13}, $${base+14}, $${base+15}, $${base+16}, $${base+17})`);
                 params.push(
                     l.slug, l.name, l.state || 'MN', l.region || null, l.county || null,
                     l.latitude ?? null, l.longitude ?? null,
@@ -1826,13 +1865,17 @@ async function ensureTables() {
                     l.description || null,
                     l.hero_image_url || null,
                     l.featured_image_url || null,
+                    l.hero_image_credit_name || null,
+                    l.hero_image_credit_url  || null,
+                    l.hero_image_license     || null,
                 );
             });
             await pool.query(
                 `INSERT INTO lakes
                    (slug, name, state, region, county, latitude, longitude,
                     intro_text, seo_title, seo_description, status, description,
-                    hero_image_url, featured_image_url)
+                    hero_image_url, featured_image_url,
+                    hero_image_credit_name, hero_image_credit_url, hero_image_license)
                  VALUES ${values.join(', ')}
                  ON CONFLICT (slug) DO NOTHING`,
                 params
