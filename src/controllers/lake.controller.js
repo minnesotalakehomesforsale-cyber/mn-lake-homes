@@ -120,7 +120,12 @@ exports.list = async (req, res) => {
                 where.push(`status = $${params.length}`);
             }
         } else {
+            // Public callers see only published lakes that have a hero
+            // photo. Half-baked rows (slug-only, gradient placeholder)
+            // auto-hide from the public grid until a real photo is set —
+            // the moment hero_image_url is populated, the lake reappears.
             where.push(`status = 'published'`);
+            where.push(`hero_image_url IS NOT NULL AND hero_image_url <> ''`);
         }
 
         // Join counts for the admin table view (linked agents + businesses).

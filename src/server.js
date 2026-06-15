@@ -564,6 +564,39 @@ function buildPhotoCreditHtml(row) {
     return `<div class="photo-credit" style="font-size:0.72rem;color:#94a3b8;margin-top:0.6rem;text-align:right;line-height:1.4;">Photo: ${nameLink}${licenseText}</div>`;
 }
 
+/**
+ * Friendly 404 for unknown lake/town/business slugs (and for entries we
+ * carry but don't yet have a hero photo for). Renders pages/public/404.html
+ * with kind + slug tokens so the page can address the visitor specifically
+ * ("We don't profile <Lake Lida> yet, but our agents do…"). Falls back to
+ * bare text if the template is missing so we never 500 the request.
+ */
+function renderFriendly404(res, { kind, slug }) {
+    const tplPath = path.join(PROJECT_ROOT, 'pages/public/404.html');
+    fs.readFile(tplPath, 'utf8', (err, html) => {
+        if (err) {
+            res.status(404).send(`${kind ? kind.charAt(0).toUpperCase() + kind.slice(1) : 'Page'} not found`);
+            return;
+        }
+        const kindLabel = kind === 'lake' ? 'lake'
+            : kind === 'town' ? 'town'
+            : kind === 'business' ? 'business'
+            : 'page';
+        // Best-effort prettification of the slug into a display name —
+        // "lake-lida" → "Lake Lida". Title-cases each kebab segment.
+        const pretty = (slug || '')
+            .split('-')
+            .filter(Boolean)
+            .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(' ') || 'this page';
+        const out = html
+            .replace(/\{\{NOT_FOUND_KIND\}\}/g,  escapeHtml(kindLabel))
+            .replace(/\{\{NOT_FOUND_NAME\}\}/g,  escapeHtml(pretty))
+            .replace(/\{\{NOT_FOUND_SLUG\}\}/g,  escapeHtml(slug || ''));
+        res.status(404).type('html').send(out);
+    });
+}
+
 function buildGalleryHtml({ images, title, eyebrow, subtitle, href, label }) {
     const list = Array.isArray(images) ? images : [];
     const urls = list.map(it => {
@@ -608,10 +641,12 @@ app.get('/lakes/:slug', async (req, res, next) => {
             [req.params.slug]
         );
         const lake = rows[0];
-        if (!lake || lake.status !== 'published') {
-            res.status(404).sendFile(path.join(PROJECT_ROOT, 'pages/public/404.html'), (err) => {
-                if (err) res.status(404).send('Lake not found');
-            });
+        // Public detail pages require a real hero photo. A lake without
+        // one auto-hides — same response as if the slug didn't exist at
+        // all — so visitors never land on a half-baked placeholder card.
+        const hasHero = lake && (lake.hero_image_url || '').trim();
+        if (!lake || lake.status !== 'published' || !hasHero) {
+            renderFriendly404(res, { kind: 'lake', slug: req.params.slug });
             return;
         }
 
@@ -722,9 +757,7 @@ app.get('/businesses/:slug', async (req, res, next) => {
         );
         const biz = rows[0];
         if (!biz || biz.status !== 'active') {
-            res.status(404).sendFile(path.join(PROJECT_ROOT, 'pages/public/404.html'), (err) => {
-                if (err) res.status(404).send('Business not found');
-            });
+            renderFriendly404(res, { kind: 'business', slug: req.params.slug });
             return;
         }
 
@@ -885,10 +918,9 @@ app.get('/towns/:slug', async (req, res, next) => {
             [req.params.slug]
         );
         const tag = rows[0];
-        if (!tag) {
-            res.status(404).sendFile(path.join(PROJECT_ROOT, 'pages/public/404.html'), (err) => {
-                if (err) res.status(404).send('Town not found');
-            });
+        const hasHero = tag && (tag.hero_image_url || '').trim();
+        if (!tag || !hasHero) {
+            renderFriendly404(res, { kind: 'town', slug: req.params.slug });
             return;
         }
         const templatePath = path.join(PROJECT_ROOT, 'pages/public/town-detail.html');

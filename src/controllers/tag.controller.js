@@ -100,6 +100,13 @@ exports.list = async (req, res) => {
         if (active === 'true')  where.push(`t.active = TRUE`);
         if (active === 'false') where.push(`t.active = FALSE`);
         if (active !== 'true' && active !== 'false' && active !== 'all') where.push(`t.active = TRUE`);
+        // Public callers see only towns that have a hero photo. Half-baked
+        // rows (slug-only, gradient placeholder) auto-hide from the public
+        // grid until a real photo is set. Admins still see everything for
+        // curation, regardless of image state.
+        if (!isAdmin(req)) {
+            where.push(`t.hero_image_url IS NOT NULL AND t.hero_image_url <> ''`);
+        }
         // When ?with_lakes=true, restrict to towns that have at least one
         // published lake attached — powers the public /towns browse page.
         if (with_lakes === 'true') {
