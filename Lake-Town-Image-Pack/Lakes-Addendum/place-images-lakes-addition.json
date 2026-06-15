@@ -1,0 +1,165 @@
+{
+  "lakes": [
+    {
+      "slug": "rainy-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/57/Sunrise%2C_Rainy_Lake.jpg",
+      "credit_name": "jck_photos (Flickr)",
+      "license": "CC BY 2.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Sunrise,_Rainy_Lake.jpg"
+    },
+    {
+      "slug": "otter-tail-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/34/OtterTailLakeRiverInlet.jpg",
+      "credit_name": "See file page",
+      "license": "CC BY-SA 3.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:OtterTailLakeRiverInlet.jpg"
+    },
+    {
+      "slug": "lake-bemidji",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/ee/Lake_Bemidji_DSC_0211_%28641346227%29.jpg",
+      "credit_name": "Pete Markham (Flickr)",
+      "license": "CC BY-SA 2.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Lake_Bemidji_DSC_0211_(641346227).jpg"
+    },
+    {
+      "slug": "kabetogama-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/df/Kabotogama_Lake_%28Panorama%29.jpg",
+      "credit_name": "Chris Light",
+      "license": "CC BY-SA 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Kabotogama_Lake_(Panorama).jpg"
+    },
+    {
+      "slug": "big-sandy-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/9c/Panorama_of_Big_Sandy_Lake_in_McGregor_Minnesota_with_smoke_haze_from_forest_fires_in_Canada_-_Flickr_-_Lorie_Shaull.jpg",
+      "credit_name": "Lorie Shaull (Flickr)",
+      "license": "CC BY-SA 2.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Panorama_of_Big_Sandy_Lake_in_McGregor_Minnesota_with_smoke_haze_from_forest_fires_in_Canada_-_Flickr_-_Lorie_Shaull.jpg"
+    },
+    {
+      "slug": "lake-carlos",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/59/Lake_Carlos_State_Park_Sunset%2C_Minnesota_%2836305899921%29.jpg",
+      "credit_name": "Tony Webster",
+      "license": "CC BY-SA 2.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Lake_Carlos_State_Park_Sunset,_Minnesota_(36305899921).jpg"
+    },
+    {
+      "slug": "green-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/b5/Green_Lake_-_Spicer%2C_Minnesota_%2835386515466%29.jpg",
+      "credit_name": "Tony Webster",
+      "license": "CC BY-SA 2.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Green_Lake_-_Spicer,_Minnesota_(35386515466).jpg"
+    },
+    {
+      "slug": "lake-minnewaska",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/75/City_of_Glenwood%2C_Minnesota_-_Lake_Minnewaska_Beach_%2837603232850%29.jpg",
+      "credit_name": "Tony Webster",
+      "license": "CC BY-SA 2.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:City_of_Glenwood,_Minnesota_-_Lake_Minnewaska_Beach_(37603232850).jpg"
+    },
+    {
+      "slug": "pokegama-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/1/1a/Itasca_county_MN_169_Pokegama_Lake_from_east_IMG_1339.JPG",
+      "credit_name": "Bjoertvedt",
+      "license": "CC BY-SA 3.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Itasca_county_MN_169_Pokegama_Lake_from_east_IMG_1339.JPG"
+    },
+    {
+      "slug": "burntside-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/94/Burntside_Lake_BWCAW.jpg",
+      "credit_name": "Gerg~commonswiki",
+      "license": "CC BY-SA 2.5",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Burntside_Lake_BWCAW.jpg"
+    },
+    {
+      "slug": "christmas-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c2/Christmas_Lake_Swans_2006.JPG",
+      "credit_name": "Chardonnay Vance",
+      "license": "CC BY-SA 3.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Christmas_Lake_Swans_2006.JPG"
+    },
+    {
+      "slug": "prior-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/5a/Lower_Prior_Lake%2C_Minnesota_%287114272219%29.jpg",
+      "credit_name": "WorldIslandInfo.com (Flickr)",
+      "license": "CC BY 2.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Lower_Prior_Lake,_Minnesota_(7114272219).jpg"
+    },
+    {
+      "slug": "lake-waconia",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/92/2009-0713-Waconia-LakeWaconia.jpg",
+      "credit_name": "Bobak Ha'Eri",
+      "license": "CC BY 3.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:2009-0713-Waconia-LakeWaconia.jpg"
+    },
+    {
+      "slug": "lake-minnewashta",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/3d/Lake_Minnewashta_Regional_Park%2C_Aug_2023.jpg",
+      "credit_name": "Thomson200",
+      "license": "CC0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Lake_Minnewashta_Regional_Park,_Aug_2023.jpg"
+    },
+    {
+      "slug": "lake-independence",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/bd/Melting_Ice_on_Lake_Independence_-_Baker_Park_Reserve_-_Minnesota_in_Spring_%2854125019402%29.jpg",
+      "credit_name": "Tony Webster",
+      "license": "CC BY 2.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Melting_Ice_on_Lake_Independence_-_Baker_Park_Reserve_-_Minnesota_in_Spring_(54125019402).jpg"
+    },
+    {
+      "slug": "medicine-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/ef/2009-0722-MedicineLake.jpg",
+      "credit_name": "Bobak Ha'Eri",
+      "license": "CC BY 3.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:2009-0722-MedicineLake.jpg"
+    },
+    {
+      "slug": "bay-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/2/2c/Bay_Lake_Mn.jpg",
+      "credit_name": "Glenn R. Wichman",
+      "license": "Public Domain",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Bay_Lake_Mn.jpg"
+    },
+    {
+      "slug": "south-long-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/51/South_Long_Lake_at_Sunrise_-_panoramio.jpg",
+      "credit_name": "karlee ladyk (Panoramio)",
+      "license": "CC BY 3.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:South_Long_Lake_at_Sunrise_-_panoramio.jpg"
+    },
+    {
+      "slug": "lake-koronis",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/ef/Ice_Fishing_on_Lake_Koronis_Paynesville.jpg",
+      "credit_name": "DatraxMada",
+      "license": "CC BY-SA 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Ice_Fishing_on_Lake_Koronis_Paynesville.jpg"
+    },
+    {
+      "slug": "lake-zumbro",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e6/Lake_Zumbro_Dam.jpg",
+      "credit_name": "McGhiever",
+      "license": "CC BY-SA 4.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Lake_Zumbro_Dam.jpg"
+    },
+    {
+      "slug": "big-stone-lake",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/bd/Big_Stone_Lake_from_Ortonville.JPG",
+      "credit_name": "McGhiever",
+      "license": "CC BY-SA 3.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Big_Stone_Lake_from_Ortonville.JPG"
+    },
+    {
+      "slug": "lake-pepin",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/82/Lake_Pepin_Panorama.jpg",
+      "credit_name": "Molandfreak",
+      "license": "CC BY-SA 3.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Lake_Pepin_Panorama.jpg"
+    },
+    {
+      "slug": "lake-shetek",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c1/Lake_Shetek_swimming_area.JPG",
+      "credit_name": "McGhiever",
+      "license": "CC BY-SA 3.0",
+      "credit_url": "https://commons.wikimedia.org/wiki/File:Lake_Shetek_swimming_area.JPG"
+    }
+  ]
+}

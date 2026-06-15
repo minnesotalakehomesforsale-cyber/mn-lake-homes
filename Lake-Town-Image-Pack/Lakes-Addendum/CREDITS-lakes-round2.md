@@ -1,0 +1,25 @@
+# Lake image credits (round 2) - required attribution
+
+- Rainy Lake: photo by jck_photos (Flickr), CC BY 2.0 - https://commons.wikimedia.org/wiki/File:Sunrise,_Rainy_Lake.jpg
+- Otter Tail Lake: photo by See file page, CC BY-SA 3.0 - https://commons.wikimedia.org/wiki/File:OtterTailLakeRiverInlet.jpg
+- Lake Bemidji: photo by Pete Markham (Flickr), CC BY-SA 2.0 - https://commons.wikimedia.org/wiki/File:Lake_Bemidji_DSC_0211_(641346227).jpg
+- Lake Kabetogama: photo by Chris Light, CC BY-SA 4.0 - https://commons.wikimedia.org/wiki/File:Kabotogama_Lake_(Panorama).jpg
+- Big Sandy Lake: photo by Lorie Shaull (Flickr), CC BY-SA 2.0 - https://commons.wikimedia.org/wiki/File:Panorama_of_Big_Sandy_Lake_in_McGregor_Minnesota_with_smoke_haze_from_forest_fires_in_Canada_-_Flickr_-_Lorie_Shaull.jpg
+- Lake Carlos: photo by Tony Webster, CC BY-SA 2.0 - https://commons.wikimedia.org/wiki/File:Lake_Carlos_State_Park_Sunset,_Minnesota_(36305899921).jpg
+- Green Lake: photo by Tony Webster, CC BY-SA 2.0 - https://commons.wikimedia.org/wiki/File:Green_Lake_-_Spicer,_Minnesota_(35386515466).jpg
+- Lake Minnewaska: photo by Tony Webster, CC BY-SA 2.0 - https://commons.wikimedia.org/wiki/File:City_of_Glenwood,_Minnesota_-_Lake_Minnewaska_Beach_(37603232850).jpg
+- Pokegama Lake: photo by Bjoertvedt, CC BY-SA 3.0 - https://commons.wikimedia.org/wiki/File:Itasca_county_MN_169_Pokegama_Lake_from_east_IMG_1339.JPG
+- Burntside Lake: photo by Gerg~commonswiki, CC BY-SA 2.5 - https://commons.wikimedia.org/wiki/File:Burntside_Lake_BWCAW.jpg
+- Christmas Lake: photo by Chardonnay Vance, CC BY-SA 3.0 - https://commons.wikimedia.org/wiki/File:Christmas_Lake_Swans_2006.JPG
+- Prior Lake: photo by WorldIslandInfo.com (Flickr), CC BY 2.0 - https://commons.wikimedia.org/wiki/File:Lower_Prior_Lake,_Minnesota_(7114272219).jpg
+- Lake Waconia: photo by Bobak Ha'Eri, CC BY 3.0 - https://commons.wikimedia.org/wiki/File:2009-0713-Waconia-LakeWaconia.jpg
+- Lake Minnewashta: photo by Thomson200, CC0 - https://commons.wikimedia.org/wiki/File:Lake_Minnewashta_Regional_Park,_Aug_2023.jpg
+- Lake Independence: photo by Tony Webster, CC BY 2.0 - https://commons.wikimedia.org/wiki/File:Melting_Ice_on_Lake_Independence_-_Baker_Park_Reserve_-_Minnesota_in_Spring_(54125019402).jpg
+- Medicine Lake: photo by Bobak Ha'Eri, CC BY 3.0 - https://commons.wikimedia.org/wiki/File:2009-0722-MedicineLake.jpg
+- Bay Lake: photo by Glenn R. Wichman, Public Domain - https://commons.wikimedia.org/wiki/File:Bay_Lake_Mn.jpg
+- South Long Lake: photo by karlee ladyk (Panoramio), CC BY 3.0 - https://commons.wikimedia.org/wiki/File:South_Long_Lake_at_Sunrise_-_panoramio.jpg
+- Lake Koronis: photo by DatraxMada, CC BY-SA 4.0 - https://commons.wikimedia.org/wiki/File:Ice_Fishing_on_Lake_Koronis_Paynesville.jpg
+- Lake Zumbro: photo by McGhiever, CC BY-SA 4.0 - https://commons.wikimedia.org/wiki/File:Lake_Zumbro_Dam.jpg
+- Big Stone Lake: photo by McGhiever, CC BY-SA 3.0 - https://commons.wikimedia.org/wiki/File:Big_Stone_Lake_from_Ortonville.JPG
+- Lake Pepin: photo by Molandfreak, CC BY-SA 3.0 - https://commons.wikimedia.org/wiki/File:Lake_Pepin_Panorama.jpg
+- Lake Shetek: photo by McGhiever, CC BY-SA 3.0 - https://commons.wikimedia.org/wiki/File:Lake_Shetek_swimming_area.JPG
