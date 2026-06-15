@@ -761,8 +761,8 @@
                 // API enforces that regardless of what's in the URL.
                 const [townRes, lakeRes, bizRes] = await Promise.all([
                     fetch(_isAdminView
-                        ? '/api/tags?with_lakes=true'
-                        : '/api/tags?with_lakes=true&active=true'),
+                        ? '/api/tags'
+                        : '/api/tags?active=true'),
                     fetch(_isAdminView ? '/api/lakes?status=all' : '/api/lakes'),
                     fetch(_isAdminView
                         ? '/api/businesses?status=all'
