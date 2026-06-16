@@ -189,6 +189,13 @@ async function persistPaymentAndMirrorToHubspot(invoice, status) {
                         [note.id, paymentRow.id]
                     );
                 }
+                // Flip the contact's lifecyclestage to Customer on the first
+                // successful charge so paying agents stop showing as Leads in
+                // the HubSpot pipeline. Idempotent — markContactAsCustomer
+                // reads the stage first and skips no-op patches.
+                if (status === 'paid') {
+                    await hubspot.markContactAsCustomer(hsId);
+                }
             }
         } catch (err) {
             // Never let HubSpot break the webhook path.

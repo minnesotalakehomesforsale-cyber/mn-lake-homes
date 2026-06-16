@@ -171,6 +171,43 @@ async function updateContact(hsContactId, props) {
 }
 
 /**
+ * Mark a HubSpot contact as a Customer (lifecyclestage = "customer").
+ * Used on first successful Stripe charge so paying agents/businesses stop
+ * showing as Leads in the pipeline.
+ *
+ * HubSpot's lifecyclestage is one-way by default — once advanced it can't
+ * be downgraded via the API (HubSpot's workflow rules re-promote it on
+ * the next contact update). That's the right behavior for us: cancellation
+ * doesn't reverse "they paid us". Reading the current value first so we
+ * don't issue no-op patches for contacts that are already marked.
+ */
+async function markContactAsCustomer(hsContactId) {
+    if (!ENABLED)        { logSkip('HUBSPOT_ENABLE_SYNC=false'); return null; }
+    if (!isConfigured()) { logSkip('HUBSPOT_ACCESS_TOKEN/PORTAL_ID not set'); return null; }
+    if (!hsContactId)    { logSkip('no hs_contact_id for customer flip'); return null; }
+
+    try {
+        // Cheap read first — avoid a PATCH when the contact is already a
+        // customer (HubSpot still triggers workflow re-evaluation on no-op
+        // patches, which is noisy if we do it on every renewal invoice).
+        const cur = await hsFetch(`/crm/v3/objects/contacts/${hsContactId}?properties=lifecyclestage`);
+        const stage = cur?.properties?.lifecyclestage || '';
+        if (stage === 'customer' || stage === 'evangelist') {
+            return { id: hsContactId, unchanged: true, stage };
+        }
+        const updated = await hsFetch(`/crm/v3/objects/contacts/${hsContactId}`, {
+            method: 'PATCH',
+            body: { properties: { lifecyclestage: 'customer' } },
+        });
+        console.log(`[hubspot] flipped contact ${updated.id} to customer (was ${stage || 'unset'})`);
+        return { id: updated.id, fromStage: stage || null };
+    } catch (err) {
+        console.error(`[hubspot] FAILED customer flip ${hsContactId}:`, err.message);
+        return null;
+    }
+}
+
+/**
  * Create a Note engagement on a contact's timeline. Used to mirror admin
  * notes about an agent into HubSpot so they show up against the contact.
  * Fire-and-forget like the rest of this module — returns { id } on success,
@@ -342,6 +379,7 @@ module.exports = {
     syncContact,
     updateContact,
     createContactNote,
+    markContactAsCustomer,
     getPortalContactUrl,
     isConfigured,
     ping,
