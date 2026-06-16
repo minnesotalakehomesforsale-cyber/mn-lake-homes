@@ -13,20 +13,92 @@ async function persistPaymentAndMirrorToHubspot(invoice, status) {
     // The subscription belongs to either a business or an agent (never both).
     // Resolve the local user_id by subscription_id so the payment row anchors
     // to a user that's already in our DB.
+    //
+    // ⚠ Race condition: Stripe doesn't guarantee webhook ordering, and for
+    // a brand-new subscription `invoice.payment_succeeded` often arrives
+    // BEFORE `checkout.session.completed` — the event that writes
+    // stripe_subscription_id onto the agent/business row. When that happens,
+    // both DB lookups below return nothing and the payment row used to be
+    // saved with user_id=NULL — orphaned forever, invisible on the admin
+    // Payments tab. To fix that, when the DB lookups miss, we fall back
+    // to retrieving the subscription from Stripe and reading the user_id
+    // we stamped onto subscription.metadata at checkout creation time. We
+    // ALSO backfill the missing stripe_subscription_id onto the agent/
+    // business row so the race never bites the next invoice.
     let userId = null;
+    let resolvedFrom = null;
     if (invoice.subscription) {
         const bizRow = await pool.query(
             `SELECT user_id FROM businesses WHERE stripe_subscription_id = $1 LIMIT 1`,
             [invoice.subscription]
         );
-        userId = bizRow.rows[0]?.user_id || null;
+        if (bizRow.rows[0]?.user_id) {
+            userId = bizRow.rows[0].user_id;
+            resolvedFrom = 'businesses.sub_id';
+        }
         if (!userId) {
             const agentRow = await pool.query(
                 `SELECT user_id FROM agents WHERE stripe_subscription_id = $1 LIMIT 1`,
                 [invoice.subscription]
             );
-            userId = agentRow.rows[0]?.user_id || null;
+            if (agentRow.rows[0]?.user_id) {
+                userId = agentRow.rows[0].user_id;
+                resolvedFrom = 'agents.sub_id';
+            }
         }
+        // Fallback 1: ask Stripe for subscription.metadata.user_id (we stamp
+        // this at checkout time on both agent and business flows).
+        if (!userId) {
+            try {
+                const stripe = getStripe();
+                if (stripe) {
+                    const sub = await stripe.subscriptions.retrieve(invoice.subscription);
+                    const metaUserId = sub?.metadata?.user_id || null;
+                    const metaKind   = sub?.metadata?.kind || null;
+                    if (metaUserId) {
+                        userId = metaUserId;
+                        resolvedFrom = 'stripe.sub.metadata';
+                        // Backfill the matching row so the next invoice for
+                        // this subscription resolves locally without hitting
+                        // the Stripe API.
+                        if (metaKind === 'agent') {
+                            await pool.query(
+                                `UPDATE agents
+                                    SET stripe_subscription_id = COALESCE(stripe_subscription_id, $1),
+                                        stripe_customer_id     = COALESCE(stripe_customer_id, $2)
+                                  WHERE user_id = $3`,
+                                [invoice.subscription, invoice.customer || null, metaUserId]
+                            );
+                        } else if (metaKind === 'business' && sub?.metadata?.business_id) {
+                            await pool.query(
+                                `UPDATE businesses
+                                    SET stripe_subscription_id = COALESCE(stripe_subscription_id, $1),
+                                        stripe_customer_id     = COALESCE(stripe_customer_id, $2)
+                                  WHERE id = $3`,
+                                [invoice.subscription, invoice.customer || null, sub.metadata.business_id]
+                            );
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('[Stripe Webhook] sub.metadata fallback failed:', err.message);
+            }
+        }
+        // Fallback 2: match by customer email — last resort, covers historical
+        // rows where the subscription wasn't created with our metadata.
+        if (!userId && invoice.customer_email) {
+            const userRow = await pool.query(
+                `SELECT id FROM users WHERE lower(email) = lower($1) LIMIT 1`,
+                [invoice.customer_email]
+            );
+            if (userRow.rows[0]?.id) {
+                userId = userRow.rows[0].id;
+                resolvedFrom = 'users.email';
+            }
+        }
+    }
+    if (userId && resolvedFrom !== 'businesses.sub_id' && resolvedFrom !== 'agents.sub_id') {
+        console.log(`[Stripe Webhook] user_id resolved via ${resolvedFrom} for invoice ${invoice.id}`);
     }
 
     // Stripe always sends an integer in the smallest currency unit. Use
