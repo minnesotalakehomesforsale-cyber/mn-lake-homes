@@ -498,7 +498,7 @@ app.get('/sitemap.xml', async (req, res) => {
         for (const t of towns.rows)      push(`${base}/towns/${encodeURIComponent(t.slug)}`,       { lastmod: iso(t.updated_at),  priority: 0.8, changefreq: 'weekly'  });
         for (const b of businesses.rows) push(`${base}/businesses/${encodeURIComponent(b.slug)}`,  { lastmod: iso(b.updated_at),  priority: 0.6, changefreq: 'monthly' });
         for (const a of agents.rows)     push(`${base}/pages/public/agent-profile.html?slug=${encodeURIComponent(a.slug)}`, { lastmod: iso(a.updated_at), priority: 0.6, changefreq: 'monthly' });
-        for (const p of posts.rows)      push(`${base}/pages/public/blog-post.html?slug=${encodeURIComponent(p.slug)}`,     { lastmod: iso(p.published_at || p.updated_at), priority: 0.5, changefreq: 'monthly' });
+        for (const p of posts.rows)      push(`${base}/blog/${encodeURIComponent(p.slug)}`,                                   { lastmod: iso(p.published_at || p.updated_at), priority: 0.5, changefreq: 'monthly' });
 
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -1028,6 +1028,115 @@ app.get('/towns/:slug', async (req, res, next) => {
     }
 });
 
+// ── Blog detail SSR (/blog/:slug) ───────────────────────────────────────────
+// Renders pages/public/blog-post.html with title/meta/JSON-LD baked in so
+// the bot sees the right SEO surface (the client-side JS fallback was fine
+// for users but invisible to crawlers). Article + BreadcrumbList JSON-LD
+// follows the same pattern as the lake/town pages.
+app.get('/blog/:slug', async (req, res, next) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT id, title, slug, excerpt, body, cover_image_url, tag,
+                    read_time_minutes, author_name, is_published,
+                    published_at, updated_at, seo_title, seo_description
+               FROM blog_posts
+              WHERE slug = $1 AND deleted_at IS NULL
+              LIMIT 1`,
+            [req.params.slug]
+        );
+        const post = rows[0];
+        if (!post || !post.is_published) {
+            renderFriendly404(res, { kind: 'page', slug: req.params.slug });
+            return;
+        }
+
+        const tplPath = path.join(PROJECT_ROOT, 'pages/public/blog-post.html');
+        fs.readFile(tplPath, 'utf8', (err, html) => {
+            if (err) return next(err);
+
+            const seoTitle = post.seo_title || `${post.title} | MN Lake Homes`;
+            const seoDesc  = post.seo_description || post.excerpt || '';
+            const canonical = `/blog/${post.slug}`;
+            const baseUrl = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
+            const heroAbs = post.cover_image_url
+                ? (post.cover_image_url.startsWith('http') ? post.cover_image_url : `${baseUrl}${post.cover_image_url}`)
+                : '';
+            const pubISO = post.published_at ? new Date(post.published_at).toISOString() : null;
+            const updISO = post.updated_at   ? new Date(post.updated_at).toISOString()   : pubISO;
+
+            // Article + BreadcrumbList (Home → Blog → this post). Wrapped in
+            // a single <script> via @graph so we keep the document clean.
+            const jsonld = {
+                '@context': 'https://schema.org',
+                '@graph': [
+                    {
+                        '@type': 'Article',
+                        'headline': post.title,
+                        'description': seoDesc || undefined,
+                        'image': heroAbs || undefined,
+                        'author': { '@type': 'Organization', 'name': post.author_name || 'MN Lake Homes Team' },
+                        'publisher': { '@type': 'Organization', 'name': 'MN Lake Homes',
+                            'logo': { '@type': 'ImageObject', 'url': `${baseUrl}/favicon.svg` } },
+                        'datePublished': pubISO || undefined,
+                        'dateModified':  updISO || undefined,
+                        'mainEntityOfPage': `${baseUrl}${canonical}`,
+                        'articleSection': post.tag || undefined,
+                    },
+                    {
+                        '@type': 'BreadcrumbList',
+                        'itemListElement': [
+                            { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': `${baseUrl}/` },
+                            { '@type': 'ListItem', 'position': 2, 'name': 'Blog', 'item': `${baseUrl}/pages/public/blog.html` },
+                            { '@type': 'ListItem', 'position': 3, 'name': post.title, 'item': `${baseUrl}${canonical}` },
+                        ],
+                    },
+                ],
+            };
+            const jsonldTag = `<script type="application/ld+json">${JSON.stringify(jsonld)}</script>`;
+
+            // Replace the document title + inject meta tags + JSON-LD into
+            // <head>. The template is still client-side rendered for the
+            // body — we just give the crawler what it needs up front.
+            let out = html
+                .replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(seoTitle)}</title>`);
+            const metaBlock = `
+    <meta name="description" content="${escapeHtml(seoDesc)}">
+    <link rel="canonical" href="${escapeHtml(canonical)}">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="${escapeHtml(seoTitle)}">
+    <meta property="og:description" content="${escapeHtml(seoDesc)}">
+    <meta property="og:url" content="${escapeHtml(baseUrl + canonical)}">
+    ${heroAbs ? `<meta property="og:image" content="${escapeHtml(heroAbs)}">` : ''}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="${escapeHtml(seoTitle)}">
+    <meta name="twitter:description" content="${escapeHtml(seoDesc)}">
+    ${heroAbs ? `<meta name="twitter:image" content="${escapeHtml(heroAbs)}">` : ''}
+    ${jsonldTag}
+`;
+            // The client-side blog-post.html JS reads ?slug=... from the
+            // URL — preserve that by setting a hidden marker that the JS
+            // also looks for. Cheaper than rewriting the body server-side.
+            out = out
+                .replace('</head>', `${metaBlock}<script>window.__BLOG_SLUG__='${post.slug.replace(/'/g, "\\'")}';</script>\n</head>`)
+                .replace(
+                    `new URLSearchParams(window.location.search).get('slug')`,
+                    `(window.__BLOG_SLUG__ || new URLSearchParams(window.location.search).get('slug'))`
+                );
+            res.type('html').send(out);
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// 301 the old query-string URLs to the clean route so we don't fragment
+// link equity between two URLs pointing at the same post.
+app.get('/pages/public/blog-post.html', (req, res, next) => {
+    const slug = (req.query.slug || '').toString().trim();
+    if (!slug) return next();
+    res.redirect(301, `/blog/${encodeURIComponent(slug)}`);
+});
+
 // Default-browser favicon path → SVG. Even though every page now references
 // /favicon.svg explicitly via <link rel="icon">, older browsers and some
 // social-share crawlers still probe /favicon.ico unconditionally. Redirect
@@ -1127,6 +1236,17 @@ async function ensureTables() {
             CREATE INDEX IF NOT EXISTS idx_contact_inquiries_unread ON contact_inquiries(is_read) WHERE is_read = false AND deleted_at IS NULL;
             CREATE INDEX IF NOT EXISTS idx_contact_inquiries_created ON contact_inquiries(created_at DESC);
         `);
+        // SEO overrides on blog posts — separate columns so the listing
+        // page can keep using `excerpt` as the social-preview text while
+        // the detail page sets distinct <title> and meta description tags
+        // for search. Backward compatible: both nullable; SSR falls back
+        // to title / excerpt when blank.
+        await pool.query(`
+            ALTER TABLE blog_posts
+                ADD COLUMN IF NOT EXISTS seo_title       VARCHAR(300),
+                ADD COLUMN IF NOT EXISTS seo_description TEXT;
+        `);
+
         // Add deleted_at to blog_posts if it doesn't exist yet (migration for existing tables)
         await pool.query(`
             ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
