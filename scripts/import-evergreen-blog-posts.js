@@ -25,8 +25,11 @@ const pool = require('../src/database/pool');
 
 const PUBLISHED_AT = new Date('2026-06-15T12:00:00Z');
 const AUTHOR = 'MN Lake Homes editorial';
-const TAG    = 'Evergreen / Trust';
 const READ_TIME = 6;
+
+// `tag` is the visible badge on the post card and detail page, so it has
+// to read naturally to a buyer/seller — not the internal "Evergreen / Trust"
+// editorial taxonomy. Per-post overrides below.
 
 // ─── Post bodies (HTML; client-side innerHTML render) ───────────────────────
 //
@@ -46,6 +49,7 @@ const POSTS = [
     {
         slug: 'why-a-local-lake-specialist-beats-a-national-portal',
         title: 'Why a Local Lake Specialist Beats a National Portal',
+        tag: 'Buying a Lake Home',
         seo_title: 'Why a Local Lake Specialist Beats a National Portal | MN Lake Homes',
         seo_description: "National real estate portals weren't built for Minnesota lakefront. Here's why a vetted, local lake specialist sees what a national algorithm can't.",
         excerpt: "National real estate portals weren't built for Minnesota lakefront. Here's why a vetted, local lake specialist sees what a national algorithm can't.",
@@ -100,6 +104,7 @@ ${ctaButton('Get matched with a Minnesota lake specialist →')}
     {
         slug: 'how-to-work-with-a-lake-specialist-agent',
         title: 'How to Work With a Lake-Specialist Agent (and What to Expect)',
+        tag: 'Working With an Agent',
         seo_title: 'How to Work With a Lake-Specialist Agent | MN Lake Homes',
         seo_description: "New to buying lakefront in Minnesota? Here's how working with a vetted, local lake-specialist agent works, what to expect, and how to get the most from it.",
         excerpt: "New to buying lakefront in Minnesota? Here's how working with a vetted, local lake-specialist agent works, what to expect, and how to get the most from it.",
@@ -166,6 +171,7 @@ ${ctaButton('Get matched with a Minnesota lake specialist →')}
     {
         slug: 'what-vetted-licensed-local-means',
         title: 'What "Vetted, Licensed, Local" Actually Means When We Match You',
+        tag: 'How It Works',
         seo_title: 'What "Vetted, Licensed, Local" Means for Your Match | MN Lake Homes',
         seo_description: "We match you with a vetted, licensed, local Minnesota lake agent. Here's exactly what each of those three words means — and why it matters on the water.",
         excerpt: "We match you with a vetted, licensed, local Minnesota lake agent. Here's exactly what each of those three words means — and why it matters on the water.",
@@ -236,7 +242,7 @@ async function main() {
                 updated_at      = NOW()
              RETURNING (xmax = 0) AS inserted`,
             [
-                p.title, p.slug, p.excerpt, p.body, p.cover_image_url, TAG,
+                p.title, p.slug, p.excerpt, p.body, p.cover_image_url, p.tag,
                 READ_TIME, PUBLISHED_AT, AUTHOR, p.seo_title, p.seo_description,
             ]
         );
