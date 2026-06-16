@@ -1897,9 +1897,79 @@ const inviteBusiness = async (req, res) => {
 // table), by agent_id (used by agent-review.html which holds the agent
 // PK, not the user_id), and by business_id (used by entity-edit.html for
 // businesses). All return the same shape so the UI can stay simple.
+//
+// Source-of-truth strategy: the local `payments` table is a cache for
+// HubSpot mirror status (the hs_note_id we wrote when the invoice landed
+// via webhook). It is NOT the source of truth for "which invoices exist"
+// — Stripe is. Webhook delivery is unreliable (ordering races, secret
+// rotations, prior-incident outages) and we've been bitten by orphans
+// where Stripe has invoices that the local table never captured.
+//
+// So this function fetches the live Stripe invoice list for the customer
+// and merges it with the local table. Every invoice Stripe knows about
+// shows up; the hs_note_id column comes from the local row if one exists.
+// Result: the Payments tab is always accurate even when the webhook missed.
+function stripeFromEnv() {
+    try {
+        const key = process.env.STRIPE_SECRET_KEY;
+        return key ? require('stripe')(key) : null;
+    } catch (_) { return null; }
+}
+
+async function fetchStripeInvoicesForCustomer(customerId) {
+    const stripe = stripeFromEnv();
+    if (!stripe || !customerId) return [];
+    try {
+        // Pull recent invoices in one round trip. 24 covers two years of
+        // monthly billing — plenty for the admin Payments tab. If we ever
+        // need more, the auto-paginator does the right thing.
+        const out = [];
+        for await (const inv of stripe.invoices.list({ customer: customerId, limit: 24 })) {
+            out.push(inv);
+            if (out.length >= 100) break;
+        }
+        return out;
+    } catch (err) {
+        console.error('[loadPaymentsForUser] Stripe invoices.list failed:', err.message);
+        return [];
+    }
+}
+
+function mapStripeStatusToLocal(s) {
+    // Stripe statuses: draft, open, paid, uncollectible, void.
+    // Local statuses: paid, failed, refunded. Map to a 1-liner the UI
+    // already renders cleanly.
+    if (s === 'paid') return 'paid';
+    if (s === 'uncollectible' || s === 'open') return 'failed';
+    if (s === 'void') return 'refunded';
+    return s || 'unknown';
+}
+
+function stripeInvoiceToRow(inv) {
+    const line = inv.lines?.data?.[0];
+    return {
+        id: null, // synthetic — no local row yet
+        amount_cents: inv.status === 'paid' ? (inv.amount_paid || 0) : (inv.amount_due || 0),
+        currency: (inv.currency || 'usd').toLowerCase(),
+        status: mapStripeStatusToLocal(inv.status),
+        description: line?.description || inv.description || inv.billing_reason || null,
+        invoice_url: inv.hosted_invoice_url || null,
+        invoice_pdf: inv.invoice_pdf || null,
+        period_start: line?.period?.start ? new Date(line.period.start * 1000).toISOString() : null,
+        period_end:   line?.period?.end   ? new Date(line.period.end   * 1000).toISOString() : null,
+        stripe_invoice_id: inv.id,
+        hs_note_id: null, // unknown until we cross-reference local rows
+        created_at: inv.created ? new Date(inv.created * 1000).toISOString() : null,
+    };
+}
+
 async function loadPaymentsForUser(userId) {
     if (!userId) return { payments: [], hs_contact_url: null };
-    const [paymentsRes, userRes] = await Promise.all([
+
+    // Pull local payments + the user's HubSpot id + the user's Stripe
+    // customer id from whichever table owns them (agents takes precedence
+    // since the same user_id could in theory exist in both).
+    const [paymentsRes, userRes, agentRes, bizRes] = await Promise.all([
         pool.query(
             `SELECT id, amount_cents, currency, status, description,
                     invoice_url, invoice_pdf, period_start, period_end,
@@ -1910,9 +1980,39 @@ async function loadPaymentsForUser(userId) {
             [userId]
         ),
         pool.query(`SELECT hs_contact_id FROM users WHERE id = $1`, [userId]),
+        pool.query(`SELECT stripe_customer_id FROM agents     WHERE user_id = $1 LIMIT 1`, [userId]),
+        pool.query(`SELECT stripe_customer_id FROM businesses WHERE user_id = $1 LIMIT 1`, [userId]),
     ]);
+    const localRows = paymentsRes.rows;
+    const customerId = agentRes.rows[0]?.stripe_customer_id || bizRes.rows[0]?.stripe_customer_id || null;
+
+    // Fetch live Stripe invoices and merge by stripe_invoice_id. Local
+    // row wins for hs_note_id and the local primary key; Stripe wins for
+    // everything else so amount/status/period reflect Stripe truth.
+    const stripeInvoices = await fetchStripeInvoicesForCustomer(customerId);
+    const localByInvoice = new Map(localRows.filter(r => r.stripe_invoice_id).map(r => [r.stripe_invoice_id, r]));
+    const merged = [];
+    for (const inv of stripeInvoices) {
+        const row = stripeInvoiceToRow(inv);
+        const local = localByInvoice.get(inv.id);
+        if (local) {
+            row.id         = local.id;
+            row.hs_note_id = local.hs_note_id;
+        }
+        merged.push(row);
+    }
+    // Bring in any local rows Stripe didn't return (extremely rare —
+    // would mean an invoice was deleted in Stripe but kept locally).
+    for (const local of localRows) {
+        if (!local.stripe_invoice_id || !stripeInvoices.find(i => i.id === local.stripe_invoice_id)) {
+            merged.push(local);
+        }
+    }
+    // Sort newest first by created_at (string ISO compares correctly).
+    merged.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+
     return {
-        payments: paymentsRes.rows,
+        payments: merged,
         hs_contact_url: hubspot.getPortalContactUrl(userRes.rows[0]?.hs_contact_id),
         hs_synced: !!userRes.rows[0]?.hs_contact_id,
     };
