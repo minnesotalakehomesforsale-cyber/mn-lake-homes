@@ -1267,6 +1267,26 @@ async function ensureTables() {
             WHERE tag = 'Evergreen / Trust';
         `);
 
+        // One-time data fix: the six evergreen posts (2026-06-15 + 2026-06-16)
+        // were all seeded with a flat 6-minute read time. Replace with honest,
+        // length-derived values (~225 wpm). Scoped to rows still at the canned
+        // 6 so any later admin edit is preserved (WHERE stops matching once
+        // the value changes), which also makes it idempotent across deploys.
+        await pool.query(`
+            UPDATE blog_posts SET read_time_minutes = CASE slug
+                WHEN 'what-vetted-licensed-local-means'                    THEN 4
+                WHEN 'how-lake-home-matching-works-and-why-its-free-to-you' THEN 5
+                WHEN 'why-a-local-lake-specialist-beats-a-national-portal'  THEN 5
+                WHEN 'how-to-work-with-a-lake-specialist-agent'            THEN 5
+                ELSE read_time_minutes END
+            WHERE read_time_minutes = 6 AND slug IN (
+                'what-vetted-licensed-local-means',
+                'how-lake-home-matching-works-and-why-its-free-to-you',
+                'why-a-local-lake-specialist-beats-a-national-portal',
+                'how-to-work-with-a-lake-specialist-agent'
+            );
+        `);
+
         // Backfill lead table columns for older production databases.
         // These are referenced by /api/admin/leads/:id/assign and related endpoints.
         await pool.query(`

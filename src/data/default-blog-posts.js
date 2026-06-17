@@ -498,7 +498,7 @@ const posts = [
         title: "How Lake-Home Matching Works — and Why It's Free to You",
         slug: 'how-lake-home-matching-works-and-why-its-free-to-you',
         tag: 'How It Works',
-        read_time_minutes: 6,
+        read_time_minutes: 5,
         cover_image_url: '/assets/images/blog/hero-how-lake-home-matching-works.jpg',
         is_published: true,
         published_at: new Date('2026-06-16T12:00:00Z'),
