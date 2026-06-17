@@ -1252,6 +1252,21 @@ async function ensureTables() {
             ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
         `);
 
+        // One-time data fix: the 2026-06-15 evergreen posts were originally
+        // seeded with the INTERNAL bucket "Evergreen / Trust" in the visible
+        // `tag` column, which the blog list renders verbatim as the badge.
+        // Replace it with the reader-facing category. Idempotent and scoped to
+        // rows still showing the internal label, so any later admin edit to the
+        // tag is preserved (the WHERE no longer matches once it's changed).
+        await pool.query(`
+            UPDATE blog_posts SET tag = CASE slug
+                WHEN 'why-a-local-lake-specialist-beats-a-national-portal' THEN 'Buying a Lake Home'
+                WHEN 'how-to-work-with-a-lake-specialist-agent'            THEN 'Working With an Agent'
+                WHEN 'what-vetted-licensed-local-means'                    THEN 'How It Works'
+                ELSE tag END
+            WHERE tag = 'Evergreen / Trust';
+        `);
+
         // Backfill lead table columns for older production databases.
         // These are referenced by /api/admin/leads/:id/assign and related endpoints.
         await pool.query(`
@@ -2225,7 +2240,7 @@ async function ensureTables() {
              WHERE profile_photo_url LIKE '/assets/images/agents/%';
         `);
 
-        await seedBlogIfEmpty();
+        await seedBlogPosts();
     } catch (err) {
         console.error(' Table migration warning:', err.message);
     }
@@ -2265,19 +2280,32 @@ async function backfillBusinessCoords() {
     }
 }
 
-async function seedBlogIfEmpty() {
-    const { rows } = await pool.query('SELECT COUNT(*) FROM blog_posts');
-    if (parseInt(rows[0].count) > 0) return;
-    console.log(' Seeding default blog posts...');
+async function seedBlogPosts() {
+    // Idempotent: inserts any canonical post from default-blog-posts.js whose
+    // slug isn't already in the table — on EVERY startup, not just when the
+    // table is empty. ON CONFLICT (slug) DO NOTHING means existing rows (admin
+    // edits, separately-imported posts) are never touched; this only fills in
+    // posts that are missing. That's what makes a git push of a new post in
+    // default-blog-posts.js actually publish it on the next deploy.
     const { posts } = require('./data/default-blog-posts');
+    let added = 0;
     for (const p of posts) {
-        await pool.query(`
-            INSERT INTO blog_posts (title, slug, excerpt, body, cover_image_url, tag, read_time_minutes, is_published, published_at, author_name)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'MN Lake Homes Team')
+        const r = await pool.query(`
+            INSERT INTO blog_posts
+                (title, slug, excerpt, body, cover_image_url, tag,
+                 read_time_minutes, is_published, published_at, author_name,
+                 seo_title, seo_description)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
             ON CONFLICT (slug) DO NOTHING
-        `, [p.title, p.slug, p.excerpt, p.body, p.cover_image_url, p.tag, p.read_time_minutes, !!p.is_published, p.published_at || new Date()]);
+        `, [
+            p.title, p.slug, p.excerpt, p.body, p.cover_image_url, p.tag,
+            p.read_time_minutes || 5, p.is_published !== false,
+            p.published_at || new Date(), p.author_name || 'MN Lake Homes Team',
+            p.seo_title || null, p.seo_description || null,
+        ]);
+        added += r.rowCount;
     }
-    console.log(' Default blog posts seeded.');
+    if (added > 0) console.log(` Seeded ${added} missing blog post(s).`);
 }
 
 // ==========================================
