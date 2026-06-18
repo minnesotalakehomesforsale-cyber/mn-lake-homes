@@ -83,26 +83,24 @@
         .blog-filter-btn:hover { border-color: #1d6df2; color: #1d6df2; }
         .blog-filter-btn.active { background: #1d6df2; border-color: #1d6df2; color: #fff; }
 
-        .blog-filter-bar {
-            position: fixed;
-            top: 72px;
-            left: 0;
-            right: 0;
-            z-index: 40;
-            background: #fff;
-            border-bottom: 1px solid #edf2f7;
-            padding: 1.1rem 2rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-        }
-        .blog-filter-inner {
+        .blog-controls {
             max-width: 1200px;
-            margin: 0 auto;
+            margin: 0 auto 2.75rem;
             display: flex;
             gap: 1rem;
             align-items: center;
+            justify-content: space-between;
             flex-wrap: wrap;
         }
-        .blog-search-wrap { position: relative; flex: 1; min-width: 220px; }
+        .blog-search-wrap { position: relative; flex: 1; min-width: 240px; }
+        .blog-search-wrap .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+            pointer-events: none;
+        }
         .blog-search-wrap input {
             width: 100%;
             padding: 0.75rem 1rem 0.75rem 2.75rem;
@@ -112,8 +110,14 @@
             font-family: inherit;
             outline: none;
             box-sizing: border-box;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .blog-search-wrap input:focus {
+            border-color: #1d6df2;
+            box-shadow: 0 0 0 3px rgba(29,109,242,0.12);
         }
         .blog-tag-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .blog-result-count { color: #a0aec0; font-size: 0.85rem; margin: -1.5rem 0 2rem; }
 
         .blog-index-section { padding: 5rem 2rem 6rem !important; }
         #blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 3rem; }
@@ -149,6 +153,14 @@
 
     <section class="blog-section blog-index-section">
         <div class="blog-container">
+            <div class="blog-controls">
+                <div class="blog-search-wrap">
+                    <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input id="blog-search" type="search" placeholder="Search articles by keyword…" autocomplete="off" aria-label="Search articles">
+                </div>
+                <div class="blog-tag-filters" id="blog-tag-filters" role="group" aria-label="Filter by category"></div>
+            </div>
+            <p class="blog-result-count" id="blog-result-count" hidden></p>
             <div id="blog-grid">
                 <div style="grid-column: 1/-1; text-align:center; padding: 3rem; color: #a0aec0;">Loading posts...</div>
             </div>
@@ -176,17 +188,73 @@
                 </a>`;
         }
 
+        let allPosts = [];
+        let activeTag = 'All';
+        let searchQuery = '';
+
+        function applyFilters() {
+            const grid = document.getElementById('blog-grid');
+            const countEl = document.getElementById('blog-result-count');
+            const q = searchQuery.trim().toLowerCase();
+
+            const filtered = allPosts.filter(p => {
+                const tagOk = activeTag === 'All' || (p.tag || 'General') === activeTag;
+                if (!tagOk) return false;
+                if (!q) return true;
+                const haystack = `${p.title || ''} ${p.excerpt || ''} ${p.tag || ''}`.toLowerCase();
+                return haystack.includes(q);
+            });
+
+            if (!filtered.length) {
+                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#a0aec0;">No articles match your search. Try a different keyword or category.</div>';
+            } else {
+                grid.innerHTML = filtered.map(buildCard).join('');
+            }
+
+            // Only show the count when the reader has actually narrowed things down.
+            if (q || activeTag !== 'All') {
+                countEl.hidden = false;
+                countEl.textContent = `${filtered.length} ${filtered.length === 1 ? 'article' : 'articles'}` +
+                    (activeTag !== 'All' ? ` in “${activeTag}”` : '') +
+                    (q ? ` matching “${searchQuery.trim()}”` : '');
+            } else {
+                countEl.hidden = true;
+            }
+        }
+
+        function buildTagFilters() {
+            const wrap = document.getElementById('blog-tag-filters');
+            const tags = ['All', ...Array.from(new Set(allPosts.map(p => p.tag || 'General'))).sort()];
+            wrap.innerHTML = tags.map(t =>
+                `<button type="button" class="blog-filter-btn${t === activeTag ? ' active' : ''}" data-tag="${t.replace(/"/g, '&quot;')}">${t}</button>`
+            ).join('');
+            wrap.querySelectorAll('.blog-filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    activeTag = btn.dataset.tag;
+                    wrap.querySelectorAll('.blog-filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+                    applyFilters();
+                });
+            });
+        }
+
         async function loadPosts() {
             const grid = document.getElementById('blog-grid');
             try {
                 const res = await fetch('/api/blog');
                 if (!res.ok) throw new Error();
-                const posts = await res.json();
-                if (!posts.length) {
+                allPosts = await res.json();
+                if (!allPosts.length) {
                     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#a0aec0;">No posts yet.</div>';
                     return;
                 }
-                grid.innerHTML = posts.map(buildCard).join('');
+                buildTagFilters();
+                applyFilters();
+
+                const searchInput = document.getElementById('blog-search');
+                searchInput.addEventListener('input', e => {
+                    searchQuery = e.target.value;
+                    applyFilters();
+                });
             } catch (err) {
                 grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#a0aec0;">Could not load posts.</div>';
             }
