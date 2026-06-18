@@ -25,6 +25,7 @@
     { "name": "Lakeville",       "slug": "lakeville",       "region": "Twin Cities Metro", "lat": 44.6497, "lng": -93.2428, "tier": 3 },
     { "name": "Chanhassen",      "slug": "chanhassen",      "region": "Twin Cities Metro", "lat": 44.8622, "lng": -93.5300, "tier": 3 },
     { "name": "Excelsior",       "slug": "excelsior",       "region": "Twin Cities Metro", "lat": 44.9030, "lng": -93.5663, "tier": 3 },
+    { "name": "Wayzata",         "slug": "wayzata",         "region": "Twin Cities Metro", "lat": 44.9733, "lng": -93.5066, "tier": 3 },
     { "name": "Mound",           "slug": "mound",           "region": "Twin Cities Metro", "lat": 44.9361, "lng": -93.6661, "tier": 3 },
     { "name": "Lino Lakes",      "slug": "lino-lakes",      "region": "Twin Cities Metro", "lat": 45.1608, "lng": -93.0860, "tier": 3 },
     { "name": "Big Lake",        "slug": "big-lake",        "region": "Central Lakes",     "lat": 45.3325, "lng": -93.7458, "tier": 3 },

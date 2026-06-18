@@ -58,6 +58,20 @@ const WALKER_LIFESTYLE = `Walker's calendar is built around the water and the wo
 
 The rest of the year it's the Chippewa National Forest, the Heartland Trail, the City Park beach, and supper-club dinners. For buyers who want serious water and real wilderness over a polished resort scene, Walker is the trade everyone in the know makes.`;
 
+const WAYZATA_OVERVIEW = `Wayzata is a small, affluent city of about 4,500 residents in Hennepin County, set on the north shore of Lake Minnetonka roughly 15 miles west of downtown Minneapolis. For a town its size it punches well above its weight: a walkable downtown along Lake Street, the historic Great Northern Depot right on the water, and the Wayzata Lake Walk tying it all to the bay. You can park once and move between the lake, lunch, and the shops on foot — a genuine rarity on Minnetonka.
+
+The town grew up around James J. Hill's Great Northern Railway, and that heritage still anchors its identity: the restored depot, the James J. Hill Days festival each September, and a deep sailing culture centered on Wayzata Bay and the Wayzata Yacht Club. It's served by Wayzata Public Schools (ISD 284), consistently among the top-ranked districts in Minnesota, and it borders Orono, Minnetonka Beach, Woodland, and Minnetonka.
+
+Wayzata is the dressed-up end of Lake Minnetonka — refined, walkable, and built around the water.`;
+
+const WAYZATA_REAL_ESTATE = `Wayzata anchors the top of the Lake Minnetonka market — and Minnetonka is the top of the Minnesota lake market, so this is about as high as waterfront pricing goes in the state. Expect historic estates, extensively rebuilt lake homes, and new luxury construction on Wayzata Bay and the protected shoreline toward Ferndale, alongside walk-to-downtown condos and homes that trade at a premium precisely because almost nothing else on the lake is this walkable.
+
+Lakefront here is generational and tightly held; when premier frontage trades, it often does so quietly. Off-water homes within walking distance of Lake Street are their own fierce micro-market. Inventory is thin and competition is real — a specialist who knows Wayzata Bay bay by bay, and the difference between Ferndale and the village, earns their keep here.`;
+
+const WAYZATA_LIFESTYLE = `Downtown is the draw: lakefront dining along Lake Street, boutiques, and the Lake Walk that fills with strollers, runners, and sailors all summer. The Great Northern Depot and the bandshell anchor community events, and James J. Hill Days in September is the signature festival. Boating and sailing on Wayzata Bay define the season, with the Wayzata Yacht Club running regattas all summer.
+
+Beyond the lake, it's a short hop to the western suburbs' trails and golf and to the rest of Minnetonka's 14,000-plus acres. Wayzata is lake life with a tucked-in shirt — polished, social, and walkable in a way the rest of the lake isn't.`;
+
 module.exports = [
     {
         slug: 'excelsior',
@@ -65,7 +79,15 @@ module.exports = [
         description: [EXCELSIOR_OVERVIEW, EXCELSIOR_REAL_ESTATE, EXCELSIOR_LIFESTYLE].join('\n\n'),
         seo_title: 'Excelsior MN Homes for Sale | MN Lake Homes',
         seo_description: "Excelsior, MN homes for sale. A walkable Victorian downtown on the south shore of Lake Minnetonka — beaches, premier waterfront, and historic charm. Get new listings.",
-        hero_image_url: '/assets/images/mn-harbor-town.webp',
+        hero_image_url: '/assets/images/mn-cape-cod-lakefront.jpg',
+    },
+    {
+        slug: 'wayzata',
+        intro_text: "The polished north-shore gateway to Lake Minnetonka — Wayzata pairs a walkable lakefront downtown with some of the most coveted (and most expensive) waterfront in Minnesota.",
+        description: [WAYZATA_OVERVIEW, WAYZATA_REAL_ESTATE, WAYZATA_LIFESTYLE].join('\n\n'),
+        seo_title: 'Wayzata MN Homes for Sale | MN Lake Homes',
+        seo_description: "Wayzata, MN homes for sale. The walkable north-shore gateway to Lake Minnetonka — historic downtown, premier waterfront, and top-ranked schools. Get new listings.",
+        hero_image_url: '/assets/images/mn-chateau-aerial.jpg',
     },
     {
         slug: 'nisswa',
