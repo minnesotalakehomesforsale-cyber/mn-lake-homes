@@ -75,7 +75,7 @@ Beyond the lake, it's a short hop to the western suburbs' trails and golf and to
 module.exports = [
     {
         slug: 'excelsior',
-        intro_text: "A walkable Victorian lake town on the south shore of Lake Minnetonka — Excelsior pairs a historic Water Street downtown with some of the most sought-after waterfront in the Twin Cities.",
+        intro_text: "A walkable Victorian downtown on the south shore of Lake Minnetonka.",
         description: [EXCELSIOR_OVERVIEW, EXCELSIOR_REAL_ESTATE, EXCELSIOR_LIFESTYLE].join('\n\n'),
         seo_title: 'Excelsior MN Homes for Sale | MN Lake Homes',
         seo_description: "Excelsior, MN homes for sale. A walkable Victorian downtown on the south shore of Lake Minnetonka — beaches, premier waterfront, and historic charm. Get new listings.",
@@ -83,7 +83,7 @@ module.exports = [
     },
     {
         slug: 'wayzata',
-        intro_text: "The polished north-shore gateway to Lake Minnetonka — Wayzata pairs a walkable lakefront downtown with some of the most coveted (and most expensive) waterfront in Minnesota.",
+        intro_text: "The polished north-shore gateway to Lake Minnetonka.",
         description: [WAYZATA_OVERVIEW, WAYZATA_REAL_ESTATE, WAYZATA_LIFESTYLE].join('\n\n'),
         seo_title: 'Wayzata MN Homes for Sale | MN Lake Homes',
         seo_description: "Wayzata, MN homes for sale. The walkable north-shore gateway to Lake Minnetonka — historic downtown, premier waterfront, and top-ranked schools. Get new listings.",
@@ -91,7 +91,7 @@ module.exports = [
     },
     {
         slug: 'nisswa',
-        intro_text: "The picture-book heart of the Brainerd Lakes — Nisswa pairs a walkable, shop-lined downtown with the Gull Lake chain, Minnesota's most established resort-lake market.",
+        intro_text: "The walkable heart of the Brainerd Lakes and the Gull Lake chain.",
         description: [NISSWA_OVERVIEW, NISSWA_REAL_ESTATE, NISSWA_LIFESTYLE].join('\n\n'),
         seo_title: 'Nisswa MN Homes for Sale | MN Lake Homes',
         seo_description: "Nisswa, MN homes for sale. The walkable heart of the Brainerd Lakes on the Gull Lake chain — cabins, year-round lake homes, and luxury frontage. Get new listings.",
@@ -99,7 +99,7 @@ module.exports = [
     },
     {
         slug: 'walker',
-        intro_text: "A northwoods fishing town on the south shore of Leech Lake — Walker is the walleye-and-cabin gateway to Minnesota's third-largest lake and the Chippewa National Forest.",
+        intro_text: "A northwoods fishing town on the south shore of Leech Lake.",
         description: [WALKER_OVERVIEW, WALKER_REAL_ESTATE, WALKER_LIFESTYLE].join('\n\n'),
         seo_title: 'Walker MN Homes for Sale | MN Lake Homes',
         seo_description: "Walker, MN homes for sale. A northwoods fishing town on Leech Lake — cabins, year-round homes, and frontage near the Chippewa National Forest. Get new listings.",
