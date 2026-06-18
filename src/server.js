@@ -958,7 +958,12 @@ app.get('/towns/:slug', async (req, res, next) => {
             // SEO-leaning H1 ("[Town] Lake Homes for Sale"); otherwise the
             // template falls back to the simpler "Explore [Town]" treatment.
             const hasContent      = !!(tag.description && tag.description.trim());
-            const heroH1HtmlRich  = `${escapeHtml(tag.name)} <span>Homes for Sale</span>`;
+            // Both variants MUST close the </h1> themselves — the template
+            // emits a bare "<h1>{{TOWN_HERO_H1_HTML}}" with no closing tag. If
+            // the rich variant omits </h1>, the <p class="lead"> subtitle is
+            // swallowed into the heading and inherits its letter-spacing:-2px,
+            // which jams the subtitle text together.
+            const heroH1HtmlRich  = `${escapeHtml(tag.name)} <span>Homes for Sale</span></h1>`;
             const heroH1HtmlBasic = `Explore<br><span>${escapeHtml(tag.name)}</span></h1>`;
             const heroH1Html      = hasContent ? heroH1HtmlRich : heroH1HtmlBasic;
             const introText       = (tag.intro_text || '').trim()
