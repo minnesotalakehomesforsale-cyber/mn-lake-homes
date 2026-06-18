@@ -2261,6 +2261,7 @@ async function ensureTables() {
         `);
 
         await seedBlogPosts();
+        await seedTownContent();
     } catch (err) {
         console.error(' Table migration warning:', err.message);
     }
@@ -2326,6 +2327,36 @@ async function seedBlogPosts() {
         added += r.rowCount;
     }
     if (added > 0) console.log(` Seeded ${added} missing blog post(s).`);
+}
+
+async function seedTownContent() {
+    // Curate individual town pages on deploy. Each town's tag row already
+    // exists (from tags-seed.js); this fills in the hero + long-form content
+    // and flips it active so the page actually renders at /towns/<slug>.
+    //
+    // Scoped to rows that haven't been curated yet (empty hero_image_url) so
+    // it only ships the initial content once — later admin edits are never
+    // overwritten on subsequent boots. Mirrors the standalone content-lift
+    // scripts (e.g. detroit-lakes-town-content-lift.js) but runs automatically
+    // so a push publishes the town without a manual Render-shell step.
+    const towns = require('./data/town-content');
+    let curated = 0;
+    for (const t of towns) {
+        const r = await pool.query(`
+            UPDATE tags
+               SET intro_text      = $2,
+                   description     = $3,
+                   seo_title       = $4,
+                   seo_description = $5,
+                   hero_image_url  = $6,
+                   active          = TRUE,
+                   updated_at      = NOW()
+             WHERE slug = $1
+               AND (hero_image_url IS NULL OR hero_image_url = '')
+        `, [t.slug, t.intro_text, t.description, t.seo_title, t.seo_description, t.hero_image_url]);
+        curated += r.rowCount;
+    }
+    if (curated > 0) console.log(` Curated ${curated} town page(s).`);
 }
 
 // ==========================================
