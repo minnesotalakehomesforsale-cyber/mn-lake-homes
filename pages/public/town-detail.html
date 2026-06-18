@@ -426,11 +426,6 @@
             <h2>Discover more around {{TOWN_NAME}}</h2>
             <p class="lead-sub">Nearby towns, the lakes that define this part of {{TOWN_REGION}}, and the easiest ways to take a next step.</p>
 
-            <div class="discover-row" id="tn-discover-lakes-row" style="display:none;">
-                <h3>Lakes in or near {{TOWN_NAME}}</h3>
-                <div class="discover-grid" id="tn-discover-lakes"></div>
-            </div>
-
             <div class="discover-row" id="tn-discover-towns-row" style="display:none;">
                 <h3>Other towns in {{TOWN_REGION}}</h3>
                 <div class="discover-grid" id="tn-discover-towns"></div>
@@ -795,28 +790,9 @@
         // there's nothing to render — the action-cards row keeps the
         // section useful in all cases.
         async function loadDiscover() {
-            // Lakes connected to this town (reuse existing tag/lakes endpoint)
-            try {
-                const r = await fetch(`/api/tags/${encodeURIComponent(TOWN_SLUG)}/lakes`);
-                if (r.ok) {
-                    const lakes = await r.json();
-                    if (Array.isArray(lakes) && lakes.length) {
-                        document.getElementById('tn-discover-lakes').innerHTML = lakes.slice(0, 4).map(l => {
-                            const img = l.featured_image_url || l.hero_image_url || '';
-                            const style = img ? `style="background-image:url('${escHtml(img)}');"` : '';
-                            return `
-                                <a class="discover-card" href="/lakes/${encodeURIComponent(l.slug)}">
-                                    <div class="thumb" ${style}></div>
-                                    <div class="body">
-                                        <div class="name">${escHtml(l.name)}</div>
-                                        <div class="meta">${escHtml([l.county ? l.county + ' Co.' : '', l.state].filter(Boolean).join(' · '))}</div>
-                                    </div>
-                                </a>`;
-                        }).join('');
-                        document.getElementById('tn-discover-lakes-row').style.display = '';
-                    }
-                }
-            } catch (_) { /* row stays hidden */ }
+            // Note: lakes connected to this town are already shown in the
+            // primary "Lakes in {{TOWN_NAME}}" section above (loadLakes), so
+            // the Discover block intentionally omits a second lakes row.
 
             // Other towns in this region (exclude self)
             try {
