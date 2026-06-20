@@ -306,7 +306,10 @@
                     endTitle.textContent = 'Ready to meet your lake specialist?';
                 }
 
-                document.getElementById('post-body').innerHTML = post.body || '<p>No content yet.</p>';
+                // Strip the legacy in-article "Get matched … →" button; the page
+                // renders one canonical bottom CTA instead.
+                const cleanBody = (post.body || '').replace(/<p[^>]*text-align:\s*center[^>]*>\s*<a\b[\s\S]*?(?:→|&rarr;|&#8594;)[\s\S]*?<\/a>\s*<\/p>/gi, '');
+                document.getElementById('post-body').innerHTML = cleanBody || '<p>No content yet.</p>';
                 buildToc();
             } catch (err) {
                 document.getElementById('post-title').textContent = 'Post not found';

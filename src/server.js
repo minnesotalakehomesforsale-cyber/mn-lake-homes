@@ -1059,6 +1059,17 @@ app.get('/towns/:slug', async (req, res, next) => {
     }
 });
 
+// Strip the legacy in-article CTA button (a centered <p> wrapping a styled
+// "Get matched … →" anchor) from post bodies — the blog template now renders a
+// single canonical bottom CTA, so the in-body one is a duplicate.
+function stripCtaButtons(html) {
+    if (!html) return html;
+    return html.replace(
+        /<p[^>]*text-align:\s*center[^>]*>\s*<a\b[\s\S]*?(?:→|&rarr;|&#8594;)[\s\S]*?<\/a>\s*<\/p>/gi,
+        ''
+    );
+}
+
 // ── Blog detail SSR (/blog/:slug) ───────────────────────────────────────────
 // Renders pages/public/blog-post.html with title/meta/JSON-LD baked in so
 // the bot sees the right SEO surface (the client-side JS fallback was fine
@@ -1080,6 +1091,7 @@ app.get('/blog/:slug', async (req, res, next) => {
             renderFriendly404(res, { kind: 'page', slug: req.params.slug });
             return;
         }
+        post.body = stripCtaButtons(post.body);
 
         const tplPath = path.join(PROJECT_ROOT, 'pages/public/blog-post.html');
         fs.readFile(tplPath, 'utf8', (err, html) => {
