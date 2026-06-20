@@ -12,7 +12,10 @@
            body all sit at the SAME width and align on the same left/right
            edges. padding-inline / padding-block (not the `padding` shorthand)
            so per-section vertical padding never wipes the side padding. */
-        .post-container { max-width: 1380px; margin: 0 auto; padding-inline: 2rem; box-sizing: border-box; }
+        /* width:100% is required because <body> is a flex column — without it
+           each section shrinks to its content width and margin:auto centers
+           that shrunk block, which reads as "centered" instead of left. */
+        .post-container { width: 100%; max-width: 1380px; margin: 0 auto; padding-inline: 2rem; box-sizing: border-box; }
 
         /* ── Article head (above the image, left-aligned) ────────────────── */
         .post-head { padding-block: 7.5rem 2rem; }
@@ -49,8 +52,16 @@
             grid-template-columns: 200px minmax(0, 1fr) 290px;
             column-gap: 44px;
             align-items: start;
-            padding-block-end: 6rem;
+            padding-block-end: 2.5rem;
         }
+
+        /* ── Big bottom CTA box ──────────────────────────────────────────── */
+        .post-end-cta { padding-block-end: 6rem; }
+        .end-cta-box { background: linear-gradient(135deg, #1d6df2 0%, #3b82f6 100%); border-radius: 24px; padding: 4rem 3rem; text-align: center; box-shadow: 0 28px 64px rgba(29,109,242,0.28); }
+        .end-cta-box h3 { font-size: 2.6rem; font-weight: 800; color: #fff; letter-spacing: -1.25px; line-height: 1.1; margin: 0 0 0.85rem; }
+        .end-cta-box p { font-size: 1.2rem; color: rgba(255,255,255,0.92); line-height: 1.55; max-width: 560px; margin: 0 auto 2.25rem; }
+        .end-cta-btn { display: inline-block; background: #fff; color: #1d6df2; font-weight: 800; font-size: 1.05rem; padding: 1.05rem 2.5rem; border-radius: 999px; text-decoration: none; transition: transform 0.15s, box-shadow 0.15s; }
+        .end-cta-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,0.18); }
 
         /* Left: sticky table of contents with scroll-spy */
         .post-toc { position: sticky; top: 96px; align-self: start; }
@@ -104,6 +115,9 @@
             .post-body h2 { font-size: 1.5rem; margin-top: 2.25rem; }
             .post-body h3 { font-size: 1.18rem; }
             .post-body li { font-size: 1.02rem; }
+            .end-cta-box { padding: 2.75rem 1.5rem; border-radius: 18px; }
+            .end-cta-box h3 { font-size: 1.9rem; }
+            .end-cta-box p { font-size: 1.05rem; }
         }
         @media (max-width: 480px) {
             .post-title { font-size: 2rem; letter-spacing: -1px; }
@@ -177,6 +191,15 @@
             </div>
         </aside>
     </div>
+
+    <!-- Big bottom call-to-action -->
+    <section class="post-end-cta post-container">
+        <div class="end-cta-box">
+            <h3 id="end-cta-title">Ready to find your lake home?</h3>
+            <p id="end-cta-sub">Get matched with a vetted, licensed, local lake specialist who knows your water — free to you, and no commission out of your pocket.</p>
+            <a href="/pages/public/buy.html" class="end-cta-btn" id="end-cta-btn">Get matched with a specialist &rarr;</a>
+        </div>
+    </section>
 
     <global-footer></global-footer>
     <lead-modal></lead-modal>
@@ -268,12 +291,15 @@
                 const tag = post.tag || '';
                 const matchTitle = document.getElementById('cta-match-title');
                 const matchSub = document.getElementById('cta-match-sub');
+                const endTitle = document.getElementById('end-cta-title');
                 if (/sell/i.test(tag)) {
                     matchTitle.textContent = 'Selling a lake home?';
                     matchSub.textContent = "Get matched with a local specialist who knows what waterfront buyers on your lake actually pay for. Free, no commission.";
+                    endTitle.textContent = 'Ready to sell your lake home?';
                 } else if (/agent|work/i.test(tag)) {
                     matchTitle.textContent = 'Want the right agent?';
                     matchSub.textContent = "We do the vetting for you and match you with a licensed, local lake specialist. Free, no commission.";
+                    endTitle.textContent = 'Ready to meet your lake specialist?';
                 }
 
                 document.getElementById('post-body').innerHTML = post.body || '<p>No content yet.</p>';
