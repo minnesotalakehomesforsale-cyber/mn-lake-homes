@@ -1257,6 +1257,57 @@ app.get('/agents/:slug', async (req, res, next) => {
 // so they get a usable icon instead of a 404 line in the server logs.
 app.get('/favicon.ico', (req, res) => res.redirect(301, '/favicon.svg'));
 
+// ── Site search (/search?q=) ────────────────────────────────────────────────
+// Server-rendered results across lakes, towns, blog guides, and agents. Backs
+// the homepage WebSite SearchAction. Results pages are noindex (see template).
+app.get('/search', async (req, res, next) => {
+    try {
+        const q = (req.query.q || '').toString().trim().slice(0, 80);
+        const tplPath = path.join(PROJECT_ROOT, 'pages/public/search.html');
+        const like = `%${q}%`;
+        const safe = (p) => p.then(r => r.rows).catch(() => []);
+
+        let lakes = [], towns = [], posts = [], agents = [];
+        if (q) {
+            [lakes, towns, posts, agents] = await Promise.all([
+                safe(pool.query(`SELECT slug, name, region, intro_text FROM lakes WHERE status = 'published' AND name ILIKE $1 ORDER BY name LIMIT 8`, [like])),
+                safe(pool.query(`SELECT slug, name, region FROM tags WHERE active = TRUE AND COALESCE(hero_image_url,'') <> '' AND name ILIKE $1 ORDER BY name LIMIT 8`, [like])),
+                safe(pool.query(`SELECT slug, title, excerpt FROM blog_posts WHERE is_published = TRUE AND deleted_at IS NULL AND (title ILIKE $1 OR excerpt ILIKE $1) ORDER BY published_at DESC NULLS LAST LIMIT 8`, [like])),
+                safe(pool.query(`SELECT slug, display_name, city, state, brokerage_name FROM agents WHERE profile_status = 'published' AND is_published = true AND display_name ILIKE $1 ORDER BY display_name LIMIT 8`, [like])),
+            ]);
+        }
+
+        const enc = encodeURIComponent;
+        const hit = (href, name, meta, sub) =>
+            `<a class="search-hit" href="${href}"><div><span class="h-name">${escapeHtml(name)}</span>${meta ? `<span class="h-meta">${escapeHtml(meta)}</span>` : ''}</div>${sub ? `<div class="h-sub">${escapeHtml(sub)}</div>` : ''}</a>`;
+        const group = (title, items) => items.length ? `<div class="search-group"><h2>${title}</h2>${items.join('')}</div>` : '';
+        const clip = (s) => { s = (s || '').trim(); return s.length > 130 ? s.slice(0, 130).trim() + '…' : s; };
+
+        let results;
+        if (!q) {
+            results = `<p class="search-empty">Search Minnesota lakes, towns, buyer guides, and agents.</p>`;
+        } else {
+            const blocks = [
+                group('Lakes', lakes.map(l => hit(`/lakes/${enc(l.slug)}`, l.name, l.region || 'Lake', clip(l.intro_text)))),
+                group('Towns', towns.map(t => hit(`/towns/${enc(t.slug)}`, t.name, t.region || 'Town'))),
+                group('Guides', posts.map(p => hit(`/blog/${enc(p.slug)}`, p.title, 'Blog', clip(p.excerpt)))),
+                group('Agents', agents.map(a => hit(`/agents/${enc(a.slug)}`, a.display_name, [a.brokerage_name, [a.city, a.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ') || 'Agent'))),
+            ].filter(Boolean);
+            results = blocks.length ? blocks.join('') : `<p class="search-empty">No matches for “${escapeHtml(q)}”. Try a lake or town name like “Gull Lake” or “Nisswa”.</p>`;
+        }
+
+        fs.readFile(tplPath, 'utf8', (err, html) => {
+            if (err) return next(err);
+            const out = html
+                .replace('<title>Search | MN Lake Homes</title>', `<title>${q ? `${escapeHtml(q)} — Search` : 'Search'} | MN Lake Homes</title>`)
+                .replace('{{SEARCH_TITLE}}', q ? `Results for “${escapeHtml(q)}”` : 'Search')
+                .replace('{{SEARCH_QUERY}}', escapeHtml(q))
+                .replace('{{SEARCH_RESULTS}}', results);
+            res.type('html').send(out);
+        });
+    } catch (err) { next(err); }
+});
+
 app.use(express.static(PROJECT_ROOT));
 
 // Fallback for Next.js-style clean URL resolution. Most public pages

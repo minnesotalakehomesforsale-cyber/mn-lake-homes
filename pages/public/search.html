@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search | MN Lake Homes</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/favicon.svg">
+    <!-- Search results shouldn't be indexed, but links should be followed. -->
+    <meta name="robots" content="noindex, follow">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/search">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        .search-wrap { max-width: 880px; margin: 0 auto; padding: 8rem 2rem 5rem; }
+        .search-title { font-size: 2.4rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; margin-bottom: 1.5rem; }
+        .search-form { display: flex; gap: 0.75rem; margin-bottom: 2.5rem; }
+        .search-form input { flex: 1; padding: 0.9rem 1.1rem; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 1rem; font-family: inherit; outline: none; box-sizing: border-box; }
+        .search-form input:focus { border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.12); }
+        .search-form button { padding: 0.9rem 1.5rem; background: #1d6df2; color: #fff; border: none; border-radius: 10px; font-weight: 700; font-size: 0.95rem; font-family: inherit; cursor: pointer; }
+        .search-form button:hover { background: #155ad1; }
+        .search-group { margin-bottom: 2.5rem; }
+        .search-group h2 { font-size: 0.78rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #1d6df2; margin-bottom: 1rem; }
+        .search-hit { display: block; padding: 1rem 1.1rem; border: 1px solid #edf2f7; border-radius: 12px; margin-bottom: 0.75rem; text-decoration: none; color: inherit; transition: border-color 0.15s, transform 0.15s; }
+        .search-hit:hover { border-color: #1d6df2; transform: translateX(2px); }
+        .search-hit .h-name { font-size: 1.1rem; font-weight: 700; color: #1a202c; }
+        .search-hit .h-meta { font-size: 0.82rem; color: #a0aec0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; margin-left: 0.5rem; }
+        .search-hit .h-sub { font-size: 0.92rem; color: #718096; line-height: 1.5; margin-top: 0.3rem; }
+        .search-empty { color: #a0aec0; font-size: 1.05rem; padding: 2rem 0; }
+        @media (max-width: 600px) { .search-wrap { padding: 6.5rem 1.25rem 3.5rem; } .search-title { font-size: 1.9rem; } }
+    </style>
+    <script src="../../components/components.js" defer></script>
+</head>
+<body style="background: #fff;">
+    <global-header></global-header>
+    <div class="search-wrap">
+        <h1 class="search-title">{{SEARCH_TITLE}}</h1>
+        <form class="search-form" action="/search" method="get" role="search">
+            <input type="search" name="q" value="{{SEARCH_QUERY}}" placeholder="Search lakes, towns, guides, agents…" aria-label="Search the site" autocomplete="off" autofocus>
+            <button type="submit">Search</button>
+        </form>
+        <div class="search-results">{{SEARCH_RESULTS}}</div>
+    </div>
+    <global-footer></global-footer>
+    <lead-modal></lead-modal>
+</body>
+</html>
