@@ -134,7 +134,7 @@
         <nav class="post-breadcrumb" aria-label="Breadcrumb">
             <a href="/">Home</a>
             <span class="sep">&rsaquo;</span>
-            <a href="/pages/public/blog.html">Blog</a>
+            <a href="/blog">Blog</a>
             <span class="sep">&rsaquo;</span>
             <span class="current" id="bc-title">Loading…</span>
         </nav>
@@ -253,15 +253,19 @@
         }
 
         async function loadPost() {
-            // /blog/:slug SSR injects window.__BLOG_SLUG__; the listing links
-            // here with ?slug=. Support both entry points.
-            const slug = window.__BLOG_SLUG__ || new URLSearchParams(window.location.search).get('slug');
-            if (!slug) { document.getElementById('post-title').textContent = 'Post not found.'; return; }
-
             try {
-                const res = await fetch(`/api/blog/${slug}`);
-                if (!res.ok) throw new Error('Not found');
-                const post = await res.json();
+                // /blog/:slug SSR injects the full post as window.__BLOG_POST__
+                // (and the body is already in the HTML for crawlers). Use it and
+                // skip the fetch. Fall back to ?slug= / __BLOG_SLUG__ fetch when
+                // the page is loaded directly (e.g. the listing's ?slug= links).
+                let post = window.__BLOG_POST__ || null;
+                if (!post) {
+                    const slug = window.__BLOG_SLUG__ || new URLSearchParams(window.location.search).get('slug');
+                    if (!slug) { document.getElementById('post-title').textContent = 'Post not found.'; return; }
+                    const res = await fetch(`/api/blog/${slug}`);
+                    if (!res.ok) throw new Error('Not found');
+                    post = await res.json();
+                }
 
                 document.title = `${post.title} | MN Lake Homes`;
                 document.getElementById('bc-title').textContent = post.title;

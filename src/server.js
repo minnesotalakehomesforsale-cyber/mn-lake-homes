@@ -497,7 +497,7 @@ app.get('/sitemap.xml', async (req, res) => {
         for (const l of lakes.rows)      push(`${base}/lakes/${encodeURIComponent(l.slug)}`,       { lastmod: iso(l.updated_at),  priority: 0.8, changefreq: 'weekly'  });
         for (const t of towns.rows)      push(`${base}/towns/${encodeURIComponent(t.slug)}`,       { lastmod: iso(t.updated_at),  priority: 0.8, changefreq: 'weekly'  });
         for (const b of businesses.rows) push(`${base}/businesses/${encodeURIComponent(b.slug)}`,  { lastmod: iso(b.updated_at),  priority: 0.6, changefreq: 'monthly' });
-        for (const a of agents.rows)     push(`${base}/pages/public/agent-profile.html?slug=${encodeURIComponent(a.slug)}`, { lastmod: iso(a.updated_at), priority: 0.6, changefreq: 'monthly' });
+        for (const a of agents.rows)     push(`${base}/agents/${encodeURIComponent(a.slug)}`,                              { lastmod: iso(a.updated_at), priority: 0.6, changefreq: 'monthly' });
         for (const p of posts.rows)      push(`${base}/blog/${encodeURIComponent(p.slug)}`,                                   { lastmod: iso(p.published_at || p.updated_at), priority: 0.5, changefreq: 'monthly' });
 
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -1091,7 +1091,7 @@ app.get('/blog/:slug', async (req, res, next) => {
                         '@type': 'BreadcrumbList',
                         'itemListElement': [
                             { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': `${baseUrl}/` },
-                            { '@type': 'ListItem', 'position': 2, 'name': 'Blog', 'item': `${baseUrl}/pages/public/blog.html` },
+                            { '@type': 'ListItem', 'position': 2, 'name': 'Blog', 'item': `${baseUrl}/blog` },
                             { '@type': 'ListItem', 'position': 3, 'name': post.title, 'item': `${baseUrl}${canonical}` },
                         ],
                     },
@@ -1118,15 +1118,35 @@ app.get('/blog/:slug', async (req, res, next) => {
     ${heroAbs ? `<meta name="twitter:image" content="${escapeHtml(heroAbs)}">` : ''}
     ${jsonldTag}
 `;
-            // The client-side blog-post.html JS reads ?slug=... from the
-            // URL — preserve that by setting a hidden marker that the JS
-            // also looks for. Cheaper than rewriting the body server-side.
+            // Server-render the body so crawlers (and no-JS clients) get the
+            // full article, not a "Loading…" shell. The whole post is also
+            // handed to the page as window.__BLOG_POST__ so the client renders
+            // from it (TOC, CTAs, newsletter) without a second fetch.
+            const tagTxt   = post.tag || 'General';
+            const readTxt  = `${post.read_time_minutes || 4} min read`;
+            const subTxt   = post.excerpt || post.seo_description || '';
+            const authorTxt = post.author_name || 'MN Lake Homes';
+            let dateTxt = '';
+            const rawDate = post.published_at || post.updated_at;
+            if (rawDate) { try { dateTxt = new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); } catch (_) {} }
+            // JSON for the client; escape `<` so a "</script>" in the body can't break out.
+            const postJson = JSON.stringify({
+                title: post.title, slug: post.slug, excerpt: post.excerpt, body: post.body,
+                cover_image_url: post.cover_image_url, tag: post.tag, read_time_minutes: post.read_time_minutes,
+                author_name: post.author_name, published_at: post.published_at, seo_description: post.seo_description,
+            }).replace(/</g, '\\u003c');
+
             out = out
-                .replace('</head>', `${metaBlock}<script>window.__BLOG_SLUG__='${post.slug.replace(/'/g, "\\'")}';</script>\n</head>`)
-                .replace(
-                    `new URLSearchParams(window.location.search).get('slug')`,
-                    `(window.__BLOG_SLUG__ || new URLSearchParams(window.location.search).get('slug'))`
-                );
+                .replace('</head>', `${metaBlock}<script>window.__BLOG_POST__=${postJson};</script>\n</head>`)
+                .replace('<span class="current" id="bc-title">Loading…</span>', `<span class="current" id="bc-title">${escapeHtml(post.title)}</span>`)
+                .replace('<span id="post-tag" class="post-tag"></span>', `<span id="post-tag" class="post-tag">${escapeHtml(tagTxt)}</span>`)
+                .replace('<span id="post-read-time" class="post-read-pill"></span>', `<span id="post-read-time" class="post-read-pill">${escapeHtml(readTxt)}</span>`)
+                .replace('<h1 id="post-title" class="post-title">Loading…</h1>', `<h1 id="post-title" class="post-title">${escapeHtml(post.title)}</h1>`)
+                .replace('<p id="post-subtitle" class="post-subtitle"></p>', `<p id="post-subtitle" class="post-subtitle">${escapeHtml(subTxt)}</p>`)
+                .replace('<div class="post-author-name" id="post-author">MN Lake Homes</div>', `<div class="post-author-name" id="post-author">${escapeHtml(authorTxt)}</div>`)
+                .replace('<div class="post-author-date" id="post-date"></div>', `<div class="post-author-date" id="post-date">${escapeHtml(dateTxt)}</div>`)
+                .replace('<img id="hero-img" src="" alt="">', `<img id="hero-img" src="${escapeHtml(post.cover_image_url || '')}" alt="${escapeHtml(post.title)}">`)
+                .replace('<article class="post-body" id="post-body"></article>', `<article class="post-body" id="post-body">${post.body || ''}</article>`);
             res.type('html').send(out);
         });
     } catch (err) {
@@ -1140,6 +1160,95 @@ app.get('/pages/public/blog-post.html', (req, res, next) => {
     const slug = (req.query.slug || '').toString().trim();
     if (!slug) return next();
     res.redirect(301, `/blog/${encodeURIComponent(slug)}`);
+});
+
+// ── Agent profile SSR (/agents/:slug) ───────────────────────────────────────
+// Clean, crawlable agent URLs with RealEstateAgent + BreadcrumbList JSON-LD and
+// a server-rendered hero. The page (agent-profile.html) renders the rest from
+// window.__AGENT__ without a second fetch.
+app.get('/agents/:slug', async (req, res, next) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT a.slug, a.display_name, a.brokerage_name, a.city, a.state,
+                    a.service_areas, a.bio, a.phone_public, a.email_public,
+                    a.website_url, a.facebook_url, a.instagram_url, a.linkedin_url,
+                    a.profile_photo_url, m.display_badge_label AS membership_badge
+               FROM agents a JOIN memberships m ON a.membership_id = m.id
+              WHERE a.slug = $1 AND a.profile_status = 'published' AND a.is_published = true
+              LIMIT 1`,
+            [req.params.slug]
+        );
+        const agent = rows[0];
+        if (!agent) { renderFriendly404(res, { kind: 'agent', slug: req.params.slug }); return; }
+
+        const tplPath = path.join(PROJECT_ROOT, 'pages/public/agent-profile.html');
+        fs.readFile(tplPath, 'utf8', (err, html) => {
+            if (err) return next(err);
+            const baseUrl = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
+            const canonical = `/agents/${agent.slug}`;
+            const role = agent.membership_badge || 'Lake Home Specialist';
+            const loc = [agent.city, agent.state].filter(Boolean).join(', ');
+            const title = `${agent.display_name}${agent.brokerage_name ? ' · ' + agent.brokerage_name : ''} | Minnesota Lake Home Agent`;
+            const bioText = (agent.bio || '').replace(/\s+/g, ' ').trim();
+            const desc = bioText ? bioText.slice(0, 155) : `${agent.display_name} is a vetted Minnesota lake home specialist${loc ? ' serving ' + loc : ''}. Get matched and start your lakefront search.`;
+            const photoAbs = agent.profile_photo_url
+                ? (agent.profile_photo_url.startsWith('http') ? agent.profile_photo_url : `${baseUrl}${agent.profile_photo_url}`)
+                : '';
+
+            let areas = agent.service_areas;
+            if (typeof areas === 'string') { try { areas = JSON.parse(areas); } catch (_) { areas = []; } }
+            if (!Array.isArray(areas)) areas = [];
+            const areaNames = areas.map(a => (typeof a === 'string' ? a : (a && (a.name || a.slug)))).filter(Boolean);
+
+            const agentLd = {
+                '@context': 'https://schema.org',
+                '@type': 'RealEstateAgent',
+                name: agent.display_name,
+                url: `${baseUrl}${canonical}`,
+                image: photoAbs || undefined,
+                description: bioText || undefined,
+                telephone: agent.phone_public || undefined,
+                email: agent.email_public || undefined,
+                worksFor: agent.brokerage_name ? { '@type': 'Organization', name: agent.brokerage_name } : undefined,
+                address: loc ? { '@type': 'PostalAddress', addressLocality: agent.city || undefined, addressRegion: agent.state || undefined, addressCountry: 'US' } : undefined,
+                areaServed: areaNames.length ? areaNames.map(n => ({ '@type': 'Place', name: n })) : (agent.state ? { '@type': 'State', name: agent.state } : undefined),
+                sameAs: [agent.website_url, agent.facebook_url, agent.instagram_url, agent.linkedin_url].filter(Boolean),
+            };
+            if (!agentLd.sameAs.length) delete agentLd.sameAs;
+            const breadcrumbLd = {
+                '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+                itemListElement: [
+                    { '@type': 'ListItem', position: 1, name: 'Home', item: `${baseUrl}/` },
+                    { '@type': 'ListItem', position: 2, name: 'Agents', item: `${baseUrl}/agents` },
+                    { '@type': 'ListItem', position: 3, name: agent.display_name, item: `${baseUrl}${canonical}` },
+                ],
+            };
+
+            const head = `
+    <link rel="canonical" href="${escapeHtml(canonical)}">
+    <meta property="og:type" content="profile">
+    <meta property="og:title" content="${escapeHtml(title)}">
+    <meta property="og:description" content="${escapeHtml(desc)}">
+    <meta property="og:url" content="${escapeHtml(baseUrl + canonical)}">
+    ${photoAbs ? `<meta property="og:image" content="${escapeHtml(photoAbs)}">` : ''}
+    <meta name="twitter:card" content="summary_large_image">
+    <script type="application/ld+json">${JSON.stringify(agentLd)}</script>
+    <script type="application/ld+json">${JSON.stringify(breadcrumbLd)}</script>
+`;
+            const agentJson = JSON.stringify(agent).replace(/</g, '\\u003c');
+            const heroSsr = `
+                <h1 style="font-size:3rem;font-weight:700;letter-spacing:-1px;margin-bottom:0.5rem;">${escapeHtml(agent.display_name)}</h1>
+                <p style="color:#cbd5e0;font-size:1.15rem;margin-bottom:1rem;">${escapeHtml(role)}${loc ? ' · ' + escapeHtml(loc) : ''}</p>
+                ${bioText ? `<p style="color:#a0aec0;max-width:640px;margin:0 auto;line-height:1.6;">${escapeHtml(bioText)}</p>` : ''}`;
+
+            const out = html
+                .replace(/<title[^>]*>[^<]*<\/title>/, `<title>${escapeHtml(title)}</title>`)
+                .replace('<meta name="description" content="MN Lake Homes agent profile page.">', `<meta name="description" content="${escapeHtml(desc)}">`)
+                .replace('</head>', `${head}<script>window.__AGENT__=${agentJson};</script>\n</head>`)
+                .replace('<div style="color: #a0aec0; font-size: 1.1rem;">Loading profile...</div>', heroSsr);
+            res.type('html').send(out);
+        });
+    } catch (err) { next(err); }
 });
 
 // Default-browser favicon path → SVG. Even though every page now references

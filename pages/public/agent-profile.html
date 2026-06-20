@@ -139,15 +139,21 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            const slug = new URLSearchParams(window.location.search).get('slug');
             const hero = document.getElementById('profile-hero');
             const body = document.getElementById('profile-body');
 
-            let agent = null;
+            // /agents/:slug SSR hands the agent over as window.__AGENT__ (and
+            // renders the hero for crawlers). Use it; otherwise read the slug
+            // from the clean path or the legacy ?slug= and fetch.
+            let agent = window.__AGENT__ || null;
             try {
-                if (slug) {
-                    const res = await fetch(`/api/agents/public/${slug}`);
-                    if (res.ok) agent = await res.json();
+                if (!agent) {
+                    const pathSlug = (window.location.pathname.match(/^\/agents\/([^\/?#]+)/) || [])[1];
+                    const slug = pathSlug || new URLSearchParams(window.location.search).get('slug');
+                    if (slug) {
+                        const res = await fetch(`/api/agents/public/${slug}`);
+                        if (res.ok) agent = await res.json();
+                    }
                 }
             } catch (err) {
                 console.error(err);

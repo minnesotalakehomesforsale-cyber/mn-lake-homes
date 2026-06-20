@@ -359,7 +359,7 @@
                 : '';
 
             const card = document.createElement('a');
-            card.href = `agent-profile.html?slug=${encodeURIComponent(agent.slug)}`;
+            card.href = `/agents/${encodeURIComponent(agent.slug)}`;
             card.style.cssText = 'text-decoration:none;color:inherit;display:block;';
             card.className = 'agent-link-wrapper';
             card.innerHTML = `
