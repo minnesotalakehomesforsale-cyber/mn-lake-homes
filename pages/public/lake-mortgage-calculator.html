@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lake Home Mortgage & Affordability Calculator | MN Lake Homes</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta name="description" content="Estimate the monthly cost of a Minnesota lake home — principal, interest, property tax, and insurance — plus the lakefront-specific costs buyers forget. Free calculator.">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/lake-mortgage-calculator">
+    <meta property="og:title" content="Lake Home Mortgage & Affordability Calculator">
+    <meta property="og:description" content="Estimate the true monthly cost of a Minnesota lake home, including the lakefront costs buyers forget.">
+    <meta property="og:url" content="https://minnesotalakehomesforsale.com/lake-mortgage-calculator">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        .tool-head { padding: 7.5rem 2rem 1.5rem; max-width: 820px; margin: 0 auto; text-align: center; }
+        .tool-eyebrow { color: #1d6df2; font-size: 0.78rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 1rem; }
+        .tool-head h1 { font-size: 3rem; font-weight: 800; color: #1a202c; letter-spacing: -1.5px; line-height: 1.05; margin-bottom: 1rem; }
+        .tool-head p { font-size: 1.15rem; color: #718096; line-height: 1.6; }
+        .calc-wrap { max-width: 960px; margin: 0 auto; padding: 1rem 2rem 6rem; display: grid; grid-template-columns: 1fr 360px; gap: 2rem; align-items: start; }
+        .calc-card { border: 1px solid #e8edf3; border-radius: 18px; background: #fff; box-shadow: 0 12px 40px rgba(16,24,40,0.06); padding: 2rem; }
+        .field { margin-bottom: 1.25rem; }
+        .field label { display: block; font-size: 0.85rem; font-weight: 700; color: #4a5568; margin-bottom: 0.4rem; }
+        .field .input { display: flex; align-items: center; border: 1.5px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+        .field .input:focus-within { border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.12); }
+        .field .adorn { padding: 0 0.75rem; color: #a0aec0; font-weight: 700; background: #f7f9fa; align-self: stretch; display: flex; align-items: center; }
+        .field input { flex: 1; border: none; outline: none; padding: 0.7rem 0.9rem; font-family: inherit; font-size: 1rem; font-weight: 600; color: #1a202c; min-width: 0; }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .result-card { border: 1px solid #e8edf3; border-radius: 18px; background: #fff; box-shadow: 0 12px 40px rgba(16,24,40,0.06); padding: 2rem; position: sticky; top: 90px; }
+        .result-total { text-align: center; padding-bottom: 1.5rem; border-bottom: 1px solid #edf2f7; margin-bottom: 1.5rem; }
+        .result-total .num { font-size: 2.75rem; font-weight: 800; color: #1d6df2; letter-spacing: -1.5px; }
+        .result-total .lbl { color: #a0aec0; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .breakdown { display: flex; flex-direction: column; gap: 0.7rem; }
+        .breakdown .line { display: flex; justify-content: space-between; font-size: 0.95rem; }
+        .breakdown .line span:first-child { color: #718096; }
+        .breakdown .line span:last-child { font-weight: 700; color: #1a202c; }
+        .result-sub { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid #edf2f7; font-size: 0.85rem; color: #a0aec0; }
+        .calc-note { max-width: 960px; margin: 0 auto; padding: 0 2rem; }
+        .calc-note .box { background: #f5f9ff; border: 1px solid #dbeafe; border-radius: 14px; padding: 1.5rem 1.75rem; }
+        .calc-note h3 { font-size: 1.1rem; font-weight: 800; color: #1a202c; margin: 0 0 0.6rem; }
+        .calc-note ul { margin: 0; padding-left: 1.2rem; color: #4a5568; line-height: 1.7; font-size: 0.95rem; }
+        .tool-cta { max-width: 960px; margin: 2.5rem auto 0; padding: 0 2rem; }
+        .tool-cta .inner { text-align: center; background: linear-gradient(135deg,#1d6df2,#3b82f6); border-radius: 18px; padding: 2.5rem; color: #fff; }
+        .tool-cta h3 { font-size: 1.6rem; font-weight: 800; margin: 0 0 0.5rem; }
+        .tool-cta p { color: rgba(255,255,255,0.9); margin: 0 0 1.5rem; }
+        .tool-cta a { display: inline-block; background: #fff; color: #1d6df2; font-weight: 800; padding: 0.9rem 2rem; border-radius: 99px; text-decoration: none; }
+        @media (max-width: 820px) {
+            .calc-wrap { grid-template-columns: 1fr; }
+            .result-card { position: static; }
+            .tool-head { padding: 6rem 1.25rem 1rem; } .tool-head h1 { font-size: 2.1rem; }
+            .calc-wrap, .calc-note, .tool-cta { padding-left: 1.25rem; padding-right: 1.25rem; }
+        }
+    </style>
+    <script src="../../components/components.js" defer></script>
+</head>
+<body style="background:#fff;">
+    <global-header></global-header>
+
+    <div class="tool-head">
+        <div class="tool-eyebrow">Affordability Calculator</div>
+        <h1>Lake home cost calculator</h1>
+        <p>Estimate the real monthly cost of a Minnesota lake home — principal, interest, taxes, and insurance — then see the lakefront-specific costs first-time buyers forget.</p>
+    </div>
+
+    <div class="calc-wrap">
+        <div class="calc-card">
+            <div class="field">
+                <label for="price">Home price</label>
+                <div class="input"><span class="adorn">$</span><input id="price" type="number" value="650000" min="0" step="5000"></div>
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <label for="downpct">Down payment</label>
+                    <div class="input"><input id="downpct" type="number" value="20" min="0" max="100" step="1"><span class="adorn">%</span></div>
+                </div>
+                <div class="field">
+                    <label for="rate">Interest rate</label>
+                    <div class="input"><input id="rate" type="number" value="6.5" min="0" max="20" step="0.1"><span class="adorn">%</span></div>
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <label for="term">Loan term</label>
+                    <div class="input"><input id="term" type="number" value="30" min="1" max="40" step="1"><span class="adorn">yrs</span></div>
+                </div>
+                <div class="field">
+                    <label for="tax">Property tax (annual)</label>
+                    <div class="input"><input id="tax" type="number" value="1.1" min="0" max="5" step="0.05"><span class="adorn">%</span></div>
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <label for="ins">Home insurance (annual)</label>
+                    <div class="input"><span class="adorn">$</span><input id="ins" type="number" value="2600" min="0" step="100"></div>
+                </div>
+                <div class="field">
+                    <label for="extra">Dues / extras (monthly)</label>
+                    <div class="input"><span class="adorn">$</span><input id="extra" type="number" value="0" min="0" step="25"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="result-card">
+            <div class="result-total">
+                <div class="num" id="r-total">$0</div>
+                <div class="lbl">Estimated / month</div>
+            </div>
+            <div class="breakdown">
+                <div class="line"><span>Principal &amp; interest</span><span id="r-pi">$0</span></div>
+                <div class="line"><span>Property tax</span><span id="r-tax">$0</span></div>
+                <div class="line"><span>Insurance</span><span id="r-ins">$0</span></div>
+                <div class="line"><span>Dues / extras</span><span id="r-extra">$0</span></div>
+            </div>
+            <div class="result-sub">
+                Loan amount: <strong id="r-loan">$0</strong> · Down: <strong id="r-down">$0</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="calc-note">
+        <div class="box">
+            <h3>Don't forget the lakefront-specific costs</h3>
+            <ul>
+                <li><strong>Septic &amp; well:</strong> most lake homes are on private septic — a failing system can run well into five figures. Budget for inspection and possible replacement.</li>
+                <li><strong>Dock, lift &amp; shoreline:</strong> docks, boat lifts, and riprap/erosion work add up, and some need permits.</li>
+                <li><strong>Insurance:</strong> waterfront, and any flood-zone exposure, can push premiums above a typical home.</li>
+                <li><strong>Seasonal carrying costs:</strong> road-association dues, winterizing, and second-home utilities.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="tool-cta">
+        <div class="inner">
+            <h3>Know your number?</h3>
+            <p>Get matched with a vetted, local lake agent who'll find homes in your range — free, no commission.</p>
+            <a href="/pages/public/buy.html">Get matched with a specialist →</a>
+        </div>
+    </div>
+
+    <global-footer></global-footer>
+    <lead-modal></lead-modal>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        const usd = n => '$' + Math.round(n).toLocaleString('en-US');
+        function calc() {
+            const price = +$('price').value || 0;
+            const downPct = Math.min(100, Math.max(0, +$('downpct').value || 0));
+            const rate = +$('rate').value || 0;
+            const term = +$('term').value || 30;
+            const taxPct = +$('tax').value || 0;
+            const insYr = +$('ins').value || 0;
+            const extra = +$('extra').value || 0;
+
+            const down = price * downPct / 100;
+            const loan = Math.max(0, price - down);
+            const r = (rate / 100) / 12;
+            const n = term * 12;
+            const pi = r > 0 ? loan * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1) : (n ? loan / n : 0);
+            const tax = price * (taxPct / 100) / 12;
+            const ins = insYr / 12;
+            const total = pi + tax + ins + extra;
+
+            $('r-total').textContent = usd(total);
+            $('r-pi').textContent = usd(pi);
+            $('r-tax').textContent = usd(tax);
+            $('r-ins').textContent = usd(ins);
+            $('r-extra').textContent = usd(extra);
+            $('r-loan').textContent = usd(loan);
+            $('r-down').textContent = usd(down);
+        }
+        ['price', 'downpct', 'rate', 'term', 'tax', 'ins', 'extra'].forEach(id => $(id).addEventListener('input', calc));
+        calc();
+    </script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Your Minnesota Lake — Lake Match Quiz | MN Lake Homes</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta name="description" content="Answer 4 quick questions — budget, drive time, vibe, and priorities — and we'll match you with the Minnesota lakes that fit. Free interactive lake-finder quiz.">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/find-your-lake">
+    <meta property="og:title" content="Find Your Minnesota Lake — Lake Match Quiz">
+    <meta property="og:description" content="Budget, drive time, vibe, priorities → your best-fit Minnesota lakes. Free quiz.">
+    <meta property="og:url" content="https://minnesotalakehomesforsale.com/find-your-lake">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        .tool-head { padding: 7.5rem 2rem 1.5rem; max-width: 820px; margin: 0 auto; text-align: center; }
+        .tool-eyebrow { color: #1d6df2; font-size: 0.78rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 1rem; }
+        .tool-head h1 { font-size: 3rem; font-weight: 800; color: #1a202c; letter-spacing: -1.5px; line-height: 1.05; margin-bottom: 1rem; }
+        .tool-head p { font-size: 1.15rem; color: #718096; line-height: 1.6; }
+        .quiz-wrap { max-width: 820px; margin: 0 auto; padding: 1rem 2rem 6rem; }
+        .quiz-card { border: 1px solid #e8edf3; border-radius: 18px; background: #fff; box-shadow: 0 12px 40px rgba(16,24,40,0.06); padding: 2.5rem; }
+        .quiz-progress { height: 6px; background: #edf2f7; border-radius: 99px; overflow: hidden; margin-bottom: 2rem; }
+        .quiz-progress > div { height: 100%; background: #1d6df2; width: 0; transition: width 0.3s; }
+        .quiz-step { display: none; }
+        .quiz-step.active { display: block; }
+        .quiz-q { font-size: 1.5rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; margin-bottom: 0.4rem; }
+        .quiz-sub { color: #a0aec0; font-size: 0.95rem; margin-bottom: 1.75rem; }
+        .quiz-opts { display: grid; gap: 0.75rem; }
+        .quiz-opt { text-align: left; padding: 1.05rem 1.25rem; border: 1.5px solid #e2e8f0; border-radius: 12px; background: #fff; font-family: inherit; font-size: 1.02rem; font-weight: 600; color: #2d3748; cursor: pointer; transition: all 0.15s; }
+        .quiz-opt:hover { border-color: #1d6df2; background: #f5f9ff; }
+        .quiz-opt.sel { border-color: #1d6df2; background: #1d6df2; color: #fff; }
+        .quiz-nav { display: flex; justify-content: space-between; margin-top: 2rem; }
+        .quiz-btn { padding: 0.8rem 1.6rem; border-radius: 10px; border: none; font-family: inherit; font-size: 0.95rem; font-weight: 700; cursor: pointer; }
+        .quiz-btn.back { background: #fff; color: #718096; border: 1px solid #e2e8f0; }
+        .quiz-btn.next { background: #1d6df2; color: #fff; }
+        .quiz-btn:disabled { opacity: 0.45; cursor: default; }
+
+        .results h2 { font-size: 2rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; text-align: center; margin-bottom: 0.5rem; }
+        .results .sub { text-align: center; color: #718096; margin-bottom: 2.5rem; }
+        .lake-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem; }
+        .lake-card { border: 1px solid #e8edf3; border-radius: 16px; overflow: hidden; text-decoration: none; color: inherit; background: #fff; transition: transform 0.15s, box-shadow 0.15s; }
+        .lake-card:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(16,24,40,0.12); }
+        .lake-card .img { aspect-ratio: 16/10; background: #e8f1ff; overflow: hidden; }
+        .lake-card .img img { width: 100%; height: 100%; object-fit: cover; }
+        .lake-card .body { padding: 1.1rem 1.2rem 1.3rem; }
+        .lake-card .rank { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: #1d6df2; }
+        .lake-card h3 { font-size: 1.2rem; font-weight: 800; color: #1a202c; margin: 0.15rem 0 0.35rem; letter-spacing: -0.3px; }
+        .lake-card .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.6rem; }
+        .lake-card .chip { font-size: 0.72rem; font-weight: 700; background: #f0f4f8; color: #4a5568; padding: 0.2rem 0.55rem; border-radius: 99px; }
+        .results-cta { margin-top: 3rem; text-align: center; background: linear-gradient(135deg,#1d6df2,#3b82f6); border-radius: 18px; padding: 2.5rem; color: #fff; }
+        .results-cta h3 { font-size: 1.6rem; font-weight: 800; margin: 0 0 0.5rem; }
+        .results-cta p { color: rgba(255,255,255,0.9); margin: 0 0 1.5rem; }
+        .results-cta a { display: inline-block; background: #fff; color: #1d6df2; font-weight: 800; padding: 0.9rem 2rem; border-radius: 99px; text-decoration: none; }
+        .restart { display: block; margin: 1.5rem auto 0; background: none; border: none; color: #718096; font-weight: 600; cursor: pointer; font-family: inherit; }
+        @media (max-width: 600px) {
+            .tool-head { padding: 6rem 1.25rem 1rem; } .tool-head h1 { font-size: 2.1rem; }
+            .quiz-wrap { padding: 1rem 1.25rem 4rem; } .quiz-card { padding: 1.5rem; }
+        }
+    </style>
+    <script src="../../components/components.js" defer></script>
+</head>
+<body style="background:#fff;">
+    <global-header></global-header>
+
+    <div class="tool-head">
+        <div class="tool-eyebrow">Lake Match Quiz</div>
+        <h1>Find your Minnesota lake</h1>
+        <p>There are thousands of lakes in Minnesota. Answer four quick questions and we'll point you to the ones that actually fit your budget, your drive, and your idea of lake life.</p>
+    </div>
+
+    <div class="quiz-wrap">
+        <div class="quiz-card" id="quiz-card">
+            <div class="quiz-progress"><div id="bar"></div></div>
+            <div id="steps"></div>
+            <div class="quiz-nav">
+                <button class="quiz-btn back" id="back" onclick="move(-1)">Back</button>
+                <button class="quiz-btn next" id="next" onclick="move(1)" disabled>Next</button>
+            </div>
+        </div>
+        <div class="quiz-card results" id="results" style="display:none;"></div>
+    </div>
+
+    <global-footer></global-footer>
+    <lead-modal></lead-modal>
+
+    <script>
+        const QUESTIONS = [
+            { key: 'budget', q: "What's your budget?", sub: "Lakefront ranges wildly across Minnesota.", opts: [
+                { label: 'Entry-level ($)', val: 1 }, { label: 'Mid-range ($$)', val: 2 },
+                { label: 'High-end ($$$)', val: 3 }, { label: 'Luxury ($$$$)', val: 4 }, { label: 'No preference', val: 0 } ] },
+            { key: 'distance', q: 'How far from the Twin Cities?', sub: "Drive time shapes weekend-vs-getaway feel.", opts: [
+                { label: 'Under 1 hour', val: [0, 1] }, { label: '1–2.5 hours', val: [1, 2.5] },
+                { label: '2.5–4 hours', val: [2.5, 4] }, { label: "Doesn't matter", val: null } ] },
+            { key: 'vibe', q: "What's the vibe you want?", sub: "Pick the one that feels most like you.", opts: [
+                { label: 'Metro convenience', val: 'metro' }, { label: 'Lively resort scene', val: 'resort' },
+                { label: 'Quiet cabin', val: 'quiet' }, { label: 'Up-north wilderness', val: 'wilderness' },
+                { label: 'Walkable lake town', val: 'walkable' }, { label: 'Luxury waterfront', val: 'luxury' } ] },
+            { key: 'priority', q: "What matters most on the water?", sub: "Your #1 reason for being there.", opts: [
+                { label: 'Trophy fishing', val: 'fishing' }, { label: 'Big water & boating', val: 'boating' },
+                { label: 'Clear, swimmable water', val: 'clear' }, { label: 'Sailing & social scene', val: 'social' },
+                { label: 'Best value', val: 'value' } ] },
+        ];
+        const answers = {};
+        let step = 0;
+        let LAKES = [];
+
+        function render() {
+            const stepsEl = document.getElementById('steps');
+            const item = QUESTIONS[step];
+            stepsEl.innerHTML = `
+                <div class="quiz-step active">
+                    <div class="quiz-q">${item.q}</div>
+                    <div class="quiz-sub">Question ${step + 1} of ${QUESTIONS.length} · ${item.sub}</div>
+                    <div class="quiz-opts">
+                        ${item.opts.map((o, i) => `<button class="quiz-opt${answers[item.key] !== undefined && JSON.stringify(answers[item.key]) === JSON.stringify(o.val) ? ' sel' : ''}" data-i="${i}">${o.label}</button>`).join('')}
+                    </div>
+                </div>`;
+            stepsEl.querySelectorAll('.quiz-opt').forEach(b => b.addEventListener('click', () => {
+                answers[item.key] = item.opts[+b.dataset.i].val;
+                stepsEl.querySelectorAll('.quiz-opt').forEach(x => x.classList.remove('sel'));
+                b.classList.add('sel');
+                document.getElementById('next').disabled = false;
+            }));
+            document.getElementById('bar').style.width = ((step) / QUESTIONS.length * 100) + '%';
+            document.getElementById('back').style.visibility = step === 0 ? 'hidden' : 'visible';
+            document.getElementById('next').textContent = step === QUESTIONS.length - 1 ? 'See my matches →' : 'Next';
+            document.getElementById('next').disabled = answers[item.key] === undefined;
+        }
+
+        function move(dir) {
+            if (dir === 1 && step === QUESTIONS.length - 1) return finish();
+            step = Math.max(0, Math.min(QUESTIONS.length - 1, step + dir));
+            render();
+        }
+
+        function score(l) {
+            let s = 0;
+            const tp = answers.budget;
+            if (tp) { if (l.p === tp) s += 3; else if (Math.abs(l.p - tp) === 1) s += 1; }
+            const band = answers.distance;
+            if (band) { if (l.d >= band[0] && l.d <= band[1]) s += 3; }
+            if (answers.vibe && l.v.includes(answers.vibe)) s += 3;
+            const pr = answers.priority;
+            if (pr === 'fishing' && (l.f.includes('walleye') || l.f.includes('muskie'))) s += 3;
+            if (pr === 'boating' && l.v.includes('bigwater')) s += 3;
+            if (pr === 'clear' && (l.v.includes('quiet') || l.v.includes('wilderness'))) s += 3;
+            if (pr === 'social' && (l.v.includes('resort') || l.v.includes('metro'))) s += 3;
+            if (pr === 'value' && l.p <= 2) s += 3;
+            return s;
+        }
+
+        const PRICE = { 1: '$', 2: '$$', 3: '$$$', 4: '$$$$' };
+        const VIBE_LABEL = { metro: 'Metro', resort: 'Resort', quiet: 'Quiet', wilderness: 'Wilderness', walkable: 'Walkable town', luxury: 'Luxury', bigwater: 'Big water' };
+        function dist(d) { return d < 1 ? '< 1 hr from MSP' : Math.round(d * 10) / 10 + ' hr from MSP'; }
+
+        function finish() {
+            document.getElementById('bar').style.width = '100%';
+            const ranked = LAKES.map(l => ({ l, s: score(l) })).sort((a, b) => b.s - a.s).filter(x => x.s > 0).slice(0, 6);
+            const list = ranked.length ? ranked : LAKES.map(l => ({ l, s: 0 })).slice(0, 6);
+            document.getElementById('quiz-card').style.display = 'none';
+            const r = document.getElementById('results');
+            r.style.display = 'block';
+            r.innerHTML = `
+                <div class="results">
+                    <h2>Your best-fit lakes</h2>
+                    <p class="sub">Based on your budget, drive time, and what you want from the water.</p>
+                    <div class="lake-grid">
+                        ${list.map((x, i) => {
+                            const l = x.l;
+                            const chips = [PRICE[l.p], dist(l.d), VIBE_LABEL[l.v[0]]].filter(Boolean);
+                            return `<a class="lake-card" href="/lakes/${encodeURIComponent(l.slug)}">
+                                <div class="img">${l.hero ? `<img src="${l.hero}" alt="${l.name}" loading="lazy">` : ''}</div>
+                                <div class="body">
+                                    <div class="rank">${i === 0 ? 'Top match' : 'Match #' + (i + 1)}</div>
+                                    <h3>${l.name}</h3>
+                                    <div style="color:#718096;font-size:0.85rem;font-weight:600;">${l.region || ''}</div>
+                                    <div class="chips">${chips.map(c => `<span class="chip">${c}</span>`).join('')}</div>
+                                </div></a>`;
+                        }).join('')}
+                    </div>
+                    <div class="results-cta">
+                        <h3>Found one you like?</h3>
+                        <p>Get matched with a vetted, local agent who knows that exact water — free, no commission.</p>
+                        <a href="/pages/public/buy.html">Get matched with a specialist →</a>
+                    </div>
+                    <button class="restart" onclick="location.reload()">↺ Retake the quiz</button>
+                </div>`;
+            r.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        fetch('/api/tools/lakes').then(r => r.json()).then(d => { LAKES = d || []; }).catch(() => { LAKES = []; });
+        render();
+    </script>
+</body>
+</html>

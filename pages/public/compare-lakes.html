@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compare Minnesota Lakes Side by Side | MN Lake Homes</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta name="description" content="Compare Minnesota lakes side by side — price, drive time, size, vibe, and fishing. Gull vs. Mille Lacs, Minnetonka vs. Whitefish Chain, and more. Free tool.">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/compare-lakes">
+    <meta property="og:title" content="Compare Minnesota Lakes Side by Side">
+    <meta property="og:description" content="Price, drive time, size, vibe, and fishing — compare any Minnesota lakes head to head.">
+    <meta property="og:url" content="https://minnesotalakehomesforsale.com/compare-lakes">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        .tool-head { padding: 7.5rem 2rem 1.5rem; max-width: 900px; margin: 0 auto; text-align: center; }
+        .tool-eyebrow { color: #1d6df2; font-size: 0.78rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 1rem; }
+        .tool-head h1 { font-size: 3rem; font-weight: 800; color: #1a202c; letter-spacing: -1.5px; line-height: 1.05; margin-bottom: 1rem; }
+        .tool-head p { font-size: 1.15rem; color: #718096; line-height: 1.6; }
+        .cmp-wrap { max-width: 1100px; margin: 0 auto; padding: 1rem 2rem 6rem; }
+        .cmp-pickers { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-bottom: 2.5rem; }
+        .cmp-pickers select { padding: 0.8rem 1rem; border: 1.5px solid #e2e8f0; border-radius: 12px; font-family: inherit; font-size: 1rem; font-weight: 600; color: #1a202c; background: #fff; min-width: 220px; cursor: pointer; }
+        .cmp-pickers select:focus { outline: none; border-color: #1d6df2; }
+        .cmp-table { width: 100%; border-collapse: collapse; }
+        .cmp-table th, .cmp-table td { padding: 1rem; text-align: left; border-bottom: 1px solid #edf2f7; vertical-align: top; }
+        .cmp-table thead th { border-bottom: 2px solid #e2e8f0; }
+        .cmp-table .rowlabel { font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #a0aec0; white-space: nowrap; width: 150px; }
+        .cmp-col-img { aspect-ratio: 16/10; border-radius: 12px; overflow: hidden; background: #e8f1ff; margin-bottom: 0.75rem; }
+        .cmp-col-img img { width: 100%; height: 100%; object-fit: cover; }
+        .cmp-name { font-size: 1.3rem; font-weight: 800; color: #1a202c; letter-spacing: -0.4px; }
+        .cmp-name a { color: #1d6df2; text-decoration: none; }
+        .cmp-val { font-size: 1rem; color: #2d3748; font-weight: 600; }
+        .cmp-blurb { font-size: 0.9rem; color: #718096; line-height: 1.5; font-weight: 400; }
+        .cmp-link { display: inline-block; margin-top: 0.5rem; color: #1d6df2; font-weight: 700; font-size: 0.9rem; text-decoration: none; }
+        .cmp-empty { text-align: center; color: #a0aec0; padding: 3rem; }
+        .tool-cta { margin-top: 3rem; text-align: center; background: linear-gradient(135deg,#1d6df2,#3b82f6); border-radius: 18px; padding: 2.5rem; color: #fff; }
+        .tool-cta h3 { font-size: 1.6rem; font-weight: 800; margin: 0 0 0.5rem; }
+        .tool-cta p { color: rgba(255,255,255,0.9); margin: 0 0 1.5rem; }
+        .tool-cta a { display: inline-block; background: #fff; color: #1d6df2; font-weight: 800; padding: 0.9rem 2rem; border-radius: 99px; text-decoration: none; }
+        .cmp-scroll { overflow-x: auto; }
+        @media (max-width: 600px) {
+            .tool-head { padding: 6rem 1.25rem 1rem; } .tool-head h1 { font-size: 2.1rem; }
+            .cmp-wrap { padding: 1rem 1rem 4rem; } .cmp-pickers select { min-width: 0; flex: 1; }
+        }
+    </style>
+    <script src="../../components/components.js" defer></script>
+</head>
+<body style="background:#fff;">
+    <global-header></global-header>
+
+    <div class="tool-head">
+        <div class="tool-eyebrow">Compare Lakes</div>
+        <h1>Compare Minnesota lakes</h1>
+        <p>Gull vs. Mille Lacs? Minnetonka vs. the Whitefish Chain? Put any Minnesota lakes side by side on price, drive time, size, vibe, and fishing.</p>
+    </div>
+
+    <div class="cmp-wrap">
+        <div class="cmp-pickers">
+            <select id="sel0"></select>
+            <select id="sel1"></select>
+            <select id="sel2"></select>
+        </div>
+        <div class="cmp-scroll"><div id="cmp-out"></div></div>
+        <div class="tool-cta">
+            <h3>Narrowing it down?</h3>
+            <p>Get matched with a vetted, local agent who knows these lakes bay by bay — free, no commission.</p>
+            <a href="/pages/public/buy.html">Get matched with a specialist →</a>
+        </div>
+    </div>
+
+    <global-footer></global-footer>
+    <lead-modal></lead-modal>
+
+    <script>
+        let LAKES = [];
+        const bySlug = {};
+        const PRICE = { 1: '$ — Attainable', 2: '$$ — Mid-range', 3: '$$$ — High-end', 4: '$$$$ — Luxury' };
+        const VIBE = { metro: 'Metro', resort: 'Resort', quiet: 'Quiet cabin', wilderness: 'Wilderness', walkable: 'Walkable town', luxury: 'Luxury', bigwater: 'Big water' };
+        const SIZE = { small: 'Small', medium: 'Medium', large: 'Large', huge: 'Huge / big water' };
+        const FISH = { walleye: 'Walleye', muskie: 'Muskie', bass: 'Bass', trout: 'Trout', panfish: 'Panfish' };
+        const dist = d => d < 1 ? 'Under 1 hour' : (Math.round(d * 10) / 10) + ' hours';
+
+        function buildSelectors() {
+            const opts = '<option value="">— Select a lake —</option>' + LAKES.map(l => `<option value="${l.slug}">${l.name}</option>`).join('');
+            [0, 1, 2].forEach(i => {
+                const s = document.getElementById('sel' + i);
+                s.innerHTML = opts;
+                s.addEventListener('change', render);
+            });
+            // Default to a popular comparison
+            if (bySlug['gull-lake']) document.getElementById('sel0').value = 'gull-lake';
+            if (bySlug['mille-lacs-lake']) document.getElementById('sel1').value = 'mille-lacs-lake';
+            render();
+        }
+
+        function render() {
+            const chosen = [0, 1, 2].map(i => document.getElementById('sel' + i).value).filter(Boolean).map(s => bySlug[s]).filter(Boolean);
+            const out = document.getElementById('cmp-out');
+            if (chosen.length < 2) { out.innerHTML = '<div class="cmp-empty">Pick at least two lakes to compare.</div>'; return; }
+            const rows = [
+                ['Region', l => l.region || '—'],
+                ['County', l => (l.county ? l.county + ' County' : '—')],
+                ['Price', l => PRICE[l.p] || '—'],
+                ['Drive from Twin Cities', l => dist(l.d)],
+                ['Lake size', l => SIZE[l.s] || '—'],
+                ['Vibe', l => l.v.map(x => VIBE[x] || x).join(', ')],
+                ['Best fishing', l => l.f.map(x => FISH[x] || x).join(', ')],
+                ['Character', l => `<span class="cmp-blurb">${(l.intro || '').slice(0, 180)}${(l.intro || '').length > 180 ? '…' : ''}</span>`],
+            ];
+            out.innerHTML = `<table class="cmp-table"><thead><tr><th></th>${chosen.map(l => `
+                <th><div class="cmp-col-img">${l.hero ? `<img src="${l.hero}" alt="${l.name}" loading="lazy">` : ''}</div>
+                    <div class="cmp-name"><a href="/lakes/${encodeURIComponent(l.slug)}">${l.name}</a></div></th>`).join('')}</tr></thead>
+                <tbody>${rows.map(([label, fn]) => `<tr><td class="rowlabel">${label}</td>${chosen.map(l => `<td class="cmp-val">${fn(l)}</td>`).join('')}</tr>`).join('')}
+                <tr><td></td>${chosen.map(l => `<td><a class="cmp-link" href="/lakes/${encodeURIComponent(l.slug)}">View ${l.name} →</a></td>`).join('')}</tr>
+                </tbody></table>`;
+        }
+
+        fetch('/api/tools/lakes').then(r => r.json()).then(d => {
+            LAKES = (d || []).sort((a, b) => a.name.localeCompare(b.name));
+            LAKES.forEach(l => bySlug[l.slug] = l);
+            buildSelectors();
+        }).catch(() => { document.getElementById('cmp-out').innerHTML = '<div class="cmp-empty">Could not load lakes.</div>'; });
+    </script>
+</body>
+</html>

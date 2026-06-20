@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minnesota Lake Home Buyer's Checklist (Interactive) | MN Lake Homes</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta name="description" content="The interactive Minnesota lake home buyer's checklist — water & shoreline, septic & well, dock permits, shoreland zoning, access, and the deal. Saves your progress; print it for showings.">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/lake-buyer-checklist">
+    <meta property="og:title" content="Minnesota Lake Home Buyer's Checklist (Interactive)">
+    <meta property="og:description" content="Everything to check before buying a Minnesota lake home — saves your progress and prints for showings.">
+    <meta property="og:url" content="https://minnesotalakehomesforsale.com/lake-buyer-checklist">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        .tool-head { padding: 7.5rem 2rem 1rem; max-width: 820px; margin: 0 auto; text-align: center; }
+        .tool-eyebrow { color: #1d6df2; font-size: 0.78rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 1rem; }
+        .tool-head h1 { font-size: 3rem; font-weight: 800; color: #1a202c; letter-spacing: -1.5px; line-height: 1.05; margin-bottom: 1rem; }
+        .tool-head p { font-size: 1.15rem; color: #718096; line-height: 1.6; }
+        .chk-wrap { max-width: 820px; margin: 0 auto; padding: 1rem 2rem 6rem; }
+        .chk-bar-wrap { position: sticky; top: 78px; background: #fff; padding: 1rem 0; z-index: 5; }
+        .chk-bar-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; }
+        .chk-count { font-weight: 800; color: #1a202c; }
+        .chk-actions button { background: none; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.4rem 0.8rem; font-family: inherit; font-size: 0.82rem; font-weight: 700; color: #718096; cursor: pointer; margin-left: 0.5rem; }
+        .chk-bar { height: 8px; background: #edf2f7; border-radius: 99px; overflow: hidden; }
+        .chk-bar > div { height: 100%; background: #1d6df2; width: 0; transition: width 0.3s; }
+        .chk-group { margin-top: 2.25rem; }
+        .chk-group h2 { font-size: 1.3rem; font-weight: 800; color: #1a202c; letter-spacing: -0.4px; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.6rem; }
+        .chk-group h2 .n { width: 28px; height: 28px; border-radius: 8px; background: #ebf4ff; color: #1d6df2; font-size: 0.85rem; display: inline-flex; align-items: center; justify-content: center; }
+        .chk-item { display: flex; gap: 0.9rem; padding: 1rem 1.1rem; border: 1px solid #edf2f7; border-radius: 12px; margin-bottom: 0.7rem; transition: background 0.15s; }
+        .chk-item.done { background: #f7fbf8; border-color: #d6ecdd; }
+        .chk-item input { width: 22px; height: 22px; margin-top: 2px; accent-color: #1d6df2; cursor: pointer; flex-shrink: 0; }
+        .chk-item .txt label { font-weight: 700; color: #1a202c; cursor: pointer; }
+        .chk-item.done .txt label { color: #718096; text-decoration: line-through; }
+        .chk-item .txt p { margin: 0.25rem 0 0; font-size: 0.9rem; color: #718096; line-height: 1.5; }
+        .chk-item .txt a { color: #1d6df2; font-weight: 600; }
+        .tool-cta { margin-top: 3rem; text-align: center; background: linear-gradient(135deg,#1d6df2,#3b82f6); border-radius: 18px; padding: 2.5rem; color: #fff; }
+        .tool-cta h3 { font-size: 1.6rem; font-weight: 800; margin: 0 0 0.5rem; }
+        .tool-cta p { color: rgba(255,255,255,0.9); margin: 0 0 1.5rem; }
+        .tool-cta a { display: inline-block; background: #fff; color: #1d6df2; font-weight: 800; padding: 0.9rem 2rem; border-radius: 99px; text-decoration: none; }
+        @media (max-width: 600px) { .tool-head { padding: 6rem 1.25rem 1rem; } .tool-head h1 { font-size: 2.1rem; } .chk-wrap { padding: 1rem 1.25rem 4rem; } }
+        @media print {
+            global-header, global-footer, .chk-actions, .tool-cta, .tool-eyebrow { display: none !important; }
+            .chk-bar-wrap { position: static; } body { background: #fff; }
+        }
+    </style>
+    <script src="../../components/components.js" defer></script>
+</head>
+<body style="background:#fff;">
+    <global-header></global-header>
+
+    <div class="tool-head">
+        <div class="tool-eyebrow">Buyer's Checklist</div>
+        <h1>Minnesota lake home buyer's checklist</h1>
+        <p>The things that actually matter on the water — bottom, septic, docks, setbacks, access. Tick them off as you go (we save your progress), and print it to bring to showings.</p>
+    </div>
+
+    <div class="chk-wrap">
+        <div class="chk-bar-wrap">
+            <div class="chk-bar-top">
+                <span class="chk-count"><span id="done">0</span> of <span id="total">0</span> done</span>
+                <span class="chk-actions"><button onclick="window.print()">🖨 Print</button><button onclick="resetAll()">Reset</button></span>
+            </div>
+            <div class="chk-bar"><div id="bar"></div></div>
+        </div>
+        <div id="groups"></div>
+
+        <div class="tool-cta">
+            <h3>Want a pro running this list with you?</h3>
+            <p>A vetted local lake agent checks all of this on the first walkthrough. Get matched — free, no commission.</p>
+            <a href="/pages/public/buy.html">Get matched with a specialist →</a>
+        </div>
+    </div>
+
+    <global-footer></global-footer>
+    <lead-modal></lead-modal>
+
+    <script>
+        const GROUPS = [
+            { title: 'The water & shoreline', items: [
+                ['frontage', 'Confirm shoreline length & frontage quality', 'Verify the linear feet per the county survey, and walk the bottom — hard sand vs. soft muck changes value and lifestyle.'],
+                ['clarity', 'Check the lake on the DNR LakeFinder', 'Look up water clarity, depth, fish surveys, and aquatic invasive species before every showing. <a href="https://www.dnr.state.mn.us/lakefind/index.html" target="_blank" rel="noopener">DNR LakeFinder →</a>'],
+                ['orientation', 'Note orientation & exposure', 'West-facing lots catch evening sun; open-fetch shoreline takes more wind, waves, and erosion than a protected bay.'],
+            ]},
+            { title: 'Septic & well', items: [
+                ['septic', 'Get the septic compliance certificate', 'Most lake homes are on private septic. Minnesota requires a Certificate of Compliance at sale on most properties — get the inspection, pump records, and as-built. <a href="https://www.pca.state.mn.us/water/subsurface-sewage-treatment-systems-ssts" target="_blank" rel="noopener">MPCA SSTS →</a>'],
+                ['well', 'Review the well log & water test', 'Confirm well depth, age, and recent water-quality testing (coliform, nitrates, arsenic, manganese).'],
+            ]},
+            { title: 'Docks & permits', items: [
+                ['dock', 'Verify dock & lift permits transfer', 'Confirm any dock, lift, or boathouse is legally permitted (not just "always been there") and transfers at closing.'],
+                ['association', 'Check bay / association restrictions', 'Some lakes and conservation districts (e.g., the LMCD on Lake Minnetonka) limit dock size and licensing. <a href="https://www.lmcd.org/" target="_blank" rel="noopener">LMCD →</a>'],
+            ]},
+            { title: 'Shoreland zoning & setbacks', items: [
+                ['setbacks', 'Confirm shoreland setbacks for any plans', 'Minnesota regulates how close you can build, riprap, and how much natural vegetation you must keep. The addition you\'re picturing may not be approvable. <a href="https://www.dnr.state.mn.us/waters/watermgmt_section/shoreland/index.html" target="_blank" rel="noopener">DNR Shoreland →</a>'],
+                ['classification', 'Check the lake\'s DNR classification', 'Natural-environment lakes carry stricter setbacks and impervious-surface limits than recreational or general-development lakes.'],
+            ]},
+            { title: 'Access, insurance & taxes', items: [
+                ['access', 'Confirm year-round access & road maintenance', 'Is the road public, association-maintained, or unmaintained? Will it be plowed and reachable in February?'],
+                ['flood', 'Pull the FEMA flood-zone overlay', 'Flood-zone parcels trigger mandatory flood insurance on federally backed mortgages — get a quote before your contingency lapses.'],
+                ['taxes', 'Check homestead vs. seasonal tax classification', 'Property taxes and financing terms differ for a primary residence vs. a seasonal cabin.'],
+            ]},
+            { title: 'The deal', items: [
+                ['comps', 'Get true lake comps (same lake)', 'Two identical homes can sell for very different prices based on frontage and orientation — comp against the same lake, not a regional average.'],
+                ['agent', 'Work with a lake specialist, not a generalist', 'The shoreline is most of the value. Use an agent who reads water, not just houses.'],
+                ['financing', 'Confirm financing for the property type', 'Some lenders treat seasonal or remote cabins differently — confirm before you write an offer.'],
+            ]},
+        ];
+        const KEY = 'mnlh_checklist_v1';
+        let state = {};
+        try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (_) { state = {}; }
+
+        const groupsEl = document.getElementById('groups');
+        let total = 0;
+        groupsEl.innerHTML = GROUPS.map((g, gi) => {
+            return `<div class="chk-group"><h2><span class="n">${gi + 1}</span>${g.title}</h2>${g.items.map(([id, label, detail]) => {
+                total++;
+                const done = !!state[id];
+                return `<div class="chk-item${done ? ' done' : ''}" id="row-${id}">
+                    <input type="checkbox" id="cb-${id}" data-id="${id}" ${done ? 'checked' : ''}>
+                    <div class="txt"><label for="cb-${id}">${label}</label><p>${detail}</p></div></div>`;
+            }).join('')}</div>`;
+        }).join('');
+        document.getElementById('total').textContent = total;
+
+        function update() {
+            const done = Object.values(state).filter(Boolean).length;
+            document.getElementById('done').textContent = done;
+            document.getElementById('bar').style.width = (total ? done / total * 100 : 0) + '%';
+            localStorage.setItem(KEY, JSON.stringify(state));
+        }
+        groupsEl.querySelectorAll('input[type=checkbox]').forEach(cb => cb.addEventListener('change', () => {
+            const id = cb.dataset.id;
+            state[id] = cb.checked;
+            document.getElementById('row-' + id).classList.toggle('done', cb.checked);
+            update();
+        }));
+        function resetAll() {
+            state = {}; localStorage.removeItem(KEY);
+            groupsEl.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = false; document.getElementById('row-' + cb.dataset.id).classList.remove('done'); });
+            update();
+        }
+        update();
+    </script>
+</body>
+</html>

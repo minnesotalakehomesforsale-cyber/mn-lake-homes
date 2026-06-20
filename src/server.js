@@ -481,6 +481,11 @@ app.get('/sitemap.xml', async (req, res) => {
             { url: '/agents',          priority: 0.8, changefreq: 'weekly'  },
             { url: '/cash-offer',      priority: 0.7, changefreq: 'monthly' },
             { url: '/blog',            priority: 0.7, changefreq: 'daily'   },
+            { url: '/tools',                     priority: 0.7, changefreq: 'monthly' },
+            { url: '/find-your-lake',            priority: 0.7, changefreq: 'monthly' },
+            { url: '/compare-lakes',             priority: 0.7, changefreq: 'monthly' },
+            { url: '/lake-mortgage-calculator',  priority: 0.6, changefreq: 'monthly' },
+            { url: '/lake-buyer-checklist',      priority: 0.6, changefreq: 'monthly' },
             { url: '/resources',       priority: 0.6, changefreq: 'monthly' },
             { url: '/rent',            priority: 0.6, changefreq: 'weekly'  },
             { url: '/join',            priority: 0.5, changefreq: 'monthly' },
@@ -1385,6 +1390,25 @@ app.get('/search', async (req, res, next) => {
             res.type('html').send(out);
         });
     } catch (err) { next(err); }
+});
+
+// Lake tools data: live lake rows merged with quiz/compare attributes.
+app.get('/api/tools/lakes', async (req, res) => {
+    try {
+        const attrs = require('./data/lake-attributes');
+        const { rows } = await pool.query(
+            `SELECT slug, name, region, county, intro_text, hero_image_url
+               FROM lakes WHERE status = 'published' AND COALESCE(hero_image_url,'') <> '' ORDER BY name`
+        );
+        const out = rows.filter(l => attrs[l.slug]).map(l => ({
+            slug: l.slug, name: l.name, region: l.region, county: l.county,
+            intro: l.intro_text || '', hero: l.hero_image_url || '', ...attrs[l.slug],
+        }));
+        res.json(out);
+    } catch (e) {
+        console.error('[tools/lakes]', e.message);
+        res.status(500).json({ error: 'failed' });
+    }
 });
 
 app.use(express.static(PROJECT_ROOT));

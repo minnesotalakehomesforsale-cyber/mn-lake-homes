@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minnesota Lake Home Tools — Quiz, Compare, Calculator, Checklist | MN Lake Homes</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta name="description" content="Free interactive tools for Minnesota lake home buyers — find your lake, compare lakes side by side, estimate monthly costs, and run the buyer's checklist.">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/tools">
+    <meta property="og:title" content="Minnesota Lake Home Tools">
+    <meta property="og:description" content="Find your lake, compare lakes, estimate costs, and run the buyer's checklist — free interactive tools.">
+    <meta property="og:url" content="https://minnesotalakehomesforsale.com/tools">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        .tool-head { padding: 7.5rem 2rem 1rem; max-width: 820px; margin: 0 auto; text-align: center; }
+        .tool-eyebrow { color: #1d6df2; font-size: 0.78rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 1rem; }
+        .tool-head h1 { font-size: 3.2rem; font-weight: 800; color: #1a202c; letter-spacing: -1.75px; line-height: 1.05; margin-bottom: 1rem; }
+        .tool-head p { font-size: 1.2rem; color: #718096; line-height: 1.6; }
+        .tools-grid { max-width: 1000px; margin: 2.5rem auto; padding: 0 2rem 6rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .tool-tile { display: block; text-decoration: none; color: inherit; border: 1px solid #e8edf3; border-radius: 18px; background: #fff; padding: 2rem; box-shadow: 0 10px 30px rgba(16,24,40,0.05); transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s; }
+        .tool-tile:hover { transform: translateY(-4px); box-shadow: 0 20px 48px rgba(16,24,40,0.12); border-color: #1d6df2; }
+        .tool-tile .icon { width: 48px; height: 48px; border-radius: 12px; background: rgba(29,109,242,0.1); color: #1d6df2; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem; }
+        .tool-tile h2 { font-size: 1.4rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; margin: 0 0 0.5rem; }
+        .tool-tile p { font-size: 0.98rem; color: #718096; line-height: 1.55; margin: 0 0 1rem; }
+        .tool-tile .go { color: #1d6df2; font-weight: 800; font-size: 0.92rem; }
+        @media (max-width: 700px) { .tool-head { padding: 6rem 1.25rem 1rem; } .tool-head h1 { font-size: 2.2rem; } .tools-grid { grid-template-columns: 1fr; padding: 0 1.25rem 4rem; } }
+    </style>
+    <script src="../../components/components.js" defer></script>
+</head>
+<body style="background:#fff;">
+    <global-header></global-header>
+
+    <div class="tool-head">
+        <div class="tool-eyebrow">Lake Tools</div>
+        <h1>Tools for Minnesota lake buyers</h1>
+        <p>Free, no sign-up. Figure out which lake fits, compare your favorites, run the numbers, and know exactly what to check before you buy.</p>
+    </div>
+
+    <div class="tools-grid">
+        <a class="tool-tile" href="/find-your-lake">
+            <div class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></div>
+            <h2>Find your lake</h2>
+            <p>Four quick questions — budget, drive time, vibe, priorities — and we'll match you to the Minnesota lakes that actually fit.</p>
+            <span class="go">Take the quiz →</span>
+        </a>
+        <a class="tool-tile" href="/compare-lakes">
+            <div class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="3" y2="20"></line><line x1="3" y1="6" x2="9" y2="6"></line><line x1="15" y1="6" x2="21" y2="6"></line><line x1="12" y1="3" x2="12" y2="21"></line></svg></div>
+            <h2>Compare lakes</h2>
+            <p>Put any Minnesota lakes side by side — price, drive time, size, vibe, and fishing. Gull vs. Mille Lacs, Minnetonka vs. Whitefish, and more.</p>
+            <span class="go">Compare lakes →</span>
+        </a>
+        <a class="tool-tile" href="/lake-mortgage-calculator">
+            <div class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="16" y2="10"></line><line x1="8" y1="14" x2="12" y2="14"></line></svg></div>
+            <h2>Cost calculator</h2>
+            <p>Estimate the real monthly cost of a lake home — principal, interest, taxes, insurance — plus the lakefront costs buyers forget.</p>
+            <span class="go">Run the numbers →</span>
+        </a>
+        <a class="tool-tile" href="/lake-buyer-checklist">
+            <div class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></div>
+            <h2>Buyer's checklist</h2>
+            <p>The interactive lake-home checklist — water, septic, docks, setbacks, access. Saves your progress and prints for showings.</p>
+            <span class="go">Open the checklist →</span>
+        </a>
+    </div>
+
+    <global-footer></global-footer>
+    <lead-modal></lead-modal>
+</body>
+</html>
