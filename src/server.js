@@ -450,9 +450,13 @@ app.get('/sitemap.xml', async (req, res) => {
 
     try {
         const [lakes, towns, businesses, agents, posts] = await Promise.all([
-            pool.query(`SELECT slug, updated_at FROM lakes WHERE status = 'published'`),
+            // Only list pages that actually RENDER. /lakes/:slug and /towns/:slug
+            // 404 without a hero image, so a published-but-heroless row in the
+            // sitemap is a 404 we're handing Google. Require the hero here.
+            pool.query(`SELECT slug, updated_at FROM lakes
+                        WHERE status = 'published' AND COALESCE(hero_image_url,'') <> ''`),
             pool.query(`SELECT DISTINCT t.slug, t.updated_at FROM tags t
-                        WHERE t.active = TRUE
+                        WHERE t.active = TRUE AND COALESCE(t.hero_image_url,'') <> ''
                           AND EXISTS (SELECT 1 FROM lake_tags lt
                                       JOIN lakes l ON l.id = lt.lake_id
                                       WHERE lt.tag_id = t.id AND l.status = 'published')`),
