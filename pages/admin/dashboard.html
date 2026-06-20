@@ -279,6 +279,27 @@
                 </div>
             </section>
 
+            <!-- ── External quick links ─────────────────────────── -->
+            <style>
+                .d-quicklinks { display:flex; flex-wrap:wrap; align-items:center; gap:0.55rem; margin:0 0 1.5rem; }
+                .d-quicklinks .ql-label { font-size:0.72rem; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; color:#a0aec0; margin-right:0.35rem; }
+                .d-quicklinks .ql { display:inline-flex; align-items:center; gap:0.45rem; padding:0.5rem 0.9rem; border:1px solid #e2e8f0; border-radius:10px; background:#fff; color:#1a202c; text-decoration:none; font-size:0.85rem; font-weight:700; transition:border-color .15s, color .15s, transform .15s, box-shadow .15s; }
+                .d-quicklinks .ql:hover { border-color:#1d6df2; color:#1d6df2; transform:translateY(-1px); box-shadow:0 4px 12px rgba(16,24,40,0.07); }
+                .d-quicklinks .ql .dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+                .d-quicklinks .ql .arr { color:#cbd5e0; font-size:0.78rem; }
+            </style>
+            <nav class="d-quicklinks" aria-label="External quick links">
+                <span class="ql-label">Quick links</span>
+                <a class="ql" href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer"><span class="dot" style="background:#635bff;"></span>Stripe <span class="arr">↗</span></a>
+                <a class="ql" href="https://app.hubspot.com" target="_blank" rel="noopener noreferrer"><span class="dot" style="background:#ff7a59;"></span>HubSpot <span class="arr">↗</span></a>
+                <a class="ql" href="https://dashboard.render.com" target="_blank" rel="noopener noreferrer"><span class="dot" style="background:#46e3b7;"></span>Render <span class="arr">↗</span></a>
+                <a class="ql" href="https://mail.google.com" target="_blank" rel="noopener noreferrer"><span class="dot" style="background:#ea4335;"></span>Gmail <span class="arr">↗</span></a>
+                <a class="ql" href="https://trello.com" target="_blank" rel="noopener noreferrer"><span class="dot" style="background:#0079bf;"></span>Trello <span class="arr">↗</span></a>
+                <a class="ql" href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer"><span class="dot" style="background:#4285f4;"></span>Search Console <span class="arr">↗</span></a>
+                <a class="ql" href="https://analytics.google.com" target="_blank" rel="noopener noreferrer"><span class="dot" style="background:#e37400;"></span>Analytics <span class="arr">↗</span></a>
+                <a class="ql" href="https://github.com/minnesotalakehomesforsale-cyber/mn-lake-homes" target="_blank" rel="noopener noreferrer"><span class="dot" style="background:#1a202c;"></span>GitHub <span class="arr">↗</span></a>
+            </nav>
+
             <!-- ── KPI strip ───────────────────────────────────── -->
             <div class="kpi-grid">
                 <a href="system.html" class="kpi traffic" style="text-decoration:none;color:inherit;">
