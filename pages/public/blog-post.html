@@ -8,55 +8,42 @@
     <link rel="apple-touch-icon" href="/favicon.svg">
     <link rel="stylesheet" href="../../styles/style.css">
 <style>
-        /* Shared container so the head, banner, and 3-col body align on the
-           same left/right edges. Wider than the old 720px so the article
-           column reads a little roomier. padding-inline / padding-block are
-           used (not the `padding` shorthand) so per-section vertical padding
-           never wipes out the container's horizontal padding. */
+        /* One shared container so the head, the banner image, and the 3-col
+           body all sit at the SAME width and align on the same left/right
+           edges. padding-inline / padding-block (not the `padding` shorthand)
+           so per-section vertical padding never wipes the side padding. */
         .post-container { max-width: 1380px; margin: 0 auto; padding-inline: 2rem; box-sizing: border-box; }
 
-        /* ── Hero: content overlaid on the image, left-aligned ───────────── */
-        .post-hero {
-            position: relative;
-            margin-block: 7rem 3.5rem;
-            border-radius: 22px;
-            overflow: hidden;
-            min-height: 480px;
-            display: flex;
-            align-items: flex-end;          /* content sits bottom-left */
-            background: linear-gradient(135deg, #1d6df2 0%, #5b8def 100%);  /* fallback if no image */
-            box-shadow: 0 24px 60px rgba(16,24,40,0.18);
-        }
-        .post-hero .hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-        /* Dark scrim so white text stays legible over any photo */
-        .post-hero::after {
-            content: ''; position: absolute; inset: 0;
-            background: linear-gradient(to top, rgba(10,15,25,0.88) 0%, rgba(10,15,25,0.45) 45%, rgba(10,15,25,0.15) 100%);
-        }
-        .post-hero-inner { position: relative; z-index: 2; width: 100%; padding: 2.75rem; text-align: left; }
+        /* ── Article head (above the image, left-aligned) ────────────────── */
+        .post-head { padding-block: 7.5rem 2rem; }
+        .post-breadcrumb { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; color: #718096; font-size: 0.85rem; font-weight: 500; margin-bottom: 1.75rem; }
+        .post-breadcrumb a { color: #718096; text-decoration: none; transition: color 0.15s; }
+        .post-breadcrumb a:hover { color: #1d6df2; }
+        .post-breadcrumb .sep { color: #cbd5e0; }
+        .post-breadcrumb .current { color: #1a202c; font-weight: 600; }
 
-        .post-breadcrumb { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; color: rgba(255,255,255,0.7); font-size: 0.85rem; font-weight: 500; margin-bottom: 1.5rem; }
-        .post-breadcrumb a { color: rgba(255,255,255,0.7); text-decoration: none; transition: color 0.15s; }
-        .post-breadcrumb a:hover { color: #fff; }
-        .post-breadcrumb .sep { color: rgba(255,255,255,0.4); }
-        .post-breadcrumb .current { color: #fff; font-weight: 600; }
+        .post-meta-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .post-tag { display: inline-block; border: 1px solid #1d6df2; background: rgba(29,109,242,0.08); color: #1d6df2; font-size: 0.75rem; font-weight: 700; padding: 0.3rem 0.9rem; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.6px; }
+        .post-read-pill { color: #718096; font-size: 0.78rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
 
-        .post-meta-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
-        .post-tag { display: inline-block; background: #1d6df2; color: #fff; font-size: 0.75rem; font-weight: 700; padding: 0.3rem 0.9rem; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.6px; }
-        .post-read-pill { color: rgba(255,255,255,0.75); font-size: 0.78rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+        .post-title { font-size: 3.6rem; font-weight: 800; color: #1a202c; letter-spacing: -2px; line-height: 1.04; margin-bottom: 1.5rem; max-width: 20ch; }
+        .post-subtitle { font-size: 1.3rem; font-weight: 400; color: #718096; line-height: 1.55; max-width: 640px; margin-bottom: 2.25rem; }
 
-        .post-title { font-size: 3.4rem; font-weight: 800; color: #fff; letter-spacing: -1.75px; line-height: 1.05; margin-bottom: 1.25rem; max-width: 20ch; }
-        .post-subtitle { font-size: 1.25rem; font-weight: 400; color: rgba(255,255,255,0.85); line-height: 1.5; max-width: 640px; margin-bottom: 2rem; }
-
-        .post-author { display: flex; align-items: center; gap: 0.85rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.2); max-width: 640px; }
-        .post-author-avatar { width: 46px; height: 46px; border-radius: 50%; background: #fff; border: 1px solid rgba(255,255,255,0.6); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        /* brightness(0) forces the stroke logo to solid black on the white
-           disc regardless of the favicon's light/dark auto-flip. */
+        .post-author { display: flex; align-items: center; gap: 0.85rem; padding-top: 1.75rem; border-top: 1px solid #edf2f7; max-width: 640px; }
+        /* White disc + a light edge so it's visible on the white page, with the
+           house logo forced solid black (brightness(0) overrides the favicon's
+           dark-mode auto-flip). */
+        .post-author-avatar { width: 46px; height: 46px; border-radius: 50%; background: #fff; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .post-author-avatar img { width: 24px; height: 24px; filter: brightness(0); }
-        .post-author-name { font-size: 1rem; font-weight: 700; color: #fff; line-height: 1.2; }
-        .post-author-date { font-size: 0.85rem; color: rgba(255,255,255,0.65); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+        .post-author-name { font-size: 1rem; font-weight: 700; color: #1a202c; line-height: 1.2; }
+        .post-author-date { font-size: 0.85rem; color: #a0aec0; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* ── 3-column body layout ────────────────────────────────────────── */
+        /* ── Hero banner image (full content width, below the head) ──────── */
+        .post-banner-wrap { margin-block: 0.5rem 3.5rem; }
+        .post-banner { border-radius: 22px; overflow: hidden; aspect-ratio: 21 / 9; background: linear-gradient(135deg, #1d6df2 0%, #5b8def 100%); box-shadow: 0 24px 60px rgba(16,24,40,0.14); }
+        .post-banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        /* ── 3-column body layout (same width as head + banner) ──────────── */
         .post-layout {
             display: grid;
             grid-template-columns: 200px minmax(0, 1fr) 290px;
@@ -101,8 +88,6 @@
 
         /* ── Responsive ──────────────────────────────────────────────────── */
         @media (max-width: 1080px) {
-            /* Collapse the side rails. TOC hides; CTAs drop below the article
-               (still reachable) and lay out side by side. */
             .post-layout { grid-template-columns: 1fr; row-gap: 3rem; }
             .post-toc { display: none; }
             .post-cta { position: static; flex-direction: row; flex-wrap: wrap; }
@@ -110,10 +95,11 @@
         }
         @media (max-width: 768px) {
             .post-container { padding-inline: 1.25rem; }
-            .post-hero { margin-block: 5.5rem 2.5rem; min-height: 380px; border-radius: 16px; }
-            .post-hero-inner { padding: 1.75rem; }
-            .post-title { font-size: 2.2rem; letter-spacing: -1.25px; }
-            .post-subtitle { font-size: 1.08rem; }
+            .post-head { padding-block: 6rem 1.5rem; }
+            .post-title { font-size: 2.4rem; letter-spacing: -1.25px; }
+            .post-subtitle { font-size: 1.1rem; }
+            .post-banner { border-radius: 16px; aspect-ratio: 16 / 9; }
+            .post-banner-wrap { margin-block: 0.5rem 2.5rem; }
             .post-body p { font-size: 1.05rem; line-height: 1.75; }
             .post-body h2 { font-size: 1.5rem; margin-top: 2.25rem; }
             .post-body h3 { font-size: 1.18rem; }
@@ -129,31 +115,33 @@
 <body style="background: #fff;">
     <global-header></global-header>
 
-    <!-- Hero: image with content overlaid, left-aligned -->
-    <div class="post-hero post-container" id="post-hero">
-        <img id="hero-img" class="hero-bg" src="" alt="">
-        <div class="post-hero-inner">
-            <nav class="post-breadcrumb" aria-label="Breadcrumb">
-                <a href="/">Home</a>
-                <span class="sep">&rsaquo;</span>
-                <a href="/pages/public/blog.html">Blog</a>
-                <span class="sep">&rsaquo;</span>
-                <span class="current" id="bc-title">Loading…</span>
-            </nav>
-            <div class="post-meta-row">
-                <span id="post-tag" class="post-tag"></span>
-                <span id="post-read-time" class="post-read-pill"></span>
-            </div>
-            <h1 id="post-title" class="post-title">Loading…</h1>
-            <p id="post-subtitle" class="post-subtitle"></p>
-            <div class="post-author">
-                <span class="post-author-avatar"><img src="/favicon.svg" alt="" aria-hidden="true"></span>
-                <div>
-                    <div class="post-author-name" id="post-author">MN Lake Homes</div>
-                    <div class="post-author-date" id="post-date"></div>
-                </div>
+    <!-- Article head: text above the image, left-aligned -->
+    <header class="post-head post-container">
+        <nav class="post-breadcrumb" aria-label="Breadcrumb">
+            <a href="/">Home</a>
+            <span class="sep">&rsaquo;</span>
+            <a href="/pages/public/blog.html">Blog</a>
+            <span class="sep">&rsaquo;</span>
+            <span class="current" id="bc-title">Loading…</span>
+        </nav>
+        <div class="post-meta-row">
+            <span id="post-tag" class="post-tag"></span>
+            <span id="post-read-time" class="post-read-pill"></span>
+        </div>
+        <h1 id="post-title" class="post-title">Loading…</h1>
+        <p id="post-subtitle" class="post-subtitle"></p>
+        <div class="post-author">
+            <span class="post-author-avatar"><img src="/favicon.svg" alt="" aria-hidden="true"></span>
+            <div>
+                <div class="post-author-name" id="post-author">MN Lake Homes</div>
+                <div class="post-author-date" id="post-date"></div>
             </div>
         </div>
+    </header>
+
+    <!-- Hero banner: same width as the head and the body below -->
+    <div class="post-banner-wrap post-container" id="post-banner-wrap">
+        <div class="post-banner"><img id="hero-img" src="" alt=""></div>
     </div>
 
     <!-- Body: TOC | article | CTAs -->
@@ -273,8 +261,7 @@
                     heroImg.src = post.cover_image_url;
                     heroImg.alt = post.title;
                 } else {
-                    // No photo — fall back to the hero's gradient background.
-                    heroImg.style.display = 'none';
+                    document.getElementById('post-banner-wrap').style.display = 'none';
                 }
 
                 // Tailor the primary CTA to the post's category.
