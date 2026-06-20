@@ -2363,6 +2363,20 @@ async function seedTownContent() {
         curated += r.rowCount;
     }
     if (curated > 0) console.log(` Curated ${curated} town page(s).`);
+
+    // Refresh lake hero subtitles to the curated 20-25 word versions. Prod is
+    // deploy-only, so this runs on boot rather than via a direct DB write.
+    // Source of truth for these slugs (re-applied each deploy).
+    const lakeIntros = require('./data/lake-intros');
+    let lakeFixed = 0;
+    for (const [slug, intro] of Object.entries(lakeIntros)) {
+        const r = await pool.query(
+            'UPDATE lakes SET intro_text = $2, updated_at = NOW() WHERE slug = $1',
+            [slug, intro]
+        );
+        lakeFixed += r.rowCount;
+    }
+    if (lakeFixed > 0) console.log(` Refreshed ${lakeFixed} lake hero subtitle(s).`);
 }
 
 // ==========================================
