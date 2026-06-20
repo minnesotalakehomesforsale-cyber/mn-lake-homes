@@ -2582,6 +2582,20 @@ async function seedTownContent() {
         lakeFixed += r.rowCount;
     }
     if (lakeFixed > 0) console.log(` Refreshed ${lakeFixed} lake hero subtitle(s).`);
+
+    // Unique "Life on…" / "Seasons" body copy for high-traffic lakes (replaces
+    // the templated fallback). Source of truth for these slugs; re-applied each
+    // boot. Batch 1 — extend src/data/lake-content.js to cover more lakes.
+    const lakeContent = require('./data/lake-content');
+    let lakeBodies = 0;
+    for (const [slug, c] of Object.entries(lakeContent)) {
+        const r = await pool.query(
+            'UPDATE lakes SET lifestyle_text = $2, seasons_text = $3, updated_at = NOW() WHERE slug = $1',
+            [slug, c.lifestyle, c.seasons]
+        );
+        lakeBodies += r.rowCount;
+    }
+    if (lakeBodies > 0) console.log(` Refreshed ${lakeBodies} lake body section(s).`);
 }
 
 // ==========================================
