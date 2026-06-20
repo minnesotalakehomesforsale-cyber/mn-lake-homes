@@ -2576,8 +2576,12 @@ async function seedBlogPosts() {
     // posts that are missing. That's what makes a git push of a new post in
     // default-blog-posts.js actually publish it on the next deploy.
     const { posts } = require('./data/default-blog-posts');
+    // Staged drafts (is_published:false) — inserted so they appear in the admin
+    // Blog list ready to publish, but stay off the public site until then.
+    let drafts = [];
+    try { drafts = require('./data/blog-drafts'); } catch (_) { drafts = []; }
     let added = 0;
-    for (const p of posts) {
+    for (const p of [...posts, ...drafts]) {
         const r = await pool.query(`
             INSERT INTO blog_posts
                 (title, slug, excerpt, body, cover_image_url, tag,
