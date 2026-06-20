@@ -650,6 +650,17 @@ app.get('/lakes/:slug', async (req, res, next) => {
             return;
         }
 
+        // Towns connected to this lake (reverse lake_tags lookup) — used to add
+        // a crawlable "nearby towns" block so lake pages link back to towns
+        // (towns already link to their lakes).
+        const townRows = await pool.query(
+            `SELECT t.slug, t.name FROM tags t
+                JOIN lake_tags lt ON lt.tag_id = t.id
+              WHERE lt.lake_id = $1 AND t.active = TRUE
+                AND COALESCE(t.hero_image_url,'') <> '' ORDER BY t.name`,
+            [lake.id]
+        ).then(r => r.rows).catch(() => []);
+
         const templatePath = path.join(PROJECT_ROOT, 'pages/public/lake-detail.html');
         fs.readFile(templatePath, 'utf8', (err, html) => {
             if (err) return next(err);
@@ -734,6 +745,13 @@ app.get('/lakes/:slug', async (req, res, next) => {
             let out = html;
             for (const [k, v] of Object.entries(replacements)) {
                 out = out.split(k).join(v);
+            }
+            if (townRows.length) {
+                const townDir = seoDirectory([{
+                    title: `Towns on & near ${lake.name}`,
+                    items: townRows.map(t => ({ href: `/towns/${encodeURIComponent(t.slug)}`, name: t.name })),
+                }]);
+                out = out.replace('</body>', `${townDir}\n</body>`);
             }
             res.type('html').send(out);
         });
