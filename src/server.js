@@ -720,7 +720,7 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 '{{LAKE_HERO_BLOCK}}':      lakeHeroBlock,
                 '{{LAKE_HERO_CREDIT}}':     lakeHeroCredit,
                 '{{LAKE_FEATURED_IMAGE}}':  escapeHtml(featured),
-                '{{LAKE_INTRO_TEXT}}':      escapeHtml(lake.intro_text || desc),
+                '{{LAKE_INTRO_TEXT}}':      escapeHtml(lake.intro_text || `${lake.name} — explore waterfront homes and cabins for sale, and get matched with a vetted, local agent who knows this lake bay by bay.`),
                 '{{LAKE_LATITUDE}}':        escapeHtml(lake.latitude ?? ''),
                 '{{LAKE_LONGITUDE}}':       escapeHtml(lake.longitude ?? ''),
                 '{{LAKE_REGION}}':          escapeHtml(lake.region || ''),
@@ -967,7 +967,7 @@ app.get('/towns/:slug', async (req, res, next) => {
             const heroH1HtmlBasic = `Explore<br><span>${escapeHtml(tag.name)}</span></h1>`;
             const heroH1Html      = hasContent ? heroH1HtmlRich : heroH1HtmlBasic;
             const introText       = (tag.intro_text || '').trim()
-                || `Lake homes, local agents, and trusted businesses serving ${tag.name}, ${tag.state}.`;
+                || `${tag.name} is a ${tag.state} lake-country town. Browse lake homes for sale, get matched with a vetted, local lake agent, and find the trusted businesses nearby.`;
 
             // Description is JSON-encoded so the template's client-side JS
             // can parse and split it into the about-1/2/3 sections without
