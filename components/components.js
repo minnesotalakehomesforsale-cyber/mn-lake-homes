@@ -568,23 +568,24 @@ customElements.define('lead-modal', LeadModal);
 
 // ─── Multi-Step Conversational Lead Forms ─────────────────────────────────────
 
+// One "name" step instead of separate first/last (fewer fields = higher
+// completion). _lfNext derives d.first from the name for the conversational
+// personalization that follows.
 const _LF_CFG = {
     buy: {
         source: 'buyer',
         steps: [
-            { q: 'Who are we speaking with today?',         hint: "Let's start with your first name.",                                          field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
-            { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
+            { q: 'Who are we speaking with?',               hint: 'Just your name to get started.',                                            field: { id: 'name',     type: 'text',    ph: 'Your full name',          ac: 'name' } },
             { q: d => `${d.first}, what's your budget range?`,              hint: 'Helps us match you with the right properties.',               field: { id: 'budget',   type: 'select',  ph: 'Select a range…',         opts: ['Under $500K','$500K – $750K','$750K – $1M','$1M – $2M','Over $2M'] } },
             { q: 'When are you hoping to buy?',                                                                                                   field: { id: 'timeline', type: 'select',  ph: 'Select a timeline…',      opts: ['ASAP — ready to move','Within 1–3 months','Within 3–6 months','Just exploring for now'] } },
-            { q: d => `Almost done, ${d.first}. How can we reach you?`,      hint: "Enter at least one contact method and we'll be in touch within one business day.",                  field: { id: 'contact', type: 'contact' } }
+            { q: d => `Almost done, ${d.first}. How can we reach you?`,      hint: "One contact method is all we need — a local specialist reaches out within one business day.",         field: { id: 'contact', type: 'contact' } }
         ]
     },
     sell: {
         source: 'seller',
         steps: [
             { q: "What's the property address?",             hint: 'Full street address so we can pull accurate comps.',                        field: { id: 'address',  type: 'text',    ph: 'e.g. 123 Shoreline Dr, Wayzata, MN' } },
-            { q: 'Who are we speaking with today?',          hint: "Let's start with your first name.",                                         field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
-            { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
+            { q: 'Who are we speaking with?',                hint: 'Just your name to get started.',                                            field: { id: 'name',     type: 'text',    ph: 'Your full name',          ac: 'name' } },
             { q: 'When are you looking to sell?',                                                                                                 field: { id: 'timeline', type: 'select',  ph: 'Select a timeline…',      opts: ['As soon as possible','Within 3 months','3–6 months out','Just exploring options'] } },
             { q: d => `Great, ${d.first}. How can we reach you?`,            hint: "We'll send your free market analysis within one business day.",                                      field: { id: 'contact', type: 'contact' } }
         ]
@@ -592,8 +593,7 @@ const _LF_CFG = {
     rent: {
         source: 'general_contact',
         steps: [
-            { q: 'Who are we speaking with today?',         hint: "Let's start with your first name.",                                          field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
-            { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
+            { q: 'Who are we speaking with?',               hint: 'Just your name to get started.',                                            field: { id: 'name',     type: 'text',    ph: 'Your full name',          ac: 'name' } },
             { q: 'When do you need it?',                    hint: 'Helps us check availability.',                                               field: { id: 'timeline', type: 'select',  ph: 'Select a timeframe…',     opts: ['This weekend','This month','Seasonal (summer or winter)','Year-round lease'] } },
             { q: d => `${d.first}, what's your monthly budget?`,                                                                                  field: { id: 'budget',   type: 'select',  ph: 'Select a range…',         opts: ['Under $1,500/mo','$1,500 – $3,000/mo','$3,000 – $5,000/mo','Over $5,000/mo'] } },
             { q: d => `Perfect, ${d.first}. How can we reach you?`,          hint: "We'll start finding your ideal rental right away.",                                                  field: { id: 'contact', type: 'contact' } }
@@ -602,8 +602,7 @@ const _LF_CFG = {
     agent: {
         source: 'agent_inquiry',
         steps: [
-            { q: 'Who are we speaking with today?',         hint: "Let's start with your first name.",                                          field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
-            { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
+            { q: 'Who are we speaking with?',               hint: 'Just your name to get started.',                                            field: { id: 'name',     type: 'text',    ph: 'Your full name',          ac: 'name' } },
             { q: d => `${d.first}, what do you need help with?`,            hint: "We'll match you with the right specialist.",                  field: { id: 'intent',   type: 'select',  ph: 'Select one…',             opts: ['Buying a lake home','Selling my property','Finding a rental','Market information','General question'] } },
             { q: d => `Got it, ${d.first}. How can we reach you?`,           hint: 'A local specialist will be in touch within one business day.',                                        field: { id: 'contact', type: 'contact' } }
         ]
@@ -611,8 +610,7 @@ const _LF_CFG = {
     general: {
         source: 'general_contact',
         steps: [
-            { q: 'Who are we speaking with today?',         hint: "Let's start with your first name.",                                          field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
-            { q: d => `Nice to meet you, ${d.first}! What's your last name?`,                                                                    field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
+            { q: 'Who are we speaking with?',               hint: 'Just your name to get started.',                                            field: { id: 'name',     type: 'text',    ph: 'Your full name',          ac: 'name' } },
             { q: d => `How can we help you, ${d.first}?`,                                                                                        field: { id: 'intent',   type: 'select',  ph: 'Select one…',             opts: ['I want to buy a home','I want to sell my property',"I'm looking for a rental",'I need to find an agent','General question'] } },
             { q: d => `Perfect, ${d.first}. How can we reach you?`,          hint: "We'll be in touch within one business day.",                                                         field: { id: 'contact', type: 'contact' } }
         ]
@@ -620,8 +618,7 @@ const _LF_CFG = {
     cash_offer: {
         source: 'cash_offer',
         steps: [
-            { q: 'Let\'s get your cash offer started.',     hint: "First, what's your first name?",                                             field: { id: 'first',    type: 'text',    ph: 'Your first name',         ac: 'given-name'  } },
-            { q: d => `Thanks, ${d.first}! What's your last name?`,                                                                              field: { id: 'last',     type: 'text',    ph: 'Your last name',          ac: 'family-name' } },
+            { q: 'Let\'s get your cash offer started.',     hint: "First, what's your name?",                                                   field: { id: 'name',     type: 'text',    ph: 'Your full name',          ac: 'name' } },
             { q: d => `${d.first}, what's the property address?`,           hint: 'Full address or the lake + nearest city works too.',          field: { id: 'address',  type: 'text',    ph: 'e.g. 123 Shoreline Dr, Wayzata, MN' } },
             { q: 'What type of property is it?',                                                                                                  field: { id: 'property_type', type: 'select', ph: 'Select one…',       opts: ['Single-family lake home','Cabin / cottage','Condo or townhouse','Multi-family','Vacant lakefront land','Other'] } },
             { q: 'What condition is the home in?',          hint: 'A ballpark is fine — we\'ll confirm during the walkthrough.',                 field: { id: 'condition', type: 'select', ph: 'Select one…',            opts: ['Move-in ready','Light cosmetic updates needed','Major repairs needed','Tear-down / as-is'] } },
@@ -691,7 +688,8 @@ function _lfInit() {
                 <button id="lf-next" onclick="window._lfNext()"
                     style="width:100%;padding:1rem 1.5rem;background:#1a202c;color:#fff;border:none;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer;font-family:inherit;transition:background 0.2s;"
                     onmouseover="if(!this.disabled)this.style.background='#2d3748'" onmouseout="if(!this.disabled)this.style.background='#1a202c'">Continue &#8594;</button>
-                <p style="text-align:center;color:#cbd5e0;font-size:0.75rem;margin-top:0.9rem;">We respect your privacy. No spam, ever.</p>
+                <p style="text-align:center;color:#718096;font-size:0.8rem;margin-top:1.1rem;font-weight:600;">✓ Free to you &nbsp;·&nbsp; ✓ No commission &nbsp;·&nbsp; ✓ Vetted local agents</p>
+                <p style="text-align:center;color:#cbd5e0;font-size:0.72rem;margin-top:0.4rem;">No obligation. No spam, ever.</p>
             </div>
         </div>
 
@@ -968,26 +966,41 @@ function _lfUnlockScroll() {
     document.body.style.overflow = '';
 }
 
+// Fire a GA4/HubSpot funnel event (safe no-op when no tracking is configured).
+function _lfTrack(event, params) {
+    try { if (typeof window.trackConversion === 'function') window.trackConversion(event, params || {}); } catch (_) {}
+}
+
 window.openForm = function(type, prefill) {
     _lfInit();
     const t = type || 'general';
     const data = { ...(prefill && typeof prefill === 'object' ? prefill : {}) };
+    // Attribution: an explicit prefill._source wins, else a ?ref= URL param
+    // (so a tool/page can tag where the lead came from). Stored on _lfs and
+    // appended to the lead notes at submit — never dumped as a form field.
+    let leadRef = (data && data._source) || null;
+    if (data && data._source) delete data._source;
+    if (!leadRef) { try { leadRef = new URLSearchParams(window.location.search).get('ref') || null; } catch (_) {} }
     // Skip any step whose field id is already populated via prefill.
     const filtered = _LF_CFG[t].steps.filter(s => {
         if (s.field.type === 'contact') return true;
         const v = data[s.field.id];
         return v === undefined || v === null || v === '';
     });
-    _lfs = { type: t, step: 0, data, steps: filtered };
+    _lfs = { type: t, step: 0, data, steps: filtered, _leadref: leadRef, _submitted: false };
     document.getElementById('lf-ok').style.display   = 'none';
     document.getElementById('lf-body').style.display = 'block';
     document.getElementById('lf-overlay').style.display = 'block';
     _lfLockScroll();
+    _lfTrack('lead_form_open', { form_type: t, lead_ref: leadRef || undefined });
     _lfRender();
 };
 
 window.closeForm = function() {
     const el = document.getElementById('lf-overlay');
+    const wasOpen = el && el.style.display !== 'none';
+    // GA4: track drop-off (closed before submitting)
+    if (wasOpen && _lfs && !_lfs._submitted) _lfTrack('lead_form_abandon', { form_type: _lfs.type, last_step: (_lfs.step || 0) + 1 });
     if (el) el.style.display = 'none';
     _lfAddressTeardown();
     _lfUnlockScroll();
@@ -1017,7 +1030,12 @@ window._lfNext = function() {
         const val = (document.getElementById('lf-' + f.id)?.value || '').trim();
         if (!val) { err.textContent = 'This field is required.'; err.style.display = 'block'; return; }
         _lfs.data[f.id] = val;
+        // Derive the first name from the combined name field so the rest of
+        // the conversational flow can keep personalizing (${d.first}).
+        if (f.id === 'name') _lfs.data.first = val.split(/\s+/)[0] || val;
     }
+    // GA4 funnel: step completed
+    _lfTrack('lead_form_step', { step_index: _lfs.step + 1, step_field: f.id });
 
     if (_lfs.step === steps.length - 1) { _lfDoSubmit(); return; }
     _lfs.step++;
@@ -1027,16 +1045,18 @@ window._lfNext = function() {
 async function _lfDoSubmit() {
     const cfg  = _LF_CFG[_lfs.type];
     const d    = _lfs.data;
-    const name = [d.first, d.last].filter(Boolean).join(' ');
+    const name = (d.name || [d.first, d.last].filter(Boolean).join(' ')).trim();
     // address + placeId + property_* live on the lead record directly,
     // so exclude them from the free-form notes dump.
     const skip = new Set([
-        'first','last','email','phone',
+        'name','first','last','email','phone',
         'address','placeId',
         'property_street','property_city','property_state','property_zip',
     ]);
-    const notes = Object.entries(d).filter(([k,v]) => !skip.has(k) && v)
+    let notes = Object.entries(d).filter(([k,v]) => !skip.has(k) && v)
         .map(([k,v]) => `${k[0].toUpperCase()+k.slice(1).replace(/_/g,' ')}: ${v}`).join('\n');
+    // Attribution: where did this lead originate (a tool, a page, a campaign)?
+    if (_lfs._leadref) notes = (notes ? notes + '\n' : '') + `Lead source: ${_lfs._leadref}`;
 
     const btn = document.getElementById('lf-next');
     const errEl = document.getElementById('lf-err');
@@ -1069,6 +1089,7 @@ async function _lfDoSubmit() {
             })
         });
         if (!res.ok) { const r = await res.json().catch(()=>({})); throw new Error(r.error || 'Submission failed.'); }
+        _lfs._submitted = true;
 
         // Fire conversion (GA4 + HubSpot tracking). Helper is a no-op when
         // no tracking IDs are configured yet, so this is safe pre-launch.
@@ -1076,6 +1097,7 @@ async function _lfDoSubmit() {
             window.trackConversion('generate_lead', {
                 form_name: 'lead_modal',
                 lead_source: cfg.source,
+                lead_ref: _lfs._leadref || undefined,
                 has_address: !!d.address,
             });
         }
