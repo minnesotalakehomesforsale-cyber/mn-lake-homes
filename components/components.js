@@ -265,7 +265,7 @@ class GlobalHeader extends HTMLElement {
                     { heading: 'Seller Resources', links: [
                         { label: 'Seller Guides & Tools', href: `${bp}resources.html?category=Seller%20Resources` },
                         { label: 'Cost Calculator',       href: `${bp}lake-mortgage-calculator.html` },
-                        { label: 'Market Reports',        href: `${bp}resources.html?category=Market%20Reports` },
+                        { label: 'Selling Articles',      href: `${bp}blog.html?tag=Seller%20Resources` },
                         { label: 'Blog',                  href: `${bp}blog.html` },
                     ]},
                 ]
@@ -307,7 +307,7 @@ class GlobalHeader extends HTMLElement {
                     ]},
                     { heading: 'Agent Resources', links: [
                         { label: 'Agent Resource Library', href: `${bp}resources.html` },
-                        { label: 'Market Reports',         href: `${bp}resources.html?category=Market%20Reports` },
+                        { label: 'Working With Agents',    href: `${bp}blog.html?tag=Working%20With%20an%20Agent` },
                         { label: 'Training & Support',     href: `${bp}join.html` },
                         { label: 'Blog',                   href: `${bp}blog.html` },
                     ]},
@@ -330,10 +330,10 @@ class GlobalHeader extends HTMLElement {
                     ]},
                     { heading: 'Library', links: [
                         { label: 'All Resources',       href: `${bp}resources.html` },
-                        { label: 'Guides',              href: `${bp}resources.html?category=Guides` },
+                        { label: 'Buyer Guides',        href: `${bp}blog.html?tag=Buyer%20Guide` },
+                        { label: 'Seller Guides',       href: `${bp}blog.html?tag=Seller%20Resources` },
                         { label: 'Tools & Calculators', href: `${bp}resources.html?category=Tools` },
-                        { label: 'Market Reports',      href: `${bp}resources.html?category=Market%20Reports` },
-                        { label: 'Blog',                href: `${bp}blog.html` },
+                        { label: 'All Articles',        href: `${bp}blog.html` },
                     ]},
                     { heading: 'Company', links: [
                         { label: 'About Us',      href: `${bp}about.html` },
@@ -559,7 +559,7 @@ class GlobalFooter extends HTMLElement {
                     <a href="/towns">Lakes &amp; Towns</a>
                     <a href="${bp}resources.html">Resource Library</a>
                     <a href="${bp}blog.html">Blog</a>
-                    <a href="${bp}resources.html?category=Market%20Reports">Market Reports</a>
+                    <a href="${bp}find-your-lake.html">Find Your Lake</a>
                 </div>
                 <div class="link-column">
                     <h4>Company</h4>

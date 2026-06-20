@@ -247,10 +247,23 @@
                     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#a0aec0;">No posts yet.</div>';
                     return;
                 }
+
+                // Deep-link support: ?tag=Buyer Guide and ?q=/?search= so menus
+                // and other pages can land on a pre-filtered blog view.
+                const qp = new URLSearchParams(window.location.search);
+                const urlTag = (qp.get('tag') || '').trim();
+                const urlQ = (qp.get('q') || qp.get('search') || '').trim();
+                if (urlTag) {
+                    const match = allPosts.find(p => (p.tag || '').toLowerCase() === urlTag.toLowerCase());
+                    if (match) activeTag = match.tag;
+                }
+                if (urlQ) searchQuery = urlQ;
+
                 buildTagFilters();
                 applyFilters();
 
                 const searchInput = document.getElementById('blog-search');
+                if (searchQuery) searchInput.value = searchQuery;
                 searchInput.addEventListener('input', e => {
                     searchQuery = e.target.value;
                     applyFilters();
