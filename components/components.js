@@ -239,13 +239,14 @@ class GlobalHeader extends HTMLElement {
                     ]},
                     { heading: 'Tools', links: [
                         { label: 'Get a Cash Offer', href: `${bp}cash-offer.html` },
-                        { label: 'How It Works', href: `${bp}buy.html` },
+                        { label: 'Find Your Lake',   href: `${bp}find-your-lake.html` },
+                        { label: 'Compare Lakes',    href: `${bp}compare-lakes.html` },
                     ]},
                     { heading: 'Buyer Resources', links: [
-                        { label: 'Buyer Guides & Tools',      href: `${bp}resources.html?search=buyer` },
-                        { label: 'Property Value Calculator', href: `${bp}resources.html?search=valuation` },
-                        { label: 'Dock & Permits',            href: `${bp}resources.html?search=permit` },
-                        { label: 'Blog',                      href: `${bp}blog.html` },
+                        { label: 'Buyer Guides & Tools', href: `${bp}resources.html?category=Buyer%20Resources` },
+                        { label: 'Cost Calculator',      href: `${bp}lake-mortgage-calculator.html` },
+                        { label: "Buyer's Checklist",    href: `${bp}lake-buyer-checklist.html` },
+                        { label: 'Blog',                 href: `${bp}blog.html` },
                     ]},
                 ]
             },
@@ -253,17 +254,17 @@ class GlobalHeader extends HTMLElement {
                 id: 'sell', label: 'Sell', href: `${bp}sell.html`,
                 columns: [
                     { heading: 'Sell Your Home', links: [
-                        { label: 'List With an Agent', href: `${bp}sell.html` },
                         { label: 'Free Home Valuation', href: `${bp}sell.html` },
+                        { label: 'List With an Agent', href: `${bp}sell.html#full-service` },
                         { label: 'List as a Rental', href: `${bp}rent.html` },
                     ]},
                     { heading: 'Skip the Hassle', links: [
                         { label: 'Get a Cash Offer', href: `${bp}cash-offer.html` },
-                        { label: 'How Cash Offers Work', href: `${bp}cash-offer.html` },
+                        { label: 'How Cash Offers Work', href: `${bp}cash-offer.html#how-it-works` },
                     ]},
                     { heading: 'Seller Resources', links: [
-                        { label: 'Seller Guides & Tools', href: `${bp}resources.html?search=seller` },
-                        { label: 'Pricing & Valuation',   href: `${bp}resources.html?search=valuation` },
+                        { label: 'Seller Guides & Tools', href: `${bp}resources.html?category=Seller%20Resources` },
+                        { label: 'Cost Calculator',       href: `${bp}lake-mortgage-calculator.html` },
                         { label: 'Market Reports',        href: `${bp}resources.html?category=Market%20Reports` },
                         { label: 'Blog',                  href: `${bp}blog.html` },
                     ]},
@@ -316,16 +317,16 @@ class GlobalHeader extends HTMLElement {
                 id: 'resources', label: 'Resources', href: `${bp}resources.html`,
                 columns: [
                     { heading: 'For you', links: [
-                        { label: 'Buyer Resources',   href: `${bp}resources.html?search=buyer` },
-                        { label: 'Seller Resources',  href: `${bp}resources.html?search=seller` },
-                        { label: 'Renter Resources',  href: `${bp}resources.html?search=rental` },
-                        { label: 'Cabin Owner Tools', href: `${bp}resources.html?search=cabin` },
+                        { label: 'Buyer Resources',   href: `${bp}resources.html?category=Buyer%20Resources` },
+                        { label: 'Seller Resources',  href: `${bp}resources.html?category=Seller%20Resources` },
+                        { label: 'Renter Resources',  href: `${bp}rent.html` },
+                        { label: 'Cabin Owner Tools', href: `${bp}resources.html?category=Tools` },
                     ]},
                     { heading: 'By topic', links: [
-                        { label: 'Valuation & Pricing', href: `${bp}resources.html?search=valuation` },
-                        { label: 'Dock & Permits',      href: `${bp}resources.html?search=permit` },
-                        { label: 'Financing',           href: `${bp}resources.html?search=financing` },
-                        { label: 'Summertime Buying',   href: `${bp}resources.html?search=summer` },
+                        { label: 'Valuation & Pricing', href: `${bp}sell.html` },
+                        { label: 'Dock & Permits',      href: `${bp}lake-buyer-checklist.html` },
+                        { label: 'Financing',           href: `${bp}lake-mortgage-calculator.html` },
+                        { label: 'Find Your Lake',      href: `${bp}find-your-lake.html` },
                     ]},
                     { heading: 'Library', links: [
                         { label: 'All Resources',       href: `${bp}resources.html` },
