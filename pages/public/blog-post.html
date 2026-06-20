@@ -8,100 +8,106 @@
     <link rel="apple-touch-icon" href="/favicon.svg">
     <link rel="stylesheet" href="../../styles/style.css">
 <style>
-        .post-hero {
-            position: relative;
-            height: 55vh;
-            min-height: 380px;
-            overflow: hidden;
-            background: #1a202c;
-        }
-        .post-hero img {
-            width: 100%; height: 100%; object-fit: cover; opacity: 0.55;
-        }
-        .post-hero-content {
-            position: absolute; inset: 0;
-            display: flex; flex-direction: column; justify-content: flex-end;
-            padding: 3rem 2rem;
-            max-width: 860px;
-            margin: 0 auto;
-            width: 100%;
-            left: 50%; transform: translateX(-50%);
-        }
-        .post-tag { display: inline-block; background: #1d6df2; color: #fff; font-size: 0.75rem; font-weight: 700; padding: 0.3rem 0.75rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem; width: fit-content; }
-        .post-title { font-size: 3rem; font-weight: 800; color: #fff; letter-spacing: -1.5px; line-height: 1.15; margin-bottom: 1rem; }
-        .post-byline { color: rgba(255,255,255,0.7); font-size: 0.9rem; font-weight: 500; display: flex; gap: 1.5rem; flex-wrap: wrap; }
+        /* Shared container so the head, banner, and 3-col body align on the
+           same left/right edges. Wider than the old 720px so the article
+           column reads a little roomier. padding-inline / padding-block are
+           used (not the `padding` shorthand) so per-section vertical padding
+           never wipes out the container's horizontal padding. */
+        .post-container { max-width: 1380px; margin: 0 auto; padding-inline: 2rem; box-sizing: border-box; }
 
-        .post-body-wrap { max-width: 720px; margin: 0 auto; padding: 4rem 2rem 6rem; }
-        .post-body-wrap p { font-size: 1.1rem; line-height: 1.8; color: #2d3748; margin-bottom: 1.5rem; }
-        .post-body-wrap h2 { font-size: 1.6rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; margin-top: 2.5rem; margin-bottom: 1rem; }
-        .post-body-wrap h3 { font-size: 1.25rem; font-weight: 700; color: #1a202c; margin-top: 2rem; margin-bottom: 0.75rem; }
-        .post-body-wrap ul, .post-body-wrap ol { padding-left: 1.5rem; margin-bottom: 1.5rem; }
-        .post-body-wrap li { font-size: 1.05rem; line-height: 1.7; color: #2d3748; margin-bottom: 0.5rem; }
-        .post-body-wrap blockquote { border-left: 4px solid #1d6df2; padding: 0.5rem 1.5rem; margin: 2rem 0; background: #f7f9fa; border-radius: 0 8px 8px 0; }
-        .post-body-wrap blockquote p { color: #4a5568; font-style: italic; }
+        /* ── Article head ────────────────────────────────────────────────── */
+        .post-head { padding-block: 7.5rem 2rem; }
+        .post-breadcrumb { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; color: #718096; font-size: 0.85rem; font-weight: 500; margin-bottom: 1.75rem; }
+        .post-breadcrumb a { color: #718096; text-decoration: none; transition: color 0.15s; }
+        .post-breadcrumb a:hover { color: #1d6df2; }
+        .post-breadcrumb .sep { color: #cbd5e0; }
+        .post-breadcrumb .current { color: #1a202c; font-weight: 600; }
 
-        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: #718096; text-decoration: none; font-weight: 600; font-size: 0.9rem; margin-bottom: 2rem; transition: color 0.15s; }
-        .back-link:hover { color: #1a202c; }
+        .post-meta-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .post-tag { display: inline-block; border: 1px solid #1d6df2; background: rgba(29,109,242,0.08); color: #1d6df2; font-size: 0.75rem; font-weight: 700; padding: 0.3rem 0.9rem; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.6px; }
+        .post-read-pill { color: #718096; font-size: 0.78rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
 
-        /* Top-left "back to all posts" pill, anchored to the hero corner (below the fixed navbar) */
-        .post-back-pill {
-            position: absolute;
-            top: 5.5rem; /* clears the fixed navbar (~70px) */
-            left: 1.5rem;
-            z-index: 5;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            padding: 0.5rem 0.95rem 0.5rem 0.8rem;
-            border-radius: 999px;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
-            color: #fff;
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 600;
-            border: 1px solid rgba(255,255,255,0.25);
-            transition: background 0.15s, border-color 0.15s, transform 0.15s;
+        .post-title { font-size: 3.6rem; font-weight: 800; color: #1a202c; letter-spacing: -2px; line-height: 1.04; margin-bottom: 1.5rem; max-width: 17ch; }
+        .post-subtitle { font-size: 1.3rem; font-weight: 400; color: #718096; line-height: 1.55; max-width: 620px; margin-bottom: 2.25rem; }
+
+        .post-author { display: flex; align-items: center; gap: 0.85rem; padding-top: 1.75rem; border-top: 1px solid #edf2f7; max-width: 620px; }
+        .post-author-avatar { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, #1d6df2, #5b8def); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .post-author-avatar img { width: 24px; height: 24px; }
+        .post-author-name { font-size: 1rem; font-weight: 700; color: #1a202c; line-height: 1.2; }
+        .post-author-date { font-size: 0.85rem; color: #a0aec0; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* ── Hero banner image ───────────────────────────────────────────── */
+        .post-banner-wrap { margin-block: 0.5rem 3.5rem; }
+        .post-banner { border-radius: 22px; overflow: hidden; aspect-ratio: 21 / 9; background: linear-gradient(135deg, #1d6df2 0%, #5b8def 100%); box-shadow: 0 24px 60px rgba(16,24,40,0.14); }
+        .post-banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        /* ── 3-column body layout ────────────────────────────────────────── */
+        .post-layout {
+            display: grid;
+            grid-template-columns: 200px minmax(0, 1fr) 290px;
+            column-gap: 44px;
+            align-items: start;
+            padding-block-end: 6rem;
         }
-        .post-back-pill:hover {
-            background: rgba(0,0,0,0.7);
-            border-color: rgba(255,255,255,0.45);
-            transform: translateX(-2px);
-        }
-        @media (max-width: 600px) {
-            .post-back-pill { top: 4.5rem; left: 1rem; font-size: 0.78rem; padding: 0.4rem 0.8rem 0.4rem 0.65rem; }
-        }
-        .post-body-wrap img { max-width: 100%; height: auto; border-radius: 10px; }
 
-        @media (max-width: 900px) {
-            /* On mobile the hero is short enough that bottom-aligning the
-               eyebrow/title can crash into the absolute back-pill at top.
-               Switch the content to top-aligned and reserve enough top
-               padding (8rem) to clear navbar (~70px) + pill (~36px) +
-               breathing room. Hero grows to fit content with min-height as
-               a floor so short titles still feel substantial. */
-            .post-hero { height: auto; min-height: 340px; padding-top: 0; }
-            .post-hero-content { padding: 8rem 1.25rem 2rem; justify-content: flex-start; }
-            .post-title { font-size: 2rem; letter-spacing: -1px; line-height: 1.15; }
-            .post-tag { margin-bottom: 0.75rem; }
-            .post-byline { font-size: 0.82rem; gap: 1rem; }
+        /* Left: sticky table of contents with scroll-spy */
+        .post-toc { position: sticky; top: 96px; align-self: start; }
+        .post-toc-label { font-size: 0.72rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #1d6df2; margin-bottom: 1.1rem; }
+        .post-toc nav { display: flex; flex-direction: column; border-left: 2px solid #edf2f7; }
+        .toc-link { display: block; padding: 0.5rem 0 0.5rem 1.1rem; margin-left: -2px; border-left: 2px solid transparent; color: #718096; text-decoration: none; font-size: 0.92rem; font-weight: 500; line-height: 1.35; transition: color 0.15s, border-color 0.15s; }
+        .toc-link:hover { color: #1a202c; }
+        .toc-link.active { color: #1a202c; font-weight: 700; border-left-color: #1d6df2; }
 
-            .post-body-wrap { padding: 2.5rem 1.25rem 4rem; }
-            .post-body-wrap p { font-size: 1.02rem; line-height: 1.7; }
-            .post-body-wrap h2 { font-size: 1.35rem; margin-top: 2rem; }
-            .post-body-wrap h3 { font-size: 1.1rem; margin-top: 1.5rem; }
-            .post-body-wrap li { font-size: 0.98rem; line-height: 1.65; }
-            .post-body-wrap blockquote { padding: 0.4rem 1.1rem; margin: 1.5rem 0; }
-            .back-link { margin-bottom: 1.25rem; font-size: 0.85rem; }
+        /* Center: article body (wider) */
+        .post-body { min-width: 0; }
+        .post-body p { font-size: 1.13rem; line-height: 1.8; color: #2d3748; margin-bottom: 1.5rem; }
+        .post-body h2 { font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.6px; margin-top: 2.75rem; margin-bottom: 1rem; line-height: 1.2; scroll-margin-top: 92px; }
+        .post-body h3 { font-size: 1.3rem; font-weight: 700; color: #1a202c; margin-top: 2rem; margin-bottom: 0.75rem; scroll-margin-top: 92px; }
+        .post-body ul, .post-body ol { padding-left: 1.5rem; margin-bottom: 1.5rem; }
+        .post-body li { font-size: 1.08rem; line-height: 1.75; color: #2d3748; margin-bottom: 0.6rem; }
+        .post-body a { color: #1d6df2; }
+        .post-body blockquote { border-left: 4px solid #1d6df2; padding: 0.5rem 1.5rem; margin: 2rem 0; background: #f7f9fa; border-radius: 0 8px 8px 0; }
+        .post-body blockquote p { color: #4a5568; font-style: italic; }
+        .post-body img { max-width: 100%; height: auto; border-radius: 12px; }
+
+        /* Right: sticky content CTAs */
+        .post-cta { position: sticky; top: 96px; align-self: start; display: flex; flex-direction: column; gap: 1.25rem; }
+        .cta-card { border: 1px solid #e8edf3; border-radius: 16px; padding: 1.5rem; background: #fff; box-shadow: 0 8px 24px rgba(16,24,40,0.05); }
+        .cta-icon { width: 40px; height: 40px; border-radius: 10px; background: rgba(29,109,242,0.1); display: flex; align-items: center; justify-content: center; color: #1d6df2; margin-bottom: 1rem; }
+        .cta-card h4 { font-size: 1.1rem; font-weight: 800; color: #1a202c; margin: 0 0 0.5rem; letter-spacing: -0.3px; }
+        .cta-card p { font-size: 0.9rem; line-height: 1.55; color: #718096; margin: 0 0 1.15rem; }
+        .cta-btn { display: block; width: 100%; box-sizing: border-box; text-align: center; padding: 0.8rem 1rem; background: #1d6df2; color: #fff; border: none; border-radius: 10px; font-family: inherit; font-size: 0.9rem; font-weight: 700; text-decoration: none; cursor: pointer; transition: background 0.15s; }
+        .cta-btn:hover { background: #155ad1; }
+        .cta-btn:disabled { opacity: 0.65; cursor: default; }
+        .cta-input { width: 100%; box-sizing: border-box; padding: 0.7rem 0.9rem; border: 1px solid #e2e8f0; border-radius: 10px; font-family: inherit; font-size: 0.9rem; margin-bottom: 0.7rem; outline: none; }
+        .cta-input:focus { border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.12); }
+        .cta-fineprint { font-size: 0.72rem; letter-spacing: 0.5px; text-transform: uppercase; color: #a0aec0; margin: 0.85rem 0 0; }
+        .cta-success { font-size: 0.9rem; color: #1a202c; font-weight: 600; margin: 0; }
+
+        /* ── Responsive ──────────────────────────────────────────────────── */
+        @media (max-width: 1080px) {
+            /* Collapse the side rails. TOC hides; CTAs drop below the article
+               (still reachable) and lay out side by side. */
+            .post-layout { grid-template-columns: 1fr; row-gap: 3rem; }
+            .post-toc { display: none; }
+            .post-cta { position: static; flex-direction: row; flex-wrap: wrap; }
+            .cta-card { flex: 1 1 280px; }
+        }
+        @media (max-width: 768px) {
+            .post-container { padding-inline: 1.25rem; }
+            .post-head { padding-block: 6rem 1.5rem; }
+            .post-title { font-size: 2.4rem; letter-spacing: -1.25px; }
+            .post-subtitle { font-size: 1.1rem; }
+            .post-banner { border-radius: 16px; aspect-ratio: 16 / 9; }
+            .post-banner-wrap { margin-block: 0.5rem 2.5rem; }
+            .post-body p { font-size: 1.05rem; line-height: 1.75; }
+            .post-body h2 { font-size: 1.5rem; margin-top: 2.25rem; }
+            .post-body h3 { font-size: 1.18rem; }
+            .post-body li { font-size: 1.02rem; }
         }
         @media (max-width: 480px) {
-            .post-hero { min-height: 320px; }
-            .post-hero-content { padding: 7.5rem 1rem 1.75rem; }
-            .post-title { font-size: 1.6rem; letter-spacing: -0.5px; }
-            .post-body-wrap { padding: 2rem 1rem 3rem; }
-            .post-body-wrap p { font-size: 0.98rem; }
-            .post-body-wrap h2 { font-size: 1.2rem; }
+            .post-title { font-size: 2rem; letter-spacing: -1px; }
+            .post-subtitle { font-size: 1.02rem; }
         }
     </style>
     <script src="../../components/components.js" defer></script>
@@ -109,33 +115,124 @@
 <body style="background: #fff;">
     <global-header></global-header>
 
-    <div id="post-hero" class="post-hero">
-        <img id="hero-img" src="" alt="">
-        <a href="/pages/public/blog.html" class="post-back-pill" aria-label="Back to all blog posts">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            Back to all posts
-        </a>
-        <div class="post-hero-content">
+    <!-- Article head -->
+    <header class="post-head post-container">
+        <nav class="post-breadcrumb" aria-label="Breadcrumb">
+            <a href="/">Home</a>
+            <span class="sep">&rsaquo;</span>
+            <a href="/pages/public/blog.html">Blog</a>
+            <span class="sep">&rsaquo;</span>
+            <span class="current" id="bc-title">Loading…</span>
+        </nav>
+        <div class="post-meta-row">
             <span id="post-tag" class="post-tag"></span>
-            <h1 id="post-title" class="post-title">Loading...</h1>
-            <div class="post-byline">
-                <span id="post-author"></span>
-                <span id="post-date"></span>
-                <span id="post-read-time"></span>
+            <span id="post-read-time" class="post-read-pill"></span>
+        </div>
+        <h1 id="post-title" class="post-title">Loading…</h1>
+        <p id="post-subtitle" class="post-subtitle"></p>
+        <div class="post-author">
+            <span class="post-author-avatar"><img src="/favicon.svg" alt="" aria-hidden="true"></span>
+            <div>
+                <div class="post-author-name" id="post-author">MN Lake Homes</div>
+                <div class="post-author-date" id="post-date"></div>
             </div>
         </div>
+    </header>
+
+    <!-- Hero banner -->
+    <div class="post-banner-wrap post-container" id="post-banner-wrap">
+        <div class="post-banner"><img id="hero-img" src="" alt=""></div>
     </div>
 
-    <div class="post-body-wrap">
-        <div id="post-body"></div>
+    <!-- Body: TOC | article | CTAs -->
+    <div class="post-layout post-container">
+        <aside class="post-toc" id="post-toc" hidden>
+            <div class="post-toc-label">In this article</div>
+            <nav id="post-toc-nav" aria-label="Table of contents"></nav>
+        </aside>
+
+        <article class="post-body" id="post-body"></article>
+
+        <aside class="post-cta">
+            <div class="cta-card">
+                <div class="cta-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                </div>
+                <h4 id="cta-match-title">Looking for a lake home?</h4>
+                <p id="cta-match-sub">Tell us the lake or area you're after and we'll match you with a vetted, licensed, local specialist. Free, no commission.</p>
+                <a href="/pages/public/buy.html" class="cta-btn">Get matched &rarr;</a>
+            </div>
+
+            <div class="cta-card">
+                <div class="cta-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                </div>
+                <h4>Lake Home Insights</h4>
+                <p>New listings, market notes, and Minnesota lake buyer guides — straight to your inbox.</p>
+                <form id="news-form">
+                    <input type="email" class="cta-input" id="news-email" placeholder="your@email.com" autocomplete="email" required aria-label="Email address">
+                    <button type="submit" class="cta-btn">Subscribe</button>
+                    <p class="cta-fineprint">No spam. Unsubscribe anytime.</p>
+                </form>
+            </div>
+        </aside>
     </div>
 
     <global-footer></global-footer>
     <lead-modal></lead-modal>
 
     <script>
+        function slugify(text) {
+            return (text || '').toLowerCase().trim()
+                .replace(/[^\w\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-')
+                .slice(0, 60) || 'section';
+        }
+
+        // Build the left-rail TOC from the article's <h2> section headings and
+        // wire IntersectionObserver scroll-spy so the current section stays lit.
+        function buildToc() {
+            const body = document.getElementById('post-body');
+            const nav  = document.getElementById('post-toc-nav');
+            const toc  = document.getElementById('post-toc');
+            const heads = [...body.querySelectorAll('h2')];
+            if (heads.length < 2) return; // not worth a TOC for 0–1 sections
+
+            const seen = {};
+            const links = heads.map(h => {
+                let id = h.id || slugify(h.textContent);
+                while (seen[id]) id = id + '-1';
+                seen[id] = true;
+                h.id = id;
+                const a = document.createElement('a');
+                a.className = 'toc-link';
+                a.href = '#' + id;
+                a.dataset.target = id;
+                a.textContent = h.textContent;
+                a.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    history.replaceState(null, '', '#' + id);
+                });
+                nav.appendChild(a);
+                return a;
+            });
+            toc.hidden = false;
+
+            const setActive = (id) => links.forEach(l => l.classList.toggle('active', l.dataset.target === id));
+            setActive(links[0].dataset.target);
+
+            const obs = new IntersectionObserver((entries) => {
+                entries.forEach(en => { if (en.isIntersecting) setActive(en.target.id); });
+            }, { rootMargin: '-88px 0px -68% 0px', threshold: 0 });
+            heads.forEach(h => obs.observe(h));
+        }
+
         async function loadPost() {
-            const slug = new URLSearchParams(window.location.search).get('slug');
+            // /blog/:slug SSR injects window.__BLOG_SLUG__; the listing links
+            // here with ?slug=. Support both entry points.
+            const slug = window.__BLOG_SLUG__ || new URLSearchParams(window.location.search).get('slug');
             if (!slug) { document.getElementById('post-title').textContent = 'Post not found.'; return; }
 
             try {
@@ -144,35 +241,79 @@
                 const post = await res.json();
 
                 document.title = `${post.title} | MN Lake Homes`;
+                document.getElementById('bc-title').textContent = post.title;
+                document.getElementById('post-tag').textContent = post.tag || 'General';
+                document.getElementById('post-read-time').textContent = `${post.read_time_minutes || 4} min read`;
+                document.getElementById('post-title').textContent = post.title;
+                document.getElementById('post-author').textContent = post.author_name || 'MN Lake Homes';
+
+                const subtitle = post.excerpt || post.seo_description || '';
+                const subEl = document.getElementById('post-subtitle');
+                if (subtitle) subEl.textContent = subtitle; else subEl.style.display = 'none';
+
+                const pubDate = post.published_at || post.created_at;
+                document.getElementById('post-date').textContent = pubDate
+                    ? new Date(pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : '';
 
                 const heroImg = document.getElementById('hero-img');
                 if (post.cover_image_url) {
                     heroImg.src = post.cover_image_url;
                     heroImg.alt = post.title;
                 } else {
-                    document.getElementById('post-hero').style.minHeight = '120px';
-                    document.getElementById('post-hero').style.height = 'auto';
-                    heroImg.style.display = 'none';
+                    document.getElementById('post-banner-wrap').style.display = 'none';
                 }
 
-                document.getElementById('post-tag').textContent  = post.tag || 'General';
-                document.getElementById('post-title').textContent = post.title;
-                document.getElementById('post-author').textContent = `By ${post.author_name || 'MN Lake Homes Team'}`;
-                document.getElementById('post-read-time').textContent = `${post.read_time_minutes || 4} min read`;
-
-                const pubDate = post.published_at || post.created_at;
-                document.getElementById('post-date').textContent = pubDate
-                    ? new Date(pubDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-                    : '';
+                // Tailor the primary CTA to the post's category.
+                const tag = post.tag || '';
+                const matchTitle = document.getElementById('cta-match-title');
+                const matchSub = document.getElementById('cta-match-sub');
+                if (/sell/i.test(tag)) {
+                    matchTitle.textContent = 'Selling a lake home?';
+                    matchSub.textContent = "Get matched with a local specialist who knows what waterfront buyers on your lake actually pay for. Free, no commission.";
+                } else if (/agent|work/i.test(tag)) {
+                    matchTitle.textContent = 'Want the right agent?';
+                    matchSub.textContent = "We do the vetting for you and match you with a licensed, local lake specialist. Free, no commission.";
+                }
 
                 document.getElementById('post-body').innerHTML = post.body || '<p>No content yet.</p>';
+                buildToc();
             } catch (err) {
                 document.getElementById('post-title').textContent = 'Post not found';
                 document.getElementById('post-body').innerHTML = '<p>This post could not be loaded.</p>';
             }
         }
 
-        document.addEventListener('DOMContentLoaded', loadPost);
+        // Newsletter signup → real /api/marketing/subscribe endpoint.
+        function wireNewsletter() {
+            const form = document.getElementById('news-form');
+            if (!form) return;
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('news-email').value.trim();
+                const btn = form.querySelector('button');
+                btn.disabled = true; btn.textContent = 'Subscribing…';
+                try {
+                    const res = await fetch('/api/marketing/subscribe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, source: 'mnlakehomes' }),
+                    });
+                    if (!res.ok) throw new Error('subscribe failed');
+                    form.innerHTML = '<p class="cta-success">✓ You\'re on the list. Watch your inbox.</p>';
+                } catch (err) {
+                    btn.disabled = false; btn.textContent = 'Subscribe';
+                    if (!document.getElementById('news-err')) {
+                        const p = document.createElement('p');
+                        p.id = 'news-err'; p.className = 'cta-fineprint'; p.style.color = '#e53e3e';
+                        p.textContent = 'Something went wrong — please try again.';
+                        form.appendChild(p);
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => { loadPost(); wireNewsletter(); });
     </script>
 </body>
 </html>
