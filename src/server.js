@@ -481,7 +481,6 @@ app.get('/sitemap.xml', async (req, res) => {
             { url: '/agents',          priority: 0.8, changefreq: 'weekly'  },
             { url: '/cash-offer',      priority: 0.7, changefreq: 'monthly' },
             { url: '/blog',            priority: 0.7, changefreq: 'daily'   },
-            { url: '/tools',                     priority: 0.7, changefreq: 'monthly' },
             { url: '/find-your-lake',            priority: 0.7, changefreq: 'monthly' },
             { url: '/compare-lakes',             priority: 0.7, changefreq: 'monthly' },
             { url: '/lake-mortgage-calculator',  priority: 0.6, changefreq: 'monthly' },

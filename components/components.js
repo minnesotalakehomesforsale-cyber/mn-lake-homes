@@ -277,12 +277,6 @@ class GlobalHeader extends HTMLElement {
                         { label: 'Featured Agents',      href: `${bp}agents.html?featured=1` },
                         { label: 'List your Business',   href: '/business-signup' },
                     ]},
-                    { heading: 'Lake Tools', links: [
-                        { label: 'Find your lake (quiz)', href: '/find-your-lake' },
-                        { label: 'Compare lakes',         href: '/compare-lakes' },
-                        { label: 'Cost calculator',       href: '/lake-mortgage-calculator' },
-                        { label: "Buyer's checklist",     href: '/lake-buyer-checklist' },
-                    ]},
                     { heading: 'Featured Towns', links: [
                         { label: 'Wayzata',        href: '/towns/wayzata' },
                         { label: 'Excelsior',      href: '/towns/excelsior' },
