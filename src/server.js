@@ -2596,6 +2596,20 @@ async function seedTownContent() {
         lakeBodies += r.rowCount;
     }
     if (lakeBodies > 0) console.log(` Refreshed ${lakeBodies} lake body section(s).`);
+
+    // Unique town body copy (description only — never touches hero/intro, so
+    // the fully-curated towns in town-content.js are untouched). Replaces the
+    // templated about-section fallback on every other rendering town.
+    const townDescriptions = require('./data/town-descriptions');
+    let townDescN = 0;
+    for (const [slug, description] of Object.entries(townDescriptions)) {
+        const r = await pool.query(
+            'UPDATE tags SET description = $2, updated_at = NOW() WHERE slug = $1 AND active = TRUE',
+            [slug, description]
+        );
+        townDescN += r.rowCount;
+    }
+    if (townDescN > 0) console.log(` Set ${townDescN} town description(s).`);
 }
 
 // ==========================================
