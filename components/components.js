@@ -306,9 +306,9 @@ class GlobalHeader extends HTMLElement {
                         { label: 'Contact Us', href: `${bp}contact.html` },
                     ]},
                     { heading: 'Agent Resources', links: [
-                        { label: 'Agent Resource Library', href: `${bp}resources.html?search=agent` },
+                        { label: 'Agent Resource Library', href: `${bp}resources.html` },
                         { label: 'Market Reports',         href: `${bp}resources.html?category=Market%20Reports` },
-                        { label: 'Training & Scripts',     href: `${bp}resources.html?search=training` },
+                        { label: 'Training & Support',     href: `${bp}join.html` },
                         { label: 'Blog',                   href: `${bp}blog.html` },
                     ]},
                 ]
