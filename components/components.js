@@ -485,6 +485,25 @@ class GlobalFooter extends HTMLElement {
         // admin-only staff links once we confirm the session role.
         this.innerHTML = this._buildFooter(bp, rp, null);
 
+        // Sticky "Get matched" bar on mobile — floats above content, opens the
+        // match form. Appended to <body> (once) so it survives footer re-renders
+        // and the form overlay (z-index 9000) covers it when open.
+        if (!document.getElementById('mlh-sticky-cta')) {
+            const bar = document.createElement('div');
+            bar.id = 'mlh-sticky-cta';
+            bar.innerHTML = `<button type="button" onclick="window.openForm && window.openForm('buy', { _source: 'sticky-mobile-cta' })">Get matched with a lake agent &rarr;</button>`;
+            document.body.appendChild(bar);
+            const st = document.createElement('style');
+            st.textContent =
+                '#mlh-sticky-cta{display:none}' +
+                '@media (max-width:768px){' +
+                  '#mlh-sticky-cta{display:block;position:fixed;left:0;right:0;bottom:0;z-index:8000;padding:0.55rem 0.85rem calc(0.55rem + env(safe-area-inset-bottom,0px));background:rgba(255,255,255,0.97);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-top:1px solid #e2e8f0;box-shadow:0 -4px 18px rgba(16,24,40,0.10)}' +
+                  '#mlh-sticky-cta button{width:100%;padding:0.95rem;background:#1d6df2;color:#fff;border:none;border-radius:12px;font-family:inherit;font-size:1.02rem;font-weight:800;cursor:pointer}' +
+                  'body{padding-bottom:74px}' +
+                '}';
+            document.head.appendChild(st);
+        }
+
         fetch('/api/auth/session')
             .then(r => { if (r.ok) return r.json(); throw new Error('not_logged_in'); })
             .then(data => {
