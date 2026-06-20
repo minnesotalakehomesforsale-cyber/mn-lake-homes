@@ -873,9 +873,35 @@ app.get('/business/dashboard', (req, res) => {
     res.sendFile(path.join(PROJECT_ROOT, 'pages/business/dashboard.html'));
 });
 
+// Build a crawlable link directory injected into hub pages, so every
+// lake/town/agent link sits in the raw HTML (not just the client-fetched
+// cards) — strengthens internal linking and crawl discovery.
+function seoDirectory(groups) {
+    const cols = groups.map(g => {
+        if (!g.items.length) return '';
+        const links = g.items.map(i => `<a href="${i.href}" style="color:#1d6df2;text-decoration:none;display:block;padding:0.12rem 0;">${escapeHtml(i.name)}</a>`).join('');
+        return `<div style="break-inside:avoid;margin-bottom:1.5rem;"><h3 style="font-size:0.74rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#718096;margin:0 0 0.6rem;">${escapeHtml(g.title)}</h3>${links}</div>`;
+    }).join('');
+    if (!cols) return '';
+    return `<nav aria-label="Browse all" style="background:#f7f9fa;border-top:1px solid #edf2f7;padding:3rem 2rem;"><div style="max-width:1200px;margin:0 auto;columns:4;column-gap:2.5rem;font-size:0.9rem;line-height:1.5;">${cols}</div></nav>`;
+}
+
 // ─── Towns: public browse-all page ─────────────────────────────────────
-app.get('/towns', (req, res) => {
-    res.sendFile(path.join(PROJECT_ROOT, 'pages/public/towns-index.html'));
+app.get('/towns', async (req, res, next) => {
+    try {
+        const [lakesR, townsR] = await Promise.all([
+            pool.query(`SELECT slug, name FROM lakes WHERE status = 'published' ORDER BY name`).catch(() => ({ rows: [] })),
+            pool.query(`SELECT slug, name FROM tags WHERE active = TRUE AND COALESCE(hero_image_url,'') <> '' ORDER BY name`).catch(() => ({ rows: [] })),
+        ]);
+        fs.readFile(path.join(PROJECT_ROOT, 'pages/public/towns-index.html'), 'utf8', (err, html) => {
+            if (err) return next(err);
+            const dir = seoDirectory([
+                { title: 'Minnesota Lakes', items: lakesR.rows.map(l => ({ href: `/lakes/${encodeURIComponent(l.slug)}`, name: l.name })) },
+                { title: 'Lake Towns', items: townsR.rows.map(t => ({ href: `/towns/${encodeURIComponent(t.slug)}`, name: t.name })) },
+            ]);
+            res.type('html').send(html.replace('</body>', `${dir}\n</body>`));
+        });
+    } catch (err) { next(err); }
 });
 
 // ─── Homepage: inject Google Search Console verification meta tag ─────
@@ -1256,6 +1282,25 @@ app.get('/agents/:slug', async (req, res, next) => {
 // social-share crawlers still probe /favicon.ico unconditionally. Redirect
 // so they get a usable icon instead of a 404 line in the server logs.
 app.get('/favicon.ico', (req, res) => res.redirect(301, '/favicon.svg'));
+
+// ── Agents hub (/agents) ────────────────────────────────────────────────────
+// Serve agents.html with a server-rendered directory of every agent link so
+// crawlers see them in the raw HTML (the cards themselves load client-side).
+app.get('/agents', async (req, res, next) => {
+    try {
+        const r = await pool.query(
+            `SELECT slug, display_name, city FROM agents
+              WHERE profile_status = 'published' AND is_published = true ORDER BY display_name`
+        ).catch(() => ({ rows: [] }));
+        fs.readFile(path.join(PROJECT_ROOT, 'pages/public/agents.html'), 'utf8', (err, html) => {
+            if (err) return next(err);
+            const dir = seoDirectory([
+                { title: 'All Minnesota Lake Agents', items: r.rows.map(a => ({ href: `/agents/${encodeURIComponent(a.slug)}`, name: a.display_name + (a.city ? ` — ${a.city}` : '') })) },
+            ]);
+            res.type('html').send(html.replace('</body>', `${dir}\n</body>`));
+        });
+    } catch (err) { next(err); }
+});
 
 // ── Site search (/search?q=) ────────────────────────────────────────────────
 // Server-rendered results across lakes, towns, blog guides, and agents. Backs
