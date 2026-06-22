@@ -17,9 +17,9 @@
         .tool-eyebrow { color: #1d6df2; font-size: 0.78rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 1rem; }
         .tool-head h1 { font-size: 3rem; font-weight: 800; color: #1a202c; letter-spacing: -1.5px; line-height: 1.05; margin-bottom: 1rem; }
         .tool-head p { font-size: 1.15rem; color: #718096; line-height: 1.6; }
-        .cmp-wrap { max-width: 1100px; margin: 0 auto; padding: 1rem 2rem 6rem; }
+        .cmp-wrap { max-width: 1100px; margin: 0 auto; padding: 1rem 2rem 6rem; min-width: 0; }
         .cmp-pickers { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-bottom: 2.5rem; }
-        .cmp-pickers select { padding: 0.8rem 1rem; border: 1.5px solid #e2e8f0; border-radius: 12px; font-family: inherit; font-size: 1rem; font-weight: 600; color: #1a202c; background: #fff; min-width: 220px; cursor: pointer; }
+        .cmp-pickers select { padding: 0.8rem 1rem; border: 1.5px solid #e2e8f0; border-radius: 12px; font-family: inherit; font-size: 1rem; font-weight: 600; color: #1a202c; background: #fff; min-width: 220px; max-width: 100%; cursor: pointer; }
         .cmp-pickers select:focus { outline: none; border-color: #1d6df2; }
         .cmp-table { width: 100%; border-collapse: collapse; }
         .cmp-table th, .cmp-table td { padding: 1rem; text-align: left; border-bottom: 1px solid #edf2f7; vertical-align: top; }
@@ -37,10 +37,20 @@
         .tool-cta h3 { font-size: 1.6rem; font-weight: 800; margin: 0 0 0.5rem; }
         .tool-cta p { color: rgba(255,255,255,0.9); margin: 0 0 1.5rem; }
         .tool-cta a { display: inline-block; background: #fff; color: #1d6df2; font-weight: 800; padding: 0.9rem 2rem; border-radius: 99px; text-decoration: none; }
-        .cmp-scroll { overflow-x: auto; }
+        /* a real scroll container: min-width:0 + max-width keep it from growing to
+           the table's width and dragging the whole page wider than the viewport. */
+        .cmp-scroll { overflow-x: auto; min-width: 0; max-width: 100%; -webkit-overflow-scrolling: touch; }
         @media (max-width: 600px) {
             .tool-head { padding: 6rem 1.25rem 1rem; } .tool-head h1 { font-size: 2.1rem; }
-            .cmp-wrap { padding: 1rem 1rem 4rem; } .cmp-pickers select { min-width: 0; flex: 1; }
+            .cmp-wrap { padding: 1rem 1rem 4rem; } .cmp-pickers select { min-width: 0; flex: 1 1 100%; }
+            /* Fit the comparison to the screen instead of forcing a sideways
+               scroll: fixed layout gives even columns and lets cell text wrap. */
+            .cmp-table { table-layout: fixed; }
+            .cmp-table th, .cmp-table td { padding: 0.6rem 0.5rem; overflow-wrap: break-word; word-wrap: break-word; }
+            .cmp-table .rowlabel { width: 84px; white-space: normal; }
+            .cmp-name { font-size: 1.05rem; }
+            .cmp-val { font-size: 0.92rem; }
+            .tool-cta { padding: 2rem 1.5rem; } .tool-cta h3 { font-size: 1.35rem; }
         }
     </style>
     <script src="../../components/components.js" defer></script>

@@ -55,6 +55,11 @@
         @media (max-width: 600px) {
             .tool-head { padding: 6rem 1.25rem 1rem; } .tool-head h1 { font-size: 2.1rem; }
             .quiz-wrap { padding: 1rem 1.25rem 4rem; } .quiz-card { padding: 1.5rem; }
+            .quiz-q { font-size: 1.3rem; }
+            /* auto-fill minmax(260px) overflows the card on narrow phones — force one column */
+            .lake-grid { grid-template-columns: 1fr; gap: 1.1rem; }
+            .results h2 { font-size: 1.6rem; }
+            .results-cta, .quiz-card.results { padding: 1.5rem; }
         }
     </style>
     <script src="../../components/components.js" defer></script>

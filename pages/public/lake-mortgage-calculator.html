@@ -17,7 +17,7 @@
         .tool-eyebrow { color: #1d6df2; font-size: 0.78rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 1rem; }
         .tool-head h1 { font-size: 3rem; font-weight: 800; color: #1a202c; letter-spacing: -1.5px; line-height: 1.05; margin-bottom: 1rem; }
         .tool-head p { font-size: 1.15rem; color: #718096; line-height: 1.6; }
-        .calc-wrap { max-width: 960px; margin: 0 auto; padding: 1rem 2rem 6rem; display: grid; grid-template-columns: 1fr 360px; gap: 2rem; align-items: start; }
+        .calc-wrap { max-width: 960px; margin: 0 auto; padding: 1rem 2rem 6rem; display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 2rem; align-items: start; min-width: 0; }
         .calc-card { border: 1px solid #e8edf3; border-radius: 18px; background: #fff; box-shadow: 0 12px 40px rgba(16,24,40,0.06); padding: 2rem; }
         .field { margin-bottom: 1.25rem; }
         .field label { display: block; font-size: 0.85rem; font-weight: 700; color: #4a5568; margin-bottom: 0.4rem; }
@@ -25,7 +25,10 @@
         .field .input:focus-within { border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.12); }
         .field .adorn { padding: 0 0.75rem; color: #a0aec0; font-weight: 700; background: #f7f9fa; align-self: stretch; display: flex; align-items: center; }
         .field input { flex: 1; border: none; outline: none; padding: 0.7rem 0.9rem; font-family: inherit; font-size: 1rem; font-weight: 600; color: #1a202c; min-width: 0; }
-        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        /* minmax(0,1fr) (not 1fr) so the number inputs can shrink below their
+           min-content — otherwise the two-up row forces the card wider than a
+           phone viewport and body's overflow-x:clip cuts off the right side. */
+        .field-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; min-width: 0; }
         .result-card { border: 1px solid #e8edf3; border-radius: 18px; background: #fff; box-shadow: 0 12px 40px rgba(16,24,40,0.06); padding: 2rem; position: sticky; top: 90px; }
         .result-total { text-align: center; padding-bottom: 1.5rem; border-bottom: 1px solid #edf2f7; margin-bottom: 1.5rem; }
         .result-total .num { font-size: 2.75rem; font-weight: 800; color: #1d6df2; letter-spacing: -1.5px; }
@@ -49,6 +52,14 @@
             .result-card { position: static; }
             .tool-head { padding: 6rem 1.25rem 1rem; } .tool-head h1 { font-size: 2.1rem; }
             .calc-wrap, .calc-note, .tool-cta { padding-left: 1.25rem; padding-right: 1.25rem; }
+        }
+        @media (max-width: 460px) {
+            .calc-card { padding: 1.5rem; }
+            /* two number inputs side-by-side cramp with their $/% adornments and
+               wrapping labels on small phones — stack them */
+            .field-row { grid-template-columns: 1fr; gap: 0; }
+            .result-total .num { font-size: 2.35rem; }
+            .tool-cta .inner { padding: 2rem 1.5rem; }
         }
     </style>
     <script src="../../components/components.js" defer></script>

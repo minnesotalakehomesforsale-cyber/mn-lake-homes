@@ -160,6 +160,13 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* Body is a flex column, so its direct children are flex items that default to
+   min-width:auto (= min-content) and refuse to shrink. On phones a child with a
+   wide grid/table then forces the layout viewport wider than the screen and
+   overflow-x:clip silently cuts off the right edge. min-width:0 lets each
+   top-level section shrink to fit the viewport. */
+body > * { min-width: 0; }
+
 /* Navbar */
 .navbar {
     display: flex;
