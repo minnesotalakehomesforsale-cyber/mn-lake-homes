@@ -54,10 +54,15 @@
             .calc-wrap, .calc-note, .tool-cta { padding-left: 1.25rem; padding-right: 1.25rem; }
         }
         @media (max-width: 460px) {
-            .calc-card { padding: 1.5rem; }
-            /* two number inputs side-by-side cramp with their $/% adornments and
-               wrapping labels on small phones — stack them */
-            .field-row { grid-template-columns: 1fr; gap: 0; }
+            .calc-card { padding: 1.35rem; }
+            /* keep the inputs two-up (the minmax(0,1fr) tracks let them shrink to
+               fit) so the form stays compact instead of one giant field per row;
+               just tighten the gap and padding for small phones. */
+            .field-row { gap: 0.6rem; }
+            .field { margin-bottom: 1rem; }
+            .field label { font-size: 0.8rem; }
+            .field input { padding: 0.6rem 0.7rem; }
+            .field .adorn { padding: 0 0.55rem; }
             .result-total .num { font-size: 2.35rem; }
             .tool-cta .inner { padding: 2rem 1.5rem; }
         }
