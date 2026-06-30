@@ -1233,8 +1233,9 @@ app.get('/pages/public/blog-post.html', (req, res, next) => {
 app.get('/agents/:slug', async (req, res, next) => {
     try {
         const { rows } = await pool.query(
-            `SELECT a.slug, a.display_name, a.brokerage_name, a.city, a.state,
-                    a.service_areas, a.bio, a.phone_public, a.email_public,
+            `SELECT a.id, a.slug, a.display_name, a.brokerage_name, a.city, a.state,
+                    a.service_areas, a.specialties, a.is_featured, a.bio,
+                    a.phone_public, a.email_public,
                     a.website_url, a.facebook_url, a.instagram_url, a.linkedin_url,
                     a.profile_photo_url, m.display_badge_label AS membership_badge
                FROM agents a JOIN memberships m ON a.membership_id = m.id
@@ -1306,7 +1307,7 @@ app.get('/agents/:slug', async (req, res, next) => {
                 ${bioText ? `<p style="color:#a0aec0;max-width:640px;margin:0 auto;line-height:1.6;">${escapeHtml(bioText)}</p>` : ''}`;
 
             const out = html
-                .replace(/<title[^>]*>[^<]*<\/title>/, `<title>${escapeHtml(title)}</title>`)
+                .replace(/<title[^>]*>[^<]*<\/title>/, `<title id="page-title">${escapeHtml(title)}</title>`)
                 .replace('<meta name="description" content="MN Lake Homes agent profile page.">', `<meta name="description" content="${escapeHtml(desc)}">`)
                 .replace('</head>', `${head}<script>window.__AGENT__=${agentJson};</script>\n</head>`)
                 .replace('<div style="color: #a0aec0; font-size: 1.1rem;">Loading profile...</div>', heroSsr);

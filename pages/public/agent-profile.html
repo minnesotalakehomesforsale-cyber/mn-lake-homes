@@ -168,8 +168,11 @@
                 return;
             }
 
-            // Update page title
-            document.getElementById('page-title').textContent = `${agent.display_name} | MN Lake Homes`;
+            // Update page title (null-safe: SSR may rewrite the <title>, so never
+            // let a missing element throw and abort the whole profile render).
+            const titleEl = document.getElementById('page-title');
+            if (titleEl) titleEl.textContent = `${agent.display_name} | MN Lake Homes`;
+            else document.title = `${agent.display_name} | MN Lake Homes`;
 
             const serviceAreas = Array.isArray(agent.service_areas) ? agent.service_areas : (JSON.parse(agent.service_areas || '[]'));
             const specialties = Array.isArray(agent.specialties) ? agent.specialties : (JSON.parse(agent.specialties || '[]'));
