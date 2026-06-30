@@ -408,6 +408,54 @@ const drafts = [
 <h2>Buy with someone who's seen it all</h2>
 <p>An experienced lake agent knows the local inspectors, the lakes with tricky soils, and how to write contingencies that protect you. <a href="/pages/public/buy.html">Get matched with a Minnesota lake specialist</a> — free, no commission — before you fall for a cabin with a system you haven't checked.</p>`,
     },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // 11 — Local Spotlight: Granite City Aerial Media (featured partner)
+    // Tagged to the business via featured_business_slug, so once PUBLISHED it
+    // also surfaces in the "Featured Blogs" section on their profile at
+    // /businesses/granite-city-aerial-media.
+    // ─────────────────────────────────────────────────────────────────────
+    {
+        title: 'Local Spotlight: Granite City Aerial Media — Showing Minnesota Lake Homes From Above',
+        slug: 'local-spotlight-granite-city-aerial-media',
+        tag: 'Local Spotlight',
+        read_time_minutes: 4,
+        cover_image_url: img('local-spotlight-granite-city-aerial-media'),
+        is_published: false,
+        featured_business_slug: 'granite-city-aerial-media',
+        seo_title: 'Granite City Aerial Media — Drone Photography for MN Lake Homes',
+        seo_description: 'A MinnesotaLakeHomesForSale.com local business spotlight on Granite City Aerial Media, a St. Cloud-based drone photography and video partner serving lake listings statewide.',
+        excerpt: "The view from the ground tells half the story. We're spotlighting Granite City Aerial Media — a central-Minnesota drone photography partner that shows a lake home's shoreline, frontage, and setting the way buyers want to see it.",
+        body: `<p style="font-style:italic;color:#718096;">A <a href="/index.html">MinnesotaLakeHomesForSale.com</a> local business spotlight.</p>
+
+<p>When you're <a href="/pages/public/buy.html">buying</a> or <a href="/pages/public/sell.html">selling</a> a Minnesota lake home, the view from the ground only tells half the story. The shoreline, the water frontage, the dock, the tree line, how the lot sits against the lake — those are the details that sell a property, and they're nearly impossible to capture standing in the front yard. That's where the view from above changes everything.</p>
+
+<p>So for this local spotlight, we're featuring a central-Minnesota partner who does exactly that: <a href="/businesses/granite-city-aerial-media">Granite City Aerial Media</a>.</p>
+
+<h2>Why we wanted to highlight them</h2>
+<p>We're picky about the businesses we put in front of our community. Lake real estate is its own world — shoreline regulations, water frontage, dock rights, lot orientation — and the people who serve it well actually understand the water. Granite City Aerial Media brings professional drone photography and video to the table, and that's one of the highest-leverage things a lake listing can have.</p>
+<p>A strong aerial shot does a few things at once:</p>
+<ul>
+<li><strong>It shows the full setting</strong> — how the home relates to the shoreline, the size and shape of the lot, and the surrounding landscape.</li>
+<li><strong>It reveals the waterfront</strong> — frontage length, dock placement, and water access that a buyer can't gauge from a standard photo.</li>
+<li><strong>It gives buyers confidence</strong> — they can picture the property as a whole before they ever drive out to see it.</li>
+</ul>
+<p>For sellers, that often means more interest and stronger first impressions. For buyers, it means a clearer, more honest look at what they're really considering.</p>
+
+<h2>Based in the heart of Minnesota lake country</h2>
+<p>Operating out of the Granite City (St. Cloud) area, Granite City Aerial Media sits right in the middle of some of Minnesota's best lake country — within easy reach of the lakes that draw buyers from across the state. That local footprint matters. A photographer who knows the area knows the light, the seasons, and how to frame a property so it looks like the place buyers are dreaming about.</p>
+<p>Granite City Aerial Media provides professional drone photography, interior photography, cinematic video, and social media content for real estate professionals, businesses, and property owners throughout Minnesota. And while they're based near St. Cloud, they travel statewide for projects — lake homes, resorts, and commercial properties alike.</p>
+
+<h2>See their work</h2>
+<p>If you're an agent prepping a lake listing — or a <a href="/pages/public/sell.html">seller who wants your property to stand out</a> — it's worth seeing what aerial coverage can do. Visit the <a href="/businesses/granite-city-aerial-media">Granite City Aerial Media profile</a> on our site, or reach them directly:</p>
+<ul>
+<li><strong>Website:</strong> <a href="https://granitecityaerialmedia.com" target="_blank" rel="noopener">granitecityaerialmedia.com</a></li>
+<li><strong>Instagram:</strong> <a href="https://www.instagram.com/granitecityaerial" target="_blank" rel="noopener">@granitecityaerial</a></li>
+<li><strong>Facebook:</strong> <a href="https://www.facebook.com/search/top?q=Granite%20City%20Aerial%20Media" target="_blank" rel="noopener">Granite City Aerial Media</a></li>
+</ul>
+
+<p><a href="/businesses/granite-city-aerial-media">→ View Granite City Aerial Media's full profile</a></p>`,
+    },
 ];
 
 module.exports = drafts;

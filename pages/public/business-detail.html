@@ -209,6 +209,36 @@
         }
         .bz-related-grid:empty { display: none; }
 
+        /* Featured Blogs — rendered server-side only when tagged posts exist. */
+        .bz-blogs { margin-top: 3rem; }
+        .bz-blogs-head {
+            display: flex; align-items: baseline; justify-content: space-between;
+            gap: 1rem; margin: 0 0 1rem;
+        }
+        .bz-blogs-head h2 {
+            font-size: 1.1rem; font-weight: 800; letter-spacing: -0.3px;
+            color: var(--ink); margin: 0;
+        }
+        .bz-blogs-head .sub { color: var(--muted); font-size: 0.85rem; font-weight: 600; }
+        .bz-blogs-grid {
+            display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem;
+        }
+        .bz-blog-card {
+            display: flex; flex-direction: column; text-decoration: none;
+            background: #fff; border: 1px solid #e8edf3; border-radius: 14px;
+            overflow: hidden; transition: transform .15s, box-shadow .15s, border-color .15s;
+        }
+        .bz-blog-card:hover {
+            transform: translateY(-3px); border-color: #1d6df2;
+            box-shadow: 0 16px 40px rgba(16,24,40,0.1);
+        }
+        .bz-blog-img { aspect-ratio: 16/10; background: #eef3f8; overflow: hidden; }
+        .bz-blog-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .bz-blog-body { padding: 1.1rem 1.2rem 1.3rem; display: flex; flex-direction: column; flex: 1; }
+        .bz-blog-body h3 { font-size: 1.02rem; font-weight: 800; color: var(--ink); margin: 0 0 0.4rem; line-height: 1.3; letter-spacing: -0.2px; }
+        .bz-blog-body p { font-size: 0.88rem; color: var(--muted); line-height: 1.5; margin: 0 0 0.85rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .bz-blog-readmore { margin-top: auto; font-size: 0.85rem; font-weight: 800; color: #1d6df2; }
+
         /* Card styles — a copy of .db-card from towns-index.html so the
            related row looks identical to the directory cards. */
         .db-card {
@@ -269,6 +299,7 @@
 
         @media (max-width: 860px) {
             .bz-related-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .bz-blogs-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         @media (max-width: 620px) {
             .bz-shell { padding: 5rem 1rem 3rem; }
@@ -281,6 +312,8 @@
             .bz-details { padding: 1.25rem; gap: 1.25rem; }
             .bz-related-grid { grid-template-columns: 1fr; }
             .bz-related-head { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+            .bz-blogs-grid { grid-template-columns: 1fr; }
+            .bz-blogs-head { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
         }
     </style>
 </head>
@@ -316,6 +349,8 @@
                 </div>
             </div>
         </article>
+
+        {{BUSINESS_FEATURED_BLOGS}}
 
         <section class="bz-related" id="bz-related" style="display:none;">
             <div class="bz-related-head">

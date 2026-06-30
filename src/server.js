@@ -787,6 +787,39 @@ app.get('/businesses/:slug', async (req, res, next) => {
             return;
         }
 
+        // Featured Blogs — published posts tagged to this business via
+        // blog_posts.featured_business_slug. The section is omitted entirely
+        // (token → '') when there are no published posts yet.
+        let featuredBlogsHtml = '';
+        try {
+            const { rows: bposts } = await pool.query(
+                `SELECT title, slug, excerpt, cover_image_url
+                   FROM blog_posts
+                  WHERE featured_business_slug = $1 AND is_published = true AND deleted_at IS NULL
+                  ORDER BY published_at DESC NULLS LAST`,
+                [biz.slug]
+            );
+            if (bposts.length) {
+                const cards = bposts.map(p => `
+                    <a class="bz-blog-card" href="/blog/${escapeHtml(p.slug)}">
+                        ${p.cover_image_url ? `<div class="bz-blog-img"><img src="${escapeHtml(p.cover_image_url)}" alt="${escapeHtml(p.title)}" loading="lazy"></div>` : ''}
+                        <div class="bz-blog-body">
+                            <h3>${escapeHtml(p.title)}</h3>
+                            ${p.excerpt ? `<p>${escapeHtml(p.excerpt)}</p>` : ''}
+                            <span class="bz-blog-readmore">Read article →</span>
+                        </div>
+                    </a>`).join('');
+                featuredBlogsHtml = `
+        <section class="bz-blogs" aria-label="Featured blogs">
+            <div class="bz-blogs-head">
+                <h2>Featured Blogs</h2>
+                <span class="sub">Stories featuring ${escapeHtml(biz.name)} on MinnesotaLakeHomesForSale.com</span>
+            </div>
+            <div class="bz-blogs-grid">${cards}</div>
+        </section>`;
+            }
+        } catch (_) { featuredBlogsHtml = ''; }
+
         const templatePath = path.join(PROJECT_ROOT, 'pages/public/business-detail.html');
         fs.readFile(templatePath, 'utf8', (err, html) => {
             if (err) return next(err);
@@ -871,6 +904,9 @@ app.get('/businesses/:slug', async (req, res, next) => {
                 // Structured-data block injected verbatim — already contains
                 // JSON-safe output from JSON.stringify, no HTML-escaping.
                 '{{BUSINESS_STRUCTURED_DATA}}': structuredData,
+                // Featured Blogs section (verbatim HTML; fields escaped above).
+                // Empty string when the business has no published tagged posts.
+                '{{BUSINESS_FEATURED_BLOGS}}': featuredBlogsHtml,
             };
             let out = html;
             for (const [k, v] of Object.entries(replacements)) {
@@ -1518,6 +1554,16 @@ async function ensureTables() {
         // Add deleted_at to blog_posts if it doesn't exist yet (migration for existing tables)
         await pool.query(`
             ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+        `);
+
+        // Lets a blog post be "tagged" to a partner business (by slug). The
+        // business profile (/businesses/:slug) renders a "Featured Blogs" section
+        // listing the published posts that point at it — see seedBlogPosts and
+        // the /businesses/:slug route.
+        await pool.query(`
+            ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS featured_business_slug TEXT;
+            CREATE INDEX IF NOT EXISTS idx_blog_posts_featured_business
+                ON blog_posts(featured_business_slug) WHERE featured_business_slug IS NOT NULL;
         `);
 
         // One-time data fix: the 2026-06-15 evergreen posts were originally
@@ -2530,9 +2576,55 @@ async function ensureTables() {
 
         await seedBlogPosts();
         await seedTownContent();
+        await seedPartnerBusinesses();
     } catch (err) {
         console.error(' Table migration warning:', err.message);
     }
+}
+
+// Featured partner businesses we publish editorially (e.g. local-spotlight
+// blog subjects). Source-of-truth: re-applied on every boot so the profile
+// stays live and in sync with the spotlight that links to it.
+async function seedPartnerBusinesses() {
+    const partners = [
+        {
+            slug: 'granite-city-aerial-media',
+            name: 'Granite City Aerial Media',
+            type: 'photographer',
+            description: 'Premium drone photography and cinematic video for Minnesota real estate — aerial stills, interior photography, and social content that shows a lake home (and its shoreline, frontage, and lot) the way buyers actually want to see it. Based near St. Cloud, traveling statewide.',
+            phone: null,
+            email: null,
+            website_url: 'https://granitecityaerialmedia.com',
+            instagram_url: 'https://www.instagram.com/granitecityaerial',
+            // Exact Facebook page URL unverified — left null so we don't ship a
+            // broken social link. Add it here once confirmed.
+            facebook_url: null,
+            city: 'St. Cloud',
+            state: 'MN',
+            featured_image_url: '/assets/images/blog/hero-local-spotlight-granite-city-aerial-media.jpg',
+        },
+    ];
+    let n = 0;
+    for (const b of partners) {
+        const r = await pool.query(`
+            INSERT INTO businesses
+                (slug, name, type, description, phone, email, website_url,
+                 instagram_url, facebook_url, city, state, featured_image_url, status)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'active')
+            ON CONFLICT (slug) DO UPDATE SET
+                name = EXCLUDED.name, type = EXCLUDED.type,
+                description = EXCLUDED.description, website_url = EXCLUDED.website_url,
+                instagram_url = EXCLUDED.instagram_url, facebook_url = EXCLUDED.facebook_url,
+                city = EXCLUDED.city, state = EXCLUDED.state,
+                featured_image_url = EXCLUDED.featured_image_url,
+                status = 'active', updated_at = NOW()
+        `, [
+            b.slug, b.name, b.type, b.description, b.phone, b.email, b.website_url,
+            b.instagram_url, b.facebook_url, b.city, b.state, b.featured_image_url,
+        ]);
+        n += r.rowCount;
+    }
+    if (n > 0) console.log(` Seeded/updated ${n} partner business(es).`);
 }
 
 // ─── Backfill missing business coordinates ──────────────────────────────
@@ -2587,14 +2679,15 @@ async function seedBlogPosts() {
             INSERT INTO blog_posts
                 (title, slug, excerpt, body, cover_image_url, tag,
                  read_time_minutes, is_published, published_at, author_name,
-                 seo_title, seo_description)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+                 seo_title, seo_description, featured_business_slug)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
             ON CONFLICT (slug) DO NOTHING
         `, [
             p.title, p.slug, p.excerpt, p.body, p.cover_image_url, p.tag,
             p.read_time_minutes || 5, p.is_published !== false,
             p.published_at || new Date(), p.author_name || 'MN Lake Homes Team',
             p.seo_title || null, p.seo_description || null,
+            p.featured_business_slug || null,
         ]);
         added += r.rowCount;
     }
