@@ -192,6 +192,26 @@
         </aside>
     </div>
 
+    <!-- Related posts — server-rendered by /blog/:slug from same/close tags.
+         Stays an empty (invisible) element when there are no matches, and the
+         client body-render never touches it, so the SSR content persists. -->
+    <style>
+        .post-related { margin: 1.5rem auto 0; }
+        .post-related h2 { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.6px; color: #1a202c; margin: 0 0 1.25rem; }
+        .related-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; }
+        .related-card { display: flex; flex-direction: column; text-decoration: none; background: #fff; border: 1px solid #e8edf3; border-radius: 14px; overflow: hidden; transition: transform .15s, box-shadow .15s, border-color .15s; }
+        .related-card:hover { transform: translateY(-3px); border-color: #1d6df2; box-shadow: 0 16px 40px rgba(16,24,40,.1); }
+        .related-img { aspect-ratio: 16/10; background: #eef3f8; overflow: hidden; }
+        .related-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .related-body { padding: 1.1rem 1.2rem 1.3rem; display: flex; flex-direction: column; flex: 1; }
+        .related-tag { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: #1d6df2; background: #ebf4ff; padding: .15rem .5rem; border-radius: 4px; align-self: flex-start; margin-bottom: .5rem; }
+        .related-title { font-size: 1.02rem; font-weight: 800; color: #1a202c; line-height: 1.3; margin: 0 0 .4rem; letter-spacing: -.2px; }
+        .related-ex { font-size: .88rem; color: #718096; line-height: 1.5; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        @media (max-width: 860px) { .related-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 560px) { .related-grid { grid-template-columns: 1fr; } }
+    </style>
+    <section class="post-related post-container" id="related-blogs"></section>
+
     <!-- Big bottom call-to-action -->
     <section class="post-end-cta post-container">
         <div class="end-cta-box">

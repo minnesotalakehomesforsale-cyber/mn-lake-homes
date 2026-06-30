@@ -1155,6 +1155,46 @@ app.get('/blog/:slug', async (req, res, next) => {
         }
         post.body = stripCtaButtons(post.body);
 
+        // Related posts ("Featured Blogs" at the foot of the article): same tag
+        // first, then a close tag-family fallback. Section is omitted entirely
+        // when nothing relevant is found.
+        let relatedHtml = '';
+        try {
+            const TAG_FAMILIES = [
+                ['Buyer Guide', 'Buying a Lake Home', 'Choosing a Lake', 'Mille Lacs Buyer Guide'],
+                ['Seller Resources'],
+                ['Working With an Agent', 'How It Works'],
+                ['Local Life', 'Community', 'Mille Lacs Lifestyle', 'Local Spotlight'],
+            ];
+            const myTag = post.tag || 'General';
+            const family = TAG_FAMILIES.find(f => f.includes(myTag)) || [myTag];
+            const { rows: rel } = await pool.query(
+                `SELECT title, slug, excerpt, cover_image_url, tag
+                   FROM blog_posts
+                  WHERE tag = ANY($1) AND slug <> $2
+                    AND is_published = true AND deleted_at IS NULL
+                  ORDER BY (tag = $3) DESC, published_at DESC NULLS LAST
+                  LIMIT 3`,
+                [family, post.slug, myTag]
+            );
+            if (rel.length) {
+                const cards = rel.map(p => `
+                    <a class="related-card" href="/blog/${escapeHtml(p.slug)}">
+                        ${p.cover_image_url ? `<div class="related-img"><img src="${escapeHtml(p.cover_image_url)}" alt="${escapeHtml(p.title)}" loading="lazy"></div>` : ''}
+                        <div class="related-body">
+                            <span class="related-tag">${escapeHtml(p.tag || 'General')}</span>
+                            <h3 class="related-title">${escapeHtml(p.title)}</h3>
+                            ${p.excerpt ? `<p class="related-ex">${escapeHtml(p.excerpt)}</p>` : ''}
+                        </div>
+                    </a>`).join('');
+                relatedHtml = `
+    <section class="post-related post-container">
+        <h2>Related articles</h2>
+        <div class="related-grid">${cards}</div>
+    </section>`;
+            }
+        } catch (_) { relatedHtml = ''; }
+
         const tplPath = path.join(PROJECT_ROOT, 'pages/public/blog-post.html');
         fs.readFile(tplPath, 'utf8', (err, html) => {
             if (err) return next(err);
@@ -1246,7 +1286,8 @@ app.get('/blog/:slug', async (req, res, next) => {
                 .replace('<div class="post-author-name" id="post-author">MN Lake Homes</div>', `<div class="post-author-name" id="post-author">${escapeHtml(authorTxt)}</div>`)
                 .replace('<div class="post-author-date" id="post-date"></div>', `<div class="post-author-date" id="post-date">${escapeHtml(dateTxt)}</div>`)
                 .replace('<img id="hero-img" src="" alt="">', `<img id="hero-img" src="${escapeHtml(post.cover_image_url || '')}" alt="${escapeHtml(post.title)}">`)
-                .replace('<article class="post-body" id="post-body"></article>', `<article class="post-body" id="post-body">${post.body || ''}</article>`);
+                .replace('<article class="post-body" id="post-body"></article>', `<article class="post-body" id="post-body">${post.body || ''}</article>`)
+                .replace('<section class="post-related post-container" id="related-blogs"></section>', relatedHtml);
             res.type('html').send(out);
         });
     } catch (err) {
