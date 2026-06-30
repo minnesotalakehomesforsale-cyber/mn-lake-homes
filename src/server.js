@@ -669,6 +669,17 @@ app.get('/lakes/:slug', async (req, res, next) => {
             [lake.id]
         ).then(r => r.rows).catch(() => []);
 
+        // Other lakes in the same region — lake↔lake links so the lake pages
+        // form a cluster instead of dead-ending.
+        const nearbyLakes = lake.region
+            ? await pool.query(
+                `SELECT slug, name FROM lakes
+                  WHERE region = $1 AND slug <> $2 AND status = 'published'
+                    AND COALESCE(hero_image_url,'') <> '' ORDER BY name LIMIT 8`,
+                [lake.region, lake.slug]
+              ).then(r => r.rows).catch(() => [])
+            : [];
+
         const templatePath = path.join(PROJECT_ROOT, 'pages/public/lake-detail.html');
         fs.readFile(templatePath, 'utf8', (err, html) => {
             if (err) return next(err);
@@ -754,13 +765,15 @@ app.get('/lakes/:slug', async (req, res, next) => {
             for (const [k, v] of Object.entries(replacements)) {
                 out = out.split(k).join(v);
             }
-            if (townRows.length) {
-                const townDir = seoDirectory([{
-                    title: `Towns on & near ${lake.name}`,
-                    items: townRows.map(t => ({ href: `/towns/${encodeURIComponent(t.slug)}`, name: t.name })),
-                }]);
-                out = out.replace('</body>', `${townDir}\n</body>`);
-            }
+            const mesh = seoDirectory([
+                { title: `Towns on & near ${lake.name}`,
+                  items: townRows.map(t => ({ href: `/towns/${encodeURIComponent(t.slug)}`, name: t.name })) },
+                { title: lake.region ? `More lakes in ${lake.region}` : 'More Minnesota lakes',
+                  items: nearbyLakes.map(l => ({ href: `/lakes/${encodeURIComponent(l.slug)}`, name: l.name })) },
+                { title: 'Lake-buying guides', items: BLOG_GUIDE_LINKS },
+                { title: 'Tools & calculators', items: LAKE_TOOL_LINKS },
+            ]);
+            if (mesh) out = out.replace('</body>', `${mesh}\n</body>`);
             res.type('html').send(out);
         });
     } catch (err) {
@@ -938,6 +951,25 @@ app.get('/business/dashboard', (req, res) => {
 // Build a crawlable link directory injected into hub pages, so every
 // lake/town/agent link sits in the raw HTML (not just the client-fetched
 // cards) — strengthens internal linking and crawl discovery.
+// Shared internal-link mesh blocks. Cornerstone buyer guides + the interactive
+// tools, surfaced on every lake and town page so the whole site interlinks
+// (lakes <-> towns <-> blog <-> tools) and topical authority compounds. All
+// guide targets are live published posts, so these never 404.
+const BLOG_GUIDE_LINKS = [
+    { href: '/blog/buying-a-cabin-in-minnesota-2026-guide', name: 'Buying a Cabin in Minnesota' },
+    { href: '/blog/true-cost-of-owning-a-minnesota-lake-cabin', name: 'True Cost of Owning a Cabin' },
+    { href: '/blog/5-things-to-look-for-in-a-lake-property', name: '5 Things to Look For' },
+    { href: '/blog/best-minnesota-lakes-for-families', name: 'Best Lakes for Families' },
+    { href: '/blog/minnesota-shoreland-rules-before-you-buy', name: 'Minnesota Shoreland Rules' },
+    { href: '/blog', name: 'All lake guides →' },
+];
+const LAKE_TOOL_LINKS = [
+    { href: '/find-your-lake', name: 'Find Your Lake quiz' },
+    { href: '/compare-lakes', name: 'Compare lakes' },
+    { href: '/lake-mortgage-calculator', name: 'Lake cost calculator' },
+    { href: '/lake-buyer-checklist', name: 'Buyer’s checklist' },
+];
+
 function seoDirectory(groups) {
     const cols = groups.map(g => {
         if (!g.items.length) return '';
@@ -1011,6 +1043,16 @@ app.get('/towns/:slug', async (req, res, next) => {
             renderFriendly404(res, { kind: 'town', slug: req.params.slug });
             return;
         }
+        // Lakes connected to this town (lake_tags join) — town↔lake links so the
+        // town pages feed the lake cluster and vice versa.
+        const townLakes = await pool.query(
+            `SELECT l.slug, l.name FROM lakes l
+                JOIN lake_tags lt ON lt.lake_id = l.id
+              WHERE lt.tag_id = $1 AND l.status = 'published'
+                AND COALESCE(l.hero_image_url,'') <> '' ORDER BY l.name LIMIT 8`,
+            [tag.id]
+        ).then(r => r.rows).catch(() => []);
+
         const templatePath = path.join(PROJECT_ROOT, 'pages/public/town-detail.html');
         fs.readFile(templatePath, 'utf8', (err, html) => {
             if (err) return next(err);
@@ -1114,6 +1156,13 @@ app.get('/towns/:slug', async (req, res, next) => {
             for (const [k, v] of Object.entries(replacements)) {
                 out = out.split(k).join(v);
             }
+            const mesh = seoDirectory([
+                { title: `Lakes near ${tag.name}`,
+                  items: townLakes.map(l => ({ href: `/lakes/${encodeURIComponent(l.slug)}`, name: l.name })) },
+                { title: 'Lake-buying guides', items: BLOG_GUIDE_LINKS },
+                { title: 'Tools & calculators', items: LAKE_TOOL_LINKS },
+            ]);
+            if (mesh) out = out.replace('</body>', `${mesh}\n</body>`);
             res.type('html').send(out);
         });
     } catch (err) {
