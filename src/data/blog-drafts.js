@@ -494,7 +494,8 @@ const drafts = [
 <p>Our <a href="/find-your-lake">Find Your Lake quiz</a> weighs drive time directly — answer four questions and it points you to lakes that match your range, budget, and vibe. You can also put two or three head-to-head in the <a href="/compare-lakes">lake comparison tool</a>, and run the numbers on a specific price with the <a href="/lake-mortgage-calculator">lake home cost calculator</a>.</p>
 
 <h2>The local edge</h2>
-<p>Metro-adjacent lakes are competitive — good listings move fast. A local specialist who watches a specific lake knows what's coming before it hits the portals. <a href="/pages/public/buy.html">Get matched with a Minnesota lake specialist</a> (free, no commission), and brush up on the fundamentals with <a href="/blog/5-things-to-look-for-in-a-lake-property">5 things to look for in a lake property</a>.</p>`,
+<p>Metro-adjacent lakes are competitive — good listings move fast. A local specialist who watches a specific lake knows what's coming before it hits the portals. <a href="/pages/public/buy.html">Get matched with a Minnesota lake specialist</a> (free, no commission), and brush up on the fundamentals with <a href="/blog/5-things-to-look-for-in-a-lake-property">5 things to look for in a lake property</a>. Eyeing the metro's marquee water? Weigh it in <a href="/blog/lake-minnetonka-vs-brainerd-lakes">Lake Minnetonka vs. the Brainerd Lakes</a>, and time your move with <a href="/blog/best-time-to-buy-lake-home-minnesota">when to buy a Minnesota lake home</a>.</p>`,
+
     },
 
     // 13 — How much does a Minnesota lake home cost?
@@ -622,7 +623,8 @@ const drafts = [
 </ul>
 
 <h2>Be ready before the season turns</h2>
-<p>The buyers who win aren't necessarily shopping at the "perfect" time — they're <em>ready</em> when the right place appears. Take the <a href="/find-your-lake">Find Your Lake quiz</a>, line up your <a href="/lake-buyer-checklist">checklist</a>, and <a href="/pages/public/buy.html">get matched with a local specialist</a> who'll flag listings the moment they hit (free, no commission). For more on the all-in numbers, see <a href="/blog/true-cost-of-owning-a-minnesota-lake-cabin">the true cost of owning a lake cabin</a>.</p>`,
+<p>The buyers who win aren't necessarily shopping at the "perfect" time — they're <em>ready</em> when the right place appears. Take the <a href="/find-your-lake">Find Your Lake quiz</a>, line up your <a href="/lake-buyer-checklist">checklist</a>, and <a href="/pages/public/buy.html">get matched with a local specialist</a> who'll flag listings the moment they hit (free, no commission). For more on the all-in numbers, see <a href="/blog/true-cost-of-owning-a-minnesota-lake-cabin">the true cost of owning a lake cabin</a> and <a href="/blog/minnesota-lake-home-prices-2026">how much a Minnesota lake home costs</a>.</p>`,
+
     },
 
     // 17 — Docks: permits, types & costs
@@ -692,7 +694,8 @@ const drafts = [
 <p>Do the homework the listing won't: look the lake up on the <a href="https://www.dnr.state.mn.us/lakefind/index.html" target="_blank" rel="noopener">DNR LakeFinder</a> for size, depth, access, and fishery; check whether there's a public landing and how big it is; and — if you can — visit on a <em>weekend</em>, not a quiet Tuesday. A lake's true personality shows up on a sunny Saturday afternoon.</p>
 
 <h2>Find your kind of quiet</h2>
-<p>The <a href="/find-your-lake">Find Your Lake quiz</a> lets you weight "quiet cabin" and "up-north wilderness" heavily, and the <a href="/compare-lakes">comparison tool</a> shows size and character side by side. A local specialist is invaluable here — they know which lakes <em>stay</em> quiet and which fill up by July. <a href="/pages/public/buy.html">Get matched</a> — free, no commission. If a true escape is the goal, you'll also like <a href="/blog/discovering-the-magic-of-northern-minnesota">discovering the magic of northern Minnesota</a>.</p>`,
+<p>The <a href="/find-your-lake">Find Your Lake quiz</a> lets you weight "quiet cabin" and "up-north wilderness" heavily, and the <a href="/compare-lakes">comparison tool</a> shows size and character side by side. A local specialist is invaluable here — they know which lakes <em>stay</em> quiet and which fill up by July. <a href="/pages/public/buy.html">Get matched</a> — free, no commission. If a true escape is the goal, you'll also like <a href="/blog/discovering-the-magic-of-northern-minnesota">discovering the magic of northern Minnesota</a> — or, for the opposite trade-off, the <a href="/blog/best-minnesota-lakes-near-twin-cities">best lakes near the Twin Cities</a> and the <a href="/blog/brainerd-lakes-area-cabin-guide">Brainerd Lakes cabin guide</a>.</p>`,
+
     },
 
     // 19 — Lake home insurance

@@ -2616,6 +2616,7 @@ async function ensureTables() {
         `);
 
         await seedBlogPosts();
+        await seedBlogRelatedLinks();
         await seedTownContent();
         await seedPartnerBusinesses();
     } catch (err) {
@@ -2733,6 +2734,97 @@ async function seedBlogPosts() {
         added += r.rowCount;
     }
     if (added > 0) console.log(` Seeded ${added} missing blog post(s).`);
+}
+
+// Internal-linking pass for ALREADY-PUBLISHED "island" posts that predate the
+// current content library. seedBlogPosts() uses ON CONFLICT DO NOTHING, so it
+// can't add links to existing rows — this appends a curated "Keep reading"
+// block (2 contextual siblings + a tool/money page) via UPDATE. Idempotent: the
+// `NOT LIKE '%kr-related%'` guard means it runs once per post and re-deploys are
+// no-ops. All targets are live posts, so the links never 404.
+async function seedBlogRelatedLinks() {
+    const MAP = {
+        '5-things-to-look-for-in-a-lake-property': [
+            ['/blog/buying-a-cabin-in-minnesota-2026-guide', 'Buying a cabin in Minnesota'],
+            ['/blog/minnesota-shoreland-rules-before-you-buy', 'Minnesota shoreland rules'],
+            ['/lake-buyer-checklist', 'the buyer’s checklist'],
+        ],
+        'top-10-minnesota-lakes-for-boating': [
+            ['/blog/best-minnesota-lakes-for-families', 'best lakes for families'],
+            ['/blog/lake-minnetonka-vs-brainerd-lakes', 'Minnetonka vs. the Brainerd Lakes'],
+            ['/find-your-lake', 'the Find Your Lake quiz'],
+        ],
+        'how-to-stage-your-cabin-for-maximum-value': [
+            ['/blog/how-to-sell-a-lake-home-in-minnesota', 'how to sell a lake home'],
+            ['/blog/true-cost-of-owning-a-minnesota-lake-cabin', 'the true cost of owning a cabin'],
+            ['/pages/public/sell.html', 'get a free valuation'],
+        ],
+        'discovering-the-magic-of-northern-minnesota': [
+            ['/blog/best-minnesota-lakes-for-families', 'best lakes for families'],
+            ['/blog/lake-minnetonka-vs-brainerd-lakes', 'Minnetonka vs. the Brainerd Lakes'],
+            ['/find-your-lake', 'find your lake'],
+        ],
+        'buying-lakefront-why-a-general-agent-isnt-enough': [
+            ['/blog/5-things-to-look-for-in-a-lake-property', '5 things to look for in a lake property'],
+            ['/blog/true-cost-of-owning-a-minnesota-lake-cabin', 'the true cost of owning a cabin'],
+            ['/pages/public/buy.html', 'get matched with a specialist'],
+        ],
+        'how-lake-home-matching-works-and-why-its-free-to-you': [
+            ['/blog/buying-lakefront-why-a-general-agent-isnt-enough', 'why a general agent isn’t enough'],
+            ['/blog/best-minnesota-lakes-for-families', 'best lakes for families'],
+            ['/pages/public/buy.html', 'get matched — free'],
+        ],
+        'questions-to-ask-before-you-pick-a-lake-agent': [
+            ['/blog/buying-lakefront-why-a-general-agent-isnt-enough', 'why a general agent isn’t enough'],
+            ['/blog/how-lake-home-matching-works-and-why-its-free-to-you', 'how matching works'],
+            ['/pages/public/buy.html', 'get matched with a specialist'],
+        ],
+        'local-spotlight-granite-city-aerial-media': [
+            ['/blog/how-to-sell-a-lake-home-in-minnesota', 'how to sell a lake home'],
+            ['/blog/how-to-stage-your-cabin-for-maximum-value', 'staging your cabin for sale'],
+            ['/pages/public/sell.html', 'get a free valuation'],
+        ],
+        'best-minnesota-lakes-for-families': [
+            ['/blog/buying-a-cabin-in-minnesota-2026-guide', 'buying a cabin in Minnesota'],
+            ['/blog/true-cost-of-owning-a-minnesota-lake-cabin', 'the true cost of owning a cabin'],
+            ['/find-your-lake', 'the Find Your Lake quiz'],
+        ],
+        'lake-minnetonka-vs-brainerd-lakes': [
+            ['/blog/best-minnesota-lakes-for-families', 'best lakes for families'],
+            ['/blog/buying-a-cabin-in-minnesota-2026-guide', 'buying a cabin in Minnesota'],
+            ['/find-your-lake', 'find your lake'],
+        ],
+        'minnesota-lakefront-property-taxes-explained': [
+            ['/blog/true-cost-of-owning-a-minnesota-lake-cabin', 'the true cost of owning a cabin'],
+            ['/blog/how-to-sell-a-lake-home-in-minnesota', 'how to sell a lake home'],
+            ['/lake-mortgage-calculator', 'the cost calculator'],
+        ],
+        'minnesota-shoreland-rules-before-you-buy': [
+            ['/blog/5-things-to-look-for-in-a-lake-property', '5 things to look for in a lake property'],
+            ['/blog/buying-a-cabin-in-minnesota-2026-guide', 'buying a cabin in Minnesota'],
+            ['/lake-buyer-checklist', 'the buyer’s checklist'],
+        ],
+        'best-walleye-lakes-in-minnesota': [
+            ['/blog/lake-minnetonka-vs-brainerd-lakes', 'Minnetonka vs. the Brainerd Lakes'],
+            ['/blog/best-minnesota-lakes-for-families', 'best lakes for families'],
+            ['/find-your-lake', 'the Find Your Lake quiz'],
+        ],
+    };
+    let n = 0;
+    for (const [slug, links] of Object.entries(MAP)) {
+        const inner = links.map(([href, label]) => `<a href="${href}">${label}</a>`).join(' &middot; ');
+        const block = `\n<div class="kr-related" style="margin-top:2.5rem;padding-top:1.25rem;border-top:1px solid #edf2f7;font-size:0.95rem;color:#4a5568;"><strong>Keep reading:</strong> ${inner}</div>`;
+        const r = await pool.query(
+            `UPDATE blog_posts
+                SET body = COALESCE(body, '') || $2, updated_at = NOW()
+              WHERE slug = $1
+                AND COALESCE(body, '') NOT LIKE '%kr-related%'
+                AND deleted_at IS NULL`,
+            [slug, block]
+        );
+        n += r.rowCount;
+    }
+    if (n > 0) console.log(` Added internal-link blocks to ${n} blog post(s).`);
 }
 
 async function seedTownContent() {
