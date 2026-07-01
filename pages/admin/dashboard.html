@@ -87,6 +87,39 @@
         .d-card-body  { padding: 1.25rem 1.4rem; }
         .d-card-body.flush { padding: 0; }
 
+        /* ── Section labels — break the dashboard into readable zones ─── */
+        .d-section-label { font-size: 0.7rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #a0aec0; margin: 0.25rem 0 0.9rem; display: flex; align-items: center; gap: 0.7rem; }
+        .d-section-label::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+
+        /* ── Revenue (Stripe) ─────────────────────────────────────── */
+        .rev-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.75rem; }
+        @media (max-width: 1050px) { .rev-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 560px)  { .rev-grid { grid-template-columns: 1fr; } }
+        .rev-card { border-radius: 14px; padding: 1.35rem 1.45rem; color: #fff; position: relative; overflow: hidden; box-shadow: 0 12px 34px rgba(16,24,40,0.12); }
+        .rev-card .rc-label { font-size: 0.68rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; opacity: 0.85; margin-bottom: 0.55rem; }
+        .rev-card .rc-val { font-size: 2.05rem; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+        .rev-card .rc-sub { font-size: 0.78rem; opacity: 0.9; margin-top: 0.55rem; }
+        .rev-card.mrr   { background: linear-gradient(135deg, #1d6df2, #155bc8); }
+        .rev-card.month { background: linear-gradient(135deg, #2f855a, #276749); }
+        .rev-card.subs  { background: linear-gradient(135deg, #1a202c, #2d3748); }
+        .rev-card.arr   { background: linear-gradient(135deg, #7c3aed, #5b21b6); }
+        .rev-note { grid-column: 1/-1; background: #fff; border: 1px dashed #cbd5e0; border-radius: 14px; padding: 1.6rem; text-align: center; color: #718096; font-size: 0.92rem; }
+        .rev-note a { color: #1d6df2; font-weight: 700; text-decoration: none; }
+
+        /* ── AI assistant panel ───────────────────────────────────── */
+        .ai-card { margin-bottom: 1.75rem; }
+        .ai-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+        .ai-chip { border: 1px solid #d6e0ea; background: #f5f9ff; color: #1d4ed8; border-radius: 99px; padding: 0.5rem 0.95rem; font-size: 0.82rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s, color .15s, border-color .15s; }
+        .ai-chip:hover { background: #1d6df2; color: #fff; border-color: #1d6df2; }
+        .ai-chip:disabled { opacity: 0.5; cursor: default; }
+        .ai-output { background: #f7f9fa; border: 1px solid #edf2f7; border-radius: 12px; padding: 1.1rem 1.25rem; min-height: 68px; font-size: 0.92rem; line-height: 1.6; color: #2d3748; white-space: pre-wrap; max-height: 360px; overflow: auto; }
+        .ai-output .ai-placeholder { color: #a0aec0; }
+        .ai-form { display: flex; gap: 0.6rem; margin-top: 0.9rem; }
+        .ai-form input { flex: 1; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 0.75rem 0.95rem; font-family: inherit; font-size: 0.92rem; }
+        .ai-form input:focus { outline: none; border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.12); }
+        .ai-form button { background: #1d6df2; color: #fff; border: none; border-radius: 10px; padding: 0 1.5rem; font-weight: 700; font-family: inherit; cursor: pointer; }
+        .ai-form button:disabled { opacity: 0.5; cursor: default; }
+
         /* ── Grid rows ──────────────────────────────────────────── */
         .row-21   { display: grid; grid-template-columns: 2fr 1fr;  gap: 1.25rem; margin-bottom: 1.5rem; }
         .row-11   { display: grid; grid-template-columns: 1fr 1fr;  gap: 1.25rem; margin-bottom: 1.5rem; }
@@ -300,7 +333,33 @@
                 <a class="ql" href="https://github.com/minnesotalakehomesforsale-cyber/mn-lake-homes" target="_blank" rel="noopener noreferrer"><span class="dot" style="background:#1a202c;"></span>GitHub <span class="arr">↗</span></a>
             </nav>
 
+            <!-- ── Revenue (Stripe) ─────────────────────────────── -->
+            <div class="d-section-label">Revenue · Stripe</div>
+            <div class="rev-grid" id="rev-grid">
+                <div class="rev-card mrr">
+                    <div class="rc-label">Monthly recurring</div>
+                    <div class="rc-val" id="rev-mrr">—</div>
+                    <div class="rc-sub" id="rev-mrr-sub">&nbsp;</div>
+                </div>
+                <div class="rev-card month">
+                    <div class="rc-label" id="rev-month-label">This month · net</div>
+                    <div class="rc-val" id="rev-month-net">—</div>
+                    <div class="rc-sub" id="rev-month-sub">&nbsp;</div>
+                </div>
+                <div class="rev-card subs">
+                    <div class="rc-label">Active subscribers</div>
+                    <div class="rc-val" id="rev-subs">—</div>
+                    <div class="rc-sub" id="rev-subs-sub">&nbsp;</div>
+                </div>
+                <div class="rev-card arr">
+                    <div class="rc-label">Annual run-rate</div>
+                    <div class="rc-val" id="rev-arr">—</div>
+                    <div class="rc-sub">ARR at current MRR</div>
+                </div>
+            </div>
+
             <!-- ── KPI strip ───────────────────────────────────── -->
+            <div class="d-section-label">At a glance · last 7 days</div>
             <div class="kpi-grid">
                 <a href="system.html" class="kpi traffic" style="text-decoration:none;color:inherit;">
                     <div class="k-top"><span class="k-label">Visitors · 7d</span><span class="k-pip">↗</span></div>
@@ -340,6 +399,30 @@
                 </a>
             </div>
 
+            <!-- ── AI assistant ────────────────────────────────── -->
+            <div class="d-section-label">AI Assistant · grow the network</div>
+            <div class="d-card ai-card">
+                <div class="d-card-hd">
+                    <h3 class="d-card-title">Ask your assistant</h3>
+                    <a class="d-card-link" href="#" id="ai-clear">Clear</a>
+                </div>
+                <div class="d-card-body">
+                    <div class="ai-actions" id="ai-actions">
+                        <button class="ai-chip" data-prompt="Draft a warm, personal outreach email to recruit a top local lakefront real estate agent to the MN Lake Homes network. Emphasize free profile setup, qualified local leads, and no national-portal competition. Keep it under 150 words, confident and specific.">✉️ Draft agent outreach</button>
+                        <button class="ai-chip" data-prompt="Give me 3 concrete, tactical actions I can take THIS WEEK to grow the MN Lake Homes agent network across Minnesota lake country. Be specific about where to find agents and what to say.">📈 Grow the network</button>
+                        <button class="ai-chip" data-prompt="Draft a friendly, low-pressure follow-up message to a real estate agent whose MN Lake Homes profile is still pending review, nudging them to finish onboarding so their profile goes live.">🔔 Nudge pending agents</button>
+                        <button class="ai-chip" data-prompt="Act as my growth advisor. Give me a prioritized 5-item action list to convert more buyer/seller leads and add more agents this week on a Minnesota lakefront lead-gen platform.">📊 This week's game plan</button>
+                        <button class="ai-chip" data-prompt="Suggest 5 specific Minnesota lake towns or regions where I should recruit more agents next, and why each one is a good opportunity for a lakefront real estate network.">📍 Where to recruit next</button>
+                    </div>
+                    <div class="ai-output" id="ai-output"><span class="ai-placeholder">Pick a quick action above, or ask anything — draft outreach, write copy, plan your week. Your assistant knows the platform and remembers the conversation.</span></div>
+                    <form class="ai-form" id="ai-form" autocomplete="off">
+                        <input type="text" id="ai-input" placeholder="Ask your assistant anything…" aria-label="Ask the AI assistant">
+                        <button type="submit" id="ai-send">Ask</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="d-section-label">Traffic &amp; conversion</div>
             <!-- ── Traffic chart + Lead source donut ───────────── -->
             <div class="row-21">
                 <div class="d-card">
@@ -409,6 +492,7 @@
                 </div>
             </div>
 
+            <div class="d-section-label">Pipeline · agents &amp; leads</div>
             <!-- ── Pending agents + Recent leads ───────────────── -->
             <div class="row-11">
                 <div class="d-card">
@@ -455,6 +539,7 @@
                 </div>
             </div>
 
+            <div class="d-section-label">Content &amp; SEO</div>
             <!-- ── Content snapshot ────────────────────────────── -->
             <div class="snap-grid" style="margin-bottom: 1.5rem;">
                 <a href="lakes-towns.html?tab=lakes" class="snap lakes">
@@ -510,6 +595,7 @@
                 </div>
             </div>
 
+            <div class="d-section-label">System &amp; tracking</div>
             <!-- ── Launch tracking layer status ────────────────── -->
             <div class="d-card" style="margin-bottom: 1.5rem;">
                 <div class="d-card-hd">
@@ -1251,6 +1337,80 @@
                 btn.textContent = orig;
             }
         }
+    </script>
+
+    <!-- Revenue (Stripe) + AI assistant panel wiring -->
+    <script>
+    (function () {
+        const $ = id => document.getElementById(id);
+        const usd = c => '$' + Math.round((c || 0) / 100).toLocaleString('en-US');
+
+        // ── Revenue snapshot from Stripe ──
+        async function loadRevenue() {
+            const grid = $('rev-grid');
+            try {
+                const res = await fetch('/api/admin/revenue', { credentials: 'include' });
+                if (res.status === 401 || res.status === 403) return; // not authorized — leave dashes
+                const d = await res.json();
+                if (!d || d.configured === false) {
+                    grid.innerHTML = '<div class="rev-note">💳 <strong>Connect Stripe</strong> to see live revenue here. Add your <code>STRIPE_SECRET_KEY</code> to the server environment and this fills in automatically — MRR, monthly net, and active subscribers.</div>';
+                    return;
+                }
+                if (d.error) {
+                    grid.innerHTML = '<div class="rev-note">Stripe is connected but returned an error. Try again shortly.</div>';
+                    return;
+                }
+                $('rev-mrr').textContent = usd(d.mrr_cents);
+                $('rev-mrr-sub').textContent = (d.new_subscriptions_this_month || 0) + ' new this month';
+                $('rev-month-label').textContent = (d.month && d.month.label ? d.month.label : 'This month') + ' · net';
+                $('rev-month-net').textContent = usd(d.month && d.month.net_cents);
+                $('rev-month-sub').textContent = usd(d.month && d.month.gross_cents) + ' gross · ' + usd(d.month && d.month.fee_cents) + ' fees';
+                $('rev-subs').textContent = (d.active_subscriptions || 0).toLocaleString('en-US');
+                $('rev-subs-sub').textContent = 'active subscriptions';
+                $('rev-arr').textContent = usd(d.arr_cents);
+            } catch (_) { /* leave dashes */ }
+        }
+        loadRevenue();
+
+        // ── AI assistant panel (uses the existing /api/assistant/chat + memory) ──
+        const out = $('ai-output'), input = $('ai-input'), form = $('ai-form'), send = $('ai-send');
+        const chips = () => document.querySelectorAll('.ai-chip');
+        let busy = false;
+        async function ask(message) {
+            if (busy || !message) return;
+            busy = true;
+            chips().forEach(b => b.disabled = true); send.disabled = true;
+            out.innerHTML = '<span class="ai-placeholder">Thinking…</span>';
+            try {
+                const res = await fetch('/api/assistant/chat', {
+                    method: 'POST', credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || 'Assistant error');
+                out.textContent = d.reply || '(no response)';
+            } catch (err) {
+                out.innerHTML = '<span class="ai-placeholder">' + (err.message || 'Something went wrong.') + '</span>';
+            } finally {
+                busy = false;
+                chips().forEach(b => b.disabled = false); send.disabled = false;
+            }
+        }
+        $('ai-actions').addEventListener('click', e => {
+            const btn = e.target.closest('.ai-chip');
+            if (btn) ask(btn.dataset.prompt);
+        });
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+            const m = input.value.trim();
+            if (m) { input.value = ''; ask(m); }
+        });
+        $('ai-clear').addEventListener('click', e => {
+            e.preventDefault();
+            out.innerHTML = '<span class="ai-placeholder">Cleared. Pick a quick action or ask anything to start again.</span>';
+        });
+    })();
     </script>
 </body>
 </html>

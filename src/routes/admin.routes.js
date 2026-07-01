@@ -31,6 +31,9 @@ router.patch ('/site-images/:id',     siteImagesController.patch);
 router.get('/', adminController.getLedger);                              // GET /api/admin?search=&status=&membership=&published=
 router.post('/', adminController.createAgent);                            // POST /api/admin
 
+// ─── REVENUE (Stripe snapshot for the dashboard) ─────────────────────────────
+router.get('/revenue', verifyToken, requireRole(['admin', 'super_admin']), adminController.getRevenue);
+
 // ─── USER MANAGEMENT (must come before /:id to avoid shadowing) ──────────────
 router.get('/users', adminController.getUsers);                            // GET /api/admin/users
 router.get('/users/:id', adminController.getUserDetail);                   // GET /api/admin/users/:id

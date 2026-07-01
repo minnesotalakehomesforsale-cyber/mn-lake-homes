@@ -2052,6 +2052,75 @@ const getPaymentsForBusiness = async (req, res) => {
     }
 };
 
+// ─── REVENUE SNAPSHOT (Stripe) ─────────────────────────────────────────────
+// Live MRR from active subscriptions + this-month gross/fees/net from Stripe
+// balance transactions. Degrades to { configured:false } when there's no
+// STRIPE_SECRET_KEY so the dashboard can show a "connect Stripe" state instead
+// of erroring. Read-only; never mutates anything in Stripe.
+const getRevenue = async (req, res) => {
+    const stripe = stripeFromEnv();
+    if (!stripe) return res.json({ configured: false });
+    try {
+        const now = new Date();
+        const monthStart = Math.floor(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1) / 1000);
+
+        // Active subscriptions → normalized monthly recurring revenue.
+        let mrrCents = 0, activeCount = 0, newThisMonth = 0;
+        const tiers = {};
+        let seen = 0;
+        for await (const sub of stripe.subscriptions.list({ status: 'active', limit: 100, expand: ['data.items.data.price'] })) {
+            activeCount++;
+            if (sub.created >= monthStart) newThisMonth++;
+            for (const it of (sub.items?.data || [])) {
+                const price = it.price || {};
+                const qty = it.quantity || 1;
+                let amt = (price.unit_amount || 0) * qty;
+                const interval = price.recurring?.interval;
+                if (interval === 'year') amt = Math.round(amt / 12);
+                else if (interval === 'week') amt = Math.round((amt * 52) / 12);
+                else if (interval === 'day') amt = Math.round((amt * 365) / 12);
+                mrrCents += amt;
+                const label = price.nickname || (price.id || 'plan');
+                tiers[label] = (tiers[label] || 0) + amt;
+            }
+            if (++seen >= 1000) break;
+        }
+
+        // This month's money movement (gross, Stripe fees, net) — net is the
+        // closest thing to "profit" Stripe can tell us (revenue minus its fees).
+        let grossCents = 0, feeCents = 0, netCents = 0, txCount = 0;
+        for await (const tx of stripe.balanceTransactions.list({ created: { gte: monthStart }, limit: 100 })) {
+            if (['charge', 'payment', 'refund', 'payment_refund'].includes(tx.type)) {
+                grossCents += tx.amount;   // refunds are negative
+                feeCents += tx.fee;
+                netCents += tx.net;
+                txCount++;
+            }
+            if (txCount >= 5000) break;
+        }
+
+        res.json({
+            configured: true,
+            currency: 'usd',
+            mrr_cents: mrrCents,
+            arr_cents: mrrCents * 12,
+            active_subscriptions: activeCount,
+            new_subscriptions_this_month: newThisMonth,
+            tiers,
+            month: {
+                label: now.toLocaleString('en-US', { month: 'long', year: 'numeric' }),
+                gross_cents: grossCents,
+                fee_cents: feeCents,
+                net_cents: netCents,
+                transactions: txCount,
+            },
+        });
+    } catch (err) {
+        console.error('[getRevenue]', err.message);
+        res.status(502).json({ configured: true, error: err.message });
+    }
+};
+
 // ─── LAUNCH TOWNS (one-time-button equivalent of the seed script) ──────────
 // Same logic as scripts/apply-launch-towns.js, exposed as an admin endpoint
 // so the user can run it once from the Towns toolbar without needing the
@@ -2257,6 +2326,7 @@ module.exports = {
     getPaymentsForUser,
     getPaymentsForAgent,
     getPaymentsForBusiness,
+    getRevenue,
     applyLaunchTowns,
     applyLaunchLakes,
 };
