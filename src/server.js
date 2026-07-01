@@ -451,7 +451,7 @@ app.get('/sitemap.xml', async (req, res) => {
     const iso = (d) => { try { return new Date(d).toISOString().split('T')[0]; } catch (_) { return null; } };
 
     try {
-        const [lakes, towns, businesses, agents, posts] = await Promise.all([
+        const [lakes, towns, businesses, agents, posts, listings] = await Promise.all([
             // Only list pages that actually RENDER. /lakes/:slug and /towns/:slug
             // 404 without a hero image, so a published-but-heroless row in the
             // sitemap is a 404 we're handing Google. Require the hero here.
@@ -469,6 +469,7 @@ app.get('/sitemap.xml', async (req, res) => {
                         WHERE profile_status = 'published' AND is_published = TRUE AND deleted_at IS NULL`),
             pool.query(`SELECT slug, updated_at, published_at FROM blog_posts
                         WHERE is_published = TRUE AND deleted_at IS NULL`),
+            pool.query(`SELECT slug, updated_at FROM listings WHERE status = 'active'`),
         ]);
 
         const entries = [];
@@ -509,6 +510,7 @@ app.get('/sitemap.xml', async (req, res) => {
         for (const b of businesses.rows) push(`${base}/businesses/${encodeURIComponent(b.slug)}`,  { lastmod: iso(b.updated_at),  priority: 0.6, changefreq: 'monthly' });
         for (const a of agents.rows)     push(`${base}/agents/${encodeURIComponent(a.slug)}`,                              { lastmod: iso(a.updated_at), priority: 0.6, changefreq: 'monthly' });
         for (const p of posts.rows)      push(`${base}/blog/${encodeURIComponent(p.slug)}`,                                   { lastmod: iso(p.published_at || p.updated_at), priority: 0.5, changefreq: 'monthly' });
+        for (const ls of listings.rows)  push(`${base}/listings/${encodeURIComponent(ls.slug)}`,                                { lastmod: iso(ls.updated_at), priority: 0.7, changefreq: 'weekly'  });
 
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -682,6 +684,11 @@ app.get('/lakes/:slug', async (req, res, next) => {
               ).then(r => r.rows).catch(() => [])
             : [];
 
+        // Live listing count — server-rendered so the fresh "N homes for sale"
+        // number is in the initial HTML (crawlable) rather than JS-only.
+        const { activeCountForLake } = require('./controllers/listing.controller');
+        const lakeListingCount = await activeCountForLake(lake.id).catch(() => 0);
+
         const templatePath = path.join(PROJECT_ROOT, 'pages/public/lake-detail.html');
         fs.readFile(templatePath, 'utf8', (err, html) => {
             if (err) return next(err);
@@ -776,6 +783,10 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 '{{LAKE_LIFESTYLE_BODY}}':  lifestyleBody,
                 '{{LAKE_SEASONS_BODY}}':    seasonsBody,
                 '{{LAKE_FAQ_HTML}}':        lakeFaqHtml,
+                '{{LAKE_LISTING_COUNT}}':   String(lakeListingCount),
+                '{{LAKE_LISTINGS_HEADING}}': escapeHtml(lakeListingCount > 0
+                    ? `${lakeListingCount} ${lakeListingCount === 1 ? 'home' : 'homes'} for sale on ${lake.name}`
+                    : `Homes for sale on ${lake.name}`),
                 '{{LAKE_GALLERY_HTML}}':    lakeGalleryHtml,
             };
             let out = html;
@@ -806,6 +817,97 @@ app.get('/lakes/:slug', async (req, res, next) => {
 // ─── Businesses: per-business public detail page ───────────────────────
 // Mirror of /lakes/:slug — static template with {{BUSINESS_*}} tokens
 // replaced server-side so SEO meta tags are in the initial HTML.
+// ─── Listings: per-property public detail page + RealEstateListing JSON-LD ──
+app.get('/listings/:slug', async (req, res, next) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT l.*, lk.name AS lake_name, lk.slug AS lake_slug
+               FROM listings l
+               LEFT JOIN lakes lk ON lk.id = l.lake_id
+              WHERE l.slug = $1 AND l.status = 'active' LIMIT 1`,
+            [req.params.slug]
+        );
+        const l = rows[0];
+        if (!l) { renderFriendly404(res, { kind: 'listing', slug: req.params.slug }); return; }
+
+        const tpl = path.join(PROJECT_ROOT, 'pages/public/listing-detail.html');
+        fs.readFile(tpl, 'utf8', (err, html) => {
+            if (err) return next(err);
+            const siteBase  = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
+            const canonical = `${siteBase}/listings/${l.slug}`;
+            const price     = l.price != null ? '$' + Number(l.price).toLocaleString('en-US') : 'Contact for price';
+            const locLine   = [l.address, l.city, l.state].filter(Boolean).join(', ');
+            const seoTitle  = `${l.title}${l.city ? ' — ' + l.city + ', ' + (l.state || 'MN') : ''} | MN Lake Homes`;
+            const seoDesc   = l.description
+                ? l.description.replace(/\s+/g, ' ').trim().slice(0, 155)
+                : `${l.title}${locLine ? ' at ' + locLine : ''}. ${price}. Get matched with a local lake agent.`;
+            const image     = l.featured_image_url || `${siteBase}/assets/images/mn-canoe-shore.webp`;
+
+            const specs = [
+                l.beds != null            ? { v: l.beds, l: 'Beds' } : null,
+                l.baths != null           ? { v: l.baths, l: 'Baths' } : null,
+                l.sqft != null            ? { v: Number(l.sqft).toLocaleString('en-US'), l: 'Sq Ft' } : null,
+                l.waterfront_feet != null ? { v: Number(l.waterfront_feet).toLocaleString('en-US'), l: 'WF Feet' } : null,
+                l.lot_acres != null       ? { v: l.lot_acres, l: 'Acres' } : null,
+            ].filter(Boolean);
+            const specsHtml = specs.length
+                ? `<div class="lst-specs">${specs.map(s => `<div class="lst-spec"><div class="v">${escapeHtml(String(s.v))}</div><div class="l">${s.l}</div></div>`).join('')}</div>`
+                : '';
+            const descHtml = l.description
+                ? l.description.split(/\n{2,}/).map(p => `<p>${escapeHtml(p.trim())}</p>`).join('')
+                : '<p>Contact us for full details on this property.</p>';
+
+            let gallery = l.gallery;
+            if (typeof gallery === 'string') { try { gallery = JSON.parse(gallery); } catch (_) { gallery = []; } }
+            const galleryHtml = Array.isArray(gallery) && gallery.length
+                ? `<div class="lst-gallery">${gallery.slice(0, 12).map(g => `<img src="${escapeHtml(typeof g === 'string' ? g : (g && g.url) || '')}" alt="${escapeHtml(l.title)}" loading="lazy">`).join('')}</div>`
+                : '';
+
+            const backLabel = l.lake_name ? `Back to ${l.lake_name}` : 'Back to lake homes';
+            const backUrl   = l.lake_slug ? `/lakes/${l.lake_slug}` : '/towns';
+
+            const ld = {
+                '@context': 'https://schema.org', '@type': 'RealEstateListing',
+                name: l.title, url: canonical, image,
+                description: l.description || undefined,
+                offers: l.price != null ? { '@type': 'Offer', price: l.price, priceCurrency: 'USD', availability: 'https://schema.org/InStock' } : undefined,
+                address: locLine ? { '@type': 'PostalAddress', streetAddress: l.address || undefined, addressLocality: l.city || undefined, addressRegion: l.state || undefined, postalCode: l.zip || undefined, addressCountry: 'US' } : undefined,
+                geo: (l.latitude != null && l.longitude != null) ? { '@type': 'GeoCoordinates', latitude: l.latitude, longitude: l.longitude } : undefined,
+                numberOfRooms: l.beds || undefined,
+                floorSize: l.sqft ? { '@type': 'QuantitativeValue', value: l.sqft, unitCode: 'FTK' } : undefined,
+            };
+            const breadcrumb = {
+                '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+                itemListElement: [
+                    { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteBase}/` },
+                    ...(l.lake_name ? [{ '@type': 'ListItem', position: 2, name: l.lake_name, item: `${siteBase}/lakes/${l.lake_slug}` }] : []),
+                    { '@type': 'ListItem', position: l.lake_name ? 3 : 2, name: l.title, item: canonical },
+                ],
+            };
+            const sd = `<script type="application/ld+json">${JSON.stringify(ld)}</script>\n    <script type="application/ld+json">${JSON.stringify(breadcrumb)}</script>`;
+
+            const repl = {
+                '{{LISTING_SEO_TITLE}}':      escapeHtml(seoTitle),
+                '{{LISTING_SEO_DESC}}':       escapeHtml(seoDesc),
+                '{{LISTING_CANONICAL}}':      escapeHtml(canonical),
+                '{{LISTING_TITLE}}':          escapeHtml(l.title),
+                '{{LISTING_PRICE}}':          escapeHtml(price),
+                '{{LISTING_ADDRESS}}':        escapeHtml(locLine || 'Minnesota'),
+                '{{LISTING_IMAGE}}':          escapeHtml(image),
+                '{{LISTING_SPECS_HTML}}':     specsHtml,
+                '{{LISTING_DESCRIPTION}}':    descHtml,
+                '{{LISTING_GALLERY_HTML}}':   galleryHtml,
+                '{{LISTING_STRUCTURED_DATA}}': sd,
+                '{{LISTING_LAKE_BACK}}':      escapeHtml(backUrl),
+                '{{LISTING_BACK_LABEL}}':     escapeHtml(backLabel),
+            };
+            let out = html;
+            for (const [k, v] of Object.entries(repl)) out = out.split(k).join(v);
+            res.type('html').send(out);
+        });
+    } catch (err) { next(err); }
+});
+
 app.get('/businesses/:slug', async (req, res, next) => {
     try {
         const { rows } = await pool.query(

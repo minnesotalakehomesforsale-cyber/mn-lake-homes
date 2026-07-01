@@ -416,6 +416,64 @@
         </div>
     </section>
 
+    <!-- Homes for sale — live count is server-rendered into the heading; the
+         cards load client-side from /api/listings. The whole section hides
+         when there are no active listings. -->
+    <section class="ld-listings" id="ld-listings" style="display:none;">
+        <style>
+            .ld-listings { background:#f7f9fa; padding:5rem 2rem; }
+            .ld-listings-inner { max-width:1200px; margin:0 auto; }
+            .ld-listings h2 { font-size:2.2rem; font-weight:700; color:#1a202c; letter-spacing:-1px; margin:0 0 2rem; text-align:center; }
+            .ld-listings-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:1.5rem; }
+            .ld-lst-card { background:#fff; border:1px solid #edf2f7; border-radius:14px; overflow:hidden; text-decoration:none; color:inherit; display:block; box-shadow:0 4px 12px rgba(0,0,0,0.04); transition:transform .15s, box-shadow .15s; }
+            .ld-lst-card:hover { transform:translateY(-4px); box-shadow:0 14px 30px rgba(0,0,0,0.1); }
+            .ld-lst-img { aspect-ratio:16/10; background:#eceff3; }
+            .ld-lst-img img { width:100%; height:100%; object-fit:cover; }
+            .ld-lst-body { padding:1.1rem 1.25rem 1.35rem; }
+            .ld-lst-price { font-size:1.35rem; font-weight:800; color:#1a202c; letter-spacing:-0.5px; }
+            .ld-lst-specs { color:#4a5568; font-size:0.88rem; font-weight:600; margin:0.3rem 0 0.5rem; }
+            .ld-lst-addr { color:#718096; font-size:0.85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+            .ld-listings-cta { text-align:center; margin-top:2.5rem; }
+        </style>
+        <div class="ld-listings-inner">
+            <h2>{{LAKE_LISTINGS_HEADING}}</h2>
+            <div class="ld-listings-grid" id="ld-listings-grid"></div>
+            <div class="ld-listings-cta">
+                <a href="/pages/public/buy.html" class="nb-cta">Get matched with a {{LAKE_NAME}} agent →</a>
+            </div>
+        </div>
+    </section>
+    <script>
+        (function () {
+            const grid = document.getElementById('ld-listings-grid');
+            const section = document.getElementById('ld-listings');
+            if (!grid || !section) return;
+            const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+            const money = n => (n == null || n === '') ? 'Contact for price' : '$' + Number(n).toLocaleString('en-US');
+            fetch(`/api/listings?lake_id=${encodeURIComponent('{{LAKE_ID}}')}`)
+                .then(r => r.ok ? r.json() : [])
+                .then(list => {
+                    if (!Array.isArray(list) || !list.length) return; // section stays hidden
+                    grid.innerHTML = list.map(l => {
+                        const img = l.featured_image_url || '/assets/images/agent-placeholder.svg';
+                        const specs = [l.beds ? `${l.beds} bd` : '', l.baths ? `${l.baths} ba` : '', l.sqft ? `${Number(l.sqft).toLocaleString('en-US')} sqft` : ''].filter(Boolean).join(' · ');
+                        const addr = [l.address, l.city].filter(Boolean).join(', ');
+                        return `
+                            <a class="ld-lst-card" href="/listings/${encodeURIComponent(l.slug)}">
+                                <div class="ld-lst-img"><img src="${esc(img)}" alt="${esc(l.title)}" loading="lazy"></div>
+                                <div class="ld-lst-body">
+                                    <div class="ld-lst-price">${esc(money(l.price))}</div>
+                                    ${specs ? `<div class="ld-lst-specs">${esc(specs)}</div>` : ''}
+                                    <div class="ld-lst-addr">${esc(addr || l.title)}</div>
+                                </div>
+                            </a>`;
+                    }).join('');
+                    section.style.display = '';
+                })
+                .catch(() => { /* leave hidden */ });
+        })();
+    </script>
+
     <!-- FAQ — visible, crawlable Q&A that mirrors the FAQPage JSON-LD in the
          head. Native <details> keeps the answers in the DOM for search engines
          while staying collapsed for readers. -->

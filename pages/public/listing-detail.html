@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{LISTING_SEO_TITLE}}</title>
+    <meta name="description" content="{{LISTING_SEO_DESC}}">
+    <link rel="canonical" href="{{LISTING_CANONICAL}}">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{LISTING_SEO_TITLE}}">
+    <meta property="og:description" content="{{LISTING_SEO_DESC}}">
+    <meta property="og:image" content="{{LISTING_IMAGE}}">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/styles/style.css">
+    {{LISTING_STRUCTURED_DATA}}
+    <style>
+        .lst-wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 2rem 5rem; }
+        .lst-back { display:inline-block; color:#718096; text-decoration:none; font-weight:600; font-size:0.9rem; margin-bottom:1.25rem; }
+        .lst-hero { width:100%; aspect-ratio:16/9; background:#eceff3; border-radius:16px; overflow:hidden; margin-bottom:1.5rem; }
+        .lst-hero img { width:100%; height:100%; object-fit:cover; }
+        .lst-price { font-size:2.5rem; font-weight:800; color:#1a202c; letter-spacing:-1.5px; margin:0; }
+        .lst-title { font-size:1.35rem; font-weight:700; color:#2d3748; margin:0.35rem 0 0.15rem; }
+        .lst-addr { color:#718096; font-size:1rem; margin:0 0 1.5rem; }
+        .lst-specs { display:flex; gap:0; flex-wrap:wrap; border:1px solid #edf2f7; border-radius:12px; overflow:hidden; margin-bottom:2rem; }
+        .lst-spec { flex:1; min-width:110px; padding:1.1rem 1.25rem; text-align:center; border-right:1px solid #edf2f7; }
+        .lst-spec:last-child { border-right:0; }
+        .lst-spec .v { font-size:1.35rem; font-weight:800; color:#1a202c; }
+        .lst-spec .l { font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#a0aec0; margin-top:0.2rem; }
+        .lst-desc { color:#2d3748; line-height:1.8; font-size:1.05rem; }
+        .lst-desc p { margin:0 0 1.1rem; }
+        .lst-cta { background:#f7f9fa; border:1px solid #edf2f7; border-radius:14px; padding:1.75rem; margin-top:2.5rem; text-align:center; }
+        .lst-cta h2 { font-size:1.4rem; font-weight:800; color:#1a202c; margin:0 0 0.4rem; }
+        .lst-cta p { color:#718096; margin:0 0 1.25rem; }
+        .lst-gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:0.75rem; margin:2rem 0; }
+        .lst-gallery img { width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:10px; }
+        @media (max-width:600px){ .lst-price { font-size:2rem; } .lst-wrap { padding:1.5rem 1.25rem 4rem; } }
+    </style>
+    <script src="/components/components.js" defer></script>
+</head>
+<body style="background:#fff;">
+    <global-header></global-header>
+
+    <main class="lst-wrap">
+        <a href="{{LISTING_LAKE_BACK}}" class="lst-back">← {{LISTING_BACK_LABEL}}</a>
+        <div class="lst-hero"><img src="{{LISTING_IMAGE}}" alt="{{LISTING_TITLE}}"></div>
+
+        <p class="lst-price">{{LISTING_PRICE}}</p>
+        <h1 class="lst-title">{{LISTING_TITLE}}</h1>
+        <p class="lst-addr">{{LISTING_ADDRESS}}</p>
+
+        {{LISTING_SPECS_HTML}}
+
+        <div class="lst-desc">{{LISTING_DESCRIPTION}}</div>
+
+        {{LISTING_GALLERY_HTML}}
+
+        <div class="lst-cta">
+            <h2>Interested in this property?</h2>
+            <p>Get matched with a vetted local agent who knows this lake and can arrange a showing.</p>
+            <a href="/pages/public/buy.html" class="nb-cta">Get matched with an agent →</a>
+        </div>
+    </main>
+
+    <global-footer></global-footer>
+</body>
+</html>
