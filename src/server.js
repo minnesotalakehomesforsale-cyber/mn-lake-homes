@@ -1537,7 +1537,7 @@ app.get('/agents/:slug', async (req, res, next) => {
                     a.service_areas, a.specialties, a.is_featured, a.bio,
                     a.phone_public, a.email_public,
                     a.website_url, a.facebook_url, a.instagram_url, a.linkedin_url,
-                    a.profile_photo_url, m.display_badge_label AS membership_badge
+                    a.profile_photo_url, a.faq, m.display_badge_label AS membership_badge
                FROM agents a JOIN memberships m ON a.membership_id = m.id
               WHERE a.slug = $1 AND a.profile_status = 'published' AND a.is_published = true
               LIMIT 1`,
@@ -1603,6 +1603,16 @@ app.get('/agents/:slug', async (req, res, next) => {
                 ],
             };
 
+            // Agent-authored FAQ → FAQPage JSON-LD (only the answered ones).
+            const { answeredFaqList } = require('./services/agent-faq');
+            const agentFaqs = answeredFaqList(agent.faq);
+            const agentFaqLdTag = agentFaqs.length
+                ? `\n    <script type="application/ld+json">${JSON.stringify({
+                    '@context': 'https://schema.org', '@type': 'FAQPage',
+                    mainEntity: agentFaqs.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+                  })}</script>`
+                : '';
+
             const head = `
     <link rel="canonical" href="${escapeHtml(canonical)}">
     <meta property="og:type" content="profile">
@@ -1612,7 +1622,7 @@ app.get('/agents/:slug', async (req, res, next) => {
     ${photoAbs ? `<meta property="og:image" content="${escapeHtml(photoAbs)}">` : ''}
     <meta name="twitter:card" content="summary_large_image">
     <script type="application/ld+json">${JSON.stringify(agentLd)}</script>
-    <script type="application/ld+json">${JSON.stringify(breadcrumbLd)}</script>
+    <script type="application/ld+json">${JSON.stringify(breadcrumbLd)}</script>${agentFaqLdTag}
 `;
             const agentJson = JSON.stringify(agent).replace(/</g, '\\u003c');
             const heroSsr = `
@@ -1918,6 +1928,9 @@ async function ensureTables() {
             -- tier than they pay for.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS paid_membership_code VARCHAR(50);
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS tier_comped BOOLEAN NOT NULL DEFAULT FALSE;
+            -- Agent-authored FAQ answers, keyed by the fixed question keys in
+            -- services/agent-faq.js. Only answered questions render publicly.
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS faq JSONB NOT NULL DEFAULT '{}'::jsonb;
         `);
 
         // HubSpot mirror id — populated by src/services/hubspot.js after a

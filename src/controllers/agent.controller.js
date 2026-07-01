@@ -137,7 +137,7 @@ const getAgentBySlug = async (req, res) => {
             SELECT a.id, a.slug, a.display_name, a.brokerage_name, a.city, a.state,
                    a.service_areas, a.specialties, a.is_featured, a.license_number, a.bio,
                    a.years_experience, a.phone_public, a.email_public, a.website_url,
-                   a.facebook_url, a.instagram_url, a.linkedin_url, a.profile_photo_url,
+                   a.facebook_url, a.instagram_url, a.linkedin_url, a.profile_photo_url, a.faq,
                    m.display_badge_label as membership_badge, m.name as membership_name
             FROM agents a
             JOIN memberships m ON a.membership_id = m.id
@@ -183,7 +183,7 @@ const saveDraft = async (req, res) => {
     let {
         display_name, brokerage_name, phone_public, email_public, website_url,
         license_number, years_experience, city, service_areas, specialties, bio,
-        profile_photo_url
+        profile_photo_url, faq
     } = req.body;
 
     try {
@@ -196,6 +196,9 @@ const saveDraft = async (req, res) => {
 
         const finalAreas = cleanArray(service_areas);
         const finalSpecs = cleanArray(specialties);
+        // FAQ: only persist when the client sent it; sanitize to known keys.
+        const { cleanAgentFaq } = require('../services/agent-faq');
+        const faqJson = (faq !== undefined) ? JSON.stringify(cleanAgentFaq(faq)) : null;
 
         await pool.query(
             `UPDATE agents SET
@@ -211,8 +214,9 @@ const saveDraft = async (req, res) => {
                 specialties = COALESCE($10, specialties),
                 bio = COALESCE(NULLIF($11,''), bio),
                 profile_photo_url = COALESCE(NULLIF($12,''), profile_photo_url),
+                faq = COALESCE($13::jsonb, faq),
                 updated_at = NOW()
-             WHERE user_id = $13`,
+             WHERE user_id = $14`,
             [
                 display_name?.trim() || null,
                 brokerage_name?.trim() || null,
@@ -226,6 +230,7 @@ const saveDraft = async (req, res) => {
                 finalSpecs.length > 0 ? JSON.stringify(finalSpecs) : null,
                 bio?.trim() || null,
                 profile_photo_url?.trim() || null,
+                faqJson,
                 req.user.userId
             ]
         );
@@ -488,6 +493,12 @@ const addMyLeadNote = async (req, res) => {
 // Legacy alias for old PATCH /me route used by some admin call paths
 const updateMyProfile = saveDraft;
 
+// GET /api/agents/faq-questions — the fixed FAQ questions agents answer.
+const getFaqQuestions = (req, res) => {
+    const { AGENT_FAQS } = require('../services/agent-faq');
+    res.json(AGENT_FAQS);
+};
+
 // ─── Agent <-> blog post links (co-branded posts / agent spotlights) ─────────
 const _isAdmin = (req) => req.user && (req.user.role === 'admin' || req.user.role === 'super_admin');
 
@@ -591,6 +602,7 @@ module.exports = {
     getMyLeadNotes,
     addMyLeadNote,
     uploadPhoto,
+    getFaqQuestions,
     listBlogPostsForAgent,
     listAgentsForBlogPost,
     replaceAgentsForBlogPost

@@ -5,6 +5,7 @@ const { verifyToken, requireRole } = require('../middleware/auth');
 
 // ─── PUBLIC ───────────────────────────────────────────────────────────────────
 router.get('/public', agentController.getPublicAgents);
+router.get('/faq-questions', agentController.getFaqQuestions);
 router.get('/public/:slug', agentController.getAgentBySlug);
 // Published featured/related blog posts for an agent's public profile.
 router.get('/public/:slug/blog-posts', agentController.listBlogPostsForAgent);

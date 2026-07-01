@@ -144,6 +144,26 @@
         </div>
     </section>
 
+    <!-- Agent FAQ — only the questions this agent has answered. Hidden if none. -->
+    <section id="agent-faq-section" style="display:none; padding:4.5rem 0; border-top:1px solid #edf2f7;">
+        <style>
+            #agent-faq-section .inner { max-width:820px; margin:0 auto; padding:0 2rem; }
+            #agent-faq-section h2 { font-size:2rem; font-weight:700; color:#1a202c; letter-spacing:-0.5px; margin:0 0 2rem; }
+            .agent-faq-item { border:1px solid #edf2f7; border-radius:12px; margin-bottom:0.85rem; background:#fff; overflow:hidden; }
+            .agent-faq-item summary { cursor:pointer; list-style:none; padding:1.15rem 1.35rem; font-size:1.02rem; font-weight:700; color:#1a202c; display:flex; justify-content:space-between; align-items:center; gap:1rem; }
+            .agent-faq-item summary::-webkit-details-marker { display:none; }
+            .agent-faq-item summary::after { content:'+'; font-size:1.4rem; font-weight:400; color:#1d6df2; flex-shrink:0; }
+            .agent-faq-item[open] summary::after { content:'\2013'; }
+            .agent-faq-a { padding:0 1.35rem 1.25rem; }
+            .agent-faq-a p { margin:0; color:#4a5568; line-height:1.65; font-size:0.98rem; white-space:pre-line; }
+            @media (max-width:600px){ #agent-faq-section { padding:3rem 0; } #agent-faq-section h2 { font-size:1.6rem; } }
+        </style>
+        <div class="inner">
+            <h2>Frequently asked questions</h2>
+            <div id="agent-faq-list"></div>
+        </div>
+    </section>
+
     <!-- Reviews — populated once the agent record loads (needs its id). -->
     <section id="agent-reviews-section" style="background:#f7f9fa;padding:4.5rem 0;border-top:1px solid #edf2f7;">
         <div style="max-width:820px;margin:0 auto;padding:0 2rem;">
@@ -331,6 +351,28 @@
             }
             const openReviewBtn = document.getElementById('open-review-btn');
             if (openReviewBtn && reviewsEl) openReviewBtn.addEventListener('click', () => reviewsEl.openModal());
+
+            // Agent FAQ — render only the questions this agent has answered.
+            (async () => {
+                try {
+                    const qRes = await fetch('/api/agents/faq-questions');
+                    const questions = qRes.ok ? await qRes.json() : [];
+                    let faq = agent.faq;
+                    if (typeof faq === 'string') { try { faq = JSON.parse(faq); } catch (_) { faq = {}; } }
+                    faq = (faq && typeof faq === 'object') ? faq : {};
+                    const answered = questions
+                        .map(q => ({ q: q.q, a: String(faq[q.key] || '').trim() }))
+                        .filter(x => x.a);
+                    if (!answered.length) return;   // section stays hidden
+                    const escf = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+                    document.getElementById('agent-faq-list').innerHTML = answered.map(x => `
+                        <details class="agent-faq-item">
+                            <summary>${escf(x.q)}</summary>
+                            <div class="agent-faq-a"><p>${escf(x.a)}</p></div>
+                        </details>`).join('');
+                    document.getElementById('agent-faq-section').style.display = '';
+                } catch (_) { /* leave hidden */ }
+            })();
 
             // Lead form submit
             document.getElementById('agent-lead-form').addEventListener('submit', async function(e) {

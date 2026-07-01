@@ -560,6 +560,10 @@
                             <p class="field-hint">Your pitch — experience, approach, and what makes you different. 2–4 short paragraphs work best.</p>
                             <textarea id="f-bio" class="input-sys" rows="6" placeholder="Professional overview..." required oninput="calcProgress()"></textarea>
                         </div>
+
+                        <h3 class="form-section-title">Your FAQ</h3>
+                        <p class="field-hint">These show as a dropdown FAQ on your public profile. <strong>Only the ones you answer appear</strong> — leave any blank to skip it. Answer as many or as few as you like.</p>
+                        <div id="faq-fields"></div>
                     </form>
                 </div>
 
@@ -930,6 +934,9 @@
             loadServiceAreas();
 
             document.getElementById('f-bio').value = agent.bio || '';
+
+            // FAQ answer fields (rendered from the fixed question set, prefilled).
+            renderFaqFields(agent.faq);
 
             // Hydrate photo preview
             if (agent.profile_photo_url) {
@@ -1487,9 +1494,36 @@
         // immediately on toggle (no Save Draft round-trip needed). The
         // agents.service_areas display column is kept in sync server-side
         // by syncServiceAreasMirror() below.
+        // Render the fixed FAQ questions as answer boxes, prefilled from the
+        // agent's saved answers. Only-answered logic happens on the public side.
+        async function renderFaqFields(faq) {
+            const wrap = document.getElementById('faq-fields');
+            if (!wrap) return;
+            if (typeof faq === 'string') { try { faq = JSON.parse(faq); } catch (_) { faq = {}; } }
+            faq = (faq && typeof faq === 'object') ? faq : {};
+            let questions = [];
+            try { const r = await fetch('/api/agents/faq-questions'); if (r.ok) questions = await r.json(); } catch (_) {}
+            const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+            wrap.innerHTML = questions.map(q => `
+                <div class="form-group-sys" style="margin-bottom:1.5rem;">
+                    <label>${esc(q.q)}</label>
+                    <textarea class="input-sys faq-answer" data-key="${esc(q.key)}" rows="3" placeholder="Your answer (optional — leave blank to hide this one)" oninput="calcProgress && calcProgress()">${esc(faq[q.key] || '')}</textarea>
+                </div>`).join('');
+        }
+
+        function collectFaqAnswers() {
+            const faq = {};
+            document.querySelectorAll('#faq-fields .faq-answer').forEach(t => {
+                const v = t.value.trim();
+                if (v) faq[t.dataset.key] = v;
+            });
+            return faq;
+        }
+
         function extractFormPayload() {
             const years = document.getElementById('f-years')?.value.trim();
             const payload = {
+                faq:               collectFaqAnswers(),
                 display_name:      document.getElementById('f-name').value.trim(),
                 brokerage_name:    document.getElementById('f-brokerage').value.trim(),
                 phone_public:      document.getElementById('f-phone').value.trim(),
