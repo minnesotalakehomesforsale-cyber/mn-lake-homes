@@ -2500,7 +2500,14 @@ body > * { min-width: 0; }
     transition: transform 0.2s, box-shadow 0.2s;
     display: flex;
     flex-direction: column;
+    /* Fill the stretched grid cell so cards in a row are equal height
+       regardless of bio length (the grid item is the <a> wrapper). */
+    height: 100%;
 }
+
+/* The <a> wrapper is the actual grid item — let it fill the cell so its
+   inner .agent-card can inherit a full-height box. */
+.agents-grid > .agent-link-wrapper { height: 100%; }
 
 .agent-card:hover {
     transform: translateY(-5px);
