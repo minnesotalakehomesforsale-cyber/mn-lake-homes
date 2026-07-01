@@ -122,17 +122,110 @@ function pickFromBuckets(buckets, counter) {
 }
 
 /**
- * Main entry — given a lead location, picks an agent and records the
- * routing side-effects (counter + last_routed_at).
- *
- * Returns { userId, agentId, tagId, tierCode } on match, or null if no agent
- * was available in any tag within radius.
+ * Nearest published lake within `radius` miles of (lat,lng), or null.
  */
-async function routeLead({ lat, lng, radiusMiles } = {}) {
-    if (lat == null || lng == null) return null;
+async function lakeNear(lat, lng, radius) {
+    const dist = `(${EARTH_RADIUS_MILES} * acos(LEAST(1.0, GREATEST(-1.0,
+        cos(radians($1)) * cos(radians(latitude)) * cos(radians(longitude) - radians($2))
+        + sin(radians($1)) * sin(radians(latitude))))))`;
+    const { rows } = await pool.query(
+        `SELECT id, slug, name, lead_routing_counter, ${dist} AS distance_miles
+           FROM lakes
+          WHERE status = 'published' AND latitude IS NOT NULL AND longitude IS NOT NULL
+            AND ${dist} <= $3
+          ORDER BY distance_miles ASC LIMIT 1`,
+        [lat, lng, radius]
+    );
+    return rows[0] || null;
+}
+
+async function getLakeById(lakeId) {
+    const { rows } = await pool.query(
+        `SELECT id, slug, name, lead_routing_counter FROM lakes WHERE id = $1 LIMIT 1`,
+        [lakeId]
+    );
+    return rows[0] || null;
+}
+
+/**
+ * Routing-eligible agents linked to a lake (agent_lakes), bucketed by tier.
+ * The lake's founding agent (agent_lakes.is_founder) is bucketed as 'founder'
+ * regardless of their global membership tier, so the 70/30 split applies to
+ * whoever holds the lake's founding spot.
+ */
+async function agentsForLake(lakeId) {
+    const sql = `
+        SELECT u.id AS user_id, u.full_name, u.email, u.last_routed_at,
+               a.id AS agent_id, a.display_name,
+               CASE WHEN al.is_founder THEN 'founder' ELSE m.code END AS tier_code
+        FROM agent_lakes al
+        JOIN agents a ON a.id = al.agent_id
+                     AND a.profile_status = 'published' AND a.is_published = TRUE
+        JOIN users  u ON u.id = a.user_id AND u.account_status = 'active'
+        JOIN memberships m ON m.id = a.membership_id
+        WHERE al.lake_id = $1
+        ORDER BY u.last_routed_at ASC NULLS FIRST, u.id ASC
+    `;
+    const { rows } = await pool.query(sql, [lakeId]);
+    const buckets = {};
+    for (const r of rows) (buckets[r.tier_code] ||= []).push(r);
+    return buckets;
+}
+
+/**
+ * Main entry — given a lead location and/or lake, picks an agent and records
+ * the routing side-effects (counter + last_routed_at).
+ *
+ * Lake-level founder routing runs FIRST: if the lead is tied to a lake (either
+ * an explicit `lakeId` from the lake page, or the nearest lake to its
+ * coordinates) and that lake has agents, the lake's founder gets 70% of its
+ * leads and the rest round-robin — the founder override you seat lake by lake.
+ * Falls back to the town/tag router when there's no lake match.
+ *
+ * Returns { userId, agentId, lakeId|tagId, tierCode } on match, or null.
+ */
+async function routeLead({ lat, lng, radiusMiles, lakeId } = {}) {
     const radius = Number(radiusMiles) > 0
         ? Number(radiusMiles)
         : await getDefaultRadiusMiles();
+
+    // ── 1. Lake-level routing (founder override, lake by lake) ──
+    let lake = null;
+    if (lakeId) lake = await getLakeById(lakeId);
+    else if (lat != null && lng != null) lake = await lakeNear(lat, lng, radius);
+    if (lake) {
+        const buckets = await agentsForLake(lake.id);
+        if (Object.keys(buckets).length) {
+            const pick = pickFromBuckets(buckets, lake.lead_routing_counter || 0);
+            if (pick) {
+                const client = await pool.connect();
+                try {
+                    await client.query('BEGIN');
+                    await client.query(`UPDATE lakes SET lead_routing_counter = lead_routing_counter + 1 WHERE id = $1`, [lake.id]);
+                    await client.query(`UPDATE users SET last_routed_at = NOW() WHERE id = $1`, [pick.user_id]);
+                    await client.query('COMMIT');
+                } catch (err) {
+                    await client.query('ROLLBACK');
+                    throw err;
+                } finally {
+                    client.release();
+                }
+                return {
+                    userId: pick.user_id,
+                    agentId: pick.agent_id,
+                    lakeId: lake.id,
+                    lakeName: lake.name,
+                    tierCode: pick.tier_code,
+                    fullName: pick.full_name,
+                    email: pick.email,
+                    distanceMiles: lake.distance_miles ?? null,
+                };
+            }
+        }
+    }
+
+    // ── 2. Town/tag routing (needs coordinates) ──
+    if (lat == null || lng == null) return null;
 
     const tags = await tagsNear(lat, lng, radius);
     if (!tags.length) return null;

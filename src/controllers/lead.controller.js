@@ -11,7 +11,7 @@ const createLead = async (req, res) => {
     let {
         name, email, phone, notes, source, agent_id,
         property_address, property_street, property_city,
-        property_state, property_zip, property_place_id,
+        property_state, property_zip, property_place_id, lake_slug,
     } = req.body;
 
     name = (name || '').trim();
@@ -36,6 +36,17 @@ const createLead = async (req, res) => {
     try {
         // Coerce agent string if dummy provided
         const finalAgentId = (agent_id && agent_id !== 'uuid-string-dummy') ? agent_id : null;
+
+        // Resolve an explicit lake (lead came from a lake page) → its id, so the
+        // router can hand it to that lake's founding agent.
+        const lakeSlug = str(lake_slug, 120);
+        let leadLakeId = null;
+        if (lakeSlug) {
+            try {
+                const lr = await pool.query(`SELECT id FROM lakes WHERE slug = $1 LIMIT 1`, [lakeSlug]);
+                leadLakeId = lr.rows[0]?.id || null;
+            } catch (_) { /* leave null */ }
+        }
 
         // Link the lead to a user account by email. Forms no longer require
         // an account — anyone can submit. If the caller is signed in we trust
@@ -83,6 +94,12 @@ const createLead = async (req, res) => {
             submittedUserId,
         ]);
         const newLeadId = leadRows[0]?.id;
+
+        // Persist the explicit lake tie (best-effort; column added via migration).
+        if (newLeadId && leadLakeId) {
+            pool.query(`UPDATE leads SET lake_id = $1 WHERE id = $2`, [leadLakeId, newLeadId])
+                .catch(e => console.error('[lead.lake_id] save failed:', e.message));
+        }
 
         logActivity({
             event_type: 'lead.create',
@@ -165,27 +182,33 @@ const createLead = async (req, res) => {
         const addressForRouting = propAddress
             || [propStreet, propCity, propState, propZip].filter(Boolean).join(', ')
             || null;
-        if (newLeadId && addressForRouting) {
+        // Route when we have a property address to geocode OR the lead is tied
+        // to a lake (lake-page leads have no address but still route to the
+        // lake's founder).
+        if (newLeadId && (addressForRouting || leadLakeId)) {
             (async () => {
                 try {
-                    const geo = await geocodeAddress(addressForRouting);
-                    if (!geo) return;
-                    const { tags } = await matchTagsAndUsers({ lat: geo.lat, lng: geo.lng });
-                    if (!tags.length) return;
+                    const geo = addressForRouting ? await geocodeAddress(addressForRouting) : null;
 
-                    // Record which tags matched (+ each distance) for audit.
-                    const valuesSql = tags.map((_, i) =>
-                        `($1, $${i + 2}, $${i + 2 + tags.length})`
-                    ).join(', ');
-                    const params = [
-                        newLeadId,
-                        ...tags.map(t => t.id),
-                        ...tags.map(t => t.distance_miles),
-                    ];
-                    await pool.query(
-                        `INSERT INTO lead_tags (lead_id, tag_id, distance_miles) VALUES ${valuesSql}`,
-                        params
-                    );
+                    // Record which town tags matched (+ distance) for audit — only
+                    // when we geocoded an address.
+                    if (geo) {
+                        const { tags } = await matchTagsAndUsers({ lat: geo.lat, lng: geo.lng });
+                        if (tags.length) {
+                            const valuesSql = tags.map((_, i) =>
+                                `($1, $${i + 2}, $${i + 2 + tags.length})`
+                            ).join(', ');
+                            const params = [
+                                newLeadId,
+                                ...tags.map(t => t.id),
+                                ...tags.map(t => t.distance_miles),
+                            ];
+                            await pool.query(
+                                `INSERT INTO lead_tags (lead_id, tag_id, distance_miles) VALUES ${valuesSql}`,
+                                params
+                            );
+                        }
+                    }
 
                     // ── Auto-assign via router ──
                     // Skip routing if a direct agent_id was supplied (e.g., lead
@@ -201,7 +224,7 @@ const createLead = async (req, res) => {
                         return;
                     }
 
-                    const pick = await routeLead({ lat: geo.lat, lng: geo.lng });
+                    const pick = await routeLead({ lat: geo?.lat, lng: geo?.lng, lakeId: leadLakeId });
                     if (!pick) {
                         // No eligible agent in any nearby tag — lead stays
                         // unassigned. Log it AND email admin so it doesn't
@@ -213,7 +236,7 @@ const createLead = async (req, res) => {
                             severity: 'warning',
                             actor: { type: 'system', label: 'lead-router' },
                             target: { type: 'lead', id: newLeadId, label: `${name} (${enumType})` },
-                            details: { lat: geo.lat, lng: geo.lng, reason: 'no_eligible_agent' },
+                            details: { lat: geo?.lat, lng: geo?.lng, lake_id: leadLakeId, reason: 'no_eligible_agent' },
                         });
                         emailService.sendAdminLeadNotification({
                             name,
@@ -222,7 +245,7 @@ const createLead = async (req, res) => {
                             phone,
                             type: enumType,
                             source: source ? `${source} · UNROUTED` : 'UNROUTED',
-                            notes: `Routing failed — no eligible agent in the matched service areas near "${geo.formattedAddress || addressForRouting}". Lead needs manual assignment from the admin Leads queue.\n\n${notes || ''}`.trim(),
+                            notes: `Routing failed — no eligible agent in the matched service areas near "${geo?.formattedAddress || addressForRouting || 'the selected lake'}". Lead needs manual assignment from the admin Leads queue.\n\n${notes || ''}`.trim(),
                         });
                         return;
                     }
@@ -251,10 +274,10 @@ const createLead = async (req, res) => {
                             notes,
                             type: enumType,
                             source,
-                            address: geo.formattedAddress || addressForRouting,
+                            address: geo?.formattedAddress || addressForRouting || pick.lakeName || null,
                         },
                         distanceMiles: pick.distanceMiles,
-                        matchedAreas: [pick.tagName],
+                        matchedAreas: [pick.lakeName || pick.tagName].filter(Boolean),
                     });
 
                     logActivity({
@@ -263,8 +286,9 @@ const createLead = async (req, res) => {
                         actor: { type: 'system', label: 'lead-router' },
                         target: { type: 'lead', id: newLeadId, label: `${name} (${enumType})` },
                         details: {
-                            lat: geo.lat, lng: geo.lng,
-                            tag_id: pick.tagId, tag_name: pick.tagName,
+                            lat: geo?.lat, lng: geo?.lng,
+                            lake_id: pick.lakeId || null, lake_name: pick.lakeName || null,
+                            tag_id: pick.tagId || null, tag_name: pick.tagName || null,
                             tier: pick.tierCode,
                             assigned_user_id: pick.userId,
                             assigned_agent_id: pick.agentId,

@@ -381,7 +381,8 @@ exports.listAgents = async (req, res) => {
                     a.is_featured AS agent_is_featured,
                     a.is_published,
                     u.full_name, u.email,
-                    COALESCE(al.is_featured, FALSE) AS lake_is_featured
+                    COALESCE(al.is_featured, FALSE) AS lake_is_featured,
+                    COALESCE(al.is_founder,  FALSE) AS lake_is_founder
              FROM agents a
              JOIN users u ON u.id = a.user_id
              LEFT JOIN agent_lakes al ON al.agent_id = a.id AND al.lake_id = $1
@@ -776,6 +777,12 @@ exports.replaceAgents = async (req, res) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
+        // Preserve the lake's founding agent across a full re-save of the
+        // agent list, as long as they're still in the new set.
+        const prevFounder = await client.query(
+            `SELECT agent_id FROM agent_lakes WHERE lake_id = $1 AND is_founder LIMIT 1`, [lakeId]
+        );
+        const keepFounderId = prevFounder.rows[0]?.agent_id;
         await client.query(`DELETE FROM agent_lakes WHERE lake_id = $1`, [lakeId]);
         if (agentIds.length) {
             const values = agentIds.map((_, i) => `($${i + 2}, $1)`).join(', ');
@@ -785,6 +792,12 @@ exports.replaceAgents = async (req, res) => {
                  WHERE EXISTS (SELECT 1 FROM agents WHERE id = v.aid::uuid)
                  ON CONFLICT (agent_id, lake_id) DO NOTHING`,
                 [lakeId, ...agentIds]
+            );
+        }
+        if (keepFounderId && agentIds.includes(keepFounderId)) {
+            await client.query(
+                `UPDATE agent_lakes SET is_founder = TRUE WHERE lake_id = $1 AND agent_id = $2`,
+                [lakeId, keepFounderId]
             );
         }
         await client.query('COMMIT');
@@ -803,6 +816,49 @@ exports.replaceAgents = async (req, res) => {
         await client.query('ROLLBACK').catch(() => {});
         console.error('[lakes.replaceAgents]', err.message);
         res.status(500).json({ error: 'Failed to save lake agents.' });
+    } finally {
+        client.release();
+    }
+};
+
+// Seat (or clear) the FOUNDING agent for a lake. The founder gets 70% of the
+// lake's leads via the router. At most one founder per lake (enforced by a
+// partial unique index); this also links the agent to the lake if needed.
+// Body: { agentId } to seat, or { agentId: null } to clear the lake's founder.
+exports.setFounder = async (req, res) => {
+    if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
+    const lakeId = req.params.id;
+    const agentId = req.body?.agentId || null;
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        // Clear any existing founder on this lake first (keeps the unique index happy).
+        await client.query(`UPDATE agent_lakes SET is_founder = FALSE WHERE lake_id = $1`, [lakeId]);
+        if (agentId) {
+            // Ensure the agent is linked to the lake, then flag as founder.
+            await client.query(
+                `INSERT INTO agent_lakes (agent_id, lake_id, is_founder)
+                 VALUES ($1, $2, TRUE)
+                 ON CONFLICT (agent_id, lake_id) DO UPDATE SET is_founder = TRUE`,
+                [agentId, lakeId]
+            );
+        }
+        await client.query('COMMIT');
+
+        logActivity({
+            event_type: agentId ? 'lake.founder.set' : 'lake.founder.clear',
+            event_scope: 'lake',
+            actor: { type: 'user', id: req.user?.userId, label: req.user?.email || req.user?.role },
+            target: { type: 'lake', id: lakeId },
+            details: { agent_id: agentId },
+            req,
+        });
+        res.json({ success: true, founderAgentId: agentId });
+    } catch (err) {
+        await client.query('ROLLBACK').catch(() => {});
+        console.error('[lakes.setFounder]', err.message);
+        res.status(500).json({ error: 'Failed to set lake founder.' });
     } finally {
         client.release();
     }

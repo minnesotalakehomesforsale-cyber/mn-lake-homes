@@ -2235,6 +2235,18 @@ async function ensureTables() {
             CREATE INDEX IF NOT EXISTS idx_agent_lakes_lake  ON agent_lakes(lake_id);
             CREATE INDEX IF NOT EXISTS idx_agent_lakes_agent ON agent_lakes(agent_id);
 
+            -- Founder agents, lake by lake. is_founder flags THE founding agent on
+            -- a lake; the partial unique index enforces at most one per lake. The
+            -- lead router gives that founder 70% of the lake's leads (round-robin
+            -- for the rest), mirroring the per-town founder model.
+            ALTER TABLE agent_lakes ADD COLUMN IF NOT EXISTS is_founder BOOLEAN NOT NULL DEFAULT FALSE;
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_agent_lakes_founder_per_lake ON agent_lakes(lake_id) WHERE is_founder;
+            ALTER TABLE lakes ADD COLUMN IF NOT EXISTS lead_routing_counter BIGINT NOT NULL DEFAULT 0;
+            -- A lead can be tied to a specific lake (from the lake page, or the
+            -- nearest lake to its geocoded address) so the lake's founder can claim it.
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS lake_id UUID;
+            CREATE INDEX IF NOT EXISTS idx_leads_lake ON leads(lake_id) WHERE lake_id IS NOT NULL;
+
             CREATE TABLE IF NOT EXISTS blog_post_lakes (
                 id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 blog_post_id UUID NOT NULL REFERENCES blog_posts(id) ON DELETE CASCADE,

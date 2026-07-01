@@ -56,6 +56,7 @@ router.delete('/:id',      verifyToken, c.softDelete);
 // Agent ↔ lake connections
 router.get('/:id/agents',  softAuth,    c.listAgents);
 router.put('/:id/agents',  verifyToken, c.replaceAgents);
+router.put('/:id/founder', verifyToken, c.setFounder);   // seat/clear the lake's founding agent
 
 // Blog post ↔ lake connections (by lake id)
 router.get('/:id/blog-posts', softAuth,    c.listBlogPosts);

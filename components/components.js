@@ -1001,13 +1001,19 @@ window.openForm = function(type, prefill) {
     let leadRef = (data && data._source) || null;
     if (data && data._source) delete data._source;
     if (!leadRef) { try { leadRef = new URLSearchParams(window.location.search).get('ref') || null; } catch (_) {} }
+    // Lake attribution: an explicit prefill._lake wins, else auto-detect from a
+    // /lakes/<slug> page URL. Sent as lake_slug at submit so the lead routes to
+    // that lake's founding agent. Never rendered as a form field.
+    let lakeSlug = (data && data._lake) || null;
+    if (data && data._lake) delete data._lake;
+    if (!lakeSlug) { try { lakeSlug = (window.location.pathname.match(/^\/lakes\/([^\/?#]+)/) || [])[1] || null; } catch (_) {} }
     // Skip any step whose field id is already populated via prefill.
     const filtered = _LF_CFG[t].steps.filter(s => {
         if (s.field.type === 'contact') return true;
         const v = data[s.field.id];
         return v === undefined || v === null || v === '';
     });
-    _lfs = { type: t, step: 0, data, steps: filtered, _leadref: leadRef, _submitted: false };
+    _lfs = { type: t, step: 0, data, steps: filtered, _leadref: leadRef, _lake: lakeSlug, _submitted: false };
     document.getElementById('lf-ok').style.display   = 'none';
     document.getElementById('lf-body').style.display = 'block';
     document.getElementById('lf-overlay').style.display = 'block';
@@ -1100,6 +1106,7 @@ async function _lfDoSubmit() {
                 phone: d.phone||null,
                 notes: notes||null,
                 source: cfg.source,
+                lake_slug:         _lfs._lake || null,
                 property_address:  d.address || null,
                 property_place_id: d.placeId || null,
                 property_street:   d.property_street || null,
