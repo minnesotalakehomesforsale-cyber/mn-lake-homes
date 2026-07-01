@@ -1843,14 +1843,18 @@ const inviteBusiness = async (req, res) => {
         const slugCheck = await client.query(`SELECT 1 FROM businesses WHERE slug = $1`, [slug]);
         if (slugCheck.rowCount) slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
 
-        // Comped: status = 'active', subscription_status = 'active',
-        // tier_comped = TRUE so the Stripe webhook can't downgrade them on
-        // a future cancel/lapse (they have no real subscription).
+        // Invited businesses land in 'pending' (NOT public) so the owner can
+        // log in and finish their profile first — same as a self-signup. Admin
+        // flips status → 'active' to publish once it looks good. They're still
+        // comped: subscription_status = 'active' + tier_comped = TRUE so the
+        // Stripe webhook can't downgrade them (no real subscription), and the
+        // public filter (status='active' AND (subscription_status='active' OR
+        // tier_comped)) shows them the moment they're approved.
         await client.query(
             `INSERT INTO businesses
                (user_id, slug, name, type, state, status,
                 subscription_status, tier, tier_comped)
-             VALUES ($1, $2, $3, $4, 'MN', 'active',
+             VALUES ($1, $2, $3, $4, 'MN', 'pending',
                      'active', $5, TRUE)`,
             [userId, slug, business_name, business_type, comp_tier]
         );
