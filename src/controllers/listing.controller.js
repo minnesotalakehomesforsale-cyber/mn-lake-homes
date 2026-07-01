@@ -3,9 +3,59 @@
 // the /listings/:slug detail page (RealEstateListing JSON-LD), and admin CRUD.
 
 const pool = require('../database/pool');
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
 const { logActivity } = require('../services/activity-log');
 
 const isAdmin = (req) => req.user && (req.user.role === 'admin' || req.user.role === 'super_admin');
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key:    process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure:     true,
+});
+
+const listingUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 12 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => (/^image\//.test(file.mimetype) ? cb(null, true) : cb(new Error('Please upload an image file.'))),
+}).array('images', 20);
+
+function bufferToCloudinary(buffer) {
+    return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+            {
+                folder: 'mnlakehomes/listings',
+                resource_type: 'image',
+                transformation: [{ width: 2000, height: 2000, crop: 'limit' }, { quality: 'auto:good' }],
+            },
+            (err, result) => (err ? reject(err) : resolve(result))
+        );
+        stream.end(buffer);
+    });
+}
+
+// POST /api/listings/admin/upload — multipart 'images' (1..20). Returns { urls }.
+exports.uploadImages = (req, res) => {
+    if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
+    if (!process.env.CLOUDINARY_CLOUD_NAME) return res.status(503).json({ error: 'Image uploads are not configured (Cloudinary env missing).' });
+    listingUpload(req, res, async (err) => {
+        if (err) return res.status(400).json({ error: err.message || 'Upload failed.' });
+        if (!req.files || !req.files.length) return res.status(400).json({ error: 'No image provided.' });
+        try {
+            const urls = [];
+            for (const f of req.files) {
+                const r = await bufferToCloudinary(f.buffer);
+                urls.push(r.secure_url);
+            }
+            res.json({ urls });
+        } catch (e) {
+            console.error('[listings.uploadImages]', e.message);
+            res.status(500).json({ error: 'Image upload failed.' });
+        }
+    });
+};
 
 const PUBLIC_COLS = `id, slug, lake_id, agent_id, title, address, city, state, zip,
     price, beds, baths, sqft, lot_acres, waterfront_feet, description,
@@ -190,6 +240,121 @@ exports.remove = async (req, res) => {
     } catch (err) {
         console.error('[listings.remove]', err.message);
         res.status(500).json({ error: 'Could not delete the listing.' });
+    }
+};
+
+// ─── Bulk import / MLS feed sync ────────────────────────────────────────────
+// Upsert a batch of listings in OUR field shape. Keyed on mls_number when
+// present (so re-imports update in place instead of duplicating); otherwise a
+// fresh slugged INSERT. Returns { created, updated, skipped }.
+async function upsertMany(items) {
+    let created = 0, updated = 0, skipped = 0;
+    for (const raw of items) {
+        try {
+            const v = bodyToCols(raw);
+            if (!v.title) { skipped++; continue; }
+            const cols = Object.keys(v);
+            let existing = null;
+            if (v.mls_number) {
+                existing = (await pool.query(`SELECT id FROM listings WHERE mls_number = $1 LIMIT 1`, [v.mls_number])).rows[0] || null;
+            }
+            if (existing) {
+                const set = cols.map((k, i) => `${k} = $${i + 2}`).join(', ');
+                await pool.query(`UPDATE listings SET ${set}, updated_at = NOW() WHERE id = $1`, [existing.id, ...cols.map(k => v[k])]);
+                updated++;
+            } else {
+                const slug = await uniqueSlug(slugify(raw.slug || v.title));
+                const ph = cols.map((_, i) => `$${i + 2}`).join(', ');
+                await pool.query(`INSERT INTO listings (slug, ${cols.join(', ')}) VALUES ($1, ${ph})`, [slug, ...cols.map(k => v[k])]);
+                created++;
+            }
+        } catch (e) {
+            console.error('[listings.upsertMany] row skipped:', e.message);
+            skipped++;
+        }
+    }
+    return { created, updated, skipped };
+}
+
+// POST /api/listings/admin/import  { listings: [ {our field shape}, ... ] }
+exports.importBatch = async (req, res) => {
+    if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
+    const items = Array.isArray(req.body?.listings) ? req.body.listings : null;
+    if (!items) return res.status(400).json({ error: 'Body must be { listings: [ ... ] }.' });
+    if (items.length > 2000) return res.status(400).json({ error: 'Max 2000 listings per import.' });
+    try {
+        const result = await upsertMany(items);
+        logActivity({
+            event_type: 'listing.import', event_scope: 'listing',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.email || 'admin' },
+            target: { type: 'listing' }, details: { ...result, total: items.length }, req,
+        });
+        res.json({ success: true, total: items.length, ...result });
+    } catch (err) {
+        console.error('[listings.importBatch]', err.message);
+        res.status(500).json({ error: 'Import failed.' });
+    }
+};
+
+// Map a RESO Web API record (the common MLS standard) → our field shape.
+function mapResoRecord(r) {
+    const media = Array.isArray(r.Media) ? r.Media.map(m => m && m.MediaURL).filter(Boolean) : [];
+    const active = r.StandardStatus === 'Active' || r.MlsStatus === 'Active';
+    return {
+        mls_number:      r.ListingKey || r.ListingId || r.ListingKeyNumeric || null,
+        title:           r.UnparsedAddress || [r.City, r.StateOrProvince].filter(Boolean).join(', ') || 'Lake Property',
+        address:         r.UnparsedAddress || null,
+        city:            r.City || null,
+        state:           r.StateOrProvince || 'MN',
+        zip:             r.PostalCode || null,
+        price:           r.ListPrice ?? null,
+        beds:            r.BedroomsTotal ?? null,
+        baths:           r.BathroomsTotalInteger ?? r.BathroomsTotalDecimal ?? null,
+        sqft:            r.LivingArea ?? r.AboveGradeFinishedArea ?? null,
+        lot_acres:       r.LotSizeAcres ?? null,
+        waterfront_feet: r.WaterfrontFeet ?? null,
+        description:     r.PublicRemarks || null,
+        featured_image_url: media[0] || null,
+        gallery:         media.slice(1),
+        latitude:        r.Latitude ?? null,
+        longitude:       r.Longitude ?? null,
+        external_url:    r.ListingURL || null,
+        status:          active ? 'active' : 'pending',
+    };
+}
+
+// POST /api/listings/admin/sync-feed — pull from a configured RESO Web API /
+// JSON feed and upsert. Ready for real credentials: set MLS_FEED_URL (+ optional
+// MLS_FEED_TOKEN bearer). Until then it returns a clear "not configured" note.
+exports.syncFeed = async (req, res) => {
+    if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
+    const url = process.env.MLS_FEED_URL;
+    if (!url) {
+        return res.status(503).json({
+            error: 'No MLS feed configured.',
+            howto: 'Set MLS_FEED_URL to your RESO Web API query (or a JSON feed URL) and, if needed, MLS_FEED_TOKEN for the bearer token. Then click Sync again. The importer maps standard RESO fields (ListingKey, ListPrice, BedroomsTotal, LivingArea, UnparsedAddress, Media, etc.) automatically.',
+            configured: false,
+        });
+    }
+    try {
+        const headers = { Accept: 'application/json' };
+        if (process.env.MLS_FEED_TOKEN) headers.Authorization = `Bearer ${process.env.MLS_FEED_TOKEN}`;
+        const r = await fetch(url, { headers });
+        if (!r.ok) return res.status(502).json({ error: `Feed responded ${r.status}.` });
+        const data = await r.json();
+        const records = Array.isArray(data) ? data : (Array.isArray(data.value) ? data.value : []);
+        if (!records.length) return res.json({ success: true, total: 0, created: 0, updated: 0, skipped: 0, note: 'Feed returned no records.' });
+        const mapped = records.map(mapResoRecord).filter(x => x.title);
+        const result = await upsertMany(mapped);
+        logActivity({
+            event_type: 'listing.feed_sync', event_scope: 'listing',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.email || 'admin' },
+            target: { type: 'listing' }, details: { ...result, total: records.length }, req,
+        });
+        res.json({ success: true, total: records.length, ...result });
+    } catch (err) {
+        console.error('[listings.syncFeed]', err.message);
+        res.status(500).json({ error: `Feed sync failed: ${err.message}` });
     }
 };
 

@@ -49,7 +49,10 @@
                     <h1 style="font-size:1.85rem;font-weight:800;letter-spacing:-0.75px;margin:0 0 0.25rem;">Listings</h1>
                     <p style="color:#718096;font-size:0.95rem;margin:0;">Property listings. Tie each to a lake to power the live "homes for sale" count + grid on that lake's page, and each gets its own SEO page.</p>
                 </div>
-                <button class="btn-primary" onclick="openCreate()">+ New listing</button>
+                <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+                    <button class="btn-ghost" onclick="openImport()">⇪ Import / MLS sync</button>
+                    <button class="btn-primary" onclick="openCreate()">+ New listing</button>
+                </div>
             </header>
             <div id="table-wrap"><div class="ls-empty">Loading…</div></div>
         </main>
@@ -82,7 +85,20 @@
                     <div class="fld"><label>Lot (acres)</label><input id="f-lot" type="number" step="0.01"></div>
                     <div class="fld"><label>Waterfront (ft)</label><input id="f-wf" type="number"></div>
                 </div>
-                <div class="fld"><label>Featured image URL</label><input id="f-image" placeholder="https://…"></div>
+                <div class="fld">
+                    <label>Featured image</label>
+                    <div style="display:flex;gap:0.5rem;align-items:center;">
+                        <input id="f-image" placeholder="https://… (or upload →)" style="flex:1;" oninput="previewFeatured()">
+                        <label class="btn-ghost" style="cursor:pointer;margin:0;white-space:nowrap;">Upload<input type="file" accept="image/*" hidden onchange="uploadFeatured(this)"></label>
+                    </div>
+                    <img id="f-image-preview" alt="" style="display:none;margin-top:0.5rem;max-height:120px;border-radius:8px;border:1px solid #edf2f7;">
+                </div>
+                <div class="fld">
+                    <label>Gallery photos</label>
+                    <label class="btn-ghost" style="cursor:pointer;display:inline-block;">+ Add photos<input type="file" accept="image/*" multiple hidden onchange="uploadGallery(this)"></label>
+                    <span id="f-gallery-status" style="color:#a0aec0;font-size:0.82rem;margin-left:0.5rem;"></span>
+                    <div id="f-gallery-preview" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.6rem;"></div>
+                </div>
                 <div class="grid2">
                     <div class="fld"><label>MLS #</label><input id="f-mls"></div>
                     <div class="fld"><label>External listing URL</label><input id="f-ext" placeholder="https://…"></div>
@@ -99,8 +115,27 @@
         </div>
     </div>
 
+    <div id="import-modal" class="ovl" onclick="if(event.target===this)closeImport()">
+        <div class="modal" style="max-width:640px;">
+            <div class="m-hdr"><h2>Import listings</h2><button class="m-close" onclick="closeImport()">×</button></div>
+            <div class="m-body">
+                <div id="imp-msg" class="err"></div>
+                <p style="color:#718096;font-size:0.9rem;margin:0 0 1rem;">Paste a <strong>JSON array</strong> of listings. Recognized fields: <code>title, mls_number, price, beds, baths, sqft, lot_acres, waterfront_feet, address, city, state, zip, description, featured_image_url, external_url, status, lake_id</code>. Rows with a matching <strong>MLS #</strong> update in place instead of duplicating.</p>
+                <textarea id="imp-json" rows="9" placeholder='[{"title":"4BR Gull Lake Cabin","mls_number":"6543210","price":750000,"beds":4,"baths":3,"sqft":2400,"city":"Nisswa","status":"active"}]' style="width:100%;padding:0.7rem;border:1px solid #e2e8f0;border-radius:8px;font-family:monospace;font-size:0.8rem;box-sizing:border-box;"></textarea>
+                <div style="display:flex;gap:0.5rem;justify-content:space-between;margin-top:1rem;flex-wrap:wrap;">
+                    <button class="btn-ghost" onclick="syncFeed()" title="Pull from your configured RESO/MLS feed (MLS_FEED_URL env)">⟳ Sync from MLS feed</button>
+                    <div style="display:flex;gap:0.5rem;">
+                        <button class="btn-ghost" onclick="closeImport()">Cancel</button>
+                        <button class="btn-primary" id="imp-btn" onclick="runImport()">Import JSON</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let _lakes = [];
+        let _gallery = [];
         function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
         function money(n){return n==null||n===''?'—':'$'+Number(n).toLocaleString('en-US');}
 
@@ -147,7 +182,46 @@
             setV('f-beds', r.beds); setV('f-baths', r.baths); setV('f-sqft', r.sqft);
             setV('f-lot', r.lot_acres); setV('f-wf', r.waterfront_feet); setV('f-image', r.featured_image_url);
             setV('f-mls', r.mls_number); setV('f-ext', r.external_url); setV('f-desc', r.description);
+            let g = r.gallery; if (typeof g === 'string') { try { g = JSON.parse(g); } catch { g = []; } }
+            _gallery = Array.isArray(g) ? g.slice() : [];
+            renderGalleryPreview();
+            previewFeatured();
         }
+
+        // ── Image upload (Cloudinary) ──────────────────────────────────────────
+        async function uploadFiles(files) {
+            const fd = new FormData();
+            [...files].forEach(f => fd.append('images', f));
+            const res = await fetch('/api/listings/admin/upload', { method: 'POST', body: fd });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || 'Upload failed.');
+            return data.urls || [];
+        }
+        function previewFeatured() {
+            const img = document.getElementById('f-image-preview');
+            const url = V('f-image').trim();
+            if (url) { img.src = url; img.style.display = 'block'; } else { img.style.display = 'none'; }
+        }
+        async function uploadFeatured(input) {
+            if (!input.files || !input.files[0]) return;
+            try { const [url] = await uploadFiles([input.files[0]]); if (url) { setV('f-image', url); previewFeatured(); } }
+            catch (e) { alert(e.message); } finally { input.value = ''; }
+        }
+        async function uploadGallery(input) {
+            if (!input.files || !input.files.length) return;
+            const status = document.getElementById('f-gallery-status');
+            status.textContent = 'Uploading…';
+            try { const urls = await uploadFiles(input.files); _gallery.push(...urls); renderGalleryPreview(); status.textContent = ''; }
+            catch (e) { status.textContent = ''; alert(e.message); } finally { input.value = ''; }
+        }
+        function renderGalleryPreview() {
+            document.getElementById('f-gallery-preview').innerHTML = _gallery.map((u, i) => `
+                <div style="position:relative;">
+                    <img src="${esc(u)}" alt="" style="width:64px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #edf2f7;">
+                    <button type="button" onclick="removeGalleryImg(${i})" title="Remove" style="position:absolute;top:-6px;right:-6px;background:#c53030;color:#fff;border:0;border-radius:50%;width:18px;height:18px;font-size:0.7rem;line-height:1;cursor:pointer;">×</button>
+                </div>`).join('');
+        }
+        function removeGalleryImg(i) { _gallery.splice(i, 1); renderGalleryPreview(); }
 
         function openCreate() {
             fillForm({ status:'active', state:'MN' });
@@ -180,7 +254,50 @@
                 price:V('f-price'), beds:V('f-beds'), baths:V('f-baths'), sqft:V('f-sqft'),
                 lot_acres:V('f-lot'), waterfront_feet:V('f-wf'), featured_image_url:V('f-image').trim(),
                 mls_number:V('f-mls').trim(), external_url:V('f-ext').trim(), description:V('f-desc').trim(),
+                gallery:_gallery,
             };
+        }
+
+        // ── Import / MLS feed sync ─────────────────────────────────────────────
+        function openImport() {
+            document.getElementById('imp-json').value = '';
+            const m = document.getElementById('imp-msg'); m.style.display = 'none';
+            document.getElementById('import-modal').classList.add('open');
+        }
+        function closeImport() { document.getElementById('import-modal').classList.remove('open'); }
+        function impMsg(text, ok) {
+            const m = document.getElementById('imp-msg');
+            m.textContent = text; m.style.display = 'block';
+            m.style.background = ok ? '#f0fff4' : '#fff5f5';
+            m.style.color = ok ? '#276749' : '#c53030';
+            m.style.borderColor = ok ? '#9ae6b4' : '#feb2b2';
+        }
+        async function runImport() {
+            let listings;
+            try { listings = JSON.parse(document.getElementById('imp-json').value); }
+            catch { return impMsg('That is not valid JSON.', false); }
+            if (!Array.isArray(listings)) return impMsg('JSON must be an array of listing objects.', false);
+            const btn = document.getElementById('imp-btn'); btn.disabled = true; const o = btn.textContent; btn.textContent = 'Importing…';
+            try {
+                const res = await fetch('/api/listings/admin/import', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ listings }),
+                });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) return impMsg(d.error || 'Import failed.', false);
+                impMsg(`✓ ${d.created} created, ${d.updated} updated, ${d.skipped} skipped.`, true);
+                load();
+            } catch { impMsg('Network error.', false); }
+            finally { btn.disabled = false; btn.textContent = o; }
+        }
+        async function syncFeed() {
+            impMsg('Contacting feed…', true);
+            try {
+                const res = await fetch('/api/listings/admin/sync-feed', { method: 'POST' });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) return impMsg((d.error || 'Feed sync failed.') + (d.howto ? '\n\n' + d.howto : ''), false);
+                impMsg(`✓ Synced ${d.total} from feed — ${d.created} created, ${d.updated} updated, ${d.skipped} skipped.`, true);
+                load();
+            } catch { impMsg('Network error.', false); }
         }
 
         async function save() {
