@@ -9,6 +9,7 @@ router.get('/slug/:slug', c.getBySlug);   // single active listing (JSON)
 
 // ─── ADMIN ────────────────────────────────────────────────────────────────
 router.get('/admin',        verifyToken, c.listAdmin);
+router.get('/admin/:id',    verifyToken, c.getAdmin);
 router.post('/admin',       verifyToken, c.create);
 router.put('/admin/:id',    verifyToken, c.update);
 router.delete('/admin/:id', verifyToken, c.remove);

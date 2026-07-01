@@ -91,6 +91,19 @@ exports.listAdmin = async (req, res) => {
     }
 };
 
+// GET /api/listings/admin/:id — full row (any status) for the edit form.
+exports.getAdmin = async (req, res) => {
+    if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
+    try {
+        const { rows } = await pool.query(`SELECT ${PUBLIC_COLS} FROM listings WHERE id = $1 LIMIT 1`, [req.params.id]);
+        if (!rows.length) return res.status(404).json({ error: 'Listing not found.' });
+        res.json(rows[0]);
+    } catch (err) {
+        console.error('[listings.getAdmin]', err.message);
+        res.status(500).json({ error: 'Could not load listing.' });
+    }
+};
+
 const numOrNull = (v) => (v === '' || v === null || v === undefined ? null : Number(v));
 
 function bodyToCols(b) {
