@@ -2667,55 +2667,37 @@ async function ensureTables() {
         await seedBlogPosts();
         await seedBlogRelatedLinks();
         await seedTownContent();
-        await seedPartnerBusinesses();
+        await reconcilePartnerBusinesses();
     } catch (err) {
         console.error(' Table migration warning:', err.message);
     }
 }
 
-// Featured partner businesses we publish editorially (e.g. local-spotlight
-// blog subjects). Source-of-truth: re-applied on every boot so the profile
-// stays live and in sync with the spotlight that links to it.
-async function seedPartnerBusinesses() {
-    const partners = [
-        {
-            slug: 'granite-city-aerial-media',
-            name: 'Granite City Aerial Media',
-            type: 'photographer',
-            description: 'Premium drone photography and cinematic video for Minnesota real estate — aerial stills, interior photography, and social content that shows a lake home (and its shoreline, frontage, and lot) the way buyers actually want to see it. Based near St. Cloud, traveling statewide.',
-            phone: null,
-            email: null,
-            website_url: 'https://granitecityaerialmedia.com',
-            instagram_url: 'https://www.instagram.com/granitecityaerial',
-            // Exact Facebook page URL unverified — left null so we don't ship a
-            // broken social link. Add it here once confirmed.
-            facebook_url: null,
-            city: 'St. Cloud',
-            state: 'MN',
-            featured_image_url: '/assets/images/blog/hero-local-spotlight-granite-city-aerial-media.jpg',
-        },
-    ];
-    let n = 0;
-    for (const b of partners) {
-        const r = await pool.query(`
-            INSERT INTO businesses
-                (slug, name, type, description, phone, email, website_url,
-                 instagram_url, facebook_url, city, state, featured_image_url, status)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'active')
-            ON CONFLICT (slug) DO UPDATE SET
-                name = EXCLUDED.name, type = EXCLUDED.type,
-                description = EXCLUDED.description, website_url = EXCLUDED.website_url,
-                instagram_url = EXCLUDED.instagram_url, facebook_url = EXCLUDED.facebook_url,
-                city = EXCLUDED.city, state = EXCLUDED.state,
-                featured_image_url = EXCLUDED.featured_image_url,
-                status = 'active', updated_at = NOW()
-        `, [
-            b.slug, b.name, b.type, b.description, b.phone, b.email, b.website_url,
-            b.instagram_url, b.facebook_url, b.city, b.state, b.featured_image_url,
-        ]);
-        n += r.rowCount;
-    }
-    if (n > 0) console.log(` Seeded/updated ${n} partner business(es).`);
+// Reconcile the Granite City Aerial Media spotlight with the OWNER's real
+// business profile. We initially seeded our own business row for the local
+// spotlight before realizing the owner had already created their own (with an
+// account). This removes OUR seeded duplicate — guarded to the seeded slug with
+// NO owner account, so it can never touch the owner's real record — and
+// re-points the spotlight blog (its business tag + in-body profile links) at
+// the owner's real profile slug. Fully idempotent; safe to run every boot.
+async function reconcilePartnerBusinesses() {
+    const OWNER = 'photographer-granite-city-aerial-llc'; // the owner's real, account-backed profile
+    const DUP = 'granite-city-aerial-media';              // our seeded duplicate (no user account)
+    // Delete only the ownerless seeded duplicate — never a real, account-backed record.
+    const del = await pool.query(
+        `DELETE FROM businesses WHERE slug = $1 AND user_id IS NULL`, [DUP]
+    );
+    // Point the spotlight post's business tag + any in-body /businesses/ links
+    // at the owner's real profile.
+    await pool.query(
+        `UPDATE blog_posts
+            SET featured_business_slug = $1,
+                body = REPLACE(body, '/businesses/' || $2, '/businesses/' || $1)
+          WHERE featured_business_slug = $2
+             OR body LIKE '%/businesses/' || $2 || '%'`,
+        [OWNER, DUP]
+    );
+    if (del.rowCount > 0) console.log(' Removed duplicate seeded Granite City business; spotlight re-pointed to owner profile.');
 }
 
 // ─── Backfill missing business coordinates ──────────────────────────────
