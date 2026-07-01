@@ -822,6 +822,11 @@ app.get('/businesses/:slug', async (req, res, next) => {
             return;
         }
 
+        // Real approved-review aggregate for the AggregateRating JSON-LD
+        // (omitted entirely when there are none — never fabricated).
+        const { aggregateForSubject } = require('./controllers/review.controller');
+        const bizRating = await aggregateForSubject('business', biz.id).catch(() => ({ count: 0, average: 0 }));
+
         // Featured Blogs — published posts tagged to this business via
         // blog_posts.featured_business_slug. The section is omitted entirely
         // (token → '') when there are no published posts yet.
@@ -909,6 +914,13 @@ app.get('/businesses/:slug', async (req, res, next) => {
                     longitude: biz.longitude,
                 } : undefined,
                 sameAs: [biz.website_url, biz.instagram_url, biz.facebook_url].filter(Boolean),
+                aggregateRating: bizRating.count > 0 ? {
+                    '@type': 'AggregateRating',
+                    ratingValue: bizRating.average,
+                    reviewCount: bizRating.count,
+                    bestRating: 5,
+                    worstRating: 1,
+                } : undefined,
             });
             const breadcrumbJsonLd = JSON.stringify({
                 '@context': 'https://schema.org',
@@ -927,6 +939,7 @@ app.get('/businesses/:slug', async (req, res, next) => {
                 '{{BUSINESS_SEO_TITLE}}':       escapeHtml(title),
                 '{{BUSINESS_SEO_DESCRIPTION}}': escapeHtml(desc),
                 '{{BUSINESS_NAME}}':            escapeHtml(biz.name),
+                '{{BUSINESS_ID}}':             escapeHtml(biz.id),
                 '{{BUSINESS_SLUG}}':            escapeHtml(biz.slug),
                 '{{BUSINESS_TYPE}}':            escapeHtml(biz.type || ''),
                 '{{BUSINESS_TYPE_LABEL}}':      escapeHtml(prettyType),
@@ -1426,6 +1439,11 @@ app.get('/agents/:slug', async (req, res, next) => {
         const agent = rows[0];
         if (!agent) { renderFriendly404(res, { kind: 'agent', slug: req.params.slug }); return; }
 
+        // Real approved-review aggregate — drives the ⭐ AggregateRating in the
+        // JSON-LD. count 0 → omitted entirely (never fabricate ratings).
+        const { aggregateForSubject } = require('./controllers/review.controller');
+        const agentRating = await aggregateForSubject('agent', agent.id).catch(() => ({ count: 0, average: 0 }));
+
         const tplPath = path.join(PROJECT_ROOT, 'pages/public/agent-profile.html');
         fs.readFile(tplPath, 'utf8', (err, html) => {
             if (err) return next(err);
@@ -1460,6 +1478,15 @@ app.get('/agents/:slug', async (req, res, next) => {
                 sameAs: [agent.website_url, agent.facebook_url, agent.instagram_url, agent.linkedin_url].filter(Boolean),
             };
             if (!agentLd.sameAs.length) delete agentLd.sameAs;
+            if (agentRating.count > 0) {
+                agentLd.aggregateRating = {
+                    '@type': 'AggregateRating',
+                    ratingValue: agentRating.average,
+                    reviewCount: agentRating.count,
+                    bestRating: 5,
+                    worstRating: 1,
+                };
+            }
             const breadcrumbLd = {
                 '@context': 'https://schema.org', '@type': 'BreadcrumbList',
                 itemListElement: [
