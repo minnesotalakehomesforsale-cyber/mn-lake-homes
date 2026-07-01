@@ -2955,6 +2955,7 @@ async function ensureTables() {
         `);
 
         await seedBlogPosts();
+        await seedBlogContentV2();
         await seedBlogRelatedLinks();
         await seedTownContent();
         await reconcilePartnerBusinesses();
@@ -3055,6 +3056,32 @@ async function seedBlogPosts() {
         added += r.rowCount;
     }
     if (added > 0) console.log(` Seeded ${added} missing blog post(s).`);
+}
+
+// Push the expanded v2 bodies (src/data/blog-content-v2.js) onto existing
+// posts whose body predates the rewrite. Guarded by the '<!-- blog-v2 -->'
+// marker so it runs exactly once per post and re-deploys are no-ops; it also
+// won't clobber a later admin edit (which drops the marker). read_time is
+// bumped to match the longer content (~200 wpm), never lowered.
+async function seedBlogContentV2() {
+    let map = {};
+    try { map = require('./data/blog-content-v2'); } catch (_) { return; }
+    let updated = 0;
+    for (const [slug, body] of Object.entries(map)) {
+        if (!body || typeof body !== 'string') continue;
+        const words = body.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
+        const readMin = Math.max(4, Math.round(words / 200));
+        const r = await pool.query(
+            `UPDATE blog_posts
+                SET body = $2,
+                    read_time_minutes = GREATEST(COALESCE(read_time_minutes, 0), $3),
+                    updated_at = NOW()
+              WHERE slug = $1 AND deleted_at IS NULL AND body NOT LIKE '%blog-v2%'`,
+            [slug, body, readMin]
+        );
+        updated += r.rowCount;
+    }
+    if (updated > 0) console.log(` Refreshed ${updated} blog post(s) with expanded v2 content.`);
 }
 
 // Internal-linking pass for ALREADY-PUBLISHED "island" posts that predate the
