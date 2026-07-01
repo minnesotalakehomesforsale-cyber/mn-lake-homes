@@ -25,9 +25,15 @@ async function aggregateForSubject(subjectType, subjectId) {
 
 // POST /api/reviews — public submit. Body: { subject_type, subject_id,
 // author_name, author_email?, rating, title?, body? }
+const OK_MSG = { success: true, status: 'pending', message: 'Thanks! Your review will appear once it\'s approved.' };
+
 exports.submit = async (req, res) => {
     try {
         const b = req.body || {};
+        // Honeypot — a hidden field real users never see. Bots fill it. Pretend
+        // success so the bot doesn't learn it was blocked, but store nothing.
+        if (String(b.website || b.hp_url || '').trim()) return res.status(201).json(OK_MSG);
+
         const subjectType = String(b.subject_type || '').trim();
         const subjectId   = String(b.subject_id || '').trim();
         const authorName  = String(b.author_name || '').trim().slice(0, 120);
@@ -43,17 +49,44 @@ exports.submit = async (req, res) => {
             return res.status(400).json({ error: 'Rating must be a whole number from 1 to 5.' });
         }
 
+        // Content heuristic — reviews stuffed with links are almost always spam.
+        const linkCount = ((bodyText || '') + ' ' + (title || '')).match(/https?:\/\//gi)?.length || 0;
+        if (linkCount > 3) return res.status(400).json({ error: 'Your review looks like spam. Please remove links and try again.' });
+
         // Confirm the subject actually exists (and isn't deleted) so reviews
         // can't be attached to arbitrary UUIDs.
         const table = SUBJECTS[subjectType];
         const exists = await pool.query(`SELECT 1 FROM ${table} WHERE id = $1 LIMIT 1`, [subjectId]);
         if (!exists.rowCount) return res.status(404).json({ error: 'That profile no longer exists.' });
 
+        // Rate limit by IP: cap total per hour, and stop one IP review-bombing
+        // a single subject. Best-effort (skips cleanly if IP can't be read).
+        const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+                   || req.socket?.remoteAddress || '';
+        if (ip) {
+            const hourly = await pool.query(
+                `SELECT COUNT(*)::int AS c FROM reviews WHERE author_ip = $1 AND created_at > NOW() - INTERVAL '1 hour'`,
+                [ip]
+            );
+            if (hourly.rows[0].c >= 5) {
+                return res.status(429).json({ error: 'You have submitted several reviews recently — please try again later.' });
+            }
+            const perSubject = await pool.query(
+                `SELECT COUNT(*)::int AS c FROM reviews
+                  WHERE author_ip = $1 AND subject_type = $2 AND subject_id = $3
+                    AND created_at > NOW() - INTERVAL '24 hours'`,
+                [ip, subjectType, subjectId]
+            );
+            if (perSubject.rows[0].c >= 2) {
+                return res.status(429).json({ error: 'You have already reviewed this recently. Thank you!' });
+            }
+        }
+
         const { rows } = await pool.query(
-            `INSERT INTO reviews (subject_type, subject_id, author_name, author_email, rating, title, body, source)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, 'onsite')
+            `INSERT INTO reviews (subject_type, subject_id, author_name, author_email, rating, title, body, source, author_ip)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'onsite', $8)
              RETURNING id`,
-            [subjectType, subjectId, authorName, authorEmail, rating, title, bodyText]
+            [subjectType, subjectId, authorName, authorEmail, rating, title, bodyText, ip || null]
         );
 
         logActivity({

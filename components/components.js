@@ -652,6 +652,7 @@ class ReviewsWidget extends HTMLElement {
                     <p style="color:#718096;font-size:0.9rem;margin:0 0 1.25rem;">Reviews are checked before they appear.</p>
                     <div class="rvw-msg" style="display:none;padding:0.8rem 1rem;border-radius:8px;margin-bottom:1rem;font-weight:600;"></div>
                     <form class="rvw-form">
+                        <input class="rvw-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
                         <div style="margin-bottom:1rem;">
                             <label style="display:block;font-weight:700;color:#4a5568;font-size:0.8rem;text-transform:uppercase;margin-bottom:0.35rem;">Your rating *</label>
                             <div class="rvw-star-picker" style="display:inline-flex;">${starPicker}</div>
@@ -707,6 +708,7 @@ class ReviewsWidget extends HTMLElement {
                         rating: this._rating,
                         title: this.querySelector('.rvw-title').value.trim(),
                         body: this.querySelector('.rvw-body').value.trim(),
+                        website: (this.querySelector('.rvw-hp') || {}).value || '',
                     }),
                 });
                 const data = await res.json().catch(() => ({}));

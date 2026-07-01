@@ -2474,11 +2474,14 @@ async function ensureTables() {
                 body         TEXT,
                 status       VARCHAR(16) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
                 source       VARCHAR(24) NOT NULL DEFAULT 'onsite',
+                author_ip    VARCHAR(64),
                 created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 approved_at  TIMESTAMPTZ
             );
+            ALTER TABLE reviews ADD COLUMN IF NOT EXISTS author_ip VARCHAR(64);
             CREATE INDEX IF NOT EXISTS idx_reviews_subject ON reviews(subject_type, subject_id);
             CREATE INDEX IF NOT EXISTS idx_reviews_status  ON reviews(status);
+            CREATE INDEX IF NOT EXISTS idx_reviews_ip_time ON reviews(author_ip, created_at);
 
             -- Manual property listings (no MLS feed yet). Each optionally ties to
             -- a lake so lake pages can show a live "N homes for sale" count + grid,
