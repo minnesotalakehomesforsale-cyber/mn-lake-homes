@@ -803,6 +803,240 @@ const drafts = [
 <h2>Buy with an investor's eye</h2>
 <p>The best STR cabins aren't always the prettiest — they're the ones that pencil out on the right lake, in a jurisdiction that allows rentals, with frontage that photographs well and sleeps a crowd. A local specialist knows which lakes and towns are rental-friendly and which aren't. <a href="/pages/public/buy.html">Get matched with a Minnesota lake specialist</a> — free, no commission — and vet the property itself with the <a href="/lake-buyer-checklist">buyer's checklist</a>.</p>`,
     },
+    {
+        title: "Whitefish Chain of Lakes: A Buyer's Guide",
+        slug: "whitefish-chain-buyers-guide",
+        tag: "Choosing a Lake",
+        read_time_minutes: 7,
+        is_published: false,
+        cover_image_url: "/assets/images/blog/hero-whitefish-chain-buyers-guide.jpg",
+        excerpt: "Fourteen connected lakes, clear water, and some of the most sought-after cabins in the Brainerd Lakes area. Here's what to know before you buy on the Whitefish Chain.",
+        seo_title: "Whitefish Chain of Lakes MN: Homes & Buyer's Guide | MN Lake Homes",
+        seo_description: "A buyer's guide to the Whitefish Chain near Crosslake — the 14 connected lakes, water quality, price tiers, and how to buy a cabin on Minnesota's premier chain.",
+        body: `<p>Ask anyone who knows the Brainerd Lakes area to name the crown jewel and you'll hear the same answer: the <a href="/lakes/whitefish-chain">Whitefish Chain</a>. Fourteen connected lakes, deep clear water, and a boating culture that runs from quiet morning coffee on the dock to a summer afternoon rafted up in a bay — it's one of the most desirable places to own a cabin in Minnesota, and priced accordingly.</p>
+<h2>What makes the Chain special</h2>
+<p>The draw is the word "chain." You can idle out of a quiet channel and be on big open water in minutes, then duck back into a protected bay when the wind picks up. That connectivity — plus water clarity that rivals anything in the region — is what keeps demand (and prices) high. It's a step up in both scenery and cost from many single-basin lakes nearby.</p>
+<h2>Where it sits</h2>
+<p>The Chain is anchored by Crosslake and sits within easy reach of <a href="/towns/nisswa">Nisswa</a> and <a href="/towns/brainerd">Brainerd</a>, so you get true up-north water with dining, golf, and services close by. If you're weighing it against other marquee water, our <a href="/blog/lake-minnetonka-vs-brainerd-lakes">Lake Minnetonka vs. the Brainerd Lakes</a> comparison and the broader <a href="/blog/brainerd-lakes-area-cabin-guide">Brainerd Lakes cabin guide</a> are good next reads.</p>
+<h2>What to check before you buy</h2>
+<ul>
+<li><strong>Which lake in the Chain.</strong> The connected basins vary in depth, traffic, and price. A big-water lot lives very differently than a quiet back bay.</li>
+<li><strong>Frontage and exposure.</strong> Open-fetch shoreline takes more wind and wave action; protected bays are calmer but can weed up. Check the <a href="https://www.dnr.state.mn.us/lakefind/index.html" target="_blank" rel="noopener">DNR LakeFinder</a> for depth and fish surveys.</li>
+<li><strong>The full cost of ownership.</strong> Premium water means premium taxes, insurance, and dock/lift setups — run the numbers with our <a href="/lake-mortgage-calculator">lake cost calculator</a> and read <a href="/blog/true-cost-of-owning-a-minnesota-lake-cabin">the true cost of owning a Minnesota cabin</a>.</li>
+</ul>
+<h2>How to shop it</h2>
+<p>Inventory on the Chain moves fast and the best lots rarely hit the open market cold. <a href="/compare-lakes">Compare the Chain</a> against nearby lakes, take the <a href="/find-your-lake">Find Your Lake quiz</a> to confirm it fits your budget and vibe, and <a href="/pages/public/buy.html">get matched with a local specialist</a> who watches this water year-round — free, and no commission out of your pocket.</p>`
+    },
+    {
+        title: "The Alexandria Lakes Area: Where to Buy a Lake Home",
+        slug: "alexandria-lakes-area-guide",
+        tag: "Choosing a Lake",
+        read_time_minutes: 7,
+        is_published: false,
+        cover_image_url: "/assets/images/blog/hero-alexandria-lakes-area-guide.jpg",
+        excerpt: "Clear prairie-edge lakes, a real town year-round, and an easy drive from the metro. A buyer's guide to the Alexandria lakes area and its best water.",
+        seo_title: "Alexandria MN Lakes Area: Lake Home Buyer's Guide | MN Lake Homes",
+        seo_description: "Buying a lake home near Alexandria, MN — Lake Carlos, Lake Minnewaska, the chain of lakes, drive time from the Twin Cities, and how to find the right water.",
+        body: `<p>The <a href="/towns/alexandria">Alexandria</a> lakes area is one of Minnesota's most underrated places to own water. It sits where the prairie meets the lakes, about two to two-and-a-half hours from the Twin Cities, and it comes with something a lot of up-north spots don't: a real town that's busy all year, not just in July.</p>
+<h2>The lakes</h2>
+<p>Alexandria anchors a chain of clean, popular lakes. <a href="/lakes/lake-carlos">Lake Carlos</a> is the deep, clear big-water option with a state park on its shore; <a href="/lakes/lake-minnewaska">Lake Minnewaska</a>, just west in Glenwood, is one of the largest lakes in the region and known for wide-open views. Around them sit dozens of smaller lakes with everything from starter cabins to legacy estates.</p>
+<h2>Why buyers like it here</h2>
+<ul>
+<li><strong>Year-round town.</strong> Hospitals, restaurants, and shopping mean it works as a primary residence or a retirement landing spot, not just a summer cabin — see <a href="/blog/retiring-on-a-minnesota-lake">retiring on a Minnesota lake</a>.</li>
+<li><strong>Reasonable drive.</strong> Close enough for weekends, far enough to feel away. Compare it with the <a href="/blog/best-minnesota-lakes-near-twin-cities">best lakes near the Twin Cities</a>.</li>
+<li><strong>Family water.</strong> Sandy swimming and calmer bays make it a strong pick for families — more in <a href="/blog/best-minnesota-lakes-for-families">the best Minnesota lakes for families</a>.</li>
+</ul>
+<h2>Before you buy</h2>
+<p>Check each lake's depth, clarity, and fish surveys on the <a href="https://www.dnr.state.mn.us/lakefind/index.html" target="_blank" rel="noopener">DNR LakeFinder</a>, and weigh price tiers across the chain — a lot on Carlos prices very differently than one on a small back lake. Use the <a href="/find-your-lake">Find Your Lake quiz</a> and <a href="/compare-lakes">compare lakes side by side</a>, then <a href="/pages/public/buy.html">get matched with a local Alexandria-area specialist</a> — free, no commission.</p>`
+    },
+    {
+        title: "First-Time Lake Home Buyer? A Minnesota Starter Guide",
+        slug: "first-time-lake-home-buyer-guide",
+        tag: "Buyer Guide",
+        read_time_minutes: 7,
+        is_published: false,
+        cover_image_url: "/assets/images/blog/hero-first-time-lake-home-buyer-guide.jpg",
+        excerpt: "Buying your first lake place is different from buying a house in town. Here's the plain-English roadmap — budget, water, inspections, and the lakefront-only stuff nobody warns you about.",
+        seo_title: "First-Time Lake Home Buyer Guide (Minnesota) | MN Lake Homes",
+        seo_description: "A step-by-step starter guide for first-time Minnesota lake home buyers: setting a budget, choosing the water, septic and shoreline checks, and making a smart offer.",
+        body: `<p>Buying your first lake home is exciting — and it's genuinely different from buying a house in town. The value is in the shoreline, half the important stuff is underwater or underground, and a few lakefront-specific surprises can cost real money. Here's the roadmap.</p>
+<h2>1. Set a real budget first</h2>
+<p>Lakefront carries costs a normal home doesn't: higher taxes, waterfront insurance, docks and lifts, and often a private septic and well. Run your monthly number in the <a href="/lake-mortgage-calculator">lake cost calculator</a> before you fall in love with a listing, and read <a href="/blog/true-cost-of-owning-a-minnesota-lake-cabin">the true cost of owning a Minnesota cabin</a> and our <a href="/blog/minnesota-lake-home-financing-guide">lake home financing guide</a>.</p>
+<h2>2. Pick the water, then the house</h2>
+<p>You can remodel a house; you can't move a lake. Decide on budget, drive time, and vibe using the <a href="/find-your-lake">Find Your Lake quiz</a>, then narrow with the <a href="/compare-lakes">comparison tool</a>. Our <a href="/blog/buying-a-cabin-in-minnesota-2026-guide">2026 cabin-buying guide</a> and <a href="/blog/5-things-to-look-for-in-a-lake-property">5 things to look for in a lake property</a> go deeper.</p>
+<h2>3. Inspect the lakefront things</h2>
+<ul>
+<li><strong>Septic &amp; well.</strong> Most lake homes are on private systems — get the compliance certificate and water test. See the <a href="https://www.pca.state.mn.us/water/subsurface-sewage-treatment-systems-ssts" target="_blank" rel="noopener">MPCA SSTS</a> program.</li>
+<li><strong>Shoreline &amp; setbacks.</strong> What you can build near the water is regulated — read <a href="/blog/minnesota-shoreland-rules-before-you-buy">Minnesota shoreland rules</a>.</li>
+<li><strong>The bottom &amp; frontage.</strong> Walk the shore: hard sand vs. soft muck changes both lifestyle and value.</li>
+</ul>
+<p>Print the interactive <a href="/lake-buyer-checklist">lake home buyer's checklist</a> and bring it to every showing.</p>
+<h2>4. Get a specialist in your corner</h2>
+<p>A lake agent reads water, not just houses — and it's <a href="/pages/public/buy.html">free to get matched</a>, with no commission out of your pocket. That's the single easiest win for a first-time buyer.</p>`
+    },
+    {
+        title: "Lake Water Quality in Minnesota: Clarity, Weeds & AIS",
+        slug: "minnesota-lake-water-quality-guide",
+        tag: "Buyer Guide",
+        read_time_minutes: 7,
+        is_published: false,
+        cover_image_url: "/assets/images/blog/hero-minnesota-lake-water-quality-guide.jpg",
+        excerpt: "Two lakes ten miles apart can have completely different water. Here's how to read clarity, weeds, algae, and aquatic invasive species before you buy.",
+        seo_title: "Minnesota Lake Water Quality: Clarity, Weeds & AIS Guide | MN Lake Homes",
+        seo_description: "How to evaluate a Minnesota lake's water quality before buying — water clarity, weeds and algae, and aquatic invasive species (AIS), plus the free tools to check.",
+        body: `<p>Here's something first-time buyers learn the hard way: two lakes ten miles apart can have completely different water. One is gin-clear with a sandy bottom; the other weeds up by July and turns green in August. Since you're paying for the water, learning to read it is one of the highest-value things you can do before you buy.</p>
+<h2>Water clarity</h2>
+<p>Clarity is driven by depth, watershed, and nutrient load. Deeper, spring-fed lakes generally stay clearer; shallow lakes warm up and can bloom. Every lake's clarity readings, depth, and fish surveys are public on the <a href="https://www.dnr.state.mn.us/lakefind/index.html" target="_blank" rel="noopener">DNR LakeFinder</a> — check it before every showing.</p>
+<h2>Weeds and algae</h2>
+<p>Aquatic plants are normal and even healthy, but heavy weed growth in front of your dock affects swimming, boating, and value. Ask about the specific bay: a protected back bay is calmer but often weedier than open-fetch frontage. Our guide to the <a href="/blog/best-quiet-lakes-minnesota">best quiet lakes</a> and <a href="/blog/lakefront-vs-lake-access-property">lakefront vs. lake-access</a> both touch on how bottom and exposure change day-to-day life.</p>
+<h2>Aquatic invasive species (AIS)</h2>
+<p>Zebra mussels, Eurasian watermilfoil, and starry stonewort are present in many Minnesota lakes and spread between them. AIS doesn't necessarily tank a lake's value, but it changes management, cleaning routines, and sometimes swimming (zebra mussel shells are sharp). Know the status going in — the <a href="https://www.dnr.state.mn.us/invasives/ais/index.html" target="_blank" rel="noopener">DNR AIS program</a> tracks infested waters.</p>
+<h2>Bring it into your search</h2>
+<p>Clear, deep water is a big part of why lakes like <a href="/lakes/lake-vermilion">Lake Vermilion</a> and <a href="/lakes/christmas-lake">Christmas Lake</a> command what they do. Add water clarity to the <a href="/lake-buyer-checklist">buyer's checklist</a>, and read <a href="/blog/minnesota-shoreland-rules-before-you-buy">shoreland rules</a> and <a href="/blog/5-things-to-look-for-in-a-lake-property">5 things to look for</a>. When you're ready, <a href="/pages/public/buy.html">get matched with a specialist</a> who knows which lakes stay clear.</p>`
+    },
+    {
+        title: "How to Winterize a Minnesota Lake Cabin",
+        slug: "how-to-winterize-a-lake-cabin",
+        tag: "Local Life",
+        read_time_minutes: 6,
+        is_published: false,
+        cover_image_url: "/assets/images/blog/hero-how-to-winterize-a-lake-cabin.jpg",
+        excerpt: "Frozen pipes and ice damage sink more cabins than storms do. A practical fall checklist for closing up a Minnesota lake place the right way.",
+        seo_title: "How to Winterize a Minnesota Lake Cabin (Checklist) | MN Lake Homes",
+        seo_description: "A practical fall checklist for winterizing a Minnesota lake cabin — water and plumbing, dock and lift removal, pests, heat, and ice protection before the freeze.",
+        body: `<p>If you own a seasonal place in Minnesota, closing it up right in the fall is the difference between opening to a clean cabin in May and opening to a burst pipe and a five-figure repair. Here's the practical rundown.</p>
+<h2>Water and plumbing come first</h2>
+<p>Frozen water lines cause the most expensive cabin damage, full stop. Shut off and drain the water system, blow out the lines, and add antifreeze to traps and the toilet. If you're on a private well and septic, follow the right shutdown steps — our <a href="/blog/minnesota-lake-home-septic-and-well-guide">septic &amp; well guide</a> covers what those systems need.</p>
+<h2>Dock, lift, and shoreline</h2>
+<p>Pull the dock and boat lift (or confirm they're rated to overwinter in the ice), store the boat, and secure anything the wind or ice heave could move. Ice expansion along the shore is powerful — don't leave gear where a heave can crush it.</p>
+<h2>Pests, heat, and moisture</h2>
+<ul>
+<li><strong>Mice.</strong> Seal gaps and set traps — an empty cabin is an invitation.</li>
+<li><strong>Heat.</strong> Many owners leave the furnace at ~50°F with a smart thermostat and freeze alarm rather than fully cold; weigh the utility cost (see <a href="/blog/year-round-vs-seasonal-lake-homes-minnesota">year-round vs. seasonal</a>).</li>
+<li><strong>Moisture.</strong> Prop fridge doors, remove liquids that can freeze, and leave the place ventilated to fight mold.</li>
+</ul>
+<h2>Safety and the season ahead</h2>
+<p>If you'll be on the ice at all, read the <a href="https://www.dnr.state.mn.us/safety/ice/index.html" target="_blank" rel="noopener">DNR ice safety</a> guidance — no ice is ever "safe" ice. And factor winterizing into your ownership math; it's one of the recurring costs in <a href="/blog/true-cost-of-owning-a-minnesota-lake-cabin">the true cost of owning a cabin</a>. Thinking of trading a seasonal place for a four-season home, or selling? <a href="/pages/public/sell.html">Talk to a local specialist</a> about what your cabin is worth.</p>`
+    },
+    {
+        title: "The Best Bass Fishing Lakes in Minnesota",
+        slug: "best-bass-fishing-lakes-minnesota",
+        tag: "Local Life",
+        read_time_minutes: 7,
+        is_published: false,
+        cover_image_url: "/assets/images/blog/hero-best-bass-fishing-lakes-minnesota.jpg",
+        excerpt: "Walleye gets the headlines, but Minnesota is a bass powerhouse — and many of the best bass lakes are an easy drive from the metro. Where to buy a cabin for bass.",
+        seo_title: "Best Bass Fishing Lakes in Minnesota for Cabin Buyers | MN Lake Homes",
+        seo_description: "Minnesota's top bass fishing lakes for buyers — largemouth and smallmouth water near the Twin Cities and up north, and how to buy a cabin on a great bass lake.",
+        body: `<p>Walleye may be the state fish, but ask a serious angler and they'll tell you Minnesota is a genuinely elite bass fishery — and unlike some trophy walleye water, a lot of the best bass lakes sit close to the metro. If bass is your thing, it can absolutely drive where you buy.</p>
+<h2>Metro-close bass water</h2>
+<p>Several lakes within an hour of the Twin Cities punch well above their weight for largemouth and smallmouth. <a href="/lakes/lake-minnetonka">Lake Minnetonka</a> is a nationally known bass lake with endless structure; <a href="/lakes/prior-lake">Prior Lake</a>, <a href="/lakes/white-bear-lake">White Bear Lake</a>, and <a href="/lakes/lake-waconia">Lake Waconia</a> all produce, and <a href="/lakes/christmas-lake">Christmas Lake</a> pairs clear water with quality fish. That means you can have great bass fishing without a three-hour drive — see the <a href="/blog/best-minnesota-lakes-near-twin-cities">best lakes near the Twin Cities</a>.</p>
+<h2>What makes a great bass lake</h2>
+<ul>
+<li><strong>Structure and cover</strong> — weed edges, docks, and rock that hold fish.</li>
+<li><strong>Water clarity</strong> — clear lakes often favor smallmouth; read <a href="/blog/minnesota-lake-water-quality-guide">lake water quality</a>.</li>
+<li><strong>Reasonable pressure</strong> — quieter lakes fish better; see <a href="/blog/best-quiet-lakes-minnesota">the best quiet lakes</a>.</li>
+</ul>
+<p>Check any lake's fish survey on the <a href="https://www.dnr.state.mn.us/lakefind/index.html" target="_blank" rel="noopener">DNR LakeFinder</a> — it'll tell you the bass population before you ever wet a line.</p>
+<h2>Buying for the fishing</h2>
+<p>If walleye is more your target, pair this with our <a href="/blog/best-walleye-lakes-in-minnesota">best walleye lakes</a> guide. Then use the <a href="/find-your-lake">Find Your Lake quiz</a>, <a href="/compare-lakes">compare your top lakes</a>, and <a href="/pages/public/buy.html">get matched with a local specialist</a> who knows which shorelines sit on the best fishing — free, no commission.</p>`
+    },
+    {
+        title: "Financing a Minnesota Lake Home: Cabins & Second Homes",
+        slug: "minnesota-lake-home-financing-guide",
+        tag: "Buyer Guide",
+        read_time_minutes: 7,
+        is_published: false,
+        cover_image_url: "/assets/images/blog/hero-minnesota-lake-home-financing-guide.jpg",
+        excerpt: "Second homes, seasonal cabins, and rustic properties don't always finance like a house in town. Here's how lake home lending actually works in Minnesota.",
+        seo_title: "Financing a Minnesota Lake Home: Cabins & Second Homes | MN Lake Homes",
+        seo_description: "How to finance a Minnesota lake home — second-home vs. investment loans, down payments, why seasonal or rustic cabins can be harder to finance, and how to prepare.",
+        body: `<p>Financing a lake home isn't always like financing the house you live in. Lenders look at whether it's a second home or a rental, whether it's winterized, and even whether it has a conventional foundation and year-round access. Knowing the rules early keeps a deal from falling apart late.</p>
+<h2>Second home vs. investment property</h2>
+<p>A property you'll use yourself is a <em>second home</em> — typically better rates and down payments (often ~10%+). If you'll rent it out, lenders treat it as an <em>investment property</em>, with higher rates and usually 20–25% down. If a rental is the plan, read <a href="/blog/minnesota-lake-cabin-rental-investment">buying a lake cabin as a short-term rental</a> first — how you finance it and how you use it have to match.</p>
+<h2>Where lake homes get tricky</h2>
+<ul>
+<li><strong>Seasonal / rustic cabins.</strong> No permanent heat source, no year-round road, or a non-conforming build can limit conventional financing. See <a href="/blog/year-round-vs-seasonal-lake-homes-minnesota">year-round vs. seasonal</a>.</li>
+<li><strong>Septic &amp; well.</strong> Lenders and appraisers care about private systems — details in the <a href="/blog/minnesota-lake-home-septic-and-well-guide">septic &amp; well guide</a>.</li>
+<li><strong>Appraisals.</strong> Unique lakefront is hard to comp; a low appraisal can change your loan.</li>
+</ul>
+<h2>Run your real number</h2>
+<p>Rate, taxes, and insurance together are the monthly reality — model it in the <a href="/lake-mortgage-calculator">lake cost calculator</a>, and don't forget property taxes differ by use (see <a href="/blog/minnesota-lakefront-property-taxes-explained">lakefront property taxes explained</a>) and the full <a href="/blog/true-cost-of-owning-a-minnesota-lake-cabin">cost of ownership</a>.</p>
+<h2>Get pre-approved for the property type</h2>
+<p>Tell your lender up front that it's a lake/second home and confirm they'll finance that exact property type before you write an offer. Need a lender who knows lake deals? A <a href="/pages/public/buy.html">matched local specialist</a> can point you to one — free, no commission.</p>`
+    },
+    {
+        title: "Lake Vermilion Buyer's Guide",
+        slug: "lake-vermilion-buyers-guide",
+        tag: "Choosing a Lake",
+        read_time_minutes: 7,
+        is_published: false,
+        cover_image_url: "/assets/images/blog/hero-lake-vermilion-buyers-guide.jpg",
+        excerpt: "Rocky pine islands, clear water, and true north-woods wilderness. A buyer's guide to Lake Vermilion — one of Minnesota's most beautiful (and remote) lakes to own.",
+        seo_title: "Lake Vermilion MN Buyer's Guide: Homes & Cabins | MN Lake Homes",
+        seo_description: "Buying on Lake Vermilion — Minnesota's iconic north-woods lake with 40,000 acres, rocky islands, and clear water. Price, access, and what to check before you buy.",
+        body: `<p>Some lakes are pretty. <a href="/lakes/lake-vermilion">Lake Vermilion</a> is the kind of place magazines put on their "most beautiful lakes in America" lists — 40,000 acres of clear water, hundreds of rocky pine-covered islands, and a genuine north-woods wilderness feel up near the edge of the Boundary Waters.</p>
+<h2>The trade-off: beauty vs. distance</h2>
+<p>Vermilion is a serious drive from the Twin Cities — this is destination water, not a quick weekend lake. That distance is exactly what keeps it wild and uncrowded, but it shapes how you'll use a place here. If a true escape is the goal, you'll also love <a href="/blog/discovering-the-magic-of-northern-minnesota">the magic of northern Minnesota</a>. For a shorter-drive alternative, compare it with the <a href="/blog/best-minnesota-lakes-near-twin-cities">best lakes near the Twin Cities</a>.</p>
+<h2>What ownership looks like here</h2>
+<ul>
+<li><strong>Rock and depth.</strong> Vermilion is rocky and deep with clear water and legendary <a href="/blog/best-walleye-lakes-in-minnesota">walleye and smallmouth</a> fishing — check surveys on the <a href="https://www.dnr.state.mn.us/lakefind/index.html" target="_blank" rel="noopener">DNR LakeFinder</a>.</li>
+<li><strong>Island vs. mainland.</strong> Some of the most coveted cabins are island properties — stunning, but factor in boat access, power, and logistics.</li>
+<li><strong>Access &amp; services.</strong> Confirm year-round road access and how far you are from a town for supplies and healthcare.</li>
+</ul>
+<h2>Nearby water</h2>
+<p>If you love the rugged look, also consider <a href="/lakes/burntside-lake">Burntside Lake</a> near Ely and the big border water of <a href="/lakes/kabetogama-lake">Lake Kabetogama</a> and <a href="/lakes/rainy-lake">Rainy Lake</a>.</p>
+<h2>Buying it right</h2>
+<p>Remote, unique water needs a specialist who knows it. <a href="/compare-lakes">Compare Vermilion</a> against your other picks, then <a href="/pages/public/buy.html">get matched with a local agent</a> who understands island access, well/septic, and what drives value up here — free, no commission.</p>`
+    },
+    {
+        title: "Moving to Minnesota Lake Country: A Relocation Guide",
+        slug: "moving-to-minnesota-lake-country",
+        tag: "Buyer Guide",
+        read_time_minutes: 7,
+        is_published: false,
+        cover_image_url: "/assets/images/blog/hero-moving-to-minnesota-lake-country.jpg",
+        excerpt: "Trading the city for a lake town full-time? Here's what to weigh — year-round access, town amenities, remote work, and which lake communities work as a home base.",
+        seo_title: "Moving to Minnesota Lake Country: Relocation Guide | MN Lake Homes",
+        seo_description: "Relocating to a Minnesota lake town full-time — how to choose a community with year-round access and amenities, remote-work realities, and the best home-base towns.",
+        body: `<p>More people than ever are turning the cabin dream into an address — working remotely from the lake, or relocating for good. But living on a lake year-round is a different decision than buying a summer place. Here's how to do it with eyes open.</p>
+<h2>Full-time changes the checklist</h2>
+<p>A seasonal cabin can get away with a lot a year-round home can't: no reliable winter road, no permanent heat, a marginal well. For full-time living, those move to the top of the list — start with <a href="/blog/year-round-vs-seasonal-lake-homes-minnesota">year-round vs. seasonal lake homes</a> and the <a href="/blog/minnesota-lake-home-septic-and-well-guide">septic &amp; well guide</a>.</p>
+<h2>Pick a town, not just a lake</h2>
+<p>When it's your home base, the community matters as much as the water — healthcare, schools, groceries, an airport, and winter services. Strong year-round lake towns include <a href="/towns/brainerd">Brainerd</a>, <a href="/towns/detroit-lakes">Detroit Lakes</a>, <a href="/towns/alexandria">Alexandria</a>, and <a href="/towns/bemidji">Bemidji</a>. If you're retiring, also read <a href="/blog/retiring-on-a-minnesota-lake">retiring on a Minnesota lake</a>.</p>
+<h2>Remote work realities</h2>
+<ul>
+<li><strong>Internet.</strong> Confirm real broadband speeds at the exact address — it varies a lot lake to lake.</li>
+<li><strong>Commute reach.</strong> If you'll go to the metro occasionally, weigh the <a href="/blog/best-minnesota-lakes-near-twin-cities">best lakes near the Twin Cities</a>.</li>
+<li><strong>Winter.</strong> Be honest about the season — plowing, heating costs, and daylight.</li>
+</ul>
+<h2>Find your fit</h2>
+<p>Use the <a href="/find-your-lake">Find Your Lake quiz</a> to weight town amenities and drive time, then <a href="/pages/public/buy.html">get matched with a local specialist</a> who lives there and can tell you the truth about year-round life — free, no commission.</p>`
+    },
+    {
+        title: "How to Choose the Right Minnesota Lake: A Buyer's Framework",
+        slug: "how-to-choose-a-minnesota-lake",
+        tag: "Buyer Guide",
+        read_time_minutes: 6,
+        is_published: false,
+        cover_image_url: "/assets/images/blog/hero-how-to-choose-a-minnesota-lake.jpg",
+        excerpt: "With 10,000+ lakes, the hardest part isn't finding one — it's choosing. A simple five-factor framework to narrow thousands of lakes down to your shortlist.",
+        seo_title: "How to Choose the Right Minnesota Lake (Buyer Framework) | MN Lake Homes",
+        seo_description: "A five-factor framework for choosing the right Minnesota lake to buy on — budget, drive time, vibe, water and fishing, and lakefront vs. access — plus free tools.",
+        body: `<p>Minnesota has more than 10,000 lakes. The hard part of buying isn't finding water — it's choosing. Here's a simple framework that turns "somewhere on a lake" into a real shortlist you can actually shop.</p>
+<h2>1. Budget</h2>
+<p>Price sets the map more than anything. A lot on marquee water costs multiples of a comparable lot two lakes over. Ground yourself with <a href="/blog/minnesota-lake-home-prices-2026">the 2026 price guide</a> and the <a href="/lake-mortgage-calculator">cost calculator</a>.</p>
+<h2>2. Drive time</h2>
+<p>Be honest about how often you'll actually go. Under two hours gets used most weekends; three-plus hours is destination water. Compare the <a href="/blog/best-minnesota-lakes-near-twin-cities">best lakes near the Twin Cities</a> against up-north options.</p>
+<h2>3. Vibe</h2>
+<p>Lively resort scene or quiet cabin? Walkable town or wilderness? A metro lake like the ones in our <a href="/blog/lake-minnetonka-vs-brainerd-lakes">Minnetonka vs. Brainerd</a> piece feels nothing like one of the <a href="/blog/best-quiet-lakes-minnesota">best quiet lakes</a>.</p>
+<h2>4. Water and fishing</h2>
+<p>Clarity, depth, weeds, and fish species vary hugely — read <a href="/blog/minnesota-lake-water-quality-guide">lake water quality</a> and check any lake on the <a href="https://www.dnr.state.mn.us/lakefind/index.html" target="_blank" rel="noopener">DNR LakeFinder</a>. Anglers should see our <a href="/blog/best-walleye-lakes-in-minnesota">walleye</a> and <a href="/blog/best-bass-fishing-lakes-minnesota">bass</a> guides.</p>
+<h2>5. Frontage type</h2>
+<p>True lakefront, or lake-access with shared frontage? It's a budget and lifestyle fork — see <a href="/blog/lakefront-vs-lake-access-property">lakefront vs. lake-access</a>.</p>
+<h2>Put it together</h2>
+<p>Run the <a href="/find-your-lake">Find Your Lake quiz</a> to score these factors, <a href="/compare-lakes">compare your finalists side by side</a>, and then <a href="/pages/public/buy.html">get matched with a specialist</a> who can confirm your read on each lake — free, no commission.</p>`
+    },
 ];
 
 module.exports = drafts;
