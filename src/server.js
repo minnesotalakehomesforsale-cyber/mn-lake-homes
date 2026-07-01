@@ -57,6 +57,8 @@ app.use('/api/businesses',     require('./routes/business.routes'));
 app.use('/api/business-auth',  require('./routes/business-auth.routes'));
 app.use('/api/resources', require('./routes/resource.routes'));
 app.use('/api/marketing', require('./routes/marketing.routes'));
+app.use('/api/reviews', require('./routes/review.routes'));
+app.use('/api/listings', require('./routes/listing.routes'));
 
 app.get('/api/health', (req, res) => {
     res.json({
@@ -2326,6 +2328,62 @@ async function ensureTables() {
             );
             CREATE INDEX IF NOT EXISTS idx_blog_post_agents_agent ON blog_post_agents(agent_id);
             CREATE INDEX IF NOT EXISTS idx_blog_post_agents_post  ON blog_post_agents(blog_post_id);
+
+            -- Reviews for agents + businesses. subject_type + subject_id form a
+            -- polymorphic link (no FK, since it points at either table). Public
+            -- submissions land status='pending'; only 'approved' reviews show
+            -- publicly and feed the AggregateRating JSON-LD (real ratings only,
+            -- never fabricated). rating is 1..5.
+            CREATE TABLE IF NOT EXISTS reviews (
+                id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                subject_type VARCHAR(16) NOT NULL CHECK (subject_type IN ('agent','business')),
+                subject_id   UUID NOT NULL,
+                author_name  VARCHAR(120) NOT NULL,
+                author_email VARCHAR(255),
+                rating       SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+                title        VARCHAR(160),
+                body         TEXT,
+                status       VARCHAR(16) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
+                source       VARCHAR(24) NOT NULL DEFAULT 'onsite',
+                created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                approved_at  TIMESTAMPTZ
+            );
+            CREATE INDEX IF NOT EXISTS idx_reviews_subject ON reviews(subject_type, subject_id);
+            CREATE INDEX IF NOT EXISTS idx_reviews_status  ON reviews(status);
+
+            -- Manual property listings (no MLS feed yet). Each optionally ties to
+            -- a lake so lake pages can show a live "N homes for sale" count + grid,
+            -- and each gets its own /listings/:slug page with RealEstateListing
+            -- JSON-LD. status: active | pending | sold. price in whole USD.
+            CREATE TABLE IF NOT EXISTS listings (
+                id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                slug               VARCHAR(200) UNIQUE NOT NULL,
+                lake_id            UUID REFERENCES lakes(id) ON DELETE SET NULL,
+                agent_id           UUID REFERENCES agents(id) ON DELETE SET NULL,
+                title              VARCHAR(200) NOT NULL,
+                address            VARCHAR(255),
+                city               VARCHAR(120),
+                state              VARCHAR(8) DEFAULT 'MN',
+                zip                VARCHAR(20),
+                price              INTEGER,
+                beds               SMALLINT,
+                baths              NUMERIC(3,1),
+                sqft               INTEGER,
+                lot_acres          NUMERIC(8,2),
+                waterfront_feet    INTEGER,
+                description        TEXT,
+                featured_image_url TEXT,
+                gallery            JSONB NOT NULL DEFAULT '[]'::jsonb,
+                mls_number         VARCHAR(40),
+                external_url       TEXT,
+                latitude           DOUBLE PRECISION,
+                longitude          DOUBLE PRECISION,
+                status             VARCHAR(16) NOT NULL DEFAULT 'active' CHECK (status IN ('active','pending','sold','draft')),
+                created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_listings_lake   ON listings(lake_id) WHERE lake_id IS NOT NULL;
+            CREATE INDEX IF NOT EXISTS idx_listings_status ON listings(status);
 
             -- Nearby-towns join: reuses the existing tags catalog (each tag
             -- is a town). One lake can be near many towns and one town can
