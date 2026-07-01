@@ -781,6 +781,69 @@
         document.getElementById('create-modal').classList.remove('open');
     }
 
+    // ── Invite a business owner ────────────────────────────────────────────────
+    // The button + modal markup existed here but these handlers were never
+    // written, so clicking "Invite business" did nothing. Posts to the working
+    // POST /api/admin/invite-business (comps a listing + owner account + email).
+    function openInviteBusiness() {
+        const modal = document.getElementById('invite-modal');
+        if (!modal) { alert('Invite dialog not loaded — hard-refresh the page (Cmd/Ctrl+Shift+R).'); return; }
+        ['inv-first', 'inv-last', 'inv-email', 'inv-bizname'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        const type = document.getElementById('inv-biztype'); if (type) type.value = 'restaurant';
+        const tier = document.getElementById('inv-tier');    if (tier) tier.value = 'premium';
+        const msg = document.getElementById('inv-msg');      if (msg)  { msg.className = 'msg'; msg.textContent = ''; }
+        modal.classList.add('open');
+    }
+
+    function closeInviteBusiness() {
+        const modal = document.getElementById('invite-modal');
+        if (modal) modal.classList.remove('open');
+    }
+
+    async function sendBusinessInvite() {
+        const msg = document.getElementById('inv-msg');
+        const btn = document.getElementById('inv-send');
+        const showErr = (t) => { if (msg) { msg.className = 'msg err'; msg.textContent = t; } };
+        const payload = {
+            first_name:    document.getElementById('inv-first').value.trim(),
+            last_name:     document.getElementById('inv-last').value.trim(),
+            email:         document.getElementById('inv-email').value.trim(),
+            business_name: document.getElementById('inv-bizname').value.trim(),
+            business_type: document.getElementById('inv-biztype').value,
+            comp_tier:     document.getElementById('inv-tier').value,
+        };
+        if (!payload.first_name || !payload.email || !payload.business_name) {
+            showErr('First name, email, and business name are required.');
+            return;
+        }
+        btn.disabled = true;
+        const orig = btn.textContent;
+        btn.textContent = 'Sending…';
+        try {
+            const res = await fetch('/api/admin/invite-business', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) { showErr(data.error || 'Failed to invite business.'); return; }
+            closeInviteBusiness();
+            alert(
+                `Invite sent to ${data.email}.\n\n` +
+                `Login URL: ${data.login_url}\n` +
+                `Temporary password: ${data.tempPassword}\n\n` +
+                `(Save this in case the email fails — you can share it manually.)`
+            );
+            if (typeof loadBiz === 'function') await loadBiz();
+        } catch (e) {
+            showErr('Network error — please try again.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = orig;
+        }
+    }
+
     async function createEntity() {
         const type = document.getElementById('create-modal').dataset.entityType;
         const v = id => document.getElementById(id)?.value?.trim() || null;
