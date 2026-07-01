@@ -197,7 +197,8 @@
             <div class="field-row cols-1">
                 <div class="field-grp">
                     <label class="field-lbl">Body <span style="font-weight:400;text-transform:none;letter-spacing:0;">(HTML accepted)</span></label>
-                    <textarea class="field-inp" id="f-body" rows="12" placeholder="<p>Start writing your post here...</p>&#10;<h2>Section heading</h2>&#10;<p>More content...</p>"></textarea>
+                    <textarea class="field-inp" id="f-body" rows="12" placeholder="<p>Start writing your post here...</p>&#10;<h2>Section heading</h2>&#10;<p>More content...</p>" oninput="updateBodyWordCount()"></textarea>
+                    <div id="body-wc" style="margin-top:0.4rem;font-size:0.82rem;font-weight:600;color:#a0aec0;">Target: 700–1,000 words · aim for 4–6 H2 subheads, internal links to /buy, /sell, tools &amp; other posts, and a CTA at the end.</div>
                 </div>
             </div>
 
@@ -365,6 +366,24 @@
 
         document.getElementById('editor-overlay').classList.add('open');
         document.body.style.overflow = 'hidden';
+        updateBodyWordCount();
+    }
+
+    // House standard: every post should be 700–1,000 words. Live-count the body
+    // (HTML stripped) and coach toward the target.
+    function updateBodyWordCount() {
+        const el = document.getElementById('body-wc');
+        if (!el) return;
+        const words = (document.getElementById('f-body').value || '')
+            .replace(/<[^>]+>/g, ' ').replace(/&[a-z]+;/gi, ' ')
+            .split(/\s+/).filter(Boolean).length;
+        let color, note;
+        if (words === 0)        { color = '#a0aec0'; note = 'Target: 700–1,000 words · 4–6 H2 subheads, internal links (/buy, /sell, tools, other posts), CTA at the end.'; }
+        else if (words < 700)   { color = '#dd6b20'; note = `${words} words — below the 700-word standard. Add depth: more sections, examples, and internal links.`; }
+        else if (words <= 1000) { color = '#2f855a'; note = `${words} words — on standard (700–1,000). ✓`; }
+        else                    { color = '#3182ce'; note = `${words} words — over 1,000. Fine if it's all substance; otherwise tighten.`; }
+        el.style.color = color;
+        el.textContent = note;
     }
 
     function closeEditor() {
