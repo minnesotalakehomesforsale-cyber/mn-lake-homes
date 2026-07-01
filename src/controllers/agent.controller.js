@@ -488,6 +488,97 @@ const addMyLeadNote = async (req, res) => {
 // Legacy alias for old PATCH /me route used by some admin call paths
 const updateMyProfile = saveDraft;
 
+// ─── Agent <-> blog post links (co-branded posts / agent spotlights) ─────────
+const _isAdmin = (req) => req.user && (req.user.role === 'admin' || req.user.role === 'super_admin');
+
+// GET /api/agents/public/:slug/blog-posts
+// Published featured posts for an agent — powers the "Related articles"
+// section on the public profile. Public: published only.
+const listBlogPostsForAgent = async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT bp.id, bp.slug, bp.title, bp.excerpt, bp.cover_image_url,
+                    bp.tag, bp.read_time_minutes, bp.author_name,
+                    bp.published_at, bp.created_at
+             FROM blog_post_agents bpa
+             JOIN agents a       ON a.id = bpa.agent_id
+             JOIN blog_posts bp  ON bp.id = bpa.blog_post_id
+             WHERE a.slug = $1
+               AND bp.deleted_at IS NULL
+               AND bp.is_published = TRUE
+             ORDER BY bp.published_at DESC NULLS LAST, bp.created_at DESC
+             LIMIT 12`,
+            [req.params.slug]
+        );
+        res.json(rows);
+    } catch (err) {
+        console.error('[listBlogPostsForAgent]', err.message);
+        res.status(500).json({ error: 'Failed to load agent blog posts.' });
+    }
+};
+
+// GET /api/agents/by-blog-post/:postId — agents featured in a post.
+// Used by the blog admin editor to prefill the "Agents" picker.
+const listAgentsForBlogPost = async (req, res) => {
+    if (!_isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
+    try {
+        const { rows } = await pool.query(
+            `SELECT a.id, a.slug, a.display_name, a.profile_photo_url
+             FROM blog_post_agents bpa
+             JOIN agents a ON a.id = bpa.agent_id
+             WHERE bpa.blog_post_id = $1
+             ORDER BY a.display_name ASC`,
+            [req.params.postId]
+        );
+        res.json(rows);
+    } catch (err) {
+        console.error('[listAgentsForBlogPost]', err.message);
+        res.status(500).json({ error: 'Failed to load agents for this post.' });
+    }
+};
+
+// PUT /api/agents/by-blog-post/:postId — replace the post's featured agents.
+const replaceAgentsForBlogPost = async (req, res) => {
+    if (!_isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
+    const postId = req.params.postId;
+    const agentIds = Array.isArray(req.body?.agentIds) ? req.body.agentIds.filter(Boolean) : null;
+    if (!agentIds) return res.status(400).json({ error: 'agentIds array is required.' });
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        await client.query(`DELETE FROM blog_post_agents WHERE blog_post_id = $1`, [postId]);
+        if (agentIds.length) {
+            const values = agentIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+            await client.query(
+                `INSERT INTO blog_post_agents (blog_post_id, agent_id)
+                 SELECT pid::uuid, aid::uuid FROM (VALUES ${values}) AS v(pid, aid)
+                 WHERE EXISTS (SELECT 1 FROM agents WHERE id = v.aid::uuid)
+                 ON CONFLICT (blog_post_id, agent_id) DO NOTHING`,
+                [postId, ...agentIds]
+            );
+        }
+        await client.query('COMMIT');
+
+        logActivity({
+            event_type: 'blog_post.agents.replace',
+            event_scope: 'blog_post',
+            actor: { type: 'user', id: req.user?.userId, label: req.user?.email || req.user?.role },
+            target: { type: 'blog_post', id: postId },
+            details: { count: agentIds.length },
+            req,
+        });
+
+        res.json({ success: true, count: agentIds.length });
+    } catch (err) {
+        await client.query('ROLLBACK').catch(() => {});
+        console.error('[replaceAgentsForBlogPost]', err.message);
+        res.status(500).json({ error: 'Failed to save agents for this post.' });
+    } finally {
+        client.release();
+    }
+};
+
 module.exports = {
     getPublicAgents,
     getAgentBySlug,
@@ -499,5 +590,8 @@ module.exports = {
     updateMyLeadStatus,
     getMyLeadNotes,
     addMyLeadNote,
-    uploadPhoto
+    uploadPhoto,
+    listBlogPostsForAgent,
+    listAgentsForBlogPost,
+    replaceAgentsForBlogPost
 };

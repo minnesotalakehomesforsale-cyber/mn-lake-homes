@@ -6,6 +6,13 @@ const { verifyToken, requireRole } = require('../middleware/auth');
 // ─── PUBLIC ───────────────────────────────────────────────────────────────────
 router.get('/public', agentController.getPublicAgents);
 router.get('/public/:slug', agentController.getAgentBySlug);
+// Published featured/related blog posts for an agent's public profile.
+router.get('/public/:slug/blog-posts', agentController.listBlogPostsForAgent);
+
+// Agent<->blog links in the "by blog post" direction, for the blog admin
+// editor's "Agents featured" picker. Admin-gated in the controller.
+router.get('/by-blog-post/:postId', verifyToken, agentController.listAgentsForBlogPost);
+router.put('/by-blog-post/:postId', verifyToken, agentController.replaceAgentsForBlogPost);
 
 // Photo upload — returns a URL; caller (agent or admin) PATCHes it via their
 // own route to persist against a specific agent record.

@@ -305,10 +305,25 @@
                 ? `<span style="color:#38a169;font-weight:700;">✓ Live</span>`
                 : `<span style="color:#a0aec0;">—</span>`;
 
+            // Small circle avatar: their profile photo, or initials if none.
+            // Initials sit underneath; the photo overlays them and reveals the
+            // initials again if it fails to load (onerror hides the img).
+            const initials = (a.display_name || '?').split(/\s+/).map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+            const avatar = `
+                <div style="position:relative;width:38px;height:38px;flex-shrink:0;">
+                    <div style="position:absolute;inset:0;border-radius:50%;background:#1d6df2;color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;">${initials}</div>
+                    ${a.profile_photo_url ? `<img src="${a.profile_photo_url}" alt="" style="position:absolute;inset:0;width:38px;height:38px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">` : ''}
+                </div>`;
+
             return `<tr class="data-row" onclick="window.location.href='agent-review.html?id=${a.id}'">
                 <td>
-                    <div style="font-weight:700;">${a.display_name}</div>
-                    <div style="font-size:0.75rem;color:#a0aec0;">ID: ${a.id.slice(0,8)}…</div>
+                    <div style="display:flex;align-items:center;gap:0.7rem;">
+                        ${avatar}
+                        <div>
+                            <div style="font-weight:700;">${a.display_name}</div>
+                            <div style="font-size:0.75rem;color:#a0aec0;">ID: ${a.id.slice(0,8)}…</div>
+                        </div>
+                    </div>
                 </td>
                 <td style="color:#718096;">${a.email || '—'}</td>
                 <td>${a.brokerage_name || 'Independent'}</td>

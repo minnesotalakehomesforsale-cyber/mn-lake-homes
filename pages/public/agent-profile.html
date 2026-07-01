@@ -134,6 +134,16 @@
         </div>
     </section>
 
+    <!-- Related articles — populated + revealed by JS only if this agent is
+         featured in one or more published posts. Stays hidden otherwise. -->
+    <section id="agent-blog-section" style="display:none; background:#fff; padding:5rem 0; border-top:1px solid #edf2f7;">
+        <div style="max-width:1200px; margin:0 auto; padding:0 2rem;">
+            <h2 style="font-size:2rem; font-weight:700; color:#1a202c; letter-spacing:-0.5px; margin:0 0 0.4rem;">Related Articles</h2>
+            <p id="agent-blog-sub" style="color:#718096; margin:0 0 2.5rem;"></p>
+            <div id="agent-blog-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:2rem;"></div>
+        </div>
+    </section>
+
     <global-footer></global-footer>
     <lead-modal></lead-modal>
 
@@ -271,6 +281,37 @@
                     </form>
                 </div>
             `;
+
+            // Related articles — published posts featuring this agent. The
+            // section stays hidden unless there's at least one.
+            (async () => {
+                const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+                try {
+                    const res = await fetch(`/api/agents/public/${encodeURIComponent(agent.slug)}/blog-posts`);
+                    if (!res.ok) return;
+                    const posts = await res.json();
+                    if (!Array.isArray(posts) || !posts.length) return;   // hidden when none
+                    const sec  = document.getElementById('agent-blog-section');
+                    const grid = document.getElementById('agent-blog-grid');
+                    const sub  = document.getElementById('agent-blog-sub');
+                    sub.textContent = `Featuring ${agent.display_name.split(' ')[0]}`;
+                    grid.innerHTML = posts.map(p => `
+                        <a href="/pages/public/blog-post.html?slug=${encodeURIComponent(p.slug)}" style="text-decoration:none; color:inherit; display:block; background:#fff; border:1px solid #edf2f7; border-radius:14px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.04); transition:transform .15s, box-shadow .15s;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 28px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.04)'">
+                            <div style="aspect-ratio:16/10; background:#f0f2f5;">
+                                <img src="${esc(p.cover_image_url || '/assets/images/beach-style-exterior.jpg')}" alt="${esc(p.title)}" loading="lazy" style="width:100%; height:100%; object-fit:cover;">
+                            </div>
+                            <div style="padding:1.25rem 1.35rem 1.5rem;">
+                                <div style="display:flex; gap:0.6rem; align-items:center; font-size:0.72rem; color:#718096; font-weight:600; margin-bottom:0.5rem;">
+                                    <span style="background:#ebf4ff; color:#1d6df2; padding:0.2rem 0.55rem; border-radius:99px; font-weight:800; text-transform:uppercase; letter-spacing:0.4px;">${esc(p.tag || 'General')}</span>
+                                    <span>${p.read_time_minutes || 4} min read</span>
+                                </div>
+                                <h3 style="font-size:1.1rem; font-weight:700; color:#1a202c; line-height:1.35; margin:0 0 0.5rem;">${esc(p.title)}</h3>
+                                ${p.excerpt ? `<p style="font-size:0.9rem; color:#4a5568; line-height:1.55; margin:0; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${esc(p.excerpt)}</p>` : ''}
+                            </div>
+                        </a>`).join('');
+                    sec.style.display = '';
+                } catch (_) { /* leave the section hidden on any error */ }
+            })();
 
             // Lead form submit
             document.getElementById('agent-lead-form').addEventListener('submit', async function(e) {

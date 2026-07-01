@@ -2275,6 +2275,20 @@ async function ensureTables() {
             CREATE INDEX IF NOT EXISTS idx_blog_post_lakes_lake ON blog_post_lakes(lake_id);
             CREATE INDEX IF NOT EXISTS idx_blog_post_lakes_post ON blog_post_lakes(blog_post_id);
 
+            -- Agent<->blog join: co-branded posts / agent spotlights. A post can
+            -- feature several agents and an agent can be featured in several
+            -- posts. Published featured posts surface in the "Related articles"
+            -- section on the agent's public profile.
+            CREATE TABLE IF NOT EXISTS blog_post_agents (
+                id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                blog_post_id UUID NOT NULL REFERENCES blog_posts(id) ON DELETE CASCADE,
+                agent_id     UUID NOT NULL REFERENCES agents(id)     ON DELETE CASCADE,
+                created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (blog_post_id, agent_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_blog_post_agents_agent ON blog_post_agents(agent_id);
+            CREATE INDEX IF NOT EXISTS idx_blog_post_agents_post  ON blog_post_agents(blog_post_id);
+
             -- Nearby-towns join: reuses the existing tags catalog (each tag
             -- is a town). One lake can be near many towns and one town can
             -- border many lakes.

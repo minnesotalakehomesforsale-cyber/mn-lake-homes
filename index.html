@@ -505,7 +505,7 @@
                     return;
                 }
                 grid.innerHTML = list.map(agent => {
-                    const photo = agent.profile_photo_url || '/assets/images/mn-stillwater-aerial.webp';
+                    const photo = agent.profile_photo_url || '/assets/images/agent-placeholder.svg';
                     const title = isFeaturedAgent(agent) ? 'Lake Specialist' : 'Agent';
                     const bio = agent.bio || 'A dedicated Minnesota lake home specialist ready to help you find your perfect waterfront property.';
                     const shortBio = bio.length > 180 ? bio.slice(0, 180).trimEnd() + '…' : bio;

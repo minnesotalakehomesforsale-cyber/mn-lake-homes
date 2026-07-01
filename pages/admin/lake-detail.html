@@ -630,7 +630,7 @@
             el.innerHTML = list.map(a => {
                 const on = _selectedAgentIds.has(a.id);
                 const isFounder = _founderAgentId === a.id;
-                const photo = a.profile_photo_url || '/assets/images/mn-stillwater-aerial.webp';
+                const photo = a.profile_photo_url || '/assets/images/agent-placeholder.svg';
                 return `
                     <label class="pick-card ${on ? 'on' : ''} ${isFounder ? 'founder' : ''}" data-aid="${a.id}">
                         <input type="checkbox" ${on ? 'checked' : ''} onchange="toggleAgent('${a.id}', this.checked)">

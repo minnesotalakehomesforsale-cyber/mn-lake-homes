@@ -176,6 +176,15 @@
                         <span style="color:#a0aec0;font-size:0.85rem;">Loading lakes…</span>
                     </div>
                 </div>
+                <div class="field-grp">
+                    <label class="field-lbl">Agents featured in this post <span style="font-weight:400;text-transform:none;letter-spacing:0;">(appears in each agent's "Related articles" section — co-branded posts, spotlights)</span></label>
+                    <div id="f-agents-chips" style="display:flex;flex-wrap:wrap;gap:0.4rem;min-height:2.5rem;padding:0.55rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;align-items:center;">
+                        <span id="f-agents-empty" style="color:#a0aec0;font-size:0.85rem;">None selected — click an agent below to attach it.</span>
+                    </div>
+                    <div id="f-agents-options" style="margin-top:0.5rem;display:flex;flex-wrap:wrap;gap:0.35rem;max-height:180px;overflow:auto;padding:0.35rem;">
+                        <span style="color:#a0aec0;font-size:0.85rem;">Loading agents…</span>
+                    </div>
+                </div>
             </div>
 
             <div class="field-row cols-1">
@@ -567,7 +576,110 @@
         await savePostLakes(targetId);
     };
 
+    // ── Agents picker (co-branded posts / spotlights) ──────────────────────────
+    // Mirrors the lakes picker. Saved via PUT /api/agents/by-blog-post/:postId
+    // after the post write succeeds (need the post id for new posts).
+    let _allBlogAgents = [];
+    let _selectedAgentIds = new Set();
+
+    async function loadAgentCatalog() {
+        try {
+            const res = await fetch('/api/agents/public');
+            if (!res.ok) throw new Error();
+            _allBlogAgents = await res.json();
+        } catch (_) { _allBlogAgents = []; }
+    }
+
+    function renderAgentOptions() {
+        const opts = document.getElementById('f-agents-options');
+        if (!opts) return;
+        if (!_allBlogAgents.length) {
+            opts.innerHTML = '<span style="color:#a0aec0;font-size:0.85rem;">No published agents yet.</span>';
+            return;
+        }
+        opts.innerHTML = _allBlogAgents.map(a => {
+            const on = _selectedAgentIds.has(a.id);
+            return `
+                <button type="button"
+                        onclick="toggleAgentTag('${a.id}')"
+                        style="
+                            font-family:inherit;font-size:0.78rem;font-weight:700;
+                            padding:0.3rem 0.7rem;border-radius:99px;cursor:pointer;
+                            border:1px solid ${on ? '#1d6df2' : '#e2e8f0'};
+                            background:${on ? '#1d6df2' : '#fff'};
+                            color:${on ? '#fff' : '#4a5568'};">
+                    ${on ? '✓ ' : '+ '}${escapeHtml(a.display_name)}
+                </button>`;
+        }).join('');
+    }
+
+    function renderAgentChips() {
+        const chips = document.getElementById('f-agents-chips');
+        if (!chips) return;
+        const selected = _allBlogAgents.filter(a => _selectedAgentIds.has(a.id));
+        if (!selected.length) {
+            chips.innerHTML = '<span id="f-agents-empty" style="color:#a0aec0;font-size:0.85rem;">None selected — click an agent below to attach it.</span>';
+            return;
+        }
+        chips.innerHTML = selected.map(a => `
+            <span style="display:inline-flex;align-items:center;gap:0.35rem;background:#ebf4ff;color:#1d6df2;font-size:0.78rem;font-weight:700;padding:0.28rem 0.6rem;border-radius:99px;">
+                ${escapeHtml(a.display_name)}
+                <button type="button" onclick="toggleAgentTag('${a.id}')"
+                        style="border:0;background:transparent;color:#1d6df2;cursor:pointer;font-size:0.9rem;line-height:1;padding:0;">×</button>
+            </span>`).join('');
+    }
+
+    function toggleAgentTag(id) {
+        if (_selectedAgentIds.has(id)) _selectedAgentIds.delete(id);
+        else _selectedAgentIds.add(id);
+        renderAgentChips();
+        renderAgentOptions();
+    }
+
+    async function loadAgentsForPost(postId) {
+        _selectedAgentIds = new Set();
+        if (!postId) { renderAgentChips(); renderAgentOptions(); return; }
+        try {
+            const res = await fetch(`/api/agents/by-blog-post/${postId}`);
+            if (res.ok) {
+                const agents = await res.json();
+                _selectedAgentIds = new Set(agents.map(a => a.id));
+            }
+        } catch (_) { /* degrade silently */ }
+        renderAgentChips();
+        renderAgentOptions();
+    }
+
+    async function savePostAgents(postId) {
+        if (!postId) return;
+        try {
+            await fetch(`/api/agents/by-blog-post/${postId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ agentIds: [..._selectedAgentIds] }),
+            });
+        } catch (_) { /* the post itself already saved; don't alarm the user */ }
+    }
+
+    // Chain onto the (already lake-wrapped) editor hooks so both pickers run.
+    const _openEditorBeforeAgents = window.openEditor;
+    window.openEditor = function(id) {
+        _openEditorBeforeAgents(id);
+        loadAgentsForPost(id);
+    };
+
+    const _savePostBeforeAgents = window.savePost;
+    window.savePost = async function() {
+        const wasEditing = editingId;
+        const prevCount = allPosts.length;
+        await _savePostBeforeAgents();
+        let targetId = wasEditing;
+        if (!targetId && allPosts.length > prevCount) targetId = allPosts[0]?.id;
+        await savePostAgents(targetId);
+    };
+
     document.addEventListener('DOMContentLoaded', loadLakeCatalog);
+    document.addEventListener('DOMContentLoaded', loadAgentCatalog);
 
     // Close overlay on background click
     document.getElementById('editor-overlay').addEventListener('click', function(e) {

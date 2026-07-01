@@ -612,7 +612,7 @@
                 document.getElementById('tn-agents-cta').innerHTML =
                     '<a href="/pages/public/agents.html" class="nb-cta">View all agents →</a>';
                 el.innerHTML = agents.slice(0, 6).map(a => {
-                    const photo = a.profile_photo_url || '/assets/images/mn-stillwater-aerial.webp';
+                    const photo = a.profile_photo_url || '/assets/images/agent-placeholder.svg';
                     const bio   = a.bio || '';
                     const shortBio = bio.length > 180 ? bio.slice(0, 180).trimEnd() + '…' : bio;
                     // Featured = pays $39+ (Prime/Elite) or a manual feature →
