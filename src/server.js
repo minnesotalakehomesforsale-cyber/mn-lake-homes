@@ -3059,10 +3059,11 @@ async function seedBlogPosts() {
 }
 
 // Push the expanded v2 bodies (src/data/blog-content-v2.js) onto existing
-// posts whose body predates the rewrite. Guarded by the '<!-- blog-v2 -->'
-// marker so it runs exactly once per post and re-deploys are no-ops; it also
-// won't clobber a later admin edit (which drops the marker). read_time is
-// bumped to match the longer content (~200 wpm), never lowered.
+// posts whose body predates the rewrite, AND publish them (per the owner's
+// go-ahead to take all 31 live). Guarded by the '<!-- blog-v2 -->' marker so
+// it runs exactly once per post and re-deploys are no-ops — so if an admin
+// later unpublishes one, this won't re-publish it. read_time is bumped to
+// match the longer content (~200 wpm), never lowered.
 async function seedBlogContentV2() {
     let map = {};
     try { map = require('./data/blog-content-v2'); } catch (_) { return; }
@@ -3075,6 +3076,8 @@ async function seedBlogContentV2() {
             `UPDATE blog_posts
                 SET body = $2,
                     read_time_minutes = GREATEST(COALESCE(read_time_minutes, 0), $3),
+                    is_published = TRUE,
+                    published_at = COALESCE(published_at, NOW()),
                     updated_at = NOW()
               WHERE slug = $1 AND deleted_at IS NULL AND body NOT LIKE '%blog-v2%'`,
             [slug, body, readMin]
