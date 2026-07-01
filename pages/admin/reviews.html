@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reviews | MN Lake Homes Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: #1a202c; }
+        .filter-tab { padding: 0.7rem 1.1rem; border: none; background: transparent; font-weight: 600; color: #718096; border-bottom: 2px solid transparent; cursor: pointer; }
+        .filter-tab.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
+        .filter-container { border-bottom: 1px solid #edf2f7; display: flex; gap: 0.5rem; margin-bottom: 1.75rem; flex-wrap: wrap; }
+        .rv-card { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; padding: 1.25rem 1.4rem; margin-bottom: 0.9rem; }
+        .rv-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+        .rv-stars { color: #f6ad2b; letter-spacing: 1px; }
+        .rv-sub { color: #718096; font-size: 0.82rem; margin-top: 0.15rem; }
+        .rv-subject { font-size: 0.78rem; font-weight: 700; color: #2b6cb0; background: #ebf8ff; padding: 0.2rem 0.6rem; border-radius: 99px; }
+        .rv-body { color: #4a5568; line-height: 1.6; margin: 0.6rem 0 0; }
+        .rv-actions { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+        .rv-btn { border: 1px solid #e2e8f0; background: #fff; border-radius: 7px; padding: 0.45rem 0.9rem; font-weight: 700; font-size: 0.82rem; cursor: pointer; }
+        .rv-btn.approve { background: #f0fff4; color: #276749; border-color: #9ae6b4; }
+        .rv-btn.reject  { background: #fffaf0; color: #c05621; border-color: #fbd38d; }
+        .rv-btn.del     { background: #fff5f5; color: #c53030; border-color: #feb2b2; }
+        .rv-status { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 0.2rem 0.55rem; border-radius: 6px; }
+        .rv-status.pending  { background: #fffaf0; color: #dd6b20; }
+        .rv-status.approved { background: #f0fff4; color: #2f855a; }
+        .rv-status.rejected { background: #fff5f5; color: #c53030; }
+        .rv-empty { padding: 3rem; text-align: center; color: #a0aec0; }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-assistant.js" defer></script>
+</head>
+<body>
+    <div class="admin-wrap">
+        <admin-sidebar active="reviews"></admin-sidebar>
+        <main class="admin-main">
+            <header style="margin-bottom: 1.5rem;">
+                <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.75px; margin: 0 0 0.25rem;">Reviews</h1>
+                <p style="color: #718096; font-size: 0.95rem; margin: 0;">Approve customer reviews to publish them on agent &amp; business profiles. Only approved reviews show publicly and count toward the star rating in search results.</p>
+            </header>
+
+            <div class="filter-container" id="filters">
+                <button class="filter-tab active" data-status="pending"  onclick="setFilter('pending', this)">Pending <span id="ct-pending"></span></button>
+                <button class="filter-tab"        data-status="approved" onclick="setFilter('approved', this)">Approved</button>
+                <button class="filter-tab"        data-status="rejected" onclick="setFilter('rejected', this)">Rejected</button>
+                <button class="filter-tab"        data-status=""         onclick="setFilter('', this)">All</button>
+            </div>
+
+            <div id="list"><div class="rv-empty">Loading…</div></div>
+        </main>
+    </div>
+
+    <script>
+        let _status = 'pending';
+
+        function esc(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
+        function stars(n) { return '★★★★★☆☆☆☆☆'.slice(5 - n, 10 - n); }
+        function fmtDate(d) { try { return new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }); } catch { return ''; } }
+
+        function setFilter(status, btn) {
+            _status = status;
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.toggle('active', t === btn));
+            load();
+        }
+
+        async function load() {
+            const list = document.getElementById('list');
+            list.innerHTML = '<div class="rv-empty">Loading…</div>';
+            try {
+                const qs = _status ? `?status=${encodeURIComponent(_status)}` : '';
+                const res = await fetch(`/api/reviews/admin${qs}`);
+                if (!res.ok) throw new Error();
+                const rows = await res.json();
+                if (!rows.length) { list.innerHTML = '<div class="rv-empty">No reviews here.</div>'; return; }
+                list.innerHTML = rows.map(r => {
+                    const subjHref = r.subject_type === 'agent'
+                        ? `/agents/${encodeURIComponent(r.subject_slug || '')}`
+                        : `/businesses/${encodeURIComponent(r.subject_slug || '')}`;
+                    return `
+                    <div class="rv-card" data-id="${r.id}">
+                        <div class="rv-top">
+                            <div>
+                                <span class="rv-stars">${stars(r.rating)}</span>
+                                <strong style="margin-left:0.5rem;">${esc(r.author_name)}</strong>
+                                <span class="rv-status ${r.status}" style="margin-left:0.5rem;">${r.status}</span>
+                                <div class="rv-sub">
+                                    <a href="${subjHref}" target="_blank" class="rv-subject">${esc(r.subject_name || r.subject_type)}</a>
+                                    &nbsp;·&nbsp; ${fmtDate(r.created_at)} ${r.author_email ? '· ' + esc(r.author_email) : ''}
+                                </div>
+                            </div>
+                        </div>
+                        ${r.title ? `<div style="font-weight:700;margin-top:0.6rem;">${esc(r.title)}</div>` : ''}
+                        ${r.body ? `<p class="rv-body">${esc(r.body)}</p>` : ''}
+                        <div class="rv-actions">
+                            ${r.status !== 'approved' ? `<button class="rv-btn approve" onclick="moderate('${r.id}','approved')">✓ Approve</button>` : ''}
+                            ${r.status !== 'rejected' ? `<button class="rv-btn reject" onclick="moderate('${r.id}','rejected')">Reject</button>` : ''}
+                            ${r.status !== 'pending'  ? `<button class="rv-btn" onclick="moderate('${r.id}','pending')">Move to pending</button>` : ''}
+                            <button class="rv-btn del" onclick="removeReview('${r.id}')">Delete</button>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (_) {
+                list.innerHTML = '<div class="rv-empty">Could not load reviews.</div>';
+            }
+        }
+
+        async function moderate(id, status) {
+            try {
+                const res = await fetch(`/api/reviews/admin/${id}`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status }),
+                });
+                if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || 'Failed.'); return; }
+                load();
+            } catch (_) { alert('Network error.'); }
+        }
+
+        async function removeReview(id) {
+            if (!confirm('Delete this review permanently?')) return;
+            try {
+                const res = await fetch(`/api/reviews/admin/${id}`, { method: 'DELETE' });
+                if (!res.ok) { alert('Failed to delete.'); return; }
+                load();
+            } catch (_) { alert('Network error.'); }
+        }
+
+        // Pending count badge on the tab.
+        async function refreshPendingCount() {
+            try {
+                const res = await fetch('/api/reviews/admin?status=pending');
+                if (!res.ok) return;
+                const n = (await res.json()).length;
+                document.getElementById('ct-pending').textContent = n ? `(${n})` : '';
+            } catch (_) {}
+        }
+
+        document.addEventListener('DOMContentLoaded', () => { load(); refreshPendingCount(); });
+    </script>
+</body>
+</html>

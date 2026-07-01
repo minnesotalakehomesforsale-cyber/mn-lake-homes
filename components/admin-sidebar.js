@@ -129,6 +129,8 @@
         // are aliased so direct hits on lakes.html / tags.html /
         // businesses.html still highlight this entry in the sidebar.
         { key: 'lakes-towns', href: 'lakes-towns.html', label: 'Lakes, Towns & Businesses', aliases: ['lakes', 'tags', 'businesses'] },
+        { key: 'listings',    href: 'listings.html',   label: 'Listings' },
+        { key: 'reviews',     href: 'reviews.html',    label: 'Reviews' },
         // Site-wide image manager — every DB-backed image (lakes/towns/
         // businesses/agents/blog/resources) in one grid with one-click
         // replace. Hardcoded HTML/CSS images aren't editable here yet.
