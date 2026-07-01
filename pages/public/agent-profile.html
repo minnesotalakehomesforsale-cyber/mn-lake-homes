@@ -286,6 +286,10 @@
                             ✓ Your inquiry was sent successfully.
                         </div>
                     </form>
+                    <div style="margin-top:1.25rem; padding-top:1.25rem; border-top:1px solid #edf2f7; text-align:center;">
+                        <p style="color:#718096; font-size:0.85rem; margin:0 0 0.75rem;">Worked with ${agent.display_name.split(' ')[0]}?</p>
+                        <button type="button" id="open-review-btn" style="width:100%; background:#fff; color:#1d6df2; border:1.5px solid #1d6df2; border-radius:8px; padding:0.8rem; font-weight:700; font-size:0.95rem; cursor:pointer;">★ Leave a review</button>
+                    </div>
                 </div>
             `;
 
@@ -325,6 +329,8 @@
             if (reviewsEl && typeof reviewsEl.load === 'function') {
                 reviewsEl.load('agent', agent.id, agent.display_name);
             }
+            const openReviewBtn = document.getElementById('open-review-btn');
+            if (openReviewBtn && reviewsEl) openReviewBtn.addEventListener('click', () => reviewsEl.openModal());
 
             // Lead form submit
             document.getElementById('agent-lead-form').addEventListener('submit', async function(e) {

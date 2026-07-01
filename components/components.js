@@ -590,13 +590,67 @@ customElements.define('lead-modal', LeadModal);
 // <reviews-widget subject-type="agent" subject-id="..." subject-name="Jane">
 // Renders the approved reviews + aggregate stars and a submit form. Pages that
 // load their subject async can instead call el.load(type, id, name) once ready.
+function ensureReviewStyles() {
+    if (document.getElementById('rw-styles')) return;
+    const s = document.createElement('style');
+    s.id = 'rw-styles';
+    s.textContent = `
+      .rw { max-width:820px; margin:0 auto; }
+      .rw-h2 { font-size:2rem; font-weight:700; color:#1a202c; letter-spacing:-0.5px; margin:0; }
+      .rw-agg { display:flex; align-items:center; gap:0.55rem; margin-top:0.5rem; flex-wrap:wrap; }
+      .rw-agg .v { font-weight:800; color:#1a202c; font-size:1.15rem; }
+      .rw-agg .c { color:#718096; font-size:0.9rem; }
+      .rw-none { color:#718096; margin:0.5rem 0 0; }
+      .rw-list { margin:1.6rem 0; }
+      .rw-card { background:#fff; border:1px solid #edf2f7; border-radius:12px; padding:1.1rem 1.3rem; margin-bottom:0.8rem; }
+      .rw-card .top { display:flex; justify-content:space-between; align-items:center; gap:0.75rem; flex-wrap:wrap; }
+      .rw-card .nm { font-weight:700; color:#1a202c; }
+      .rw-card .ti { font-weight:700; color:#1a202c; margin-top:0.4rem; }
+      .rw-card .bd { color:#4a5568; line-height:1.6; margin:0.3rem 0 0; }
+      .rw-stars { white-space:nowrap; }
+      .rw-leave { display:inline-flex; align-items:center; justify-content:center; gap:0.5rem; background:#1d6df2; color:#fff; border:0; border-radius:10px; padding:0.85rem 1.5rem; font-weight:700; font-size:1rem; cursor:pointer; font-family:inherit; }
+      .rw-leave:hover { background:#155bc8; }
+
+      .rw-modal { position:fixed; inset:0; z-index:10000; background:rgba(15,23,42,0.55); display:none; align-items:center; justify-content:center; padding:1.5rem; }
+      .rw-modal.open { display:flex; }
+      .rw-sheet { background:#fff; border-radius:16px; width:100%; max-width:520px; max-height:92vh; overflow-y:auto; box-shadow:0 30px 60px rgba(0,0,0,0.3); }
+      .rw-sheet-hd { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; padding:1.4rem 1.5rem 0.5rem; }
+      .rw-sheet-hd h3 { margin:0; font-size:1.3rem; font-weight:800; color:#1a202c; }
+      .rw-sheet-hd p { margin:0.25rem 0 0; color:#718096; font-size:0.86rem; }
+      .rw-x { background:none; border:0; font-size:1.8rem; line-height:1; color:#a0aec0; cursor:pointer; padding:0 0.2rem; }
+      .rw-body { padding:0.75rem 1.5rem 1.5rem; }
+      .rw-msg { display:none; padding:0.8rem 1rem; border-radius:8px; margin-bottom:1rem; font-weight:600; font-size:0.9rem; }
+      .rw-field { margin-bottom:1rem; }
+      .rw-label { display:block; font-weight:700; color:#4a5568; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:0.4rem; }
+      .rw-input, .rw-textarea { width:100%; padding:0.8rem 0.9rem; border:1px solid #e2e8f0; border-radius:9px; font:inherit; box-sizing:border-box; }
+      .rw-textarea { resize:vertical; min-height:96px; }
+      .rw-row { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
+      .rw-stars-input { display:flex; gap:0.1rem; }
+      .rw-star-btn { background:none; border:0; cursor:pointer; font-size:2.2rem; line-height:1; color:#e2e8f0; padding:0.1rem; -webkit-tap-highlight-color:transparent; }
+      .rw-star-btn.on { color:#f6ad2b; }
+      .rw-submit { width:100%; background:#1d6df2; color:#fff; border:0; border-radius:10px; padding:0.9rem; font-weight:700; font-size:1rem; cursor:pointer; font-family:inherit; }
+      .rw-submit:disabled { opacity:0.6; }
+
+      @media (max-width:600px){
+        .rw-h2 { font-size:1.6rem; }
+        .rw-modal { padding:0; align-items:flex-end; }
+        .rw-sheet { max-width:none; border-radius:18px 18px 0 0; max-height:94vh; }
+        .rw-row { grid-template-columns:1fr; }
+        .rw-star-btn { font-size:2.5rem; padding:0.15rem 0.25rem; }
+        .rw-leave { width:100%; }
+      }`;
+    document.head.appendChild(s);
+}
+
+// Bottom-sheet-on-mobile review submit modal, shared by all widgets on a page.
 class ReviewsWidget extends HTMLElement {
     connectedCallback() {
+        ensureReviewStyles();
         this._rating = 0;
         this._type = this.getAttribute('subject-type') || 'agent';
         this._id   = this.getAttribute('subject-id') || null;
         this._name = this.getAttribute('subject-name') || 'this profile';
-        this.innerHTML = '<div class="rvw-loading" style="color:#a0aec0;padding:1rem 0;">Loading reviews…</div>';
+        this.innerHTML = '<div style="color:#a0aec0;padding:1rem 0;">Loading reviews…</div>';
         if (this._id) this.load(this._type, this._id, this._name);
     }
     async load(type, id, name) {
@@ -605,15 +659,14 @@ class ReviewsWidget extends HTMLElement {
         try {
             const res = await fetch(`/api/reviews?subject_type=${encodeURIComponent(type)}&subject_id=${encodeURIComponent(id)}`);
             if (res.ok) data = await res.json();
-        } catch (_) { /* render empty state */ }
+        } catch (_) { /* empty state */ }
         this._render(data);
     }
     _esc(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
     _starRow(value, size) {
-        // Filled/empty stars for a 0-5 value (rounded to nearest half shown as full/empty).
         let out = '';
         for (let i = 1; i <= 5; i++) out += `<span style="color:${i <= Math.round(value) ? '#f6ad2b' : '#e2e8f0'};font-size:${size};line-height:1;">★</span>`;
-        return `<span class="rvw-stars" aria-label="${value} out of 5">${out}</span>`;
+        return `<span class="rw-stars" aria-label="${value} out of 5">${out}</span>`;
     }
     _render(data) {
         const agg = data.aggregate || { count: 0, average: 0 };
@@ -621,101 +674,117 @@ class ReviewsWidget extends HTMLElement {
         const firstName = this._esc((this._name || '').split(' ')[0] || 'them');
 
         const aggregateHtml = agg.count > 0
-            ? `<div style="display:flex;align-items:center;gap:0.6rem;margin-top:0.4rem;">
-                   ${this._starRow(agg.average, '1.35rem')}
-                   <span style="font-weight:800;color:#1a202c;font-size:1.1rem;">${agg.average.toFixed(1)}</span>
-                   <span style="color:#718096;font-size:0.9rem;">(${agg.count} review${agg.count === 1 ? '' : 's'})</span>
-               </div>`
-            : `<p style="color:#718096;margin:0.4rem 0 0;">No reviews yet — be the first to review ${firstName}.</p>`;
+            ? `<div class="rw-agg">${this._starRow(agg.average, '1.3rem')}
+                   <span class="v">${agg.average.toFixed(1)}</span>
+                   <span class="c">(${agg.count} review${agg.count === 1 ? '' : 's'})</span></div>`
+            : `<p class="rw-none">No reviews yet — be the first to review ${firstName}.</p>`;
 
         const listHtml = reviews.map(r => `
-            <div style="background:#fff;border:1px solid #edf2f7;border-radius:12px;padding:1.25rem 1.4rem;margin-bottom:0.85rem;">
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
-                    <strong style="color:#1a202c;">${this._esc(r.author_name)}</strong>
-                    ${this._starRow(r.rating, '0.95rem')}
-                </div>
-                ${r.title ? `<div style="font-weight:700;color:#1a202c;margin-top:0.5rem;">${this._esc(r.title)}</div>` : ''}
-                ${r.body ? `<p style="color:#4a5568;line-height:1.6;margin:0.4rem 0 0;">${this._esc(r.body)}</p>` : ''}
+            <div class="rw-card">
+                <div class="top"><span class="nm">${this._esc(r.author_name)}</span>${this._starRow(r.rating, '0.95rem')}</div>
+                ${r.title ? `<div class="ti">${this._esc(r.title)}</div>` : ''}
+                ${r.body ? `<p class="bd">${this._esc(r.body)}</p>` : ''}
             </div>`).join('');
 
-        const starPicker = [1, 2, 3, 4, 5].map(n =>
-            `<button type="button" class="rvw-star-btn" data-n="${n}" aria-label="${n} star${n === 1 ? '' : 's'}" style="background:none;border:0;cursor:pointer;font-size:1.9rem;line-height:1;color:#e2e8f0;padding:0 0.1rem;">★</button>`
-        ).join('');
-
         this.innerHTML = `
-            <div style="max-width:820px;margin:0 auto;">
-                <h2 style="font-size:2rem;font-weight:700;color:#1a202c;letter-spacing:-0.5px;margin:0;">Reviews</h2>
+            <div class="rw">
+                <h2 class="rw-h2">Reviews</h2>
                 ${aggregateHtml}
-                <div style="margin:2rem 0;">${listHtml}</div>
-                <div style="background:#fff;border:1px solid #edf2f7;border-radius:14px;padding:1.75rem;">
-                    <h3 style="font-size:1.15rem;font-weight:800;color:#1a202c;margin:0 0 0.35rem;">Write a review</h3>
-                    <p style="color:#718096;font-size:0.9rem;margin:0 0 1.25rem;">Reviews are checked before they appear.</p>
-                    <div class="rvw-msg" style="display:none;padding:0.8rem 1rem;border-radius:8px;margin-bottom:1rem;font-weight:600;"></div>
-                    <form class="rvw-form">
-                        <input class="rvw-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
-                        <div style="margin-bottom:1rem;">
-                            <label style="display:block;font-weight:700;color:#4a5568;font-size:0.8rem;text-transform:uppercase;margin-bottom:0.35rem;">Your rating *</label>
-                            <div class="rvw-star-picker" style="display:inline-flex;">${starPicker}</div>
+                <div class="rw-list">${listHtml}</div>
+                <button type="button" class="rw-leave">★ Leave a review</button>
+            </div>`;
+
+        this.querySelector('.rw-leave').addEventListener('click', () => this.openModal());
+    }
+    // Public — lets an external button (e.g. under the contact form) open it.
+    openModal() {
+        if (!this._modal) this._buildModal();
+        this._rating = 0;
+        this._modal.querySelectorAll('.rw-star-btn').forEach(b => b.classList.remove('on'));
+        this._modal.querySelector('.rw-form').reset();
+        const msg = this._modal.querySelector('.rw-msg'); msg.style.display = 'none';
+        this._modal.querySelector('.rw-subj').textContent = this._name || 'this profile';
+        this._modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => this._modal.querySelector('.rw-name').focus(), 50);
+    }
+    closeModal() {
+        if (this._modal) this._modal.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+    _buildModal() {
+        const stars = [1, 2, 3, 4, 5].map(n =>
+            `<button type="button" class="rw-star-btn" data-n="${n}" aria-label="${n} star${n === 1 ? '' : 's'}">★</button>`).join('');
+        const m = document.createElement('div');
+        m.className = 'rw-modal';
+        m.innerHTML = `
+            <div class="rw-sheet" role="dialog" aria-modal="true" aria-label="Leave a review">
+                <div class="rw-sheet-hd">
+                    <div><h3>Leave a review</h3><p>Reviewing <strong class="rw-subj"></strong> · checked before it appears</p></div>
+                    <button type="button" class="rw-x" aria-label="Close">×</button>
+                </div>
+                <div class="rw-body">
+                    <div class="rw-msg"></div>
+                    <form class="rw-form">
+                        <input class="rw-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
+                        <div class="rw-field">
+                            <label class="rw-label">Your rating *</label>
+                            <div class="rw-stars-input">${stars}</div>
                         </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:1rem;">
-                            <input class="rvw-name" type="text" placeholder="Your name *" style="padding:0.7rem 0.9rem;border:1px solid #e2e8f0;border-radius:8px;font:inherit;">
-                            <input class="rvw-email" type="email" placeholder="Email (optional)" style="padding:0.7rem 0.9rem;border:1px solid #e2e8f0;border-radius:8px;font:inherit;">
+                        <div class="rw-row" style="margin-bottom:1rem;">
+                            <div><label class="rw-label">Your name *</label><input class="rw-input rw-name" type="text" placeholder="Jane D."></div>
+                            <div><label class="rw-label">Email (optional)</label><input class="rw-input rw-email" type="email" placeholder="jane@email.com"></div>
                         </div>
-                        <input class="rvw-title" type="text" placeholder="Title (optional)" style="width:100%;padding:0.7rem 0.9rem;border:1px solid #e2e8f0;border-radius:8px;font:inherit;margin-bottom:1rem;box-sizing:border-box;">
-                        <textarea class="rvw-body" rows="4" placeholder="Share your experience…" style="width:100%;padding:0.7rem 0.9rem;border:1px solid #e2e8f0;border-radius:8px;font:inherit;margin-bottom:1rem;box-sizing:border-box;resize:vertical;"></textarea>
-                        <button type="submit" class="rvw-submit" style="background:#1d6df2;color:#fff;border:0;border-radius:8px;padding:0.8rem 1.6rem;font-weight:700;font-size:1rem;cursor:pointer;">Submit review</button>
+                        <div class="rw-field"><label class="rw-label">Title (optional)</label><input class="rw-input rw-title" type="text" placeholder="Great experience"></div>
+                        <div class="rw-field"><label class="rw-label">Your review</label><textarea class="rw-textarea rw-body-input" placeholder="Share your experience…"></textarea></div>
+                        <button type="submit" class="rw-submit">Submit review</button>
                     </form>
                 </div>
             </div>`;
+        document.body.appendChild(m);
+        this._modal = m;
 
-        this._wire();
-    }
-    _wire() {
-        const picker = this.querySelector('.rvw-star-picker');
-        const paint = (val) => picker.querySelectorAll('.rvw-star-btn').forEach(b =>
-            b.style.color = Number(b.dataset.n) <= val ? '#f6ad2b' : '#e2e8f0');
-        picker.querySelectorAll('.rvw-star-btn').forEach(btn => {
+        m.addEventListener('click', (e) => { if (e.target === m) this.closeModal(); });
+        m.querySelector('.rw-x').addEventListener('click', () => this.closeModal());
+
+        const paint = (val) => m.querySelectorAll('.rw-star-btn').forEach(b => b.classList.toggle('on', Number(b.dataset.n) <= val));
+        m.querySelectorAll('.rw-star-btn').forEach(btn => {
             btn.addEventListener('mouseenter', () => paint(Number(btn.dataset.n)));
             btn.addEventListener('click', () => { this._rating = Number(btn.dataset.n); paint(this._rating); });
         });
-        picker.addEventListener('mouseleave', () => paint(this._rating));
+        m.querySelector('.rw-stars-input').addEventListener('mouseleave', () => paint(this._rating));
 
-        const form = this.querySelector('.rvw-form');
-        const msg  = this.querySelector('.rvw-msg');
+        const form = m.querySelector('.rw-form');
+        const msg  = m.querySelector('.rw-msg');
         const show = (text, ok) => {
-            msg.textContent = text;
-            msg.style.display = 'block';
+            msg.textContent = text; msg.style.display = 'block';
             msg.style.background = ok ? '#f0fff4' : '#fff5f5';
             msg.style.color = ok ? '#276749' : '#c53030';
             msg.style.border = `1px solid ${ok ? '#9ae6b4' : '#feb2b2'}`;
         };
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const name = this.querySelector('.rvw-name').value.trim();
+            const name = m.querySelector('.rw-name').value.trim();
             if (!this._rating) return show('Please pick a star rating.', false);
             if (!name)         return show('Please add your name.', false);
-            const btn = this.querySelector('.rvw-submit');
+            const btn = m.querySelector('.rw-submit');
             btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Submitting…';
             try {
                 const res = await fetch('/api/reviews', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        subject_type: this._type,
-                        subject_id: this._id,
-                        author_name: name,
-                        author_email: this.querySelector('.rvw-email').value.trim(),
-                        rating: this._rating,
-                        title: this.querySelector('.rvw-title').value.trim(),
-                        body: this.querySelector('.rvw-body').value.trim(),
-                        website: (this.querySelector('.rvw-hp') || {}).value || '',
+                        subject_type: this._type, subject_id: this._id,
+                        author_name: name, author_email: m.querySelector('.rw-email').value.trim(),
+                        rating: this._rating, title: m.querySelector('.rw-title').value.trim(),
+                        body: m.querySelector('.rw-body-input').value.trim(),
+                        website: m.querySelector('.rw-hp').value || '',
                     }),
                 });
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok) { show(data.error || 'Could not submit your review.', false); return; }
-                form.reset(); this._rating = 0;
-                this.querySelectorAll('.rvw-star-btn').forEach(b => b.style.color = '#e2e8f0');
                 show(data.message || 'Thanks! Your review will appear once approved.', true);
+                form.reset(); this._rating = 0; paint(0);
+                setTimeout(() => this.closeModal(), 2200);
             } catch (_) {
                 show('Network error — please try again.', false);
             } finally {
