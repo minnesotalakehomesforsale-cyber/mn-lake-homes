@@ -773,7 +773,12 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 { title: 'Lake-buying guides', items: BLOG_GUIDE_LINKS },
                 { title: 'Tools & calculators', items: LAKE_TOOL_LINKS },
             ]);
-            if (mesh) out = out.replace('</body>', `${mesh}\n</body>`);
+            if (mesh) {
+                const footerAnchor = '<global-footer></global-footer>';
+                out = out.includes(footerAnchor)
+                    ? out.replace(footerAnchor, `${mesh}\n${footerAnchor}`)   // render above the footer
+                    : out.replace('</body>', `${mesh}\n</body>`);            // fallback
+            }
             res.type('html').send(out);
         });
     } catch (err) {
@@ -993,7 +998,11 @@ app.get('/towns', async (req, res, next) => {
                 { title: 'Minnesota Lakes', items: lakesR.rows.map(l => ({ href: `/lakes/${encodeURIComponent(l.slug)}`, name: l.name })) },
                 { title: 'Lake Towns', items: townsR.rows.map(t => ({ href: `/towns/${encodeURIComponent(t.slug)}`, name: t.name })) },
             ]);
-            res.type('html').send(html.replace('</body>', `${dir}\n</body>`));
+            const footerAnchor = '<global-footer></global-footer>';
+            const out = html.includes(footerAnchor)
+                ? html.replace(footerAnchor, `${dir}\n${footerAnchor}`)   // render above the footer
+                : html.replace('</body>', `${dir}\n</body>`);            // fallback (no footer)
+            res.type('html').send(out);
         });
     } catch (err) { next(err); }
 });
@@ -1162,7 +1171,12 @@ app.get('/towns/:slug', async (req, res, next) => {
                 { title: 'Lake-buying guides', items: BLOG_GUIDE_LINKS },
                 { title: 'Tools & calculators', items: LAKE_TOOL_LINKS },
             ]);
-            if (mesh) out = out.replace('</body>', `${mesh}\n</body>`);
+            if (mesh) {
+                const footerAnchor = '<global-footer></global-footer>';
+                out = out.includes(footerAnchor)
+                    ? out.replace(footerAnchor, `${mesh}\n${footerAnchor}`)   // render above the footer
+                    : out.replace('</body>', `${mesh}\n</body>`);            // fallback
+            }
             res.type('html').send(out);
         });
     } catch (err) {
@@ -1462,7 +1476,11 @@ app.get('/agents', async (req, res, next) => {
             const dir = seoDirectory([
                 { title: 'All Minnesota Lake Agents', items: r.rows.map(a => ({ href: `/agents/${encodeURIComponent(a.slug)}`, name: a.display_name + (a.city ? ` — ${a.city}` : '') })) },
             ]);
-            res.type('html').send(html.replace('</body>', `${dir}\n</body>`));
+            const footerAnchor = '<global-footer></global-footer>';
+            const out = html.includes(footerAnchor)
+                ? html.replace(footerAnchor, `${dir}\n${footerAnchor}`)   // render above the footer
+                : html.replace('</body>', `${dir}\n</body>`);            // fallback (no footer)
+            res.type('html').send(out);
         });
     } catch (err) { next(err); }
 });
