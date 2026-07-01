@@ -9,6 +9,13 @@ const { logActivity } = require('../services/activity-log');
 
 const isAdmin = (req) => req.user && (req.user.role === 'admin' || req.user.role === 'super_admin');
 
+// Feature flag — listings are hidden from the public site until this is
+// explicitly turned on (set LISTINGS_PUBLIC=true). Admin management always
+// works; only the public-facing surfaces (grid, count, /listings/:slug,
+// sitemap, API) are gated so nothing is lost while it's hidden.
+const LISTINGS_PUBLIC = process.env.LISTINGS_PUBLIC === 'true';
+exports.LISTINGS_PUBLIC = LISTINGS_PUBLIC;
+
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key:    process.env.CLOUDINARY_API_KEY,
@@ -76,7 +83,7 @@ async function uniqueSlug(base) {
 
 // Reusable — imported by the SSR lake route for the live count.
 async function activeCountForLake(lakeId) {
-    if (!lakeId) return 0;
+    if (!LISTINGS_PUBLIC || !lakeId) return 0;
     const { rows } = await pool.query(
         `SELECT COUNT(*)::int AS c FROM listings WHERE lake_id = $1 AND status = 'active'`,
         [lakeId]
@@ -86,6 +93,7 @@ async function activeCountForLake(lakeId) {
 
 // GET /api/listings  (public) — active listings, optional ?lake_id= filter.
 exports.listPublic = async (req, res) => {
+    if (!LISTINGS_PUBLIC) return res.json([]);   // hidden from the public site
     try {
         const lakeId = String(req.query.lake_id || '').trim() || null;
         const limit  = Math.min(parseInt(req.query.limit, 10) || 24, 60);
@@ -109,6 +117,7 @@ exports.listPublic = async (req, res) => {
 
 // GET /api/listings/slug/:slug (public) — single active listing as JSON.
 exports.getBySlug = async (req, res) => {
+    if (!LISTINGS_PUBLIC) return res.status(404).json({ error: 'Not found.' });
     try {
         const { rows } = await pool.query(
             `SELECT ${PUBLIC_COLS} FROM listings WHERE slug = $1 AND status = 'active' LIMIT 1`,
