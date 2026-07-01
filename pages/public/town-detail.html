@@ -615,19 +615,15 @@
                     const photo = a.profile_photo_url || '/assets/images/mn-stillwater-aerial.webp';
                     const bio   = a.bio || '';
                     const shortBio = bio.length > 180 ? bio.slice(0, 180).trimEnd() + '…' : bio;
-                    const title = (a.membership_badge || 'Lake Specialist').toUpperCase();
-                    // Plan tier → badge: gold for top plans / manual feature,
-                    // blue for the mid plan, nothing for basic.
+                    // Featured = pays $39+ (Prime/Elite) or a manual feature →
+                    // blue "Lake Specialist" badge. Basic ($9) → no badge, "Agent".
                     const code = a.membership_code || '';
-                    const isGold = a.is_featured || code === 'top_agent' || code === 'founder';
-                    const isBlue = code === 'mn_lake_specialist' || code === 'premium';
-                    const badgeLabel = a.membership_badge || (isGold ? 'Top Agent' : 'Lake Specialist');
-                    const badgeGrad = isGold ? 'linear-gradient(135deg,#f6c453 0%,#d69e2e 100%)' : 'linear-gradient(135deg,#1d6df2 0%,#155bc8 100%)';
-                    const badgeShadow = isGold ? 'rgba(214,158,46,0.4)' : 'rgba(29,109,242,0.35)';
-                    const topBadge = (isGold || isBlue)
-                        ? `<div style="position:absolute;top:12px;left:12px;z-index:2;display:inline-flex;align-items:center;gap:0.35rem;background:${badgeGrad};color:#fff;font-size:0.72rem;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;padding:0.35rem 0.7rem;border-radius:99px;box-shadow:0 4px 12px ${badgeShadow};">
+                    const featured = a.is_featured || ['mn_lake_specialist', 'top_agent', 'premium', 'founder'].includes(code);
+                    const title = (featured ? 'Lake Specialist' : 'Agent').toUpperCase();
+                    const topBadge = featured
+                        ? `<div style="position:absolute;top:12px;left:12px;z-index:2;display:inline-flex;align-items:center;gap:0.35rem;background:linear-gradient(135deg,#1d6df2 0%,#155bc8 100%);color:#fff;font-size:0.72rem;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;padding:0.35rem 0.7rem;border-radius:99px;box-shadow:0 4px 12px rgba(29,109,242,0.35);">
                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                               ${escHtml(badgeLabel)}
+                               Lake Specialist
                            </div>`
                         : '';
                     return `
