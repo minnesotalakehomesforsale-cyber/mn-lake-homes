@@ -510,8 +510,8 @@ app.get('/sitemap.xml', async (req, res) => {
         for (const b of businesses.rows) push(`${base}/businesses/${encodeURIComponent(b.slug)}`,  { lastmod: iso(b.updated_at),  priority: 0.6, changefreq: 'monthly' });
         for (const a of agents.rows)     push(`${base}/agents/${encodeURIComponent(a.slug)}`,                              { lastmod: iso(a.updated_at), priority: 0.6, changefreq: 'monthly' });
         for (const p of posts.rows)      push(`${base}/blog/${encodeURIComponent(p.slug)}`,                                   { lastmod: iso(p.published_at || p.updated_at), priority: 0.5, changefreq: 'monthly' });
-        // Listings are hidden from the public site (and sitemap) until LISTINGS_PUBLIC=true.
-        if (process.env.LISTINGS_PUBLIC === 'true') {
+        // Active listings only (already filtered in the query); LISTINGS_PUBLIC=false hides all.
+        if (process.env.LISTINGS_PUBLIC !== 'false') {
             for (const ls of listings.rows) push(`${base}/listings/${encodeURIComponent(ls.slug)}`,                            { lastmod: iso(ls.updated_at), priority: 0.7, changefreq: 'weekly'  });
         }
 
@@ -821,9 +821,9 @@ app.get('/lakes/:slug', async (req, res, next) => {
 // Mirror of /lakes/:slug — static template with {{BUSINESS_*}} tokens
 // replaced server-side so SEO meta tags are in the initial HTML.
 // ─── Listings: per-property public detail page + RealEstateListing JSON-LD ──
-// Gated behind LISTINGS_PUBLIC — hidden from the public site until enabled.
+// Per-listing visibility (status='active'); LISTINGS_PUBLIC=false force-hides all.
 app.get('/listings/:slug', async (req, res, next) => {
-    if (process.env.LISTINGS_PUBLIC !== 'true') { renderFriendly404(res, { kind: 'listing', slug: req.params.slug }); return; }
+    if (process.env.LISTINGS_PUBLIC === 'false') { renderFriendly404(res, { kind: 'listing', slug: req.params.slug }); return; }
     try {
         const { rows } = await pool.query(
             `SELECT l.*, lk.name AS lake_name, lk.slug AS lake_slug

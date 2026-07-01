@@ -9,11 +9,12 @@ const { logActivity } = require('../services/activity-log');
 
 const isAdmin = (req) => req.user && (req.user.role === 'admin' || req.user.role === 'super_admin');
 
-// Feature flag — listings are hidden from the public site until this is
-// explicitly turned on (set LISTINGS_PUBLIC=true). Admin management always
-// works; only the public-facing surfaces (grid, count, /listings/:slug,
-// sitemap, API) are gated so nothing is lost while it's hidden.
-const LISTINGS_PUBLIC = process.env.LISTINGS_PUBLIC === 'true';
+// Visibility is per-listing: only status='active' listings are ever public
+// (the public queries already filter on it), and new listings default to
+// 'draft' so nothing shows until an admin clicks "Add to site". LISTINGS_PUBLIC
+// stays as a global kill-switch — set it to 'false' to force-hide the entire
+// feature regardless of per-listing status; otherwise it's on.
+const LISTINGS_PUBLIC = process.env.LISTINGS_PUBLIC !== 'false';
 exports.LISTINGS_PUBLIC = LISTINGS_PUBLIC;
 
 cloudinary.config({
@@ -237,6 +238,33 @@ exports.update = async (req, res) => {
     } catch (err) {
         console.error('[listings.update]', err.message);
         res.status(500).json({ error: 'Could not update the listing.' });
+    }
+};
+
+// PATCH /api/listings/admin/:id/status — quick "Add to site" / "Remove from
+// site" toggle. active = live on the public site; draft = hidden.
+exports.setStatus = async (req, res) => {
+    if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
+    const status = String(req.body?.status || '').trim();
+    if (!['active', 'pending', 'sold', 'draft'].includes(status)) {
+        return res.status(400).json({ error: 'Invalid status.' });
+    }
+    try {
+        const { rows } = await pool.query(
+            `UPDATE listings SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING id, status`,
+            [status, req.params.id]
+        );
+        if (!rows.length) return res.status(404).json({ error: 'Listing not found.' });
+        logActivity({
+            event_type: status === 'active' ? 'listing.published' : 'listing.unpublished',
+            event_scope: 'listing',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.email || 'admin' },
+            target: { type: 'listing', id: rows[0].id }, req,
+        });
+        res.json({ success: true, status: rows[0].status });
+    } catch (err) {
+        console.error('[listings.setStatus]', err.message);
+        res.status(500).json({ error: 'Could not update status.' });
     }
 };
 

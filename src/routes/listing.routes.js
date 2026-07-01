@@ -15,6 +15,7 @@ router.post('/admin/sync-feed', verifyToken, c.syncFeed);       // pull from RES
 router.get('/admin/:id',        verifyToken, c.getAdmin);
 router.post('/admin',           verifyToken, c.create);
 router.put('/admin/:id',        verifyToken, c.update);
+router.patch('/admin/:id/status', verifyToken, c.setStatus);
 router.delete('/admin/:id',     verifyToken, c.remove);
 
 module.exports = router;

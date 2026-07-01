@@ -47,7 +47,7 @@
             <header style="margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem;">
                 <div>
                     <h1 style="font-size:1.85rem;font-weight:800;letter-spacing:-0.75px;margin:0 0 0.25rem;">Listings</h1>
-                    <p style="color:#718096;font-size:0.95rem;margin:0;">Property listings. Tie each to a lake to power the live "homes for sale" count + grid on that lake's page, and each gets its own SEO page.</p>
+                    <p style="color:#718096;font-size:0.95rem;margin:0;">Property listings. New listings start <strong>hidden (Draft)</strong> — click <strong>Add to site</strong> to publish one. Live listings power the "homes for sale" count + grid on their lake's page and get their own SEO page.</p>
                 </div>
                 <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
                     <button class="btn-ghost" onclick="openImport()">⇪ Import / MLS sync</button>
@@ -164,12 +164,25 @@
                         <td>${money(r.price)}</td>
                         <td>${r.beds??'—'} / ${r.baths??'—'}</td>
                         <td><span class="ls-status ${r.status}">${r.status}</span></td>
-                        <td style="text-align:right;">
-                            ${r.status==='active'?`<a href="/listings/${esc(r.slug)}" target="_blank" style="color:#718096;margin-right:0.6rem;text-decoration:none;">View</a>`:''}
-                            <button class="btn-ghost" style="padding:0.35rem 0.8rem;" onclick='openEdit(${JSON.stringify(r.id)})'>Edit</button>
+                        <td style="text-align:right;white-space:nowrap;">
+                            ${r.status==='active'?`<a href="/listings/${esc(r.slug)}" target="_blank" style="color:#718096;margin-right:0.5rem;text-decoration:none;">View</a>`:''}
+                            ${r.status==='active'
+                                ? `<button class="btn-ghost" style="padding:0.35rem 0.7rem;color:#c05621;border-color:#fbd38d;" onclick='toggleSite(${JSON.stringify(r.id)},"draft")'>Remove from site</button>`
+                                : `<button class="btn-ghost" style="padding:0.35rem 0.7rem;color:#2f855a;border-color:#9ae6b4;" onclick='toggleSite(${JSON.stringify(r.id)},"active")'>Add to site</button>`}
+                            <button class="btn-ghost" style="padding:0.35rem 0.7rem;" onclick='openEdit(${JSON.stringify(r.id)})'>Edit</button>
                         </td>
                     </tr>`).join('')}</tbody></table>`;
             } catch { wrap.innerHTML = '<div class="ls-empty">Could not load listings.</div>'; }
+        }
+
+        async function toggleSite(id, status) {
+            try {
+                const res = await fetch(`/api/listings/admin/${id}/status`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }),
+                });
+                if (!res.ok) { const d = await res.json().catch(() => ({})); return alert(d.error || 'Failed.'); }
+                load();
+            } catch { alert('Network error.'); }
         }
 
         const V = id => document.getElementById(id).value;
@@ -224,7 +237,7 @@
         function removeGalleryImg(i) { _gallery.splice(i, 1); renderGalleryPreview(); }
 
         function openCreate() {
-            fillForm({ status:'active', state:'MN' });
+            fillForm({ status:'draft', state:'MN' });
             document.getElementById('modal-title').textContent = 'New listing';
             document.getElementById('del-btn').hidden = true;
             document.getElementById('err').style.display='none';
