@@ -409,6 +409,26 @@
         </div>
     </section>
 
+    <!-- FAQ — visible, crawlable Q&A mirroring the FAQPage JSON-LD in the head. -->
+    <section class="ld-faq" aria-label="Frequently asked questions about {{TOWN_NAME}}">
+        <style>
+            .ld-faq { max-width: 820px; margin: 0 auto; padding: 4rem 2rem 5rem; }
+            .ld-faq .ld-faq-eyebrow { display:block; font-size:0.8rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#1d6df2; margin-bottom:0.75rem; }
+            .ld-faq h2 { font-size:2rem; font-weight:700; color:#1a202c; letter-spacing:-0.75px; margin:0 0 2rem; }
+            .ld-faq .faq-item { border:1px solid #edf2f7; border-radius:12px; margin-bottom:0.85rem; background:#fff; overflow:hidden; }
+            .ld-faq .faq-item summary { cursor:pointer; list-style:none; padding:1.15rem 1.35rem; font-size:1.02rem; font-weight:700; color:#1a202c; display:flex; justify-content:space-between; align-items:center; gap:1rem; }
+            .ld-faq .faq-item summary::-webkit-details-marker { display:none; }
+            .ld-faq .faq-item summary::after { content:'+'; font-size:1.4rem; font-weight:400; color:#1d6df2; flex-shrink:0; }
+            .ld-faq .faq-item[open] summary::after { content:'\2013'; }
+            .ld-faq .faq-answer { padding:0 1.35rem 1.25rem; }
+            .ld-faq .faq-answer p { margin:0; color:#4a5568; line-height:1.65; font-size:0.98rem; }
+            @media (max-width:600px){ .ld-faq { padding:3rem 1.25rem 4rem; } .ld-faq h2 { font-size:1.65rem; } }
+        </style>
+        <span class="ld-faq-eyebrow">Frequently asked</span>
+        <h2>Common questions about {{TOWN_NAME}}</h2>
+        {{TOWN_FAQ_HTML}}
+    </section>
+
     <!-- From the blog -->
     <section class="tn-section centered gray" id="tn-blog-section" style="display:none;">
         <div class="inner">

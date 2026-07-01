@@ -216,6 +216,92 @@ const seasonsTextForLake   = (lake) => htmlToParagraphs(seasonsHtmlForLake(lake)
 const lifestyleTextForTown = (tag)  => htmlToParagraphs(lifestyleHtmlForTown(tag));
 const seasonsTextForTown   = (tag)  => htmlToParagraphs(seasonsHtmlForTown(tag));
 
+// ─── FAQ (lake + town) — visible Q&A + data for FAQPage JSON-LD ────────────
+// Answers are qualitative and location-based (no fabricated prices, depths,
+// or counts), so the same copy is safe for every row AND matches the visible
+// on-page content Google requires alongside FAQPage structured data. The two
+// faq*For* functions return a [{q, a}] array (server builds the JSON-LD from
+// it); the faqHtml*For* functions render the crawlable <details> accordion.
+
+function escFaq(s) {
+    return String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+// ['A','B','C'] → "A, B, and C"; ['A','B'] → "A and B"; ['A'] → "A"
+function listPhrase(arr) {
+    const a = arr.filter(Boolean);
+    if (!a.length) return '';
+    if (a.length === 1) return a[0];
+    if (a.length === 2) return `${a[0]} and ${a[1]}`;
+    return `${a.slice(0, -1).join(', ')}, and ${a[a.length - 1]}`;
+}
+
+function faqItemsHtml(items) {
+    return items.map(({ q, a }) => `
+                <details class="faq-item">
+                    <summary>${escFaq(q)}</summary>
+                    <div class="faq-answer"><p>${escFaq(a)}</p></div>
+                </details>`).join('');
+}
+
+function faqForLake(lake, townNames = []) {
+    const name   = lake.name || 'this lake';
+    const state  = lake.state || 'Minnesota';
+    const region = lake.region || 'Minnesota';
+    const county = lake.county ? `${lake.county} County` : null;
+    const where  = county ? `${county}, ${region}` : region;
+    const flavor = pickLakeFlavor(lake.region);
+
+    const activity = {
+        destination: 'boating, fishing, watersports, and lakeside dining, with capable marinas and services right on the water',
+        metro:       'boating, fishing, paddling, and after-work evenings on the water, with the Twin Cities close by',
+        wilderness:  'fishing, paddling, and quiet-water recreation under dark skies and wild shoreline',
+        community:   'fishing, boating, swimming, and slow-paced weekends on a quieter lake',
+    }[flavor];
+
+    const towns = (townNames || []).filter(Boolean).slice(0, 5);
+    const townsAnswer = towns.length
+        ? `${name} is close to ${listPhrase(towns)}. Each has its own dining, groceries, and marine services for lake-home owners.`
+        : `Several Minnesota towns sit within a short drive of ${name}, offering dining, groceries, and marine services for owners.`;
+
+    return [
+        { q: `Can you buy a home on ${name}?`,
+          a: `Yes. ${name}, in ${where}, ${state}, has a mix of year-round lake homes, seasonal cabins, and the occasional building lot along its shoreline. True waterfront inventory is limited and moves seasonally, so most buyers work with a local agent who tracks ${name} listings directly.` },
+        { q: `Where is ${name} located?`,
+          a: `${name} is in ${where}, ${state}.` },
+        { q: `What is there to do on ${name}?`,
+          a: `${name} is known for ${activity}. The full four-season calendar — open water in summer, color in fall, and ice season in winter — is part of what draws owners to the lake.` },
+        { q: `What towns are near ${name}?`,
+          a: townsAnswer },
+        { q: `How do I find a real estate agent for ${name}?`,
+          a: `We match you with a vetted agent who specializes in ${name} and the surrounding ${region} market and knows the shoreline bay by bay. Request an introduction on this page and we'll connect you — there's no cost to get matched.` },
+    ];
+}
+
+function faqForTown(tag, lakeNames = []) {
+    const name   = tag.name || 'this town';
+    const state  = tag.state || 'MN';
+    const region = tag.region || 'Minnesota';
+    const lakes  = (lakeNames || []).filter(Boolean).slice(0, 5);
+    const lakesAnswer = lakes.length
+        ? `${name} sits near ${listPhrase(lakes)}, among others — each with its own shoreline and character.`
+        : `${name} sits within a short drive of several Minnesota lakes, each with its own shoreline and character.`;
+
+    return [
+        { q: `Is ${name}, ${state} a good place to buy a lake home?`,
+          a: `${name} is a popular base for lake-home buyers in ${region}, ${state} — close to the water with the everyday services (dining, groceries, marine, and trades) that make lake ownership easy. Waterfront and lake-access properties nearby are limited, so most buyers work with a local agent.` },
+        { q: `Where is ${name} located?`,
+          a: `${name} is in ${region}, ${state}.` },
+        { q: `What lakes are near ${name}?`,
+          a: lakesAnswer },
+        { q: `How do I find a real estate agent in ${name}?`,
+          a: `We match you with a vetted agent who knows ${name} and the surrounding lakes. Request an introduction on this page and we'll connect you — there's no cost to get matched.` },
+    ];
+}
+
+const faqHtmlForLake = (lake, townNames = []) => faqItemsHtml(faqForLake(lake, townNames));
+const faqHtmlForTown = (tag,  lakeNames = []) => faqItemsHtml(faqForTown(tag,  lakeNames));
+
 module.exports = {
     pickLakeFlavor,
     pickTownFlavor,
@@ -227,4 +313,8 @@ module.exports = {
     seasonsTextForLake,
     lifestyleTextForTown,
     seasonsTextForTown,
+    faqForLake,
+    faqForTown,
+    faqHtmlForLake,
+    faqHtmlForTown,
 };

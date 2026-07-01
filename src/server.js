@@ -725,6 +725,20 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 ? lake.seasons_text.trim().split(/\n{2,}/).map(p => `<p>${escapeHtml(p)}</p>`).join('')
                 : lct.seasonsHtmlForLake(lake);
 
+            // FAQ — visible crawlable Q&A + FAQPage JSON-LD, built from the
+            // same location-aware data so the markup matches the on-page text.
+            const lakeFaqTownNames = townRows.map(t => t.name);
+            const lakeFaqHtml = lct.faqHtmlForLake(lake, lakeFaqTownNames);
+            const lakeFaqLd = `<script type="application/ld+json">${JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'FAQPage',
+                mainEntity: lct.faqForLake(lake, lakeFaqTownNames).map(({ q, a }) => ({
+                    '@type': 'Question',
+                    name: q,
+                    acceptedAnswer: { '@type': 'Answer', text: a },
+                })),
+            })}</script>`;
+
             // Public gallery — only rendered when the admin has uploaded at
             // least one image beyond the hero. Empty array (the default)
             // collapses to an empty string and the section disappears
@@ -756,9 +770,10 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 '{{LAKE_REGION}}':          escapeHtml(lake.region || ''),
                 '{{LAKE_COUNTY}}':          escapeHtml(lake.county || ''),
                 '{{LAKE_STATE}}':           escapeHtml(lake.state || ''),
-                '{{LAKE_STRUCTURED_DATA}}': lakeStructuredData,
+                '{{LAKE_STRUCTURED_DATA}}': lakeStructuredData + '\n    ' + lakeFaqLd,
                 '{{LAKE_LIFESTYLE_BODY}}':  lifestyleBody,
                 '{{LAKE_SEASONS_BODY}}':    seasonsBody,
+                '{{LAKE_FAQ_HTML}}':        lakeFaqHtml,
                 '{{LAKE_GALLERY_HTML}}':    lakeGalleryHtml,
             };
             let out = html;
@@ -795,7 +810,7 @@ app.get('/businesses/:slug', async (req, res, next) => {
             `SELECT id, slug, name, type, description, phone, email, website_url,
                     instagram_url, facebook_url,
                     address, city, state, zip, latitude, longitude,
-                    featured_image_url, status
+                    featured_image_url, status, price_range
              FROM businesses WHERE slug = $1 LIMIT 1`,
             [req.params.slug]
         );
@@ -860,9 +875,16 @@ app.get('/businesses/:slug', async (req, res, next) => {
             // executing JS. JSON.stringify escapes <, >, etc. safely
             // inside the JSON-LD script block.
             const siteBase = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
+            // More specific schema.org subtypes win richer results where they
+            // clearly apply; everything else stays the safe generic LocalBusiness.
+            const bizSchemaType = ({
+                restaurant: 'Restaurant',
+                builder: 'GeneralContractor',
+                photographer: 'ProfessionalService',
+            })[biz.type] || 'LocalBusiness';
             const bizJsonLd = JSON.stringify({
                 '@context': 'https://schema.org',
-                '@type': 'LocalBusiness',
+                '@type': bizSchemaType,
                 '@id': `${siteBase}/businesses/${biz.slug}`,
                 name: biz.name,
                 description: biz.description || undefined,
@@ -870,6 +892,7 @@ app.get('/businesses/:slug', async (req, res, next) => {
                 image: biz.featured_image_url || undefined,
                 telephone: biz.phone || undefined,
                 email: biz.email || undefined,
+                priceRange: biz.price_range || undefined,
                 address: (biz.address || biz.city) ? {
                     '@type': 'PostalAddress',
                     streetAddress: biz.address || undefined,
@@ -1124,6 +1147,20 @@ app.get('/towns/:slug', async (req, res, next) => {
                 ? tag.seasons_text.trim().split(/\n{2,}/).map(p => `<p>${escapeHtml(p)}</p>`).join('')
                 : lct.seasonsHtmlForTown(tag);
 
+            // FAQ — visible crawlable Q&A + FAQPage JSON-LD, using the nearby
+            // lake names so the answers are specific to this town.
+            const townFaqLakeNames = townLakes.map(l => l.name);
+            const townFaqHtml = lct.faqHtmlForTown(tag, townFaqLakeNames);
+            const townFaqLd = `<script type="application/ld+json">${JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'FAQPage',
+                mainEntity: lct.faqForTown(tag, townFaqLakeNames).map(({ q, a }) => ({
+                    '@type': 'Question',
+                    name: q,
+                    acceptedAnswer: { '@type': 'Answer', text: a },
+                })),
+            })}</script>`;
+
             // Public gallery — only rendered when the admin has uploaded at
             // least one image beyond the hero. Empty array (the default)
             // collapses to an empty string and the section disappears.
@@ -1156,7 +1193,8 @@ app.get('/towns/:slug', async (req, res, next) => {
                 '{{TOWN_HERO_H1_HTML}}':     heroH1Html,
                 '{{TOWN_INTRO_TEXT}}':       escapeHtml(introText),
                 '{{TOWN_DESCRIPTION_JSON}}': descriptionJson,
-                '{{TOWN_STRUCTURED_DATA}}':  townStructuredData,
+                '{{TOWN_STRUCTURED_DATA}}':  townStructuredData + '\n    ' + townFaqLd,
+                '{{TOWN_FAQ_HTML}}':         townFaqHtml,
                 '{{TOWN_LIFESTYLE_BODY}}':   lifestyleBody,
                 '{{TOWN_SEASONS_BODY}}':     seasonsBody,
                 '{{TOWN_GALLERY_HTML}}':     townGalleryHtml,
