@@ -496,6 +496,32 @@
         {{LAKE_FAQ_HTML}}
     </section>
 
+    <!-- In-body conversion CTA — crawlable internal links to the buyer + seller
+         lead forms. Placed mid-page (after the FAQ) so engaged SEO readers get
+         a clear next step long before the footer. -->
+    <section class="ld-leadcta" aria-label="Buy or sell on {{LAKE_NAME}}">
+        <style>
+            .ld-leadcta { padding: 1rem 2rem 5rem; }
+            .ld-leadcta-inner { max-width: 900px; margin: 0 auto; background: linear-gradient(135deg,#1d6df2 0%,#134fb0 100%); border-radius: 20px; padding: 3rem 2.5rem; text-align: center; box-shadow: 0 20px 45px rgba(29,109,242,0.28); }
+            .ld-leadcta-inner h2 { color: #fff; font-size: 2rem; font-weight: 800; letter-spacing: -0.75px; margin: 0 0 0.75rem; }
+            .ld-leadcta-inner p { color: rgba(255,255,255,0.9); font-size: 1.05rem; line-height: 1.6; max-width: 620px; margin: 0 auto 2rem; }
+            .ld-leadcta-actions { display: flex; gap: 0.85rem; justify-content: center; flex-wrap: wrap; }
+            .ld-leadcta-btn { display: inline-block; padding: 1rem 1.75rem; border-radius: 10px; font-weight: 800; font-size: 1rem; text-decoration: none; transition: transform 0.15s, box-shadow 0.15s; }
+            .ld-leadcta-btn.primary { background: #fff; color: #134fb0; box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+            .ld-leadcta-btn.ghost { background: rgba(255,255,255,0.12); color: #fff; border: 1.5px solid rgba(255,255,255,0.55); }
+            .ld-leadcta-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(0,0,0,0.2); }
+            @media (max-width:600px){ .ld-leadcta { padding: 0.5rem 1.25rem 4rem; } .ld-leadcta-inner { padding: 2.25rem 1.5rem; border-radius: 16px; } .ld-leadcta-inner h2 { font-size: 1.6rem; } .ld-leadcta-btn { display:block; } }
+        </style>
+        <div class="ld-leadcta-inner">
+            <h2>Ready to make a move on {{LAKE_NAME}}?</h2>
+            <p>Whether you're buying your place on the water or thinking about selling, start with a local {{LAKE_NAME}} specialist who knows this shoreline. It's free to get matched.</p>
+            <div class="ld-leadcta-actions">
+                <a href="/pages/public/buy.html" class="ld-leadcta-btn primary">Get matched with a {{LAKE_NAME}} agent →</a>
+                <a href="/pages/public/sell.html" class="ld-leadcta-btn ghost">Selling on {{LAKE_NAME}}? Get a free valuation →</a>
+            </div>
+        </div>
+    </section>
+
     <!-- From the blog -->
     <section id="lake-blog" class="lm-blog" style="display:none;">
         <div class="lm-blog-inner">
