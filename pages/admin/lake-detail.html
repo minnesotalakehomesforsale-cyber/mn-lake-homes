@@ -84,6 +84,11 @@
         .pick-card .name { font-weight: 700; font-size: 0.88rem; color: #1a202c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .pick-card .sub  { font-size: 0.76rem; color: #718096; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .pick-card input[type="checkbox"] { accent-color: #1d6df2; }
+        .pick-card.founder { border-color: #d69e2e; background: #fffaf0; }
+        .pick-card.founder .name::after { content: '★ Founder'; margin-left: 0.4rem; font-size: 0.66rem; font-weight: 700; color: #b7791f; letter-spacing: 0.02em; }
+        .founder-btn { flex-shrink: 0; border: 1px solid #edf2f7; background: #fff; color: #cbd5e0; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; line-height: 1; display: flex; align-items: center; justify-content: center; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+        .founder-btn:hover { border-color: #d69e2e; color: #d69e2e; }
+        .founder-btn.on { background: #d69e2e; border-color: #d69e2e; color: #fff; }
         .pick-empty { padding: 3rem; text-align: center; color: #a0aec0; border: 1px dashed #edf2f7; border-radius: 12px; }
 
         /* Stub tab body */
@@ -289,7 +294,7 @@
             <section id="panel-agents" class="panel">
                 <div class="card">
                     <h2>Connected agents</h2>
-                    <p class="hint" style="margin:-0.75rem 0 1rem;">Agents selected here appear in the "Your &lt;lake&gt; experts" section of the public lake page.</p>
+                    <p class="hint" style="margin:-0.75rem 0 1rem;">Agents selected here appear in the "Your &lt;lake&gt; experts" section of the public lake page. Tap the <span style="color:#d69e2e;font-weight:700;">★</span> to seat this lake's <strong>founding agent</strong> — they receive 70% of the lake's leads (round-robin for the rest). One founder per lake; saved instantly.</p>
                     <div class="picker-toolbar">
                         <input type="search" id="agent-search" placeholder="Search agents by name, city, or brokerage…" oninput="renderAgentPicker()">
                         <span id="agent-count-hint" class="hint" style="margin-left:auto;"></span>
@@ -430,6 +435,7 @@
         let _lake = null;
         let _allAgents = [];
         let _selectedAgentIds = new Set();
+        let _founderAgentId = null;
         let _allPosts = [];
         let _selectedPostIds = new Set();
 
@@ -599,6 +605,7 @@
                 _allAgents = await agentsRes.json();
                 const connected = connectedRes.ok ? await connectedRes.json() : [];
                 _selectedAgentIds = new Set(connected.map(a => a.id));
+                _founderAgentId = (connected.find(a => a.lake_is_founder) || {}).id || null;
                 document.getElementById('cnt-agents').textContent = _selectedAgentIds.size;
                 renderAgentPicker();
             } catch (err) {
@@ -622,15 +629,19 @@
             }
             el.innerHTML = list.map(a => {
                 const on = _selectedAgentIds.has(a.id);
+                const isFounder = _founderAgentId === a.id;
                 const photo = a.profile_photo_url || '/assets/images/mn-stillwater-aerial.webp';
                 return `
-                    <label class="pick-card ${on ? 'on' : ''}" data-aid="${a.id}">
+                    <label class="pick-card ${on ? 'on' : ''} ${isFounder ? 'founder' : ''}" data-aid="${a.id}">
                         <input type="checkbox" ${on ? 'checked' : ''} onchange="toggleAgent('${a.id}', this.checked)">
                         <img class="avatar" src="${escHtml(photo)}" alt="">
                         <div class="meta">
                             <div class="name">${escHtml(a.display_name || '(no name)')}</div>
                             <div class="sub">${escHtml(a.city || a.brokerage_name || a.email || '')}</div>
                         </div>
+                        <button type="button" class="founder-btn ${isFounder ? 'on' : ''}"
+                                title="${isFounder ? 'Founding agent — tap to clear' : 'Seat as founding agent'}"
+                                onclick="setFounder(event, '${a.id}')">★</button>
                     </label>`;
             }).join('');
         }
@@ -638,6 +649,10 @@
         function toggleAgent(id, on) {
             if (on) _selectedAgentIds.add(id);
             else    _selectedAgentIds.delete(id);
+            // A founder must stay connected — de-selecting the founder clears the seat.
+            if (!on && _founderAgentId === id) {
+                setFounder({ preventDefault() {}, stopPropagation() {} }, id);
+            }
             document.getElementById('cnt-agents').textContent = _selectedAgentIds.size;
             document.querySelectorAll('#agent-picker .pick-card').forEach(el => {
                 el.classList.toggle('on', _selectedAgentIds.has(el.dataset.aid));
@@ -662,6 +677,41 @@
                 setTimeout(() => { el.textContent = ''; }, 2500);
             } catch (err) {
                 el.textContent = err.message || 'Save failed'; el.className = 'status-text err';
+            }
+        }
+
+        // Seat / clear the lake's founding agent. Saves instantly (its own
+        // endpoint), independent of the "Save agent connections" button.
+        async function setFounder(ev, id) {
+            ev.preventDefault();   // don't toggle the card's checkbox
+            ev.stopPropagation();
+            const clearing = _founderAgentId === id;
+            const agentId = clearing ? null : id;
+            const status = document.getElementById('agents-status');
+            status.textContent = clearing ? 'Clearing founder…' : 'Seating founder…';
+            status.className = 'status-text';
+            try {
+                const res = await fetch(`/api/lakes/${LAKE_ID}/founder`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ agentId }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                _founderAgentId = agentId;
+                // A founder is always a connected agent — keep the UI consistent
+                // so a later "Save agent connections" doesn't drop them.
+                if (agentId) _selectedAgentIds.add(agentId);
+                document.getElementById('cnt-agents').textContent = _selectedAgentIds.size;
+                renderAgentPicker();
+                const name = (_allAgents.find(a => a.id === id) || {}).display_name || 'agent';
+                status.textContent = clearing ? '✓ Founder cleared' : `✓ ${name} is now the founding agent`;
+                status.className = 'status-text ok';
+                setTimeout(() => { status.textContent = ''; }, 2800);
+            } catch (err) {
+                status.textContent = err.message || 'Failed to update founder';
+                status.className = 'status-text err';
             }
         }
 

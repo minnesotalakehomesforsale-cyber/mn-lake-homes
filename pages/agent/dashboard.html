@@ -1864,10 +1864,13 @@
         }
 
         // ── Tier Pricing / Go-Live ──────────────────────────────────────────────
+        // Prices mirror the env-driven source of truth in stripe.controller.js
+        // (getAgentPricing → STRIPE_PRICING_* with defaults 9/39/149). Keep these
+        // in sync with pricing.html, or the dashboard shows agents the wrong price.
         const tierPricing = {
-            standard: { monthly: { display: '$9',   period: '/month' }, annual: { display: '$86',  period: '/year' } },
-            prime:    { monthly: { display: '$19',  period: '/month' }, annual: { display: '$179', period: '/year' } },
-            founder:  { monthly: { display: '$449', period: '/month' }, annual: { display: '$449', period: '/month' } }
+            standard: { monthly: { display: '$9',   period: '/month' }, annual: { display: '$90',   period: '/year' } },
+            prime:    { monthly: { display: '$39',  period: '/month' }, annual: { display: '$390',  period: '/year' } },
+            founder:  { monthly: { display: '$149', period: '/month' }, annual: { display: '$1490', period: '/year' } }
         };
 
         const tierPeriodState = { standard: 'monthly', prime: 'monthly', founder: 'monthly' };

@@ -119,6 +119,14 @@
         .blog-tag-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; }
         .blog-result-count { color: #a0aec0; font-size: 0.85rem; margin: -1.5rem 0 2rem; }
 
+        .blog-pagination { display: flex; align-items: center; justify-content: center; gap: 0.4rem; flex-wrap: wrap; margin-top: 3.5rem; }
+        .blog-pagination:empty { display: none; }
+        .blog-page-btn { min-width: 42px; height: 42px; padding: 0 0.9rem; border-radius: 10px; border: 1px solid #e2e8f0; background: #fff; font-size: 0.9rem; font-weight: 600; color: #4a5568; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+        .blog-page-btn:hover:not(:disabled) { border-color: #1d6df2; color: #1d6df2; }
+        .blog-page-btn.active { background: #1d6df2; border-color: #1d6df2; color: #fff; cursor: default; }
+        .blog-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .blog-page-ellipsis { padding: 0 0.35rem; color: #a0aec0; }
+
         .blog-index-section { padding: 5rem 2rem 6rem !important; }
         #blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 3rem; }
 
@@ -164,6 +172,7 @@
             <div id="blog-grid">
                 <div style="grid-column: 1/-1; text-align:center; padding: 3rem; color: #a0aec0;">Loading posts...</div>
             </div>
+            <nav class="blog-pagination" id="blog-pagination" aria-label="Blog pages"></nav>
         </div>
     </section>
 
@@ -191,6 +200,14 @@
         let allPosts = [];
         let activeTag = 'All';
         let searchQuery = '';
+        const PER_PAGE = 12;
+        let currentPage = 1;
+
+        // Filters/search changed — jump back to page 1, then re-render.
+        function resetAndApply() {
+            currentPage = 1;
+            applyFilters();
+        }
 
         function applyFilters() {
             const grid = document.getElementById('blog-grid');
@@ -205,11 +222,17 @@
                 return haystack.includes(q);
             });
 
+            const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+            if (currentPage > totalPages) currentPage = totalPages;
+            const start = (currentPage - 1) * PER_PAGE;
+            const pageItems = filtered.slice(start, start + PER_PAGE);
+
             if (!filtered.length) {
                 grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#a0aec0;">No articles match your search. Try a different keyword or category.</div>';
             } else {
-                grid.innerHTML = filtered.map(buildCard).join('');
+                grid.innerHTML = pageItems.map(buildCard).join('');
             }
+            renderPagination(totalPages);
 
             // Only show the count when the reader has actually narrowed things down.
             if (q || activeTag !== 'All') {
@@ -222,6 +245,53 @@
             }
         }
 
+        // Build compact numbered controls: ‹ Prev  1 … 4 [5] 6 … 20  Next ›
+        function renderPagination(totalPages) {
+            const nav = document.getElementById('blog-pagination');
+            if (totalPages <= 1) { nav.innerHTML = ''; return; }
+
+            const pages = [];
+            const push = n => pages.push(n);
+            push(1);
+            const from = Math.max(2, currentPage - 1);
+            const to = Math.min(totalPages - 1, currentPage + 1);
+            if (from > 2) pages.push('…');
+            for (let n = from; n <= to; n++) push(n);
+            if (to < totalPages - 1) pages.push('…');
+            if (totalPages > 1) push(totalPages);
+
+            const btn = (label, page, opts = {}) => {
+                if (opts.ellipsis) return `<span class="blog-page-ellipsis">…</span>`;
+                const attrs = [
+                    'type="button"',
+                    'class="blog-page-btn' + (opts.active ? ' active' : '') + '"',
+                    opts.disabled ? 'disabled' : `data-page="${page}"`,
+                    opts.active ? 'aria-current="page"' : '',
+                ].filter(Boolean).join(' ');
+                return `<button ${attrs}>${label}</button>`;
+            };
+
+            let html = btn('‹ Prev', currentPage - 1, { disabled: currentPage === 1 });
+            for (const p of pages) {
+                html += p === '…' ? btn('', null, { ellipsis: true })
+                                   : btn(String(p), p, { active: p === currentPage });
+            }
+            html += btn('Next ›', currentPage + 1, { disabled: currentPage === totalPages });
+            nav.innerHTML = html;
+
+            nav.querySelectorAll('.blog-page-btn[data-page]').forEach(b => {
+                b.addEventListener('click', () => goToPage(Number(b.dataset.page)));
+            });
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            applyFilters();
+            // Scroll the reader back up to the first card of the new page.
+            const section = document.querySelector('.blog-index-section') || document.getElementById('blog-grid');
+            if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
         function buildTagFilters() {
             const wrap = document.getElementById('blog-tag-filters');
             const tags = ['All', ...Array.from(new Set(allPosts.map(p => p.tag || 'General'))).sort()];
@@ -232,7 +302,7 @@
                 btn.addEventListener('click', () => {
                     activeTag = btn.dataset.tag;
                     wrap.querySelectorAll('.blog-filter-btn').forEach(b => b.classList.toggle('active', b === btn));
-                    applyFilters();
+                    resetAndApply();
                 });
             });
         }
@@ -266,7 +336,7 @@
                 if (searchQuery) searchInput.value = searchQuery;
                 searchInput.addEventListener('input', e => {
                     searchQuery = e.target.value;
-                    applyFilters();
+                    resetAndApply();
                 });
             } catch (err) {
                 grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#a0aec0;">Could not load posts.</div>';

@@ -273,7 +273,8 @@ exports.listAgentsForTag = async (req, res) => {
         const { rows } = await pool.query(
             `SELECT a.id, a.slug, a.display_name, a.brokerage_name, a.city,
                     a.profile_photo_url, a.bio, a.is_featured,
-                    m.display_badge_label AS membership_badge
+                    m.display_badge_label AS membership_badge,
+                    m.code AS membership_code, m.sort_priority
              FROM user_tags ut
              JOIN tags t ON t.id = ut.tag_id
              JOIN agents a ON a.user_id = ut.user_id
@@ -282,7 +283,7 @@ exports.listAgentsForTag = async (req, res) => {
                AND a.is_published = TRUE
                AND a.profile_status = 'published'
                AND a.deleted_at IS NULL
-             ORDER BY a.is_featured DESC, a.display_name ASC
+             ORDER BY m.sort_priority ASC NULLS LAST, a.is_featured DESC, a.display_name ASC
              LIMIT 24`,
             [key]
         );

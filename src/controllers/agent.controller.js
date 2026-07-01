@@ -104,6 +104,7 @@ const getPublicAgents = async (req, res) => {
                    a.service_areas, a.specialties, a.is_featured,
                    a.phone_public, a.email_public, a.profile_photo_url,
                    m.display_badge_label as membership_badge,
+                   m.code as membership_code, m.sort_priority,
                    COALESCE((
                        SELECT json_agg(json_build_object('slug', t.slug, 'name', t.name, 'state', t.state) ORDER BY t.name)
                        FROM user_tags ut
@@ -113,7 +114,9 @@ const getPublicAgents = async (req, res) => {
             FROM agents a
             JOIN memberships m ON a.membership_id = m.id
             WHERE a.profile_status = 'published' AND a.is_published = true
-            ORDER BY a.is_featured DESC, a.display_name ASC
+            -- Plan tier first (lower sort_priority = higher plan), then the
+            -- manual featured boost, then name. Higher-paying agents rank first.
+            ORDER BY m.sort_priority ASC NULLS LAST, a.is_featured DESC, a.display_name ASC
         `;
         const { rows } = await pool.query(query);
         res.json(rows);

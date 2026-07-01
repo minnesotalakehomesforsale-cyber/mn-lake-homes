@@ -218,6 +218,11 @@
             box-shadow: 0 4px 12px rgba(29,109,242,0.35);
         }
         .top-agent-badge svg { display: block; }
+        /* Gold treatment for the top plan tiers (Top Agent / Founder). */
+        .top-agent-badge.gold {
+            background: linear-gradient(135deg, #f6c453 0%, #d69e2e 100%);
+            box-shadow: 0 4px 12px rgba(214,158,46,0.4);
+        }
 
         .ag-empty {
             grid-column: 1 / -1;
@@ -341,22 +346,38 @@
 
         function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+        // Plan tier → card treatment. Higher-paying plans earn a richer badge:
+        //   gold  = Top Agent / Founder (or an admin's manual is_featured boost)
+        //   blue  = Lake Specialist (mid plan)
+        //   basic = clean card, no corner badge/star
+        function agentTier(a) {
+            const code = a.membership_code || '';
+            if (a.is_featured || code === 'top_agent' || code === 'founder') return 'gold';
+            if (code === 'mn_lake_specialist' || code === 'premium') return 'blue';
+            return 'basic';
+        }
+
         function buildCard(agent) {
             const photoUrl = agent.profile_photo_url || '/assets/images/mn-stillwater-aerial.webp';
             const title = agent.membership_badge || 'Lake Specialist';
             const fullBio = agent.bio || 'A dedicated Minnesota lake home specialist ready to help you find your perfect waterfront property.';
             const shortBio = fullBio.length > 120 ? fullBio.slice(0, 120).trimEnd() + '…' : fullBio;
 
-            const topBadge = agent.is_featured
-                ? `<div class="top-agent-badge" title="Top Agent — featured on MN Lake Homes">
-                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                       <span>Top Agent</span>
-                   </div>`
-                : '';
+            const tier = agentTier(agent);
+            const starSvg = (w) => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
+            const badgeLabel = tier === 'gold' ? (agent.membership_badge || 'Top Agent') : (agent.membership_badge || 'Lake Specialist');
 
-            const inlineTopIcon = agent.is_featured
-                ? `<svg style="vertical-align:-2px; margin-left:0.4rem; color:#1d6df2;" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-label="Top Agent"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`
-                : '';
+            const topBadge = tier === 'basic'
+                ? ''
+                : `<div class="top-agent-badge ${tier === 'gold' ? 'gold' : ''}" title="${escHtml(badgeLabel)} — ${escHtml(String(title))}">
+                       ${starSvg(14)}
+                       <span>${escHtml(badgeLabel)}</span>
+                   </div>`;
+
+            const starColor = tier === 'gold' ? '#d69e2e' : '#1d6df2';
+            const inlineTopIcon = tier === 'basic'
+                ? ''
+                : `<span style="vertical-align:-2px; margin-left:0.4rem; color:${starColor}; display:inline-block;" aria-label="${escHtml(badgeLabel)}">${starSvg(16)}</span>`;
 
             const card = document.createElement('a');
             card.href = `/agents/${encodeURIComponent(agent.slug)}`;
@@ -396,7 +417,7 @@
             const q = state.search.toLowerCase();
 
             const filtered = state.all.filter(a => {
-                if (state.featured  && !a.is_featured) return false;
+                if (state.featured  && agentTier(a) !== 'gold') return false;
                 if (state.area) {
                     const tags = Array.isArray(a.geo_tags) ? a.geo_tags : [];
                     if (!tags.some(t => t && t.slug === state.area)) return false;

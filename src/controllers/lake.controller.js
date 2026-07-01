@@ -381,10 +381,14 @@ exports.listAgents = async (req, res) => {
                     a.is_featured AS agent_is_featured,
                     a.is_published,
                     u.full_name, u.email,
+                    m.code AS membership_code,
+                    m.display_badge_label AS membership_badge,
+                    m.sort_priority,
                     COALESCE(al.is_featured, FALSE) AS lake_is_featured,
                     COALESCE(al.is_founder,  FALSE) AS lake_is_founder
              FROM agents a
              JOIN users u ON u.id = a.user_id
+             LEFT JOIN memberships m ON m.id = a.membership_id
              LEFT JOIN agent_lakes al ON al.agent_id = a.id AND al.lake_id = $1
              WHERE (
                  al.lake_id IS NOT NULL
@@ -401,8 +405,14 @@ exports.listAgents = async (req, res) => {
             [req.params.id]
         );
         // Re-sort after DISTINCT ON (which forces a.id leading order).
+        // Order: this lake's founder, then lake-featured, then plan tier
+        // (lower sort_priority = higher plan), then the manual featured
+        // boost, then name.
         rows.sort((x, y) => {
+            if (x.lake_is_founder !== y.lake_is_founder) return y.lake_is_founder ? 1 : -1;
             if (x.lake_is_featured !== y.lake_is_featured) return y.lake_is_featured ? 1 : -1;
+            const xp = x.sort_priority ?? 9999, yp = y.sort_priority ?? 9999;
+            if (xp !== yp) return xp - yp;
             if (x.agent_is_featured !== y.agent_is_featured) return y.agent_is_featured ? 1 : -1;
             return (x.display_name || '').localeCompare(y.display_name || '');
         });

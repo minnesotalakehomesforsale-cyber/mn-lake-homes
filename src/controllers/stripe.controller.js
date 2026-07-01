@@ -484,8 +484,11 @@ exports.getAgentPricing = (req, res) => {
                 stripe_price_annual:  !!process.env.STRIPE_PRICE_PRIME_ANNUAL,
             },
             {
+                // Slug/code stay 'founder_public'/'top_agent' (Stripe env vars +
+                // checkout depend on them) — only the display name changes, to
+                // stop colliding with the per-lake "Founder" (lake ownership).
                 tier: 'founder_public',
-                name: 'Founder',
+                name: 'Elite',
                 tagline: 'Hold up to 5 lakes across a region — top placement everywhere.',
                 features: [
                     'Everything in Prime, across up to 5 lakes / a region',
