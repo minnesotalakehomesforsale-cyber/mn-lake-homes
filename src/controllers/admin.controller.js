@@ -946,9 +946,10 @@ const getAgentCoverage = async (req, res) => {
         const { rows } = await pool.query(`
             SELECT
                 t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude,
-                COUNT(a.id) FILTER (WHERE m.code = 'founder')::int  AS founders,
-                COUNT(a.id) FILTER (WHERE m.code IN ('premium','top_agent'))::int AS premiums,
-                COUNT(a.id) FILTER (WHERE m.code IN ('basic','mn_lake_specialist'))::int AS basics,
+                COUNT(a.id) FILTER (WHERE m.code = 'founder')::int            AS founders,
+                COUNT(a.id) FILTER (WHERE m.code = 'top_agent')::int          AS elite,
+                COUNT(a.id) FILTER (WHERE m.code = 'mn_lake_specialist')::int AS prime,
+                COUNT(a.id) FILTER (WHERE m.code = 'basic')::int             AS basic,
                 COUNT(a.id)::int AS total
               FROM tags t
          LEFT JOIN user_tags ut ON ut.tag_id = t.id

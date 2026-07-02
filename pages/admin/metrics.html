@@ -7,6 +7,9 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="apple-touch-icon" href="/favicon.svg">
     <link rel="stylesheet" href="../../styles/style.css">
+    <!-- Leaflet (coverage map) — no API key needed -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <style>
         html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: #1a202c; }
 
@@ -163,15 +166,30 @@
         .cov-cell .break span { display: inline-flex; align-items: center; gap: 0.2rem; }
         .cov-cell .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
         .dot-founder { background: #1d6df2; }
-        .dot-premium { background: #9f7aea; }
+        .dot-elite   { background: #d69e2e; }
+        .dot-prime   { background: #7c3aed; }
         .dot-basic   { background: #718096; }
 
-        /* Heat intensity: gap (red) → thin (yellow) → good (green) → heavy (deep green) */
-        .cov-cell[data-heat="gap"]   { background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%); border-color: #feb2b2; }
-        .cov-cell[data-heat="thin"]  { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-color: #fde68a; }
-        .cov-cell[data-heat="good"]  { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-color: #a7f3d0; }
-        .cov-cell[data-heat="heavy"] { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-color: #6ee7b7; }
+        /* Goal-based status: gap(red) → critical(orange) → building(yellow) → good(light green) → full(deep green) */
+        .cov-cell[data-heat="gap"]      { background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%); border-color: #feb2b2; }
+        .cov-cell[data-heat="critical"] { background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%); border-color: #fdba74; }
+        .cov-cell[data-heat="building"] { background: linear-gradient(135deg, #fffbeb 0%, #fef08a 100%); border-color: #fde047; }
+        .cov-cell[data-heat="good"]     { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-color: #a7f3d0; }
+        .cov-cell[data-heat="full"]     { background: linear-gradient(135deg, #d1fae5 0%, #6ee7b7 100%); border-color: #34d399; }
         .cov-cell[data-heat="gap"] .total { color: #c53030; }
+
+        /* Per-tier goal progress (Founder 1 · Elite 2 · Prime 5 · Basic 10) */
+        .cov-goals { margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.18rem; }
+        .cov-goal { display: flex; align-items: center; justify-content: space-between; font-size: 0.66rem; font-weight: 700; }
+        .cov-goal .lbl { display: inline-flex; align-items: center; gap: 0.25rem; color: #4a5568; text-transform: uppercase; letter-spacing: 0.3px; }
+        .cov-goal .val.met  { color: #059669; }
+        .cov-goal .val.miss { color: #a0aec0; }
+        .cov-nomap { position: absolute; top: 0.5rem; right: 0.5rem; font-size: 0.58rem; font-weight: 800; color: #c05621; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 99px; padding: 0.05rem 0.4rem; }
+
+        /* Coverage map (Leaflet) */
+        #cov-map { height: 440px; border-radius: 14px; border: 1px solid #edf2f7; margin-bottom: 0.75rem; overflow: hidden; z-index: 0; }
+        .cov-map-legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.74rem; color: #718096; margin-bottom: 1.5rem; align-items: center; }
+        .cov-map-legend .cov-legend-swatch { width: 12px; height: 12px; border-radius: 50%; }
 
         .cov-legend { display: flex; gap: 1rem; font-size: 0.75rem; color: #718096; margin-top: 1rem; flex-wrap: wrap; }
         .cov-legend-item { display: inline-flex; align-items: center; gap: 0.4rem; }
@@ -302,24 +320,35 @@
                     <div class="empty" style="grid-column:1/-1;">Loading…</div>
                 </div>
 
+                <p style="font-size:0.85rem;color:#718096;margin:0 0 0.85rem;">Goal per area: <strong>1 Founder</strong> · <strong>2 Elite</strong> · <strong>5 Prime</strong> · <strong>10 Basic</strong>. Cards + map are colored by how close each area is to hitting all four.</p>
+
                 <div class="cov-controls">
                     <button class="cov-pill active" data-filter="all">All areas</button>
                     <button class="cov-pill"        data-filter="gap">Gaps (0 agents)</button>
-                    <button class="cov-pill"        data-filter="thin">Thin (1 agent)</button>
+                    <button class="cov-pill"        data-filter="below">Below goal</button>
                     <button class="cov-pill"        data-filter="needs-founder">No founder yet</button>
-                    <input id="cov-search" class="cov-search" type="search" placeholder="Search area or state…">
+                    <button class="cov-pill"        data-filter="full">Fully staffed</button>
+                    <input id="cov-search" class="cov-search" type="search" placeholder="Search area or state…"
+                           autocomplete="off" data-1p-ignore data-lpignore="true">
+                </div>
+
+                <div id="cov-map"></div>
+                <div class="cov-map-legend">
+                    <span class="cov-legend-item"><span class="cov-legend-swatch" style="background:#e53e3e;"></span> Gap</span>
+                    <span class="cov-legend-item"><span class="cov-legend-swatch" style="background:#f6ad55;"></span> Critical</span>
+                    <span class="cov-legend-item"><span class="cov-legend-swatch" style="background:#ecc94b;"></span> Building</span>
+                    <span class="cov-legend-item"><span class="cov-legend-swatch" style="background:#68d391;"></span> Good</span>
+                    <span class="cov-legend-item"><span class="cov-legend-swatch" style="background:#25a55f;"></span> Fully staffed</span>
+                    <span class="cov-legend-item" id="cov-nomap-note"></span>
                 </div>
 
                 <div id="cov-grid" class="cov-grid"></div>
 
                 <div class="cov-legend">
-                    <span class="cov-legend-item"><span class="cov-legend-swatch" style="background:#fed7d7;"></span> Gap — 0 agents</span>
-                    <span class="cov-legend-item"><span class="cov-legend-swatch" style="background:#fef3c7;"></span> Thin — 1 agent</span>
-                    <span class="cov-legend-item"><span class="cov-legend-swatch" style="background:#d1fae5;"></span> Good — 2–3 agents</span>
-                    <span class="cov-legend-item"><span class="cov-legend-swatch" style="background:#a7f3d0;"></span> Heavy — 4+ agents</span>
-                    <span class="cov-legend-item"><span class="dot dot-founder"></span> Founder</span>
-                    <span class="cov-legend-item"><span class="dot dot-premium"></span> Premium/Top</span>
-                    <span class="cov-legend-item"><span class="dot dot-basic"></span> Basic/Specialist</span>
+                    <span class="cov-legend-item"><span class="dot dot-founder"></span> Founder (goal 1)</span>
+                    <span class="cov-legend-item"><span class="dot dot-elite"></span> Elite (goal 2)</span>
+                    <span class="cov-legend-item"><span class="dot dot-prime"></span> Prime (goal 5)</span>
+                    <span class="cov-legend-item"><span class="dot dot-basic"></span> Basic (goal 10)</span>
                 </div>
             </section>
         </main>
@@ -781,61 +810,99 @@
         let coverageFilter = 'all';
         let coverageQuery = '';
 
-        function heatForTotal(total) {
-            if (total === 0) return 'gap';
-            if (total === 1) return 'thin';
-            if (total <= 3) return 'good';
-            return 'heavy';
+        // Per-area goals: 1 Founder, 2 Elite, 5 Prime, 10 Basic.
+        const COV_GOALS = { founders: 1, elite: 2, prime: 5, basic: 10 };
+        const COV_GOAL_SUM = 18;
+        const STATUS_COLOR = { gap: '#e53e3e', critical: '#f6ad55', building: '#ecc94b', good: '#68d391', full: '#25a55f' };
+        const isFull  = t => t.founders >= 1 && t.elite >= 2 && t.prime >= 5 && t.basic >= 10;
+        const attain  = t => (Math.min(t.founders,1) + Math.min(t.elite,2) + Math.min(t.prime,5) + Math.min(t.basic,10)) / COV_GOAL_SUM;
+        function statusFor(t) {
+            if (t.total === 0) return 'gap';
+            if (isFull(t)) return 'full';
+            const s = attain(t);
+            if (s < 0.25) return 'critical';
+            if (s < 0.6)  return 'building';
+            return 'good';
         }
 
-        function renderCoverage() {
+        function coverageFiltered() {
             const q = coverageQuery.toLowerCase();
-            const filtered = coverageData.filter(t => {
+            return coverageData.filter(t => {
                 if (coverageFilter === 'gap'           && t.total > 0) return false;
-                if (coverageFilter === 'thin'          && t.total !== 1) return false;
+                if (coverageFilter === 'below'         && isFull(t)) return false;
                 if (coverageFilter === 'needs-founder' && t.founders > 0) return false;
+                if (coverageFilter === 'full'          && !isFull(t)) return false;
                 if (q) {
                     const hay = `${t.name || ''} ${t.state || ''} ${t.region || ''}`.toLowerCase();
                     if (!hay.includes(q)) return false;
                 }
                 return true;
             });
+        }
 
+        function renderCoverage() {
+            const filtered = coverageFiltered();
             const grid = document.getElementById('cov-grid');
             if (!filtered.length) {
                 grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">No areas match these filters.</div>';
                 return;
             }
+            const goalRow = (lbl, cls, got, goal) =>
+                `<div class="cov-goal"><span class="lbl"><span class="dot ${cls}"></span>${lbl}</span><span class="val ${got >= goal ? 'met' : 'miss'}">${got}/${goal}</span></div>`;
             grid.innerHTML = filtered.map(t => {
-                const heat = heatForTotal(t.total);
-                const title = `${esc(t.name)} · ${esc(t.state || '')}\nFounders: ${t.founders} · Premium/Top: ${t.premiums} · Basic/Specialist: ${t.basics}`;
+                const st = statusFor(t);
+                const noMap = (t.latitude == null || t.longitude == null);
+                const title = `${esc(t.name)} · ${esc(t.state || '')}\nFounder ${t.founders}/1 · Elite ${t.elite}/2 · Prime ${t.prime}/5 · Basic ${t.basic}/10${noMap ? '\n(no coordinates — not routable or mapped)' : ''}`;
                 return `
-                    <div class="cov-cell" data-heat="${heat}" title="${title}">
+                    <div class="cov-cell" data-heat="${st}" title="${title}">
+                        ${noMap ? '<span class="cov-nomap">no map</span>' : ''}
                         <div class="name">${esc(t.name)}</div>
                         <div class="state">${esc(t.state || '—')}${t.region ? ' · ' + esc(t.region) : ''}</div>
                         <div class="total">${t.total}</div>
-                        <div class="break">
-                            <span><span class="dot dot-founder"></span>${t.founders}</span>
-                            <span><span class="dot dot-premium"></span>${t.premiums}</span>
-                            <span><span class="dot dot-basic"></span>${t.basics}</span>
+                        <div class="cov-goals">
+                            ${goalRow('Founder', 'dot-founder', t.founders, 1)}
+                            ${goalRow('Elite',   'dot-elite',   t.elite,    2)}
+                            ${goalRow('Prime',   'dot-prime',   t.prime,    5)}
+                            ${goalRow('Basic',   'dot-basic',   t.basic,   10)}
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }).join('');
+        }
+
+        let _covMap = null, _covLayer = null;
+        function renderCoverageMap() {
+            if (typeof L === 'undefined') return;
+            const geo = coverageData.filter(t => t.latitude != null && t.longitude != null);
+            const noGeo = coverageData.length - geo.length;
+            const note = document.getElementById('cov-nomap-note');
+            if (note) note.textContent = noGeo ? `${noGeo} area(s) have no coordinates — not on the map or routable` : '';
+            if (!_covMap) {
+                _covMap = L.map('cov-map', { scrollWheelZoom: false }).setView([46.6, -94.3], 6);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 13 }).addTo(_covMap);
+            }
+            if (_covLayer) _covLayer.remove();
+            _covLayer = L.layerGroup().addTo(_covMap);
+            geo.forEach(t => {
+                const st = statusFor(t);
+                L.circleMarker([t.latitude, t.longitude], { radius: 8, color: '#fff', weight: 1.5, fillColor: STATUS_COLOR[st], fillOpacity: 0.9 })
+                    .bindPopup(`<strong>${esc(t.name)}</strong>, ${esc(t.state || '')}<br>Founder ${t.founders}/1 · Elite ${t.elite}/2<br>Prime ${t.prime}/5 · Basic ${t.basic}/10`)
+                    .addTo(_covLayer);
+            });
+            setTimeout(() => _covMap.invalidateSize(), 120);
         }
 
         function renderCoverageSummary() {
             const total = coverageData.length;
             const gaps = coverageData.filter(t => t.total === 0).length;
-            const thin = coverageData.filter(t => t.total === 1).length;
-            const founded = coverageData.filter(t => t.founders > 0).length;
-            const agentCount = coverageData.reduce((sum, t) => sum + t.total, 0);
+            const below = coverageData.filter(t => !isFull(t)).length;
+            const full = coverageData.filter(t => isFull(t)).length;
+            const needFounder = coverageData.filter(t => t.founders < 1).length;
             document.getElementById('cov-summary').innerHTML = `
                 <div class="cov-stat"><div class="label">Service areas</div><div class="big">${total}</div></div>
-                <div class="cov-stat"><div class="label">Coverage gaps</div><div class="big" style="color:#c53030;">${gaps}</div><div class="sub">no published agent</div></div>
-                <div class="cov-stat"><div class="label">Thin coverage</div><div class="big" style="color:#b45309;">${thin}</div><div class="sub">only 1 agent</div></div>
-                <div class="cov-stat"><div class="label">Areas w/ founder</div><div class="big" style="color:#1d6df2;">${founded}</div><div class="sub">of ${total}</div></div>
-                <div class="cov-stat"><div class="label">Total agent assignments</div><div class="big">${agentCount}</div><div class="sub">across all areas</div></div>
+                <div class="cov-stat"><div class="label">Coverage gaps</div><div class="big" style="color:#c53030;">${gaps}</div><div class="sub">0 agents</div></div>
+                <div class="cov-stat"><div class="label">Below goal</div><div class="big" style="color:#b45309;">${below}</div><div class="sub">not fully staffed</div></div>
+                <div class="cov-stat"><div class="label">Fully staffed</div><div class="big" style="color:#059669;">${full}</div><div class="sub">hit 1/2/5/10</div></div>
+                <div class="cov-stat"><div class="label">Need a founder</div><div class="big" style="color:#1d6df2;">${needFounder}</div><div class="sub">no lake owner yet</div></div>
             `;
         }
 
@@ -847,6 +914,7 @@
                 coverageData = await res.json();
                 renderCoverageSummary();
                 renderCoverage();
+                renderCoverageMap();
             } catch (err) {
                 document.getElementById('cov-summary').innerHTML =
                     `<div class="empty" style="grid-column:1/-1;color:#c53030;">Could not load coverage: ${esc(err.message)}</div>`;
