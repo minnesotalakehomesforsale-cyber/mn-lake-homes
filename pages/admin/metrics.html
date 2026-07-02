@@ -504,6 +504,7 @@
             const W = Math.max(360, Math.round(svg.clientWidth || (svg.parentElement && svg.parentElement.clientWidth) || 900));
             const H = Math.max(240, Math.round(svg.clientHeight || 460));
             svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+            _mxLastW = W;   // keep the resize guard's baseline in sync with what we drew
             const padL = 46, padR = 24, padT = 24, padB = 34;
             const innerW = W - padL - padR, innerH = H - padT - padB;
             const NS = 'http://www.w3.org/2000/svg';
@@ -705,11 +706,20 @@
             });
         });
 
-        // Redraw on resize so the pixel-matched viewBox stays crisp at any width.
-        let _mxResize;
+        // Redraw on resize so the pixel-matched viewBox stays crisp — but ONLY
+        // when the WIDTH changes. Height-only resizes come from the parent iframe
+        // auto-sizing to our posted height; redrawing on those creates a
+        // resize→redraw→post-height→resize feedback loop (the chart "tweaking out").
+        let _mxResize, _mxLastW = 0;
         window.addEventListener('resize', () => {
             clearTimeout(_mxResize);
-            _mxResize = setTimeout(() => { if (_daily30.length) drawTrafficChart(slicePeriod(_daily30, _period)); }, 150);
+            _mxResize = setTimeout(() => {
+                const svg = document.getElementById('m-chart');
+                const w = svg ? Math.round(svg.clientWidth) : 0;
+                if (!w || w === _mxLastW) return;   // no width change → skip (breaks the loop)
+                _mxLastW = w;
+                if (_daily30.length) drawTrafficChart(slicePeriod(_daily30, _period));
+            }, 200);
         });
 
         // ─── Tabs ──────────────────────────────────────────────────────
