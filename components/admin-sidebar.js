@@ -294,3 +294,67 @@
         customElements.define('admin-sidebar', AdminSidebar);
     }
 })();
+
+// ── Universal click-to-sort for admin tables ───────────────────────────────
+// Makes every admin table (.ledger-table / .biz-table / .data-table, or any
+// table[data-sortable]) sortable by clicking a column header — like a HubSpot
+// sheet. Works on the already-rendered DOM, so no per-page data code changes.
+// Auto-detects number / date / text per column; toggles asc↔desc; shows an
+// indicator. Columns can opt out with `data-nosort` on the <th>; a cell can
+// provide an explicit sort key with `data-sort-value`.
+(function () {
+    const SORTABLE = '.ledger-table, .biz-table, .data-table, table[data-sortable]';
+    const SKIP_HEADERS = /^(actions?|manage|edit|options|controls|—|)$/i;
+
+    function cellValue(row, idx) {
+        const cell = row.children[idx];
+        if (!cell) return '';
+        if (cell.dataset && cell.dataset.sortValue != null) return cell.dataset.sortValue;
+        return (cell.textContent || '').trim();
+    }
+    function compare(a, b) {
+        const cleanA = a.replace(/[\s,$%]/g, ''), cleanB = b.replace(/[\s,$%]/g, '');
+        const numA = parseFloat(cleanA), numB = parseFloat(cleanB);
+        const isNumA = cleanA !== '' && !isNaN(numA) && /^-?[\d.]+$/.test(cleanA);
+        const isNumB = cleanB !== '' && !isNaN(numB) && /^-?[\d.]+$/.test(cleanB);
+        if (isNumA && isNumB) return numA - numB;
+        const dA = Date.parse(a), dB = Date.parse(b);
+        if (!isNaN(dA) && !isNaN(dB)) return dA - dB;
+        return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+    }
+    function makeSortable(table) {
+        if (table.__adminSortable || !table.tHead || !table.tBodies.length) return;
+        const headRow = table.tHead.rows[0];
+        if (!headRow) return;
+        table.__adminSortable = true;
+        [...headRow.cells].forEach((th, idx) => {
+            const label = (th.textContent || '').trim();
+            if (th.hasAttribute('data-nosort') || SKIP_HEADERS.test(label)) return;
+            th.style.cursor = 'pointer';
+            th.style.userSelect = 'none';
+            th.title = 'Sort by ' + label;
+            const ind = document.createElement('span');
+            ind.className = 'th-sort-ind';
+            ind.textContent = ' ↕';
+            ind.style.cssText = 'opacity:0.3;font-size:0.85em;';
+            th.appendChild(ind);
+            th.addEventListener('click', () => {
+                const tbody = table.tBodies[0];
+                const rows = [...tbody.rows].filter(r => r.children.length > 1);
+                if (rows.length < 2) return;
+                const asc = table.__sortCol === idx ? !table.__sortAsc : true;
+                table.__sortCol = idx; table.__sortAsc = asc;
+                rows.sort((r1, r2) => { const c = compare(cellValue(r1, idx), cellValue(r2, idx)); return asc ? c : -c; });
+                rows.forEach(r => tbody.appendChild(r));
+                headRow.querySelectorAll('.th-sort-ind').forEach(i => { i.textContent = ' ↕'; i.style.opacity = '0.3'; });
+                ind.textContent = asc ? ' ▲' : ' ▼'; ind.style.opacity = '1';
+            });
+        });
+    }
+    function enhanceAll() { document.querySelectorAll(SORTABLE).forEach(makeSortable); }
+    // Catch tables that render synchronously AND those fetched async by the page.
+    if (document.readyState !== 'loading') enhanceAll();
+    document.addEventListener('DOMContentLoaded', enhanceAll);
+    [300, 800, 1500, 3000].forEach(ms => setTimeout(enhanceAll, ms));
+    window.enhanceAdminTables = enhanceAll;   // pages can call after a re-render
+})();
