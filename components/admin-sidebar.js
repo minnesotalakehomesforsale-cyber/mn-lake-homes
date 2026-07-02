@@ -29,6 +29,14 @@
            the sidebar horizontally when you navigate between admin pages. */
         html { scrollbar-gutter: stable; }
         .admin-wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        /* Embed mode (?embed=1): a page iframed inside another admin page must
+           NOT be viewport-height, or its content reports the iframe's own
+           height back to the parent, which grows the iframe, which grows the
+           content — an endless "shaking / expanding" loop. Force content-driven
+           height so the posted scrollHeight is stable. */
+        body.lt-embed,
+        body.lt-embed .admin-wrap,
+        body.lt-embed .admin-main { min-height: 0 !important; height: auto !important; }
         .admin-side {
             background: #1a202c; color: #fff;
             padding: 2rem 1.5rem;

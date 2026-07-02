@@ -6,6 +6,13 @@
  * to /api/assistant/chat, and persists every exchange server-side.
  */
 (function() {
+    // Don't render inside an embedded iframe (?embed=1 pages iframed into other
+    // admin pages) — the parent already shows the assistant, so a second copy
+    // would stack a duplicate chat bubble in the corner.
+    try {
+        if (window.self !== window.top) return;
+        if (new URLSearchParams(window.location.search).get('embed') === '1') return;
+    } catch (_) { return; }
     // Inject styles once
     if (document.getElementById('ai-asst-styles')) return;
     const style = document.createElement('style');
