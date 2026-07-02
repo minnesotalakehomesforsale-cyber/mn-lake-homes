@@ -304,7 +304,6 @@
                 <button class="page-tab active" id="tab-btn-overview"   data-tab="overview"   onclick="showLT('overview')">Overview</button>
                 <button class="page-tab"        id="tab-btn-map"        data-tab="map"        onclick="showLT('map')">Map</button>
                 <button class="page-tab"        id="tab-btn-lakes"      data-tab="lakes"      onclick="showLT('lakes')">Lakes</button>
-                <button class="page-tab"        id="tab-btn-towns"      data-tab="towns"      onclick="showLT('towns')">Towns</button>
                 <button class="page-tab"        id="tab-btn-businesses" data-tab="businesses" onclick="showLT('businesses')">Businesses</button>
             </div>
 
@@ -349,11 +348,6 @@
             </div>
 
             <!-- ── Towns ────────────────────────────────────────── -->
-            <!-- Towns = the full Geo Tags manager, embedded (activate/deactivate,
-                 edit, lat/lng + auto-geocode, create). Single source of truth. -->
-            <div id="pane-towns" class="tab-pane">
-                <iframe id="frame-towns" class="lt-frame" data-src="tags.html?embed=1" title="Geo Tags manager" style="min-height: calc(100vh - 240px);"></iframe>
-            </div>
 
             <!-- ── Businesses ───────────────────────────────────── -->
             <div id="pane-businesses" class="tab-pane">
@@ -462,7 +456,7 @@
 
 <script>
     // ── State ──────────────────────────────────────────────────────────
-    const TABS = ['overview', 'map', 'lakes', 'towns', 'businesses'];
+    const TABS = ['overview', 'map', 'lakes', 'businesses'];
     const _params = new URLSearchParams(window.location.search);
     const _initialTab = TABS.includes(_params.get('tab')) ? _params.get('tab') : 'overview';
 
@@ -512,20 +506,12 @@
         if (name === 'lakes'      && !State.loaded.lakes)  loadLakes();
         if (name === 'businesses' && !State.loaded.biz)    loadBiz();
 
-        // Iframe tabs (Map + Towns) — lazy-set their src on first open.
-        if (name === 'map' || name === 'towns') {
-            const frame = document.getElementById('frame-' + name);
+        // Map is the only iframe — lazy-set its src on first open.
+        if (name === 'map') {
+            const frame = document.getElementById('frame-map');
             if (frame && !frame.src) frame.src = frame.dataset.src;
         }
     }
-
-    // Resize the embedded Geo Tags manager to its content (it posts its height).
-    window.addEventListener('message', (e) => {
-        const m = e.data;
-        if (!m || m.lt !== 'height' || typeof m.h !== 'number') return;
-        const f = document.getElementById('frame-towns');
-        if (f) f.style.height = Math.max(600, m.h + 8) + 'px';
-    });
 
     // ── Data loaders ──────────────────────────────────────────────────
     async function loadOverview() {

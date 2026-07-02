@@ -60,6 +60,7 @@
             <button id="tab-btn-database"    class="page-tab"        role="tab" onclick="showSys('database')">Database</button>
             <button id="tab-btn-diagnostics" class="page-tab"        role="tab" onclick="showSys('diagnostics')">Lead routing</button>
             <button id="tab-btn-images"      class="page-tab"        role="tab" onclick="showSys('images')">Images</button>
+            <button id="tab-btn-towns"       class="page-tab"        role="tab" onclick="showSys('towns')">Geo Tags</button>
         </div>
 
         <div id="pane-metrics" class="tab-pane active" role="tabpanel">
@@ -74,6 +75,9 @@
         <div id="pane-images" class="tab-pane" role="tabpanel">
             <iframe id="frame-images" class="sys-frame" data-src="images.html?embed=1" title="Images"></iframe>
         </div>
+        <div id="pane-towns" class="tab-pane" role="tabpanel">
+            <iframe id="frame-towns" class="sys-frame" data-src="tags.html?embed=1" title="Geo Tags"></iframe>
+        </div>
     </main>
 </div>
 
@@ -86,9 +90,10 @@
         database:    { pane: 'database' },
         diagnostics: { pane: 'diagnostics' },
         images:      { pane: 'images' },
+        towns:       { pane: 'towns' },
     };
     const TABS = Object.keys(TAB_CFG);
-    const PANES = ['metrics', 'database', 'diagnostics', 'images'];
+    const PANES = ['metrics', 'database', 'diagnostics', 'images', 'towns'];
     const _params = new URLSearchParams(window.location.search);
     const _initialTab = TABS.includes(_params.get('tab')) ? _params.get('tab') : 'traffic';
 

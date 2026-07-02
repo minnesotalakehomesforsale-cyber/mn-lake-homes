@@ -216,14 +216,14 @@
         // pre-existing logic keeps working unchanged. The standalone slugs
         // are aliased so direct hits on lakes.html / tags.html /
         // businesses.html still highlight this entry in the sidebar.
-        { key: 'lakes-towns', href: 'lakes-towns.html', label: 'Lakes, Towns & Businesses', aliases: ['lakes', 'tags', 'businesses'] },
+        { key: 'lakes-towns', href: 'lakes-towns.html', label: 'Lakes & Businesses', aliases: ['lakes', 'businesses'] },
         { key: 'listings',    href: 'listings.html',   label: 'Listings' },
         { key: 'reviews',     href: 'reviews.html',    label: 'Reviews' },
         // Analytics + system, ONE flat-header page (system.html): Traffic,
         // Conversions, Agent coverage, Database, Lead routing, and Images —
         // each an embedded section. Standalone slugs are aliased so direct hits
         // on metrics.html / database.html / images.html highlight this entry.
-        { key: 'system',      href: 'system.html',     label: 'Metrics & Database', aliases: ['metrics', 'database', 'images'], badgeId: 'nav-badge-system' },
+        { key: 'system',      href: 'system.html',     label: 'Metrics & Database', aliases: ['metrics', 'database', 'images', 'tags'], badgeId: 'nav-badge-system' },
     ];
 
     function renderNav(activeKey) {
