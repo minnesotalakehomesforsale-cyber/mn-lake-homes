@@ -516,8 +516,8 @@
             <h2>Ready to make a move on {{LAKE_NAME}}?</h2>
             <p>Whether you're buying your place on the water or thinking about selling, start with a local {{LAKE_NAME}} specialist who knows this shoreline. It's free to get matched.</p>
             <div class="ld-leadcta-actions">
-                <a href="/pages/public/buy.html" class="ld-leadcta-btn primary">Get matched with a {{LAKE_NAME}} agent →</a>
-                <a href="/pages/public/sell.html" class="ld-leadcta-btn ghost">Selling on {{LAKE_NAME}}? Get a free valuation →</a>
+                <a href="javascript:void(0)" onclick="openForm('buy', { _lake: '{{LAKE_SLUG}}' })" class="ld-leadcta-btn primary">Get matched with a {{LAKE_NAME}} agent →</a>
+                <a href="javascript:void(0)" onclick="openForm('sell', { _lake: '{{LAKE_SLUG}}' })" class="ld-leadcta-btn ghost">Selling on {{LAKE_NAME}}? Get a free valuation →</a>
             </div>
         </div>
     </section>

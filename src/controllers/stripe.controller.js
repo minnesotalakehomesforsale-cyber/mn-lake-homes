@@ -248,7 +248,7 @@ function getStripe() {
 // ─── Price ID mapping ────────────────────────────────────────────────────────
 // Note: the public "founder" pricing tier uses the slug `founder_public`
 // to avoid colliding with the DB `founder` membership tier, which is
-// admin-only and used by the 70/30 lead-routing split (not for sale).
+// admin-only and used by the exclusive-founder lead routing (not for sale).
 const PRICE_MAP = {
     standard_monthly:      process.env.STRIPE_PRICE_STANDARD_MONTHLY,
     standard_annual:       process.env.STRIPE_PRICE_STANDARD_ANNUAL,

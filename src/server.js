@@ -1995,8 +1995,8 @@ async function ensureTables() {
                     sort_priority       = EXCLUDED.sort_priority;
         `);
 
-        // Per-tag routing counter powers the 70/30 founder split. Increments on
-        // each successful assignment in that tag's geography.
+        // Per-tag round-robin counter for town routing. Increments on each
+        // successful assignment in that tag's geography.
         await safeExec(`
             ALTER TABLE tags ADD COLUMN IF NOT EXISTS lead_routing_counter INTEGER NOT NULL DEFAULT 0;
         `);
