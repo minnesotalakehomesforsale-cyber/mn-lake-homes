@@ -189,14 +189,22 @@ async function routeLead({ lat, lng, radiusMiles, lakeId } = {}) {
         ? Number(radiusMiles)
         : await getDefaultRadiusMiles();
 
-    // ── 1. Lake-level routing (founder override, lake by lake) ──
+    // ── 1. Lake-level routing (founder = exclusive lake owner) ──
+    // EXPLICIT lake only: the lead must actually name the lake (buyer picks it
+    // on the lake page/filter, or a seller picks it in the "which lake" step).
+    // We do NOT guess "on the lake" from a nearby address — proximity to a
+    // lake's center can't distinguish a lakefront home from one blocks away,
+    // so address-only leads fall through to town routing below (where the
+    // founder still competes normally via their own service-area tags).
     let lake = null;
     if (lakeId) lake = await getLakeById(lakeId);
-    else if (lat != null && lng != null) lake = await lakeNear(lat, lng, radius);
     if (lake) {
         const buckets = await agentsForLake(lake.id);
         if (Object.keys(buckets).length) {
-            const pick = pickFromBuckets(buckets, lake.lead_routing_counter || 0);
+            // The seated founder is EXCLUSIVE — 100% of their lake's leads.
+            // With no founder seated, round-robin the lake's other agents.
+            const founder = buckets.founder && buckets.founder[0];
+            const pick = founder || pickFromBuckets(buckets, lake.lead_routing_counter || 0);
             if (pick) {
                 const client = await pool.connect();
                 try {
