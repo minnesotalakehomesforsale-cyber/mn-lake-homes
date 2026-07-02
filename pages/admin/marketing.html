@@ -175,6 +175,7 @@
         <div class="page-tabs" role="tablist">
             <button id="tab-btn-overview"   class="page-tab active" onclick="showMK('overview')"   role="tab">Dashboard</button>
             <button id="tab-btn-blog"       class="page-tab"        onclick="showMK('blog')"       role="tab">Blog &amp; Content</button>
+            <button id="tab-btn-resources"  class="page-tab"        onclick="showMK('resources')"  role="tab">Resources</button>
             <button id="tab-btn-newsletter" class="page-tab"        onclick="showMK('newsletter')" role="tab">Newsletter</button>
             <button id="tab-btn-social"     class="page-tab"        onclick="showMK('social')"     role="tab">Social Media</button>
             <button id="tab-btn-agents"     class="page-tab"        onclick="showMK('agents')"     role="tab">Marketing to Agents</button>
@@ -225,6 +226,9 @@
         <!-- ── TAB 2: BLOG & CONTENT (iframe) ──────────────────────── -->
         <div id="pane-blog" class="tab-pane" role="tabpanel">
             <iframe id="frame-blog" class="lt-frame" data-src="blog.html?embed=1" title="Blog &amp; Content"></iframe>
+        </div>
+        <div id="pane-resources" class="tab-pane" role="tabpanel">
+            <iframe id="frame-resources" class="lt-frame" data-src="resources.html?embed=1" title="Resources"></iframe>
         </div>
 
         <!-- ── TAB 3: NEWSLETTER ───────────────────────────────────── -->
@@ -394,13 +398,13 @@
 
 <script>
     // ── Tabs ──────────────────────────────────────────────────────
-    const TABS = ['overview', 'blog', 'newsletter', 'social', 'agents'];
+    const TABS = ['overview', 'blog', 'resources', 'newsletter', 'social', 'agents'];
     const _params = new URLSearchParams(window.location.search);
     const _initialTab = TABS.includes(_params.get('tab')) ? _params.get('tab') : 'overview';
 
     function ensureFrameLoaded(name) {
-        if (name !== 'blog') return;
-        const f = document.getElementById('frame-blog');
+        if (name !== 'blog' && name !== 'resources') return;
+        const f = document.getElementById('frame-' + name);
         if (f && !f.src) f.src = f.dataset.src;
     }
 
@@ -471,8 +475,8 @@
     window.addEventListener('message', (e) => {
         const m = e.data;
         if (!m || m.lt !== 'height' || typeof m.h !== 'number') return;
-        if (m.frame === 'blog') {
-            const f = document.getElementById('frame-blog');
+        if (m.frame === 'blog' || m.frame === 'resources') {
+            const f = document.getElementById('frame-' + m.frame);
             if (f) f.style.height = Math.max(700, m.h + 8) + 'px';
         }
     });

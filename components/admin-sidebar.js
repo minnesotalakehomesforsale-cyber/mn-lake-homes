@@ -205,8 +205,7 @@
         // Marketing rolls up Blog & Content along with three new tabs
         // (Dashboard, Newsletter, Social Media). Blog stays accessible at
         // its old URL too — the alias keeps the highlight working.
-        { key: 'marketing',   href: 'marketing.html',  label: 'Marketing', aliases: ['blog'] },
-        { key: 'resources',   href: 'resources.html',  label: 'Resources' },
+        { key: 'marketing',   href: 'marketing.html',  label: 'Marketing & Content', aliases: ['blog', 'resources'] },
         { key: 'cash-offers', href: 'cash-offers.html',label: 'Cash Offers', cashBadge: true },
         { key: 'financials',  href: 'financials.html', label: 'Financials' },
         { key: 'users',       href: 'users.html',      label: 'Users Management' },
