@@ -12,17 +12,28 @@
 
         /* ── Hero ────────────────────────────────────────────────── */
         .d-hero {
-            background: linear-gradient(135deg, #1a202c 0%, #2d3748 55%, #1d6df2 165%);
-            color: #fff; border-radius: 16px;
-            padding: 2rem 2.25rem;
+            position: relative; overflow: hidden;
+            background:
+                radial-gradient(130% 150% at 90% -30%, rgba(29,109,242,0.55) 0%, rgba(29,109,242,0) 55%),
+                radial-gradient(90% 130% at -5% 130%, rgba(80,190,255,0.16) 0%, rgba(80,190,255,0) 55%),
+                linear-gradient(135deg, #141a27 0%, #222d41 60%, #182338 100%);
+            color: #fff; border-radius: 18px;
+            padding: 2.4rem 2.5rem;
             margin-bottom: 1.5rem;
             display: flex; flex-wrap: wrap; gap: 1.5rem;
             align-items: flex-end; justify-content: space-between;
-            box-shadow: 0 20px 60px rgba(26, 32, 44, 0.18);
+            box-shadow: 0 24px 60px rgba(20, 26, 39, 0.30);
+            border: 1px solid rgba(255,255,255,0.07);
         }
-        .d-hero h1 { font-size: 2.1rem; font-weight: 800; letter-spacing: -1px; margin: 0 0 0.35rem; line-height: 1.05; }
-        .d-hero .d-sub { color: rgba(255,255,255,0.72); font-size: 0.95rem; margin: 0; }
-        .d-hero .d-tag { display: inline-block; padding: 0.25rem 0.7rem; background: rgba(255,255,255,0.12); border-radius: 99px; font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.85rem; color: #a3bffa; }
+        /* soft top highlight + faint dot texture for depth */
+        .d-hero::before {
+            content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+            background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0) 42%);
+        }
+        .d-hero > * { position: relative; z-index: 1; }
+        .d-hero h1 { font-size: 2.35rem; font-weight: 800; letter-spacing: -1.1px; margin: 0 0 0.4rem; line-height: 1.04; color: #fff; }
+        .d-hero .d-sub { color: rgba(255,255,255,0.66); font-size: 0.95rem; margin: 0; font-weight: 500; }
+        .d-hero .d-tag { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.32rem 0.85rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 99px; font-size: 0.7rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 1rem; color: #bcd2ff; }
         .d-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
         .d-act {
             padding: 0.7rem 1.15rem; border-radius: 10px;

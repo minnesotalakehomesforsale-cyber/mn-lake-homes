@@ -110,9 +110,10 @@
         .admin-main { color: #1a202c; font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
         .admin-main ::selection { background: rgba(29,109,242,0.18); }
 
-        /* Page title — consistent for pages that don't inline-style their h1 */
-        .admin-main h1 { font-weight: 800; letter-spacing: -0.8px; color: #1a202c; }
-        .admin-main h2 { letter-spacing: -0.3px; color: #1a202c; }
+        /* Page title weight/tracking only — NOT color, so dark-hero headings
+           (e.g. the dashboard welcome banner) keep their light text. Normal
+           headings inherit the dark body color on the light canvas. */
+        .admin-main h1 { font-weight: 800; letter-spacing: -0.8px; }
 
         /* Cards — one soft, elevated surface. (.panel is intentionally left
            alone: it's a card on some pages but a tab-content wrapper on
