@@ -817,15 +817,23 @@
         }
 
         // ── Traffic chart (inline SVG line + area, with hover tooltip) ─
+        let _trafficDaily = null, _trafficW = 0;
         function drawTrafficChart(daily) {
             const svg = document.getElementById('traffic-chart');
+            if (daily) _trafficDaily = daily; else daily = _trafficDaily;
             // Clear any previous path/dot/grid (keep <defs>)
             [...svg.querySelectorAll('.area,.line,.dot,.grid,.axis,.guide,.hover-dot,.hit-area')].forEach(n => n.remove());
 
-            // padR bumped from 8 → 32 so the right-edge label doesn't
-            // clip outside the viewBox. padT/padB also adjusted for the
-            // new 260-tall viewBox.
-            const W = 600, H = 260, padL = 36, padR = 32, padT = 18, padB = 30;
+            // Match the viewBox to the SVG's REAL pixel width so 1 unit = 1px.
+            // A fixed 600-wide viewBox stretched into a ~1000px card (via
+            // preserveAspectRatio='none') scaled X ~1.7x but Y 1x — that's what
+            // made the line, dots and axis labels look fat / oval / "zoomed in".
+            // Sizing the viewBox to the actual width keeps it crisp and true.
+            const H = 260;
+            const W = Math.max(320, Math.round(svg.clientWidth || svg.getBoundingClientRect().width || 600));
+            _trafficW = W;
+            svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+            const padL = 40, padR = 34, padT = 20, padB = 32;
             const innerW = W - padL - padR, innerH = H - padT - padB;
             const NS = 'http://www.w3.org/2000/svg';
             const mk = (tag, attrs = {}, text) => {
@@ -1235,6 +1243,20 @@
 
             // ── Traffic chart ─────────────────────────────────
             drawTrafficChart(analytics?.daily || []);
+            // Redraw on width change so the 1:1 viewBox stays matched (crisp)
+            // when the window resizes. Attached once; ignores height-only changes.
+            if (!window._trafficRzBound) {
+                window._trafficRzBound = true;
+                window.addEventListener('resize', () => {
+                    clearTimeout(window._trafficRz);
+                    window._trafficRz = setTimeout(() => {
+                        const svg = document.getElementById('traffic-chart');
+                        if (!svg || !_trafficDaily) return;
+                        const w = Math.round(svg.clientWidth || 0);
+                        if (w && Math.abs(w - _trafficW) > 2) drawTrafficChart();
+                    }, 150);
+                });
+            }
             const ts = document.getElementById('traffic-summary');
             ts.innerHTML = `
                 <div class="ts-item"><span class="v">${fmt(analytics?.views_7d?.views  || 0)}</span>views · 7d</div>
