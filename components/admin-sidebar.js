@@ -217,7 +217,8 @@
         // pre-existing logic keeps working unchanged. The standalone slugs
         // are aliased so direct hits on lakes.html / tags.html /
         // businesses.html still highlight this entry in the sidebar.
-        { key: 'lakes-towns', href: 'lakes-towns.html', label: 'Lakes, Towns & Businesses', aliases: ['lakes', 'tags', 'businesses'] },
+        { key: 'lakes-towns', href: 'lakes-towns.html', label: 'Lakes, Towns & Businesses', aliases: ['lakes', 'businesses'] },
+        { key: 'tags',        href: 'tags.html',        label: 'Geo Tags' },
         { key: 'listings',    href: 'listings.html',   label: 'Listings' },
         { key: 'reviews',     href: 'reviews.html',    label: 'Reviews' },
         // Site-wide image manager — every DB-backed image (lakes/towns/
