@@ -304,6 +304,7 @@
                 <button class="page-tab active" id="tab-btn-overview"   data-tab="overview"   onclick="showLT('overview')">Overview</button>
                 <button class="page-tab"        id="tab-btn-map"        data-tab="map"        onclick="showLT('map')">Map</button>
                 <button class="page-tab"        id="tab-btn-lakes"      data-tab="lakes"      onclick="showLT('lakes')">Lakes</button>
+                <button class="page-tab"        id="tab-btn-towns"      data-tab="towns"      onclick="showLT('towns')">Towns</button>
                 <button class="page-tab"        id="tab-btn-businesses" data-tab="businesses" onclick="showLT('businesses')">Businesses</button>
             </div>
 
@@ -348,6 +349,17 @@
             </div>
 
             <!-- ── Towns ────────────────────────────────────────── -->
+            <!-- Towns ARE geo tags (one `tags` table) — this embeds the exact
+                 same manager as Metrics & Database → Geo Tags, so the two views
+                 stay 1:1 automatically. Add/edit a town here or a geo tag there;
+                 it's the same record. -->
+            <div id="pane-towns" class="tab-pane">
+                <p style="font-size:0.85rem;color:#718096;margin:0 0 0.75rem;">
+                    Towns are the geo tags used for lead routing — the same records as Metrics &amp; Database → Geo Tags. Add, edit, or archive them here.
+                </p>
+                <iframe id="frame-towns" class="lt-frame" data-src="/pages/admin/tags.html?embed=1" title="Towns (geo tags)"
+                        style="height: calc(100vh - 240px); min-height: 600px;"></iframe>
+            </div>
 
             <!-- ── Businesses ───────────────────────────────────── -->
             <div id="pane-businesses" class="tab-pane">
@@ -456,7 +468,7 @@
 
 <script>
     // ── State ──────────────────────────────────────────────────────────
-    const TABS = ['overview', 'map', 'lakes', 'businesses'];
+    const TABS = ['overview', 'map', 'lakes', 'towns', 'businesses'];
     const _params = new URLSearchParams(window.location.search);
     const _initialTab = TABS.includes(_params.get('tab')) ? _params.get('tab') : 'overview';
 
@@ -506,12 +518,25 @@
         if (name === 'lakes'      && !State.loaded.lakes)  loadLakes();
         if (name === 'businesses' && !State.loaded.biz)    loadBiz();
 
-        // Map is the only iframe — lazy-set its src on first open.
+        // Iframe tabs — lazy-set src on first open.
         if (name === 'map') {
             const frame = document.getElementById('frame-map');
             if (frame && !frame.src) frame.src = frame.dataset.src;
         }
+        if (name === 'towns') {
+            const frame = document.getElementById('frame-towns');
+            if (frame && !frame.src) frame.src = frame.dataset.src;
+        }
     }
+
+    // Auto-resize the embedded Towns (geo tags) iframe — tags.html?embed=1
+    // posts {lt:'height', frame:'towns', h} as its content grows.
+    window.addEventListener('message', (e) => {
+        const m = e.data;
+        if (!m || m.lt !== 'height' || typeof m.h !== 'number') return;
+        const target = document.getElementById('frame-' + m.frame);
+        if (target) target.style.height = Math.max(600, m.h + 8) + 'px';
+    });
 
     // ── Data loaders ──────────────────────────────────────────────────
     async function loadOverview() {
@@ -577,54 +602,11 @@
     }
 
 
-    async function loadTowns() {
-        State.loaded.towns = true;
-        try {
-            // ?active=all is the tag controller's "skip the default-active
-            // filter" knob. (include_archived=1 was a typo that silently fell
-            // through to active-only, hiding every deactivated town.)
-            const r = await fetch('/api/tags?active=all', { credentials: 'include' });
-            const data = await r.json();
-            State.towns = Array.isArray(data) ? data : (data.rows || []);
-        } catch (_) { State.towns = []; }
-
-        const states = [...new Set(State.towns.map(t => t.state).filter(Boolean))].sort();
-        const sel = document.getElementById('tw-state');
-        const cur = sel.value;
-        sel.innerHTML = '<option value="">All states</option>' + states.map(s => `<option value="${escAttr(s)}">${escHtml(s)}</option>`).join('');
-        if (cur && states.includes(cur)) sel.value = cur;
-        renderTowns();
-    }
-
-    function renderTowns() {
-        const q       = document.getElementById('tw-search').value.toLowerCase().trim();
-        const state   = document.getElementById('tw-state').value;
-        const visMode = document.getElementById('tw-active').value;
-        const filtered = State.towns.filter(t => {
-            if (visMode === 'active' && !t.active) return false;
-            if (q && !(`${t.name||''} ${t.region||''} ${t.state||''}`.toLowerCase().includes(q))) return false;
-            if (state && t.state !== state) return false;
-            return true;
-        });
-        // Show "X of Y" — filtered/total — plus a second pill telling the
-        // admin how many of all loaded towns are currently active (matches
-        // exactly what the public site will surface).
-        const activeTotal = State.towns.filter(t => t.active).length;
-        updateCount('tw-count', filtered.length, State.towns.length, activeTotal);
-        renderGrid('tw-grid', filtered, {
-            type: 'town',
-            empty: 'No towns match the current filters.',
-            thumb: t => t.hero_image_url,
-            initials: t => (t.name || '?').slice(0, 1).toUpperCase(),
-            status: t => t.active ? 'published' : 'archived',
-            name:  t => t.name,
-            meta:  t => [t.region, t.state].filter(Boolean).join(' · '),
-            stats: t => [
-                t.lake_count != null ? `${t.lake_count} lakes` : null,
-                t.agent_count != null ? `${t.agent_count} agents` : null,
-            ].filter(Boolean),
-        });
-    }
+    // NOTE: the Towns tab now embeds the shared tags.html manager (same one as
+    // Metrics & Database → Geo Tags), so towns stay 1:1 with geo tags. The old
+    // inline loadTowns()/renderTowns() list was removed to avoid a second,
+    // divergent town view. The Overview "Towns" count still comes from
+    // loadOverview() (which fetches /api/tags).
 
     async function loadBiz() {
         State.loaded.biz = true;
