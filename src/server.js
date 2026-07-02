@@ -2505,6 +2505,9 @@ async function ensureTables() {
                 approved_at  TIMESTAMPTZ
             );
             ALTER TABLE reviews ADD COLUMN IF NOT EXISTS author_ip VARCHAR(64);
+            -- Self-heal: older reviews tables predate approved_at, so the moderate
+            -- UPDATE (which sets approved_at) 500s with "column does not exist".
+            ALTER TABLE reviews ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
             CREATE INDEX IF NOT EXISTS idx_reviews_subject ON reviews(subject_type, subject_id);
             CREATE INDEX IF NOT EXISTS idx_reviews_status  ON reviews(status);
             CREATE INDEX IF NOT EXISTS idx_reviews_ip_time ON reviews(author_ip, created_at);
