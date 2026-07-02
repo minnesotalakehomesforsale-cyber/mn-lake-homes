@@ -121,26 +121,34 @@ exports.recomputeSeatValues = async (req, res) => {
               FROM lakes l WHERE l.status = 'published' ORDER BY l.name`);
         if (!rows.length) return res.json({ updated: 0, total: 0 });
 
-        const input = rows.map(r => ({ id: r.id, name: r.name, region: r.region, state: r.state, leads_90d: r.leads_90d }));
-        const sys = 'You price exclusive "founding agent" sponsorship seats on lakes for a Minnesota-area lake-real-estate lead network. Each lake has ONE founder seat. Price each $75–$5000 per month based on: (a) typical WATERFRONT HOME PRICES on that lake from your knowledge (e.g., Lake Minnetonka is ultra-premium and should be near the top; small community lakes are modest), and (b) the LEAD TRAFFIC we currently send (leads_90d — more leads = more valuable). Expensive homes AND high traffic => highest prices. Return ONLY JSON: {"values":[{"id":"<id>","value":<integer 75-5000>,"reason":"<max 12 words>"}]} with one entry per lake.';
-        const user = `Lakes (JSON):\n${JSON.stringify(input)}`;
+        // Reference lakes by a small integer index — NOT their UUID. LLMs mangle
+        // opaque UUIDs, which silently breaks the id match. We map the index back
+        // to the real id server-side.
+        const input = rows.map((r, i) => ({ i, name: r.name, region: r.region, state: r.state, leads_90d: r.leads_90d }));
+        const sys = 'You price exclusive "founding agent" sponsorship seats on lakes for a Minnesota-area lake-real-estate lead network. Each lake has ONE founder seat. Price each $75–$5000 per month based on: (a) typical WATERFRONT HOME PRICES on that lake from your knowledge (e.g., Lake Minnetonka is ultra-premium and should be near the top; small community lakes are modest), and (b) the LEAD TRAFFIC we currently send (leads_90d — more leads = more valuable). Expensive homes AND high traffic => highest prices; a lake with zero leads still has a baseline value from its home prices. Return ONLY JSON of the form {"values":[{"i":<the lake index>,"value":<integer 75-5000>,"reason":"<max 10 words>"}]} with one entry for EVERY lake index provided.';
+        const user = `Lakes (JSON, use the "i" index in your reply):\n${JSON.stringify(input)}`;
         const completion = await client.chat.completions.create({
             model: MODEL,
             messages: [{ role: 'system', content: sys }, { role: 'user', content: user }],
-            temperature: 0.3, max_tokens: 4000, response_format: { type: 'json_object' },
+            temperature: 0.3, max_tokens: 8000, response_format: { type: 'json_object' },
         });
         let parsed; try { parsed = JSON.parse(completion.choices[0]?.message?.content || '{}'); }
         catch (_) { return res.status(502).json({ error: 'AI returned invalid JSON.' }); }
-        const values = Array.isArray(parsed.values) ? parsed.values : [];
+        // Be lenient about the wrapper key.
+        const values = Array.isArray(parsed) ? parsed
+            : (parsed.values || parsed.lakes || parsed.data || Object.values(parsed).find(Array.isArray) || []);
         let updated = 0;
         for (const v of values) {
+            const idx = Number(v.i ?? v.index);
+            const lake = rows[idx];
             const val = Math.max(75, Math.min(5000, parseInt(v.value, 10) || 0));
-            if (!v.id || !val) continue;
+            if (!lake || !val) continue;
             const r = await pool.query(
                 `UPDATE lakes SET founder_seat_ai_value = $1, founder_seat_ai_reason = $2, founder_seat_ai_at = NOW() WHERE id = $3`,
-                [val, String(v.reason || '').slice(0, 160), v.id]);
+                [val, String(v.reason || '').slice(0, 160), lake.id]);
             updated += r.rowCount;
         }
+        if (!updated) return res.status(502).json({ error: `AI returned ${values.length} value(s) but none mapped to a lake. Try again.` });
         res.json({ updated, total: rows.length });
     } catch (err) {
         console.error('[financials.recomputeSeatValues]', err.message);
