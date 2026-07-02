@@ -97,12 +97,99 @@
         .admin-main { padding: 3rem 3.5rem; background: #f7f9fa; overflow-y: auto; }
     `;
 
+    // ── Shared admin design system (cohesive polish) ───────────────────
+    // One source of truth for how CONTENT looks on every admin page:
+    // headers, cards/panels, tables, buttons, inputs, badges, modals. This
+    // is injected on every page (via the sidebar, which is everywhere) and
+    // loads after each page's own <style>, so it normalizes the historically
+    // divergent per-page styling (.ledger-table vs .biz-table, .btn-add vs
+    // .btn-primary, two modal systems, etc.) into one look. Keeps the existing
+    // identity: #1a202c chrome, #1d6df2 accent, #f7f9fa canvas. Visual-only —
+    // no layout/structure props — so it can't break existing page layouts.
+    const DESIGN_CSS = `
+        .admin-main { color: #1a202c; font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        .admin-main ::selection { background: rgba(29,109,242,0.18); }
+
+        /* Page title — consistent for pages that don't inline-style their h1 */
+        .admin-main h1 { font-weight: 800; letter-spacing: -0.8px; color: #1a202c; }
+        .admin-main h2 { letter-spacing: -0.3px; color: #1a202c; }
+
+        /* Cards — one soft, elevated surface. (.panel is intentionally left
+           alone: it's a card on some pages but a tab-content wrapper on
+           others, and those card-panels are already styled consistently.) */
+        .admin-main .card {
+            background: #fff; border: 1px solid #edf2f7; border-radius: 14px;
+            box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 10px 26px rgba(16,24,40,0.05);
+        }
+
+        /* Tables — normalize the divergent table classes into one look */
+        .admin-main .ledger-table, .admin-main .biz-table, .admin-main .data-table {
+            width: 100%; border-collapse: separate; border-spacing: 0;
+            background: #fff; border: 1px solid #edf2f7; border-radius: 14px; overflow: hidden;
+            box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 10px 26px rgba(16,24,40,0.05);
+        }
+        .admin-main .ledger-table th, .admin-main .biz-table th, .admin-main .data-table th {
+            background: #f9fafb; text-align: left; padding: 0.95rem 1.35rem;
+            font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+            color: #718096; border-bottom: 1px solid #edf2f7;
+        }
+        .admin-main .ledger-table td, .admin-main .biz-table td, .admin-main .data-table td {
+            padding: 0.95rem 1.35rem; border-bottom: 1px solid #f2f5f8;
+            font-size: 0.9rem; color: #2d3748; vertical-align: middle;
+        }
+        .admin-main .ledger-table tr:last-child td, .admin-main .biz-table tr:last-child td, .admin-main .data-table tr:last-child td { border-bottom: none; }
+        .admin-main .ledger-table tr.data-row:hover, .admin-main .biz-table tbody tr:hover, .admin-main .data-table tr.data-row:hover { background: #f6faff; cursor: pointer; }
+
+        /* Buttons — one primary + one ghost, with a subtle lift */
+        .admin-main .btn-primary, .admin-main .btn-add {
+            background: #1d6df2; color: #fff; border: none; border-radius: 10px;
+            padding: 0.7rem 1.4rem; font-weight: 700; font-size: 0.9rem; font-family: inherit; cursor: pointer;
+            box-shadow: 0 2px 6px rgba(29,109,242,0.25); transition: transform .12s, box-shadow .12s, background .12s;
+        }
+        .admin-main .btn-primary:hover, .admin-main .btn-add:hover { background: #155bc8; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(29,109,242,0.32); }
+        .admin-main .btn-ghost {
+            background: #fff; color: #2d3748; border: 1px solid #e2e8f0; border-radius: 10px;
+            padding: 0.7rem 1.25rem; font-weight: 600; font-size: 0.9rem; font-family: inherit; cursor: pointer; transition: all .12s;
+        }
+        .admin-main .btn-ghost:hover { border-color: #cbd5e0; background: #f7f9fa; }
+
+        /* Inputs — one field style + one accent focus ring */
+        .admin-main .field-inp, .admin-main .search-input, .admin-main .filter-select,
+        .admin-main .field input, .admin-main .field select, .admin-main .field textarea {
+            font-family: inherit; font-size: 0.9rem; border: 1px solid #e2e8f0; border-radius: 10px;
+            background-color: #fff; color: #1a202c; outline: none; transition: border-color .12s, box-shadow .12s;
+        }
+        .admin-main .field-inp:focus, .admin-main .search-input:focus, .admin-main .filter-select:focus,
+        .admin-main .field input:focus, .admin-main .field select:focus, .admin-main .field textarea:focus {
+            border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.12);
+        }
+
+        /* Status pills — consistent shape */
+        .admin-main .s-badge { border-radius: 99px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; padding: 0.28rem 0.7rem; }
+
+        /* Modals — both systems (.ovl/.modal + .modal-overlay-admin/.modal-box)
+           get one elevated container. Only loads on admin pages, so safe. */
+        .modal, .modal-box { border-radius: 16px; box-shadow: 0 30px 60px rgba(16,24,40,0.25); }
+        .m-hdr { border-bottom: 1px solid #edf2f7; }
+    `;
+
     function injectStyles() {
-        if (document.getElementById('admin-sidebar-styles')) return;
-        const el = document.createElement('style');
-        el.id = 'admin-sidebar-styles';
-        el.textContent = BASE_CSS;
-        document.head.appendChild(el);
+        if (!document.getElementById('admin-sidebar-styles')) {
+            const el = document.createElement('style');
+            el.id = 'admin-sidebar-styles';
+            el.textContent = BASE_CSS;
+            document.head.appendChild(el);
+        }
+        // Shared design system — appended AFTER the page's own inline <style>
+        // (which lives in <head>), so it wins the cascade and unifies the
+        // divergent per-page component styles into one cohesive look. Scoped
+        // to admin content classes only; the sidebar is untouched.
+        if (!document.getElementById('admin-ui-styles')) {
+            const ds = document.createElement('style');
+            ds.id = 'admin-ui-styles';
+            ds.textContent = DESIGN_CSS;
+            document.head.appendChild(ds);
+        }
     }
 
     // ── Canonical nav list ─────────────────────────────────────────────
