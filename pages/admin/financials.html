@@ -146,7 +146,7 @@
                     <div class="fin-grid">
                         <div class="fin-stat"><div class="l">MRR now</div><div class="v">${money(projRes.mrr.now)}</div><div class="s">${projRes.actual.source === 'stripe' ? 'live from Stripe' : 'modeled — connect Stripe'} · ${money(projRes.arr.now)}/yr</div></div>
                         <div class="fin-stat goal"><div class="l">MRR at full</div><div class="v">${money(projRes.mrr.full)}</div><div class="s">${money(projRes.arr.full)} / yr — every seat sold</div></div>
-                        <div class="fin-stat"><div class="l">Founder seats</div><div class="v">${projRes.founder.seatsFilled}/${projRes.founder.seatsTotal}</div><div class="s">up to ${money(projRes.founder.mrrFull)}/mo at list</div></div>
+                        <div class="fin-stat"><div class="l">Founder seats</div><div class="v">${projRes.founder.seatsFilled}/${projRes.founder.seatsTotal}</div><div class="s">${projRes.founder.mrrFull > 0 ? 'up to ' + money(projRes.founder.mrrFull) + '/mo at list' : 'set prices or run AI valuation →'}</div></div>
                         <div class="fin-stat"><div class="l">Upside remaining</div><div class="v">${money(projRes.mrr.full - projRes.mrr.now)}</div><div class="s">/mo if fully staffed</div></div>
                     </div>
                     ${projRes.scenarios.map(s => `

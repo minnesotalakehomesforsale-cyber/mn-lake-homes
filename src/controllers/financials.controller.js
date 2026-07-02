@@ -22,7 +22,11 @@ const PRICE = {
 };
 // Per-area staffing goals (founder is per-lake, priced individually).
 const GOAL = { elite: 2, prime: 5, basic: 10 };
-const DEFAULT_FOUNDER = 149;   // fallback founder price when none set/estimated
+// A founder seat with no listed price AND no AI value counts as $0 — NOT a tier
+// price. (It used to fall back to $149, which is the Elite rate and made the
+// founder projection look like elite pricing.) Set a price or run the AI
+// valuation to give a lake real founder value.
+const DEFAULT_FOUNDER = 0;
 
 function stripeFromEnv() {
     try { const k = process.env.STRIPE_SECRET_KEY; return k ? require('stripe')(k) : null; } catch (_) { return null; }
