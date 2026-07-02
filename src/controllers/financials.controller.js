@@ -124,7 +124,9 @@ exports.lakeSeatValues = async (req, res) => {
                    l.founder_seat_price, l.founder_seat_ai_value, l.founder_seat_ai_reason, l.founder_seat_ai_at,
                    EXISTS (SELECT 1 FROM agent_lakes al WHERE al.lake_id = l.id AND al.is_founder) AS founder_seated,
                    (SELECT COUNT(*) FROM leads le WHERE le.lake_id = l.id AND le.created_at > NOW() - INTERVAL '90 days')::int AS leads_90d,
-                   (SELECT COUNT(*) FROM leads le WHERE le.lake_id = l.id)::int AS leads_all
+                   (SELECT COUNT(*) FROM leads le WHERE le.lake_id = l.id)::int AS leads_all,
+                   (SELECT COUNT(*) FROM page_views pv WHERE pv.path IN ('/lakes/' || l.slug, '/lakes/' || l.slug || '/')
+                                                         AND pv.created_at > NOW() - INTERVAL '90 days')::int AS views_90d
               FROM lakes l
              WHERE l.status = 'published'
           ORDER BY COALESCE(l.founder_seat_ai_value, 0) DESC, l.name ASC`);
@@ -155,15 +157,17 @@ exports.recomputeSeatValues = async (req, res) => {
     try {
         const { rows } = await pool.query(`
             SELECT l.id, l.name, l.region, l.state,
-                   (SELECT COUNT(*) FROM leads le WHERE le.lake_id = l.id AND le.created_at > NOW() - INTERVAL '90 days')::int AS leads_90d
+                   (SELECT COUNT(*) FROM leads le WHERE le.lake_id = l.id AND le.created_at > NOW() - INTERVAL '90 days')::int AS leads_90d,
+                   (SELECT COUNT(*) FROM page_views pv WHERE pv.path IN ('/lakes/' || l.slug, '/lakes/' || l.slug || '/')
+                                                         AND pv.created_at > NOW() - INTERVAL '90 days')::int AS views_90d
               FROM lakes l WHERE l.status = 'published' ORDER BY l.name`);
         if (!rows.length) return res.json({ updated: 0, total: 0 });
 
         // Reference lakes by a small integer index — NOT their UUID. LLMs mangle
         // opaque UUIDs, which silently breaks the id match. We map the index back
         // to the real id server-side.
-        const input = rows.map((r, i) => ({ i, name: r.name, region: r.region, state: r.state, leads_90d: r.leads_90d }));
-        const sys = 'You price exclusive "founding agent" sponsorship seats on lakes for a Minnesota-area lake-real-estate lead network. Each lake has ONE founder seat. Price each $75–$5000 per month based on: (a) typical WATERFRONT HOME PRICES on that lake from your knowledge (e.g., Lake Minnetonka is ultra-premium and should be near the top; small community lakes are modest), and (b) the LEAD TRAFFIC we currently send (leads_90d — more leads = more valuable). Expensive homes AND high traffic => highest prices; a lake with zero leads still has a baseline value from its home prices. Return ONLY JSON of the form {"values":[{"i":<the lake index>,"value":<integer 75-5000>,"reason":"<max 10 words>"}]} with one entry for EVERY lake index provided.';
+        const input = rows.map((r, i) => ({ i, name: r.name, region: r.region, state: r.state, leads_90d: r.leads_90d, views_90d: r.views_90d }));
+        const sys = 'You price exclusive "founding agent" sponsorship seats on lakes for a Minnesota-area lake-real-estate lead network. Each lake has ONE founder seat, priced $75-$5000/month. Method: (1) WATERFRONT HOME PRICES on that lake (your knowledge) set the CEILING — ultra-premium lakes like Lake Minnetonka can justify up to $5000, modest community lakes far less. (2) Then scale DOWN toward the floor by ACTUAL DEMAND we can prove: page views (views_90d) and leads (leads_90d) on that lake page. Demand is what a founder actually pays for. A lake with ZERO views AND ZERO leads has NO demonstrated demand, so price it LOW regardless of home prices — NEVER near the max — as speculative potential (roughly $150-$600 for premium lakes, $75-$150 for modest ones). Leads count more than views; both rising moves it toward the ceiling. Return ONLY JSON: {"values":[{"i":<lake index>,"value":<integer 75-5000>,"reason":"<max 12 words; name the driver>"}]} with one entry for EVERY lake index provided.';
         const user = `Lakes (JSON, use the "i" index in your reply):\n${JSON.stringify(input)}`;
         const completion = await client.chat.completions.create({
             model: MODEL,

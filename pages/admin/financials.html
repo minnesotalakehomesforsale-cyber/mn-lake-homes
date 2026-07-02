@@ -94,11 +94,11 @@
                 <div class="fin-section" style="padding:0.4rem 0.6rem;">
                     <table class="fin-table" id="seats-table">
                         <thead><tr>
-                            <th>Lake</th><th>Region</th><th style="text-align:center;">Leads · 90d</th>
+                            <th>Lake</th><th>Region</th><th style="text-align:center;">Views · 90d</th><th style="text-align:center;">Leads · 90d</th>
                             <th style="text-align:center;">Founder</th><th style="text-align:right;">AI value</th>
                             <th style="text-align:right;">Listed price</th><th>AI rationale</th>
                         </tr></thead>
-                        <tbody><tr><td colspan="7" class="muted" style="padding:2rem;text-align:center;">Loading…</td></tr></tbody>
+                        <tbody><tr><td colspan="8" class="muted" style="padding:2rem;text-align:center;">Loading…</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -179,11 +179,12 @@
             const tbody = document.querySelector('#seats-table tbody');
             try {
                 const rows = await fetch('/api/admin/financials/lake-seat-values', { credentials: 'include' }).then(r => r.ok ? r.json() : []);
-                if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7" class="muted" style="padding:2rem;text-align:center;">No published lakes yet.</td></tr>'; return; }
+                if (!rows.length) { tbody.innerHTML = '<tr><td colspan="8" class="muted" style="padding:2rem;text-align:center;">No published lakes yet.</td></tr>'; return; }
                 tbody.innerHTML = rows.map(l => `
                     <tr>
                         <td><strong>${esc(l.name)}</strong></td>
                         <td class="muted">${esc(l.region || '—')}</td>
+                        <td style="text-align:center;">${l.views_90d != null ? l.views_90d : '—'}</td>
                         <td style="text-align:center;">${l.leads_90d}</td>
                         <td style="text-align:center;"><span class="seat-pill ${l.founder_seated ? 'yes' : 'no'}">${l.founder_seated ? 'Seated' : 'Open'}</span></td>
                         <td style="text-align:right;" class="ai-val">${l.founder_seat_ai_value ? money(l.founder_seat_ai_value) : '—'}</td>
@@ -191,7 +192,7 @@
                         <td class="muted" style="font-size:0.8rem;">${esc(l.founder_seat_ai_reason || '')}</td>
                     </tr>`).join('');
             } catch (_) {
-                tbody.innerHTML = '<tr><td colspan="7" style="color:#c53030;padding:2rem;text-align:center;">Could not load lakes.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="color:#c53030;padding:2rem;text-align:center;">Could not load lakes.</td></tr>';
             }
         }
 
