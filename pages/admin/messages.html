@@ -14,7 +14,25 @@
         .page-head p  { color: #718096; font-size: 0.95rem; margin: 0; }
 
         .msg-layout { display: grid; grid-template-columns: 320px 1fr; gap: 1.25rem; align-items: start; }
-        @media (max-width: 860px) { .msg-layout { grid-template-columns: 1fr; } }
+        @media (max-width: 860px) {
+            .msg-layout { grid-template-columns: 1fr; }
+            /* iOS-Messages feel: the list is the whole screen; tapping a person
+               slides the thread in full-screen over it. */
+            .msg-list { max-height: none; border-radius: 12px; }
+            .msg-thread { display: none; }
+            body.thread-open .msg-thread {
+                display: flex; position: fixed; inset: 0; z-index: 6000;
+                border-radius: 0; min-height: 100vh; height: 100dvh;
+                animation: slideInThread 0.22s ease;
+            }
+            body.thread-open { overflow: hidden; }
+            @keyframes slideInThread { from { transform: translateX(100%); } to { transform: translateX(0); } }
+            .msg-thread-head { position: sticky; top: 0; background: #fff; z-index: 2; }
+            .msg-thread-back { display: inline-flex; }
+            .msg-thread-head h2 { font-size: 1.05rem; }
+            .m-row { max-width: 88%; }
+            .msg-compose { position: sticky; bottom: 0; background: #fff; padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+        }
 
         .msg-list {
             background: #fff; border: 1px solid #edf2f7; border-radius: 14px;
@@ -39,6 +57,9 @@
         .msg-agent .nm { font-weight: 700; font-size: 0.9rem; color: #1a202c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .msg-agent .sub { font-size: 0.76rem; color: #a0aec0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .msg-agent .dot { width: 9px; height: 9px; border-radius: 50%; background: #1d6df2; margin-left: auto; flex-shrink: 0; }
+        .msg-agent .nm-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+        .msg-agent .ag-time { font-size: 0.72rem; color: #a0aec0; flex-shrink: 0; font-weight: 600; }
+        .msg-agent .ag-chev { color: #cbd5e0; font-size: 1.1rem; margin-left: auto; flex-shrink: 0; font-weight: 700; }
 
         .msg-thread {
             background: #fff; border: 1px solid #edf2f7; border-radius: 14px;
@@ -47,16 +68,29 @@
         .msg-thread-head { padding: 1.25rem 1.5rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
         .msg-thread-head h2 { font-size: 1.15rem; font-weight: 800; margin: 0; }
         .msg-thread-head .sub { font-size: 0.8rem; color: #718096; margin-top: 0.15rem; }
-        .msg-thread-body { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 0.85rem; }
-        .bubble {
-            align-self: flex-end; max-width: 78%;
-            background: #1d6df2; color: #fff; border-radius: 14px 14px 4px 14px;
-            padding: 0.7rem 1rem; font-size: 0.9rem; line-height: 1.5; white-space: pre-line;
-        }
-        .bubble .meta { font-size: 0.68rem; color: rgba(255,255,255,0.75); margin-top: 0.4rem; display: flex; gap: 0.5rem; align-items: center; }
-        .bubble .meta .read { background: rgba(255,255,255,0.2); border-radius: 99px; padding: 0.05rem 0.5rem; font-weight: 700; cursor: pointer; transition: background 0.12s; user-select: none; }
-        .bubble .meta .read:hover { background: rgba(255,255,255,0.35); }
-        .bubble .del { color: rgba(255,255,255,0.7); cursor: pointer; text-decoration: underline; }
+        /* Chat canvas + message rows (bubbles colored per sender). */
+        .msg-thread-body { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 0.35rem;
+            background: linear-gradient(180deg, #f7f9fc 0%, #eef2f8 100%); }
+        .m-daydiv { align-self: center; font-size: 0.68rem; color: #a0aec0; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; margin: 0.75rem 0 0.4rem; }
+        .m-row { display: flex; gap: 0.55rem; align-items: flex-end; max-width: 80%; margin-top: 0.5rem; }
+        .m-row.mine   { align-self: flex-end;   flex-direction: row-reverse; }
+        .m-row.theirs { align-self: flex-start; }
+        .m-row.stack  { margin-top: 0.12rem; }               /* consecutive from same sender */
+        .m-av { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 800; color: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.12); }
+        .m-av.hidden { visibility: hidden; }
+        .m-col { display: flex; flex-direction: column; min-width: 0; }
+        .m-row.mine .m-col { align-items: flex-end; }
+        .m-sender { font-size: 0.7rem; font-weight: 800; color: #4a5568; margin: 0 0.6rem 0.15rem; }
+        .m-bubble { padding: 0.6rem 0.9rem; font-size: 0.9rem; line-height: 1.45; white-space: pre-line; border-radius: 20px; color: #fff; box-shadow: 0 1px 2px rgba(16,24,40,0.08); word-break: break-word; }
+        .m-row.mine   .m-bubble { background: #1d6df2; border-bottom-right-radius: 6px; }
+        .m-row.theirs .m-bubble { border-bottom-left-radius: 6px; }   /* bg set inline per sender */
+        .m-meta { font-size: 0.64rem; color: #a0aec0; display: flex; gap: 0.55rem; align-items: center; margin: 0.2rem 0.55rem 0; }
+        .m-meta .read { cursor: pointer; font-weight: 800; color: #718096; user-select: none; }
+        .m-meta .read.is-read { color: #38a169; }
+        .m-meta .del { cursor: pointer; text-decoration: underline; }
+        .m-meta .del:hover { color: #c53030; }
+        /* Back button — mobile only (hidden on desktop) */
+        .msg-thread-back { display: none; background: none; border: 0; color: #1d6df2; font: inherit; font-weight: 700; font-size: 1rem; cursor: pointer; align-items: center; gap: 0.25rem; padding: 0; }
         .msg-empty { color: #a0aec0; font-size: 0.92rem; text-align: center; margin: auto; padding: 2rem; }
         .msg-compose { border-top: 1px solid #edf2f7; padding: 1rem 1.25rem; display: flex; gap: 0.6rem; align-items: flex-end; }
         .msg-compose textarea { flex: 1; resize: vertical; min-height: 46px; max-height: 160px; font: inherit; font-size: 0.92rem; padding: 0.7rem 0.9rem; border: 1px solid #e2e8f0; border-radius: 10px; outline: none; }
@@ -145,7 +179,8 @@
             <!-- Thread -->
             <div class="msg-thread">
                 <div class="msg-thread-head">
-                    <div>
+                    <button class="msg-thread-back" onclick="closeThreadMobile()" aria-label="Back to messages"><span style="font-size:1.3rem;line-height:1;">‹</span> Messages</button>
+                    <div style="flex:1; min-width:0;">
                         <h2 id="thread-name">Select an agent</h2>
                         <div class="sub" id="thread-sub">Pick someone on the left to start messaging.</div>
                     </div>
@@ -203,18 +238,32 @@
     let _threads = {};    // user_id -> thread meta (unread, last)
     let _activeUserId = null;
 
+    let _myId = null;   // current admin's user id — their messages align right
     const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const initials = n => (n || '?').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
     const fmtWhen = d => d ? new Date(d).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : '';
+    const fmtTime = d => d ? new Date(d).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' }) : '';
+    const fmtDay  = d => { const x = new Date(d), t = new Date(); const same = x.toDateString() === t.toDateString();
+        return same ? 'Today' : x.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }); };
+
+    // Stable color per sender so each admin's messages are visually distinct.
+    const SENDER_COLORS = ['#7c3aed','#0ea5e9','#059669','#d97706','#db2777','#0891b2','#4f46e5','#ca8a04','#e11d48','#2563eb'];
+    function senderColor(id) {
+        const s = String(id || '');
+        let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+        return SENDER_COLORS[h % SENDER_COLORS.length];
+    }
 
     async function boot() {
         try {
             // Full agent roster (so admin can start a thread with anyone) +
             // existing threads (for unread counts + ordering).
-            const [ledger, threads] = await Promise.all([
+            const [ledger, threads, sess] = await Promise.all([
                 fetch('/api/admin', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
                 fetch('/api/admin/messages/threads', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
+                fetch('/api/auth/session', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
             ]);
+            _myId = sess && (sess.userId || sess.user_id || sess.id) || null;
             _threads = {};
             (threads || []).forEach(t => { _threads[t.user_id] = t; });
             const arr = Array.isArray(ledger) ? ledger : (ledger.rows || []);
@@ -253,19 +302,27 @@
             });
         const el = document.getElementById('agent-list');
         if (!list.length) { el.innerHTML = '<div class="msg-empty">No agents match.</div>'; return; }
-        el.innerHTML = list.map(a => `
+        el.innerHTML = list.map(a => {
+            const th = _threads[a.user_id] || {};
+            const preview = th.last_body ? esc(th.last_body) : esc(a.email || 'No messages yet');
+            const time = a.last_at ? esc(fmtWhen(a.last_at)) : '';
+            return `
             <div class="msg-agent ${a.user_id === _activeUserId ? 'active' : ''}" onclick="openThread('${a.user_id}')">
-                <div class="av">${esc(initials(a.name))}</div>
+                <div class="av" style="background:${senderColor(a.user_id)};color:#fff;">${esc(initials(a.name))}</div>
                 <div style="min-width:0;flex:1;">
-                    <div class="nm">${esc(a.name)}</div>
-                    <div class="sub">${esc(a.email)}</div>
+                    <div class="nm-row"><span class="nm">${esc(a.name)}</span>${time ? `<span class="ag-time">${time}</span>` : ''}</div>
+                    <div class="sub">${preview}</div>
                 </div>
-                ${a.unread ? '<span class="dot" title="Unread by agent"></span>' : ''}
-            </div>`).join('');
+                ${a.unread ? '<span class="dot" title="Unread by agent"></span>' : '<span class="ag-chev">›</span>'}
+            </div>`; }).join('');
     }
+
+    // On mobile this class makes the thread slide in full-screen over the list.
+    function closeThreadMobile() { document.body.classList.remove('thread-open'); }
 
     async function openThread(userId) {
         _activeUserId = userId;
+        document.body.classList.add('thread-open');
         renderAgentList();
         const a = _agents.find(x => x.user_id === userId);
         document.getElementById('thread-name').textContent = a ? a.name : 'Agent';
@@ -288,16 +345,32 @@
             body.innerHTML = '<div class="msg-empty">No messages yet. Send the first one below.</div>';
             return;
         }
-        body.innerHTML = msgs.map(m => `
-            <div class="bubble">
-                ${esc(m.body)}
-                <div class="meta">
-                    <span>${esc(fmtWhen(m.created_at))}</span>
-                    <span class="read" onclick="toggleRead('${m.id}', ${m.read_at ? 'true' : 'false'})"
-                          title="Click to mark ${m.read_at ? 'unread' : 'read'}">${m.read_at ? 'Read' : 'Sent'}</span>
-                    <span class="del" onclick="delMessage('${m.id}')">delete</span>
-                </div>
-            </div>`).join('');
+        let html = '', lastDay = '', lastSender = '';
+        msgs.forEach(m => {
+            const day = fmtDay(m.created_at);
+            if (day !== lastDay) { html += `<div class="m-daydiv">${esc(day)}</div>`; lastDay = day; lastSender = ''; }
+            const mine = _myId && String(m.sender_user_id) === String(_myId);
+            const senderKey = String(m.sender_user_id || 'admin');
+            const stack = senderKey === lastSender;
+            lastSender = senderKey;
+            const color = mine ? '#1d6df2' : senderColor(m.sender_user_id);
+            const avatar = mine ? '' : `<div class="m-av ${stack ? 'hidden' : ''}" style="background:${color};">${esc(initials(m.sender_name))}</div>`;
+            html += `
+                <div class="m-row ${mine ? 'mine' : 'theirs'} ${stack ? 'stack' : ''}">
+                    ${avatar}
+                    <div class="m-col">
+                        ${(!mine && !stack) ? `<div class="m-sender">${esc(m.sender_name || 'Admin')}</div>` : ''}
+                        <div class="m-bubble"${mine ? '' : ` style="background:${color};"`}>${esc(m.body)}</div>
+                        <div class="m-meta">
+                            <span>${esc(fmtTime(m.created_at))}</span>
+                            <span class="read ${m.read_at ? 'is-read' : ''}" onclick="toggleRead('${m.id}', ${m.read_at ? 'true' : 'false'})"
+                                  title="Click to mark ${m.read_at ? 'unread' : 'read'}">${m.read_at ? '✓ Read' : 'Sent'}</span>
+                            <span class="del" onclick="delMessage('${m.id}')">delete</span>
+                        </div>
+                    </div>
+                </div>`;
+        });
+        body.innerHTML = html;
         body.scrollTop = body.scrollHeight;
     }
 

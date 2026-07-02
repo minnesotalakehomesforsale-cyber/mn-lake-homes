@@ -210,8 +210,8 @@ exports.threads = async (req, res) => {
 exports.threadForAgent = async (req, res) => {
     try {
         const { rows } = await pool.query(`
-            SELECT m.id, m.body, m.created_at, m.read_at,
-                   COALESCE(s.full_name, 'Admin') AS sender_name
+            SELECT m.id, m.body, m.created_at, m.read_at, m.sender_user_id,
+                   COALESCE(s.full_name, s.email, 'Admin') AS sender_name
               FROM agent_messages m
               LEFT JOIN users s ON s.id = m.sender_user_id
              WHERE m.recipient_user_id = $1
