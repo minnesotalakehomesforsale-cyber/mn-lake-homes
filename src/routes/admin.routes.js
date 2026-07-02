@@ -36,6 +36,7 @@ router.get('/revenue', verifyToken, requireRole(['admin', 'super_admin']), admin
 
 // ─── LEAD ROUTING DIAGNOSTICS (before /:id so the slug isn't read as an id) ──
 router.get('/routing-diagnostics', verifyToken, requireRole(['admin', 'super_admin']), adminController.getRoutingDiagnostics);
+router.get('/marketing/agent-insights', verifyToken, requireRole(['admin', 'super_admin']), adminController.getAgentMarketingInsights);
 
 // ─── USER MANAGEMENT (must come before /:id to avoid shadowing) ──────────────
 router.get('/users', adminController.getUsers);                            // GET /api/admin/users

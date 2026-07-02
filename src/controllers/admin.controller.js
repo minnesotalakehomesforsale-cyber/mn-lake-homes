@@ -2379,8 +2379,98 @@ const getRoutingDiagnostics = async (req, res) => {
     }
 };
 
+// Lazy OpenAI client (same key the assistant uses). Null if unconfigured.
+let _mktOpenAI = null;
+function getMktOpenAI() {
+    if (_mktOpenAI) return _mktOpenAI;
+    if (!process.env.OPENAI_API_KEY) return null;
+    try { const { OpenAI } = require('openai'); _mktOpenAI = new OpenAI({ apiKey: process.env.OPENAI_API_KEY }); return _mktOpenAI; }
+    catch (_) { return null; }
+}
+
+/**
+ * GET /api/admin/marketing/agent-insights
+ * Computes coverage deficits against the per-area goals (1 Founder, 2 Elite,
+ * 5 Prime, 10 Basic), then asks the model for a prioritized recruiting/
+ * marketing-to-agents plan. Degrades to the computed stats if OpenAI is off.
+ */
+const getAgentMarketingInsights = async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT t.name, t.state, t.region, t.latitude, t.longitude,
+                   COUNT(a.id) FILTER (WHERE m.code = 'founder')::int            AS founders,
+                   COUNT(a.id) FILTER (WHERE m.code = 'top_agent')::int          AS elite,
+                   COUNT(a.id) FILTER (WHERE m.code = 'mn_lake_specialist')::int AS prime,
+                   COUNT(a.id) FILTER (WHERE m.code = 'basic')::int             AS basic,
+                   COUNT(a.id)::int AS total
+              FROM tags t
+         LEFT JOIN user_tags ut ON ut.tag_id = t.id
+         LEFT JOIN users u      ON u.id = ut.user_id AND u.account_status = 'active'
+         LEFT JOIN agents a     ON a.user_id = u.id AND a.profile_status = 'published' AND a.is_published = TRUE
+         LEFT JOIN memberships m ON m.id = a.membership_id
+             WHERE t.active = TRUE
+          GROUP BY t.id`);
+
+        const GOAL = { founder: 1, elite: 2, prime: 5, basic: 10 };
+        const areas = rows.map(t => {
+            const def = {
+                founder: Math.max(0, GOAL.founder - t.founders),
+                elite:   Math.max(0, GOAL.elite   - t.elite),
+                prime:   Math.max(0, GOAL.prime   - t.prime),
+                basic:   Math.max(0, GOAL.basic   - t.basic),
+            };
+            return { name: t.name, state: t.state, region: t.region || '—',
+                     have: { founder: t.founders, elite: t.elite, prime: t.prime, basic: t.basic },
+                     total: t.total, def, need: def.founder + def.elite + def.prime + def.basic,
+                     noGeo: t.latitude == null || t.longitude == null };
+        });
+
+        const byRegion = {};
+        areas.forEach(a => { const k = `${a.state} · ${a.region}`; (byRegion[k] ||= { region: k, deficit: 0, areas: 0, gaps: 0, needFounder: 0 });
+            byRegion[k].deficit += a.need; byRegion[k].areas++; if (a.total === 0) byRegion[k].gaps++; if (a.have.founder < 1) byRegion[k].needFounder++; });
+
+        const stats = {
+            totalAreas: areas.length,
+            gaps: areas.filter(a => a.total === 0).length,
+            belowGoal: areas.filter(a => a.need > 0).length,
+            needFounder: areas.filter(a => a.have.founder < 1).length,
+            noCoordinates: areas.filter(a => a.noGeo).length,
+            totalDeficit: {
+                founder: areas.reduce((s, a) => s + a.def.founder, 0),
+                elite:   areas.reduce((s, a) => s + a.def.elite, 0),
+                prime:   areas.reduce((s, a) => s + a.def.prime, 0),
+                basic:   areas.reduce((s, a) => s + a.def.basic, 0),
+            },
+            topRegionsByDeficit: Object.values(byRegion).sort((a, b) => b.deficit - a.deficit).slice(0, 8),
+            worstAreas: [...areas].sort((a, b) => b.need - a.need).slice(0, 15)
+                .map(a => ({ area: `${a.name}, ${a.state}`, region: a.region, have: a.have, need: a.def })),
+        };
+
+        const client = getMktOpenAI();
+        let recommendations = null;
+        if (client) {
+            const sys = 'You are a concise growth strategist for a Minnesota lake-real-estate AGENT network. You advise the platform owner on recruiting and marketing TO real-estate agents (not consumers). Output clean HTML only — use <h4>, <p>, <ul><li>. No markdown, no code fences, no preamble.';
+            const user = `Per service-area staffing goals: 1 Founder (the lake owner / exclusive spot), 2 Elite, 5 Prime, 10 Basic agents. Below is the CURRENT coverage vs goal as JSON (deficits = how many more of each tier are needed). Produce a prioritized action plan: (1) the top regions/areas to target first and why, (2) which TIER to push in each and the pitch angle for that tier, (3) 3–5 concrete recruiting tactics for a small MN lake-real-estate brand. Keep it tight and specific to the data.\n\nDATA:\n${JSON.stringify(stats)}`;
+            try {
+                const completion = await client.chat.completions.create({
+                    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+                    messages: [{ role: 'system', content: sys }, { role: 'user', content: user }],
+                    temperature: 0.5, max_tokens: 1200,
+                });
+                recommendations = completion.choices[0]?.message?.content?.trim() || null;
+            } catch (e) { console.error('[agent-insights AI]', e.message); }
+        }
+
+        res.json({ generatedAt: new Date().toISOString(), aiConfigured: !!client, stats, recommendations });
+    } catch (err) {
+        console.error('[getAgentMarketingInsights]', err.message);
+        res.status(500).json({ error: 'Failed to build agent marketing insights.' });
+    }
+};
+
 module.exports = {
     getRoutingDiagnostics,
+    getAgentMarketingInsights,
     getLedger,
     getAgentDetail,
     getSubscriberBilling,

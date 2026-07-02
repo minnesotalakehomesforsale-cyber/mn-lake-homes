@@ -177,6 +177,7 @@
             <button id="tab-btn-blog"       class="page-tab"        onclick="showMK('blog')"       role="tab">Blog &amp; Content</button>
             <button id="tab-btn-newsletter" class="page-tab"        onclick="showMK('newsletter')" role="tab">Newsletter</button>
             <button id="tab-btn-social"     class="page-tab"        onclick="showMK('social')"     role="tab">Social Media</button>
+            <button id="tab-btn-agents"     class="page-tab"        onclick="showMK('agents')"     role="tab">Marketing to Agents</button>
         </div>
 
         <!-- ── TAB 1: DASHBOARD ─────────────────────────────────────── -->
@@ -301,8 +302,40 @@
                 </div>
             </div>
         </div>
+
+        <!-- ── TAB 5: MARKETING TO AGENTS (coverage-gap insights) ──────── -->
+        <div id="pane-agents" class="tab-pane" role="tabpanel">
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem;">
+                <div>
+                    <h2 style="font-size:1.2rem;font-weight:800;margin:0 0 0.25rem;">Where to recruit next</h2>
+                    <p style="color:#718096;font-size:0.9rem;margin:0;">Coverage gaps against your per-area goals (1 Founder · 2 Elite · 5 Prime · 10 Basic), with AI recommendations on which areas + tiers to target.</p>
+                </div>
+                <button class="btn-ghost" onclick="refreshAgentInsights()" style="border:1px solid #e2e8f0;background:#fff;border-radius:10px;padding:0.55rem 1rem;font:inherit;font-weight:700;cursor:pointer;">↻ Refresh</button>
+            </div>
+            <div id="agents-body"><p style="color:#a0aec0;">Loading…</p></div>
+        </div>
     </main>
 </div>
+
+<style>
+    #pane-agents .ag-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.85rem; margin-bottom: 1.5rem; }
+    #pane-agents .ag-stat { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; padding: 1rem 1.15rem; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 8px 22px rgba(16,24,40,0.04); }
+    #pane-agents .ag-stat .l { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #a0aec0; margin-bottom: 0.3rem; }
+    #pane-agents .ag-stat .v { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.5px; line-height: 1; }
+    #pane-agents .ag-stat .s { font-size: 0.75rem; color: #718096; margin-top: 0.3rem; }
+    #pane-agents .ag-cols { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.25rem; }
+    @media (max-width: 900px) { #pane-agents .ag-cols { grid-template-columns: 1fr; } }
+    #pane-agents .ag-panel { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.25rem 1.4rem; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 8px 22px rgba(16,24,40,0.04); }
+    #pane-agents .ag-panel h3 { font-size: 0.95rem; font-weight: 800; margin: 0 0 0.85rem; color: #1a202c; }
+    #pane-agents .ag-ai { font-size: 0.9rem; line-height: 1.6; color: #2d3748; }
+    #pane-agents .ag-ai h4 { font-size: 0.9rem; font-weight: 800; color: #1a202c; margin: 1rem 0 0.4rem; }
+    #pane-agents .ag-ai ul { margin: 0.3rem 0 0.8rem 1.1rem; padding: 0; }
+    #pane-agents .ag-ai li { margin-bottom: 0.35rem; }
+    #pane-agents .ag-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    #pane-agents .ag-table th { text-align: left; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; color: #a0aec0; font-weight: 800; padding: 0.4rem 0.5rem; border-bottom: 1px solid #edf2f7; }
+    #pane-agents .ag-table td { padding: 0.55rem 0.5rem; border-bottom: 1px solid #f2f5f8; color: #2d3748; vertical-align: top; }
+    #pane-agents .ag-need { display: inline-block; background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; border-radius: 6px; padding: 0.05rem 0.35rem; font-size: 0.72rem; font-weight: 800; margin-left: 0.2rem; }
+</style>
 
 <!-- New/edit post modal -->
 <div class="mk-modal" id="post-modal">
@@ -361,7 +394,7 @@
 
 <script>
     // ── Tabs ──────────────────────────────────────────────────────
-    const TABS = ['overview', 'blog', 'newsletter', 'social'];
+    const TABS = ['overview', 'blog', 'newsletter', 'social', 'agents'];
     const _params = new URLSearchParams(window.location.search);
     const _initialTab = TABS.includes(_params.get('tab')) ? _params.get('tab') : 'overview';
 
@@ -384,7 +417,55 @@
 
         if (name === 'newsletter' && !_subscribersLoaded) loadSubscribers();
         if (name === 'social'     && !_postsLoaded)       loadPosts();
+        if (name === 'agents'     && !_agentInsightsLoaded) loadAgentInsights();
     }
+
+    // ── Marketing to Agents — coverage-gap insights (AI) ───────────────────
+    let _agentInsightsLoaded = false;
+    async function loadAgentInsights() {
+        _agentInsightsLoaded = true;
+        const el = document.getElementById('agents-body');
+        el.innerHTML = '<p style="color:#a0aec0;">Analyzing coverage and generating recommendations…</p>';
+        try {
+            const res = await fetch('/api/admin/marketing/agent-insights', { credentials: 'include' });
+            if (!res.ok) throw new Error('Failed to load insights.');
+            const d = await res.json();
+            const s = d.stats;
+            const def = s.totalDeficit;
+            const statCard = (label, val, color, sub) => `<div class="ag-stat"><div class="l">${label}</div><div class="v" style="color:${color};">${val}</div><div class="s">${sub || ''}</div></div>`;
+            const worstRows = s.worstAreas.map(a => `
+                <tr><td><strong>${escHtml(a.area)}</strong><div style="font-size:0.75rem;color:#a0aec0;">${escHtml(a.region)}</div></td>
+                    <td>F ${a.have.founder}/1 · E ${a.have.elite}/2 · P ${a.have.prime}/5 · B ${a.have.basic}/10</td>
+                    <td style="text-align:right;">${a.need.founder ? `<span class="ag-need">+${a.need.founder}F</span>` : ''} ${a.need.elite ? `<span class="ag-need">+${a.need.elite}E</span>` : ''} ${a.need.prime ? `<span class="ag-need">+${a.need.prime}P</span>` : ''} ${a.need.basic ? `<span class="ag-need">+${a.need.basic}B</span>` : ''}</td></tr>`).join('');
+            const regionRows = s.topRegionsByDeficit.map(r => `<tr><td>${escHtml(r.region)}</td><td style="text-align:center;">${r.areas}</td><td style="text-align:center;color:#c53030;">${r.gaps}</td><td style="text-align:center;color:#1d6df2;">${r.needFounder}</td><td style="text-align:right;font-weight:800;">${r.deficit}</td></tr>`).join('');
+            el.innerHTML = `
+                <div class="ag-grid">
+                    ${statCard('Areas below goal', s.belowGoal, '#b45309', `of ${s.totalAreas}`)}
+                    ${statCard('Coverage gaps', s.gaps, '#c53030', '0 agents')}
+                    ${statCard('Need a founder', s.needFounder, '#1d6df2', 'no lake owner')}
+                    ${statCard('Seats to fill', def.founder + def.elite + def.prime + def.basic, '#1a202c', `${def.founder}F · ${def.elite}E · ${def.prime}P · ${def.basic}B`)}
+                </div>
+                <div class="ag-cols">
+                    <div class="ag-panel">
+                        <h3>🤖 AI recommendations</h3>
+                        ${d.recommendations ? `<div class="ag-ai">${d.recommendations}</div>`
+                            : `<p style="color:#718096;">${d.aiConfigured ? 'No recommendation generated — try Refresh.' : 'AI is not configured (set OPENAI_API_KEY) — the data-driven targets below still apply.'}</p>`}
+                    </div>
+                    <div class="ag-panel">
+                        <h3>Top regions to target</h3>
+                        <table class="ag-table"><thead><tr><th>Region</th><th>Areas</th><th>Gaps</th><th>No founder</th><th>Deficit</th></tr></thead><tbody>${regionRows}</tbody></table>
+                    </div>
+                </div>
+                <div class="ag-panel" style="margin-top:1.25rem;">
+                    <h3>Areas furthest from goal</h3>
+                    <table class="ag-table"><thead><tr><th>Area</th><th>Current</th><th style="text-align:right;">Still needs</th></tr></thead><tbody>${worstRows}</tbody></table>
+                </div>
+                <p style="font-size:0.75rem;color:#a0aec0;margin-top:1rem;">Generated ${new Date(d.generatedAt).toLocaleString()}. Goals per area: 1 Founder · 2 Elite · 5 Prime · 10 Basic.</p>`;
+        } catch (err) {
+            el.innerHTML = `<p style="color:#c53030;">${escHtml(err.message)}</p>`;
+        }
+    }
+    function refreshAgentInsights() { _agentInsightsLoaded = false; loadAgentInsights(); }
 
     // Iframe auto-resize from blog.html embed mode.
     window.addEventListener('message', (e) => {
