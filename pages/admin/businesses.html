@@ -165,7 +165,8 @@
 
             <div class="toolbar">
                 <input type="search" id="search" placeholder="Search by name or city…" oninput="applyFilters()"
-                       autocomplete="off" name="business-search" data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other">
+                       autocomplete="off" name="business-search" data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other"
+                       readonly onfocus="this.removeAttribute('readonly')">
                 <select id="filter-type" onchange="applyFilters()">
                     <option value="">All types</option>
                     <option value="restaurant">Restaurant</option>

@@ -78,8 +78,8 @@
                         <label><div style="font-size:0.78rem;font-weight:700;color:#4a5568;margin-bottom:0.3rem;">First name</div><input id="na-first" style="width:100%;box-sizing:border-box;padding:0.6rem 0.7rem;border:1px solid #e2e8f0;border-radius:8px;font-size:0.92rem;"></label>
                         <label><div style="font-size:0.78rem;font-weight:700;color:#4a5568;margin-bottom:0.3rem;">Last name</div><input id="na-last" style="width:100%;box-sizing:border-box;padding:0.6rem 0.7rem;border:1px solid #e2e8f0;border-radius:8px;font-size:0.92rem;"></label>
                     </div>
-                    <label style="display:block; margin-top:0.75rem;"><div style="font-size:0.78rem;font-weight:700;color:#4a5568;margin-bottom:0.3rem;">Email</div><input type="email" id="na-email" style="width:100%;box-sizing:border-box;padding:0.6rem 0.7rem;border:1px solid #e2e8f0;border-radius:8px;font-size:0.92rem;"></label>
-                    <label style="display:block; margin-top:0.75rem;"><div style="font-size:0.78rem;font-weight:700;color:#4a5568;margin-bottom:0.3rem;">Password <span style="color:#a0aec0;font-weight:500;">(min 8 chars)</span></div><input type="password" id="na-pass" style="width:100%;box-sizing:border-box;padding:0.6rem 0.7rem;border:1px solid #e2e8f0;border-radius:8px;font-size:0.92rem;"></label>
+                    <label style="display:block; margin-top:0.75rem;"><div style="font-size:0.78rem;font-weight:700;color:#4a5568;margin-bottom:0.3rem;">Email</div><input type="email" id="na-email" autocomplete="off" data-1p-ignore data-lpignore="true" style="width:100%;box-sizing:border-box;padding:0.6rem 0.7rem;border:1px solid #e2e8f0;border-radius:8px;font-size:0.92rem;"></label>
+                    <label style="display:block; margin-top:0.75rem;"><div style="font-size:0.78rem;font-weight:700;color:#4a5568;margin-bottom:0.3rem;">Password <span style="color:#a0aec0;font-weight:500;">(min 8 chars)</span></div><input type="password" id="na-pass" autocomplete="new-password" data-1p-ignore data-lpignore="true" style="width:100%;box-sizing:border-box;padding:0.6rem 0.7rem;border:1px solid #e2e8f0;border-radius:8px;font-size:0.92rem;"></label>
 
                     <div style="margin-top:1rem;display:flex;justify-content:space-between;align-items:center;">
                         <div style="font-size:0.78rem;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:0.5px;">Allowed sidebar tabs</div>
@@ -109,7 +109,9 @@
 
         <!-- Search -->
         <div class="controls-bar">
-            <input type="text" class="search-input" placeholder="Search by name or email..." id="searchInput" oninput="renderTable()">
+            <input type="search" class="search-input" placeholder="Search by name or email..." id="searchInput" oninput="renderTable()"
+                   autocomplete="off" name="users-search" data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other"
+                   readonly onfocus="this.removeAttribute('readonly')">
         </div>
 
         <!-- Table -->

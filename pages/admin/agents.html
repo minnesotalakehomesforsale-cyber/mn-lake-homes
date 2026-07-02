@@ -118,6 +118,7 @@
                    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
                    name="agent-directory-search" role="searchbox" aria-label="Search agents"
                    data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other"
+                   readonly onfocus="this.removeAttribute('readonly')"
                    oninput="applyFilters()">
             <select id="membership-filter" class="filter-select" onchange="applyFilters()">
                 <option value="all">All Memberships</option>
@@ -184,11 +185,11 @@
             </div>
             <div class="modal-field full">
                 <label>Work Email *</label>
-                <input type="email" id="a-email" class="modal-input" placeholder="jane@brokerage.com">
+                <input type="email" id="a-email" class="modal-input" placeholder="jane@brokerage.com" autocomplete="off" data-1p-ignore data-lpignore="true">
             </div>
             <div class="modal-field full" id="a-pass-wrap">
                 <label>Temporary Password *</label>
-                <input type="password" id="a-pass" class="modal-input" placeholder="Minimum 8 characters">
+                <input type="password" id="a-pass" class="modal-input" placeholder="Minimum 8 characters" autocomplete="new-password" data-1p-ignore data-lpignore="true">
             </div>
             <div class="modal-field">
                 <label>Brokerage Name</label>
