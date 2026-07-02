@@ -115,6 +115,7 @@
         <!-- Search + Filter Bar -->
         <div class="controls-bar">
             <input type="text" id="search-input" class="search-input" placeholder="Search by name, email, or brokerage..."
+                   autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="agent-directory-search"
                    oninput="applyFilters()">
             <select id="membership-filter" class="filter-select" onchange="applyFilters()">
                 <option value="all">All Memberships</option>

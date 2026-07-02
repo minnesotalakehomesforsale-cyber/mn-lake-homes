@@ -378,7 +378,7 @@
                             <svg id="featured-icon" width="22" height="22" viewBox="0 0 24 24" fill="#e2e8f0" stroke="#cbd5e0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                             <div style="flex:1;">
                                 <div style="font-weight:700; font-size:0.95rem; color:#1a202c;" id="featured-label">Not Featured</div>
-                                <div style="font-size:0.75rem; color:#718096;">Shows on the home page's Featured Agents section + star badge on cards.</div>
+                                <div style="font-size:0.75rem; color:#718096;" id="featured-sub">Shows on the home page's Featured Agents section + star badge on cards.</div>
                             </div>
                         </div>
                         <button class="btn-save" id="featured-toggle-btn" style="width:100%;" onclick="toggleFeatured()">Mark as Featured</button>
@@ -760,8 +760,8 @@
         document.getElementById('p-slug').value     = a.slug            || '';
         document.getElementById('p-id').value       = a.id              || '';
 
-        // Featured agent state
-        renderFeaturedState(!!a.is_featured);
+        // Featured agent state — plan-featured ($39+) OR manual flag
+        renderFeaturedState(!!a.is_featured, a.membership_code);
 
         // Profile photo preview
         const photoPreview = document.getElementById('p-photo-preview');
@@ -878,10 +878,37 @@
     }
 
     // ── Featured Agent Toggle ────────────────────────────────────────────────
-    function renderFeaturedState(isFeatured) {
+    // Agents who pay $39+ (Prime/Elite/etc.) are featured AUTOMATICALLY by their
+    // plan — the manual is_featured flag is only a boost for basic-plan agents.
+    // So reflect plan-based featured here instead of showing "Not Featured" for
+    // a paying agent.
+    const FEATURED_PLAN_CODES = ['mn_lake_specialist', 'top_agent', 'premium', 'founder'];
+    function renderFeaturedState(isFeatured, membershipCode) {
         const icon = document.getElementById('featured-icon');
         const label = document.getElementById('featured-label');
+        const sub = document.getElementById('featured-sub');
         const btn = document.getElementById('featured-toggle-btn');
+        const byPlan = FEATURED_PLAN_CODES.includes(membershipCode);
+
+        if (byPlan) {
+            icon.setAttribute('fill', '#1d6df2');
+            icon.setAttribute('stroke', '#1d6df2');
+            label.textContent = 'Featured Agent ★';
+            label.style.color = '#1d6df2';
+            if (sub) sub.textContent = 'Featured automatically via their paid plan ($39+) — shows in Featured Agents with the badge. No action needed.';
+            btn.textContent = 'Featured via plan';
+            btn.disabled = true;
+            btn.style.background = '#ebf4ff';
+            btn.style.color = '#1d6df2';
+            btn.style.border = '1px solid #bcd2ff';
+            btn.style.cursor = 'default';
+            btn.dataset.featured = '1';
+            return;
+        }
+
+        btn.disabled = false;
+        btn.style.cursor = '';
+        if (sub) sub.textContent = 'Manually feature this basic-plan agent. (Paid $39+ agents are featured automatically.)';
         if (isFeatured) {
             icon.setAttribute('fill', '#1d6df2');
             icon.setAttribute('stroke', '#1d6df2');
