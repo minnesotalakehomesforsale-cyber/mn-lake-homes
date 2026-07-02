@@ -24,6 +24,29 @@ const PRICE = {
 const GOAL = { elite: 2, prime: 5, basic: 10 };
 const DEFAULT_FOUNDER = 149;   // fallback founder price when none set/estimated
 
+function stripeFromEnv() {
+    try { const k = process.env.STRIPE_SECRET_KEY; return k ? require('stripe')(k) : null; } catch (_) { return null; }
+}
+// Actual current MRR straight from Stripe's active subscriptions (real amounts),
+// normalized to monthly. This is the source of truth for "now" — never assume
+// membership tier == amount paid.
+async function stripeMonthlyMrrCents(stripe) {
+    let cents = 0, active = 0;
+    for await (const sub of stripe.subscriptions.list({ status: 'active', limit: 100, expand: ['data.items.data.price'] })) {
+        active++;
+        for (const it of sub.items.data) {
+            const price = it.price || {}; const qty = it.quantity || 1;
+            let amt = (price.unit_amount || 0) * qty;
+            const iv = price.recurring && price.recurring.interval;
+            if (iv === 'year') amt = Math.round(amt / 12);
+            else if (iv === 'week') amt = Math.round((amt * 52) / 12);
+            else if (iv === 'day') amt = Math.round((amt * 365) / 12);
+            cents += amt;
+        }
+    }
+    return { cents, active };
+}
+
 let _openai = null;
 function getOpenAI() {
     if (_openai) return _openai;
@@ -54,23 +77,34 @@ exports.projections = async (req, res) => {
         const cap  = { elite: A * GOAL.elite, prime: A * GOAL.prime, basic: A * GOAL.basic };
         const fill = { elite: by['top_agent'] || 0, prime: by['mn_lake_specialist'] || 0, basic: by['basic'] || 0 };
 
-        const subMrrNow  = fill.elite * PRICE.elite + fill.prime * PRICE.prime + fill.basic * PRICE.basic;
-        const subMrrFull = cap.elite  * PRICE.elite + cap.prime  * PRICE.prime + cap.basic  * PRICE.basic;
-        const founderNow = founderNowQ.rows[0].total, founderFull = founderPotQ.rows[0].total;
-        const mrrNow = subMrrNow + founderNow, mrrFull = subMrrFull + founderFull;
-        const scen = p => Math.round(mrrNow + p * (mrrFull - mrrNow));
+        const subMrrFull  = cap.elite * PRICE.elite + cap.prime * PRICE.prime + cap.basic * PRICE.basic;
+        const founderFull = founderPotQ.rows[0].total;
+        const mrrFull     = subMrrFull + founderFull;
+        // Modeled "now" is only a fallback when Stripe isn't connected.
+        const modeledNow  = fill.elite * PRICE.elite + fill.prime * PRICE.prime + fill.basic * PRICE.basic + founderNowQ.rows[0].total;
+
+        // ACTUAL current MRR from Stripe (real charges) — the source of truth.
+        const stripe = stripeFromEnv();
+        let actualMrr = null, activeSubs = null;
+        if (stripe) { try { const s = await stripeMonthlyMrrCents(stripe); actualMrr = Math.round(s.cents / 100); activeSubs = s.active; } catch (_) {} }
+
+        const mrrNow = (actualMrr != null) ? actualMrr : modeledNow;
+        const ceiling = Math.max(mrrFull, mrrNow);
+        const scen = p => Math.round(mrrNow + p * (ceiling - mrrNow));
 
         res.json({
             prices: PRICE, goals: GOAL, areas: A, lakes: L,
-            subscription: { capacity: cap, filled: fill, mrrNow: subMrrNow, mrrFull: subMrrFull },
-            founder: { seatsFilled: founderNowQ.rows[0].n, seatsTotal: L, mrrNow: founderNow, mrrFull: founderFull },
+            actual: { source: actualMrr != null ? 'stripe' : 'modeled', stripeConfigured: !!stripe, activeSubs, modeledNow },
+            subscription: { capacity: cap, filled: fill, mrrFull: subMrrFull,
+                            potentialByTier: { elite: cap.elite * PRICE.elite, prime: cap.prime * PRICE.prime, basic: cap.basic * PRICE.basic } },
+            founder: { seatsFilled: founderNowQ.rows[0].n, seatsTotal: L, mrrFull: founderFull },
             mrr: { now: mrrNow, full: mrrFull }, arr: { now: mrrNow * 12, full: mrrFull * 12 },
             scenarios: [
-                { label: 'Today (modeled)', mrr: mrrNow },
-                { label: 'Fill 25% of gap', mrr: scen(0.25) },
-                { label: 'Fill 50% of gap', mrr: scen(0.50) },
-                { label: 'Fill 75% of gap', mrr: scen(0.75) },
-                { label: 'All seats full',  mrr: mrrFull },
+                { label: 'Today (actual)',   mrr: mrrNow },
+                { label: 'Fill 25% of gap',  mrr: scen(0.25) },
+                { label: 'Fill 50% of gap',  mrr: scen(0.50) },
+                { label: 'Fill 75% of gap',  mrr: scen(0.75) },
+                { label: 'All seats full',   mrr: mrrFull },
             ],
         });
     } catch (err) {

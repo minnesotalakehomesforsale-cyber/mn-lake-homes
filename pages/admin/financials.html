@@ -144,9 +144,9 @@
                 const max = projRes.mrr.full || 1;
                 scen.innerHTML = `
                     <div class="fin-grid">
-                        <div class="fin-stat"><div class="l">Modeled MRR now</div><div class="v">${money(projRes.mrr.now)}</div><div class="s">${money(projRes.arr.now)} / yr</div></div>
+                        <div class="fin-stat"><div class="l">MRR now</div><div class="v">${money(projRes.mrr.now)}</div><div class="s">${projRes.actual.source === 'stripe' ? 'live from Stripe' : 'modeled — connect Stripe'} · ${money(projRes.arr.now)}/yr</div></div>
                         <div class="fin-stat goal"><div class="l">MRR at full</div><div class="v">${money(projRes.mrr.full)}</div><div class="s">${money(projRes.arr.full)} / yr — every seat sold</div></div>
-                        <div class="fin-stat"><div class="l">Founder seats</div><div class="v">${projRes.founder.seatsFilled}/${projRes.founder.seatsTotal}</div><div class="s">${money(projRes.founder.mrrNow)} → ${money(projRes.founder.mrrFull)} /mo</div></div>
+                        <div class="fin-stat"><div class="l">Founder seats</div><div class="v">${projRes.founder.seatsFilled}/${projRes.founder.seatsTotal}</div><div class="s">up to ${money(projRes.founder.mrrFull)}/mo at list</div></div>
                         <div class="fin-stat"><div class="l">Upside remaining</div><div class="v">${money(projRes.mrr.full - projRes.mrr.now)}</div><div class="s">/mo if fully staffed</div></div>
                     </div>
                     ${projRes.scenarios.map(s => `
@@ -162,12 +162,12 @@
                     <tr><td><strong>${name}</strong> <span class="muted">${money(price)}/mo</span></td>
                         <td style="width:200px;"><div class="fin-bar"><span style="width:${cap?Math.min(100,Math.round(filled/cap*100)):0}%;"></span></div></td>
                         <td style="text-align:right;width:110px;">${filled} / ${cap}</td>
-                        <td style="text-align:right;width:120px;font-weight:700;">${money(filled*price)}/mo</td></tr>`;
-                seats.innerHTML = `<table class="fin-table"><thead><tr><th>Tier</th><th>Fill</th><th style="text-align:right;">Seats</th><th style="text-align:right;">MRR now</th></tr></thead><tbody>
+                        <td style="text-align:right;width:130px;font-weight:700;">${money(cap*price)}/mo</td></tr>`;
+                seats.innerHTML = `<table class="fin-table"><thead><tr><th>Tier</th><th>Fill</th><th style="text-align:right;">Seats</th><th style="text-align:right;">At full /mo</th></tr></thead><tbody>
                     ${row('Elite', projRes.prices.elite, projRes.subscription.filled.elite, projRes.subscription.capacity.elite)}
                     ${row('Prime', projRes.prices.prime, projRes.subscription.filled.prime, projRes.subscription.capacity.prime)}
                     ${row('Basic', projRes.prices.basic, projRes.subscription.filled.basic, projRes.subscription.capacity.basic)}
-                    <tr><td><strong>Founder</strong> <span class="muted">per-lake price</span></td><td><div class="fin-bar"><span style="width:${projRes.founder.seatsTotal?Math.round(projRes.founder.seatsFilled/projRes.founder.seatsTotal*100):0}%;"></span></div></td><td style="text-align:right;">${projRes.founder.seatsFilled} / ${projRes.founder.seatsTotal}</td><td style="text-align:right;font-weight:700;">${money(projRes.founder.mrrNow)}/mo</td></tr>
+                    <tr><td><strong>Founder</strong> <span class="muted">per-lake price</span></td><td><div class="fin-bar"><span style="width:${projRes.founder.seatsTotal?Math.round(projRes.founder.seatsFilled/projRes.founder.seatsTotal*100):0}%;"></span></div></td><td style="text-align:right;">${projRes.founder.seatsFilled} / ${projRes.founder.seatsTotal}</td><td style="text-align:right;font-weight:700;">${money(projRes.founder.mrrFull)}/mo</td></tr>
                 </tbody></table>
                 <p class="muted" style="margin-top:0.75rem;">${projRes.areas} service areas · ${projRes.lakes} lakes. Elite ${money(projRes.prices.elite)} · Prime ${money(projRes.prices.prime)} · Basic ${money(projRes.prices.basic)} per month.</p>`;
             } else { seats.innerHTML = '<p class="muted">Could not load seat data.</p>'; }
