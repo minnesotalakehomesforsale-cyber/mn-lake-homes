@@ -38,6 +38,13 @@ router.get('/revenue', verifyToken, requireRole(['admin', 'super_admin']), admin
 router.get('/routing-diagnostics', verifyToken, requireRole(['admin', 'super_admin']), adminController.getRoutingDiagnostics);
 router.get('/marketing/agent-insights', verifyToken, requireRole(['admin', 'super_admin']), adminController.getAgentMarketingInsights);
 
+// ─── FINANCIALS (revenue projections + per-lake founder-seat valuation) ──────
+const financialsController = require('../controllers/financials.controller');
+router.get ('/financials/projections',            verifyToken, requireRole(['admin', 'super_admin']), financialsController.projections);
+router.get ('/financials/lake-seat-values',       verifyToken, requireRole(['admin', 'super_admin']), financialsController.lakeSeatValues);
+router.post('/financials/recompute-seat-values',  verifyToken, requireRole(['admin', 'super_admin']), financialsController.recomputeSeatValues);
+router.put ('/financials/lake/:id/founder-price', verifyToken, requireRole(['admin', 'super_admin']), financialsController.setFounderPrice);
+
 // ─── USER MANAGEMENT (must come before /:id to avoid shadowing) ──────────────
 router.get('/users', adminController.getUsers);                            // GET /api/admin/users
 router.get('/users/:id', adminController.getUserDetail);                   // GET /api/admin/users/:id

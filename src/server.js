@@ -2447,6 +2447,14 @@ async function ensureTables() {
             ALTER TABLE agent_lakes ADD COLUMN IF NOT EXISTS is_founder BOOLEAN NOT NULL DEFAULT FALSE;
             CREATE UNIQUE INDEX IF NOT EXISTS ux_agent_lakes_founder_per_lake ON agent_lakes(lake_id) WHERE is_founder;
             ALTER TABLE lakes ADD COLUMN IF NOT EXISTS lead_routing_counter BIGINT NOT NULL DEFAULT 0;
+            -- Founding-agent seat economics, per lake. founder_seat_price is the
+            -- ACTUAL listed monthly price ($75–$5000). founder_seat_ai_* cache the
+            -- AI's dynamic "what it should be worth" estimate (home-price tier ×
+            -- lead traffic) so the Financials tab can show suggested vs listed.
+            ALTER TABLE lakes ADD COLUMN IF NOT EXISTS founder_seat_price     INTEGER;
+            ALTER TABLE lakes ADD COLUMN IF NOT EXISTS founder_seat_ai_value  INTEGER;
+            ALTER TABLE lakes ADD COLUMN IF NOT EXISTS founder_seat_ai_reason TEXT;
+            ALTER TABLE lakes ADD COLUMN IF NOT EXISTS founder_seat_ai_at     TIMESTAMPTZ;
             -- A lead can be tied to a specific lake (from the lake page, or the
             -- nearest lake to its geocoded address) so the lake's founder can claim it.
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS lake_id UUID;

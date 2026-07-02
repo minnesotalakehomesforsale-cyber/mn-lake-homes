@@ -1,0 +1,149 @@
+/**
+ * financials.controller.js — Financials tab data.
+ *
+ *  - projections(): DB-modeled seat capacity + fill scenarios. Live Stripe
+ *    actuals (MRR/ARR) come from the existing /api/admin/revenue; this adds the
+ *    "what if we fill X seats" side. Recomputes on every call, so it tracks the
+ *    current agent roster, founder seatings, and per-lake prices automatically.
+ *  - lakeSeatValues(): per-lake founder-seat economics (leads + AI value + the
+ *    actual listed price).
+ *  - recomputeSeatValues(): AI re-estimates each lake's founder-seat value from
+ *    home-price desirability × our lead traffic.
+ *  - setFounderPrice(): admin sets the actual listed price ($75–$5000).
+ */
+const pool = require('../database/pool');
+
+const num = (v, d) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : d; };
+// Elite = $149 (top_agent, env FOUNDER_MONTHLY), Prime = $39, Basic = $9.
+const PRICE = {
+    elite: num(process.env.STRIPE_PRICING_FOUNDER_MONTHLY, 149),
+    prime: num(process.env.STRIPE_PRICING_PRIME_MONTHLY, 39),
+    basic: num(process.env.STRIPE_PRICING_STANDARD_MONTHLY, 9),
+};
+// Per-area staffing goals (founder is per-lake, priced individually).
+const GOAL = { elite: 2, prime: 5, basic: 10 };
+const DEFAULT_FOUNDER = 149;   // fallback founder price when none set/estimated
+
+let _openai = null;
+function getOpenAI() {
+    if (_openai) return _openai;
+    if (!process.env.OPENAI_API_KEY) return null;
+    try { const { OpenAI } = require('openai'); _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY }); return _openai; }
+    catch (_) { return null; }
+}
+const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+
+exports.projections = async (req, res) => {
+    try {
+        const [areasQ, lakesQ, filledQ, founderNowQ, founderPotQ] = await Promise.all([
+            pool.query(`SELECT COUNT(*)::int n FROM tags WHERE active = TRUE`),
+            pool.query(`SELECT COUNT(*)::int n FROM lakes WHERE status = 'published'`),
+            pool.query(`SELECT m.code, COUNT(*)::int n
+                          FROM agents a JOIN users u ON u.id = a.user_id JOIN memberships m ON m.id = a.membership_id
+                         WHERE a.profile_status = 'published' AND a.is_published = TRUE AND u.account_status = 'active' AND a.deleted_at IS NULL
+                      GROUP BY m.code`),
+            pool.query(`SELECT COUNT(*)::int n,
+                               COALESCE(SUM(COALESCE(l.founder_seat_price, l.founder_seat_ai_value, ${DEFAULT_FOUNDER})), 0)::int total
+                          FROM lakes l
+                         WHERE EXISTS (SELECT 1 FROM agent_lakes al WHERE al.lake_id = l.id AND al.is_founder)`),
+            pool.query(`SELECT COALESCE(SUM(COALESCE(founder_seat_price, founder_seat_ai_value, ${DEFAULT_FOUNDER})), 0)::int total
+                          FROM lakes WHERE status = 'published'`),
+        ]);
+        const A = areasQ.rows[0].n, L = lakesQ.rows[0].n;
+        const by = {}; filledQ.rows.forEach(r => { by[r.code] = r.n; });
+        const cap  = { elite: A * GOAL.elite, prime: A * GOAL.prime, basic: A * GOAL.basic };
+        const fill = { elite: by['top_agent'] || 0, prime: by['mn_lake_specialist'] || 0, basic: by['basic'] || 0 };
+
+        const subMrrNow  = fill.elite * PRICE.elite + fill.prime * PRICE.prime + fill.basic * PRICE.basic;
+        const subMrrFull = cap.elite  * PRICE.elite + cap.prime  * PRICE.prime + cap.basic  * PRICE.basic;
+        const founderNow = founderNowQ.rows[0].total, founderFull = founderPotQ.rows[0].total;
+        const mrrNow = subMrrNow + founderNow, mrrFull = subMrrFull + founderFull;
+        const scen = p => Math.round(mrrNow + p * (mrrFull - mrrNow));
+
+        res.json({
+            prices: PRICE, goals: GOAL, areas: A, lakes: L,
+            subscription: { capacity: cap, filled: fill, mrrNow: subMrrNow, mrrFull: subMrrFull },
+            founder: { seatsFilled: founderNowQ.rows[0].n, seatsTotal: L, mrrNow: founderNow, mrrFull: founderFull },
+            mrr: { now: mrrNow, full: mrrFull }, arr: { now: mrrNow * 12, full: mrrFull * 12 },
+            scenarios: [
+                { label: 'Today (modeled)', mrr: mrrNow },
+                { label: 'Fill 25% of gap', mrr: scen(0.25) },
+                { label: 'Fill 50% of gap', mrr: scen(0.50) },
+                { label: 'Fill 75% of gap', mrr: scen(0.75) },
+                { label: 'All seats full',  mrr: mrrFull },
+            ],
+        });
+    } catch (err) {
+        console.error('[financials.projections]', err.message);
+        res.status(500).json({ error: 'Failed to build projections.' });
+    }
+};
+
+exports.lakeSeatValues = async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT l.id, l.slug, l.name, l.region, l.state,
+                   l.founder_seat_price, l.founder_seat_ai_value, l.founder_seat_ai_reason, l.founder_seat_ai_at,
+                   EXISTS (SELECT 1 FROM agent_lakes al WHERE al.lake_id = l.id AND al.is_founder) AS founder_seated,
+                   (SELECT COUNT(*) FROM leads le WHERE le.lake_id = l.id AND le.created_at > NOW() - INTERVAL '90 days')::int AS leads_90d,
+                   (SELECT COUNT(*) FROM leads le WHERE le.lake_id = l.id)::int AS leads_all
+              FROM lakes l
+             WHERE l.status = 'published'
+          ORDER BY COALESCE(l.founder_seat_ai_value, 0) DESC, l.name ASC`);
+        res.json(rows);
+    } catch (err) {
+        console.error('[financials.lakeSeatValues]', err.message);
+        res.status(500).json({ error: 'Failed to load lake seat values.' });
+    }
+};
+
+exports.setFounderPrice = async (req, res) => {
+    try {
+        const raw = req.body?.price;
+        const price = (raw === null || raw === '' || raw === undefined)
+            ? null : Math.max(75, Math.min(5000, parseInt(raw, 10) || 0));
+        const { rowCount } = await pool.query(`UPDATE lakes SET founder_seat_price = $1 WHERE id = $2`, [price, req.params.id]);
+        if (!rowCount) return res.status(404).json({ error: 'Lake not found.' });
+        res.json({ success: true, price });
+    } catch (err) {
+        console.error('[financials.setFounderPrice]', err.message);
+        res.status(500).json({ error: 'Failed to set price.' });
+    }
+};
+
+exports.recomputeSeatValues = async (req, res) => {
+    const client = getOpenAI();
+    if (!client) return res.status(503).json({ error: 'OpenAI is not configured (set OPENAI_API_KEY).' });
+    try {
+        const { rows } = await pool.query(`
+            SELECT l.id, l.name, l.region, l.state,
+                   (SELECT COUNT(*) FROM leads le WHERE le.lake_id = l.id AND le.created_at > NOW() - INTERVAL '90 days')::int AS leads_90d
+              FROM lakes l WHERE l.status = 'published' ORDER BY l.name`);
+        if (!rows.length) return res.json({ updated: 0, total: 0 });
+
+        const input = rows.map(r => ({ id: r.id, name: r.name, region: r.region, state: r.state, leads_90d: r.leads_90d }));
+        const sys = 'You price exclusive "founding agent" sponsorship seats on lakes for a Minnesota-area lake-real-estate lead network. Each lake has ONE founder seat. Price each $75–$5000 per month based on: (a) typical WATERFRONT HOME PRICES on that lake from your knowledge (e.g., Lake Minnetonka is ultra-premium and should be near the top; small community lakes are modest), and (b) the LEAD TRAFFIC we currently send (leads_90d — more leads = more valuable). Expensive homes AND high traffic => highest prices. Return ONLY JSON: {"values":[{"id":"<id>","value":<integer 75-5000>,"reason":"<max 12 words>"}]} with one entry per lake.';
+        const user = `Lakes (JSON):\n${JSON.stringify(input)}`;
+        const completion = await client.chat.completions.create({
+            model: MODEL,
+            messages: [{ role: 'system', content: sys }, { role: 'user', content: user }],
+            temperature: 0.3, max_tokens: 4000, response_format: { type: 'json_object' },
+        });
+        let parsed; try { parsed = JSON.parse(completion.choices[0]?.message?.content || '{}'); }
+        catch (_) { return res.status(502).json({ error: 'AI returned invalid JSON.' }); }
+        const values = Array.isArray(parsed.values) ? parsed.values : [];
+        let updated = 0;
+        for (const v of values) {
+            const val = Math.max(75, Math.min(5000, parseInt(v.value, 10) || 0));
+            if (!v.id || !val) continue;
+            const r = await pool.query(
+                `UPDATE lakes SET founder_seat_ai_value = $1, founder_seat_ai_reason = $2, founder_seat_ai_at = NOW() WHERE id = $3`,
+                [val, String(v.reason || '').slice(0, 160), v.id]);
+            updated += r.rowCount;
+        }
+        res.json({ updated, total: rows.length });
+    } catch (err) {
+        console.error('[financials.recomputeSeatValues]', err.message);
+        res.status(500).json({ error: `Recompute failed: ${err.message}` });
+    }
+};

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financials | MN Lake Homes Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', -apple-system, sans-serif; color: #1a202c; }
+        .page-tabs { display: flex; gap: 0.25rem; margin-bottom: 1.5rem; border-bottom: 2px solid #edf2f7; overflow-x: auto; }
+        .page-tab { background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -2px; padding: 0.7rem 1rem; font: inherit; font-weight: 700; font-size: 0.92rem; color: #718096; cursor: pointer; white-space: nowrap; }
+        .page-tab:hover { color: #1a202c; }
+        .page-tab.active { color: #1d6df2; border-bottom-color: #1d6df2; }
+        .tab-pane { display: none; } .tab-pane.active { display: block; }
+
+        .fin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.9rem; margin-bottom: 1.5rem; }
+        .fin-stat { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.15rem 1.3rem; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 8px 22px rgba(16,24,40,0.05); }
+        .fin-stat .l { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #a0aec0; margin-bottom: 0.35rem; }
+        .fin-stat .v { font-size: 1.9rem; font-weight: 800; letter-spacing: -0.8px; line-height: 1; color: #1a202c; }
+        .fin-stat .s { font-size: 0.76rem; color: #718096; margin-top: 0.35rem; }
+        .fin-stat.live { border-color: #bee3f8; background: linear-gradient(135deg,#fff,#f0f7ff); }
+        .fin-stat.goal .v { color: #059669; }
+
+        .fin-section { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.4rem 1.6rem; margin-bottom: 1.5rem; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 8px 22px rgba(16,24,40,0.05); }
+        .fin-section h3 { font-size: 0.98rem; font-weight: 800; margin: 0 0 0.25rem; }
+        .fin-section .hint { font-size: 0.82rem; color: #718096; margin: 0 0 1.1rem; }
+        .fin-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        .fin-table th { text-align: left; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; color: #a0aec0; font-weight: 800; padding: 0.5rem 0.6rem; border-bottom: 1px solid #edf2f7; }
+        .fin-table td { padding: 0.6rem 0.6rem; border-bottom: 1px solid #f2f5f8; color: #2d3748; vertical-align: middle; }
+        .fin-table tr:last-child td { border-bottom: none; }
+        .fin-bar { height: 8px; border-radius: 99px; background: #edf2f7; overflow: hidden; min-width: 90px; }
+        .fin-bar > span { display: block; height: 100%; background: #1d6df2; }
+
+        .scen-row { display: flex; align-items: center; gap: 1rem; padding: 0.7rem 0; border-bottom: 1px solid #f2f5f8; }
+        .scen-row:last-child { border-bottom: none; }
+        .scen-row .lbl { width: 160px; font-weight: 700; font-size: 0.88rem; color: #2d3748; flex-shrink: 0; }
+        .scen-row .track { flex: 1; height: 12px; background: #edf2f7; border-radius: 99px; overflow: hidden; }
+        .scen-row .track > span { display: block; height: 100%; background: linear-gradient(90deg,#1d6df2,#155bc8); }
+        .scen-row .amt { width: 150px; text-align: right; font-weight: 800; font-size: 0.95rem; }
+
+        .price-input { width: 92px; padding: 0.35rem 0.5rem; border: 1px solid #e2e8f0; border-radius: 8px; font: inherit; font-size: 0.86rem; text-align: right; }
+        .price-input:focus { border-color: #1d6df2; outline: none; }
+        .ai-val { font-weight: 800; color: #7c3aed; }
+        .seat-pill { font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; border-radius: 99px; padding: 0.12rem 0.5rem; }
+        .seat-pill.yes { background: #f0fff4; color: #2f855a; border: 1px solid #c6f6d5; }
+        .seat-pill.no  { background: #fffaf0; color: #b45309; border: 1px solid #fbd38d; }
+        .btn-primary { background: #1d6df2; color: #fff; border: 0; border-radius: 10px; padding: 0.6rem 1.15rem; font: inherit; font-weight: 700; cursor: pointer; }
+        .btn-primary:disabled { opacity: 0.6; cursor: default; }
+        .muted { color: #a0aec0; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+
+    <div class="admin-wrap">
+        <admin-sidebar active="financials"></admin-sidebar>
+        <main class="admin-main">
+            <header style="margin-bottom:1.5rem;">
+                <h1 style="font-size:1.85rem;font-weight:800;letter-spacing:-0.75px;margin:0 0 0.25rem;">Financials</h1>
+                <p style="color:#718096;margin:0;font-size:0.95rem;">Live revenue + run-rate from Stripe, seat-fill projections, and per-lake founder-seat valuation. Everything recomputes from current data.</p>
+            </header>
+
+            <div class="page-tabs" role="tablist">
+                <button id="tab-btn-revenue" class="page-tab active" role="tab" onclick="showFin('revenue')">Revenue &amp; Projections</button>
+                <button id="tab-btn-seats"   class="page-tab"        role="tab" onclick="showFin('seats')">Founder Seat Values</button>
+            </div>
+
+            <div id="pane-revenue" class="tab-pane active" role="tabpanel">
+                <div id="rev-live"></div>
+                <div class="fin-section">
+                    <h3>Projected monthly recurring revenue</h3>
+                    <p class="hint">Modeled from your per-area goals (2 Elite · 5 Prime · 10 Basic per area) + one founder seat per lake. "Fill the gap" scenarios interpolate between today and every seat sold.</p>
+                    <div id="rev-scenarios"><p class="muted">Loading…</p></div>
+                </div>
+                <div class="fin-section">
+                    <h3>Seat capacity vs filled</h3>
+                    <p class="hint">Route-eligible (published + active) agents by tier against the network goal.</p>
+                    <div id="rev-seats"></div>
+                </div>
+            </div>
+
+            <div id="pane-seats" class="tab-pane" role="tabpanel">
+                <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+                    <div>
+                        <h3 style="font-size:1.05rem;font-weight:800;margin:0 0 0.2rem;">What each lake's founder seat is worth</h3>
+                        <p class="muted" style="margin:0;">AI values each lake by waterfront home prices × our lead traffic ($75–$5000/mo). Set the actual listed price per lake.</p>
+                    </div>
+                    <button class="btn-primary" id="recompute-btn" onclick="recompute()">↻ Recompute AI values</button>
+                </div>
+                <div id="seats-msg"></div>
+                <div class="fin-section" style="padding:0.4rem 0.6rem;">
+                    <table class="fin-table" id="seats-table">
+                        <thead><tr>
+                            <th>Lake</th><th>Region</th><th style="text-align:center;">Leads · 90d</th>
+                            <th style="text-align:center;">Founder</th><th style="text-align:right;">AI value</th>
+                            <th style="text-align:right;">Listed price</th><th>AI rationale</th>
+                        </tr></thead>
+                        <tbody><tr><td colspan="7" class="muted" style="padding:2rem;text-align:center;">Loading…</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const money = n => '$' + Math.round(n).toLocaleString('en-US');
+        let _seatsLoaded = false;
+
+        function showFin(name) {
+            ['revenue', 'seats'].forEach(k => {
+                document.getElementById('tab-btn-' + k).classList.toggle('active', k === name);
+                document.getElementById('pane-' + k).classList.toggle('active', k === name);
+            });
+            if (name === 'seats' && !_seatsLoaded) loadSeats();
+        }
+
+        async function loadRevenue() {
+            // Live Stripe actuals (existing endpoint) + modeled projections.
+            const [liveRes, projRes] = await Promise.all([
+                fetch('/api/admin/revenue', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+                fetch('/api/admin/financials/projections', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+            ]);
+
+            const live = document.getElementById('rev-live');
+            if (live) {
+                if (liveRes && liveRes.configured) {
+                    live.innerHTML = `<div class="fin-grid">
+                        <div class="fin-stat live"><div class="l">MRR · live</div><div class="v">${money(liveRes.mrr_cents/100)}</div><div class="s">${liveRes.active_subscriptions} active subscriptions</div></div>
+                        <div class="fin-stat live"><div class="l">Run rate (ARR)</div><div class="v">${money(liveRes.arr_cents/100)}</div><div class="s">MRR × 12</div></div>
+                        <div class="fin-stat live"><div class="l">Net this month</div><div class="v">${money((liveRes.month?.net_cents||0)/100)}</div><div class="s">${liveRes.month?.label || ''} · after fees</div></div>
+                        <div class="fin-stat live"><div class="l">New subs · month</div><div class="v">${liveRes.new_subscriptions_this_month}</div><div class="s">this month</div></div>
+                    </div>`;
+                } else {
+                    live.innerHTML = `<div class="fin-section" style="border-color:#fbd38d;background:#fffaf0;"><strong>Stripe not connected.</strong> <span class="muted">Live MRR/run-rate needs Stripe configured. The modeled projections below still work from your agent + lake data.</span></div>`;
+                }
+            }
+
+            const scen = document.getElementById('rev-scenarios');
+            if (proj(projRes)) {
+                const max = projRes.mrr.full || 1;
+                scen.innerHTML = `
+                    <div class="fin-grid">
+                        <div class="fin-stat"><div class="l">Modeled MRR now</div><div class="v">${money(projRes.mrr.now)}</div><div class="s">${money(projRes.arr.now)} / yr</div></div>
+                        <div class="fin-stat goal"><div class="l">MRR at full</div><div class="v">${money(projRes.mrr.full)}</div><div class="s">${money(projRes.arr.full)} / yr — every seat sold</div></div>
+                        <div class="fin-stat"><div class="l">Founder seats</div><div class="v">${projRes.founder.seatsFilled}/${projRes.founder.seatsTotal}</div><div class="s">${money(projRes.founder.mrrNow)} → ${money(projRes.founder.mrrFull)} /mo</div></div>
+                        <div class="fin-stat"><div class="l">Upside remaining</div><div class="v">${money(projRes.mrr.full - projRes.mrr.now)}</div><div class="s">/mo if fully staffed</div></div>
+                    </div>
+                    ${projRes.scenarios.map(s => `
+                        <div class="scen-row"><div class="lbl">${esc(s.label)}</div>
+                            <div class="track"><span style="width:${Math.round((s.mrr/max)*100)}%;"></span></div>
+                            <div class="amt">${money(s.mrr)}<span class="muted" style="font-weight:500;font-size:0.75rem;">/mo</span></div>
+                        </div>`).join('')}`;
+            } else { scen.innerHTML = '<p class="muted">Could not load projections.</p>'; }
+
+            const seats = document.getElementById('rev-seats');
+            if (proj(projRes)) {
+                const row = (name, price, filled, cap) => `
+                    <tr><td><strong>${name}</strong> <span class="muted">${money(price)}/mo</span></td>
+                        <td style="width:200px;"><div class="fin-bar"><span style="width:${cap?Math.min(100,Math.round(filled/cap*100)):0}%;"></span></div></td>
+                        <td style="text-align:right;width:110px;">${filled} / ${cap}</td>
+                        <td style="text-align:right;width:120px;font-weight:700;">${money(filled*price)}/mo</td></tr>`;
+                seats.innerHTML = `<table class="fin-table"><thead><tr><th>Tier</th><th>Fill</th><th style="text-align:right;">Seats</th><th style="text-align:right;">MRR now</th></tr></thead><tbody>
+                    ${row('Elite', projRes.prices.elite, projRes.subscription.filled.elite, projRes.subscription.capacity.elite)}
+                    ${row('Prime', projRes.prices.prime, projRes.subscription.filled.prime, projRes.subscription.capacity.prime)}
+                    ${row('Basic', projRes.prices.basic, projRes.subscription.filled.basic, projRes.subscription.capacity.basic)}
+                    <tr><td><strong>Founder</strong> <span class="muted">per-lake price</span></td><td><div class="fin-bar"><span style="width:${projRes.founder.seatsTotal?Math.round(projRes.founder.seatsFilled/projRes.founder.seatsTotal*100):0}%;"></span></div></td><td style="text-align:right;">${projRes.founder.seatsFilled} / ${projRes.founder.seatsTotal}</td><td style="text-align:right;font-weight:700;">${money(projRes.founder.mrrNow)}/mo</td></tr>
+                </tbody></table>
+                <p class="muted" style="margin-top:0.75rem;">${projRes.areas} service areas · ${projRes.lakes} lakes. Elite ${money(projRes.prices.elite)} · Prime ${money(projRes.prices.prime)} · Basic ${money(projRes.prices.basic)} per month.</p>`;
+            } else { seats.innerHTML = '<p class="muted">Could not load seat data.</p>'; }
+        }
+        function proj(p) { return p && p.mrr; }
+
+        async function loadSeats() {
+            _seatsLoaded = true;
+            const tbody = document.querySelector('#seats-table tbody');
+            try {
+                const rows = await fetch('/api/admin/financials/lake-seat-values', { credentials: 'include' }).then(r => r.ok ? r.json() : []);
+                if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7" class="muted" style="padding:2rem;text-align:center;">No published lakes yet.</td></tr>'; return; }
+                tbody.innerHTML = rows.map(l => `
+                    <tr>
+                        <td><strong>${esc(l.name)}</strong></td>
+                        <td class="muted">${esc(l.region || '—')}</td>
+                        <td style="text-align:center;">${l.leads_90d}</td>
+                        <td style="text-align:center;"><span class="seat-pill ${l.founder_seated ? 'yes' : 'no'}">${l.founder_seated ? 'Seated' : 'Open'}</span></td>
+                        <td style="text-align:right;" class="ai-val">${l.founder_seat_ai_value ? money(l.founder_seat_ai_value) : '—'}</td>
+                        <td style="text-align:right;">$<input class="price-input" type="number" min="75" max="5000" step="25" value="${l.founder_seat_price ?? ''}" placeholder="${l.founder_seat_ai_value || '—'}" onchange="savePrice('${l.id}', this)"></td>
+                        <td class="muted" style="font-size:0.8rem;">${esc(l.founder_seat_ai_reason || '')}</td>
+                    </tr>`).join('');
+            } catch (_) {
+                tbody.innerHTML = '<tr><td colspan="7" style="color:#c53030;padding:2rem;text-align:center;">Could not load lakes.</td></tr>';
+            }
+        }
+
+        async function savePrice(id, input) {
+            const val = input.value === '' ? null : parseInt(input.value, 10);
+            input.disabled = true;
+            try {
+                const r = await fetch(`/api/admin/financials/lake/${id}/founder-price`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ price: val }),
+                });
+                const d = await r.json().catch(() => ({}));
+                if (!r.ok) throw new Error(d.error || 'Save failed');
+                input.value = d.price ?? '';
+                input.style.borderColor = '#38a169';
+                setTimeout(() => { input.style.borderColor = ''; }, 1200);
+            } catch (e) { input.style.borderColor = '#c53030'; alert(e.message); }
+            finally { input.disabled = false; }
+        }
+
+        async function recompute() {
+            const btn = document.getElementById('recompute-btn');
+            const msg = document.getElementById('seats-msg');
+            btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Valuing lakes…';
+            msg.innerHTML = '';
+            try {
+                const r = await fetch('/api/admin/financials/recompute-seat-values', { method: 'POST', credentials: 'include' });
+                const d = await r.json().catch(() => ({}));
+                if (!r.ok) throw new Error(d.error || 'Recompute failed.');
+                msg.innerHTML = `<div class="fin-section" style="border-color:#9ae6b4;background:#f0fff4;padding:0.8rem 1.1rem;">✓ Updated AI values for ${d.updated} of ${d.total} lakes.</div>`;
+                _seatsLoaded = false; loadSeats();
+            } catch (e) {
+                msg.innerHTML = `<div class="fin-section" style="border-color:#feb2b2;background:#fff5f5;padding:0.8rem 1.1rem;color:#c53030;">${esc(e.message)}</div>`;
+            } finally { btn.disabled = false; btn.textContent = orig; }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadRevenue);
+    </script>
+</body>
+</html>

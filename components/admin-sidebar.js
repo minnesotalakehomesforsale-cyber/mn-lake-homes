@@ -208,6 +208,7 @@
         { key: 'marketing',   href: 'marketing.html',  label: 'Marketing', aliases: ['blog'] },
         { key: 'resources',   href: 'resources.html',  label: 'Resources' },
         { key: 'cash-offers', href: 'cash-offers.html',label: 'Cash Offers', cashBadge: true },
+        { key: 'financials',  href: 'financials.html', label: 'Financials' },
         { key: 'users',       href: 'users.html',      label: 'Users Management' },
         { key: 'tasks',       href: 'tasks.html',      label: 'Tasks', badgeId: 'nav-badge-tasks' },
         // Lakes + Towns + Businesses share one page (lakes-towns.html) with
