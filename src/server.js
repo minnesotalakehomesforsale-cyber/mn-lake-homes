@@ -3037,8 +3037,11 @@ async function seedBlogPosts() {
     // Blog list ready to publish, but stay off the public site until then.
     let drafts = [];
     try { drafts = require('./data/blog-drafts'); } catch (_) { drafts = []; }
+    // Newest draft batch (also is_published:false) — kept in its own file.
+    let newDrafts = [];
+    try { newDrafts = require('./data/blog-new'); } catch (_) { newDrafts = []; }
     let added = 0;
-    for (const p of [...posts, ...drafts]) {
+    for (const p of [...posts, ...drafts, ...newDrafts]) {
         const r = await pool.query(`
             INSERT INTO blog_posts
                 (title, slug, excerpt, body, cover_image_url, tag,
