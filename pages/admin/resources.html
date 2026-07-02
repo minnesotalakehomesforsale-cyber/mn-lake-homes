@@ -348,7 +348,7 @@
             const statusLabel = !r.active ? 'Inactive' : r.featured ? 'Featured' : 'Active';
             const statusCls   = !r.active ? 'archived' : r.featured ? 'featured' : 'ok';
             const created = new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            const href = `resource-edit.html?id=${encodeURIComponent(r.id)}`;
+            const href = `resource-edit.html?id=${encodeURIComponent(r.id)}${new URLSearchParams(location.search).get('embed') === '1' ? '&embed=1' : ''}`;
             // Resources are text-only on the public site (no thumbnails), so the
             // admin card is text-only too — no reused stock imagery.
             return `
@@ -441,7 +441,7 @@
             const data = await r.json().catch(() => ({}));
             if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
             closeCreate();
-            window.location.href = `resource-edit.html?id=${encodeURIComponent(data.id)}`;
+            window.location.href = `resource-edit.html?id=${encodeURIComponent(data.id)}${new URLSearchParams(location.search).get('embed') === '1' ? '&embed=1' : ''}`;
         } catch (err) {
             msg.textContent = err.message;
             msg.className = 'msg err';

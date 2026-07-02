@@ -9,6 +9,11 @@
     <link rel="stylesheet" href="../../styles/style.css">
     <style>
         html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: #1a202c; }
+        /* Embed mode (?embed=1) — this editor opens inside the Marketing &
+           Content → Resources tab. Hide the app chrome; keep the back-link. */
+        body.lt-embed admin-sidebar { display: none !important; }
+        body.lt-embed .admin-wrap { display: block !important; }
+        body.lt-embed .admin-main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
 
         .back-link { color: #718096; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem; font-size: 0.92rem; }
         .back-link:hover { color: #1a202c; }
@@ -451,7 +456,7 @@
         try {
             const r = await fetch(`/api/resources/${encodeURIComponent(ID)}`, { method: 'DELETE', credentials: 'include' });
             if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || `HTTP ${r.status}`); }
-            window.location.href = 'resources.html';
+            window.location.href = 'resources.html' + (new URLSearchParams(location.search).get('embed') === '1' ? '?embed=1' : '');
         } catch (err) {
             toast(err.message, 'err');
             btn.disabled = false; btn.textContent = 'Yes, delete';
@@ -499,6 +504,23 @@
             if (e.key === 'Escape' && document.getElementById('del-modal').classList.contains('open')) closeDelete();
         });
     });
+</script>
+<script>
+    // Embed-mode helper — clean editing inside the Resources tab: hide chrome,
+    // keep the back-link pointing back into the embedded list, post height.
+    (function () {
+        if (new URLSearchParams(window.location.search).get('embed') !== '1') return;
+        document.body.classList.add('lt-embed');
+        const back = document.querySelector('.back-link');
+        if (back) back.setAttribute('href', 'resources.html?embed=1');
+        let lastH = 0;
+        function postHeight() {
+            const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+            if (h !== lastH) { lastH = h; window.parent.postMessage({ lt: 'height', frame: 'resources', h }, '*'); }
+        }
+        window.addEventListener('load', postHeight);
+        setInterval(postHeight, 600);
+    })();
 </script>
 </body>
 </html>
