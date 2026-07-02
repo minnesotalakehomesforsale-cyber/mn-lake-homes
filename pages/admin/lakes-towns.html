@@ -349,19 +349,10 @@
             </div>
 
             <!-- ── Towns ────────────────────────────────────────── -->
+            <!-- Towns = the full Geo Tags manager, embedded (activate/deactivate,
+                 edit, lat/lng + auto-geocode, create). Single source of truth. -->
             <div id="pane-towns" class="tab-pane">
-                <div class="sec-bar">
-                    <input type="search" id="tw-search" placeholder="Search towns…" oninput="renderTowns()">
-                    <select id="tw-state" onchange="renderTowns()"><option value="">All states</option></select>
-                    <select id="tw-active" onchange="renderTowns()">
-                        <option value="active">Active only</option>
-                        <option value="all">Including archived</option>
-                    </select>
-                    <div class="spacer"></div>
-                    <button class="btn-primary" onclick="openCreate('town')">+ New town</button>
-                </div>
-                <div id="tw-grid" class="card-grid"><div class="empty-grid">Loading…</div></div>
-                <div class="lt-count-row"><span id="tw-count" class="lt-count" title="Showing in the grid above / total in the database">—</span></div>
+                <iframe id="frame-towns" class="lt-frame" data-src="tags.html?embed=1" title="Geo Tags manager" style="min-height: calc(100vh - 240px);"></iframe>
             </div>
 
             <!-- ── Businesses ───────────────────────────────────── -->
@@ -519,15 +510,22 @@
 
         // Lazy-load data per tab
         if (name === 'lakes'      && !State.loaded.lakes)  loadLakes();
-        if (name === 'towns'      && !State.loaded.towns)  loadTowns();
         if (name === 'businesses' && !State.loaded.biz)    loadBiz();
 
-        // Map is the only iframe — lazy-set its src on first open
-        if (name === 'map') {
-            const frame = document.getElementById('frame-map');
+        // Iframe tabs (Map + Towns) — lazy-set their src on first open.
+        if (name === 'map' || name === 'towns') {
+            const frame = document.getElementById('frame-' + name);
             if (frame && !frame.src) frame.src = frame.dataset.src;
         }
     }
+
+    // Resize the embedded Geo Tags manager to its content (it posts its height).
+    window.addEventListener('message', (e) => {
+        const m = e.data;
+        if (!m || m.lt !== 'height' || typeof m.h !== 'number') return;
+        const f = document.getElementById('frame-towns');
+        if (f) f.style.height = Math.max(600, m.h + 8) + 'px';
+    });
 
     // ── Data loaders ──────────────────────────────────────────────────
     async function loadOverview() {
