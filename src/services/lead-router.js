@@ -168,8 +168,8 @@ async function agentsForLake(lakeId) {
  * Lake-level founder routing runs FIRST: only when the lead EXPLICITLY names a
  * lake (`lakeId`, resolved from a buyer's lake pick or a seller's lake choice)
  * and that lake has agents. A seated founder gets 100% of that lake's leads;
- * with no founder, its other lake-linked agents round-robin. We never guess the
- * lake from coordinates. Falls back to the town/tag router when there's no lake.
+ * with no founder, its other lake-linked agents go to the weighted lottery. We
+ * never guess the lake from coordinates. Falls back to town/tag when no lake.
  *
  * Returns { userId, agentId, lakeId|tagId, tierCode } on match, or null.
  */
@@ -191,7 +191,7 @@ async function routeLead({ lat, lng, radiusMiles, lakeId } = {}) {
         const buckets = await agentsForLake(lake.id);
         if (Object.keys(buckets).length) {
             // The seated founder is EXCLUSIVE — 100% of their lake's leads.
-            // With no founder seated, round-robin the lake's other agents.
+            // With no founder seated, the lake's other agents go to the lottery.
             const founder = buckets.founder && buckets.founder[0];
             const pick = founder || pickFromBuckets(buckets);
             if (pick) {
