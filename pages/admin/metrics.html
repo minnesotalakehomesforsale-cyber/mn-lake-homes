@@ -17,7 +17,8 @@
            Hide the admin chrome so only the metrics content shows. */
         body.lt-embed admin-sidebar,
         body.lt-embed admin-assistant,
-        body.lt-embed .m-head { display: none !important; }
+        body.lt-embed .m-head,
+        body.lt-embed .m-tabs { display: none !important; }   /* parent drives the sub-tab */
         body.lt-embed .admin-wrap { display: block !important; }
         body.lt-embed .admin-main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
 
@@ -694,6 +695,17 @@
                 if (btn.dataset.panel === 'coverage'    && !coverageLoaded)    loadCoverage();
                 if (btn.dataset.panel === 'conversions' && !conversionsLoaded) loadConversions();
             });
+        });
+
+        // When embedded in system.html, the parent deep-links a sub-tab via
+        // ?tab=traffic|conversions|coverage. Activate it (and lazy-load its data).
+        document.addEventListener('DOMContentLoaded', () => {
+            const t = new URLSearchParams(location.search).get('tab');
+            if (!['traffic', 'conversions', 'coverage'].includes(t)) return;
+            document.querySelectorAll('.m-tab').forEach(b => b.classList.toggle('active', b.dataset.panel === t));
+            document.querySelectorAll('.m-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + t));
+            if (t === 'coverage'    && !coverageLoaded)    loadCoverage();
+            if (t === 'conversions' && !conversionsLoaded) loadConversions();
         });
 
         // ─── Conversions tab (server-side mirror of GA4 / HubSpot events) ──

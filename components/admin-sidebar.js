@@ -220,14 +220,11 @@
         { key: 'lakes-towns', href: 'lakes-towns.html', label: 'Lakes, Towns & Businesses', aliases: ['lakes', 'tags', 'businesses'] },
         { key: 'listings',    href: 'listings.html',   label: 'Listings' },
         { key: 'reviews',     href: 'reviews.html',    label: 'Reviews' },
-        // Site-wide image manager — every DB-backed image (lakes/towns/
-        // businesses/agents/blog/resources) in one grid with one-click
-        // replace. Hardcoded HTML/CSS images aren't editable here yet.
-        { key: 'images',      href: 'images.html',     label: 'Images' },
-        // Metrics + Database share one page (system.html) with a tab per
-        // section. Standalone slugs are aliased so direct hits on
-        // metrics.html / database.html still highlight this entry.
-        { key: 'system',      href: 'system.html',     label: 'Metrics & Database', aliases: ['metrics', 'database'], badgeId: 'nav-badge-system' },
+        // Analytics + system, ONE flat-header page (system.html): Traffic,
+        // Conversions, Agent coverage, Database, Lead routing, and Images —
+        // each an embedded section. Standalone slugs are aliased so direct hits
+        // on metrics.html / database.html / images.html highlight this entry.
+        { key: 'system',      href: 'system.html',     label: 'Metrics & Database', aliases: ['metrics', 'database', 'images'], badgeId: 'nav-badge-system' },
     ];
 
     function renderNav(activeKey) {

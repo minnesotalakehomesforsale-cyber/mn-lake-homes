@@ -51,48 +51,65 @@
             <p>Traffic, agent coverage, system health, table counts, and the full activity audit — all in one place.</p>
         </div>
 
+        <!-- One flat header. Traffic/Conversions/Agent coverage drive the single
+             metrics iframe via ?tab; Database, Lead routing, Images are their own. -->
         <div class="page-tabs" role="tablist">
-            <button id="tab-btn-metrics"     class="page-tab active" role="tab" onclick="showSys('metrics')">Metrics</button>
+            <button id="tab-btn-traffic"     class="page-tab active" role="tab" onclick="showSys('traffic')">Traffic</button>
+            <button id="tab-btn-conversions" class="page-tab"        role="tab" onclick="showSys('conversions')">Conversions</button>
+            <button id="tab-btn-coverage"    class="page-tab"        role="tab" onclick="showSys('coverage')">Agent coverage</button>
             <button id="tab-btn-database"    class="page-tab"        role="tab" onclick="showSys('database')">Database</button>
-            <button id="tab-btn-diagnostics" class="page-tab"        role="tab" onclick="showSys('diagnostics')">Lead Routing</button>
+            <button id="tab-btn-diagnostics" class="page-tab"        role="tab" onclick="showSys('diagnostics')">Lead routing</button>
+            <button id="tab-btn-images"      class="page-tab"        role="tab" onclick="showSys('images')">Images</button>
         </div>
 
         <div id="pane-metrics" class="tab-pane active" role="tabpanel">
-            <iframe id="frame-metrics" class="sys-frame" data-src="metrics.html?embed=1" title="Metrics"></iframe>
+            <iframe id="frame-metrics" class="sys-frame" data-src="metrics.html?embed=1&amp;tab=traffic" title="Metrics"></iframe>
         </div>
-
         <div id="pane-database" class="tab-pane" role="tabpanel">
             <iframe id="frame-database" class="sys-frame" data-src="database.html?embed=1" title="Database"></iframe>
         </div>
-
         <div id="pane-diagnostics" class="tab-pane" role="tabpanel">
             <iframe id="frame-diagnostics" class="sys-frame" data-src="diagnostics.html?embed=1" title="Lead Routing Diagnostics"></iframe>
+        </div>
+        <div id="pane-images" class="tab-pane" role="tabpanel">
+            <iframe id="frame-images" class="sys-frame" data-src="images.html?embed=1" title="Images"></iframe>
         </div>
     </main>
 </div>
 
 <script>
-    const TABS = ['metrics', 'database', 'diagnostics'];
+    // Each header tab → which pane shows + (for the shared metrics iframe) which sub-tab.
+    const TAB_CFG = {
+        traffic:     { pane: 'metrics',     metricsTab: 'traffic' },
+        conversions: { pane: 'metrics',     metricsTab: 'conversions' },
+        coverage:    { pane: 'metrics',     metricsTab: 'coverage' },
+        database:    { pane: 'database' },
+        diagnostics: { pane: 'diagnostics' },
+        images:      { pane: 'images' },
+    };
+    const TABS = Object.keys(TAB_CFG);
+    const PANES = ['metrics', 'database', 'diagnostics', 'images'];
     const _params = new URLSearchParams(window.location.search);
-    const _initialTab = TABS.includes(_params.get('tab')) ? _params.get('tab') : 'metrics';
-
-    // Lazy-load iframes — only set the src the first time their tab is opened
-    // so the page boot doesn't fire two full pages worth of queries up front.
-    function ensureFrameLoaded(name) {
-        const frame = document.getElementById('frame-' + name);
-        if (frame && !frame.src) frame.src = frame.dataset.src;
-    }
+    const _initialTab = TABS.includes(_params.get('tab')) ? _params.get('tab') : 'traffic';
 
     function showSys(name) {
-        if (!TABS.includes(name)) name = 'metrics';
-        TABS.forEach(k => {
-            document.getElementById('tab-btn-' + k).classList.toggle('active', k === name);
-            document.getElementById('pane-' + k).classList.toggle('active', k === name);
-        });
-        ensureFrameLoaded(name);
+        if (!TABS.includes(name)) name = 'traffic';
+        const cfg = TAB_CFG[name];
+        TABS.forEach(k => document.getElementById('tab-btn-' + k).classList.toggle('active', k === name));
+        PANES.forEach(p => document.getElementById('pane-' + p).classList.toggle('active', p === cfg.pane));
+
+        if (cfg.metricsTab) {
+            // Traffic/Conversions/Agent coverage share ONE metrics iframe — only
+            // reload it when the requested sub-tab actually changes.
+            const f = document.getElementById('frame-metrics');
+            const want = 'metrics.html?embed=1&tab=' + cfg.metricsTab;
+            if (f.getAttribute('src') !== want && (f.src || '').indexOf('tab=' + cfg.metricsTab) === -1) f.src = want;
+        } else {
+            const f = document.getElementById('frame-' + cfg.pane);
+            if (f && !f.src) f.src = f.dataset.src;
+        }
         const url = new URL(window.location);
-        if (name === 'metrics') url.searchParams.delete('tab');
-        else                    url.searchParams.set('tab', name);
+        if (name === 'traffic') url.searchParams.delete('tab'); else url.searchParams.set('tab', name);
         history.replaceState(null, '', url);
     }
 
@@ -105,6 +122,8 @@
     });
 
     document.addEventListener('DOMContentLoaded', () => {
+        // The metrics iframe starts on ?tab=traffic; set its src now so Traffic is live.
+        const fm = document.getElementById('frame-metrics'); if (fm && !fm.src) fm.src = fm.dataset.src;
         showSys(_initialTab);
     });
 </script>
