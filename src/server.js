@@ -1979,15 +1979,15 @@ async function ensureTables() {
             CREATE INDEX IF NOT EXISTS idx_password_reset_active  ON password_reset_tokens(expires_at) WHERE used_at IS NULL;
         `);
 
-        // ── Lead routing infrastructure (Founder/Premium/Basic tiers + round-robin) ──
+        // ── Lead routing infrastructure (Founder/Premium/Basic tiers + weighted lottery) ──
         // Two new membership tiers. Sort priorities keep ordering intuitive
         // (lower = higher priority): founder 50, top_agent 100, premium 150,
         // mn_lake_specialist 200, basic 300.
         await pool.query(`
             INSERT INTO memberships (name, code, description, display_badge_label, sort_priority)
             VALUES
-                ('Founder',  'founder',  'Exclusive founding agent for a service area — receives 70% of leads in that area.', 'Founder',  50),
-                ('Premium',  'premium',  'Premium network agent — receives leads via round-robin after the founder.',         'Premium',  150)
+                ('Founder',  'founder',  'Exclusive founding agent for a lake — gets 100% of that lake''s leads, plus top priority (most lottery weight) in their service-area towns.', 'Founder',  50),
+                ('Premium',  'premium',  'Premium network agent — competes in the weighted lead lottery in their service areas.',         'Premium',  150)
             ON CONFLICT (code) DO UPDATE
                 SET name                = EXCLUDED.name,
                     description         = EXCLUDED.description,

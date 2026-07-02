@@ -86,7 +86,7 @@
                 <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
                     <div>
                         <h3 style="font-size:1.05rem;font-weight:800;margin:0 0 0.2rem;">What each lake's founder seat is worth</h3>
-                        <p class="muted" style="margin:0;">AI values each lake by waterfront home prices × our lead traffic ($75–$5000/mo). Set the actual listed price per lake.</p>
+                        <p class="muted" style="margin:0;">AI values each lake by waterfront home prices × our lead traffic ($249–$5000/mo — a founder seat clears the $149 Elite plan). Set the actual listed price per lake.</p>
                     </div>
                     <button class="btn-primary" id="recompute-btn" onclick="recompute()">↻ Recompute AI values</button>
                 </div>
@@ -188,7 +188,7 @@
                         <td style="text-align:center;">${l.leads_90d}</td>
                         <td style="text-align:center;"><span class="seat-pill ${l.founder_seated ? 'yes' : 'no'}">${l.founder_seated ? 'Seated' : 'Open'}</span></td>
                         <td style="text-align:right;" class="ai-val">${l.founder_seat_ai_value ? money(l.founder_seat_ai_value) : '—'}</td>
-                        <td style="text-align:right;">$<input class="price-input" type="number" min="75" max="5000" step="25" value="${l.founder_seat_price ?? ''}" placeholder="${l.founder_seat_ai_value || '—'}" onchange="savePrice('${l.id}', this)"></td>
+                        <td style="text-align:right;">$<input class="price-input" type="number" min="249" max="5000" step="25" value="${l.founder_seat_price ?? ''}" placeholder="${l.founder_seat_ai_value || '—'}" onchange="savePrice('${l.id}', this)"></td>
                         <td class="muted" style="font-size:0.8rem;">${esc(l.founder_seat_ai_reason || '')}</td>
                     </tr>`).join('');
             } catch (_) {

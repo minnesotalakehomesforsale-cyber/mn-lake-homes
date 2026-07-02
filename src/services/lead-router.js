@@ -15,10 +15,10 @@
  *   2. TOWN/tag routing (fallback). Find tags within match radius, closest
  *      first; walk nearest-to-farthest and, at the first tag with any
  *      published agent, run a WEIGHTED LOTTERY: each agent gets balls by tier
- *      (Founder 4 · Elite 3 · Prime 2 · Basic 1) and one ball is drawn at
- *      random. Higher tiers get better odds; lower tiers still win sometimes;
- *      same-tier agents share evenly. A founder competes here by their own
- *      membership tier via their service-area tags (their 100% is lake-only).
+ *      (Founder 12 · Elite 8 · Prime 3 · Basic 1, admin-tunable) and one ball
+ *      is drawn at random. Higher tiers get better odds; lower tiers still win
+ *      sometimes; same-tier agents share evenly. A founder carries founder
+ *      weight in each of their service-area tags too (their lake stays 100%).
  *   3. Bump the lake/tag lead_routing_counter and the winner's last_routed_at.
  *   4. Return { userId, agentId, lakeId|tagId, tierCode } or null if no match.
  *
@@ -30,10 +30,34 @@ const pool = require('../database/pool');
 // Lottery weights ("balls") by tier. Higher tier = more balls = better odds,
 // but every tier keeps a real shot and same-tier agents share evenly. A lead
 // is drawn at random from the pooled balls of all eligible agents in a tag.
-//   Founder 4 · Elite (top_agent) 3 · Prime (mn_lake_specialist) 2 · Basic 1.
-// Unknown/legacy codes fall back to 1 ball so nobody is silently excluded.
-const TIER_BALLS = { founder: 4, top_agent: 3, premium: 2, mn_lake_specialist: 2, basic: 1 };
+//   Founder 12 · Elite (top_agent) 8 · Prime (mn_lake_specialist) 3 · Basic 1.
+// A founder gets founder-weight in each of their geo-tags AND 100% of their
+// own lake. Unknown/legacy codes fall back to 1 ball so nobody is excluded.
+// Overridable at runtime via app_config key 'tier_lottery_balls' (JSON), so
+// the weights can be tuned from the admin without a redeploy.
+const DEFAULT_TIER_BALLS = { founder: 12, top_agent: 8, premium: 8, mn_lake_specialist: 3, basic: 1 };
 const DEFAULT_BALLS = 1;
+
+// Read the tier weights, merging any admin overrides over the defaults. Any
+// bad/missing config silently falls back to DEFAULT_TIER_BALLS.
+async function getTierBalls() {
+    try {
+        const { rows } = await pool.query(
+            `SELECT value FROM app_config WHERE key = 'tier_lottery_balls'`
+        );
+        const raw = rows[0]?.value;
+        if (!raw) return DEFAULT_TIER_BALLS;
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        const merged = { ...DEFAULT_TIER_BALLS };
+        for (const [code, n] of Object.entries(parsed || {})) {
+            const w = Number(n);
+            if (Number.isFinite(w) && w >= 0) merged[code] = w;
+        }
+        return merged;
+    } catch (_) {
+        return DEFAULT_TIER_BALLS;
+    }
+}
 
 const EARTH_RADIUS_MILES = 3959;
 
@@ -76,8 +100,11 @@ async function tagsNear(lat, lng, radius) {
 
 /**
  * Return all routing-eligible agents attached to a specific tag, bucketed by tier.
- * Only published + active accounts. Ordered by last_routed_at ASC (nulls first)
- * so the round-robin pick is always the first row in a given tier.
+ * Only published + active accounts. An agent who holds a founder seat on ANY
+ * lake is bucketed as 'founder' here (top lottery weight) across every one of
+ * their service-area tags — that's the town-side half of the founder benefit;
+ * the other half is 100% of their own lake. Everyone else is bucketed by their
+ * membership tier code. Ordered by last_routed_at ASC (nulls first).
  */
 async function agentsForTag(tagId) {
     const sql = `
@@ -87,7 +114,10 @@ async function agentsForTag(tagId) {
                u.last_routed_at,
                a.id               AS agent_id,
                a.display_name,
-               m.code             AS tier_code
+               CASE WHEN EXISTS (
+                   SELECT 1 FROM agent_lakes al
+                    WHERE al.agent_id = a.id AND al.is_founder
+               ) THEN 'founder' ELSE m.code END AS tier_code
         FROM user_tags ut
         JOIN users      u ON u.id = ut.user_id AND u.account_status = 'active'
         JOIN agents     a ON a.user_id = u.id
@@ -107,19 +137,20 @@ async function agentsForTag(tagId) {
 
 /**
  * Weighted-lottery pick from tier-bucketed agents. Every eligible agent gets
- * TIER_BALLS[tier] balls (Founder 4, Elite 3, Prime 2, Basic 1); we pool all
- * the balls and draw one at random. So a higher tier has better odds than a
- * lower one, and two agents in the same tier have equal odds — with 20 basic
- * agents each holding one ball, it plays out like a fair rotation among them.
+ * `weights[tier]` balls (default Founder 12, Elite 8, Prime 3, Basic 1); we
+ * pool all the balls and draw one at random. So a higher tier has better odds
+ * than a lower one, and two agents in the same tier have equal odds — with 20
+ * basic agents each holding one ball, it plays out like a fair rotation.
  *
- * Lake founder exclusivity is handled by the caller before this runs, so here
- * a 'founder' bucket only appears via an admin-set founder membership; it's
- * weighted like any other tier. Returns the winning agent row, or null.
+ * A founder who competes in a town tag (via their own service areas) is
+ * bucketed as 'founder' by agentsForTag, so they carry founder weight here too.
+ * Lake-level founder exclusivity (100%) is handled by the caller beforehand.
+ * Returns the winning agent row, or null.
  */
-function pickFromBuckets(buckets) {
+function pickFromBuckets(buckets, weights = DEFAULT_TIER_BALLS) {
     const balls = [];
     for (const [code, agents] of Object.entries(buckets)) {
-        const weight = TIER_BALLS[code] ?? DEFAULT_BALLS;
+        const weight = weights[code] ?? DEFAULT_BALLS;
         for (const agent of (agents || [])) {
             for (let i = 0; i < weight; i++) balls.push(agent);
         }
@@ -177,6 +208,7 @@ async function routeLead({ lat, lng, radiusMiles, lakeId } = {}) {
     const radius = Number(radiusMiles) > 0
         ? Number(radiusMiles)
         : await getDefaultRadiusMiles();
+    const weights = await getTierBalls();
 
     // ── 1. Lake-level routing (founder = exclusive lake owner) ──
     // EXPLICIT lake only: the lead must actually name the lake (buyer picks it
@@ -193,7 +225,7 @@ async function routeLead({ lat, lng, radiusMiles, lakeId } = {}) {
             // The seated founder is EXCLUSIVE — 100% of their lake's leads.
             // With no founder seated, the lake's other agents go to the lottery.
             const founder = buckets.founder && buckets.founder[0];
-            const pick = founder || pickFromBuckets(buckets);
+            const pick = founder || pickFromBuckets(buckets, weights);
             if (pick) {
                 const client = await pool.connect();
                 try {
@@ -231,7 +263,7 @@ async function routeLead({ lat, lng, radiusMiles, lakeId } = {}) {
         const buckets = await agentsForTag(tag.id);
         if (!Object.keys(buckets).length) continue;
 
-        const pick = pickFromBuckets(buckets);
+        const pick = pickFromBuckets(buckets, weights);
         if (!pick) continue;
 
         // Side-effects: bump the tag counter + the agent's last_routed_at.

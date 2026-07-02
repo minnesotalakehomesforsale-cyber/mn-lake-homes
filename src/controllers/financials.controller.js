@@ -9,7 +9,7 @@
  *    actual listed price).
  *  - recomputeSeatValues(): AI re-estimates each lake's founder-seat value from
  *    home-price desirability × our lead traffic.
- *  - setFounderPrice(): admin sets the actual listed price ($75–$5000).
+ *  - setFounderPrice(): admin sets the actual listed price ($249–$5000).
  */
 const pool = require('../database/pool');
 
@@ -141,7 +141,7 @@ exports.setFounderPrice = async (req, res) => {
     try {
         const raw = req.body?.price;
         const price = (raw === null || raw === '' || raw === undefined)
-            ? null : Math.max(75, Math.min(5000, parseInt(raw, 10) || 0));
+            ? null : Math.max(249, Math.min(5000, parseInt(raw, 10) || 0));
         const { rowCount } = await pool.query(`UPDATE lakes SET founder_seat_price = $1 WHERE id = $2`, [price, req.params.id]);
         if (!rowCount) return res.status(404).json({ error: 'Lake not found.' });
         res.json({ success: true, price });
@@ -167,7 +167,7 @@ exports.recomputeSeatValues = async (req, res) => {
         // opaque UUIDs, which silently breaks the id match. We map the index back
         // to the real id server-side.
         const input = rows.map((r, i) => ({ i, name: r.name, region: r.region, state: r.state, leads_90d: r.leads_90d, views_90d: r.views_90d }));
-        const sys = 'You price exclusive "founding agent" sponsorship seats on lakes for a Minnesota-area lake-real-estate lead network. Each lake has ONE founder seat, priced $75-$5000/month. Method: (1) WATERFRONT HOME PRICES on that lake (your knowledge) set the CEILING — ultra-premium lakes like Lake Minnetonka can justify up to $5000, modest community lakes far less. (2) Then scale DOWN toward the floor by ACTUAL DEMAND we can prove: page views (views_90d) and leads (leads_90d) on that lake page. Demand is what a founder actually pays for. A lake with ZERO views AND ZERO leads has NO demonstrated demand, so price it LOW regardless of home prices — NEVER near the max — as speculative potential (roughly $150-$600 for premium lakes, $75-$150 for modest ones). Leads count more than views; both rising moves it toward the ceiling. Return ONLY JSON: {"values":[{"i":<lake index>,"value":<integer 75-5000>,"reason":"<max 12 words; name the driver>"}]} with one entry for EVERY lake index provided.';
+        const sys = 'You price exclusive "founding agent" sponsorship seats on lakes for a Minnesota-area lake-real-estate lead network. Each lake has ONE founder seat: the founder gets 100% of that lake\'s leads AND top priority in their surrounding towns, so the seat is worth MORE than the $149/mo Elite plan — the floor is $249/mo, ceiling $5000/mo. Method: (1) WATERFRONT HOME PRICES on that lake (your knowledge) set the CEILING — ultra-premium lakes like Lake Minnetonka can justify up to $5000, modest community lakes far less. (2) Then scale DOWN toward the floor by ACTUAL DEMAND we can prove: page views (views_90d) and leads (leads_90d) on that lake page. Demand is what a founder actually pays for. A lake with ZERO views AND ZERO leads has NO demonstrated demand, so price it LOW regardless of home prices — NEVER near the max — as speculative potential (roughly $300-$700 for premium lakes, $249-$300 for modest ones). Leads count more than views; both rising moves it toward the ceiling. Return ONLY JSON: {"values":[{"i":<lake index>,"value":<integer 249-5000>,"reason":"<max 12 words; name the driver>"}]} with one entry for EVERY lake index provided.';
         const user = `Lakes (JSON, use the "i" index in your reply):\n${JSON.stringify(input)}`;
         const completion = await client.chat.completions.create({
             model: MODEL,
@@ -183,7 +183,7 @@ exports.recomputeSeatValues = async (req, res) => {
         for (const v of values) {
             const idx = Number(v.i ?? v.index);
             const lake = rows[idx];
-            const val = Math.max(75, Math.min(5000, parseInt(v.value, 10) || 0));
+            const val = Math.max(249, Math.min(5000, parseInt(v.value, 10) || 0));
             if (!lake || !val) continue;
             const r = await pool.query(
                 `UPDATE lakes SET founder_seat_ai_value = $1, founder_seat_ai_reason = $2, founder_seat_ai_at = NOW() WHERE id = $3`,

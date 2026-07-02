@@ -254,9 +254,9 @@ function sendAgentProfileLive({ email, display_name, slug, membership_code }) {
     // and gets its own welcome. Anything unrecognized falls back to Standard.
     //   Standard ($9)  → membership_code 'basic'
     //   Prime ($39)    → membership_code 'mn_lake_specialist'
-    //   Founder ($149) → membership_code 'top_agent'
+    //   Elite ($149)   → membership_code 'top_agent'
     const tier =
-        membership_code === 'top_agent'           ? 'founder' :
+        membership_code === 'top_agent'           ? 'elite'   :
         membership_code === 'mn_lake_specialist'  ? 'prime'   :
         'standard';
 
@@ -274,31 +274,31 @@ function sendAgentProfileLive({ email, display_name, slug, membership_code }) {
           &mdash; The team at MinnesotaLakeHomesForSale.com
         </p>`;
 
-    // ─── Founder ($149) ────────────────────────────────────────────────────
-    if (tier === 'founder') {
+    // ─── Elite ($149) ──────────────────────────────────────────────────────
+    if (tier === 'elite') {
         return sendEmail({
             to: email,
-            subject: 'Welcome to MN Lake Homes — your Founder profile is live',
+            subject: 'Welcome to MN Lake Homes — your Elite profile is live',
             html: layout({
-                title: `You're live, ${name}. Welcome to Founder.`,
+                title: `You're live, ${name}. Welcome to Elite.`,
                 preheader: 'Top placement, featured listings, and a feature blog about you — all incoming.',
                 body: `
                     <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
-                      Welcome to MinnesotaLakeHomesForSale.com. Payment cleared, your profile is published, and your Founder placement is now active across the lake pages in your region.
+                      Welcome to MinnesotaLakeHomesForSale.com. Payment cleared, your profile is published, and your Elite placement is now active across the lake pages in your region.
                     </p>
 
-                    <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">Your Founder perks</h3>
+                    <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">Your Elite perks</h3>
                     <ol style="margin:0 0 18px;padding-left:1.25rem;font-size:15px;line-height:1.7;color:#2d3748;">
                       <li style="margin-bottom:0.6rem;"><strong>A feature blog post about you.</strong> Our team writes a personal piece &mdash; your background, the lakes you cover, your approach &mdash; and publishes it to the MN Lake Homes blog with a permanent link back to your profile. We'll reach out within the next 7 days for a short interview to get the details right.</li>
                       <li style="margin-bottom:0.6rem;"><strong>Featured listings.</strong> Your active listings get top placement on the relevant lake pages, pinned above standard agent listings. Add them in your dashboard and we'll handle the placement.</li>
-                      <li><strong>First look at matched leads.</strong> New buyer and seller inquiries from your region's lake pages route to you before they go to other agents on the same lake.</li>
+                      <li><strong>Highest lead priority of any plan.</strong> New buyer and seller inquiries across your region's lake pages are matched to you at the top priority of any subscription tier.</li>
                     </ol>
 
                     ${intro}
 
                     <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">Get featured on our social media</h3>
                     <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
-                      Founder agents are the first we spotlight on our <a href="https://www.instagram.com/mnlakehomes/" style="color:#1d6df2;text-decoration:none;">Instagram</a> and <a href="https://www.facebook.com/mnlakehomesforsale" style="color:#1d6df2;text-decoration:none;">Facebook</a>. We'll reach out about a feature post &mdash; usually a portrait + lake/listing shots + a short Q&amp;A &mdash; within the next two weeks. If you'd rather kick it off sooner, just reply to this email with <strong>"feature me"</strong> and 2&ndash;3 high-quality photos.
+                      Elite agents are among the first we spotlight on our <a href="https://www.instagram.com/mnlakehomes/" style="color:#1d6df2;text-decoration:none;">Instagram</a> and <a href="https://www.facebook.com/mnlakehomesforsale" style="color:#1d6df2;text-decoration:none;">Facebook</a>. We'll reach out about a feature post &mdash; usually a portrait + lake/listing shots + a short Q&amp;A &mdash; within the next two weeks. If you'd rather kick it off sooner, just reply to this email with <strong>"feature me"</strong> and 2&ndash;3 high-quality photos.
                     </p>
 
                     <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">A few things worth doing this week</h3>
@@ -322,7 +322,7 @@ function sendAgentProfileLive({ email, display_name, slug, membership_code }) {
             subject: 'Welcome to MN Lake Homes — your Prime profile is live',
             html: layout({
                 title: `You're live, ${name}. Welcome to Prime.`,
-                preheader: 'Featured at the top of your lake page, with first look at matched leads.',
+                preheader: 'Featured at the top of your lake page, with higher lead priority in your areas.',
                 body: `
                     <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
                       Welcome to MinnesotaLakeHomesForSale.com. Payment cleared, and your Prime profile is now featured at the top of your lake page.
@@ -331,7 +331,7 @@ function sendAgentProfileLive({ email, display_name, slug, membership_code }) {
                     <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">Your Prime perks</h3>
                     <ol style="margin:0 0 18px;padding-left:1.25rem;font-size:15px;line-height:1.7;color:#2d3748;">
                       <li style="margin-bottom:0.6rem;"><strong>Featured placement at the top of your lake page.</strong> Buyers and sellers searching that lake see you above standard agents.</li>
-                      <li style="margin-bottom:0.6rem;"><strong>First look at matched leads.</strong> New buyer and seller inquiries from your lake page route to you before they go to standard agents on the same lake.</li>
+                      <li style="margin-bottom:0.6rem;"><strong>Higher lead priority.</strong> New buyer and seller inquiries from your lake page are far more likely to match to you than to standard agents on the same lake.</li>
                       <li><strong>A direct line to the founder.</strong> You're one of the first agents in. Your feedback shapes how matching, routing, and the lake pages actually work.</li>
                     </ol>
 
@@ -372,14 +372,14 @@ function sendAgentProfileLive({ email, display_name, slug, membership_code }) {
                 <ul style="margin:0 0 18px;padding-left:1.25rem;font-size:15px;line-height:1.7;color:#2d3748;">
                   <li>Your agent profile listed on one lake page (directory style).</li>
                   <li>Buyers and sellers searching that lake can find you and reach out directly through your contact info.</li>
-                  <li>Standard is a directory listing &mdash; matched lead routing is a Prime / Founder benefit.</li>
+                  <li>You're in the lead-matching rotation at base priority &mdash; Prime and Elite agents are matched ahead of you, but leads still reach you.</li>
                 </ul>
 
                 ${intro}
 
                 <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">Want more visibility? Upgrade anytime</h3>
                 <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
-                  If you want featured placement at the top of your lake page and first look at matched buyer and seller leads, you can upgrade to Prime ($39/mo) or Founder ($149/mo) right from your dashboard. Your existing profile, photo, and contact info all carry over instantly.
+                  If you want featured placement at the top of your lake page and higher priority on matched buyer and seller leads, you can upgrade to Prime ($39/mo) or Elite ($149/mo) right from your dashboard. Your existing profile, photo, and contact info all carry over instantly.
                 </p>
 
                 <h3 style="margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;">Want to get featured on our social media?</h3>
