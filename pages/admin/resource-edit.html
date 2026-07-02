@@ -138,11 +138,6 @@
 
         <!-- Profile header -->
         <div class="profile-header" id="hdr">
-            <div class="ph-photo" id="hdr-photo" onclick="document.getElementById('hdr-photo-input').click()" title="Click to replace the thumbnail">
-                <span id="hdr-initial">?</span>
-                <div class="overlay" id="hdr-overlay">Replace image</div>
-            </div>
-            <input type="file" id="hdr-photo-input" class="ph-input" accept="image/*" onchange="onThumbPicked(event)">
             <div class="ph-main">
                 <div class="ph-name-row">
                     <h1 id="hdr-name">Loading…</h1>
@@ -215,13 +210,6 @@
 
     function renderHeader() {
         document.title = `${entity.title || 'Resource'} | MN Lake Homes Admin`;
-        const img = entity.thumbnail_url;
-        const photo = document.getElementById('hdr-photo');
-        const initial = document.getElementById('hdr-initial');
-        const overlay = document.getElementById('hdr-overlay');
-        if (img) { photo.style.backgroundImage = `url('${img}')`; initial.style.display = 'none'; overlay.textContent = 'Replace image'; }
-        else { photo.style.backgroundImage = ''; initial.style.display = ''; initial.textContent = (entity.title || '?').charAt(0).toUpperCase(); overlay.textContent = 'Upload image'; }
-
         document.getElementById('hdr-name').textContent = entity.title || '(untitled)';
         document.getElementById('hdr-status').innerHTML = statusBadge(entity);
         document.getElementById('hdr-sub').textContent = [entity.category, entity.resource_type].filter(Boolean).join(' · ');
@@ -317,7 +305,6 @@
             <div class="field-grid">
                 ${fieldGroup({ id: 'f-desc',    label: 'Description', value: entity.description, type: 'textarea', full: true, hint: 'Plain text. Shown on the public resources page card + the download modal.' })}
                 ${fieldGroup({ id: 'f-url',    label: 'Download URL', value: entity.url, full: true, hint: 'Where the file lives — Cloudinary URL, /assets/pdfs/… path, or any public URL.' })}
-                ${fieldGroup({ id: 'f-thumb',  label: 'Thumbnail URL', value: entity.thumbnail_url, full: true, hint: 'You can also upload a thumbnail by clicking the photo tile at the top of this page.' })}
             </div>`;
         return panel('Content', '', body, 'Save Content', 'save-content');
     }
@@ -447,45 +434,7 @@
         patch({
             description: v('f-desc'),
             url: v('f-url') || '#',
-            thumbnail_url: v('f-thumb'),
         }, 'save-content');
-    }
-
-    // ── Header image upload ─────────────────────────────────────────
-    async function onThumbPicked(event) {
-        const file = event.target.files?.[0];
-        if (!file) return;
-        if (file.size > 8 * 1024 * 1024) { toast('Image must be 8 MB or smaller.', 'err'); return; }
-        if (!file.type.startsWith('image/')) { toast('Pick an image file.', 'err'); return; }
-        const photo = document.getElementById('hdr-photo');
-        const overlay = document.getElementById('hdr-overlay');
-        const reader = new FileReader();
-        reader.onload = e => { photo.style.backgroundImage = `url('${e.target.result}')`; document.getElementById('hdr-initial').style.display = 'none'; };
-        reader.readAsDataURL(file);
-        photo.classList.add('uploading'); overlay.textContent = 'Uploading…';
-        try {
-            const fd = new FormData(); fd.append('image', file);
-            const upRes = await fetch('/api/resources/upload-image', { method: 'POST', body: fd, credentials: 'include' });
-            const upData = await upRes.json().catch(() => ({}));
-            if (!upRes.ok) throw new Error(upData.error || 'Upload failed.');
-            const saveRes = await fetch(`/api/resources/${encodeURIComponent(ID)}`, {
-                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-                body: JSON.stringify({ thumbnail_url: upData.url }),
-            });
-            if (!saveRes.ok) throw new Error('Save failed.');
-            entity.thumbnail_url = upData.url;
-            overlay.textContent = 'Replace image';
-            toast('Thumbnail saved.', 'ok');
-        } catch (err) {
-            toast(err.message, 'err');
-            const url = entity.thumbnail_url;
-            if (url) photo.style.backgroundImage = `url('${url}')`;
-            else { photo.style.backgroundImage = ''; document.getElementById('hdr-initial').style.display = ''; }
-            overlay.textContent = 'Replace image';
-        } finally {
-            photo.classList.remove('uploading');
-            event.target.value = '';
-        }
     }
 
     function openPublic() {

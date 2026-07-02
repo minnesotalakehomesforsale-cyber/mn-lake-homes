@@ -99,20 +99,13 @@
             transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
         }
         .rsc-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,0.08); border-color: #cbd5e0; }
-        .rsc-thumb {
-            position: relative; width: 100%; aspect-ratio: 16 / 10;
-            background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
-            background-size: cover; background-position: center;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .rsc-thumb.empty { color: rgba(26,32,44,0.35); font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-        .rsc-thumb .status-pill {
-            position: absolute; top: 0.65rem; left: 0.65rem;
+        .rsc-toprow { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+        .rsc-type { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #718096; }
+        .status-pill {
             padding: 0.22rem 0.55rem; border-radius: 99px;
             font-size: 0.66rem; font-weight: 800;
             text-transform: uppercase; letter-spacing: 0.6px;
-            background: rgba(0,0,0,0.55); color: #fff;
-            backdrop-filter: blur(4px);
+            color: #fff; flex-shrink: 0;
         }
         .status-pill.ok       { background: rgba(47,133,90,0.92); }
         .status-pill.draft    { background: rgba(74,85,104,0.85); }
@@ -346,21 +339,20 @@
         }
 
         grid.innerHTML = filtered.map(r => {
-            const thumb = r.thumbnail_url;
-            const thumbStyle = thumb ? `style="background-image:url('${esc(thumb)}');"` : '';
             const statusLabel = !r.active ? 'Inactive' : r.featured ? 'Featured' : 'Active';
             const statusCls   = !r.active ? 'archived' : r.featured ? 'featured' : 'ok';
             const created = new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             const href = `resource-edit.html?id=${encodeURIComponent(r.id)}`;
+            // Resources are text-only on the public site (no thumbnails), so the
+            // admin card is text-only too — no reused stock imagery.
             return `
                 <a class="rsc-card" href="${href}">
-                    <div class="rsc-thumb ${thumb ? '' : 'empty'}" ${thumbStyle}>
-                        ${thumb ? '' : 'No thumbnail'}
-                        <span class="status-pill ${statusCls}">${esc(statusLabel)}</span>
-                    </div>
                     <div class="rsc-body">
+                        <div class="rsc-toprow">
+                            <span class="rsc-type">${esc(r.category)} · ${esc(r.resource_type)}</span>
+                            <span class="status-pill ${statusCls}">${esc(statusLabel)}</span>
+                        </div>
                         <div class="name">${esc(r.title)}</div>
-                        <div class="meta">${esc(r.category)} · ${esc(r.resource_type)}</div>
                         <div class="stats">
                             <span class="stat-chip">Live ${esc(created)}</span>
                             ${r.url && r.url !== '#' ? '<span class="stat-chip">PDF set</span>' : '<span class="stat-chip" style="color:#c53030;border-color:#feb2b2;background:#fff5f5;">No URL</span>'}
