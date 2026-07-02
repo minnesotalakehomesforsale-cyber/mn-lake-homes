@@ -130,7 +130,8 @@
         <section class="activity-panel">
             <div class="activity-header">
                 <span class="activity-title">Activity Log</span>
-                <input type="text" class="search-input" id="search-input" placeholder="Search event type, actor, target…" oninput="onSearch()">
+                <input type="search" class="search-input" id="search-input" placeholder="Search event type, actor, target…" oninput="onSearch()"
+                       autocomplete="off" name="db-log-search" data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other">
             </div>
             <div class="filter-bar">
                 <button class="filter-pill active" data-scope="all"       onclick="setScope('all',this)">All</button>
