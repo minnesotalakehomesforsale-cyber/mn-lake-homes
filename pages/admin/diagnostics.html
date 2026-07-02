@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Routing Diagnostics | MN Lake Homes Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', -apple-system, sans-serif; color: #1a202c; }
+        /* Embed mode (?embed=1) — iframed inside system.html */
+        body.lt-embed admin-sidebar,
+        body.lt-embed .admin-main > header { display: none !important; }
+        body.lt-embed .admin-wrap { display: block !important; }
+        body.lt-embed .admin-main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+
+        .rd-status { display: flex; align-items: center; gap: 1rem; padding: 1.4rem 1.6rem; border-radius: 14px; margin-bottom: 1.75rem; border: 1px solid; }
+        .rd-status .dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+        .rd-status h2 { margin: 0; font-size: 1.15rem; font-weight: 800; }
+        .rd-status p { margin: 0.15rem 0 0; font-size: 0.9rem; }
+        .rd-status.green  { background: #f0fff4; border-color: #9ae6b4; color: #22543d; } .rd-status.green .dot  { background: #38a169; }
+        .rd-status.yellow { background: #fffaf0; border-color: #f6e05e; color: #744210; } .rd-status.yellow .dot { background: #d69e2e; }
+        .rd-status.red    { background: #fff5f5; border-color: #feb2b2; color: #742a2a; } .rd-status.red .dot    { background: #e53e3e; }
+
+        .rd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.75rem; }
+        .rd-stat { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.25rem 1.4rem; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 10px 26px rgba(16,24,40,0.05); }
+        .rd-stat .k { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #718096; margin: 0 0 0.5rem; }
+        .rd-stat .v { font-size: 2rem; font-weight: 800; letter-spacing: -1px; color: #1a202c; line-height: 1; }
+        .rd-stat .s { font-size: 0.82rem; color: #718096; margin-top: 0.35rem; }
+        .rd-stat .v.ok { color: #2f855a; } .rd-stat .v.warn { color: #c05621; } .rd-stat .v.bad { color: #c53030; }
+
+        .rd-panel { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.4rem 1.6rem; margin-bottom: 1.25rem; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 10px 26px rgba(16,24,40,0.05); }
+        .rd-panel h3 { margin: 0 0 0.9rem; font-size: 0.95rem; font-weight: 800; color: #1a202c; }
+        .rd-panel .pill { display: inline-block; background: #f7f9fa; border: 1px solid #edf2f7; border-radius: 8px; padding: 0.3rem 0.6rem; margin: 0.2rem 0.3rem 0.2rem 0; font-size: 0.82rem; color: #4a5568; }
+        .rd-row { display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 0; border-bottom: 1px solid #f2f5f8; font-size: 0.9rem; }
+        .rd-row:last-child { border-bottom: none; }
+        .rd-row .r-ok { color: #2f855a; font-weight: 700; } .rd-row .r-bad { color: #c53030; font-weight: 700; }
+        .rd-fix { font-size: 0.85rem; color: #4a5568; background: #f7fafc; border-left: 3px solid #1d6df2; padding: 0.6rem 0.9rem; border-radius: 0 8px 8px 0; margin-top: 0.6rem; line-height: 1.5; }
+        .rd-muted { color: #a0aec0; font-size: 0.85rem; }
+        .rd-refresh { border: 1px solid #e2e8f0; background: #fff; border-radius: 10px; padding: 0.5rem 1rem; font-weight: 700; font-size: 0.85rem; cursor: pointer; color: #2d3748; }
+    </style>
+</head>
+<body>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+
+    <div class="admin-wrap">
+        <admin-sidebar active="system"></admin-sidebar>
+        <main class="admin-main">
+            <header style="margin-bottom:2rem; display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; flex-wrap:wrap;">
+                <div>
+                    <h1 style="font-size:1.85rem; font-weight:800; letter-spacing:-0.75px; margin:0 0 0.25rem;">Lead Routing Diagnostics</h1>
+                    <p style="color:#718096; margin:0; font-size:0.95rem;">Everything that decides whether an incoming lead gets auto-assigned.</p>
+                </div>
+                <button class="rd-refresh" onclick="loadDiag()">↻ Refresh</button>
+            </header>
+            <div id="rd-content"><p class="rd-muted">Loading diagnostics…</p></div>
+        </main>
+    </div>
+
+    <script>
+        const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+
+        async function loadDiag() {
+            const el = document.getElementById('rd-content');
+            el.innerHTML = '<p class="rd-muted">Loading diagnostics…</p>';
+            try {
+                const res = await fetch('/api/admin/routing-diagnostics', { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to load diagnostics.');
+                render(await res.json());
+            } catch (err) {
+                el.innerHTML = `<p style="color:#c53030;">${esc(err.message)}</p>`;
+            }
+        }
+
+        function render(d) {
+            const statusText = {
+                green:  ['All systems go', 'Leads are routing — geocoder is on and agents cover their areas.'],
+                yellow: ['Routing works, with gaps', 'Leads route, but some agents or areas below have no coverage — fix them to stop leaks.'],
+                red:    ['Routing is broken', 'Incoming leads will NOT auto-assign. Fix the red items below now.'],
+            }[d.status] || ['Unknown', ''];
+
+            const g = d.geocoder, a = d.agents, c = d.coverage, o = d.outcomes;
+            const vClass = (n) => n > 0 ? 'ok' : 'bad';
+
+            document.getElementById('rd-content').innerHTML = `
+                <div class="rd-status ${d.status}">
+                    <span class="dot"></span>
+                    <div><h2>${esc(statusText[0])}</h2><p>${esc(statusText[1])}</p></div>
+                </div>
+
+                <div class="rd-grid">
+                    <div class="rd-stat"><p class="k">Geocoder</p><div class="v ${g.configured ? 'ok' : 'bad'}">${g.configured ? 'On' : 'Off'}</div><div class="s">${g.configured ? esc(g.keyVar) : 'Address-based routing disabled'}</div></div>
+                    <div class="rd-stat"><p class="k">Routable agents</p><div class="v ${vClass(a.routable)}">${a.routable}</div><div class="s">of ${a.publishedActive} published &amp; active</div></div>
+                    <div class="rd-stat"><p class="k">Areas covered</p><div class="v ${c.zeroCoverage > 0 ? 'warn' : 'ok'}">${c.tagsWithAgents}/${c.geoTags}</div><div class="s">${c.zeroCoverage} town area(s) with no agent</div></div>
+                    <div class="rd-stat"><p class="k">Open unassigned leads</p><div class="v ${o.openUnassignedLeads > 0 ? 'warn' : 'ok'}">${o.openUnassignedLeads}</div><div class="s">${o.assigned30d} routed · ${o.unassigned30d} missed (30d)</div></div>
+                </div>
+
+                <div class="rd-panel">
+                    <h3>Geocoding (address → coordinates)</h3>
+                    <div class="rd-row"><span>Server geocoder key set</span><span class="${g.configured ? 'r-ok' : 'r-bad'}">${g.configured ? '✓ ' + esc(g.keyVar) : '✗ Missing'}</span></div>
+                    ${g.configured ? '' : `<div class="rd-fix"><strong>Fix:</strong> set <code>GOOGLE_SERVER_KEY</code> (or <code>GOOGLE_PLACES_API_KEY</code>) in your production environment. Without it, only leads submitted from a lake page route; every address-based lead goes unassigned.</div>`}
+                </div>
+
+                <div class="rd-panel">
+                    <h3>Agent coverage</h3>
+                    <div class="rd-row"><span>Published &amp; active agents</span><span>${a.publishedActive}</span></div>
+                    <div class="rd-row"><span>With service areas (user_tags)</span><span>${a.withAreas}</span></div>
+                    <div class="rd-row"><span>Linked to a lake (agent_lakes)</span><span>${a.withLakes}</span></div>
+                    <div class="rd-row"><span>Routable (either)</span><span class="${vClass(a.routable)}">${a.routable}</span></div>
+                    <div class="rd-row"><span>Published but <strong>unroutable</strong> (no areas/lakes)</span><span class="${a.unroutable > 0 ? 'r-bad' : 'r-ok'}">${a.unroutable}</span></div>
+                    ${a.unroutableList.length ? `<div class="rd-fix"><strong>These published agents get zero leads</strong> — they have no service areas or lake links:<br>${a.unroutableList.map(x => `<span class="pill">${esc(x.display_name || x.email)}</span>`).join('')}<br>Fix: open each in the Agents tab → set Service Areas, or seat them on a lake.</div>` : ''}
+                    ${a.routable === 0 ? `<div class="rd-fix" style="border-color:#e53e3e;"><strong>Critical:</strong> no routable agents at all — every lead will go unassigned. Publish agents and give them service areas.</div>` : ''}
+                </div>
+
+                <div class="rd-panel">
+                    <h3>Service-area coverage</h3>
+                    <div class="rd-row"><span>Town areas (geo-tagged)</span><span>${c.geoTags}</span></div>
+                    <div class="rd-row"><span>Areas with ≥1 eligible agent</span><span class="${vClass(c.tagsWithAgents)}">${c.tagsWithAgents}</span></div>
+                    <div class="rd-row"><span>Lakes with agents linked</span><span>${c.lakesWithAgents}</span></div>
+                    ${c.zeroCoverage > 0 ? `<div class="rd-fix"><strong>${c.zeroCoverage} area(s) have no agent</strong> — leads there go unassigned. First ${c.zeroCoverageSample.length}:<br>${c.zeroCoverageSample.map(n => `<span class="pill">${esc(n)}</span>`).join('')}</div>` : '<p class="rd-muted" style="margin:0.6rem 0 0;">Every geo-tagged area has at least one agent. ✓</p>'}
+                </div>
+
+                <div class="rd-panel">
+                    <h3>Recent routing (last 30 days)</h3>
+                    <div class="rd-row"><span>Leads auto-assigned</span><span class="r-ok">${o.assigned30d}</span></div>
+                    <div class="rd-row"><span>Leads that missed (no eligible agent)</span><span class="${o.unassigned30d > 0 ? 'r-bad' : 'r-ok'}">${o.unassigned30d}</span></div>
+                    <div class="rd-row"><span>Open unassigned in the queue</span><span class="${o.openUnassignedLeads > 0 ? 'r-bad' : 'r-ok'}">${o.openUnassignedLeads}</span></div>
+                </div>
+            `;
+        }
+
+        document.addEventListener('DOMContentLoaded', loadDiag);
+    </script>
+
+    <!-- Embed-mode helper — hide chrome + post height when iframed in system.html -->
+    <script>
+        (function () {
+            if (new URLSearchParams(window.location.search).get('embed') !== '1') return;
+            document.body.classList.add('lt-embed');
+            let lastH = 0;
+            function postHeight() {
+                const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+                if (h !== lastH) { lastH = h; window.parent.postMessage({ lt: 'height', frame: 'diagnostics', h }, '*'); }
+            }
+            window.addEventListener('load', postHeight);
+            setInterval(postHeight, 600);
+        })();
+    </script>
+</body>
+</html>

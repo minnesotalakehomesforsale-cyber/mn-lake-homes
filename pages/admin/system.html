@@ -52,8 +52,9 @@
         </div>
 
         <div class="page-tabs" role="tablist">
-            <button id="tab-btn-metrics"  class="page-tab active" role="tab" onclick="showSys('metrics')">Metrics</button>
-            <button id="tab-btn-database" class="page-tab"        role="tab" onclick="showSys('database')">Database</button>
+            <button id="tab-btn-metrics"     class="page-tab active" role="tab" onclick="showSys('metrics')">Metrics</button>
+            <button id="tab-btn-database"    class="page-tab"        role="tab" onclick="showSys('database')">Database</button>
+            <button id="tab-btn-diagnostics" class="page-tab"        role="tab" onclick="showSys('diagnostics')">Lead Routing</button>
         </div>
 
         <div id="pane-metrics" class="tab-pane active" role="tabpanel">
@@ -63,11 +64,15 @@
         <div id="pane-database" class="tab-pane" role="tabpanel">
             <iframe id="frame-database" class="sys-frame" data-src="database.html?embed=1" title="Database"></iframe>
         </div>
+
+        <div id="pane-diagnostics" class="tab-pane" role="tabpanel">
+            <iframe id="frame-diagnostics" class="sys-frame" data-src="diagnostics.html?embed=1" title="Lead Routing Diagnostics"></iframe>
+        </div>
     </main>
 </div>
 
 <script>
-    const TABS = ['metrics', 'database'];
+    const TABS = ['metrics', 'database', 'diagnostics'];
     const _params = new URLSearchParams(window.location.search);
     const _initialTab = TABS.includes(_params.get('tab')) ? _params.get('tab') : 'metrics';
 

@@ -410,6 +410,39 @@
                 </a>
             </div>
 
+            <!-- ── Lead routing readiness ──────────────────────── -->
+            <div class="d-section-label">Lead routing · will new leads get assigned?</div>
+            <a href="system.html?tab=diagnostics" id="rd-dash-card" class="d-card" style="display:block;text-decoration:none;color:inherit;padding:1.15rem 1.4rem;margin-bottom:1.75rem;border-left:4px solid #e2e8f0;">
+                <span id="rd-dash-body" style="color:#a0aec0;font-size:0.9rem;">Checking routing health…</span>
+            </a>
+            <script>
+            (function () {
+                async function loadRoutingHealth() {
+                    const card = document.getElementById('rd-dash-card');
+                    const body = document.getElementById('rd-dash-body');
+                    if (!card || !body) return;
+                    try {
+                        const r = await fetch('/api/admin/routing-diagnostics', { credentials: 'include' });
+                        if (!r.ok) throw new Error();
+                        const d = await r.json();
+                        const color = { green: '#38a169', yellow: '#d69e2e', red: '#e53e3e' }[d.status] || '#a0aec0';
+                        const head  = { green: 'All systems go', yellow: 'Working, with gaps', red: 'Routing is broken' }[d.status] || 'Unknown';
+                        card.style.borderLeftColor = color;
+                        const bits = [
+                            `Geocoder <strong>${d.geocoder.configured ? 'on' : 'OFF'}</strong>`,
+                            `<strong>${d.agents.routable}</strong>/${d.agents.publishedActive} agents routable`,
+                            `<strong>${d.coverage.zeroCoverage}</strong> areas uncovered`,
+                            `<strong>${d.outcomes.openUnassignedLeads}</strong> unassigned in queue`,
+                        ];
+                        body.innerHTML = `<span style="display:inline-flex;align-items:center;gap:0.5rem;"><span style="width:11px;height:11px;border-radius:50%;background:${color};display:inline-block;"></span><strong style="color:#1a202c;">${head}</strong></span> <span style="color:#718096;font-size:0.88rem;">· ${bits.join(' · ')} · <span style="color:#1d6df2;font-weight:700;">Full diagnostics →</span></span>`;
+                    } catch (_) {
+                        body.innerHTML = '<span style="color:#718096;">Routing diagnostics unavailable · <span style="color:#1d6df2;font-weight:700;">open →</span></span>';
+                    }
+                }
+                document.addEventListener('DOMContentLoaded', loadRoutingHealth);
+            })();
+            </script>
+
             <!-- ── AI assistant ────────────────────────────────── -->
             <div class="d-section-label">AI Assistant · grow the network</div>
             <div class="d-card ai-card">

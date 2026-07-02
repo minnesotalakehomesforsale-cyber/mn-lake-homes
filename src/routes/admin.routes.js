@@ -34,6 +34,9 @@ router.post('/', adminController.createAgent);                            // POS
 // ─── REVENUE (Stripe snapshot for the dashboard) ─────────────────────────────
 router.get('/revenue', verifyToken, requireRole(['admin', 'super_admin']), adminController.getRevenue);
 
+// ─── LEAD ROUTING DIAGNOSTICS (before /:id so the slug isn't read as an id) ──
+router.get('/routing-diagnostics', verifyToken, requireRole(['admin', 'super_admin']), adminController.getRoutingDiagnostics);
+
 // ─── USER MANAGEMENT (must come before /:id to avoid shadowing) ──────────────
 router.get('/users', adminController.getUsers);                            // GET /api/admin/users
 router.get('/users/:id', adminController.getUserDetail);                   // GET /api/admin/users/:id

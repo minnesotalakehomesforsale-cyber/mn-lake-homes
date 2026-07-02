@@ -2290,7 +2290,96 @@ async function applyLaunchLakes(req, res) {
     }
 }
 
+/**
+ * GET /api/admin/routing-diagnostics
+ * Everything that determines whether an incoming lead actually gets routed:
+ *  - geocoder configured? (address→coords, required for town routing)
+ *  - published+active agents, and how many are routable (have service-area
+ *    tags via user_tags OR a lake link via agent_lakes)
+ *  - which published agents are UNROUTABLE (no areas/lakes) — they'll get 0 leads
+ *  - service-area coverage: geo-tags with ≥1 eligible agent vs zero-coverage
+ *  - lakes with agents linked
+ *  - recent outcomes: assigned vs unassigned (30d) + open unassigned leads
+ * Rolls up to an overall red/yellow/green so the dashboard can show it at a glance.
+ */
+const getRoutingDiagnostics = async (req, res) => {
+    try {
+        const geocoderKeyVar = process.env.GOOGLE_SERVER_KEY ? 'GOOGLE_SERVER_KEY'
+            : (process.env.GOOGLE_PLACES_API_KEY ? 'GOOGLE_PLACES_API_KEY' : null);
+        const PUB = `a.profile_status='published' AND a.is_published = TRUE AND u.account_status='active' AND a.deleted_at IS NULL`;
+
+        const [agents, coverage, lakes, outcomes, unassigned, unroutable, zeroTags] = await Promise.all([
+            pool.query(`
+                SELECT COUNT(*)::int AS published_active,
+                       COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM user_tags ut WHERE ut.user_id = a.user_id))::int AS with_areas,
+                       COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM agent_lakes al WHERE al.agent_id = a.id))::int AS with_lakes,
+                       COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM user_tags ut WHERE ut.user_id = a.user_id)
+                                           OR  EXISTS (SELECT 1 FROM agent_lakes al WHERE al.agent_id = a.id))::int AS routable
+                FROM agents a JOIN users u ON u.id = a.user_id WHERE ${PUB}`),
+            pool.query(`
+                SELECT COUNT(*)::int AS geo_tags,
+                       COUNT(*) FILTER (WHERE EXISTS (
+                           SELECT 1 FROM user_tags ut JOIN agents a ON a.user_id = ut.user_id JOIN users u ON u.id = a.user_id
+                           WHERE ut.tag_id = t.id AND ${PUB}))::int AS tags_with_agents
+                FROM tags t WHERE t.active = TRUE AND t.latitude IS NOT NULL AND t.longitude IS NOT NULL`),
+            pool.query(`SELECT COUNT(DISTINCT al.lake_id)::int AS n
+                        FROM agent_lakes al JOIN agents a ON a.id = al.agent_id JOIN users u ON u.id = a.user_id WHERE ${PUB}`),
+            pool.query(`SELECT COUNT(*) FILTER (WHERE event_type='lead.route_assigned')::int AS assigned,
+                               COUNT(*) FILTER (WHERE event_type='lead.route_unassigned')::int AS unassigned
+                        FROM activity_log WHERE created_at > NOW() - INTERVAL '30 days'`),
+            pool.query(`SELECT COUNT(*)::int AS n FROM leads WHERE assigned_user_id IS NULL AND agent_id IS NULL AND deleted_at IS NULL`),
+            pool.query(`SELECT a.display_name, u.email FROM agents a JOIN users u ON u.id = a.user_id
+                        WHERE ${PUB}
+                          AND NOT EXISTS (SELECT 1 FROM user_tags ut WHERE ut.user_id = a.user_id)
+                          AND NOT EXISTS (SELECT 1 FROM agent_lakes al WHERE al.agent_id = a.id)
+                        ORDER BY a.display_name LIMIT 50`),
+            pool.query(`SELECT t.name FROM tags t
+                        WHERE t.active = TRUE AND t.latitude IS NOT NULL AND t.longitude IS NOT NULL
+                          AND NOT EXISTS (SELECT 1 FROM user_tags ut JOIN agents a ON a.user_id = ut.user_id JOIN users u ON u.id = a.user_id
+                                          WHERE ut.tag_id = t.id AND ${PUB})
+                        ORDER BY t.name LIMIT 200`),
+        ]);
+
+        const ag = agents.rows[0], cov = coverage.rows[0];
+        const geocoderOk = !!geocoderKeyVar;
+        // Overall status: red if geocoder off OR no routable agents; yellow if
+        // some published agents are unroutable or some areas have zero coverage.
+        let status = 'green';
+        if (!geocoderOk || ag.routable === 0) status = 'red';
+        else if (unroutable.rows.length > 0 || (cov.geo_tags - cov.tags_with_agents) > 0) status = 'yellow';
+
+        res.json({
+            status,
+            geocoder: { configured: geocoderOk, keyVar: geocoderKeyVar },
+            agents: {
+                publishedActive: ag.published_active,
+                withAreas: ag.with_areas,
+                withLakes: ag.with_lakes,
+                routable: ag.routable,
+                unroutable: unroutable.rows.length,
+                unroutableList: unroutable.rows,
+            },
+            coverage: {
+                geoTags: cov.geo_tags,
+                tagsWithAgents: cov.tags_with_agents,
+                zeroCoverage: cov.geo_tags - cov.tags_with_agents,
+                zeroCoverageSample: zeroTags.rows.map(r => r.name).slice(0, 40),
+                lakesWithAgents: lakes.rows[0].n,
+            },
+            outcomes: {
+                assigned30d: outcomes.rows[0].assigned,
+                unassigned30d: outcomes.rows[0].unassigned,
+                openUnassignedLeads: unassigned.rows[0].n,
+            },
+        });
+    } catch (err) {
+        console.error('[routing-diagnostics]', err.message);
+        res.status(500).json({ error: 'Failed to build routing diagnostics.' });
+    }
+};
+
 module.exports = {
+    getRoutingDiagnostics,
     getLedger,
     getAgentDetail,
     getSubscriberBilling,
