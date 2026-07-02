@@ -106,6 +106,20 @@
         .rev-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.75rem; }
         @media (max-width: 1050px) { .rev-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 560px)  { .rev-grid { grid-template-columns: 1fr; } }
+
+        /* Growth section — founder seats, coverage, reviews (clickable cards) */
+        .growth-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.75rem; }
+        @media (max-width: 900px) { .growth-grid { grid-template-columns: 1fr; } }
+        .growth-card { display: block; text-decoration: none; color: inherit; transition: transform 0.12s, box-shadow 0.15s; }
+        .growth-card:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(16,24,40,0.10); }
+        .growth-card .gc-big { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.5px; color: #1a202c; line-height: 1; }
+        .growth-card .gc-sub { font-size: 0.82rem; color: #718096; margin-top: 0.35rem; }
+        .gc-bar { height: 7px; border-radius: 99px; background: #edf2f7; overflow: hidden; margin: 0.9rem 0 0.5rem; }
+        .gc-bar > span { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg,#1d6df2,#155bc8); }
+        .gc-rows { display: flex; gap: 1.1rem; flex-wrap: wrap; margin-top: 0.6rem; }
+        .gc-rows .gr { font-size: 0.8rem; color: #4a5568; font-weight: 600; }
+        .gc-rows .gr b { display: block; font-size: 1.15rem; color: #1a202c; font-weight: 800; }
+        .gc-warn { color: #c05621; font-weight: 700; }
         .rev-card { border-radius: 14px; padding: 1.35rem 1.45rem; color: #fff; position: relative; overflow: hidden; box-shadow: 0 12px 34px rgba(16,24,40,0.12); }
         .rev-card .rc-label { font-size: 0.68rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; opacity: 0.85; margin-bottom: 0.55rem; }
         .rev-card .rc-val { font-size: 2.05rem; font-weight: 800; letter-spacing: -1px; line-height: 1; }
@@ -345,7 +359,7 @@
             </nav>
 
             <!-- ── Revenue (Stripe) ─────────────────────────────── -->
-            <div class="d-section-label">Revenue · Stripe</div>
+            <div class="d-section-label">Revenue · Stripe <a href="financials.html" class="d-card-link" style="letter-spacing:0;text-transform:none;">Open financials →</a></div>
             <div class="rev-grid" id="rev-grid">
                 <div class="rev-card mrr">
                     <div class="rc-label">Monthly recurring</div>
@@ -409,6 +423,88 @@
                     <div class="k-bar"></div>
                 </a>
             </div>
+
+            <!-- ── Growth · founder seats, coverage, reviews ───── -->
+            <div class="d-section-label">Growth · seats, coverage &amp; goals</div>
+            <div class="growth-grid">
+                <!-- Founder seats + revenue goal → Financials -->
+                <a href="financials.html" class="d-card growth-card">
+                    <div class="d-card-hd">
+                        <h3 class="d-card-title">Founder seats &amp; revenue goal</h3>
+                        <span class="d-card-link">Financials →</span>
+                    </div>
+                    <div class="d-card-body">
+                        <div class="gc-big" id="gc-seats">—</div>
+                        <div class="gc-sub" id="gc-seats-sub">founder seats filled</div>
+                        <div class="gc-bar"><span id="gc-mrr-bar" style="width:0%;"></span></div>
+                        <div class="gc-sub" id="gc-mrr-sub">MRR —</div>
+                    </div>
+                </a>
+                <!-- Agent coverage → Metrics & Database coverage tab -->
+                <a href="system.html?tab=coverage" class="d-card growth-card">
+                    <div class="d-card-hd">
+                        <h3 class="d-card-title">Agent coverage</h3>
+                        <span class="d-card-link">Coverage map →</span>
+                    </div>
+                    <div class="d-card-body">
+                        <div class="gc-big" id="gc-cov">—</div>
+                        <div class="gc-sub" id="gc-cov-sub">towns with an agent</div>
+                        <div class="gc-rows" id="gc-tiers"></div>
+                    </div>
+                </a>
+                <!-- Reviews to moderate → Agents · Reviews tab -->
+                <a href="agents.html?tab=reviews" class="d-card growth-card">
+                    <div class="d-card-hd">
+                        <h3 class="d-card-title">Reviews to moderate</h3>
+                        <span class="d-card-link">Open reviews →</span>
+                    </div>
+                    <div class="d-card-body">
+                        <div class="gc-big" id="gc-reviews">—</div>
+                        <div class="gc-sub" id="gc-reviews-sub">awaiting approval</div>
+                    </div>
+                </a>
+            </div>
+            <script>
+            (function () {
+                const money = n => '$' + Math.round(n || 0).toLocaleString('en-US');
+                // Founder seats + MRR-to-goal (from the projections endpoint).
+                fetch('/api/admin/financials/projections', { credentials: 'include' })
+                    .then(r => r.ok ? r.json() : null).then(d => {
+                        if (!d) return;
+                        const f = d.founder || {}, mrr = d.mrr || {};
+                        document.getElementById('gc-seats').textContent = `${f.seatsFilled ?? 0} / ${f.seatsTotal ?? 0}`;
+                        const pct = mrr.full ? Math.min(100, Math.round((mrr.now / mrr.full) * 100)) : 0;
+                        document.getElementById('gc-mrr-bar').style.width = pct + '%';
+                        document.getElementById('gc-mrr-sub').textContent =
+                            `MRR ${money(mrr.now)} of ${money(mrr.full)} at full (${pct}%)`;
+                    }).catch(() => {});
+                // Agent coverage summary (from the coverage endpoint).
+                fetch('/api/admin/metrics/agent-coverage', { credentials: 'include' })
+                    .then(r => r.ok ? r.json() : null).then(rows => {
+                        if (!Array.isArray(rows)) return;
+                        const total = rows.length;
+                        const covered = rows.filter(t => (t.total || 0) > 0).length;
+                        const gaps = total - covered;
+                        const sum = k => rows.reduce((a, t) => a + (t[k] || 0), 0);
+                        document.getElementById('gc-cov').textContent = `${covered} / ${total}`;
+                        document.getElementById('gc-cov-sub').innerHTML = gaps
+                            ? `towns covered · <span class="gc-warn">${gaps} with no agent</span>`
+                            : 'towns covered · every town has an agent';
+                        document.getElementById('gc-tiers').innerHTML = [
+                            ['Founders', sum('founders')], ['Elite', sum('elite')],
+                            ['Prime', sum('prime')], ['Basic', sum('basic')],
+                        ].map(([l, n]) => `<div class="gr"><b>${n}</b>${l}</div>`).join('');
+                    }).catch(() => {});
+                // Reviews awaiting moderation.
+                fetch('/api/reviews/admin?status=pending', { credentials: 'include' })
+                    .then(r => r.ok ? r.json() : null).then(rows => {
+                        const n = Array.isArray(rows) ? rows.length : 0;
+                        document.getElementById('gc-reviews').textContent = n;
+                        document.getElementById('gc-reviews-sub').textContent =
+                            n === 0 ? 'all caught up' : (n === 1 ? 'review awaiting approval' : 'reviews awaiting approval');
+                    }).catch(() => {});
+            })();
+            </script>
 
             <!-- ── Lead routing readiness ──────────────────────── -->
             <div class="d-section-label">Lead routing · will new leads get assigned?</div>
