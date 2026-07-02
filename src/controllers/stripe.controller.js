@@ -282,6 +282,107 @@ function businessTierFromPriceId(priceId) {
 // Gated: the caller must already have an agents row — no profile, no paid
 // plan. The pricing page never sends payment-less users here, but the
 // server enforces it too so a hand-crafted POST can't bypass it.
+// ─── Founder seats (per-lake exclusive) — FEATURE-FLAGGED, HIDDEN ────────────
+// A founder seat is a per-lake add-on: the buyer gets 100% of that lake's leads
+// plus top routing priority in their towns. Price is per-lake and variable
+// (lakes.founder_seat_price, floor $249, ceiling $5000), so checkout uses Stripe
+// dynamic price_data rather than a fixed price ID. Gated behind
+// FOUNDER_SEATS_PUBLIC — default OFF, so nothing is buyable until we flip it on.
+// (Admins can still seat founders manually via lake.controller setFounder.)
+const FOUNDER_SEATS_PUBLIC = process.env.FOUNDER_SEATS_PUBLIC === 'true';
+exports.FOUNDER_SEATS_PUBLIC = FOUNDER_SEATS_PUBLIC;
+
+const FOUNDER_SEAT_FLOOR   = 249;
+const FOUNDER_SEAT_CEILING = 5000;
+// Annual = 10× monthly (matches the ~2-months-free convention on the other tiers).
+const FOUNDER_ANNUAL_MULTIPLIER = 10;
+
+// POST /api/stripe/founder-seat/checkout  { lakeId, period }
+// Hidden until FOUNDER_SEATS_PUBLIC=true. Creates a subscription Checkout with
+// the lake's own price. On success the webhook flags agent_lakes.is_founder.
+exports.createFounderSeatCheckout = async (req, res) => {
+    try {
+        if (!FOUNDER_SEATS_PUBLIC) {
+            return res.status(404).json({ error: 'Founder seats are not available yet.' });
+        }
+        const stripe = getStripe();
+        if (!stripe) {
+            return res.status(503).json({ error: 'Stripe is not configured on this server. Set STRIPE_SECRET_KEY.' });
+        }
+
+        const { lakeId, period } = req.body;
+        if (!lakeId) return res.status(400).json({ error: 'A lakeId is required.' });
+        if (!['monthly', 'annual'].includes(period)) {
+            return res.status(400).json({ error: 'Invalid period. Must be monthly or annual.' });
+        }
+
+        // Caller must be an agent with a profile (same gate as the tier checkout).
+        const { rows: agentRows } = await pool.query(
+            `SELECT a.id, a.stripe_customer_id, u.email
+               FROM agents a JOIN users u ON u.id = a.user_id
+              WHERE a.user_id = $1 LIMIT 1`,
+            [req.user.userId]
+        );
+        if (!agentRows.length) {
+            return res.status(400).json({ error: 'Create your agent profile before claiming a founder seat.' });
+        }
+        const agent = agentRows[0];
+
+        // Lake must be published, have a listed (or AI) price, and be unclaimed.
+        const { rows: lakeRows } = await pool.query(
+            `SELECT id, name, status,
+                    COALESCE(founder_seat_price, founder_seat_ai_value) AS price,
+                    EXISTS (SELECT 1 FROM agent_lakes al WHERE al.lake_id = lakes.id AND al.is_founder) AS taken
+               FROM lakes WHERE id = $1 LIMIT 1`,
+            [lakeId]
+        );
+        const lake = lakeRows[0];
+        if (!lake || lake.status !== 'published') {
+            return res.status(404).json({ error: 'Lake not found.' });
+        }
+        if (lake.taken) {
+            return res.status(409).json({ error: "This lake's founder seat is already taken." });
+        }
+        if (!lake.price) {
+            return res.status(400).json({ error: "This lake isn't open for founder seats yet." });
+        }
+
+        // Enforce the floor/ceiling server-side regardless of what's stored.
+        const monthly = Math.max(FOUNDER_SEAT_FLOOR, Math.min(FOUNDER_SEAT_CEILING, parseInt(lake.price, 10) || 0));
+        const amount  = period === 'annual' ? monthly * FOUNDER_ANNUAL_MULTIPLIER : monthly;
+        const interval = period === 'annual' ? 'year' : 'month';
+
+        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const meta = { kind: 'founder_seat', lake_id: lake.id, agent_id: agent.id, user_id: req.user.userId };
+
+        const session = await stripe.checkout.sessions.create({
+            mode: 'subscription',
+            payment_method_types: ['card'],
+            line_items: [{
+                quantity: 1,
+                price_data: {
+                    currency: 'usd',
+                    unit_amount: amount * 100,
+                    recurring: { interval },
+                    product_data: { name: `Founder seat — ${lake.name}` },
+                },
+            }],
+            metadata:          meta,
+            subscription_data: { metadata: meta },
+            ...(agent.stripe_customer_id
+                ? { customer: agent.stripe_customer_id }
+                : { customer_email: agent.email }),
+            success_url: `${baseUrl}/pages/public/checkout-success.html?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url:  `${baseUrl}/pages/public/pricing.html?canceled=1`,
+        });
+
+        return res.json({ url: session.url });
+    } catch (err) {
+        console.error('[Stripe Founder Seat] Error creating session:', err.message);
+        return res.status(500).json({ error: 'Failed to create founder-seat checkout session.' });
+    }
+};
+
 exports.createCheckoutSession = async (req, res) => {
     try {
         const stripe = getStripe();
@@ -585,6 +686,51 @@ exports.handleWebhook = async (req, res) => {
                     break;
                 }
 
+                // Founder-seat purchases (per-lake add-on) carry kind='founder_seat'.
+                // They flag agent_lakes.is_founder for that lake rather than touching
+                // the agent's membership tier. Handled before the agent path.
+                if (session.metadata?.kind === 'founder_seat') {
+                    const { lake_id, agent_id, user_id } = session.metadata;
+                    if (!lake_id || !agent_id) {
+                        console.error('[Stripe Webhook] founder_seat checkout missing lake_id/agent_id');
+                        break;
+                    }
+                    const client = await pool.connect();
+                    try {
+                        await client.query('BEGIN');
+                        // One founder per lake — clear any existing seat first.
+                        await client.query(`UPDATE agent_lakes SET is_founder = FALSE WHERE lake_id = $1`, [lake_id]);
+                        await client.query(
+                            `INSERT INTO agent_lakes (agent_id, lake_id, is_founder)
+                             VALUES ($1, $2, TRUE)
+                             ON CONFLICT (agent_id, lake_id) DO UPDATE SET is_founder = TRUE`,
+                            [agent_id, lake_id]
+                        );
+                        // Track the subscription on the lake so a cancellation can
+                        // find it and release the seat.
+                        await client.query(
+                            `UPDATE lakes SET founder_seat_subscription_id = $1 WHERE id = $2`,
+                            [session.subscription, lake_id]
+                        );
+                        await client.query('COMMIT');
+                    } catch (e) {
+                        await client.query('ROLLBACK').catch(() => {});
+                        console.error('[Stripe Webhook] founder_seat seating failed:', e.message);
+                        break;
+                    } finally {
+                        client.release();
+                    }
+                    console.log(`[Stripe Webhook] Founder seat: agent ${agent_id} seated on lake ${lake_id}`);
+                    logActivity({
+                        event_type: 'lake.founder.purchased',
+                        event_scope: 'billing',
+                        actor: { type: 'stripe', label: 'Stripe' },
+                        target: { type: 'lake', id: lake_id, label: 'founder seat' },
+                        details: { agent_id, user_id, subscription_id: session.subscription },
+                    });
+                    break;
+                }
+
                 const userId  = session.metadata?.user_id;
 
                 if (!userId) {
@@ -694,6 +840,30 @@ exports.handleWebhook = async (req, res) => {
                         severity: 'warning',
                         actor: { type: 'stripe', label: 'Stripe' },
                         target: { type: 'business', id: bizHit.rows[0].id, label: contact?.business_name || bizHit.rows[0].id },
+                        details: { subscription_id: subscriptionId },
+                    });
+                    break;
+                }
+
+                // Founder-seat subscriptions live on lakes, not agents — release
+                // the seat (clear is_founder + the tracked subscription) if this
+                // cancellation matches one.
+                const seatHit = await pool.query(
+                    `UPDATE lakes SET founder_seat_subscription_id = NULL
+                      WHERE founder_seat_subscription_id = $1
+                      RETURNING id`,
+                    [subscriptionId]
+                );
+                if (seatHit.rowCount) {
+                    const lakeId = seatHit.rows[0].id;
+                    await pool.query(`UPDATE agent_lakes SET is_founder = FALSE WHERE lake_id = $1`, [lakeId]);
+                    console.log(`[Stripe Webhook] Founder seat released on lake ${lakeId} (subscription canceled)`);
+                    logActivity({
+                        event_type: 'lake.founder.canceled',
+                        event_scope: 'billing',
+                        severity: 'warning',
+                        actor: { type: 'stripe', label: 'Stripe' },
+                        target: { type: 'lake', id: lakeId, label: 'founder seat' },
                         details: { subscription_id: subscriptionId },
                     });
                     break;

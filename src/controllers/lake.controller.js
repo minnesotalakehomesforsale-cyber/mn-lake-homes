@@ -831,9 +831,11 @@ exports.replaceAgents = async (req, res) => {
     }
 };
 
-// Seat (or clear) the FOUNDING agent for a lake. The founder gets 70% of the
-// lake's leads via the router. At most one founder per lake (enforced by a
-// partial unique index); this also links the agent to the lake if needed.
+// Seat (or clear) the FOUNDING agent for a lake. The founder gets 100% of the
+// lake's leads via the router (plus top priority in their towns). At most one
+// founder per lake (partial unique index); this also links the agent if needed.
+// Admin path — the public purchase flow (stripe.controller createFounderSeatCheckout)
+// is feature-flagged off until FOUNDER_SEATS_PUBLIC=true.
 // Body: { agentId } to seat, or { agentId: null } to clear the lake's founder.
 exports.setFounder = async (req, res) => {
     if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
