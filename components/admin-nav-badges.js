@@ -91,6 +91,26 @@
         } catch (_) { /* silent — not critical */ }
     }
 
+    // Agents — reviews awaiting moderation. Surfaces on the Agents Directory
+    // nav item so pending customer reviews (moderated in Agents → Reviews) are
+    // visible from anywhere in the admin.
+    async function refreshReviewsBadge() {
+        const badge = document.getElementById('nav-badge-agents');
+        if (!badge) return;
+        try {
+            const res = await fetch('/api/reviews/admin?status=pending');
+            if (!res.ok) return;
+            const rows = await res.json();
+            const count = Array.isArray(rows) ? rows.length : 0;
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        } catch (_) { /* silent — not critical */ }
+    }
+
     // System — error + warning rows in the activity log over the last 24h.
     // Surfaces failing webhooks / sync errors / etc. in the sidebar without
     // making the admin open the log to notice something's wrong.
@@ -117,6 +137,7 @@
         refreshLeadsBadge();
         refreshMessagesBadge();
         refreshSystemBadge();
+        refreshReviewsBadge();
     }
 
     // Expose so pages can trigger an immediate refresh after user actions
@@ -126,6 +147,7 @@
     window.refreshLeadsBadge      = refreshLeadsBadge;
     window.refreshMessagesBadge   = refreshMessagesBadge;
     window.refreshSystemBadge     = refreshSystemBadge;
+    window.refreshReviewsBadge    = refreshReviewsBadge;
 
     // First fetch on load, then every 60s for most badges. Cash offers
     // refresh every 30s (faster — a new offer is the highest-signal event).
@@ -137,6 +159,7 @@
             refreshLeadsBadge();
             refreshMessagesBadge();
             refreshSystemBadge();
+            refreshReviewsBadge();
         }, 60_000);
         setInterval(refreshCashOfferBadge, 30_000);
     });

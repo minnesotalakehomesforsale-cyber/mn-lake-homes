@@ -52,6 +52,25 @@
         .filter-tab.active { color: var(--accent-blue, #1d6df2); border-bottom-color: var(--accent-blue, #1d6df2); }
         .filter-container { border-bottom: 1px solid #edf2f7; display: flex; gap: 1rem; margin-bottom: 2rem; overflow-x: auto; }
 
+        /* Top-level tabs: Agents directory | Reviews moderation */
+        .agent-tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid #e2e8f0; margin-bottom: 1.75rem; }
+        .agent-tab {
+            padding: 0.8rem 1.4rem; border: none; background: transparent; cursor: pointer;
+            font-family: inherit; font-weight: 700; font-size: 0.95rem; color: #718096;
+            border-bottom: 2.5px solid transparent; margin-bottom: -1px;
+            display: inline-flex; align-items: center; gap: 0.5rem; transition: color 0.15s, border-color 0.15s;
+        }
+        .agent-tab:hover { color: #2d3748; }
+        .agent-tab.active { color: var(--accent-blue, #1d6df2); border-bottom-color: var(--accent-blue, #1d6df2); }
+        .atab-badge {
+            min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px;
+            background: #e53e3e; color: #fff; font-size: 0.72rem; font-weight: 800;
+            display: inline-flex; align-items: center; justify-content: center; line-height: 1;
+        }
+        .agent-pane { display: none; }
+        .agent-pane.active { display: block; }
+        .reviews-frame { width: 100%; border: 0; display: block; background: #fff; border-radius: 12px; min-height: 600px; }
+
         /* Table */
         .ledger-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid #edf2f7; }
         .ledger-table th { background: #f7f9fa; padding: 1.25rem 1.5rem; text-align: left; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; border-bottom: 1px solid #edf2f7; font-weight: 700; }
@@ -109,9 +128,21 @@
                 <h1 style="font-size: 2rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; margin-bottom: 0.5rem;">Agents Directory</h1>
                 <p style="color: #718096; font-size: 1rem;">Click any row to open the full agent detail and approval workflow.</p>
             </div>
-            <button class="btn-add" onclick="openAddModal()">+ Add Agent</button>
+            <button class="btn-add" id="btn-add-agent" onclick="openAddModal()">+ Add Agent</button>
         </header>
 
+        <!-- Top-level tabs: the agent directory and the review moderation queue
+             both live under "Agents". The Reviews tab embeds reviews.html and
+             shows a red badge with the count of reviews awaiting moderation. -->
+        <div class="agent-tabs" role="tablist">
+            <button id="atab-agents"  class="agent-tab active" onclick="showAgentTab('agents')">Agents</button>
+            <button id="atab-reviews" class="agent-tab" onclick="showAgentTab('reviews')">
+                Reviews <span id="reviews-tab-badge" class="atab-badge" style="display:none;"></span>
+            </button>
+        </div>
+
+        <!-- ── Agents directory ─────────────────────────────────── -->
+        <div id="pane-agents" class="agent-pane active">
         <!-- Search + Filter Bar -->
         <div class="controls-bar">
             <input type="search" id="search-input" class="search-input" placeholder="Search by name, email, or brokerage..."
@@ -158,6 +189,15 @@
                 <tr><td colspan="7" style="text-align:center;padding:2rem;color:#718096;">Loading...</td></tr>
             </tbody>
         </table>
+        </div><!-- /pane-agents -->
+
+        <!-- ── Reviews moderation (embeds reviews.html) ─────────── -->
+        <div id="pane-reviews" class="agent-pane">
+            <p style="color:#718096;font-size:0.95rem;margin:0 0 1rem;">
+                Approve customer reviews to publish them on agent &amp; business profiles. Pending reviews show a badge on the tab above.
+            </p>
+            <iframe id="frame-reviews" class="reviews-frame" data-src="/pages/admin/reviews.html?embed=1" title="Reviews"></iframe>
+        </div>
     </main>
 </div>
 
@@ -229,7 +269,53 @@
 
     async function init() {
         await loadAgents();
+        refreshReviewsTabBadge();
+        // If deep-linked with ?tab=reviews, open the Reviews tab straight away.
+        const t = new URLSearchParams(window.location.search).get('tab');
+        if (t === 'reviews') showAgentTab('reviews');
     }
+
+    // ── Top-level tab switching (Agents | Reviews) ─────────────────────────────
+    function showAgentTab(name) {
+        const isReviews = name === 'reviews';
+        document.getElementById('atab-agents').classList.toggle('active', !isReviews);
+        document.getElementById('atab-reviews').classList.toggle('active', isReviews);
+        document.getElementById('pane-agents').classList.toggle('active', !isReviews);
+        document.getElementById('pane-reviews').classList.toggle('active', isReviews);
+        // "+ Add Agent" only makes sense on the directory.
+        const addBtn = document.getElementById('btn-add-agent');
+        if (addBtn) addBtn.style.display = isReviews ? 'none' : '';
+        // Lazy-load the reviews iframe on first open.
+        if (isReviews) {
+            const f = document.getElementById('frame-reviews');
+            if (f && !f.src) f.src = f.dataset.src;
+        }
+        const url = new URL(window.location);
+        if (isReviews) url.searchParams.set('tab', 'reviews'); else url.searchParams.delete('tab');
+        history.replaceState(null, '', url);
+    }
+
+    // Red badge on the Reviews tab = count of reviews awaiting moderation.
+    async function refreshReviewsTabBadge() {
+        const badge = document.getElementById('reviews-tab-badge');
+        if (!badge) return;
+        try {
+            const res = await fetch('/api/reviews/admin?status=pending');
+            if (!res.ok) return;
+            const rows = await res.json();
+            const n = Array.isArray(rows) ? rows.length : 0;
+            badge.textContent = n > 99 ? '99+' : n;
+            badge.style.display = n > 0 ? 'inline-flex' : 'none';
+        } catch (_) { /* silent */ }
+    }
+
+    // Auto-resize the embedded reviews iframe as its content grows.
+    window.addEventListener('message', (e) => {
+        const m = e.data;
+        if (!m || m.lt !== 'height' || m.frame !== 'reviews' || typeof m.h !== 'number') return;
+        const f = document.getElementById('frame-reviews');
+        if (f) f.style.height = Math.max(600, m.h + 8) + 'px';
+    });
 
     // ── Data Loading ──────────────────────────────────────────────────────────
     async function loadAgents() {

@@ -8,6 +8,13 @@
     <link rel="stylesheet" href="../../styles/style.css">
     <style>
         html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: #1a202c; }
+        /* Embed mode (?embed=1) — iframed inside agents.html Reviews tab. */
+        body.lt-embed admin-sidebar,
+        body.lt-embed admin-assistant,
+        body.lt-embed .admin-main > header { display: none !important; }
+        body.lt-embed .admin-wrap { display: block !important; }
+        body.lt-embed .admin-main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+        body.lt-embed { background: #fff; }
         .filter-tab { padding: 0.7rem 1.1rem; border: none; background: transparent; font-weight: 600; color: #718096; border-bottom: 2px solid transparent; cursor: pointer; }
         .filter-tab.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
         .filter-container { border-bottom: 1px solid #edf2f7; display: flex; gap: 0.5rem; margin-bottom: 1.75rem; flex-wrap: wrap; }
@@ -138,6 +145,26 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => { load(); refreshPendingCount(); });
+    </script>
+
+    <!-- Embed-mode helper. Active only when loaded via agents.html?...embed=1.
+         Hides chrome and posts document height so the iframe auto-grows. -->
+    <script>
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('embed') !== '1') return;
+            document.body.classList.add('lt-embed');
+            let lastH = 0;
+            function postHeight() {
+                const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+                if (h !== lastH) {
+                    lastH = h;
+                    window.parent.postMessage({ lt: 'height', frame: 'reviews', h }, '*');
+                }
+            }
+            window.addEventListener('load', postHeight);
+            setInterval(postHeight, 500);
+        })();
     </script>
 </body>
 </html>

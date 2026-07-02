@@ -198,7 +198,7 @@
     // to every admin page. Add a new item by appending a row below.
     const NAV = [
         { key: 'dashboard',   href: 'dashboard.html',  label: 'Dashboard' },
-        { key: 'agents',      href: 'agents.html',     label: 'Agents Directory' },
+        { key: 'agents',      href: 'agents.html',     label: 'Agents Directory', badgeId: 'nav-badge-agents' },
         { key: 'leads',       href: 'leads.html',      label: 'Central Leads', badgeId: 'nav-badge-leads' },
         { key: 'inquiries',   href: 'inquiries.html',  label: 'Inquiries', badgeId: 'nav-badge-inquiries' },
         { key: 'messages',    href: 'messages.html',   label: 'Messages', badgeId: 'nav-badge-messages' },
