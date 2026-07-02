@@ -10,11 +10,15 @@
  *      EXPLICITLY names a lake (buyer picked it on the lake page/filter, or a
  *      seller picked it). If that lake has a seated founder, the founder gets
  *      100% of the lake's leads; with no founder, its other lake-linked agents
- *      round-robin. We never infer "on the lake" from an address (see below).
+ *      go to the weighted lottery below. We never infer "on the lake" from an
+ *      address (see below).
  *   2. TOWN/tag routing (fallback). Find tags within match radius, closest
- *      first; walk nearest-to-farthest and, per tag, round-robin published
- *      agents by tier (premium → basic) on oldest last_routed_at (NULL first).
- *      A founder still competes here normally via their own service-area tags.
+ *      first; walk nearest-to-farthest and, at the first tag with any
+ *      published agent, run a WEIGHTED LOTTERY: each agent gets balls by tier
+ *      (Founder 4 · Elite 3 · Prime 2 · Basic 1) and one ball is drawn at
+ *      random. Higher tiers get better odds; lower tiers still win sometimes;
+ *      same-tier agents share evenly. A founder competes here by their own
+ *      membership tier via their service-area tags (their 100% is lake-only).
  *   3. Bump the lake/tag lead_routing_counter and the winner's last_routed_at.
  *   4. Return { userId, agentId, lakeId|tagId, tierCode } or null if no match.
  *
@@ -23,8 +27,13 @@
  */
 const pool = require('../database/pool');
 
-// Tier priority: lower number = higher priority. Matches memberships.sort_priority.
-const TIER_RANK = { founder: 1, top_agent: 2, premium: 3, mn_lake_specialist: 4, basic: 5 };
+// Lottery weights ("balls") by tier. Higher tier = more balls = better odds,
+// but every tier keeps a real shot and same-tier agents share evenly. A lead
+// is drawn at random from the pooled balls of all eligible agents in a tag.
+//   Founder 4 · Elite (top_agent) 3 · Prime (mn_lake_specialist) 2 · Basic 1.
+// Unknown/legacy codes fall back to 1 ball so nobody is silently excluded.
+const TIER_BALLS = { founder: 4, top_agent: 3, premium: 2, mn_lake_specialist: 2, basic: 1 };
+const DEFAULT_BALLS = 1;
 
 const EARTH_RADIUS_MILES = 3959;
 
@@ -97,21 +106,26 @@ async function agentsForTag(tagId) {
 }
 
 /**
- * Pick the winning agent from tier-bucketed agents: walk tiers in priority
- * order (founder → top_agent → premium → … → basic) and return the first
- * non-empty bucket's round-robin pick (buckets are pre-sorted oldest
- * last_routed_at first). Founder exclusivity for lakes is handled by the
- * caller before this runs, so in practice this only sees non-founder tiers.
- * Returns the agent row or null.
+ * Weighted-lottery pick from tier-bucketed agents. Every eligible agent gets
+ * TIER_BALLS[tier] balls (Founder 4, Elite 3, Prime 2, Basic 1); we pool all
+ * the balls and draw one at random. So a higher tier has better odds than a
+ * lower one, and two agents in the same tier have equal odds — with 20 basic
+ * agents each holding one ball, it plays out like a fair rotation among them.
+ *
+ * Lake founder exclusivity is handled by the caller before this runs, so here
+ * a 'founder' bucket only appears via an admin-set founder membership; it's
+ * weighted like any other tier. Returns the winning agent row, or null.
  */
 function pickFromBuckets(buckets) {
-    const tiers = Object.keys(buckets)
-        .sort((a, b) => (TIER_RANK[a] ?? 99) - (TIER_RANK[b] ?? 99));
-    for (const code of tiers) {
-        const pool = buckets[code] || [];
-        if (pool.length) return pool[0];
+    const balls = [];
+    for (const [code, agents] of Object.entries(buckets)) {
+        const weight = TIER_BALLS[code] ?? DEFAULT_BALLS;
+        for (const agent of (agents || [])) {
+            for (let i = 0; i < weight; i++) balls.push(agent);
+        }
     }
-    return null;
+    if (!balls.length) return null;
+    return balls[Math.floor(Math.random() * balls.length)];
 }
 
 async function getLakeById(lakeId) {
