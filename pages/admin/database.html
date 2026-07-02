@@ -79,6 +79,9 @@
         .sev-pill.error   { background: #fee2e2; color: #c53030; }
 
         .activity-empty { padding: 4rem 2rem; text-align: center; color: #a0aec0; font-size: 0.9rem; }
+        .activity-more { padding: 0.9rem 2rem; text-align: center; border-top: 1px solid #edf2f7; }
+        .activity-more-btn { background: #f7f9fa; border: 1px solid #e2e8f0; border-radius: 999px; padding: 0.5rem 1.4rem; font: inherit; font-size: 0.85rem; font-weight: 700; color: #1d6df2; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+        .activity-more-btn:hover { background: #ebf4ff; border-color: #1d6df2; }
 
         .refresh-btn { padding: 0.45rem 1rem; background: #fff; color: #1a202c; border: 1px solid #e2e8f0; border-radius: 7px; font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
         .refresh-btn:hover { border-color: #1d6df2; color: #1d6df2; }
@@ -250,17 +253,34 @@
 
             const res = await fetch('/api/activity?' + params.toString());
             if (!res.ok) throw new Error();
-            const rows = await res.json();
-
-            if (!rows.length) {
-                list.innerHTML = '<li class="activity-empty">No events match this filter yet.</li>';
-                return;
-            }
-
-            list.innerHTML = rows.map(renderRow).join('');
+            _activityRows = await res.json();
+            _activityShown = 10;              // reset the reveal on every (re)load
+            renderActivity();
         } catch {
             list.innerHTML = '<li class="activity-empty">Failed to load activity.</li>';
         }
+    }
+
+    // Progressive reveal so you don't scroll a 200-row wall: 10 → Show all (100)
+    // → Show more (everything loaded).
+    let _activityRows = [], _activityShown = 10;
+    function renderActivity() {
+        const list = document.getElementById('activity-list');
+        if (!_activityRows.length) {
+            list.innerHTML = '<li class="activity-empty">No events match this filter yet.</li>';
+            return;
+        }
+        let html = _activityRows.slice(0, _activityShown).map(renderRow).join('');
+        if (_activityShown < _activityRows.length) {
+            const remaining = _activityRows.length - _activityShown;
+            const label = _activityShown < 100 ? 'Show all' : 'Show more';
+            html += `<li class="activity-more"><button class="activity-more-btn" onclick="showMoreActivity()">${label} · ${remaining} more</button></li>`;
+        }
+        list.innerHTML = html;
+    }
+    function showMoreActivity() {
+        _activityShown = _activityShown < 100 ? 100 : _activityRows.length;
+        renderActivity();
     }
 
     function renderRow(e) {
