@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Business Coverage | MN Lake Homes Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', -apple-system, sans-serif; color: #1a202c; }
+        /* Embed mode (?embed=1) — iframed inside system.html. */
+        body.lt-embed admin-sidebar,
+        body.lt-embed admin-assistant,
+        body.lt-embed .admin-main > header { display: none !important; }
+        body.lt-embed .admin-wrap { display: block !important; }
+        body.lt-embed .admin-main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+        body.lt-embed { background: #fff; }
+
+        .bc-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem; }
+        .bc-stat { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; padding: 1rem 1.15rem; }
+        .bc-stat .label { font-size: 0.66rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #a0aec0; margin: 0 0 0.3rem; }
+        .bc-stat .big { font-size: 1.55rem; font-weight: 800; color: #1a202c; letter-spacing: -0.4px; line-height: 1.1; }
+        .bc-stat .sub { font-size: 0.74rem; color: #718096; margin-top: 0.25rem; }
+        .bc-stat.warn .big { color: #b45309; }
+
+        .bc-controls { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+        .bc-pill { padding: 0.4rem 0.85rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 999px; font: inherit; font-size: 0.82rem; font-weight: 600; color: #4a5568; cursor: pointer; }
+        .bc-pill:hover { border-color: #cbd5e0; }
+        .bc-pill.active { background: #1d6df2; border-color: #1d6df2; color: #fff; }
+        .bc-search { flex: 1; min-width: 200px; max-width: 320px; padding: 0.5rem 0.9rem; border: 1px solid #e2e8f0; border-radius: 999px; font: inherit; font-size: 0.85rem; outline: none; }
+        .bc-search:focus { border-color: #1d6df2; }
+        .bc-type-sel { padding: 0.5rem 0.9rem; border: 1px solid #e2e8f0; border-radius: 999px; font: inherit; font-size: 0.82rem; font-weight: 600; color: #4a5568; background: #fff; cursor: pointer; }
+
+        .bc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; }
+        .bc-cell { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; padding: 0.85rem 0.95rem; transition: transform 0.12s, box-shadow 0.15s; }
+        .bc-cell:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+        .bc-cell.gap { border-color: #fbd38d; background: #fffaf0; }
+        .bc-cell .name { font-size: 0.82rem; font-weight: 700; color: #1a202c; margin: 0 0 0.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bc-cell .state { font-size: 0.68rem; color: #a0aec0; margin-bottom: 0.5rem; }
+        .bc-cell .total { font-size: 1.5rem; font-weight: 800; color: #1a202c; line-height: 1; letter-spacing: -0.3px; }
+        .bc-cell .total.zero { color: #b45309; }
+        .bc-break { display: flex; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; color: #4a5568; }
+        .bc-break span { display: inline-flex; align-items: center; gap: 0.22rem; }
+        .bc-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+        .dot-prem { background: #059669; }
+        .dot-std  { background: #1d6df2; }
+        .dot-free { background: #a0aec0; }
+        .bc-types { margin-top: 0.55rem; display: flex; flex-wrap: wrap; gap: 0.25rem; }
+        .bc-type-chip { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; color: #4a5568; background: #f1f5f9; border-radius: 6px; padding: 0.1rem 0.4rem; }
+        .bc-legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.74rem; color: #718096; margin-top: 1rem; align-items: center; }
+        .bc-empty { padding: 2.5rem; text-align: center; color: #a0aec0; }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-assistant.js" defer></script>
+</head>
+<body>
+    <div class="admin-wrap">
+        <admin-sidebar active="system"></admin-sidebar>
+        <main class="admin-main">
+            <header style="margin-bottom: 1.25rem;">
+                <h1 style="font-size: 1.75rem; font-weight: 800; letter-spacing: -0.6px; margin: 0 0 0.25rem;">Business coverage</h1>
+                <p style="color: #718096; font-size: 0.92rem; margin: 0;">Live directory businesses per service area — where you're covered and where you're not. Orange = an area with zero live businesses.</p>
+            </header>
+
+            <div id="bc-summary" class="bc-summary"></div>
+
+            <div class="bc-controls">
+                <button class="bc-pill active" data-filter="all" onclick="setFilter('all', this)">All areas</button>
+                <button class="bc-pill" data-filter="has" onclick="setFilter('has', this)">Has businesses</button>
+                <button class="bc-pill" data-filter="gap" onclick="setFilter('gap', this)">Gaps (zero)</button>
+                <select id="bc-type" class="bc-type-sel" onchange="render()">
+                    <option value="">Any category</option>
+                    <option value="marina">Marina</option>
+                    <option value="outdoor_recreation">Resort / Outdoor</option>
+                    <option value="restaurant">Restaurant</option>
+                    <option value="boat_rental">Boat rental</option>
+                    <option value="builder">Builder</option>
+                    <option value="photographer">Photographer</option>
+                    <option value="service">Service</option>
+                    <option value="other">Other</option>
+                </select>
+                <input id="bc-search" class="bc-search" type="search" placeholder="Search area or state…" oninput="render()">
+            </div>
+
+            <div id="bc-grid" class="bc-grid"><div class="bc-empty">Loading…</div></div>
+
+            <div class="bc-legend">
+                <span><span class="bc-dot dot-prem"></span> Premium (Featured Partner)</span>
+                <span><span class="bc-dot dot-std"></span> Standard (Local Spotlight)</span>
+                <span><span class="bc-dot dot-free"></span> Free</span>
+                <span id="bc-note"></span>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        let _rows = [];
+        let _filter = 'all';
+
+        const TYPE_LABEL = {
+            marina: 'Marina', outdoor_recreation: 'Resort', restaurant: 'Restaurant',
+            boat_rental: 'Boat rental', builder: 'Builder', photographer: 'Photo',
+            service: 'Service', other: 'Other',
+        };
+
+        function setFilter(f, btn) {
+            _filter = f;
+            document.querySelectorAll('.bc-pill').forEach(p => p.classList.toggle('active', p === btn));
+            render();
+        }
+
+        async function load() {
+            try {
+                const r = await fetch('/api/admin/metrics/business-coverage', { credentials: 'include' });
+                _rows = r.ok ? await r.json() : [];
+            } catch (_) { _rows = []; }
+            summarize();
+            render();
+        }
+
+        function summarize() {
+            const total = _rows.length;
+            const covered = _rows.filter(r => (r.total || 0) > 0).length;
+            const gaps = total - covered;
+            const live = _rows.reduce((a, r) => a + (r.total || 0), 0);
+            const el = document.getElementById('bc-summary');
+            el.innerHTML = `
+                <div class="bc-stat"><div class="label">Service areas</div><div class="big">${total}</div><div class="sub">active geo tags</div></div>
+                <div class="bc-stat"><div class="label">Areas covered</div><div class="big">${covered}</div><div class="sub">${total ? Math.round(covered / total * 100) : 0}% of areas</div></div>
+                <div class="bc-stat warn"><div class="label">Areas with a gap</div><div class="big">${gaps}</div><div class="sub">zero live businesses</div></div>
+                <div class="bc-stat"><div class="label">Live businesses</div><div class="big">${live}</div><div class="sub">across the directory</div></div>`;
+        }
+
+        function render() {
+            const q = document.getElementById('bc-search').value.toLowerCase().trim();
+            const type = document.getElementById('bc-type').value;
+            const grid = document.getElementById('bc-grid');
+            let rows = _rows.slice();
+
+            if (type) rows = rows.filter(r => Array.isArray(r.types) && r.types.includes(type));
+            if (_filter === 'has') rows = rows.filter(r => (r.total || 0) > 0);
+            if (_filter === 'gap') rows = rows.filter(r => (r.total || 0) === 0);
+            if (q) rows = rows.filter(r => `${r.name || ''} ${r.state || ''} ${r.region || ''}`.toLowerCase().includes(q));
+
+            // Gaps first, then fewest businesses first — the work-list order.
+            rows.sort((a, b) => (a.total || 0) - (b.total || 0) || String(a.name).localeCompare(b.name));
+
+            document.getElementById('bc-note').textContent = `Showing ${rows.length} of ${_rows.length} areas`;
+
+            if (!rows.length) { grid.innerHTML = '<div class="bc-empty">No areas match.</div>'; return; }
+            grid.innerHTML = rows.map(r => {
+                const t = r.total || 0;
+                const types = (Array.isArray(r.types) ? r.types : []).filter(Boolean)
+                    .map(x => `<span class="bc-type-chip">${esc(TYPE_LABEL[x] || x)}</span>`).join('');
+                return `<div class="bc-cell ${t === 0 ? 'gap' : ''}">
+                    <div class="name">${esc(r.name)}</div>
+                    <div class="state">${esc(r.state || '')}${r.region ? ' · ' + esc(r.region) : ''}</div>
+                    <div class="total ${t === 0 ? 'zero' : ''}">${t}</div>
+                    <div class="bc-break">
+                        <span><span class="bc-dot dot-prem"></span>${r.premium || 0}</span>
+                        <span><span class="bc-dot dot-std"></span>${r.basic || 0}</span>
+                        <span><span class="bc-dot dot-free"></span>${r.free || 0}</span>
+                    </div>
+                    ${types ? `<div class="bc-types">${types}</div>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', load);
+    </script>
+
+    <!-- Embed-mode helper — hides chrome + posts height so system.html can size the iframe. -->
+    <script>
+        (function () {
+            if (new URLSearchParams(window.location.search).get('embed') !== '1') return;
+            document.body.classList.add('lt-embed');
+            let lastH = 0;
+            function postHeight() {
+                const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+                if (h !== lastH) { lastH = h; window.parent.postMessage({ lt: 'height', frame: 'bizcov', h }, '*'); }
+            }
+            window.addEventListener('load', postHeight);
+            setInterval(postHeight, 500);
+        })();
+    </script>
+</body>
+</html>

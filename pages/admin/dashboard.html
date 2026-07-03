@@ -108,8 +108,8 @@
         @media (max-width: 560px)  { .rev-grid { grid-template-columns: 1fr; } }
 
         /* Growth section — founder seats, coverage, reviews (clickable cards) */
-        .growth-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.75rem; }
-        @media (max-width: 900px) { .growth-grid { grid-template-columns: 1fr; } }
+        .growth-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin-bottom: 1.75rem; }
+        @media (max-width: 560px) { .growth-grid { grid-template-columns: 1fr; } }
         .growth-card { display: block; text-decoration: none; color: inherit; transition: transform 0.12s, box-shadow 0.15s; }
         .growth-card:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(16,24,40,0.10); }
         .growth-card .gc-big { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.5px; color: #1a202c; line-height: 1; }
@@ -452,6 +452,19 @@
                         <div class="gc-rows" id="gc-tiers"></div>
                     </div>
                 </a>
+                <!-- Business coverage → Metrics & Database business-coverage tab -->
+                <a href="system.html?tab=bizcov" class="d-card growth-card">
+                    <div class="d-card-hd">
+                        <h3 class="d-card-title">Business coverage</h3>
+                        <span class="d-card-link">Coverage →</span>
+                    </div>
+                    <div class="d-card-body">
+                        <div class="gc-big" id="gc-biz">—</div>
+                        <div class="gc-sub" id="gc-biz-sub">areas with a business</div>
+                        <div class="gc-bar"><span id="gc-biz-bar" style="width:0%;"></span></div>
+                        <div class="gc-sub" id="gc-biz-mrr">— paying</div>
+                    </div>
+                </a>
                 <!-- Reviews to moderate → Agents · Reviews tab -->
                 <a href="agents.html?tab=reviews" class="d-card growth-card">
                     <div class="d-card-hd">
@@ -494,6 +507,18 @@
                             ['Founders', sum('founders')], ['Elite', sum('elite')],
                             ['Prime', sum('prime')], ['Basic', sum('basic')],
                         ].map(([l, n]) => `<div class="gr"><b>${n}</b>${l}</div>`).join('');
+                    }).catch(() => {});
+                // Business coverage + paying count.
+                fetch('/api/admin/financials/business-projections', { credentials: 'include' })
+                    .then(r => r.ok ? r.json() : null).then(bp => {
+                        if (!bp) return;
+                        document.getElementById('gc-biz').textContent = `${bp.coveredAreas} / ${bp.areas}`;
+                        const pct = bp.areas ? Math.round((bp.coveredAreas / bp.areas) * 100) : 0;
+                        document.getElementById('gc-biz-bar').style.width = pct + '%';
+                        document.getElementById('gc-biz-mrr').textContent = `${bp.paying.total} paying · ${money(bp.mrr.now)}/mo`;
+                        document.getElementById('gc-biz-sub').innerHTML = bp.areaGaps.length
+                            ? `areas covered · <span class="gc-warn">${bp.areaGaps.length} gap${bp.areaGaps.length === 1 ? '' : 's'}</span>`
+                            : 'areas covered · full coverage';
                     }).catch(() => {});
                 // Reviews awaiting moderation.
                 fetch('/api/reviews/admin?status=pending', { credentials: 'include' })

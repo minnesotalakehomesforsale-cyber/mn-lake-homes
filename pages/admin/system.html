@@ -57,6 +57,7 @@
             <button id="tab-btn-traffic"     class="page-tab active" role="tab" onclick="showSys('traffic')">Traffic</button>
             <button id="tab-btn-conversions" class="page-tab"        role="tab" onclick="showSys('conversions')">Conversions</button>
             <button id="tab-btn-coverage"    class="page-tab"        role="tab" onclick="showSys('coverage')">Agent coverage</button>
+            <button id="tab-btn-bizcov"      class="page-tab"        role="tab" onclick="showSys('bizcov')">Business coverage</button>
             <button id="tab-btn-database"    class="page-tab"        role="tab" onclick="showSys('database')">Database</button>
             <button id="tab-btn-diagnostics" class="page-tab"        role="tab" onclick="showSys('diagnostics')">Lead routing</button>
             <button id="tab-btn-images"      class="page-tab"        role="tab" onclick="showSys('images')">Images</button>
@@ -78,6 +79,9 @@
         <div id="pane-towns" class="tab-pane" role="tabpanel">
             <iframe id="frame-towns" class="sys-frame" data-src="tags.html?embed=1" title="Geo Tags"></iframe>
         </div>
+        <div id="pane-bizcov" class="tab-pane" role="tabpanel">
+            <iframe id="frame-bizcov" class="sys-frame" data-src="business-coverage.html?embed=1" title="Business coverage"></iframe>
+        </div>
     </main>
 </div>
 
@@ -87,13 +91,14 @@
         traffic:     { pane: 'metrics',     metricsTab: 'traffic' },
         conversions: { pane: 'metrics',     metricsTab: 'conversions' },
         coverage:    { pane: 'metrics',     metricsTab: 'coverage' },
+        bizcov:      { pane: 'bizcov' },
         database:    { pane: 'database' },
         diagnostics: { pane: 'diagnostics' },
         images:      { pane: 'images' },
         towns:       { pane: 'towns' },
     };
     const TABS = Object.keys(TAB_CFG);
-    const PANES = ['metrics', 'database', 'diagnostics', 'images', 'towns'];
+    const PANES = ['metrics', 'database', 'diagnostics', 'images', 'towns', 'bizcov'];
     const _params = new URLSearchParams(window.location.search);
     const _initialTab = TABS.includes(_params.get('tab')) ? _params.get('tab') : 'traffic';
 
