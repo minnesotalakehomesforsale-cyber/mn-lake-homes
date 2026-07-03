@@ -486,23 +486,52 @@ class GlobalFooter extends HTMLElement {
         // admin-only staff links once we confirm the session role.
         this.innerHTML = this._buildFooter(bp, rp, null);
 
-        // Sticky "Get matched" bar on mobile — floats above content, opens the
-        // match form. Appended to <body> (once) so it survives footer re-renders
-        // and the form overlay (z-index 9000) covers it when open.
-        if (!document.getElementById('mlh-sticky-cta')) {
+        // Sticky "Get matched" bar on mobile — a compact CTA above the content
+        // that opens the match form. Appended to <body> (once) so it survives
+        // footer re-renders; the form overlay (z-index 9000) covers it when open.
+        // It has a dismiss (×) button; once closed it stays closed on that device
+        // (localStorage), so it's never a permanent obstruction.
+        let _ctaDismissed = false;
+        try { _ctaDismissed = localStorage.getItem('mlh_cta_dismissed') === '1'; } catch (e) {}
+        if (!document.getElementById('mlh-sticky-cta') && !_ctaDismissed) {
             const bar = document.createElement('div');
             bar.id = 'mlh-sticky-cta';
-            bar.innerHTML = `<button type="button" onclick="window.openForm && window.openForm('buy', { _source: 'sticky-mobile-cta' })">Get matched with a lake agent &rarr;</button>`;
+
+            const main = document.createElement('button');
+            main.type = 'button';
+            main.className = 'mlh-cta-main';
+            main.innerHTML = 'Get matched with a lake agent &rarr;';
+            main.addEventListener('click', () => window.openForm && window.openForm('buy', { _source: 'sticky-mobile-cta' }));
+
+            const close = document.createElement('button');
+            close.type = 'button';
+            close.className = 'mlh-cta-x';
+            close.setAttribute('aria-label', 'Dismiss');
+            close.innerHTML = '&times;';
+            close.addEventListener('click', () => {
+                try { localStorage.setItem('mlh_cta_dismissed', '1'); } catch (e) {}
+                bar.remove();
+                document.body.classList.remove('mlh-has-cta');
+            });
+
+            bar.appendChild(main);
+            bar.appendChild(close);
             document.body.appendChild(bar);
-            const st = document.createElement('style');
-            st.textContent =
-                '#mlh-sticky-cta{display:none}' +
-                '@media (max-width:768px){' +
-                  '#mlh-sticky-cta{display:block;position:fixed;left:0;right:0;bottom:0;z-index:8000;padding:0.55rem 0.85rem calc(0.55rem + env(safe-area-inset-bottom,0px));background:rgba(255,255,255,0.97);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-top:1px solid #e2e8f0;box-shadow:0 -4px 18px rgba(16,24,40,0.10)}' +
-                  '#mlh-sticky-cta button{width:100%;padding:0.95rem;background:#1d6df2;color:#fff;border:none;border-radius:12px;font-family:inherit;font-size:1.02rem;font-weight:800;cursor:pointer}' +
-                  'body{padding-bottom:74px}' +
-                '}';
-            document.head.appendChild(st);
+            document.body.classList.add('mlh-has-cta');
+
+            if (!document.getElementById('mlh-sticky-cta-style')) {
+                const st = document.createElement('style');
+                st.id = 'mlh-sticky-cta-style';
+                st.textContent =
+                    '#mlh-sticky-cta{display:none}' +
+                    '@media (max-width:768px){' +
+                      '#mlh-sticky-cta{display:flex;align-items:center;gap:0.4rem;position:fixed;left:0;right:0;bottom:0;z-index:8000;padding:0.4rem 0.55rem calc(0.4rem + env(safe-area-inset-bottom,0px));background:rgba(255,255,255,0.97);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-top:1px solid #e2e8f0;box-shadow:0 -4px 18px rgba(16,24,40,0.10)}' +
+                      '#mlh-sticky-cta .mlh-cta-main{flex:1;min-width:0;padding:0.7rem 0.9rem;background:#1d6df2;color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:0.9rem;font-weight:700;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+                      '#mlh-sticky-cta .mlh-cta-x{flex:0 0 auto;width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;border-radius:10px;font-size:1.4rem;line-height:1;cursor:pointer;font-family:inherit;padding:0}' +
+                      'body.mlh-has-cta{padding-bottom:60px}' +
+                    '}';
+                document.head.appendChild(st);
+            }
         }
 
         fetch('/api/auth/session')
