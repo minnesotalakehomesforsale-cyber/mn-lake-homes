@@ -22,6 +22,31 @@ const PRICE = {
 };
 // Per-area staffing goals (founder is per-lake, priced individually).
 const GOAL = { elite: 2, prime: 5, basic: 10 };
+
+// ── Businesses (directory: resorts, marinas, dock builders, …) ──────────────
+// Tiers: Premium ($79, "Featured Partner") · Standard ($29, "Local Spotlight")
+// · Free ($0). Only paying tiers (subscription_status='active') add revenue.
+const BIZ_PRICE = {
+    premium: num(process.env.STRIPE_PRICING_BUSINESS_PREMIUM_MONTHLY, 79),
+    basic:   num(process.env.STRIPE_PRICING_BUSINESS_BASIC_MONTHLY, 29),
+};
+// Per-area goal: 1 Featured Partner + 3 Local Spotlights in each service area.
+const BIZ_GOAL = { premium: 1, basic: 3 };
+// The canonical business categories (business.controller KNOWN_TYPES), with a
+// label + whether we consider it a "core" type every area should have covered.
+const BIZ_TYPES = [
+    { key: 'marina',             label: 'Marina',            core: true  },
+    { key: 'outdoor_recreation', label: 'Resort / Outdoor',  core: true  },
+    { key: 'restaurant',         label: 'Restaurant',        core: true  },
+    { key: 'boat_rental',        label: 'Boat rental',       core: true  },
+    { key: 'builder',            label: 'Builder',           core: false },
+    { key: 'photographer',       label: 'Photographer',      core: false },
+    { key: 'service',            label: 'Service',           core: false },
+    { key: 'other',              label: 'Other',             core: false },
+];
+// A business is "live" on the directory when active AND either admin-managed
+// (no owner login), paying, or comped. Reused across the queries below.
+const BIZ_LIVE = `b.status = 'active' AND (b.user_id IS NULL OR b.subscription_status = 'active' OR b.tier_comped)`;
 // A founder seat with no listed price AND no AI value counts as $0 — NOT a tier
 // price. (It used to fall back to $149, which is the Elite rate and made the
 // founder projection look like elite pricing.) Set a price or run the AI
@@ -195,5 +220,147 @@ exports.recomputeSeatValues = async (req, res) => {
     } catch (err) {
         console.error('[financials.recomputeSeatValues]', err.message);
         res.status(500).json({ error: `Recompute failed: ${err.message}` });
+    }
+};
+
+// ── Shared models (used by the business + company endpoints) ────────────────
+
+// Agent + founder side, modeled from current roster + per-area goals.
+async function agentModel() {
+    const [areasQ, lakesQ, filledQ, founderNowQ, founderPotQ] = await Promise.all([
+        pool.query(`SELECT COUNT(*)::int n FROM tags WHERE active = TRUE`),
+        pool.query(`SELECT COUNT(*)::int n FROM lakes WHERE status = 'published'`),
+        pool.query(`SELECT m.code, COUNT(*)::int n
+                      FROM agents a JOIN users u ON u.id = a.user_id JOIN memberships m ON m.id = a.membership_id
+                     WHERE a.profile_status = 'published' AND a.is_published = TRUE AND u.account_status = 'active' AND a.deleted_at IS NULL
+                  GROUP BY m.code`),
+        pool.query(`SELECT COUNT(*)::int n,
+                           COALESCE(SUM(COALESCE(l.founder_seat_price, l.founder_seat_ai_value, ${DEFAULT_FOUNDER})), 0)::int total
+                      FROM lakes l
+                     WHERE EXISTS (SELECT 1 FROM agent_lakes al WHERE al.lake_id = l.id AND al.is_founder)`),
+        pool.query(`SELECT COALESCE(SUM(COALESCE(founder_seat_price, founder_seat_ai_value, ${DEFAULT_FOUNDER})), 0)::int total
+                      FROM lakes WHERE status = 'published'`),
+    ]);
+    const A = areasQ.rows[0].n, L = lakesQ.rows[0].n;
+    const by = {}; filledQ.rows.forEach(r => { by[r.code] = r.n; });
+    const cap  = { elite: A * GOAL.elite, prime: A * GOAL.prime, basic: A * GOAL.basic };
+    const fill = { elite: by['top_agent'] || 0, prime: by['mn_lake_specialist'] || 0, basic: by['basic'] || 0 };
+    const subMrrFull = cap.elite * PRICE.elite + cap.prime * PRICE.prime + cap.basic * PRICE.basic;
+    const founderFull = founderPotQ.rows[0].total;
+    const founderNow  = founderNowQ.rows[0].total;
+    const modeledNow  = fill.elite * PRICE.elite + fill.prime * PRICE.prime + fill.basic * PRICE.basic + founderNow;
+    return { areas: A, lakes: L, capacity: cap, filled: fill, subMrrFull,
+             founderFull, founderNow, founderSeated: founderNowQ.rows[0].n,
+             modeledNow, mrrFull: subMrrFull + founderFull };
+}
+
+// Business side, modeled from live directory + per-area goals + type coverage.
+async function businessModel() {
+    const [areasQ, payingQ, liveQ, typeCovQ, areaGapQ] = await Promise.all([
+        pool.query(`SELECT COUNT(*)::int n FROM tags WHERE active = TRUE`),
+        pool.query(`SELECT paid_tier AS tier, COUNT(*)::int n
+                      FROM businesses
+                     WHERE subscription_status = 'active' AND stripe_subscription_id IS NOT NULL
+                       AND paid_tier IN ('premium','basic')
+                  GROUP BY paid_tier`),
+        pool.query(`SELECT b.type, COALESCE(NULLIF(b.tier,''),'free') AS tier, COUNT(*)::int n
+                      FROM businesses b WHERE ${BIZ_LIVE} GROUP BY b.type, 2`),
+        pool.query(`SELECT b.type, COUNT(DISTINCT bt.tag_id)::int areas
+                      FROM businesses b
+                      JOIN business_tags bt ON bt.business_id = b.id
+                      JOIN tags t ON t.id = bt.tag_id AND t.active = TRUE
+                     WHERE ${BIZ_LIVE} GROUP BY b.type`),
+        pool.query(`SELECT t.name, t.state, t.region
+                      FROM tags t
+                     WHERE t.active = TRUE
+                       AND NOT EXISTS (SELECT 1 FROM business_tags bt
+                                        JOIN businesses b ON b.id = bt.business_id AND ${BIZ_LIVE}
+                                       WHERE bt.tag_id = t.id)
+                  ORDER BY t.state, t.name`),
+    ]);
+    const A = areasQ.rows[0].n;
+    const paying = { premium: 0, basic: 0 };
+    payingQ.rows.forEach(r => { if (r.tier in paying) paying[r.tier] = r.n; });
+    paying.total = paying.premium + paying.basic;
+
+    const live = { premium: 0, basic: 0, free: 0, total: 0 };
+    const typeCount = {};
+    liveQ.rows.forEach(r => {
+        const tier = ['premium', 'basic', 'free'].includes(r.tier) ? r.tier : 'free';
+        live[tier] += r.n; live.total += r.n;
+        typeCount[r.type] = (typeCount[r.type] || 0) + r.n;
+    });
+    const areasByType = {};
+    typeCovQ.rows.forEach(r => { areasByType[r.type] = r.areas; });
+
+    const typeCoverage = BIZ_TYPES.map(t => ({
+        key: t.key, label: t.label, core: t.core,
+        live: typeCount[t.key] || 0,
+        areasCovered: areasByType[t.key] || 0,
+    }));
+
+    const capacity = { premium: A * BIZ_GOAL.premium, basic: A * BIZ_GOAL.basic };
+    const mrrNow  = paying.premium * BIZ_PRICE.premium + paying.basic * BIZ_PRICE.basic;
+    const mrrFull = capacity.premium * BIZ_PRICE.premium + capacity.basic * BIZ_PRICE.basic;
+
+    return { areas: A, prices: BIZ_PRICE, goals: BIZ_GOAL, paying, live, capacity,
+             typeCoverage, mrr: { now: mrrNow, full: mrrFull },
+             areaGaps: areaGapQ.rows, coveredAreas: A - areaGapQ.rows.length };
+}
+
+// GET /api/admin/financials/business-projections
+exports.businessProjections = async (req, res) => {
+    try {
+        const m = await businessModel();
+        const mrrNow = m.mrr.now, mrrFull = m.mrr.full;
+        const ceiling = Math.max(mrrFull, mrrNow);
+        const scen = p => Math.round(mrrNow + p * (ceiling - mrrNow));
+        res.json({
+            ...m,
+            arr: { now: mrrNow * 12, full: mrrFull * 12 },
+            scenarios: [
+                { label: 'Today (paying now)', mrr: mrrNow },
+                { label: 'Fill 25% of goal',   mrr: scen(0.25) },
+                { label: 'Fill 50% of goal',   mrr: scen(0.50) },
+                { label: 'Fill 75% of goal',   mrr: scen(0.75) },
+                { label: 'Every slot full',    mrr: mrrFull },
+            ],
+        });
+    } catch (err) {
+        console.error('[financials.businessProjections]', err.message);
+        res.status(500).json({ error: 'Failed to build business projections.' });
+    }
+};
+
+// GET /api/admin/financials/company — the whole company, agents + businesses.
+exports.companyProjections = async (req, res) => {
+    try {
+        const [ag, biz] = await Promise.all([agentModel(), businessModel()]);
+        // Stripe actual is the true combined "now" (every active subscription).
+        const stripe = stripeFromEnv();
+        let actualMrr = null, activeSubs = null;
+        if (stripe) { try { const s = await stripeMonthlyMrrCents(stripe); actualMrr = Math.round(s.cents / 100); activeSubs = s.active; } catch (_) {} }
+
+        const agentSubsNow = ag.modeledNow - ag.founderNow;
+        const modeledNow = ag.modeledNow + biz.mrr.now;
+        const mrrNow = actualMrr != null ? actualMrr : modeledNow;
+        const mrrFull = ag.mrrFull + biz.mrr.full;
+
+        res.json({
+            source: actualMrr != null ? 'stripe' : 'modeled',
+            stripeConfigured: !!stripe, activeSubs, modeledNow,
+            mrr: { now: mrrNow, full: mrrFull },
+            arr: { now: mrrNow * 12, full: mrrFull * 12 },
+            upside: Math.max(0, mrrFull - mrrNow),
+            areas: ag.areas, lakes: ag.lakes,
+            streams: {
+                agents:   { nowModeled: agentSubsNow, full: ag.subMrrFull },
+                founder:  { nowModeled: ag.founderNow, full: ag.founderFull, seated: ag.founderSeated, total: ag.lakes },
+                business: { nowModeled: biz.mrr.now,   full: biz.mrr.full,   paying: biz.paying.total, live: biz.live.total },
+            },
+        });
+    } catch (err) {
+        console.error('[financials.companyProjections]', err.message);
+        res.status(500).json({ error: 'Failed to build company overview.' });
     }
 };

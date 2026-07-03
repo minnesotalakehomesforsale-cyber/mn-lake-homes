@@ -41,6 +41,8 @@ router.get('/marketing/agent-insights', verifyToken, requireRole(['admin', 'supe
 // ─── FINANCIALS (revenue projections + per-lake founder-seat valuation) ──────
 const financialsController = require('../controllers/financials.controller');
 router.get ('/financials/projections',            verifyToken, requireRole(['admin', 'super_admin']), financialsController.projections);
+router.get ('/financials/business-projections',   verifyToken, requireRole(['admin', 'super_admin']), financialsController.businessProjections);
+router.get ('/financials/company',                verifyToken, requireRole(['admin', 'super_admin']), financialsController.companyProjections);
 router.get ('/financials/lake-seat-values',       verifyToken, requireRole(['admin', 'super_admin']), financialsController.lakeSeatValues);
 router.post('/financials/recompute-seat-values',  verifyToken, requireRole(['admin', 'super_admin']), financialsController.recomputeSeatValues);
 router.put ('/financials/lake/:id/founder-price', verifyToken, requireRole(['admin', 'super_admin']), financialsController.setFounderPrice);
@@ -114,6 +116,7 @@ router.post('/invite-business',
 
 // ─── METRICS ─────────────────────────────────────────────────────────────────
 router.get('/metrics/agent-coverage', adminController.getAgentCoverage);
+router.get('/metrics/business-coverage', adminController.getBusinessCoverage);
 
 // ─── SYSTEM (powers the sidebar System badge — errors/warnings in last 24h) ─
 router.get('/system/alerts-count', adminController.getSystemAlertsCount);

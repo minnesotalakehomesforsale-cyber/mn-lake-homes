@@ -48,6 +48,27 @@
         .btn-primary { background: #1d6df2; color: #fff; border: 0; border-radius: 10px; padding: 0.6rem 1.15rem; font: inherit; font-weight: 700; cursor: pointer; }
         .btn-primary:disabled { opacity: 0.6; cursor: default; }
         .muted { color: #a0aec0; font-size: 0.85rem; }
+
+        /* Company stream breakdown */
+        .stream-row { display: flex; align-items: center; gap: 1rem; padding: 0.7rem 0; border-bottom: 1px solid #f2f5f8; }
+        .stream-row:last-child { border-bottom: none; }
+        .stream-row .nm { width: 150px; font-weight: 700; font-size: 0.9rem; color: #2d3748; flex-shrink: 0; }
+        .stream-row .track { flex: 1; height: 12px; background: #edf2f7; border-radius: 99px; overflow: hidden; }
+        .stream-row .track > span { display: block; height: 100%; border-radius: 99px; }
+        .stream-row .amt { width: 150px; text-align: right; font-weight: 800; font-size: 0.92rem; }
+        /* Business category coverage rows */
+        .type-row { display: flex; align-items: center; gap: 0.9rem; padding: 0.5rem 0; border-bottom: 1px solid #f2f5f8; font-size: 0.85rem; }
+        .type-row:last-child { border-bottom: none; }
+        .type-row .tn { width: 150px; font-weight: 700; color: #2d3748; flex-shrink: 0; }
+        .type-row .tbar { flex: 1; height: 9px; background: #edf2f7; border-radius: 99px; overflow: hidden; }
+        .type-row .tbar > span { display: block; height: 100%; border-radius: 99px; }
+        .type-row .tc { width: 150px; text-align: right; color: #4a5568; font-weight: 600; font-size: 0.8rem; }
+        /* Area-gap chips */
+        .gap-chip { display: inline-block; font-size: 0.74rem; font-weight: 700; color: #b45309; background: #fffaf0; border: 1px solid #fbd38d; border-radius: 99px; padding: 0.18rem 0.65rem; margin: 0 0.25rem 0.35rem 0; }
+        @media (max-width: 600px) {
+            .stream-row .nm, .type-row .tn { width: 110px; font-size: 0.82rem; }
+            .stream-row .amt, .type-row .tc { width: 110px; font-size: 0.8rem; }
+        }
     </style>
 </head>
 <body>
@@ -60,15 +81,27 @@
         <main class="admin-main">
             <header style="margin-bottom:1.5rem;">
                 <h1 style="font-size:1.85rem;font-weight:800;letter-spacing:-0.75px;margin:0 0 0.25rem;">Financials</h1>
-                <p style="color:#718096;margin:0;font-size:0.95rem;">Live revenue + run-rate from Stripe, seat-fill projections, and per-lake founder-seat valuation. Everything recomputes from current data.</p>
+                <p style="color:#718096;margin:0;font-size:0.95rem;">The whole company: agent plans, per-lake founder seats, and the business directory — live revenue from Stripe plus fill projections, goals, and coverage gaps. Everything recomputes from current data.</p>
             </header>
 
             <div class="page-tabs" role="tablist">
-                <button id="tab-btn-revenue" class="page-tab active" role="tab" onclick="showFin('revenue')">Revenue &amp; Projections</button>
-                <button id="tab-btn-seats"   class="page-tab"        role="tab" onclick="showFin('seats')">Founder Seat Values</button>
+                <button id="tab-btn-company"  class="page-tab active" role="tab" onclick="showFin('company')">Company</button>
+                <button id="tab-btn-revenue"  class="page-tab"        role="tab" onclick="showFin('revenue')">Agents</button>
+                <button id="tab-btn-seats"    class="page-tab"        role="tab" onclick="showFin('seats')">Founder Seats</button>
+                <button id="tab-btn-business" class="page-tab"        role="tab" onclick="showFin('business')">Businesses</button>
             </div>
 
-            <div id="pane-revenue" class="tab-pane active" role="tabpanel">
+            <!-- ── COMPANY: agents + founders + businesses combined ──────── -->
+            <div id="pane-company" class="tab-pane active" role="tabpanel">
+                <div id="co-live"></div>
+                <div class="fin-section">
+                    <h3>Where the money comes from</h3>
+                    <p class="hint">Every revenue stream's monthly potential when fully sold. Company MRR "now" is live from Stripe (agents + founder seats + businesses).</p>
+                    <div id="co-streams"><p class="muted">Loading…</p></div>
+                </div>
+            </div>
+
+            <div id="pane-revenue" class="tab-pane" role="tabpanel">
                 <div id="rev-live"></div>
                 <div class="fin-section">
                     <h3>Projected monthly recurring revenue</h3>
@@ -102,6 +135,31 @@
                     </table>
                 </div>
             </div>
+
+            <!-- ── BUSINESSES: paying counts, goals, area + type coverage ──── -->
+            <div id="pane-business" class="tab-pane" role="tabpanel">
+                <div id="bz-stats"></div>
+                <div class="fin-section">
+                    <h3>Projected business revenue</h3>
+                    <p class="hint">Modeled from the per-area goal (1 Featured Partner + 3 Local Spotlights per service area). "Fill the goal" scenarios interpolate between paying today and every slot sold.</p>
+                    <div id="bz-scenarios"><p class="muted">Loading…</p></div>
+                </div>
+                <div class="fin-section">
+                    <h3>Paying businesses by tier</h3>
+                    <p class="hint">Active paid subscriptions against the network goal. Free and comped listings don't count toward revenue.</p>
+                    <div id="bz-tiers"></div>
+                </div>
+                <div class="fin-section">
+                    <h3>Category coverage — which business types you're light on</h3>
+                    <p class="hint">Live directory businesses per category, and how many service areas each type reaches. Orange = a core type covering under half your areas.</p>
+                    <div id="bz-types"></div>
+                </div>
+                <div class="fin-section">
+                    <h3>Areas with no business yet</h3>
+                    <p class="hint">Active service areas that have zero live businesses — prime outreach targets.</p>
+                    <div id="bz-gaps"></div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -109,13 +167,81 @@
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         const money = n => '$' + Math.round(n).toLocaleString('en-US');
         let _seatsLoaded = false;
+        const _loaded = { company: false, revenue: false, business: false };
 
         function showFin(name) {
-            ['revenue', 'seats'].forEach(k => {
+            ['company', 'revenue', 'seats', 'business'].forEach(k => {
                 document.getElementById('tab-btn-' + k).classList.toggle('active', k === name);
                 document.getElementById('pane-' + k).classList.toggle('active', k === name);
             });
-            if (name === 'seats' && !_seatsLoaded) loadSeats();
+            if (name === 'company'  && !_loaded.company)  { _loaded.company  = true; loadCompany(); }
+            if (name === 'revenue'  && !_loaded.revenue)  { _loaded.revenue  = true; loadRevenue(); }
+            if (name === 'seats'    && !_seatsLoaded)     { loadSeats(); }
+            if (name === 'business' && !_loaded.business) { _loaded.business = true; loadBusiness(); }
+        }
+
+        // ── Company overview (agents + founders + businesses) ──────────────
+        async function loadCompany() {
+            const co = await fetch('/api/admin/financials/company', { credentials: 'include' })
+                .then(r => r.ok ? r.json() : null).catch(() => null);
+            const live = document.getElementById('co-live');
+            const streams = document.getElementById('co-streams');
+            if (!co) { live.innerHTML = '<p class="muted">Could not load company overview.</p>'; streams.innerHTML = ''; return; }
+            live.innerHTML = `<div class="fin-grid">
+                <div class="fin-stat live"><div class="l">Company MRR${co.source === 'stripe' ? ' · live' : ''}</div><div class="v">${money(co.mrr.now)}</div><div class="s">${co.source === 'stripe' ? (co.activeSubs + ' active subscriptions') : 'modeled — connect Stripe'} · ${money(co.arr.now)}/yr</div></div>
+                <div class="fin-stat goal"><div class="l">MRR at full</div><div class="v">${money(co.mrr.full)}</div><div class="s">${money(co.arr.full)}/yr — every slot sold</div></div>
+                <div class="fin-stat"><div class="l">Upside remaining</div><div class="v">${money(co.upside)}</div><div class="s">/mo to hit every goal</div></div>
+                <div class="fin-stat"><div class="l">Businesses paying</div><div class="v">${co.streams.business.paying}</div><div class="s">${co.streams.business.live} live in the directory</div></div>
+            </div>`;
+            const max = co.mrr.full || 1, S = co.streams;
+            const bar = (nm, full, color) => `<div class="stream-row"><div class="nm">${nm}</div><div class="track"><span style="width:${Math.round((full / max) * 100)}%;background:${color};"></span></div><div class="amt">${money(full)}<span class="muted" style="font-weight:500;font-size:0.72rem;">/mo</span></div></div>`;
+            streams.innerHTML =
+                bar('Agent plans', S.agents.full, '#1d6df2') +
+                bar('Founder seats', S.founder.full, '#d69e2e') +
+                bar('Businesses', S.business.full, '#059669') +
+                `<div class="stream-row" style="border-top:2px solid #e2e8f0;margin-top:0.25rem;padding-top:0.85rem;"><div class="nm"><strong>Total at full</strong></div><div class="track"><span style="width:100%;background:#1a202c;"></span></div><div class="amt"><strong>${money(co.mrr.full)}</strong><span class="muted" style="font-weight:500;font-size:0.72rem;">/mo</span></div></div>` +
+                `<p class="muted" style="margin-top:0.9rem;">${S.founder.seated}/${S.founder.total} founder seats seated · ${S.business.paying} businesses paying · ${co.areas} service areas.</p>`;
+        }
+
+        // ── Business financials + coverage ─────────────────────────────────
+        async function loadBusiness() {
+            const bp = await fetch('/api/admin/financials/business-projections', { credentials: 'include' })
+                .then(r => r.ok ? r.json() : null).catch(() => null);
+            const stats = document.getElementById('bz-stats');
+            if (!bp) { stats.innerHTML = '<p class="muted">Could not load business financials.</p>'; return; }
+            stats.innerHTML = `<div class="fin-grid">
+                <div class="fin-stat"><div class="l">Business MRR</div><div class="v">${money(bp.mrr.now)}</div><div class="s">${bp.paying.total} paying · ${money(bp.arr.now)}/yr</div></div>
+                <div class="fin-stat goal"><div class="l">MRR at full</div><div class="v">${money(bp.mrr.full)}</div><div class="s">${money(bp.arr.full)}/yr — goal met</div></div>
+                <div class="fin-stat"><div class="l">Live in directory</div><div class="v">${bp.live.total}</div><div class="s">${bp.live.premium} premium · ${bp.live.basic} standard · ${bp.live.free} free</div></div>
+                <div class="fin-stat"><div class="l">Areas covered</div><div class="v">${bp.coveredAreas}/${bp.areas}</div><div class="s">${bp.areaGaps.length} area${bp.areaGaps.length === 1 ? '' : 's'} with no business</div></div>
+            </div>`;
+
+            const scen = document.getElementById('bz-scenarios');
+            const smax = bp.mrr.full || 1;
+            scen.innerHTML = bp.scenarios.map(s => `<div class="scen-row"><div class="lbl">${esc(s.label)}</div><div class="track"><span style="width:${Math.round((s.mrr / smax) * 100)}%;"></span></div><div class="amt">${money(s.mrr)}<span class="muted" style="font-weight:500;font-size:0.75rem;">/mo</span></div></div>`).join('');
+
+            const tiers = document.getElementById('bz-tiers');
+            const trow = (nm, price, filled, cap) => `<tr><td><strong>${nm}</strong> <span class="muted">${money(price)}/mo</span></td><td style="width:200px;"><div class="fin-bar"><span style="width:${cap ? Math.min(100, Math.round(filled / cap * 100)) : 0}%;"></span></div></td><td style="text-align:right;width:120px;">${filled} / ${cap}</td><td style="text-align:right;width:130px;font-weight:700;">${money(cap * price)}/mo</td></tr>`;
+            tiers.innerHTML = `<table class="fin-table"><thead><tr><th>Tier</th><th>Fill vs goal</th><th style="text-align:right;">Paying / goal</th><th style="text-align:right;">At full /mo</th></tr></thead><tbody>
+                ${trow('Premium · Featured Partner', bp.prices.premium, bp.paying.premium, bp.capacity.premium)}
+                ${trow('Standard · Local Spotlight', bp.prices.basic, bp.paying.basic, bp.capacity.basic)}
+            </tbody></table><p class="muted" style="margin-top:0.75rem;">${bp.areas} service areas · goal ${bp.goals.premium} premium + ${bp.goals.basic} standard per area.</p>`;
+
+            const types = document.getElementById('bz-types');
+            const amax = bp.areas || 1;
+            types.innerHTML = bp.typeCoverage.map(t => {
+                const pct = Math.round((t.areasCovered / amax) * 100);
+                const light = t.core && t.areasCovered < Math.ceil(amax * 0.5);
+                return `<div class="type-row"><div class="tn">${esc(t.label)}${t.core ? '' : ' <span class="muted" style="font-weight:500;">· optional</span>'}</div><div class="tbar"><span style="width:${pct}%;background:${light ? '#dd6b20' : '#1d6df2'};"></span></div><div class="tc">${t.live} live · ${t.areasCovered}/${bp.areas} areas</div></div>`;
+            }).join('');
+
+            const gaps = document.getElementById('bz-gaps');
+            if (!bp.areaGaps.length) {
+                gaps.innerHTML = '<p class="muted">Every active area has at least one live business. 🎉</p>';
+            } else {
+                gaps.innerHTML = bp.areaGaps.slice(0, 80).map(a => `<span class="gap-chip">${esc(a.name)}${a.state ? ', ' + esc(a.state) : ''}</span>`).join('')
+                    + (bp.areaGaps.length > 80 ? `<p class="muted" style="margin-top:0.5rem;">+${bp.areaGaps.length - 80} more</p>` : '');
+            }
         }
 
         async function loadRevenue() {
@@ -229,7 +355,7 @@
             } finally { btn.disabled = false; btn.textContent = orig; }
         }
 
-        document.addEventListener('DOMContentLoaded', loadRevenue);
+        document.addEventListener('DOMContentLoaded', () => showFin('company'));
     </script>
 </body>
 </html>

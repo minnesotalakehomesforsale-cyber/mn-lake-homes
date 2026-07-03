@@ -970,6 +970,39 @@ const getAgentCoverage = async (req, res) => {
 };
 
 /**
+ * GET /api/admin/metrics/business-coverage
+ * Per-area (tag) count of LIVE directory businesses, bucketed by tier
+ * (premium / basic / free) with the list of categories present — the business
+ * mirror of getAgentCoverage. "Live" = active AND (admin-managed OR paying OR
+ * comped). Drives the Business Coverage grid + gap detection.
+ */
+const getBusinessCoverage = async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT
+                t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude,
+                COUNT(b.id) FILTER (WHERE COALESCE(NULLIF(b.tier,''),'free') = 'premium')::int AS premium,
+                COUNT(b.id) FILTER (WHERE COALESCE(NULLIF(b.tier,''),'free') = 'basic')::int   AS basic,
+                COUNT(b.id) FILTER (WHERE COALESCE(NULLIF(b.tier,''),'free') = 'free')::int    AS free,
+                COUNT(b.id)::int AS total,
+                ARRAY_REMOVE(ARRAY_AGG(DISTINCT b.type), NULL) AS types
+              FROM tags t
+         LEFT JOIN business_tags bt ON bt.tag_id = t.id
+         LEFT JOIN businesses b ON b.id = bt.business_id
+                                AND b.status = 'active'
+                                AND (b.user_id IS NULL OR b.subscription_status = 'active' OR b.tier_comped)
+             WHERE t.active = TRUE
+          GROUP BY t.id
+          ORDER BY t.state, t.name
+        `);
+        res.json(rows);
+    } catch (err) {
+        console.error('[getBusinessCoverage]', err.message);
+        res.status(500).json({ error: 'Server error.' });
+    }
+};
+
+/**
  * GET /api/admin/leads/unassigned-count
  * Returns { count } of leads that still need attention — no agent_id and no
  * assigned_user_id AND not closed/archived. Powers the admin nav red dot,
@@ -2499,6 +2532,7 @@ module.exports = {
     deleteAgentNote,
     getUnassignedLeadCount,
     getAgentCoverage,
+    getBusinessCoverage,
     getSystemAlertsCount,
     listAdminTabs,
     setUserPermissions,
