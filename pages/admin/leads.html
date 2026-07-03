@@ -152,7 +152,11 @@
             document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
             el.classList.add('active');
             if(status === 'all') renderTable(a => true);
-            else if(status === 'unassigned') renderTable(a => ['new', 'unassigned'].includes(a.status));
+            // "Requires Assignment" = genuinely has NO agent/user on it yet. A
+            // fresh lead can already be assigned (e.g. an agent-explicit inquiry
+            // routes straight to that agent), so status alone isn't enough —
+            // exclude anything that already shows an assignee.
+            else if(status === 'unassigned') renderTable(a => !a.agent_id && !a.assigned_user_id && !a.assigned_user_name && ['new', 'unassigned'].includes(a.status));
             else renderTable(a => a.status === status);
         }
 
