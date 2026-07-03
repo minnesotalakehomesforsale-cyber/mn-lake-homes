@@ -47,6 +47,16 @@ const BIZ_TYPES = [
 // A business is "live" on the directory when active AND either admin-managed
 // (no owner login), paying, or comped. Reused across the queries below.
 const BIZ_LIVE = `b.status = 'active' AND (b.user_id IS NULL OR b.subscription_status = 'active' OR b.tier_comped)`;
+
+// ── Cash offers (transactional, not recurring) ──────────────────────────────
+// The platform earns a referral/assignment fee when a cash-offer request turns
+// into a deal. Estimated value per closed deal — a made-up but reasonable
+// number for a lakefront cash purchase; override with CASH_OFFER_VALUE_USD.
+// Small monthly goal (2 floor, 5 stretch, 3 target).
+const CASH_OFFER_VALUE = num(process.env.CASH_OFFER_VALUE_USD, 3000);
+const CASH_OFFER_GOAL = { low: 2, high: 5, target: 3 };
+// Statuses that count as a realized deal (best-effort; unknown statuses → 0).
+const CASH_OFFER_WON = `status IN ('accepted','won','closed','sold','completed')`;
 // A founder seat with no listed price AND no AI value counts as $0 — NOT a tier
 // price. (It used to fall back to $149, which is the Elite rate and made the
 // founder projection look like elite pricing.) Set a price or run the AI
@@ -335,16 +345,35 @@ exports.businessProjections = async (req, res) => {
 // GET /api/admin/financials/company — the whole company, agents + businesses.
 exports.companyProjections = async (req, res) => {
     try {
-        const [ag, biz] = await Promise.all([agentModel(), businessModel()]);
-        // Stripe actual is the true combined "now" (every active subscription).
+        const [ag, biz, coQ] = await Promise.all([
+            agentModel(), businessModel(),
+            pool.query(`SELECT
+                    COUNT(*) FILTER (WHERE created_at >= date_trunc('month', NOW()))::int AS leads_month,
+                    COUNT(*) FILTER (WHERE created_at >= date_trunc('month', NOW()) AND ${CASH_OFFER_WON})::int AS won_month,
+                    COUNT(*) FILTER (WHERE ${CASH_OFFER_WON})::int AS won_all
+                  FROM cash_offer_leads WHERE archived_at IS NULL`).catch(() => ({ rows: [{ leads_month: 0, won_month: 0, won_all: 0 }] })),
+        ]);
+        // Stripe actual is the true combined "now" for recurring (every active sub).
         const stripe = stripeFromEnv();
         let actualMrr = null, activeSubs = null;
         if (stripe) { try { const s = await stripeMonthlyMrrCents(stripe); actualMrr = Math.round(s.cents / 100); activeSubs = s.active; } catch (_) {} }
 
         const agentSubsNow = ag.modeledNow - ag.founderNow;
         const modeledNow = ag.modeledNow + biz.mrr.now;
-        const mrrNow = actualMrr != null ? actualMrr : modeledNow;
+        const mrrNow = actualMrr != null ? actualMrr : modeledNow;   // recurring only
         const mrrFull = ag.mrrFull + biz.mrr.full;
+
+        // Cash offers — transactional, kept OUT of MRR and shown as a separate
+        // estimate so the recurring number stays clean.
+        const co = coQ.rows[0] || { leads_month: 0, won_month: 0, won_all: 0 };
+        const cashNow    = (co.won_month || 0) * CASH_OFFER_VALUE;             // realized this month
+        const cashAtGoal = CASH_OFFER_GOAL.target * CASH_OFFER_VALUE;          // target run-rate
+        const cashOffers = {
+            perDeal: CASH_OFFER_VALUE,
+            goalLow: CASH_OFFER_GOAL.low, goalHigh: CASH_OFFER_GOAL.high, goalTarget: CASH_OFFER_GOAL.target,
+            leadsThisMonth: co.leads_month || 0, wonThisMonth: co.won_month || 0, wonAllTime: co.won_all || 0,
+            estRevenueNow: cashNow, estRevenueAtGoal: cashAtGoal,
+        };
 
         res.json({
             source: actualMrr != null ? 'stripe' : 'modeled',
@@ -353,10 +382,15 @@ exports.companyProjections = async (req, res) => {
             arr: { now: mrrNow * 12, full: mrrFull * 12 },
             upside: Math.max(0, mrrFull - mrrNow),
             areas: ag.areas, lakes: ag.lakes,
+            cashOffers,
+            // Total monthly revenue INCLUDING the cash-offer estimate (recurring
+            // + transactional), so the owner sees the whole picture in one number.
+            totalMonthly: { now: mrrNow + cashNow, atGoal: mrrFull + cashAtGoal },
             streams: {
-                agents:   { nowModeled: agentSubsNow, full: ag.subMrrFull },
-                founder:  { nowModeled: ag.founderNow, full: ag.founderFull, seated: ag.founderSeated, total: ag.lakes },
-                business: { nowModeled: biz.mrr.now,   full: biz.mrr.full,   paying: biz.paying.total, live: biz.live.total },
+                agents:    { nowModeled: agentSubsNow, full: ag.subMrrFull },
+                founder:   { nowModeled: ag.founderNow, full: ag.founderFull, seated: ag.founderSeated, total: ag.lakes },
+                business:  { nowModeled: biz.mrr.now,   full: biz.mrr.full,   paying: biz.paying.total, live: biz.live.total },
+                cashOffer: { nowEst: cashNow, atGoalEst: cashAtGoal },
             },
         });
     } catch (err) {

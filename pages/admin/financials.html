@@ -187,20 +187,23 @@
             const live = document.getElementById('co-live');
             const streams = document.getElementById('co-streams');
             if (!co) { live.innerHTML = '<p class="muted">Could not load company overview.</p>'; streams.innerHTML = ''; return; }
+            const c = co.cashOffers || { perDeal: 0, goalTarget: 0, leadsThisMonth: 0, wonThisMonth: 0, estRevenueAtGoal: 0 };
             live.innerHTML = `<div class="fin-grid">
-                <div class="fin-stat live"><div class="l">Company MRR${co.source === 'stripe' ? ' · live' : ''}</div><div class="v">${money(co.mrr.now)}</div><div class="s">${co.source === 'stripe' ? (co.activeSubs + ' active subscriptions') : 'modeled — connect Stripe'} · ${money(co.arr.now)}/yr</div></div>
-                <div class="fin-stat goal"><div class="l">MRR at full</div><div class="v">${money(co.mrr.full)}</div><div class="s">${money(co.arr.full)}/yr — every slot sold</div></div>
-                <div class="fin-stat"><div class="l">Upside remaining</div><div class="v">${money(co.upside)}</div><div class="s">/mo to hit every goal</div></div>
-                <div class="fin-stat"><div class="l">Businesses paying</div><div class="v">${co.streams.business.paying}</div><div class="s">${co.streams.business.live} live in the directory</div></div>
+                <div class="fin-stat live"><div class="l">Recurring MRR${co.source === 'stripe' ? ' · live' : ''}</div><div class="v">${money(co.mrr.now)}</div><div class="s">${co.source === 'stripe' ? (co.activeSubs + ' active subscriptions') : 'modeled — connect Stripe'} · ${money(co.arr.now)}/yr</div></div>
+                <div class="fin-stat goal"><div class="l">MRR at full</div><div class="v">${money(co.mrr.full)}</div><div class="s">recurring only · ${money(co.arr.full)}/yr</div></div>
+                <div class="fin-stat"><div class="l">Cash offers · this month</div><div class="v">${c.wonThisMonth}</div><div class="s">${c.leadsThisMonth} requests · goal ${c.goalLow}–${c.goalHigh}/mo · ${money(c.perDeal)}/deal</div></div>
+                <div class="fin-stat goal"><div class="l">Total monthly at goal</div><div class="v">${money(co.totalMonthly.atGoal)}</div><div class="s">recurring + ~${money(c.estRevenueAtGoal)} cash offers</div></div>
             </div>`;
-            const max = co.mrr.full || 1, S = co.streams;
-            const bar = (nm, full, color) => `<div class="stream-row"><div class="nm">${nm}</div><div class="track"><span style="width:${Math.round((full / max) * 100)}%;background:${color};"></span></div><div class="amt">${money(full)}<span class="muted" style="font-weight:500;font-size:0.72rem;">/mo</span></div></div>`;
+            const S = co.streams;
+            const max = co.totalMonthly.atGoal || 1;
+            const bar = (nm, val, color, note) => `<div class="stream-row"><div class="nm">${nm}</div><div class="track"><span style="width:${Math.round((val / max) * 100)}%;background:${color};"></span></div><div class="amt">${money(val)}<span class="muted" style="font-weight:500;font-size:0.72rem;">/mo${note || ''}</span></div></div>`;
             streams.innerHTML =
                 bar('Agent plans', S.agents.full, '#1d6df2') +
                 bar('Founder seats', S.founder.full, '#d69e2e') +
                 bar('Businesses', S.business.full, '#059669') +
-                `<div class="stream-row" style="border-top:2px solid #e2e8f0;margin-top:0.25rem;padding-top:0.85rem;"><div class="nm"><strong>Total at full</strong></div><div class="track"><span style="width:100%;background:#1a202c;"></span></div><div class="amt"><strong>${money(co.mrr.full)}</strong><span class="muted" style="font-weight:500;font-size:0.72rem;">/mo</span></div></div>` +
-                `<p class="muted" style="margin-top:0.9rem;">${S.founder.seated}/${S.founder.total} founder seats seated · ${S.business.paying} businesses paying · ${co.areas} service areas.</p>`;
+                bar('Cash offers <span class="muted" style="font-weight:600;">· est</span>', S.cashOffer.atGoalEst, '#7c3aed', ' est') +
+                `<div class="stream-row" style="border-top:2px solid #e2e8f0;margin-top:0.25rem;padding-top:0.85rem;"><div class="nm"><strong>Total at goal</strong></div><div class="track"><span style="width:100%;background:#1a202c;"></span></div><div class="amt"><strong>${money(co.totalMonthly.atGoal)}</strong><span class="muted" style="font-weight:500;font-size:0.72rem;">/mo</span></div></div>` +
+                `<p class="muted" style="margin-top:0.9rem;">${S.founder.seated}/${S.founder.total} founder seats · ${S.business.paying} businesses paying · cash-offer goal ${c.goalLow}–${c.goalHigh} deals/mo at ${money(c.perDeal)} each (${c.wonAllTime || 0} closed all-time). Set CASH_OFFER_VALUE_USD to tune.</p>`;
         }
 
         // ── Business financials + coverage ─────────────────────────────────
