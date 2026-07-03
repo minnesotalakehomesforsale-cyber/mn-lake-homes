@@ -1127,7 +1127,10 @@ function seoDirectory(groups) {
         return `<div style="break-inside:avoid;margin-bottom:1.5rem;"><h3 style="font-size:0.74rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#718096;margin:0 0 0.6rem;">${escapeHtml(g.title)}</h3>${links}</div>`;
     }).join('');
     if (!cols) return '';
-    return `<nav aria-label="Browse all" style="background:#f7f9fa;border-top:1px solid #edf2f7;padding:3rem 2rem;"><div style="max-width:1200px;margin:0 auto;columns:4;column-gap:2.5rem;font-size:0.9rem;line-height:1.5;">${cols}</div></nav>`;
+    // columns:130px caps at 4 but lets the browser drop to 2 on phones and 3 on
+    // small tablets instead of forcing 4 skinny ~75px columns that wrap every
+    // word. Responsive with no media query needed.
+    return `<nav aria-label="Browse all" style="background:#f7f9fa;border-top:1px solid #edf2f7;padding:2.75rem 1.25rem;"><div style="max-width:1200px;margin:0 auto;columns:130px 4;column-gap:1.5rem;font-size:0.92rem;line-height:1.5;">${cols}</div></nav>`;
 }
 
 // ─── Towns: public browse-all page ─────────────────────────────────────
