@@ -9,6 +9,7 @@ const { verifyToken, requireRole } = require('../middleware/auth');
 router.get   ('/marketing/overview',                marketingController.overview);
 router.get   ('/marketing/newsletter/subscribers',  marketingController.listSubscribers);
 router.get   ('/marketing/posts',                   marketingController.listPosts);
+router.get   ('/marketing/calendar',                marketingController.calendar);
 router.post  ('/marketing/posts',                   marketingController.createPost);
 router.patch ('/marketing/posts/:id',               marketingController.updatePost);
 router.delete('/marketing/posts/:id',               marketingController.deletePost);

@@ -177,6 +177,7 @@
             <button id="tab-btn-blog"       class="page-tab"        onclick="showMK('blog')"       role="tab">Blog &amp; Content</button>
             <button id="tab-btn-resources"  class="page-tab"        onclick="showMK('resources')"  role="tab">Resources</button>
             <button id="tab-btn-newsletter" class="page-tab"        onclick="showMK('newsletter')" role="tab">Newsletter</button>
+            <button id="tab-btn-calendar"   class="page-tab"        onclick="showMK('calendar')"   role="tab">Content Calendar</button>
             <button id="tab-btn-social"     class="page-tab"        onclick="showMK('social')"     role="tab">Social Media</button>
             <button id="tab-btn-agents"     class="page-tab"        onclick="showMK('agents')"     role="tab">Marketing to Agents</button>
             <button id="tab-btn-businesses" class="page-tab"        onclick="showMK('businesses')" role="tab">Marketing to Businesses</button>
@@ -308,6 +309,72 @@
             </div>
         </div>
 
+        <!-- ── CONTENT CALENDAR ─────────────────────────────────────── -->
+        <div id="pane-calendar" class="tab-pane" role="tabpanel">
+            <div class="cal-toolbar">
+                <div class="cal-nav">
+                    <button class="cal-arrow" onclick="calShift(-1)" aria-label="Previous month">&lsaquo;</button>
+                    <span id="cal-title" class="cal-title">&mdash;</span>
+                    <button class="cal-arrow" onclick="calShift(1)" aria-label="Next month">&rsaquo;</button>
+                    <button class="mk-btn ghost cal-today" onclick="calToday()">Today</button>
+                </div>
+                <div class="cal-filters" id="cal-filters"></div>
+                <button class="mk-btn primary" onclick="openCalItem()">+ Add content</button>
+            </div>
+            <div class="cal-layout">
+                <div class="cal-main">
+                    <div class="cal-weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+                    <div class="cal-grid" id="cal-grid"></div>
+                </div>
+                <aside class="cal-side">
+                    <div class="cal-side-hd">Blogs to publish <span id="cal-blog-count" class="cal-badge">0</span></div>
+                    <div id="cal-blogs" class="cal-blogs"><div class="mk-skel">Loading…</div></div>
+                    <p style="font-size:0.72rem;color:#a0aec0;margin:0.8rem 0 0;line-height:1.5;">Drafts waiting to go live. Give one a date and it lands on the calendar; publish it when you're ready.</p>
+                </aside>
+            </div>
+        </div>
+
+        <style>
+            .cal-toolbar { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1rem; }
+            .cal-nav { display:flex; align-items:center; gap:0.5rem; }
+            .cal-arrow { width:34px; height:34px; border:1px solid #e2e8f0; background:#fff; border-radius:9px; font-size:1.25rem; line-height:1; color:#4a5568; cursor:pointer; }
+            .cal-arrow:hover { border-color:#cbd5e0; }
+            .cal-title { font-size:1.15rem; font-weight:800; min-width:170px; letter-spacing:-0.3px; }
+            .cal-today { padding:0.45rem 0.9rem; }
+            .cal-filters { display:flex; gap:0.35rem; flex-wrap:wrap; margin-left:auto; }
+            .cal-chip { display:inline-flex; align-items:center; gap:0.32rem; font-size:0.73rem; font-weight:700; padding:0.28rem 0.6rem; border-radius:99px; border:1px solid #e2e8f0; background:#fff; color:#4a5568; cursor:pointer; user-select:none; }
+            .cal-chip .dot { width:8px; height:8px; border-radius:50%; }
+            .cal-chip.off { opacity:0.38; }
+            .cal-layout { display:grid; grid-template-columns:1fr 278px; gap:1.1rem; align-items:start; }
+            @media (max-width:960px){ .cal-layout { grid-template-columns:1fr; } }
+            .cal-weekdays { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:6px; }
+            .cal-weekdays span { font-size:0.64rem; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; color:#a0aec0; text-align:center; }
+            .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+            .cal-day { background:#fff; border:1px solid #edf2f7; border-radius:10px; min-height:106px; padding:0.4rem; display:flex; flex-direction:column; gap:3px; cursor:pointer; transition:border-color 0.12s, box-shadow 0.12s; }
+            .cal-day:hover { border-color:#cbd5e0; box-shadow:0 4px 12px rgba(16,24,40,0.06); }
+            .cal-day.out { background:#f7f9fa; }
+            .cal-day.today { border-color:#1d6df2; box-shadow:0 0 0 1px #1d6df2 inset; }
+            .cal-daynum { font-size:0.74rem; font-weight:700; color:#718096; }
+            .cal-day.today .cal-daynum { color:#1d6df2; }
+            .cal-ev { display:flex; align-items:center; gap:0.28rem; font-size:0.68rem; font-weight:700; color:#fff; border-radius:5px; padding:0.16rem 0.36rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
+            .cal-ev .ev-t { overflow:hidden; text-overflow:ellipsis; }
+            .cal-more { font-size:0.65rem; color:#a0aec0; font-weight:700; padding-left:0.2rem; }
+            .cal-side { background:#fff; border:1px solid #edf2f7; border-radius:12px; padding:1rem 1.1rem; box-shadow:0 1px 2px rgba(16,24,40,0.04); }
+            .cal-side-hd { font-size:0.78rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#4a5568; margin-bottom:0.75rem; display:flex; align-items:center; gap:0.5rem; }
+            .cal-badge { background:#fef3c7; color:#92400e; border-radius:99px; padding:0.05rem 0.5rem; font-size:0.72rem; }
+            .cal-blogs { display:flex; flex-direction:column; gap:0.5rem; max-height:520px; overflow-y:auto; }
+            .cal-blog { border:1px solid #edf2f7; border-radius:9px; padding:0.55rem 0.65rem; cursor:pointer; transition:border-color 0.12s, background 0.12s; }
+            .cal-blog:hover { border-color:#cbd5e0; background:#fafbfc; }
+            .cal-blog .bt { font-size:0.82rem; font-weight:700; line-height:1.25; }
+            .cal-blog .bd { font-size:0.7rem; color:#a0aec0; margin-top:0.2rem; }
+            .cal-blog .bd.sched { color:#2f855a; font-weight:700; }
+            .cal-field { display:flex; flex-direction:column; gap:0.3rem; margin-bottom:0.9rem; }
+            .cal-field label { font-size:0.72rem; font-weight:700; color:#4a5568; text-transform:uppercase; letter-spacing:0.4px; }
+            .cal-field input, .cal-field select, .cal-field textarea { font:inherit; font-size:0.9rem; padding:0.55rem 0.7rem; border:1px solid #e2e8f0; border-radius:9px; outline:none; background:#fff; }
+            .cal-field input:focus, .cal-field select:focus, .cal-field textarea:focus { border-color:#1d6df2; }
+            .cal-2col { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
+        </style>
+
         <!-- ── TAB 5: MARKETING TO AGENTS (coverage-gap insights) ──────── -->
         <div id="pane-agents" class="tab-pane" role="tabpanel">
             <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem;">
@@ -409,9 +476,21 @@
     </div>
 </div>
 
+<!-- Content-calendar item modal (marketing item OR blog draft) -->
+<div class="mk-modal" id="cal-modal">
+    <div class="mk-modal-box">
+        <div class="mk-modal-hd">
+            <h3 id="cal-modal-title">New content</h3>
+            <button class="mk-btn ghost" onclick="closeCalModal()" style="padding:0.25rem 0.6rem;font-size:1.1rem;line-height:1;">&times;</button>
+        </div>
+        <div class="mk-modal-body" id="cal-modal-body"></div>
+        <div class="mk-modal-ft" id="cal-modal-ft"></div>
+    </div>
+</div>
+
 <script>
     // ── Tabs ──────────────────────────────────────────────────────
-    const TABS = ['overview', 'blog', 'resources', 'newsletter', 'social', 'agents', 'businesses'];
+    const TABS = ['overview', 'blog', 'resources', 'newsletter', 'social', 'calendar', 'agents', 'businesses'];
     const _params = new URLSearchParams(window.location.search);
     const _initialTab = TABS.includes(_params.get('tab')) ? _params.get('tab') : 'overview';
 
@@ -434,6 +513,7 @@
 
         if (name === 'newsletter' && !_subscribersLoaded) loadSubscribers();
         if (name === 'social'     && !_postsLoaded)       loadPosts();
+        if (name === 'calendar'   && !_calLoaded)         loadCalendar();
         if (name === 'agents'     && !_agentInsightsLoaded) loadAgentInsights();
         if (name === 'businesses' && !_bizInsightsLoaded)   loadBusinessInsights();
     }
@@ -534,6 +614,160 @@
         }
     }
     function refreshBusinessInsights() { _bizInsightsLoaded = false; loadBusinessInsights(); }
+
+    // ── Content calendar ───────────────────────────────────────────────────
+    const CT = {
+        post:  { label: 'Social post',  color: '#1d6df2' },
+        story: { label: 'Story',        color: '#ec4899' },
+        reel:  { label: 'Reel / video', color: '#8b5cf6' },
+        dm:    { label: 'DM outreach',  color: '#f59e0b' },
+        email: { label: 'Email',        color: '#059669' },
+        sms:   { label: 'SMS',          color: '#06b6d4' },
+        blog:  { label: 'Blog',         color: '#dc2626' },
+        other: { label: 'Other',        color: '#718096' },
+    };
+    const CT_ORDER = ['post', 'story', 'reel', 'dm', 'email', 'sms', 'blog', 'other'];
+    const CAL_CHANNELS = ['instagram', 'facebook', 'tiktok', 'youtube', 'linkedin', 'twitter', 'pinterest', 'other'];
+    let _calLoaded = false;
+    let _calData = [];
+    let _calRef = new Date(); _calRef.setDate(1);
+    const _calHidden = new Set();
+    let _calEdit = null;
+
+    const ymdLocal = d => { const z = new Date(d); return z.getFullYear() + '-' + String(z.getMonth() + 1).padStart(2, '0') + '-' + String(z.getDate()).padStart(2, '0'); };
+
+    async function loadCalendar() {
+        _calLoaded = true;
+        try {
+            const res = await fetch('/api/admin/marketing/calendar', { credentials: 'include' });
+            const d = await res.json();
+            _calData = Array.isArray(d.items) ? d.items : [];
+        } catch (_) { _calData = []; }
+        renderCalFilters(); renderCalendar(); renderCalBlogs();
+    }
+
+    function renderCalFilters() {
+        document.getElementById('cal-filters').innerHTML = CT_ORDER.map(t =>
+            `<span class="cal-chip ${_calHidden.has(t) ? 'off' : ''}" onclick="calToggleType('${t}')"><span class="dot" style="background:${CT[t].color};"></span>${CT[t].label}</span>`).join('');
+    }
+    function calToggleType(t) { _calHidden.has(t) ? _calHidden.delete(t) : _calHidden.add(t); renderCalFilters(); renderCalendar(); }
+    function calShift(n) { _calRef.setMonth(_calRef.getMonth() + n); renderCalendar(); }
+    function calToday() { _calRef = new Date(); _calRef.setDate(1); renderCalendar(); }
+
+    function renderCalendar() {
+        const y = _calRef.getFullYear(), m = _calRef.getMonth();
+        document.getElementById('cal-title').textContent = _calRef.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        const startDow = new Date(y, m, 1).getDay();
+        const gridStart = new Date(y, m, 1 - startDow);
+        const todayKey = ymdLocal(new Date());
+        const byDate = {};
+        _calData.forEach(it => { if (!it.date || _calHidden.has(it.content_type)) return; (byDate[it.date] ||= []).push(it); });
+        const cells = [];
+        for (let i = 0; i < 42; i++) {
+            const d = new Date(gridStart); d.setDate(gridStart.getDate() + i);
+            const key = ymdLocal(d);
+            const out = d.getMonth() !== m;
+            const items = (byDate[key] || []).sort((a, b) => CT_ORDER.indexOf(a.content_type) - CT_ORDER.indexOf(b.content_type));
+            const evs = items.slice(0, 3).map(it => `<div class="cal-ev" style="background:${CT[it.content_type]?.color || '#718096'};" onclick="event.stopPropagation();openCalItem('${it.kind}','${it.id}')" title="${escHtml(it.title)}"><span class="ev-t">${escHtml(it.title)}</span></div>`).join('');
+            const more = items.length > 3 ? `<div class="cal-more">+${items.length - 3} more</div>` : '';
+            cells.push(`<div class="cal-day ${out ? 'out' : ''} ${key === todayKey ? 'today' : ''}" onclick="openCalItem(null,null,'${key}')"><div class="cal-daynum">${d.getDate()}</div>${evs}${more}</div>`);
+        }
+        document.getElementById('cal-grid').innerHTML = cells.join('');
+    }
+
+    function renderCalBlogs() {
+        const blogs = _calData.filter(it => it.kind === 'blog');
+        document.getElementById('cal-blog-count').textContent = blogs.length;
+        const el = document.getElementById('cal-blogs');
+        if (!blogs.length) { el.innerHTML = '<div style="color:#a0aec0;font-size:0.8rem;padding:0.5rem 0;">No drafts waiting.</div>'; return; }
+        el.innerHTML = blogs.map(b => `<div class="cal-blog" onclick="openCalItem('blog','${b.id}')"><div class="bt">${escHtml(b.title)}</div><div class="bd ${b.date ? 'sched' : ''}">${b.date ? 'Go live ' + fmtDate(b.date) : 'No date set'}</div></div>`).join('');
+    }
+
+    function openCalItem(kind, id, presetDate) {
+        _calEdit = (kind && id) ? { kind, id } : null;
+        const body = document.getElementById('cal-modal-body');
+        const ft = document.getElementById('cal-modal-ft');
+        const titleEl = document.getElementById('cal-modal-title');
+        if (_calEdit && kind === 'blog') {
+            const b = _calData.find(x => x.kind === 'blog' && x.id === id) || {};
+            titleEl.textContent = 'Blog — plan its go-live';
+            body.innerHTML = `
+                <div class="cal-field"><label>Post</label><input type="text" value="${escHtml(b.title || '')}" disabled></div>
+                <div class="cal-field"><label>Scheduled go-live date</label><input type="date" id="cal-blog-date" value="${b.date || ''}"></div>
+                <p style="font-size:0.8rem;color:#718096;margin:0;">A date just plans it on the calendar. Hit <b>Publish now</b> to take it live immediately, or open the Blog tab to edit the content.</p>`;
+            ft.innerHTML = `
+                <button class="mk-btn ghost" onclick="showMK('blog')">Open Blog tab</button>
+                <div style="flex:1;"></div>
+                <button class="mk-btn ghost" onclick="saveBlogSchedule('${id}')">Save date</button>
+                <button class="mk-btn primary" onclick="publishBlogNow('${id}')">Publish now</button>`;
+        } else {
+            const it = _calEdit ? _calData.find(x => x.kind === 'marketing' && x.id === id) : null;
+            titleEl.textContent = it ? 'Edit content' : 'New content';
+            const typeOpts = CT_ORDER.filter(t => t !== 'blog').map(t => `<option value="${t}" ${it && it.content_type === t ? 'selected' : ''}>${CT[t].label}</option>`).join('');
+            const chanOpts = ['<option value="">— platform —</option>'].concat(CAL_CHANNELS.map(c => `<option value="${c}" ${it && it.channel === c ? 'selected' : ''}>${c[0].toUpperCase() + c.slice(1)}</option>`)).join('');
+            const statOpts = ['idea', 'in_progress', 'scheduled', 'posted', 'cancelled'].map(s => `<option value="${s}" ${it && it.status === s ? 'selected' : ''}>${s.replace('_', ' ')}</option>`).join('');
+            body.innerHTML = `
+                <div class="cal-field"><label>Title</label><input type="text" id="cal-f-title" maxlength="300" placeholder="What's the content?" value="${it ? escHtml(it.title) : ''}"></div>
+                <div class="cal-2col">
+                    <div class="cal-field"><label>Type</label><select id="cal-f-type">${typeOpts}</select></div>
+                    <div class="cal-field"><label>Platform / channel</label><select id="cal-f-channel">${chanOpts}</select></div>
+                </div>
+                <div class="cal-2col">
+                    <div class="cal-field"><label>Date</label><input type="date" id="cal-f-date" value="${it ? (it.date || '') : (presetDate || '')}"></div>
+                    <div class="cal-field"><label>Status</label><select id="cal-f-status">${statOpts}</select></div>
+                </div>
+                <div class="cal-field"><label>Notes / caption</label><textarea id="cal-f-desc" rows="4" placeholder="Hook, caption, CTA, links…">${it ? escHtml(it.description || '') : ''}</textarea></div>
+                <div id="cal-f-err" style="color:#c53030;font-size:0.85rem;display:none;"></div>`;
+            ft.innerHTML = `
+                ${it ? `<button class="mk-btn danger" onclick="deleteCalItem('${id}')">Delete</button>` : ''}
+                <div style="flex:1;"></div>
+                <button class="mk-btn ghost" onclick="closeCalModal()">Cancel</button>
+                <button class="mk-btn primary" onclick="saveCalItem()">Save</button>`;
+        }
+        document.getElementById('cal-modal').classList.add('open');
+    }
+    function closeCalModal() { document.getElementById('cal-modal').classList.remove('open'); _calEdit = null; }
+
+    async function saveCalItem() {
+        const title = document.getElementById('cal-f-title').value.trim();
+        const err = document.getElementById('cal-f-err');
+        if (!title) { err.textContent = 'Title is required.'; err.style.display = 'block'; return; }
+        const payload = {
+            title,
+            content_type: document.getElementById('cal-f-type').value,
+            channel: document.getElementById('cal-f-channel').value || null,
+            due_date: document.getElementById('cal-f-date').value || null,
+            status: document.getElementById('cal-f-status').value,
+            description: document.getElementById('cal-f-desc').value.trim() || null,
+        };
+        try {
+            const url = _calEdit ? `/api/admin/marketing/posts/${_calEdit.id}` : '/api/admin/marketing/posts';
+            const res = await fetch(url, { method: _calEdit ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+            if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Save failed.'); }
+            closeCalModal(); _calLoaded = false; await loadCalendar();
+        } catch (e) { err.textContent = e.message; err.style.display = 'block'; }
+    }
+    async function deleteCalItem(id) {
+        if (!confirm('Delete this content item?')) return;
+        try { await fetch(`/api/admin/marketing/posts/${id}`, { method: 'DELETE', credentials: 'include' }); closeCalModal(); _calLoaded = false; await loadCalendar(); }
+        catch (_) { alert('Delete failed.'); }
+    }
+    async function saveBlogSchedule(id) {
+        const date = document.getElementById('cal-blog-date').value || null;
+        try {
+            const res = await fetch(`/api/blog/admin/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ scheduled_for: date }) });
+            if (!res.ok) throw new Error();
+            closeCalModal(); _calLoaded = false; await loadCalendar();
+        } catch (_) { alert('Could not save the date.'); }
+    }
+    async function publishBlogNow(id) {
+        if (!confirm('Publish this blog now? It will go live on the public site.')) return;
+        try {
+            const res = await fetch(`/api/blog/admin/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ is_published: true }) });
+            if (!res.ok) throw new Error();
+            closeCalModal(); _calLoaded = false; await loadCalendar();
+        } catch (_) { alert('Publish failed.'); }
+    }
 
     // Iframe auto-resize from blog.html embed mode.
     window.addEventListener('message', (e) => {

@@ -140,7 +140,7 @@ const updatePost = async (req, res) => {
         const vals = [];
         let i = 1;
 
-        const allowed = ['title', 'excerpt', 'body', 'cover_image_url', 'tag', 'read_time_minutes', 'author_name'];
+        const allowed = ['title', 'excerpt', 'body', 'cover_image_url', 'tag', 'read_time_minutes', 'author_name', 'scheduled_for'];
         for (const key of allowed) {
             if (key in body) {
                 fields.push(`${key} = $${i++}`);

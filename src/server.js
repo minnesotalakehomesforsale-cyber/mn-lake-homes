@@ -2870,6 +2870,13 @@ async function ensureTables() {
             );
             CREATE INDEX IF NOT EXISTS idx_marketing_posts_due    ON marketing_posts(due_date);
             CREATE INDEX IF NOT EXISTS idx_marketing_posts_status ON marketing_posts(status);
+            -- content_type = the KIND of content (post/story/reel/dm/email/sms/
+            -- blog/other), separate from channel (the platform). Powers the
+            -- unified content calendar's colour-coding + type filter.
+            ALTER TABLE marketing_posts ADD COLUMN IF NOT EXISTS content_type VARCHAR(24) NOT NULL DEFAULT 'post';
+            -- Optional scheduled publish date for a blog draft, so it shows on
+            -- the content calendar with a "go live" date (manual publish).
+            ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS scheduled_for DATE;
         `);
 
         // Day-0 launch baselines + any subsequent snapshots. Each row is a
