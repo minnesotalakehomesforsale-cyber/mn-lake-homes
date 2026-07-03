@@ -2501,9 +2501,84 @@ const getAgentMarketingInsights = async (req, res) => {
     }
 };
 
+// GET /api/admin/marketing/business-insights
+// The business mirror of getAgentMarketingInsights: per-area business coverage
+// vs the directory goal (1 Featured Partner + 3 Local Spotlights per area, plus
+// the core types every lake area should have), then the SAME AI writes a
+// prioritized recruiting plan — just aimed at signing local businesses.
+const BIZ_CORE_TYPES = ['marina', 'outdoor_recreation', 'restaurant', 'boat_rental'];
+const BIZ_TYPE_LABEL = { marina: 'Marina', outdoor_recreation: 'Resort/Outdoor', restaurant: 'Restaurant', boat_rental: 'Boat rental', builder: 'Builder', photographer: 'Photographer', service: 'Service', other: 'Other' };
+
+const getBusinessMarketingInsights = async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT t.name, t.state, t.region, t.latitude, t.longitude,
+                   COUNT(b.id) FILTER (WHERE COALESCE(NULLIF(b.tier,''),'free') = 'premium')::int AS premium,
+                   COUNT(b.id) FILTER (WHERE COALESCE(NULLIF(b.tier,''),'free') = 'basic')::int   AS basic,
+                   COUNT(b.id) FILTER (WHERE COALESCE(NULLIF(b.tier,''),'free') = 'free')::int    AS free,
+                   COUNT(b.id)::int AS total,
+                   ARRAY_REMOVE(ARRAY_AGG(DISTINCT b.type), NULL) AS types
+              FROM tags t
+         LEFT JOIN business_tags bt ON bt.tag_id = t.id
+         LEFT JOIN businesses b ON b.id = bt.business_id
+                                AND b.status = 'active'
+                                AND (b.user_id IS NULL OR b.subscription_status = 'active' OR b.tier_comped)
+             WHERE t.active = TRUE
+          GROUP BY t.id`);
+
+        const GOAL = { premium: 1, basic: 3 };
+        const areas = rows.map(t => {
+            const types = Array.isArray(t.types) ? t.types : [];
+            const missingCore = BIZ_CORE_TYPES.filter(ct => !types.includes(ct));
+            const def = { premium: Math.max(0, GOAL.premium - t.premium), basic: Math.max(0, GOAL.basic - t.basic) };
+            return { name: t.name, state: t.state, region: t.region || '—',
+                     have: { premium: t.premium, basic: t.basic, free: t.free }, total: t.total,
+                     types, missingCore, def, need: def.premium + def.basic,
+                     noGeo: t.latitude == null || t.longitude == null };
+        });
+
+        const byRegion = {};
+        areas.forEach(a => { const k = `${a.state} · ${a.region}`; (byRegion[k] ||= { region: k, deficit: 0, areas: 0, gaps: 0, missingCore: 0 });
+            byRegion[k].deficit += a.need; byRegion[k].areas++; if (a.total === 0) byRegion[k].gaps++; byRegion[k].missingCore += a.missingCore.length; });
+
+        const stats = {
+            totalAreas: areas.length,
+            gaps: areas.filter(a => a.total === 0).length,
+            belowGoal: areas.filter(a => a.need > 0).length,
+            noCoordinates: areas.filter(a => a.noGeo).length,
+            totalDeficit: { premium: areas.reduce((s, a) => s + a.def.premium, 0), basic: areas.reduce((s, a) => s + a.def.basic, 0) },
+            missingCoreByType: BIZ_CORE_TYPES.map(ct => ({ type: BIZ_TYPE_LABEL[ct], areasMissing: areas.filter(a => a.missingCore.includes(ct)).length })),
+            topRegionsByDeficit: Object.values(byRegion).sort((a, b) => b.deficit - a.deficit).slice(0, 8),
+            worstAreas: [...areas].sort((a, b) => b.need - a.need || b.missingCore.length - a.missingCore.length).slice(0, 15)
+                .map(a => ({ area: `${a.name}, ${a.state}`, region: a.region, have: a.have, need: a.def, missing: a.missingCore.map(t => BIZ_TYPE_LABEL[t]) })),
+        };
+
+        const client = getMktOpenAI();
+        let recommendations = null;
+        if (client) {
+            const sys = 'You are a concise growth strategist for a Minnesota lake-area LOCAL BUSINESS DIRECTORY (marinas, resorts, restaurants, boat rentals, dock builders, photographers). You advise the platform owner on recruiting local businesses to buy paid directory listings (Featured Partner $79/mo, Local Spotlight $29/mo), organized by service area. Output clean HTML only — use <h4>, <p>, <ul><li>. No markdown, no code fences, no preamble.';
+            const user = `Per service-area goal: 1 Featured Partner (Premium) + 3 Local Spotlights (Standard), and every area should ideally cover the core types: Marina, Resort/Outdoor, Restaurant, Boat rental. Below is CURRENT coverage vs goal as JSON (deficits = how many more paid listings needed; missing = core business types absent). Produce a prioritized action plan: (1) the top regions/areas to target first and why, (2) which business TYPES to recruit in each area to fill the missing core types, (3) 3–5 concrete outreach tactics to sign local lake businesses to a paid listing — the pitch angle is reaching buyers and vacationers who land on that lake's page. Keep it tight and specific to the data.\n\nDATA:\n${JSON.stringify(stats)}`;
+            try {
+                const completion = await client.chat.completions.create({
+                    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+                    messages: [{ role: 'system', content: sys }, { role: 'user', content: user }],
+                    temperature: 0.5, max_tokens: 1200,
+                });
+                recommendations = completion.choices[0]?.message?.content?.trim() || null;
+            } catch (e) { console.error('[business-insights AI]', e.message); }
+        }
+
+        res.json({ generatedAt: new Date().toISOString(), aiConfigured: !!client, stats, recommendations });
+    } catch (err) {
+        console.error('[getBusinessMarketingInsights]', err.message);
+        res.status(500).json({ error: 'Failed to build business marketing insights.' });
+    }
+};
+
 module.exports = {
     getRoutingDiagnostics,
     getAgentMarketingInsights,
+    getBusinessMarketingInsights,
     getLedger,
     getAgentDetail,
     getSubscriberBilling,

@@ -37,6 +37,7 @@ router.get('/revenue', verifyToken, requireRole(['admin', 'super_admin']), admin
 // ─── LEAD ROUTING DIAGNOSTICS (before /:id so the slug isn't read as an id) ──
 router.get('/routing-diagnostics', verifyToken, requireRole(['admin', 'super_admin']), adminController.getRoutingDiagnostics);
 router.get('/marketing/agent-insights', verifyToken, requireRole(['admin', 'super_admin']), adminController.getAgentMarketingInsights);
+router.get('/marketing/business-insights', verifyToken, requireRole(['admin', 'super_admin']), adminController.getBusinessMarketingInsights);
 
 // ─── FINANCIALS (revenue projections + per-lake founder-seat valuation) ──────
 const financialsController = require('../controllers/financials.controller');
