@@ -148,6 +148,16 @@ h1, h2, .hero-title, .section-title, [class*="hero"] h1 {
     font-family: var(--font-family);
 }
 
+/* Global mobile-overflow guards — one place so EVERY page is protected from
+   horizontal overflow instead of relying on each page's own media queries:
+   - overflow-x:clip on <html> too (not just <body>) closes the scroll gap;
+   - media can never be wider than its column;
+   - long words/headings (e.g. a long lake or town name) wrap instead of
+     pushing the whole layout wider than the phone screen. */
+html { max-width: 100%; overflow-x: clip; }
+img, svg, video, canvas { max-width: 100%; }
+h1, h2, h3, h4 { overflow-wrap: break-word; word-wrap: break-word; }
+
 body {
     background-color: var(--bg-dark);
     color: var(--text-primary);
@@ -618,11 +628,12 @@ body > * { min-width: 0; }
 }
 
 .title {
-    font-size: 6rem;
+    font-size: clamp(2.5rem, 7vw, 6rem);
     line-height: 1.05;
     font-weight: 800;
-    letter-spacing: -2.5px;
+    letter-spacing: -0.02em;
     color: var(--text-primary);
+    overflow-wrap: break-word;
 }
 
 /* Force Inter on hero title + subtitle. The global '[class*="hero"] h1'
@@ -742,7 +753,7 @@ body > * { min-width: 0; }
     box-shadow: 0 15px 40px rgba(7, 89, 133, 0.5), 0 0 20px rgba(3, 105, 161, 0.35);
     z-index: 100;
     width: max-content;
-    max-width: calc(100vw - 2rem);
+    max-width: calc(100% - 2rem);
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -965,7 +976,7 @@ body > * { min-width: 0; }
 /* Responsive — hero */
 @media (max-width: 1200px) {
     .hero-section { padding-top: 8rem; }
-    .title { font-size: 3.5rem; letter-spacing: -1.25px; }
+    .title { letter-spacing: -0.02em; }
     .hero-content { max-width: 760px; }
     .hero-showcase { gap: 1.5rem; max-width: 1040px; }
     .left-card, .right-card {
@@ -979,7 +990,7 @@ body > * { min-width: 0; }
 }
 
 @media (max-width: 900px) {
-    .title { font-size: 4.5rem; }
+    .title { line-height: 1.05; }
     /* Mobile nav simplifies to: logo + single auth pill + hamburger.
        The full Log In / Get Started pair is desktop-only. */
     .nav-links,
@@ -988,13 +999,13 @@ body > * { min-width: 0; }
     .hero-showcase::-webkit-scrollbar { display: none; }
     .left-card, .right-card, .center-card { width: 100%; max-width: none; flex: 0 0 75vw; height: 380px; margin-top: 0; scroll-snap-align: center; }
     .flex-split { grid-template-columns: 1fr; }
-    .floating-promo { flex-direction: column; text-align: center; gap: 0.5rem; padding: 1rem 2rem 1rem; width: 100%; max-width: calc(100vw - 1rem); bottom: 0.5rem; border-width: 1px; border-radius: 8px; }
+    .floating-promo { flex-direction: column; text-align: center; gap: 0.5rem; padding: 1rem 2rem 1rem; width: 100%; max-width: calc(100% - 1rem); bottom: 0.5rem; border-width: 1px; border-radius: 8px; }
     .promo-close { position: absolute; top: 0.5rem; right: 0.5rem; }
     .floating-promo .btn { padding: 0.6rem 1.5rem; font-size: 0.9rem; border-radius: 6px; }
 }
 
 @media (max-width: 600px) {
-    .title { font-size: 3.6rem; line-height: 1.05; letter-spacing: -2px; }
+    .title { line-height: 1.05; letter-spacing: -0.02em; }
     .subtitle { font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 1rem; }
     .hero-section .btn { padding: 0.75rem 1.25rem; font-size: 0.9rem; font-weight: 700; }
     .left-card, .right-card, .center-card { flex: 0 0 78vw; height: 320px; }
@@ -2204,9 +2215,15 @@ body > * { min-width: 0; }
 }
 
 @media (max-width: 900px) {
-    .site-footer { padding: 4rem 2rem 0; }
+    .site-footer { padding: 4rem 1.5rem 0; }
     .footer-container { flex-direction: column; align-items: flex-start; gap: 2.5rem; text-align: left; }
-    .footer-links { flex-direction: column; align-items: flex-start; gap: 2rem; width: 100%; }
+    /* Brand: drop the fixed 300px basis so it fills the column instead of
+       eating ~80% of a phone screen. */
+    .footer-brand { flex: 1 1 auto; max-width: 100%; }
+    .footer-desc { max-width: 100%; }
+    /* Links: reset the desktop right-margin (it was left on at width:100%,
+       so the column measured 100% + 4rem → horizontal overflow). */
+    .footer-links { flex-direction: column; align-items: flex-start; gap: 2rem; width: 100%; margin-right: 0; }
     .footer-contact { align-items: flex-start; }
     .link-column { align-items: flex-start; width: 100%; }
 }
@@ -2302,7 +2319,10 @@ body > * { min-width: 0; }
     .sp-grey-box { padding: 2.5rem 1.75rem !important; }
     .sp-grey-box .sp-title { font-size: 2rem !important; }
     .sp-fw-image { height: 320px !important; }
-    .sp-title { font-size: 2.25rem; letter-spacing: -1px; }
+    /* !important so it beats the per-page INLINE font-size on buy/sell hero
+       titles (style="font-size:4rem") — inline can't be scaled by a plain
+       media rule, which left those headings huge and overflowing on phones. */
+    .sp-title { font-size: 2.25rem !important; letter-spacing: -1px; }
     .sp-grid-3 { gap: 2rem !important; margin-top: 2rem !important; }
     .sp-stat-card { min-width: 0; padding: 1rem 1.25rem; right: 1rem; bottom: 1rem; }
     .sp-stat-value { font-size: 1.75rem; }
@@ -2311,7 +2331,7 @@ body > * { min-width: 0; }
     .sp-dark-section .sp-grid { align-items: stretch !important; }
 }
 @media (max-width: 600px) {
-    .sp-title { font-size: 1.9rem; }
+    .sp-title { font-size: 1.9rem !important; }
     .sp-grey-box { padding: 2rem 1.25rem !important; }
     .sp-grey-box .sp-title { font-size: 1.75rem !important; }
     .sp-fw-image { height: 240px !important; border-radius: 14px; }
