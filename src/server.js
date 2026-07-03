@@ -2994,6 +2994,7 @@ async function ensureTables() {
         await seedBlogPosts();
         await seedBlogContentV2();
         await seedBlogRelatedLinks();
+        await seedStagedDraftReset();
         await seedTownContent();
         await reconcilePartnerBusinesses();
     } catch (err) {
@@ -3077,25 +3078,71 @@ async function seedBlogPosts() {
     // Newest draft batch (also is_published:false) — kept in its own file.
     let newDrafts = [];
     try { newDrafts = require('./data/blog-new'); } catch (_) { newDrafts = []; }
-    let added = 0;
+    let added = 0, failed = 0;
+    // Per-post try/catch so one bad row (e.g. an over-length title) can't abort
+    // the whole loop and silently drop every post after it — the newest drafts
+    // are seeded LAST, so a mid-loop throw used to make them vanish.
     for (const p of [...posts, ...drafts, ...newDrafts]) {
-        const r = await pool.query(`
-            INSERT INTO blog_posts
-                (title, slug, excerpt, body, cover_image_url, tag,
-                 read_time_minutes, is_published, published_at, author_name,
-                 seo_title, seo_description, featured_business_slug)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-            ON CONFLICT (slug) DO NOTHING
-        `, [
-            p.title, p.slug, p.excerpt, p.body, p.cover_image_url, p.tag,
-            p.read_time_minutes || 5, p.is_published !== false,
-            p.published_at || new Date(), p.author_name || 'MN Lake Homes Team',
-            p.seo_title || null, p.seo_description || null,
-            p.featured_business_slug || null,
-        ]);
-        added += r.rowCount;
+        try {
+            const r = await pool.query(`
+                INSERT INTO blog_posts
+                    (title, slug, excerpt, body, cover_image_url, tag,
+                     read_time_minutes, is_published, published_at, author_name,
+                     seo_title, seo_description, featured_business_slug)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+                ON CONFLICT (slug) DO NOTHING
+            `, [
+                p.title, p.slug, p.excerpt, p.body, p.cover_image_url, p.tag,
+                p.read_time_minutes || 5, p.is_published !== false,
+                p.published_at || new Date(), p.author_name || 'MN Lake Homes Team',
+                p.seo_title || null, p.seo_description || null,
+                p.featured_business_slug || null,
+            ]);
+            added += r.rowCount;
+        } catch (e) {
+            failed++;
+            console.warn(`[seedBlogPosts] skipped "${p.slug}": ${e.message}`);
+        }
     }
-    if (added > 0) console.log(` Seeded ${added} missing blog post(s).`);
+    if (added > 0)  console.log(` Seeded ${added} missing blog post(s).`);
+    if (failed > 0) console.warn(` ${failed} blog post(s) failed to seed.`);
+}
+
+// One-time reconciliation: the blog-new posts are meant to be DRAFTS, but some
+// of their slugs were inserted as PUBLISHED by a manually-run import script.
+// seedBlogPosts() uses ON CONFLICT DO NOTHING, so it can never flip those back.
+// Force them to draft exactly once — guarded by an app_config flag so any
+// later admin "Publish" decision sticks and this never re-drafts them.
+async function seedStagedDraftReset() {
+    const KEY = 'blog_new_drafts_reset_v1';
+    try {
+        const { rows } = await pool.query(`SELECT value FROM app_config WHERE key = $1`, [KEY]);
+        const done = rows[0] && (rows[0].value === 1 || rows[0].value === '1' || rows[0].value === true);
+        if (done) return;
+
+        let newDrafts = [];
+        try { newDrafts = require('./data/blog-new'); } catch (_) { newDrafts = []; }
+        const slugs = newDrafts.filter(p => p.is_published === false).map(p => p.slug);
+        let n = 0;
+        if (slugs.length) {
+            const r = await pool.query(
+                `UPDATE blog_posts
+                    SET is_published = FALSE, published_at = NULL, updated_at = NOW()
+                  WHERE slug = ANY($1) AND deleted_at IS NULL`,
+                [slugs]
+            );
+            n = r.rowCount;
+        }
+        await pool.query(
+            `INSERT INTO app_config (key, value, description)
+             VALUES ($1, '1'::jsonb, 'one-time: reset blog-new posts to draft (they had been auto-published)')
+             ON CONFLICT (key) DO UPDATE SET value = '1'::jsonb, updated_at = NOW()`,
+            [KEY]
+        );
+        if (n) console.log(` Reset ${n} staged blog draft(s) back to draft.`);
+    } catch (e) {
+        console.warn('[seedStagedDraftReset]', e.message);
+    }
 }
 
 // Push the expanded v2 bodies (src/data/blog-content-v2.js) onto existing
