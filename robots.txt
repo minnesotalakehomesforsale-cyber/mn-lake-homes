@@ -1,7 +1,15 @@
 User-agent: *
 Allow: /
+
+# Only truly-private areas are blocked. Utility/auth pages (login, signup,
+# etc.) are noindex via X-Robots-Tag header instead of blocked here.
+# NOTE: the app serves a dynamic /robots.txt (src/server.js) that overrides
+# this file — keep the two in sync.
+Disallow: /api/
 Disallow: /pages/admin/
 Disallow: /pages/agent/
-Disallow: /api/
+Disallow: /pages/business/
+Disallow: /admin/
+Disallow: /business/dashboard
 
 Sitemap: https://minnesotalakehomesforsale.com/sitemap.xml

@@ -425,20 +425,37 @@ app.get('/robots.txt', (req, res) => {
 `User-agent: *
 Allow: /
 
-# Don't crawl dashboards, admin, or raw APIs
+# Only block truly-private areas — dashboards, admin, raw APIs. Login/signup
+# and other utility pages are NOT blocked here; they send an X-Robots-Tag:
+# noindex header instead, so Google can crawl them, see the directive, and
+# drop them cleanly (robots-blocking them just triggers a "Blocked by
+# robots.txt" report in Search Console without truly de-indexing).
 Disallow: /api/
 Disallow: /pages/admin/
 Disallow: /pages/agent/
-Disallow: /business/dashboard
+Disallow: /pages/business/
 Disallow: /admin/
-Disallow: /login
-Disallow: /signup
-Disallow: /agent-login
-Disallow: /business-login
-Disallow: /forbidden
+Disallow: /business/dashboard
 
 Sitemap: https://minnesotalakehomesforsale.com/sitemap.xml
 `);
+});
+
+// ─── noindex utility/auth/transactional pages ───────────────────────────────
+// These have no SEO value and shouldn't appear in search, but robots-blocking
+// them trips GSC's "Blocked by robots.txt" report without cleanly de-indexing.
+// An X-Robots-Tag: noindex header lets Google crawl them, honor the directive,
+// and drop them. Matches both the pretty route (/login) and the static file
+// (/pages/public/login.html) by basename.
+const NOINDEX_NAMES = new Set([
+    'login', 'signup', 'agent-login', 'business-login',
+    'forgot-password', 'reset-password', 'forbidden',
+    'checkout-success', 'search', 'submit-business',
+]);
+app.use((req, res, next) => {
+    const base = req.path.replace(/\/+$/, '').split('/').pop().replace(/\.html$/i, '');
+    if (NOINDEX_NAMES.has(base)) res.set('X-Robots-Tag', 'noindex, follow');
+    next();
 });
 
 // ─── /sitemap.xml ─────────────────────────────────────────────────────────
