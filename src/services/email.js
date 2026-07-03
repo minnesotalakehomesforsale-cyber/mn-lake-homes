@@ -954,6 +954,45 @@ function sendBusinessSubscriptionCancelled({ to, name, businessName }) {
     });
 }
 
+/**
+ * Admin alert — an agent or business just canceled their subscription.
+ * Goes to REPLY_TO (the owner inbox) so churn is noticed immediately.
+ * `kind` is a label like 'Agent', 'Business', or 'Founder seat'.
+ */
+function sendAdminSubscriptionCancelled({ kind, who, contact, tier, subscriptionId, note }) {
+    const label = kind || 'Subscription';
+    const timestamp = new Date().toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const rows = [
+        { label: 'Type',      value: label },
+        { label: kind === 'Business' ? 'Business' : 'Name', value: who || '—' },
+        { label: 'Contact',   value: contact || 'Unknown' },
+        { label: 'Plan',      value: tier || '—' },
+        { label: 'Canceled',  value: timestamp },
+        { label: 'Sub ID',    value: subscriptionId || '—' },
+    ].map(r => `
+        <tr>
+            <td style="padding:8px 12px;font-size:13px;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.5px;vertical-align:top;white-space:nowrap;">${r.label}</td>
+            <td style="padding:8px 12px;font-size:15px;color:#1a202c;">${r.value}</td>
+        </tr>`).join('');
+
+    return sendEmail({
+        to: REPLY_TO,
+        subject: `⚠️ ${label} canceled — ${who || 'subscription ended'}`,
+        html: layout({
+            title: `A ${label.toLowerCase()} just canceled`,
+            preheader: `${who || 'A subscriber'} canceled their ${label.toLowerCase()} subscription.`,
+            body: `
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Stripe reported a cancellation. Details:
+                </p>
+                <table style="width:100%;border-collapse:collapse;margin:0 0 8px;">${rows}</table>
+                ${note ? `<p style="margin:16px 0 0;font-size:14px;color:#4a5568;line-height:1.6;">${note}</p>` : ''}`,
+            ctaText: 'Open Admin Dashboard',
+            ctaUrl: `${SITE_URL}/pages/admin/dashboard.html`,
+        })
+    });
+}
+
 // ─── Admin-initiated invites (comped accounts) ─────────────────────────────
 // Both invites surface the temp password in a copyable monospace block
 // rather than a CTA-button URL. The agent/business is supposed to log in,
@@ -1205,6 +1244,7 @@ module.exports = {
     sendBusinessApproved,
     sendBusinessPaymentFailed,
     sendBusinessSubscriptionCancelled,
+    sendAdminSubscriptionCancelled,
     sendAgentInvite,
     sendBusinessInvite,
     sendCustom,
