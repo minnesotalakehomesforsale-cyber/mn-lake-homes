@@ -63,6 +63,7 @@ app.use('/api/searches', require('./routes/search.routes'));
 app.use('/api/partners', require('./routes/partner.routes'));
 app.use('/api/market', require('./routes/market.routes'));
 app.use('/api/dream', require('./routes/dream.routes'));
+app.use('/api/cockpit', require('./routes/cockpit.routes'));
 
 app.get('/api/health', (req, res) => {
     res.json({
@@ -2958,6 +2959,15 @@ async function ensureTables() {
                 UNIQUE (scope, month)
             );
 
+            -- Monthly MRR snapshots for the admin revenue cockpit trend.
+            CREATE TABLE IF NOT EXISTS mrr_snapshots (
+                month       DATE PRIMARY KEY,
+                agent_mrr   INTEGER NOT NULL DEFAULT 0,
+                business_mrr INTEGER NOT NULL DEFAULT 0,
+                total_mrr   INTEGER NOT NULL DEFAULT 0,
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+
             -- Lead outcome tracking: agents mark a lead won/lost with the sale
             -- price. Powers closed-deal proof (agent ROI, company sales volume,
             -- testimonials).
@@ -3883,6 +3893,9 @@ app.listen(PORT, async () => {
         const { recordMonthlySnapshot } = require('./controllers/market.controller');
         setTimeout(() => recordMonthlySnapshot().catch(e => console.warn('[market.snapshot]', e.message)), 2 * 60 * 1000);
         setInterval(() => recordMonthlySnapshot().catch(e => console.warn('[market.snapshot]', e.message)), 12 * 60 * 60 * 1000);
+        const { recordMrrSnapshot } = require('./controllers/cockpit.controller');
+        setTimeout(() => recordMrrSnapshot().catch(e => console.warn('[mrr.snapshot]', e.message)), 2 * 60 * 1000);
+        setInterval(() => recordMrrSnapshot().catch(e => console.warn('[mrr.snapshot]', e.message)), 12 * 60 * 60 * 1000);
     }
 
     // Push every existing contact (users / leads / inquiries) into HubSpot

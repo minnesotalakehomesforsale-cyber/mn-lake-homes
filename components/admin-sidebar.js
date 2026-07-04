@@ -225,6 +225,7 @@
         // its old URL too — the alias keeps the highlight working.
         { key: 'marketing',   href: 'marketing.html',  label: 'Marketing & Content', aliases: ['blog', 'resources'] },
         { key: 'cash-offers', href: 'cash-offers.html',label: 'Cash Offers', cashBadge: true },
+        { key: 'cockpit',     href: 'cockpit.html',    label: 'Revenue Cockpit' },
         { key: 'financials',  href: 'financials.html', label: 'Financials' },
         { key: 'users',       href: 'users.html',      label: 'Users Management' },
         { key: 'tasks',       href: 'tasks.html',      label: 'Tasks', badgeId: 'nav-badge-tasks' },
