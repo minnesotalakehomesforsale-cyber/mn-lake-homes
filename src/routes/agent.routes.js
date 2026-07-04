@@ -24,6 +24,7 @@ router.get('/me', verifyToken, requireRole('agent'), agentController.getMyProfil
 router.get('/me/leads', verifyToken, requireRole('agent'), agentController.getMyLeads);
 router.get('/me/roi',   verifyToken, requireRole('agent'), agentController.getMyRoi);
 router.get('/me/leaderboard', verifyToken, requireRole('agent'), agentController.getMyLeaderboard);
+router.get('/admin/at-risk', verifyToken, agentController.getAtRiskAgents);
 router.patch('/me/leads/:id/status', verifyToken, requireRole('agent'), agentController.updateMyLeadStatus);
 router.patch('/me/leads/:id/outcome', verifyToken, requireRole('agent'), agentController.setMyLeadOutcome);
 router.get  ('/me/leads/:id/notes',  verifyToken, requireRole('agent'), agentController.getMyLeadNotes);

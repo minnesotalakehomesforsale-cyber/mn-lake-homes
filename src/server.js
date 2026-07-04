@@ -2133,6 +2133,9 @@ async function ensureTables() {
             -- tier than they pay for.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS paid_membership_code VARCHAR(50);
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS tier_comped BOOLEAN NOT NULL DEFAULT FALSE;
+            -- Throttle for churn-risk nudges so a disengaged agent isn't emailed
+            -- more than every couple of weeks.
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS last_churn_nudge_at TIMESTAMPTZ;
             -- Agent-authored FAQ answers, keyed by the fixed question keys in
             -- services/agent-faq.js. Only answered questions render publicly.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS faq JSONB NOT NULL DEFAULT '{}'::jsonb;
@@ -3766,6 +3769,13 @@ app.listen(PORT, async () => {
         const { runMonthlyRoiEmails } = require('./services/agent-roi-email');
         setTimeout(() => runMonthlyRoiEmails().catch(e => console.warn('[agent-roi-email]', e.message)), 3 * 60 * 1000);
         setInterval(() => runMonthlyRoiEmails().catch(e => console.warn('[agent-roi-email]', e.message)), 12 * 60 * 60 * 1000);
+    }
+
+    // Churn-risk sweep — nudge disengaged agents + weekly admin digest.
+    if (process.env.CHURN_SWEEP_ENABLED !== 'false') {
+        const { runChurnSweep } = require('./services/churn');
+        setTimeout(() => runChurnSweep().catch(e => console.warn('[churn]', e.message)), 5 * 60 * 1000);
+        setInterval(() => runChurnSweep().catch(e => console.warn('[churn]', e.message)), 24 * 60 * 60 * 1000);
     }
 
     // Push every existing contact (users / leads / inquiries) into HubSpot

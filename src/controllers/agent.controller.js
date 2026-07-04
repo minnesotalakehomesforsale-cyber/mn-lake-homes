@@ -550,6 +550,16 @@ const getMyRoi = async (req, res) => {
     } catch (e) { console.error('[getMyRoi]', e.message); res.status(500).json({ error: 'Failed to load ROI.' }); }
 };
 
+// GET /api/agents/admin/at-risk — churn-risk list for the admin cockpit.
+const getAtRiskAgents = async (req, res) => {
+    if (!['admin', 'super_admin'].includes(req.user?.role)) return res.status(403).json({ error: 'Admin only.' });
+    try {
+        const { findAtRisk } = require('../services/churn');
+        const list = await findAtRisk();
+        res.json(list.map(a => ({ agent_id: a.agent_id, name: a.display_name, email: a.email, reason: a.reason, ghosting: a.ghosting, dormant: a.dormant })));
+    } catch (e) { console.error('[getAtRiskAgents]', e.message); res.status(500).json({ error: 'Failed to load at-risk agents.' }); }
+};
+
 // GET /api/agents/me/leaderboard — this month's ranking + the caller's spot.
 const getMyLeaderboard = async (req, res) => {
     try {
@@ -801,6 +811,7 @@ module.exports = {
     getMyLeads,
     getMyRoi,
     getMyLeaderboard,
+    getAtRiskAgents,
     setMyLeadOutcome,
     updateMyLeadStatus,
     getMyLeadNotes,
