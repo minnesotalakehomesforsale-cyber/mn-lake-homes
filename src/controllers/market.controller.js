@@ -70,6 +70,22 @@ async function recordMonthlySnapshot() {
             ON CONFLICT (scope, month) DO UPDATE
               SET active=EXCLUDED.active, median_price=EXCLUDED.median_price, median_dom=EXCLUDED.median_dom,
                   sold=EXCLUDED.sold, sold_median=EXCLUDED.sold_median`);
+
+        // Per-lake snapshots (scope = lake slug) → per-lake trend charts.
+        await pool.query(`
+            INSERT INTO market_snapshots (scope, month, active, median_price, median_dom, sold, sold_median)
+            SELECT lk.slug, date_trunc('month', now())::date,
+                   COUNT(*) FILTER (WHERE l.status='active')::int,
+                   percentile_cont(0.5) WITHIN GROUP (ORDER BY l.price) FILTER (WHERE l.status='active' AND l.price IS NOT NULL)::int,
+                   percentile_cont(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (now()-l.created_at))/86400) FILTER (WHERE l.status='active')::int,
+                   COUNT(*) FILTER (WHERE l.status='sold' AND l.sold_at >= now()-interval '180 days')::int,
+                   percentile_cont(0.5) WITHIN GROUP (ORDER BY l.price) FILTER (WHERE l.status='sold' AND l.sold_at >= now()-interval '180 days' AND l.price IS NOT NULL)::int
+              FROM lakes lk JOIN listings l ON l.lake_id = lk.id
+             GROUP BY lk.slug
+            HAVING COUNT(*) FILTER (WHERE l.status IN ('active','sold')) > 0
+            ON CONFLICT (scope, month) DO UPDATE
+              SET active=EXCLUDED.active, median_price=EXCLUDED.median_price, median_dom=EXCLUDED.median_dom,
+                  sold=EXCLUDED.sold, sold_median=EXCLUDED.sold_median`);
     } catch (e) { console.warn('[market.snapshot]', e.message); }
 }
 exports.recordMonthlySnapshot = recordMonthlySnapshot;

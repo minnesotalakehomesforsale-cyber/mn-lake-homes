@@ -726,6 +726,12 @@ app.get('/lakes/:slug', async (req, res, next) => {
                    AVG(price) FILTER (WHERE status='sold' AND sold_at >= now() - interval '180 days' AND price IS NOT NULL) AS sold_avg
               FROM listings WHERE lake_id = $1`, [lake.id]).then(r => r.rows[0]).catch(() => null);
 
+        // Per-lake median-price history for a trend sparkline (Phase 6).
+        const lakeHistory = (process.env.LISTINGS_PUBLIC === 'false') ? [] : await pool.query(
+            `SELECT to_char(month,'Mon') AS label, median_price
+               FROM market_snapshots WHERE scope = $1 AND median_price IS NOT NULL
+              ORDER BY month ASC LIMIT 12`, [lake.slug]).then(r => r.rows).catch(() => []);
+
         const templatePath = path.join(PROJECT_ROOT, 'pages/public/lake-detail.html');
         fs.readFile(templatePath, 'utf8', (err, html) => {
             if (err) return next(err);
@@ -814,8 +820,24 @@ app.get('/lakes/:slug', async (req, res, next) => {
                     ms.sold_recent ? { v: ms.sold_recent, l: 'Sold (6 mo)' } : null,
                 ].filter(Boolean);
                 if (cards.length >= 2) {
+                    // Median-price trend sparkline (only once ≥2 monthly snapshots exist).
+                    let chart = '';
+                    if (Array.isArray(lakeHistory) && lakeHistory.length >= 2) {
+                        const vals = lakeHistory.map(p => Number(p.median_price));
+                        const w = 600, h = 90, pad = 6;
+                        const min = Math.min(...vals), max = Math.max(...vals), span = (max - min) || 1;
+                        const stepX = (w - pad * 2) / (vals.length - 1);
+                        const pts = vals.map((v, i) => [pad + i * stepX, h - pad - ((v - min) / span) * (h - pad * 2)]);
+                        const line = pts.map((c, i) => (i ? 'L' : 'M') + c[0].toFixed(1) + ' ' + c[1].toFixed(1)).join(' ');
+                        const area = `${line} L ${pts[pts.length - 1][0].toFixed(1)} ${h - pad} L ${pts[0][0].toFixed(1)} ${h - pad} Z`;
+                        chart = `<div class="lm-trend"><div class="lm-trend-h">Median list price trend</div>`
+                            + `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:70px;display:block;">`
+                            + `<path d="${area}" fill="rgba(29,109,242,0.10)"></path>`
+                            + `<path d="${line}" fill="none" stroke="#1d6df2" stroke-width="2.5" stroke-linejoin="round"></path></svg></div>`;
+                    }
                     lakeMarketHtml = `<div class="lake-market"><div class="lm-head"><h2>${escapeHtml(lake.name)} market snapshot</h2><span class="lm-date">Updated ${escapeHtml(monthLabel)}</span></div>`
                         + `<div class="lm-grid">${cards.map(c => `<div class="lm-stat"><div class="lm-v">${escapeHtml(String(c.v))}</div><div class="lm-l">${escapeHtml(c.l)}</div></div>`).join('')}</div>`
+                        + chart
                         + `<p class="lm-cta"><a href="/pages/user/dashboard.html#alerts">🔔 Get alerts when new ${escapeHtml(lake.name)} homes hit the market →</a></p></div>`;
                 }
             }
