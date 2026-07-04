@@ -10,6 +10,33 @@ require('dotenv').config({ path: envFile });
 
 const app = express();
 
+// ── Error monitoring (optional; enabled when SENTRY_DSN is set) ──────────────
+// Guarded require so a missing package never blocks boot. Also wires
+// process-level handlers so crashes are always logged (Render captures logs)
+// and reported to Sentry when available.
+let Sentry = null;
+if (process.env.SENTRY_DSN) {
+    try {
+        Sentry = require('@sentry/node');
+        Sentry.init({
+            dsn: process.env.SENTRY_DSN,
+            environment: process.env.NODE_ENV || 'production',
+            tracesSampleRate: 0,
+        });
+        console.log('[sentry] error monitoring enabled');
+    } catch (e) {
+        console.warn('[sentry] SENTRY_DSN set but @sentry/node not installed:', e.message);
+    }
+}
+process.on('unhandledRejection', (reason) => {
+    console.error('[unhandledRejection]', reason);
+    if (Sentry) try { Sentry.captureException(reason); } catch (_) {}
+});
+process.on('uncaughtException', (err) => {
+    console.error('[uncaughtException]', err);
+    if (Sentry) try { Sentry.captureException(err); } catch (_) {}
+});
+
 // ==========================================
 // MIDDLEWARE
 // ==========================================
@@ -289,6 +316,7 @@ app.get('/api/_diagnostic', async (req, res) => {
 // (instead of Express's default HTML error page which makes fetches fail silently)
 app.use('/api', (err, req, res, next) => {
     console.error(`[API Error] ${req.method} ${req.originalUrl}:`, err.message);
+    if (Sentry) try { Sentry.captureException(err, { extra: { url: req.originalUrl, method: req.method } }); } catch (_) {}
     if (res.headersSent) return next(err);
     res.status(err.status || 500).json({
         error: err.message || 'Unexpected server error.',
@@ -503,7 +531,7 @@ app.get('/sitemap.xml', async (req, res) => {
             { url: '/buy',             priority: 0.9, changefreq: 'weekly'  },
             { url: '/sell',            priority: 0.9, changefreq: 'weekly'  },
             { url: '/towns',           priority: 0.9, changefreq: 'weekly'  },
-            { url: '/properties',      priority: 0.8, changefreq: 'daily'   },
+            { url: '/towns?view=props', priority: 0.8, changefreq: 'daily'  },
             { url: '/market-index',    priority: 0.7, changefreq: 'weekly'  },
             { url: '/agents',          priority: 0.8, changefreq: 'weekly'  },
             { url: '/cash-offer',      priority: 0.7, changefreq: 'monthly' },
@@ -1478,15 +1506,9 @@ app.get('/review/:token', (req, res, next) => {
     });
 });
 
-// Properties map — agents' own listings, pinned to their geocoded address.
-// Its own page (distinct from the lakes/towns and businesses map views).
-app.get('/properties', (req, res, next) => {
-    if (process.env.LISTINGS_PUBLIC === 'false') return res.redirect(302, '/towns');
-    fs.readFile(path.join(PROJECT_ROOT, 'pages/public/properties.html'), 'utf8', (err, html) => {
-        if (err) return next(err);
-        res.type('html').send(html);
-    });
-});
+// Consolidated: the Lake Properties map now lives as a tab inside /towns.
+// Keep /properties as a permanent redirect so old links + the sitemap resolve.
+app.get('/properties', (req, res) => res.redirect(301, '/towns?view=props'));
 
 // ─── Homepage: inject Google Search Console verification meta tag ─────
 // GoogleBot may not run JS reliably for the verification check, so the
@@ -2075,7 +2097,19 @@ app.get('/api/tools/lakes', async (req, res) => {
     }
 });
 
-app.use(express.static(PROJECT_ROOT));
+app.use(express.static(PROJECT_ROOT, {
+    // Freshness policy so edits show up without a manual cache purge:
+    //  • HTML: always revalidate (etag → instant 304 when unchanged).
+    //  • JS/CSS: short cache + must-revalidate so shared component/style
+    //    changes propagate within minutes instead of being pinned.
+    setHeaders: (res, filePath) => {
+        if (/\.html$/i.test(filePath)) {
+            res.setHeader('Cache-Control', 'no-cache');
+        } else if (/\.(js|css)$/i.test(filePath)) {
+            res.setHeader('Cache-Control', 'public, max-age=300, must-revalidate');
+        }
+    },
+}));
 
 // Fallback for Next.js-style clean URL resolution. Most public pages
 // live under /pages/public/ — try that first so /buy, /about, /privacy
