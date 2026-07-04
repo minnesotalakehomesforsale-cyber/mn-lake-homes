@@ -23,6 +23,7 @@
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <script src="../../components/components.js" defer></script>
+    <script src="../../components/card-carousel.js"></script>
 
     <style>
         /* Embed mode (?embed=1) — page is iframed inside admin
@@ -566,6 +567,10 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l1.5-4h15L21 9"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/></svg>
                 <span class="db-side-label">Businesses<br>&amp; Services</span>
             </button>
+            <button type="button" class="db-side-btn" data-view="props" onclick="setView('props')">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
+                <span class="db-side-label">Lake<br>Properties</span>
+            </button>
             <a class="db-side-btn" href="/pages/public/agents.html">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.418 3.582-8 8-8s8 3.582 8 8"/></svg>
                 <span class="db-side-label">Find an<br>Agent</span>
@@ -579,6 +584,7 @@
         <div class="db-mobile-tabs" role="tablist" aria-label="View">
             <button type="button" class="is-active" data-view="geo" onclick="setView('geo')">Lakes &amp; Towns</button>
             <button type="button" data-view="biz" onclick="setView('biz')">Businesses</button>
+            <button type="button" data-view="props" onclick="setView('props')">Properties</button>
             <a href="/pages/public/agents.html" aria-label="Find an agent">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.418 3.582-8 8-8s8 3.582 8 8"/></svg>
             </a>
@@ -658,7 +664,9 @@
         let _towns = [];
         let _lakes = [];
         let _businesses = [];
-        let _view = 'geo';     // 'geo' = towns+lakes | 'biz' = businesses
+        let _properties = [];  // agent-listed homes for the Properties view
+        let _view = 'geo';     // 'geo' = towns+lakes | 'biz' = businesses | 'props' = listings
+        const money = n => (n == null || n === '') ? 'Contact for price' : '$' + Number(n).toLocaleString('en-US');
         let _type = 'all';     // meaning depends on _view (see SEG_OPTIONS)
         // Items after text/region/type filters, before viewport clipping.
         // Cached so map pan/zoom can re-filter the right list cheaply.
@@ -678,6 +686,11 @@
                 { key: 'marina',              label: 'Marinas' },
                 { key: 'outdoor_recreation',  label: 'Resorts' },
                 { key: 'service',             label: 'Services' },
+            ],
+            props: [
+                { key: 'all',        label: 'All' },
+                { key: 'waterfront', label: 'Waterfront' },
+                { key: 'featured',   label: 'Featured' },
             ],
         };
 
@@ -746,6 +759,15 @@
                 iconSize: [22, 30], iconAnchor: [11, 28], popupAnchor: [0, -26],
             });
         }
+        // Property pins: gold for featured/boosted, blue for standard.
+        function propPinIcon(p) {
+            const c = (p && (p.featured || p.boosted)) ? '#f6ad14' : '#1d6df2';
+            return L.divIcon({
+                className: 'bz-pin-wrap',
+                html: `<div class="bz-pin" style="--c:${c}"></div>`,
+                iconSize: [22, 30], iconAnchor: [11, 28], popupAnchor: [0, -26],
+            });
+        }
 
         // ── Load both feeds in parallel ───────────────────────────
         async function loadAll() {
@@ -772,6 +794,8 @@
                 _towns = await townRes.json();
                 _lakes = lakeRes.ok ? await lakeRes.json() : [];
                 _businesses = bizRes.ok ? await bizRes.json() : [];
+                // Listings (agent-posted homes) — best-effort; empty if gated off.
+                _properties = await fetch('/api/listings/map').then(r => r.ok ? r.json() : []).catch(() => []);
             } catch (err) {
                 console.error('loadAll: fetch failed', err);
                 document.getElementById('db-grid').innerHTML =
@@ -793,8 +817,9 @@
             // in regions.
             const sel = document.getElementById('db-region');
             let opts;
-            if (_view === 'biz') {
-                const cities = [...new Set(_businesses.map(b => b.city).filter(Boolean))].sort();
+            if (_view === 'biz' || _view === 'props') {
+                const src = _view === 'biz' ? _businesses : _properties;
+                const cities = [...new Set(src.map(b => b.city).filter(Boolean))].sort();
                 sel.setAttribute('aria-label', 'Filter by city');
                 opts = [
                     '<option value="">All cities</option>',
@@ -844,6 +869,7 @@
             document.getElementById('db-search').value = '';
             document.getElementById('db-search').placeholder = v === 'biz'
                 ? 'Search businesses…'
+                : v === 'props' ? 'Search properties…'
                 : 'Search lakes or towns…';
             // Tier filter only applies to businesses — hide + reset elsewhere.
             const tierSel = document.getElementById('db-tier');
@@ -884,6 +910,22 @@
                 return filtered.map(b => ({ kind: 'biz', data: b }));
             }
 
+            if (_view === 'props') {
+                const filtered = _properties.filter(p => {
+                    if (_type === 'waterfront' && p.waterfront !== true) return false;
+                    if (_type === 'featured' && !(p.featured || p.boosted)) return false;
+                    if (regionOrCity && p.city !== regionOrCity) return false;
+                    if (search) {
+                        const hay = `${p.title} ${p.city || ''} ${p.agent_name || ''}`.toLowerCase();
+                        if (!hay.includes(search)) return false;
+                    }
+                    return true;
+                });
+                // Featured / boosted homes float to the top.
+                filtered.sort((a, b) => ((b.featured || b.boosted) ? 1 : 0) - ((a.featured || a.boosted) ? 1 : 0));
+                return filtered.map(p => ({ kind: 'props', data: p }));
+            }
+
             const towns = (_type === 'lake') ? [] : _towns.filter(t => {
                 if (regionOrCity && t.region !== regionOrCity) return false;
                 if (search && !t.name.toLowerCase().includes(search)) return false;
@@ -915,7 +957,13 @@
             // Legend + titles follow the active segment so the top-right
             // chip always reflects what's actually on the map. "All" keeps
             // the multi-category label; anything else narrows to one.
-            if (_view === 'biz') {
+            if (_view === 'props') {
+                title.textContent = 'Lake Properties';
+                sub.textContent = 'Homes for sale on Minnesota lakes, listed by our network agents.';
+                legend.innerHTML =
+                    '<span><span class="dot" style="background:#f6ad14;"></span>Featured</span>' +
+                    '<span><span class="dot" style="background:#1d6df2;"></span>Listings</span>';
+            } else if (_view === 'biz') {
                 const segLabel = SEG_OPTIONS.biz.find(o => o.key === _type)?.label || 'Businesses';
                 title.textContent = _type === 'all' ? 'Businesses & Services' : segLabel;
                 sub.textContent = 'Local restaurants, marinas, resorts, and services around Minnesota lakes.';
@@ -986,7 +1034,7 @@
 
         function updateCount(visible) {
             const el = document.getElementById('db-count');
-            if (_view === 'biz') {
+            if (_view === 'biz' || _view === 'props') {
                 el.textContent = `${visible.length} of ${_filteredItems.length} in view`;
                 return;
             }
@@ -1035,6 +1083,23 @@
         // The right-side list is intentionally never driven by map events —
         // pins are for scanning, cards are for scrolling.
         function buildPreviewCard(item) {
+            if (item.kind === 'props') {
+                const p = item.data;
+                let g = p.gallery; if (typeof g === 'string') { try { g = JSON.parse(g); } catch (_) { g = []; } }
+                const imgs = [p.featured_image_url, ...(Array.isArray(g) ? g : [])].filter(Boolean);
+                const cine = window.cardCarouselHTML ? cardCarouselHTML(imgs, { alt: p.title, width: 320 }) : '';
+                const specs = [p.beds != null ? p.beds + ' bd' : '', p.baths != null ? p.baths + ' ba' : '', p.city || ''].filter(Boolean).join(' · ');
+                return `
+                    <div class="db-pop-card">
+                        <div class="thumb" style="height:150px;position:relative;">${cine}${(p.featured || p.boosted) ? '<span class="chip">★ Featured</span>' : ''}</div>
+                        <div class="db-pop-body">
+                            <h4>${escHtml(money(p.price))}</h4>
+                            <div class="meta">${escHtml(p.title)}${specs ? ' · ' + escHtml(specs) : ''}</div>
+                            <a class="db-pop-btn" href="/listings/${encodeURIComponent(p.slug)}">View listing →</a>
+                        </div>
+                    </div>
+                `;
+            }
             if (item.kind === 'biz') {
                 const b = item.data;
                 const thumb = b.featured_image_url || DEFAULT_BIZ_IMG;
@@ -1102,13 +1167,14 @@
                 if (d.latitude == null || d.longitude == null) return;
                 const key = keyFor(item);
                 const icon =
-                    item.kind === 'biz'  ? bizPinIcon(item.data.type)
-                  : item.kind === 'lake' ? LK_PIN_ICON
-                  :                        TX_PIN_ICON;
+                    item.kind === 'biz'   ? bizPinIcon(item.data.type)
+                  : item.kind === 'props' ? propPinIcon(item.data)
+                  : item.kind === 'lake'  ? LK_PIN_ICON
+                  :                         TX_PIN_ICON;
                 const marker = L.marker([d.latitude, d.longitude], { icon })
                     .addTo(_markerLayer);
 
-                marker.bindTooltip(escHtml(d.name), {
+                marker.bindTooltip(escHtml(d.name || d.title || ''), {
                     direction: 'top',
                     offset: [0, -28],
                     className: 'db-pin-tip',
@@ -1157,6 +1223,7 @@
         // Single place that converts an item to its DOM key.
         function keyFor(item) {
             const prefix = item.kind === 'biz' ? 'b'
+                         : item.kind === 'props' ? 'p'
                          : item.kind === 'lake' ? 'l' : 't';
             return `${prefix}:${item.data.slug}`;
         }
@@ -1204,13 +1271,55 @@
             return ` <span class="lt-admin-badge ${escHtml(cls)}">${escHtml(label)}</span>`;
         }
 
+        function propsEmptyHtml() {
+            // Shown when the Properties view has no listings — doubles as an
+            // agent-recruiting moment (only agents with a profile can list).
+            return `
+                <div class="db-empty props-empty" style="grid-column:1/-1;">
+                    <div style="font-size:2.2rem;margin-bottom:0.5rem;">🏡</div>
+                    <h3 style="font-size:1.35rem;font-weight:800;color:#1a202c;margin:0 0 0.5rem;">Lake listings coming soon</h3>
+                    <p style="color:#4a5568;line-height:1.6;max-width:460px;margin:0 auto 1.5rem;">We're just getting started. Homes our network agents list will appear here on the map.</p>
+                    <div style="background:#eef4ff;border:1px solid #d6e4ff;border-radius:14px;padding:1.5rem;max-width:520px;margin:0 auto;">
+                        <div style="font-weight:800;color:#1a202c;margin-bottom:0.35rem;">Are you an agent?</div>
+                        <p style="color:#4a5568;font-size:0.95rem;line-height:1.6;margin:0 0 1.1rem;">List your properties here for free — it's an exclusive perk of joining the network. Only members with an agent profile can post listings.</p>
+                        <div style="display:flex;gap:0.6rem;justify-content:center;flex-wrap:wrap;">
+                            <a href="/pages/agent/dashboard.html" style="background:#1d6df2;color:#fff;font-weight:700;text-decoration:none;border-radius:9px;padding:0.65rem 1.2rem;">List a property</a>
+                            <a href="/pages/public/join.html" style="background:#fff;color:#1d6df2;font-weight:700;text-decoration:none;border:1px solid #cbd8ea;border-radius:9px;padding:0.65rem 1.2rem;">Become an agent →</a>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
         function renderGrid(items) {
             const grid = document.getElementById('db-grid');
             if (!items.length) {
-                grid.innerHTML = '<div class="db-empty">Nothing matches those filters yet. Try a different region or clear your search.</div>';
+                grid.innerHTML = _view === 'props'
+                    ? propsEmptyHtml()
+                    : '<div class="db-empty">Nothing matches those filters yet. Try a different region or clear your search.</div>';
                 return;
             }
             grid.innerHTML = items.map(item => {
+                if (item.kind === 'props') {
+                    const p = item.data;
+                    let g = p.gallery; if (typeof g === 'string') { try { g = JSON.parse(g); } catch (_) { g = []; } }
+                    const imgs = [p.featured_image_url, ...(Array.isArray(g) ? g : [])].filter(Boolean);
+                    const cine = window.cardCarouselHTML ? cardCarouselHTML(imgs, { alt: p.title, width: 520 }) : '';
+                    const specs = [p.beds != null ? p.beds + ' bd' : '', p.baths != null ? p.baths + ' ba' : '', p.property_type || ''].filter(Boolean).join(' · ');
+                    const loc = [p.city, p.agent_name].filter(Boolean).join(' · ');
+                    return `
+                        <a class="db-card" href="/listings/${encodeURIComponent(p.slug)}" data-key="${escHtml(keyFor(item))}">
+                            <div class="db-card-thumb">
+                                ${(p.featured || p.boosted) ? '<span class="chip">★ Featured</span>' : ''}
+                                ${cine}
+                            </div>
+                            <div class="db-card-body">
+                                <h3>${escHtml(money(p.price))}</h3>
+                                <div class="loc">${escHtml(p.title)}</div>
+                                <p>${escHtml([specs, loc].filter(Boolean).join(' · '))}</p>
+                                <span class="db-card-cta">View listing <span aria-hidden="true">→</span></span>
+                            </div>
+                        </a>`;
+                }
                 if (item.kind === 'biz') {
                     const b = item.data;
                     const thumb = b.featured_image_url || DEFAULT_BIZ_IMG;
@@ -1320,7 +1429,7 @@
             const p = new URLSearchParams(location.search);
             const v = p.get('view');
             const t = p.get('type');
-            if (v === 'biz' || v === 'geo') _view = v;
+            if (v === 'biz' || v === 'geo' || v === 'props') _view = v;
             if (t && SEG_OPTIONS[_view]?.some(o => o.key === t)) _type = t;
 
             // Sync the sidebar + mobile tabs + search placeholder + tier filter.
@@ -1330,6 +1439,7 @@
             syncMobileViewTabs();
             document.getElementById('db-search').placeholder = _view === 'biz'
                 ? 'Search businesses…'
+                : _view === 'props' ? 'Search properties…'
                 : 'Search lakes or towns…';
             document.getElementById('db-tier').style.display = _view === 'biz' ? '' : 'none';
         }

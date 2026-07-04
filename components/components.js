@@ -275,7 +275,7 @@ class GlobalHeader extends HTMLElement {
                 columns: [
                     { heading: 'Browse', links: [
                         { label: 'Lakes & Towns map',    href: '/towns' },
-                        { label: 'Properties map',       href: '/properties' },
+                        { label: 'Lake Properties map',  href: '/towns?view=props' },
                         { label: 'Market Index',         href: '/market-index' },
                         { label: 'Featured Agents',      href: `${bp}agents.html?featured=1` },
                         { label: 'List your Business',   href: '/business-signup' },
@@ -434,6 +434,7 @@ class GlobalHeader extends HTMLElement {
                 ${navLinksHtml}
             </nav>
             <div class="nav-actions">
+                <a href="/towns?view=props" style="display:inline-flex;align-items:center;gap:0.4rem;color:#fff;font-weight:700;font-size:0.9rem;text-decoration:none;border:1px solid rgba(255,255,255,0.28);border-radius:8px;padding:0.5rem 0.95rem;margin-right:0.5rem;white-space:nowrap;" aria-label="Browse lake property listings">🏠 Listings</a>
                 ${authHtml}
             </div>
             ${user ? `
@@ -544,7 +545,7 @@ class GlobalFooter extends HTMLElement {
                 <div class="link-column">
                     <h4>Explore</h4>
                     <a href="/towns">Lakes &amp; Towns</a>
-                    <a href="/properties">Properties Map</a>
+                    <a href="/towns?view=props">Lake Properties Map</a>
                     <a href="/market-index">Market Index</a>
                     <a href="${bp}resources.html">Resource Library</a>
                     <a href="${bp}blog.html">Blog</a>
