@@ -32,7 +32,33 @@
         .pm-filters input:focus, .pm-filters select:focus { border-color:#1d6df2; }
         .pm-wf { display:inline-flex; align-items:center; gap:0.35rem; font-size:0.88rem; color:#4a5568; font-weight:600; cursor:pointer; }
         #f-clear { border:1px solid #e2e8f0; background:#fff; border-radius:9px; padding:0.5rem 0.85rem; font:inherit; font-size:0.85rem; font-weight:700; color:#718096; cursor:pointer; }
-        #props-map { height: min(72vh, 680px); border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; z-index: 0; }
+        .pm-split { display: flex; gap: 1rem; align-items: stretch; }
+        #props-map { flex: 1 1 56%; height: 660px; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; z-index: 0; }
+        .pm-list-wrap { flex: 1 1 44%; max-height: 660px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 16px; padding: 0.75rem; -webkit-overflow-scrolling: touch; }
+        #props-list { display: grid; grid-template-columns: 1fr; gap: 0.75rem; }
+        .pl-card { display: block; text-decoration: none; color: inherit; border: 1px solid #edf2f7; border-radius: 12px; overflow: hidden; background: #fff; transition: box-shadow .15s, border-color .15s; }
+        .pl-card:hover, .pl-card.hi { box-shadow: 0 6px 18px rgba(29,109,242,0.16); border-color: #bcd4fb; }
+        .pl-img { height: 160px; position: relative; }
+        .pl-b { padding: 0.7rem 0.95rem 0.85rem; }
+        .pl-price { font-weight: 800; color: #0f2b46; font-size: 1.2rem; letter-spacing: -0.5px; }
+        .pl-specs { color: #4a5568; font-size: 0.88rem; margin-top: 0.15rem; }
+        .pl-addr { color: #a0aec0; font-size: 0.82rem; margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pl-flags { margin-top: 0.4rem; display: flex; gap: 0.35rem; flex-wrap: wrap; }
+        .pm-pin.pm-pin-hi span, .pm-pin-hi span { transform: scale(1.5); box-shadow: 0 0 0 4px rgba(29,109,242,0.35), 0 2px 6px rgba(16,24,40,0.5) !important; }
+        .pm-toggle { display: none; }
+        @media (max-width: 900px) {
+            .pm-split { flex-direction: column; }
+            #props-map { flex: none; height: 62vh; }
+            .pm-list-wrap { flex: none; max-height: none; border: none; padding: 0; overflow: visible; }
+            #props-list { grid-template-columns: 1fr 1fr; }
+            /* Map/List toggle on small screens */
+            .pm-toggle { display: inline-flex; background: #edf2f7; border-radius: 999px; padding: 0.25rem; margin: 0 0 0.75rem; }
+            .pm-toggle button { border: none; background: none; font: inherit; font-weight: 700; font-size: 0.85rem; color: #4a5568; padding: 0.45rem 1.1rem; border-radius: 999px; cursor: pointer; }
+            .pm-toggle button.on { background: #fff; color: #1d6df2; box-shadow: 0 2px 6px rgba(16,24,40,0.08); }
+            .pm-split.show-list #props-map { display: none; }
+            .pm-split.show-map .pm-list-wrap { display: none; }
+        }
+        @media (max-width: 560px) { #props-list { grid-template-columns: 1fr; } }
         .pm-count { font-size: 0.85rem; color: #718096; margin: 0.75rem 0 0; }
         .leaflet-popup-content-wrapper { border-radius: 14px !important; box-shadow: 0 14px 34px rgba(16,24,40,0.22) !important; padding: 0 !important; overflow: hidden; }
         .leaflet-popup-content { margin: 0 !important; width: 240px !important; font-family: 'SF Pro Text', -apple-system, sans-serif; }
@@ -92,8 +118,15 @@
             <label class="pm-wf"><input id="f-wf" type="checkbox"> Waterfront</label>
             <button id="f-clear" type="button" onclick="clearFilters()">Clear</button>
         </div>
-        <div id="props-map"></div>
         <p class="pm-count" id="pm-count"></p>
+        <div class="pm-toggle" id="pm-toggle">
+            <button type="button" class="on" data-view="map" onclick="pmView('map')">🗺 Map</button>
+            <button type="button" data-view="list" onclick="pmView('list')">☰ List</button>
+        </div>
+        <div class="pm-split show-map" id="pm-split">
+            <div id="props-map"></div>
+            <div class="pm-list-wrap"><div id="props-list"></div></div>
+        </div>
 
         <section class="pm-sold" id="pm-sold" style="display:none;">
             <h2>Recently sold</h2>
@@ -145,14 +178,38 @@
                 return `${img}<div class="pm-pop-body">${badge}<div class="t">${esc(p.title)}</div><div class="m">${meta}</div><a class="view" href="/listings/${esc(p.slug)}">View listing →</a></div>`;
             }
 
+            const _markers = {};
+            const listEl = document.getElementById('props-list');
+
+            function cardHtml(p) {
+                let g = p.gallery; if (typeof g === 'string') { try { g = JSON.parse(g); } catch (_) { g = []; } }
+                const imgs = [p.featured_image_url, ...(Array.isArray(g) ? g : [])].filter(Boolean);
+                const cine = window.cardCarouselHTML ? cardCarouselHTML(imgs, { alt: p.title, width: 520 })
+                    : `<span style="display:block;width:100%;height:100%;background:#eef2f7 ${p.featured_image_url ? `url('${esc(thumb(p.featured_image_url))}') center/cover` : ''}"></span>`;
+                const specs = [p.beds != null ? p.beds + ' bd' : '', p.baths != null ? p.baths + ' ba' : '', p.property_type || ''].filter(Boolean).join(' · ');
+                const now = Date.now();
+                const flags = [
+                    p.featured ? '<span class="pm-pop-feat">★ Featured</span>' : '',
+                    (p.created_at && now - new Date(p.created_at).getTime() <= 14 * 86400000) ? '<span class="pm-pop-chip new">New</span>' : '',
+                    (p.original_price != null && p.price != null && Number(p.price) < Number(p.original_price)) ? '<span class="pm-pop-chip drop">Price ↓</span>' : '',
+                ].filter(Boolean).join(' ');
+                return `<a class="pl-card" data-id="${esc(p.id)}" href="/listings/${esc(p.slug)}">
+                    <div class="pl-img">${cine}</div>
+                    <div class="pl-b"><div class="pl-price">${money(p.price)}</div>
+                    <div class="pl-specs">${esc(specs || 'Lake home')}</div>
+                    <div class="pl-addr">${esc([p.city, p.agent_name].filter(Boolean).join(' · ') || p.title)}</div>
+                    ${flags ? `<div class="pl-flags">${flags}</div>` : ''}</div></a>`;
+            }
+
             function applyFilters() {
                 cluster.clearLayers(); featLayer.clearLayers();
+                for (const k in _markers) delete _markers[k];
                 const q = (document.getElementById('f-q').value || '').toLowerCase().trim();
                 const type = document.getElementById('f-type').value;
                 const minBeds = +document.getElementById('f-beds').value || 0;
                 const maxPrice = +document.getElementById('f-price').value || 0;
                 const wf = document.getElementById('f-wf').checked;
-                const bounds = []; let shown = 0, anyFeat = false;
+                const bounds = []; const matched = []; let anyFeat = false;
                 _all.forEach(p => {
                     const lat = Number(p.latitude), lng = Number(p.longitude);
                     if (!isFinite(lat) || !isFinite(lng)) return;
@@ -163,14 +220,31 @@
                     if (wf && p.waterfront !== true) return;
                     const m = L.marker([lat, lng], { icon: p.featured ? featIcon : regIcon, zIndexOffset: p.featured ? 1000 : 0 }).bindPopup(popupHtml(p));
                     if (p.featured) { featLayer.addLayer(m); anyFeat = true; } else { cluster.addLayer(m); }
-                    bounds.push([lat, lng]); shown++;
+                    _markers[p.id] = m;
+                    bounds.push([lat, lng]); matched.push(p);
                 });
                 if (bounds.length) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+                const shown = matched.length;
                 count.innerHTML = shown
-                    ? `${shown} propert${shown === 1 ? 'y' : 'ies'}${shown !== _all.length ? ' of ' + _all.length : ''} on the map.`
+                    ? `${shown} propert${shown === 1 ? 'y' : 'ies'}${shown !== _all.length ? ' of ' + _all.length : ''}.`
                         + (anyFeat ? `<span class="pm-legend"><span><i style="background:#f6ad14"></i>Featured agent</span><span><i style="background:#1d6df2"></i>Standard</span></span>` : '')
                     : 'No properties match these filters — try widening them.';
+                // List panel (synced with the map).
+                listEl.innerHTML = shown ? matched.map(cardHtml).join('') : '<div style="padding:2rem 1rem;text-align:center;color:#a0aec0;">No matches — widen your filters.</div>';
+                listEl.querySelectorAll('.pl-card').forEach(cardEl => {
+                    const mk = _markers[cardEl.dataset.id];
+                    cardEl.addEventListener('mouseenter', () => { if (mk && mk._icon) mk._icon.classList.add('pm-pin-hi'); });
+                    cardEl.addEventListener('mouseleave', () => { if (mk && mk._icon) mk._icon.classList.remove('pm-pin-hi'); });
+                });
             }
+            // Mobile Map/List toggle.
+            window.pmView = function (v) {
+                const split = document.getElementById('pm-split');
+                split.classList.toggle('show-map', v === 'map');
+                split.classList.toggle('show-list', v === 'list');
+                document.querySelectorAll('#pm-toggle button').forEach(b => b.classList.toggle('on', b.dataset.view === v));
+                if (v === 'map') setTimeout(() => map.invalidateSize(), 50);
+            };
             window.clearFilters = function () {
                 ['f-q', 'f-type', 'f-beds', 'f-price'].forEach(id => document.getElementById(id).value = '');
                 document.getElementById('f-wf').checked = false;
@@ -187,6 +261,7 @@
                 }
                 _all = rows;
                 applyFilters();
+                setTimeout(() => map.invalidateSize(), 120);
             }).catch(() => {
                 count.textContent = 'Could not load properties. Please refresh.';
             });
