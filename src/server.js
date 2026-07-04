@@ -1309,7 +1309,7 @@ app.get('/businesses/:slug', async (req, res, next) => {
                 const { coverUrlFor: _bc } = require('./services/blog-cover');
                 const cards = bposts.map(p => `
                     <a class="bz-blog-card" href="/blog/${escapeHtml(p.slug)}">
-                        <div class="bz-blog-img"><img src="${escapeHtml(_bc(p))}" alt="${escapeHtml(p.title)}" loading="lazy"></div>
+                        ${_bc(p) ? `<div class="bz-blog-img"><img src="${escapeHtml(_bc(p))}" alt="${escapeHtml(p.title)}" loading="lazy"></div>` : ''}
                         <div class="bz-blog-body">
                             <h3>${escapeHtml(p.title)}</h3>
                             ${p.excerpt ? `<p>${escapeHtml(p.excerpt)}</p>` : ''}
@@ -1767,26 +1767,6 @@ function stripCtaButtons(html) {
     );
 }
 
-// ── Per-post generated blog cover (/blog/cover/<slug>.svg) ──────────────────
-// A unique, on-brand cover generated from the post's slug + title + category —
-// so every post has its OWN image instead of a recycled site photo. Registered
-// before /blog/:slug so the two-segment path wins. Heavily cacheable (art is
-// deterministic per slug).
-app.get('/blog/cover/:slug', async (req, res) => {
-    const { renderCoverSvg } = require('./services/blog-cover');
-    const slug = String(req.params.slug || '').replace(/\.svg$/i, '');
-    let title = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    let tag = 'Lake Living';
-    try {
-        const { rows } = await pool.query(
-            `SELECT title, tag FROM blog_posts WHERE slug = $1 AND deleted_at IS NULL LIMIT 1`, [slug]);
-        if (rows[0]) { title = rows[0].title || title; tag = rows[0].tag || tag; }
-    } catch (_) { /* fall back to slug-derived title */ }
-    res.set('Content-Type', 'image/svg+xml; charset=utf-8');
-    res.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
-    res.send(renderCoverSvg({ title, tag, slug }));
-});
-
 // ── Blog detail SSR (/blog/:slug) ───────────────────────────────────────────
 // Renders pages/public/blog-post.html with title/meta/JSON-LD baked in so
 // the bot sees the right SEO surface (the client-side JS fallback was fine
@@ -1839,7 +1819,7 @@ app.get('/blog/:slug', async (req, res, next) => {
             if (rel.length) {
                 const cards = rel.map(p => `
                     <a class="related-card" href="/blog/${escapeHtml(p.slug)}">
-                        <div class="related-img"><img src="${escapeHtml(_blogCover(p))}" alt="${escapeHtml(p.title)}" loading="lazy"></div>
+                        ${_blogCover(p) ? `<div class="related-img"><img src="${escapeHtml(_blogCover(p))}" alt="${escapeHtml(p.title)}" loading="lazy"></div>` : ''}
                         <div class="related-body">
                             <span class="related-tag">${escapeHtml(p.tag || 'General')}</span>
                             <h3 class="related-title">${escapeHtml(p.title)}</h3>
@@ -1944,7 +1924,15 @@ app.get('/blog/:slug', async (req, res, next) => {
                 .replace('<p id="post-subtitle" class="post-subtitle"></p>', `<p id="post-subtitle" class="post-subtitle">${escapeHtml(subTxt)}</p>`)
                 .replace('<div class="post-author-name" id="post-author">MN Lake Homes</div>', `<div class="post-author-name" id="post-author">${escapeHtml(authorTxt)}</div>`)
                 .replace('<div class="post-author-date" id="post-date"></div>', `<div class="post-author-date" id="post-date">${escapeHtml(dateTxt)}</div>`)
-                .replace('<img id="hero-img" src="" alt="">', `<img id="hero-img" src="${escapeHtml(post.cover_image_url || '')}" alt="${escapeHtml(post.title)}">`)
+                // Cover only when the post has its own image; otherwise hide the
+                // whole banner (no recycled photo, no gradient block — just blank).
+                .replace('<div class="post-banner-wrap post-container" id="post-banner-wrap">',
+                    post.cover_image_url
+                        ? '<div class="post-banner-wrap post-container" id="post-banner-wrap">'
+                        : '<div class="post-banner-wrap post-container" id="post-banner-wrap" style="display:none">')
+                .replace('<img id="hero-img" src="" alt="">', post.cover_image_url
+                    ? `<img id="hero-img" src="${escapeHtml(post.cover_image_url)}" alt="${escapeHtml(post.title)}">`
+                    : '<img id="hero-img" src="" alt="">')
                 .replace('<article class="post-body" id="post-body"></article>', `<article class="post-body" id="post-body">${post.body || ''}</article>`)
                 .replace('<section class="post-related post-container" id="related-blogs"></section>', relatedHtml);
             res.type('html').send(out);
@@ -3700,6 +3688,7 @@ async function ensureTables() {
         `);
 
         await seedBlogPosts();
+        await applyBlogCoverMap();
         await seedBlogContentV2();
         await seedBlogRelatedLinks();
         await seedStagedDraftReset();
@@ -3770,6 +3759,30 @@ async function backfillBusinessCoords() {
     } catch (err) {
         console.warn(' Coord backfill skipped:', err.message);
     }
+}
+
+// Apply the generated per-post cover photos (slug → Cloudinary URL, produced by
+// the offline OpenAI batch). Idempotent and safe: only overwrites a cover that
+// is empty or a shared /assets/images stock photo — a real admin upload is never
+// touched. This is how each blog gets its OWN photo instead of a recycled one.
+async function applyBlogCoverMap() {
+    let map = {};
+    try { map = require('./data/blog-cover-map.json'); } catch (_) { return; }
+    const entries = Object.entries(map).filter(([, url]) => url);
+    if (!entries.length) return;
+    let updated = 0;
+    for (const [slug, url] of entries) {
+        try {
+            const { rowCount } = await pool.query(
+                `UPDATE blog_posts SET cover_image_url = $1
+                  WHERE slug = $2
+                    AND (cover_image_url IS NULL OR cover_image_url = ''
+                         OR cover_image_url LIKE '/assets/images/%')`,
+                [url, slug]);
+            updated += rowCount || 0;
+        } catch (e) { console.warn(`[blog-cover-map] ${slug}: ${e.message}`); }
+    }
+    console.log(`[blog-cover-map] applied ${updated}/${entries.length} generated covers`);
 }
 
 async function seedBlogPosts() {

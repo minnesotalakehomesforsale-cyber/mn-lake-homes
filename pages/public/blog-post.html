@@ -303,12 +303,17 @@
                     ? new Date(pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                     : '';
 
+                // Show the banner only when the post has its own image; otherwise
+                // hide it entirely (no recycled site photos, no placeholder).
                 const heroImg = document.getElementById('hero-img');
-                // Each post has its own cover; if none, the generated per-slug cover.
-                const BLOG_FALLBACK_IMG = '/blog/cover/' + encodeURIComponent(post.slug) + '.svg';
-                heroImg.onerror = function () { this.onerror = null; this.src = BLOG_FALLBACK_IMG; };
-                heroImg.src = post.cover_image_url || BLOG_FALLBACK_IMG;   // every post shows an image
-                heroImg.alt = post.title;
+                const bannerWrap = document.getElementById('post-banner-wrap');
+                if (post.cover_image_url) {
+                    heroImg.src = post.cover_image_url;
+                    heroImg.alt = post.title;
+                    if (bannerWrap) bannerWrap.style.display = '';
+                } else if (bannerWrap) {
+                    bannerWrap.style.display = 'none';
+                }
 
                 // Tailor the primary CTA to the post's category.
                 const tag = post.tag || '';

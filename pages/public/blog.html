@@ -183,11 +183,13 @@
         const clockSVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
 
         function buildCard(p) {
+            // Only show a cover when the post has its OWN image; otherwise the
+            // card is text-first (no recycled site photos, no placeholder).
             return `
-                <a href="/pages/public/blog-post.html?slug=${p.slug}" class="blog-card">
-                    <div class="blog-image">
-                        <img src="${p.cover_image_url || ('/blog/cover/' + encodeURIComponent(p.slug) + '.svg')}" alt="${p.title}" loading="lazy" width="800" height="500" onerror="this.onerror=null;this.src='/blog/cover/'+encodeURIComponent('${p.slug}')+'.svg'">
-                    </div>
+                <a href="/pages/public/blog-post.html?slug=${p.slug}" class="blog-card${p.cover_image_url ? '' : ' no-cover'}">
+                    ${p.cover_image_url ? `<div class="blog-image">
+                        <img src="${p.cover_image_url}" alt="${p.title}" loading="lazy" width="800" height="500">
+                    </div>` : ''}
                     <div class="blog-meta">
                         <span class="blog-tag">${p.tag || 'General'}</span>
                         <span class="blog-time">${clockSVG} Read: ${p.read_time_minutes || 4} minutes</span>

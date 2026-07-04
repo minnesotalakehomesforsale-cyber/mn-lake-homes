@@ -372,9 +372,9 @@
                 if (!posts.length) { host.innerHTML = '<div class="rx-empty" style="grid-column: 1 / -1;">No posts yet.</div>'; return; }
                 host.innerHTML = posts.slice(0, 4).map(p => `
                     <a class="rx-blog-card" href="/pages/public/blog-post.html?slug=${encodeURIComponent(p.slug)}">
-                        <div class="rx-blog-img">
-                            <img src="${escAttr(p.cover_image_url || ('/blog/cover/' + encodeURIComponent(p.slug) + '.svg'))}" alt="${escAttr(p.title)}" loading="lazy" onerror="this.onerror=null;this.src='/blog/cover/'+encodeURIComponent('${p.slug}')+'.svg'">
-                        </div>
+                        ${p.cover_image_url ? `<div class="rx-blog-img">
+                            <img src="${escAttr(p.cover_image_url)}" alt="${escAttr(p.title)}" loading="lazy">
+                        </div>` : ''}
                         <div class="rx-blog-body">
                             <span class="rx-blog-tag">${escHtml(p.tag || 'General')}</span>
                             <h3 class="rx-blog-title">${escHtml(p.title)}</h3>
