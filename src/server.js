@@ -945,6 +945,15 @@ app.get('/listings/:slug', async (req, res, next) => {
                 [l.city]).then(r => r.rows).catch(() => []);
         }
 
+        // "Recently sold like this" comps — same lake or city, most recent first.
+        const compRows = (process.env.LISTINGS_PUBLIC === 'false') ? [] : await pool.query(
+            `SELECT title, price, city, beds, baths, sqft, featured_image_url, sold_at
+               FROM listings
+              WHERE status = 'sold' AND id <> $1
+                AND (($2::uuid IS NOT NULL AND lake_id = $2) OR ($3 <> '' AND city ILIKE $3))
+              ORDER BY sold_at DESC NULLS LAST LIMIT 6`,
+            [l.id, l.lake_id || null, l.city || '']).then(r => r.rows).catch(() => []);
+
         const tpl = path.join(PROJECT_ROOT, 'pages/public/listing-detail.html');
         fs.readFile(tpl, 'utf8', (err, html) => {
             if (err) return next(err);
@@ -1091,6 +1100,19 @@ app.get('/listings/:slug', async (req, res, next) => {
                 }
             }
 
+            // "Recently sold like this" comp cards (pricing proof).
+            let compsHtml = '';
+            if (compRows.length) {
+                const cimg = r => cldThumb(r.featured_image_url || `${siteBase}/assets/images/mn-canoe-shore.webp`, 400);
+                const cards = compRows.map(r => {
+                    const sp = r.price != null ? '$' + Number(r.price).toLocaleString('en-US') : 'Sold';
+                    const when = r.sold_at ? new Date(r.sold_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '';
+                    const specs = [r.beds != null ? r.beds + ' bd' : '', r.baths != null ? r.baths + ' ba' : '', r.sqft ? Number(r.sqft).toLocaleString('en-US') + ' sqft' : ''].filter(Boolean).join(' · ');
+                    return `<div class="lst-comp-card"><div class="lst-comp-img" style="background-image:url('${escapeHtml(cimg(r))}')"><span class="lst-comp-tag">Sold${when ? ' · ' + escapeHtml(when) : ''}</span></div><div class="b"><div class="p">${escapeHtml(sp)}</div><div class="t">${escapeHtml(r.title)}</div><div class="m">${escapeHtml(specs)}</div></div></div>`;
+                }).join('');
+                compsHtml = `<section class="lst-rel"><h2 class="lst-section-h">Recently sold nearby</h2><p style="color:#718096;margin:-0.6rem 0 1rem;">What comparable homes${l.lake_name ? ' on ' + escapeHtml(l.lake_name) : ''} actually closed for.</p><div class="lst-rel-grid">${cards}</div></section>`;
+            }
+
             const backLabel = l.lake_name ? `Back to ${l.lake_name}` : 'Back to lake homes';
             const backUrl   = l.lake_slug ? `/lakes/${l.lake_slug}` : '/towns';
 
@@ -1153,6 +1175,7 @@ app.get('/listings/:slug', async (req, res, next) => {
                 '{{LISTING_GALLERY_HTML}}':   galleryHtml,
                 '{{LISTING_RELATED_HTML}}':   relatedHtml,
                 '{{LISTING_AREA_HTML}}':      areaHtml,
+                '{{LISTING_COMPS_HTML}}':     compsHtml,
                 '{{LISTING_STRUCTURED_DATA}}': sd,
                 '{{LISTING_LAKE_BACK}}':      escapeHtml(backUrl),
                 '{{LISTING_BACK_LABEL}}':     escapeHtml(backLabel),

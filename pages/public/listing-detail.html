@@ -62,6 +62,14 @@
         .lst-fact-row:last-child { border-bottom:0; }
         .lst-fact-row .k { color:#718096; }
         .lst-fact-row .val { color:#1a202c; font-weight:700; text-align:right; }
+        /* Recently sold comps */
+        .lst-comp-card { border:1px solid #edf2f7; border-radius:12px; overflow:hidden; background:#fff; }
+        .lst-comp-img { width:100%; aspect-ratio:4/3; background:#eef2f7 center/cover; position:relative; filter:grayscale(0.12); }
+        .lst-comp-tag { position:absolute; top:8px; left:8px; background:#1a202c; color:#fff; font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; padding:2px 8px; border-radius:6px; }
+        .lst-comp-card .b { padding:0.7rem 0.85rem 0.9rem; }
+        .lst-comp-card .p { font-weight:800; color:#1a202c; font-size:1.05rem; }
+        .lst-comp-card .t { color:#4a5568; font-size:0.9rem; margin-top:0.15rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .lst-comp-card .m { color:#a0aec0; font-size:0.8rem; margin-top:0.2rem; }
         /* About the area */
         .lst-area { margin-top:2.75rem; }
         .lst-area-card { border:1px solid #edf2f7; border-radius:14px; overflow:hidden; background:#fff; }
@@ -352,6 +360,8 @@
         </div>
 
         {{LISTING_GALLERY_HTML}}
+
+        {{LISTING_COMPS_HTML}}
 
         {{LISTING_AREA_HTML}}
 
