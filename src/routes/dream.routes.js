@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const c = require('../controllers/dream.controller');
+const { verifyToken } = require('../middleware/auth');
 
-router.post('/search', c.search);   // natural-language listing search
+// Admin-only for now — keeps AI (OpenAI) usage off public/agent surfaces.
+router.post('/search', verifyToken, c.search);
 
 module.exports = router;

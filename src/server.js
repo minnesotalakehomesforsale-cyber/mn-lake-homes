@@ -505,7 +505,6 @@ app.get('/sitemap.xml', async (req, res) => {
             { url: '/towns',           priority: 0.9, changefreq: 'weekly'  },
             { url: '/properties',      priority: 0.8, changefreq: 'daily'   },
             { url: '/market-index',    priority: 0.7, changefreq: 'weekly'  },
-            { url: '/find-a-home',     priority: 0.7, changefreq: 'monthly' },
             { url: '/agents',          priority: 0.8, changefreq: 'weekly'  },
             { url: '/cash-offer',      priority: 0.7, changefreq: 'monthly' },
             { url: '/blog',            priority: 0.7, changefreq: 'daily'   },
@@ -1364,14 +1363,6 @@ app.get('/towns', async (req, res, next) => {
             res.type('html').send(out);
         });
     } catch (err) { next(err); }
-});
-
-// AI "describe your dream lake home" search.
-app.get('/find-a-home', (req, res, next) => {
-    fs.readFile(path.join(PROJECT_ROOT, 'pages/public/dream-search.html'), 'utf8', (err, html) => {
-        if (err) return next(err);
-        res.type('html').send(html);
-    });
 });
 
 // Public MN Lake Market Index.

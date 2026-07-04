@@ -65,8 +65,9 @@ async function aiParse(q) {
     } catch (e) { console.warn('[dream.aiParse]', e.message); return null; }
 }
 
-// POST /api/dream/search { query }
+// POST /api/dream/search { query } — admin-only (AI usage kept off public surfaces).
 exports.search = async (req, res) => {
+    if (!['admin', 'super_admin'].includes(req.user?.role)) return res.status(403).json({ error: 'Admin only.' });
     if (!LISTINGS_PUBLIC) return res.json({ criteria: {}, listings: [] });
     const query = String(req.body?.query || '').trim();
     if (!query) return res.status(400).json({ error: 'Describe the home you want.' });
