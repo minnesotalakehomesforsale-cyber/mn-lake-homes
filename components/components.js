@@ -276,8 +276,9 @@ class GlobalHeader extends HTMLElement {
                     { heading: 'Browse', links: [
                         { label: 'Lakes & Towns map',    href: '/towns' },
                         { label: 'Properties map',       href: '/properties' },
+                        { label: 'Describe your dream home', href: '/find-a-home' },
+                        { label: 'Market Index',         href: '/market-index' },
                         { label: 'Featured Agents',      href: `${bp}agents.html?featured=1` },
-                        { label: 'List your Business',   href: '/business-signup' },
                     ]},
                     { heading: 'Featured Towns', links: [
                         { label: 'Wayzata',        href: '/towns/wayzata' },
