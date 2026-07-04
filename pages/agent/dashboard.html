@@ -849,6 +849,9 @@
       .prop-pill { font-size:0.64rem;font-weight:800;text-transform:uppercase;border-radius:99px;padding:0.12rem 0.5rem; }
       .prop-pill.active { background:#f0fff4;color:#2f855a; } .prop-pill.draft { background:#fffaf0;color:#b45309; }
       .prop-pill.sold { background:#1a202c;color:#fff; }
+      .prop-perf { display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:0.45rem; font-size:0.8rem; color:#718096; font-weight:600; }
+      .prop-perf span { white-space:nowrap; }
+      @media (max-width:560px){ .prop-card { flex-wrap:wrap; } .prop-card .pc-actions { margin-left:0; width:100%; } }
     </style>
 
     <script>
@@ -952,6 +955,12 @@
                                 ${p.inquiry_count > 0 ? `<span class="prop-pill" style="background:#ebf4ff;color:#1d6df2;margin-left:0.4rem;">${p.inquiry_count} inquir${p.inquiry_count === 1 ? 'y' : 'ies'}</span>` : ''}
                                 ${(p.boosted_until && new Date(p.boosted_until) > new Date()) ? `<span class="prop-pill" style="background:#fef3c7;color:#b45309;margin-left:0.4rem;">★ Boosted</span>` : ''}
                                 ${p.status === 'active' ? `<a href="/listings/${esc(p.slug)}" target="_blank" style="font-size:0.76rem;color:#1d6df2;margin-left:0.5rem;">View page ↗</a>` : ''}</div>
+                            <div class="prop-perf">
+                                <span title="Page views">👁 ${(p.view_count || 0).toLocaleString('en-US')}</span>
+                                <span title="Saved by buyers">♥ ${p.save_count || 0}</span>
+                                <span title="Showing / inquiry requests">✉ ${p.inquiry_count || 0}</span>
+                                <span title="Watching for price drops">🔔 ${p.watch_count || 0}</span>
+                            </div>
                         </div>
                         <div class="pc-actions">
                             ${p.status === 'sold'

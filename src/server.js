@@ -915,6 +915,9 @@ app.get('/listings/:slug', async (req, res, next) => {
         const l = rows[0];
         if (!l) { renderFriendly404(res, { kind: 'listing', slug: req.params.slug }); return; }
 
+        // Lifetime view counter (fire-and-forget) for agent performance stats.
+        pool.query(`UPDATE listings SET view_count = view_count + 1 WHERE id = $1`, [l.id]).catch(() => {});
+
         // Related listings for internal linking + discovery (Phase 4):
         // other active homes from the same agent and on the same lake.
         const { rows: relRows } = await pool.query(
@@ -3055,6 +3058,8 @@ async function ensureTables() {
             -- independent of the agent's membership tier.
             ALTER TABLE listings ADD COLUMN IF NOT EXISTS boosted_until  TIMESTAMPTZ;
             ALTER TABLE listings ADD COLUMN IF NOT EXISTS boost_session  TEXT;
+            -- Lifetime view counter (all visitors) for the agent performance view.
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS view_count     INTEGER NOT NULL DEFAULT 0;
             UPDATE listings SET original_price = price WHERE original_price IS NULL AND price IS NOT NULL;
 
             -- Nearby-towns join: reuses the existing tags catalog (each tag
