@@ -374,7 +374,9 @@ exports.listMine = async (req, res) => {
         const agentId = await agentIdFor(req);
         if (!agentId) return res.status(403).json({ error: 'Create your agent profile first.' });
         const { rows } = await pool.query(
-            `SELECT ${PUBLIC_COLS} FROM listings WHERE agent_id = $1 ORDER BY created_at DESC`, [agentId]);
+            `SELECT ${PUBLIC_COLS.split(',').map(c => 'l.' + c.trim()).join(', ')},
+                    (SELECT COUNT(*)::int FROM leads ld WHERE ld.listing_id = l.id AND ld.deleted_at IS NULL) AS inquiry_count
+               FROM listings l WHERE l.agent_id = $1 ORDER BY l.created_at DESC`, [agentId]);
         res.json(rows);
     } catch (err) { console.error('[listings.listMine]', err.message); res.status(500).json({ error: 'Could not load your properties.' }); }
 };

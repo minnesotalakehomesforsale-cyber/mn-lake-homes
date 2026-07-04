@@ -32,6 +32,15 @@
         .lst-cta { background:#f7f9fa; border:1px solid #edf2f7; border-radius:14px; padding:1.75rem; margin-top:2.5rem; text-align:center; }
         .lst-cta h2 { font-size:1.4rem; font-weight:800; color:#1a202c; margin:0 0 0.4rem; }
         .lst-cta p { color:#718096; margin:0 0 1.25rem; }
+        #lst-showing-form { max-width:520px; margin:0 auto; text-align:left; }
+        .lst-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; margin-bottom:0.6rem; }
+        #lst-showing-form input, #lst-showing-form textarea { width:100%; box-sizing:border-box; font:inherit; font-size:0.95rem; padding:0.65rem 0.8rem; border:1px solid #e2e8f0; border-radius:9px; background:#fff; outline:none; }
+        #lst-showing-form input:focus, #lst-showing-form textarea:focus { border-color:#1d6df2; }
+        #lst-showing-form textarea { margin-bottom:0.6rem; resize:vertical; }
+        #lst-showing-form .nb-cta { width:100%; border:none; cursor:pointer; font-size:1rem; }
+        .lst-form-err { color:#c53030; font-size:0.86rem; margin:0 0 0.6rem; display:none; }
+        .lst-form-fine { color:#a0aec0; font-size:0.78rem; margin:0.7rem 0 0; text-align:center; }
+        @media (max-width:520px){ .lst-form-grid { grid-template-columns:1fr; } }
         .lst-gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:0.75rem; margin:2rem 0; }
         .lst-gallery img { width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:10px; cursor:zoom-in; transition:opacity .15s; }
         .lst-gallery img:hover { opacity:0.92; }
@@ -109,6 +118,35 @@
                 } catch (_) {}
             }
             document.addEventListener('DOMContentLoaded', refreshSaveState);
+
+            async function submitShowing(e) {
+                e.preventDefault();
+                const err = document.getElementById('sh-err');
+                const name = document.getElementById('sh-name').value.trim();
+                const email = document.getElementById('sh-email').value.trim();
+                const phone = document.getElementById('sh-phone').value.trim();
+                const when = document.getElementById('sh-when').value.trim();
+                const msg = document.getElementById('sh-msg').value.trim();
+                err.style.display = 'none';
+                if (!name) { err.textContent = 'Please add your name.'; err.style.display = 'block'; return false; }
+                if (!email && !phone) { err.textContent = 'Add an email or a phone number so the agent can reach you.'; err.style.display = 'block'; return false; }
+                const notes = [when ? 'Preferred time: ' + when : '', msg].filter(Boolean).join('\n') || 'Requested a showing of this property.';
+                const btn = document.getElementById('sh-submit');
+                btn.disabled = true; btn.textContent = 'Sending…';
+                try {
+                    const r = await fetch('/api/leads', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, email, phone, notes, source: 'property_question', listing_id: LISTING_ID }),
+                    });
+                    if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'Something went wrong.'); }
+                    document.getElementById('lst-showing-form').style.display = 'none';
+                    document.getElementById('lst-showing-done').style.display = 'block';
+                } catch (ex) {
+                    err.textContent = ex.message; err.style.display = 'block';
+                    btn.disabled = false; btn.textContent = 'Request showing →';
+                }
+                return false;
+            }
         </script>
 
         {{LISTING_SPECS_HTML}}
@@ -119,10 +157,26 @@
 
         {{LISTING_GALLERY_HTML}}
 
-        <div class="lst-cta">
-            <h2>Interested in this property?</h2>
-            <p>Get matched with a vetted local agent who knows this lake and can arrange a showing.</p>
-            <a href="/pages/public/buy.html" class="nb-cta">Get matched with an agent →</a>
+        <div class="lst-cta" id="lst-showing">
+            <h2>Request a showing</h2>
+            <p>Tell the listing agent when you'd like to see this home — they'll reach out to set it up.</p>
+            <form id="lst-showing-form" onsubmit="return submitShowing(event)">
+                <div class="lst-form-grid">
+                    <input id="sh-name" type="text" placeholder="Your name" autocomplete="name" required>
+                    <input id="sh-email" type="email" placeholder="Email" autocomplete="email">
+                    <input id="sh-phone" type="tel" placeholder="Phone" autocomplete="tel">
+                    <input id="sh-when" type="text" placeholder="Preferred day/time (optional)">
+                </div>
+                <textarea id="sh-msg" rows="2" placeholder="Anything the agent should know? (optional)"></textarea>
+                <div id="sh-err" class="lst-form-err"></div>
+                <button type="submit" id="sh-submit" class="nb-cta">Request showing →</button>
+                <p class="lst-form-fine">One of email or phone is required so the agent can reach you.</p>
+            </form>
+            <div id="lst-showing-done" style="display:none;">
+                <div style="font-size:2.2rem;line-height:1;margin-bottom:0.5rem;">✓</div>
+                <h2 style="margin:0 0 0.3rem;">Request sent</h2>
+                <p style="margin:0;">The listing agent will be in touch shortly. Keep an eye on your email or phone.</p>
+            </div>
         </div>
     </main>
 

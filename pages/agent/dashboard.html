@@ -898,6 +898,7 @@
                             <div style="font-weight:700;font-size:0.98rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.title)}</div>
                             <div style="font-size:0.8rem;color:#718096;">${[money(p.price), esc(p.city || '')].filter(Boolean).join(' · ')}</div>
                             <div style="margin-top:0.3rem;"><span class="prop-pill ${p.status === 'active' ? 'active' : 'draft'}">${p.status === 'active' ? 'Active' : 'Inactive'}</span>
+                                ${p.inquiry_count > 0 ? `<span class="prop-pill" style="background:#ebf4ff;color:#1d6df2;margin-left:0.4rem;">${p.inquiry_count} inquir${p.inquiry_count === 1 ? 'y' : 'ies'}</span>` : ''}
                                 ${p.status === 'active' ? `<a href="/listings/${esc(p.slug)}" target="_blank" style="font-size:0.76rem;color:#1d6df2;margin-left:0.5rem;">View page ↗</a>` : ''}</div>
                         </div>
                         <div class="pc-actions">
@@ -1575,7 +1576,8 @@
             const typeLabel = LEAD_TYPE_LABEL_A[l.type] || (l.type || 'General').replace(/_/g,' ');
             document.getElementById('lp-badges').innerHTML =
                 `<span class="lead-badge lb-${l.type}">${escA(typeLabel)}</span>
-                 ${l.source_page_title ? `<span style="font-size:0.72rem;color:#a0aec0;font-weight:700;align-self:center;">via ${escA(l.source_page_title)}</span>` : ''}`;
+                 ${l.listing_title ? `<a href="/listings/${escA(l.listing_slug)}" target="_blank" style="font-size:0.72rem;color:#1d6df2;font-weight:800;align-self:center;text-decoration:none;">🏠 Showing: ${escA(l.listing_title)} ↗</a>` : ''}
+                 ${(!l.listing_title && l.source_page_title) ? `<span style="font-size:0.72rem;color:#a0aec0;font-weight:700;align-self:center;">via ${escA(l.source_page_title)}</span>` : ''}`;
 
             // Contact block — email + phone are click-to-act.
             const contact = [];

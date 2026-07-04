@@ -2671,6 +2671,20 @@ async function ensureTables() {
             CREATE INDEX IF NOT EXISTS idx_saved_listings_user    ON saved_listings(user_id);
             CREATE INDEX IF NOT EXISTS idx_saved_listings_listing ON saved_listings(listing_id);
 
+            -- A lead can be tied to a specific property (e.g. "request a showing"
+            -- on a listing page). ON DELETE SET NULL keeps the lead if the
+            -- listing is later removed.
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS listing_id UUID REFERENCES listings(id) ON DELETE SET NULL;
+            CREATE INDEX IF NOT EXISTS idx_leads_listing ON leads(listing_id) WHERE listing_id IS NOT NULL;
+
+            -- Listing freshness + lifecycle (Phase 3/8): remember the first price
+            -- we saw (to detect drops), an optional open-house datetime, and when
+            -- a home was marked sold (for the "recently sold" wall).
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS original_price INTEGER;
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS open_house_at  TIMESTAMPTZ;
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS sold_at        TIMESTAMPTZ;
+            UPDATE listings SET original_price = price WHERE original_price IS NULL AND price IS NOT NULL;
+
             -- Nearby-towns join: reuses the existing tags catalog (each tag
             -- is a town). One lake can be near many towns and one town can
             -- border many lakes.

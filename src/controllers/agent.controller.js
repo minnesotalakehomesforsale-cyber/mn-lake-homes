@@ -353,10 +353,12 @@ const getMyLeads = async (req, res) => {
                    l.message, l.lead_type as type, l.lead_source as source,
                    l.lead_status as status, l.budget_min, l.budget_max,
                    l.timeline_text, l.location_text, l.contact_preference,
-                   l.source_page_title, l.created_at
+                   l.source_page_title, l.created_at,
+                   l.listing_id, li.title AS listing_title, li.slug AS listing_slug
             FROM leads l
             JOIN agents a ON l.agent_id = a.id
             JOIN users u ON a.user_id = u.id
+            LEFT JOIN listings li ON li.id = l.listing_id
             WHERE u.id = $1
               AND l.deleted_at IS NULL
             ORDER BY l.created_at DESC

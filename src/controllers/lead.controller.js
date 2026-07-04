@@ -9,7 +9,7 @@ const { getLeadMagnetForType } = require('../services/lead-magnet');
 
 const createLead = async (req, res) => {
     let {
-        name, email, phone, notes, source, agent_id,
+        name, email, phone, notes, source, agent_id, listing_id,
         property_address, property_street, property_city,
         property_state, property_zip, property_place_id, lake_slug,
     } = req.body;
@@ -27,15 +27,37 @@ const createLead = async (req, res) => {
         return String(v).trim().slice(0, max) || null;
     };
     const propAddress = str(property_address, 500);
-    const propStreet  = str(property_street, 255);
-    const propCity    = str(property_city, 120);
-    const propState   = str(property_state, 50);
-    const propZip     = str(property_zip, 20);
+    let   propStreet  = str(property_street, 255);
+    let   propCity    = str(property_city, 120);
+    let   propState   = str(property_state, 50);
+    let   propZip     = str(property_zip, 20);
     const propPlaceId = str(property_place_id, 255);
 
     try {
         // Coerce agent string if dummy provided
-        const finalAgentId = (agent_id && agent_id !== 'uuid-string-dummy') ? agent_id : null;
+        let finalAgentId = (agent_id && agent_id !== 'uuid-string-dummy') ? agent_id : null;
+
+        // Listing-tied lead (e.g. "request a showing"). Resolve the property
+        // server-side so the submitter can't spoof the agent: the lead goes to
+        // whoever actually posted the home; its address seeds routing fallback.
+        const listingId = (listing_id && String(listing_id).trim()) || null;
+        let listing = null;
+        if (listingId) {
+            try {
+                const lr = await pool.query(
+                    `SELECT id, agent_id, lake_id, title, address, city, state, zip
+                       FROM listings WHERE id = $1 LIMIT 1`, [listingId]);
+                listing = lr.rows[0] || null;
+            } catch (_) { /* leave null */ }
+        }
+        if (listing) {
+            if (!finalAgentId && listing.agent_id) finalAgentId = listing.agent_id;  // → the posting agent
+            // Seed property fields from the listing when the form didn't supply them.
+            if (!propStreet && listing.address) propStreet = str(listing.address, 255);
+            if (!propCity   && listing.city)    propCity   = str(listing.city, 120);
+            if (!propState  && listing.state)   propState  = str(listing.state, 50);
+            if (!propZip    && listing.zip)     propZip    = str(listing.zip, 20);
+        }
 
         // Resolve an explicit lake (lead came from a lake page) → its id, so the
         // router can hand it to that lake's founding agent.
@@ -68,9 +90,9 @@ const createLead = async (req, res) => {
                 lead_type, lead_source, agent_id, lead_status,
                 property_address, property_street, property_city,
                 property_state, property_zip, property_place_id,
-                user_id
+                user_id, listing_id
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', $9, $10, $11, $12, $13, $14, $15)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', $9, $10, $11, $12, $13, $14, $15, $16)
             RETURNING id
         `;
         // We extrapolate first name logically
@@ -91,7 +113,7 @@ const createLead = async (req, res) => {
             name, firstName, email, phone, notes,
             enumType, source, finalAgentId,
             propAddress, propStreet, propCity, propState, propZip, propPlaceId,
-            submittedUserId,
+            submittedUserId, listingId,
         ]);
         const newLeadId = leadRows[0]?.id;
 
@@ -172,6 +194,47 @@ const createLead = async (req, res) => {
                     pool.query(`UPDATE leads SET hs_contact_id = $1 WHERE id = $2`, [r.id, newLeadId])
                         .catch(e => console.error('[hubspot] save id failed:', e.message));
                 }
+            })();
+        }
+
+        // Direct assignment (a listing "request a showing", or any lead that
+        // arrives with an explicit agent_id): assign to that agent and email
+        // them right away — independent of address/lake geo routing, which the
+        // block below intentionally skips when finalAgentId is set.
+        if (newLeadId && finalAgentId) {
+            (async () => {
+                try {
+                    const ar = await pool.query(
+                        `SELECT a.id AS agent_id, a.user_id, a.display_name, u.email
+                           FROM agents a LEFT JOIN users u ON u.id = a.user_id
+                          WHERE a.id = $1 LIMIT 1`, [finalAgentId]);
+                    const ag = ar.rows[0];
+                    await pool.query(
+                        `UPDATE leads SET assigned_user_id = $1, lead_status = 'contacted', updated_at = NOW()
+                          WHERE id = $2`, [ag?.user_id || null, newLeadId]);
+                    if (ag?.email) {
+                        emailService.sendMatchedAgentNotification({
+                            to: ag.email,
+                            agentFirstName: (ag.display_name || '').split(' ')[0] || 'there',
+                            lead: {
+                                id: newLeadId, name, email, phone, notes,
+                                type: enumType, source,
+                                address: listing?.title
+                                    || propAddress
+                                    || [propStreet, propCity].filter(Boolean).join(', ')
+                                    || null,
+                            },
+                            distanceMiles: null,
+                            matchedAreas: [listing?.title].filter(Boolean),
+                        });
+                    }
+                    logActivity({
+                        event_type: 'lead.route_assigned', event_scope: 'lead',
+                        actor: { type: 'system', label: 'lead-router' },
+                        target: { type: 'lead', id: newLeadId, label: `${name} (${enumType})` },
+                        details: { direct: true, listing_id: listingId, assigned_agent_id: finalAgentId, assigned_user_id: ag?.user_id || null },
+                    });
+                } catch (e) { console.warn('[lead direct-assign] failed:', e.message); }
             })();
         }
 
