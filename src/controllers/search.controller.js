@@ -147,6 +147,8 @@ async function notifyListing(listingId, reason = 'new') {
     } catch (e) { console.warn('[search.notifyListing] failed:', e.message); }
 }
 exports.notifyListing = notifyListing;
+exports.matches = matches;
+exports.describe = describe;
 
 function escapeHtml(s) {
     return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

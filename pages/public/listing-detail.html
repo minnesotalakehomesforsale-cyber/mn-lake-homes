@@ -167,6 +167,8 @@
                 } catch (_) {}
             }
             document.addEventListener('DOMContentLoaded', refreshSaveState);
+            // Record the view for signed-in users (fire-and-forget; 401 if anon).
+            fetch('/api/listings/' + LISTING_ID + '/view', { method: 'POST', credentials: 'include' }).catch(() => {});
 
             // Mortgage calculator — prefilled from the listing price/tax.
             (function () {

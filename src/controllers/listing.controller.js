@@ -578,7 +578,9 @@ exports.listSaved = async (req, res) => {
         if (!uid) return res.status(401).json({ error: 'Please sign in.' });
         const { rows } = await pool.query(
             `SELECT l.id, l.slug, l.title, l.description, l.featured_image_url, l.external_url,
-                    l.price, l.city, l.state, l.status, s.created_at AS saved_at,
+                    l.price, l.city, l.state, l.status, l.beds, l.baths, l.sqft,
+                    l.lot_acres, l.year_built, l.waterfront, l.property_type,
+                    s.created_at AS saved_at,
                     a.display_name AS agent_name, a.slug AS agent_slug
                FROM saved_listings s
                JOIN listings l ON l.id = s.listing_id
@@ -590,6 +592,33 @@ exports.listSaved = async (req, res) => {
 };
 
 // GET /api/listings/saved/ids — just the ids the user saved (for the ♥ state).
+// POST /api/listings/:id/view — record a signed-in user viewing a listing.
+exports.recordView = async (req, res) => {
+    try {
+        const uid = req.user?.userId;
+        if (!uid) return res.json({ ok: false });   // anonymous → no-op
+        await pool.query(
+            `INSERT INTO recently_viewed (user_id, listing_id) VALUES ($1, $2)
+             ON CONFLICT (user_id, listing_id) DO UPDATE SET viewed_at = NOW()`,
+            [uid, req.params.id]);
+        res.json({ ok: true });
+    } catch (e) { res.json({ ok: false }); }
+};
+
+// GET /api/listings/viewed/mine — the user's recently-viewed listings.
+exports.listViewed = async (req, res) => {
+    try {
+        const uid = req.user?.userId;
+        if (!uid) return res.status(401).json({ error: 'Please sign in.' });
+        const { rows } = await pool.query(
+            `SELECT l.id, l.slug, l.title, l.price, l.city, l.featured_image_url, rv.viewed_at
+               FROM recently_viewed rv JOIN listings l ON l.id = rv.listing_id
+              WHERE rv.user_id = $1 AND l.status = 'active'
+              ORDER BY rv.viewed_at DESC LIMIT 8`, [uid]);
+        res.json(rows);
+    } catch (e) { console.error('[listings.listViewed]', e.message); res.status(500).json({ error: 'Could not load.' }); }
+};
+
 exports.savedIds = async (req, res) => {
     try {
         const uid = req.user?.userId;

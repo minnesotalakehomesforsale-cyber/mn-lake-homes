@@ -334,9 +334,17 @@
 
         <!-- Saved properties -->
         <section class="ud-panel" id="panel-saved">
+            <div class="ud-card" id="ud-viewed-card" style="display:none;">
+                <h2>Recently viewed</h2>
+                <div id="ud-viewed" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.8rem;margin-top:0.5rem;"></div>
+            </div>
             <div class="ud-card">
-                <h2>Saved properties</h2>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
+                    <h2 style="margin:0;">Saved properties</h2>
+                    <button id="ud-compare-btn" onclick="toggleCompare()" style="display:none;border:1px solid #e2e8f0;background:#fff;border-radius:8px;padding:0.5rem 1rem;font:inherit;font-weight:700;font-size:0.85rem;cursor:pointer;">Compare</button>
+                </div>
                 <p class="ud-lead">Properties you've saved. Click through to the agent's full listing anytime, or remove ones you're no longer interested in.</p>
+                <div id="ud-compare" style="display:none;overflow-x:auto;margin-top:0.5rem;"></div>
                 <div id="ud-saved" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1rem;margin-top:0.5rem;">
                     <div class="ud-leads-state">Loading…</div>
                 </div>
@@ -629,6 +637,55 @@
 
         // ── Saved properties ────────────────────────────────────────────
         let _savedLoaded = false;
+        let _savedRows = [];
+        const _esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+        async function loadViewed() {
+            const card = document.getElementById('ud-viewed-card');
+            const box = document.getElementById('ud-viewed');
+            try {
+                const res = await fetch('/api/listings/viewed/mine', { credentials: 'include' });
+                if (!res.ok) return;
+                const rows = await res.json();
+                if (!rows.length) { card.style.display = 'none'; return; }
+                const money = n => n ? '$' + Number(n).toLocaleString('en-US') : '';
+                box.innerHTML = rows.map(p => `
+                    <a href="/listings/${_esc(p.slug)}" style="text-decoration:none;color:inherit;border:1px solid #edf2f7;border-radius:10px;overflow:hidden;display:block;">
+                        <div style="height:90px;background:#eef2f7 ${p.featured_image_url ? `url('${_esc(p.featured_image_url)}') center/cover` : ''};"></div>
+                        <div style="padding:0.5rem 0.6rem;">
+                            <div style="font-weight:700;font-size:0.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_esc(p.title)}</div>
+                            <div style="font-size:0.75rem;color:#718096;">${[money(p.price), _esc(p.city||'')].filter(Boolean).join(' · ')}</div>
+                        </div>
+                    </a>`).join('');
+                card.style.display = 'block';
+            } catch (_) {}
+        }
+
+        let _compareOpen = false;
+        function toggleCompare() {
+            _compareOpen = !_compareOpen;
+            const box = document.getElementById('ud-compare');
+            document.getElementById('ud-compare-btn').textContent = _compareOpen ? 'Hide comparison' : 'Compare';
+            if (!_compareOpen) { box.style.display = 'none'; return; }
+            const rows = _savedRows.slice(0, 5);
+            const money = n => n != null ? '$' + Number(n).toLocaleString('en-US') : '—';
+            const yn = b => b === true ? 'Yes' : (b === false ? 'No' : '—');
+            const fields = [
+                ['Price', p => money(p.price)],
+                ['Beds', p => p.beds ?? '—'],
+                ['Baths', p => p.baths ?? '—'],
+                ['Sq ft', p => p.sqft != null ? Number(p.sqft).toLocaleString('en-US') : '—'],
+                ['Lot (acres)', p => p.lot_acres ?? '—'],
+                ['Year built', p => p.year_built ?? '—'],
+                ['Waterfront', p => yn(p.waterfront)],
+                ['Type', p => _esc(p.property_type || '—')],
+                ['City', p => _esc(p.city || '—')],
+            ];
+            box.innerHTML = `<table style="border-collapse:collapse;min-width:100%;font-size:0.88rem;">
+                <thead><tr><th style="text-align:left;padding:0.6rem;border-bottom:2px solid #edf2f7;"></th>${rows.map(p => `<th style="padding:0.6rem;border-bottom:2px solid #edf2f7;text-align:left;min-width:130px;"><a href="/listings/${_esc(p.slug)}" style="color:#1d6df2;text-decoration:none;font-weight:700;">${_esc(p.title)}</a></th>`).join('')}</tr></thead>
+                <tbody>${fields.map(f => `<tr><td style="padding:0.55rem 0.6rem;color:#718096;font-weight:700;border-bottom:1px solid #f7f9fa;">${f[0]}</td>${rows.map(p => `<td style="padding:0.55rem 0.6rem;border-bottom:1px solid #f7f9fa;font-weight:600;">${f[1](p)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+            box.style.display = 'block';
+        }
         async function loadSaved(force) {
             if (_savedLoaded && !force) return;
             _savedLoaded = true;
@@ -639,6 +696,9 @@
                 const res = await fetch('/api/listings/saved/mine', { credentials: 'include' });
                 if (!res.ok) throw new Error();
                 const rows = await res.json();
+                _savedRows = rows;
+                loadViewed();
+                document.getElementById('ud-compare-btn').style.display = rows.length >= 2 ? '' : 'none';
                 if (!rows.length) {
                     box.innerHTML = '<div class="ud-leads-state" style="grid-column:1/-1;">No saved properties yet. Tap the ♥ on any listing to save it here.</div>';
                     return;

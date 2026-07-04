@@ -2868,6 +2868,17 @@ async function ensureTables() {
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
             CREATE INDEX IF NOT EXISTS idx_saved_searches_user ON saved_searches(user_id);
+
+            -- Recently-viewed listings per signed-in user (buyer re-engagement).
+            CREATE TABLE IF NOT EXISTS recently_viewed (
+                user_id    UUID NOT NULL REFERENCES users(id)    ON DELETE CASCADE,
+                listing_id UUID NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+                viewed_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                PRIMARY KEY (user_id, listing_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_recently_viewed_user ON recently_viewed(user_id, viewed_at DESC);
+            -- Weekly buyer digest throttle.
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS last_digest_at TIMESTAMPTZ;
             -- One alert email per (search, listing) — dedupes new + drop notices.
             CREATE TABLE IF NOT EXISTS saved_search_hits (
                 search_id  UUID NOT NULL REFERENCES saved_searches(id) ON DELETE CASCADE,
@@ -3848,6 +3859,13 @@ app.listen(PORT, async () => {
         const { runWinBackSweep } = require('./services/win-back');
         setTimeout(() => runWinBackSweep().catch(e => console.warn('[win-back]', e.message)), 4 * 60 * 1000);
         setInterval(() => runWinBackSweep().catch(e => console.warn('[win-back]', e.message)), 6 * 60 * 60 * 1000);
+    }
+
+    // Weekly buyer digest — new-matches roundup for users with saved searches.
+    if (process.env.BUYER_DIGEST_ENABLED !== 'false') {
+        const { runWeeklyDigest } = require('./services/buyer-digest');
+        setTimeout(() => runWeeklyDigest().catch(e => console.warn('[buyer-digest]', e.message)), 6 * 60 * 1000);
+        setInterval(() => runWeeklyDigest().catch(e => console.warn('[buyer-digest]', e.message)), 12 * 60 * 60 * 1000);
     }
 
     // Market Index monthly snapshot (idempotent per month; builds trend history).

@@ -20,9 +20,11 @@ router.post  ('/mine/:id/boost',  verifyToken, requireRole('agent'), c.boostChec
 router.delete('/mine/:id',        verifyToken, requireRole('agent'), c.removeMine);
 
 // ─── SAVED / LIKED (any signed-in user) ─────────────────────────────────────
-router.get ('/saved/mine', verifyToken, c.listSaved);
-router.get ('/saved/ids',  verifyToken, c.savedIds);
-router.post('/:id/save',   verifyToken, c.toggleSave);
+router.get ('/saved/mine',  verifyToken, c.listSaved);
+router.get ('/saved/ids',   verifyToken, c.savedIds);
+router.get ('/viewed/mine', verifyToken, c.listViewed);
+router.post('/:id/save',    verifyToken, c.toggleSave);
+router.post('/:id/view',    verifyToken, c.recordView);
 
 // ─── ADMIN ────────────────────────────────────────────────────────────────
 router.get('/admin',            verifyToken, c.listAdmin);
