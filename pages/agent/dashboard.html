@@ -103,6 +103,17 @@
         .dash-stat-num { font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; line-height: 1.1; font-variant-numeric: tabular-nums; }
         .dash-stat-lbl { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-top: 0.35rem; }
         @media (max-width: 600px) { .dash-stats { grid-template-columns: 1fr; } .dash-stat-num { font-size: 1.5rem; } }
+        .dash-roi { margin-top: 1.5rem; }
+        .roi-hero { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: space-between; align-items: center; background: linear-gradient(135deg,#0f2b46,#1d6df2); color: #fff; border-radius: 16px; padding: 1.6rem 1.8rem; }
+        .roi-hero-lbl { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; }
+        .roi-hero-num { font-size: 2.6rem; font-weight: 800; letter-spacing: -1.5px; margin: 0.15rem 0; }
+        .roi-hero-sub { font-size: 0.92rem; font-weight: 600; opacity: 0.92; }
+        .roi-chips { display: grid; grid-template-columns: repeat(2, auto); gap: 0.6rem 1.5rem; }
+        .roi-chip { text-align: center; }
+        .roi-chip span { display: block; font-size: 1.5rem; font-weight: 800; line-height: 1; }
+        .roi-chip small { font-size: 0.7rem; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.4px; }
+        .roi-foot { font-size: 0.76rem; color: #a0aec0; margin: 0.7rem 0.2rem 0; }
+        @media (max-width: 600px) { .roi-hero-num { font-size: 2rem; } .roi-hero { padding: 1.3rem; } }
 
         /* Articles section */
         .dash-section-h { font-size: 1.1rem; font-weight: 800; color: #1a202c; letter-spacing: -0.3px; margin: 2.25rem 0 1rem; }
@@ -333,6 +344,24 @@
                         <div class="dash-stat"><div class="dash-stat-num" id="dash-stat-leads">—</div><div class="dash-stat-lbl">Active leads</div></div>
                         <div class="dash-stat"><div class="dash-stat-num" id="dash-stat-msgs">—</div><div class="dash-stat-lbl">Unread messages</div></div>
                         <div class="dash-stat"><div class="dash-stat-num" id="dash-stat-tier">—</div><div class="dash-stat-lbl">Membership tier</div></div>
+                    </div>
+
+                    <!-- ROI panel — proof of value; populated by loadRoi() -->
+                    <div id="dash-roi" class="dash-roi" style="display:none;">
+                        <div class="roi-hero">
+                            <div>
+                                <div class="roi-hero-lbl">Estimated value of your leads this month</div>
+                                <div class="roi-hero-num" id="roi-month-value">$0</div>
+                                <div class="roi-hero-sub" id="roi-multiple"></div>
+                            </div>
+                            <div class="roi-chips">
+                                <div class="roi-chip"><span id="roi-leads-month">0</span><small>leads this month</small></div>
+                                <div class="roi-chip"><span id="roi-showings">0</span><small>showing requests</small></div>
+                                <div class="roi-chip"><span id="roi-listings">0</span><small>active listings</small></div>
+                                <div class="roi-chip"><span id="roi-inquiries">0</span><small>listing inquiries</small></div>
+                            </div>
+                        </div>
+                        <p class="roi-foot" id="roi-foot"></p>
                     </div>
 
                     <div class="dash-links">
@@ -1090,6 +1119,7 @@
             refreshMsgBadge();
             hydrateDashboardMessages();
             loadAgentArticles();
+            loadRoi();
         });
 
         // ── Messages (read-only, one-way from the MNLH team) ──────────────────────
@@ -1303,6 +1333,29 @@
                 pill.style.display = 'none';
                 desc.textContent = 'Your active leads from the platform';
             }
+        }
+
+        // Agent ROI panel — proof of value on the dashboard landing.
+        async function loadRoi() {
+            try {
+                const r = await fetch('/api/agents/me/roi', { credentials: 'include' });
+                if (!r.ok) return;
+                const d = await r.json();
+                const money = n => '$' + Number(n || 0).toLocaleString('en-US');
+                document.getElementById('roi-month-value').textContent = money(d.month_value);
+                const mult = (d.roi_multiple && d.plan_price)
+                    ? `That's about ${d.roi_multiple}× your ${money(d.plan_price)}/mo plan`
+                    : `From ${d.leads_month} lead${d.leads_month === 1 ? '' : 's'} this month`;
+                document.getElementById('roi-multiple').textContent = mult;
+                document.getElementById('roi-leads-month').textContent = d.leads_month;
+                document.getElementById('roi-showings').textContent = d.showings_month;
+                document.getElementById('roi-listings').textContent = d.active_listings;
+                document.getElementById('roi-inquiries').textContent = d.listing_inquiries;
+                document.getElementById('roi-foot').textContent =
+                    `Estimate: ${d.leads_month} lead${d.leads_month === 1 ? '' : 's'} × ${money(d.expected_per_lead)} expected value each `
+                    + `(≈ ${money(d.avg_sale)} avg sale × ${d.commission_pct}% commission × ${Math.round(d.close_rate * 100)}% close rate). Actual results vary.`;
+                document.getElementById('dash-roi').style.display = 'block';
+            } catch (_) {}
         }
 
         // Messages card + unread preview on the landing page.

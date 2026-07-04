@@ -422,6 +422,59 @@ const updateMyLeadStatus = async (req, res) => {
     }
 };
 
+// ── Agent ROI (proof-of-value) ──────────────────────────────────────────────
+// Assumptions are deliberately conservative and env-overridable so the number
+// reads as credible pipeline, not hype.
+const ROI_AVG_SALE   = Number(process.env.AGENT_ROI_AVG_SALE_USD)  || 475000;   // typical MN lake home
+const ROI_COMMISSION = Number(process.env.AGENT_ROI_COMMISSION_PCT) || 2.5;      // % buyer-side
+const ROI_CLOSE_RATE = Number(process.env.AGENT_ROI_CLOSE_RATE)     || 0.08;     // deals per lead
+const ROI_PLAN_PRICE = { founder: 249, top_agent: 149, premium: 149, mn_lake_specialist: 39, basic: 9 };
+
+const getMyRoi = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const ar = await pool.query(
+            `SELECT a.id AS agent_id, m.code AS plan_code, m.display_badge_label AS plan_label
+               FROM agents a LEFT JOIN memberships m ON m.id = a.membership_id
+              WHERE a.user_id = $1 LIMIT 1`, [userId]);
+        if (!ar.rowCount) return res.status(403).json({ error: 'No agent profile yet.' });
+        const agentId = ar.rows[0].agent_id;
+        const planCode = ar.rows[0].plan_code || 'basic';
+        const planPrice = ROI_PLAN_PRICE[planCode] ?? 9;
+
+        const lq = await pool.query(`
+            SELECT COUNT(*) FILTER (WHERE created_at >= date_trunc('month', now()))::int AS leads_month,
+                   COUNT(*)::int AS leads_total,
+                   COUNT(*) FILTER (WHERE listing_id IS NOT NULL AND created_at >= date_trunc('month', now()))::int AS showings_month,
+                   COUNT(*) FILTER (WHERE agent_ack_at IS NOT NULL AND created_at >= date_trunc('month', now()))::int AS worked_month
+              FROM leads WHERE agent_id = $1 AND deleted_at IS NULL`, [agentId]);
+        const listq = await pool.query(`
+            SELECT AVG(price)::int AS avg_price,
+                   COUNT(*) FILTER (WHERE status = 'active')::int AS active_listings,
+                   (SELECT COUNT(*)::int FROM leads le
+                      WHERE le.listing_id IN (SELECT id FROM listings WHERE agent_id = $1)
+                        AND le.deleted_at IS NULL) AS listing_inquiries
+              FROM listings WHERE agent_id = $1 AND price IS NOT NULL`, [agentId]);
+
+        const s = lq.rows[0], lst = listq.rows[0];
+        const avgSale = lst.avg_price || ROI_AVG_SALE;
+        const perClosed = Math.round(avgSale * (ROI_COMMISSION / 100));
+        const perLead = Math.round(perClosed * ROI_CLOSE_RATE);
+        const monthValue = s.leads_month * perLead;
+
+        res.json({
+            plan_code: planCode, plan_label: ar.rows[0].plan_label, plan_price: planPrice,
+            leads_month: s.leads_month, leads_total: s.leads_total,
+            showings_month: s.showings_month, worked_month: s.worked_month,
+            active_listings: lst.active_listings || 0, listing_inquiries: lst.listing_inquiries || 0,
+            avg_sale: avgSale, commission_pct: ROI_COMMISSION, close_rate: ROI_CLOSE_RATE,
+            per_closed_commission: perClosed, expected_per_lead: perLead,
+            month_value: monthValue,
+            roi_multiple: planPrice ? +(monthValue / planPrice).toFixed(1) : null,
+        });
+    } catch (e) { console.error('[getMyRoi]', e.message); res.status(500).json({ error: 'Failed to load ROI.' }); }
+};
+
 /**
  * GET  /api/agents/me/leads/:id/notes   list MY notes on one of my leads
  * POST /api/agents/me/leads/:id/notes   add a note to one of my leads
@@ -607,6 +660,7 @@ module.exports = {
     submitForReview,
     updateMyProfile,
     getMyLeads,
+    getMyRoi,
     updateMyLeadStatus,
     getMyLeadNotes,
     addMyLeadNote,

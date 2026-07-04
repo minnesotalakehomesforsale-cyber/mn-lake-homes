@@ -22,6 +22,7 @@ router.post('/upload-photo', agentController.uploadPhoto);
 // ─── PROTECTED — Agent only ───────────────────────────────────────────────────
 router.get('/me', verifyToken, requireRole('agent'), agentController.getMyProfile);
 router.get('/me/leads', verifyToken, requireRole('agent'), agentController.getMyLeads);
+router.get('/me/roi',   verifyToken, requireRole('agent'), agentController.getMyRoi);
 router.patch('/me/leads/:id/status', verifyToken, requireRole('agent'), agentController.updateMyLeadStatus);
 router.get  ('/me/leads/:id/notes',  verifyToken, requireRole('agent'), agentController.getMyLeadNotes);
 router.post ('/me/leads/:id/notes',  verifyToken, requireRole('agent'), agentController.addMyLeadNote);

@@ -3658,6 +3658,14 @@ app.listen(PORT, async () => {
         setInterval(() => runSlaSweep().catch(e => console.warn('[lead-sla]', e.message)), 15 * 60 * 1000);
     }
 
+    // Monthly agent ROI recap — self-guards to once per calendar month.
+    // Checked a few minutes after boot, then twice a day.
+    if (process.env.AGENT_ROI_EMAIL_ENABLED !== 'false') {
+        const { runMonthlyRoiEmails } = require('./services/agent-roi-email');
+        setTimeout(() => runMonthlyRoiEmails().catch(e => console.warn('[agent-roi-email]', e.message)), 3 * 60 * 1000);
+        setInterval(() => runMonthlyRoiEmails().catch(e => console.warn('[agent-roi-email]', e.message)), 12 * 60 * 60 * 1000);
+    }
+
     // Push every existing contact (users / leads / inquiries) into HubSpot
     // in the background. Idempotent — only touches rows whose hs_contact_id
     // is still NULL. Throttled internally to respect rate limits. Runs as
