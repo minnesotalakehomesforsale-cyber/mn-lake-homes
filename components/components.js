@@ -1743,3 +1743,117 @@ document.addEventListener('keydown', e => {
         .catch(() => { /* config endpoint unreachable — fall through silently */ });
 })();
 
+// ─── Conversion boosters ────────────────────────────────────────────────────
+// Three tasteful nudges that lift lead volume from the SAME traffic:
+//   • a sticky "Get matched" bar on mobile (where most traffic is),
+//   • a once-per-session desktop exit-intent capture,
+//   • honest social-proof numbers woven into both (hidden when too small).
+// All open the existing conversational lead form. Public pages only; never on
+// the app/dashboards, and never while the lead form itself is open.
+(function conversionBoosters() {
+    if (window.__cvBoostInit) return;
+    window.__cvBoostInit = true;
+
+    // Guard: skip the logged-in app surfaces (admin/agent/business/user).
+    const p = location.pathname;
+    if (/^\/pages\/(admin|agent|business|user)\//.test(p) || document.querySelector('.admin-wrap')) return;
+
+    const ss = {
+        get: k => { try { return sessionStorage.getItem(k); } catch (_) { return null; } },
+        set: (k, v) => { try { sessionStorage.setItem(k, v); } catch (_) {} },
+    };
+    const openLead = (src) => { if (typeof window.openForm === 'function') window.openForm('buyer', { _source: src }); };
+    const formOpen = () => { const o = document.getElementById('lf-overlay'); return o && o.style.display !== 'none'; };
+
+    // Build an honest one-liner from the biggest credible number; null if none
+    // clear the bar (so we never show "0 buyers matched").
+    function proofLine(s) {
+        if (!s) return null;
+        if (s.matches_30d >= 10) return `${s.matches_30d.toLocaleString()} buyers matched this month`;
+        if (s.agents >= 5 && s.lakes >= 10) return `${s.agents} vetted agents across ${s.lakes} Minnesota lakes`;
+        if (s.lakes >= 20) return `${s.lakes} Minnesota lakes covered`;
+        return null;
+    }
+
+    let _stats = null;
+    fetch('/api/stats/social-proof', { credentials: 'omit' })
+        .then(r => r.ok ? r.json() : null).then(s => { _stats = s; hydrateProof(); }).catch(() => {});
+
+    // Styles.
+    const css = document.createElement('style');
+    css.textContent = `
+      .cv-sticky { position:fixed; left:0; right:0; bottom:0; z-index:8000; display:none;
+        background:#0b2a10; color:#fff; padding:0.7rem 0.9rem calc(0.7rem + env(safe-area-inset-bottom));
+        box-shadow:0 -6px 20px rgba(0,0,0,0.18); align-items:center; gap:0.75rem; }
+      .cv-sticky.show { display:flex; }
+      .cv-sticky .cv-txt { flex:1; min-width:0; line-height:1.25; }
+      .cv-sticky .cv-t1 { font-weight:800; font-size:0.95rem; }
+      .cv-sticky .cv-t2 { font-size:0.72rem; opacity:0.8; margin-top:0.1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .cv-sticky .cv-go { background:#1d6df2; color:#fff; border:0; border-radius:9px; padding:0.6rem 1rem; font-weight:800; font-size:0.9rem; white-space:nowrap; cursor:pointer; font-family:inherit; }
+      .cv-sticky .cv-x { background:none; border:0; color:rgba(255,255,255,0.6); font-size:1.3rem; line-height:1; cursor:pointer; padding:0.2rem 0.3rem; }
+      @media (min-width:768px){ .cv-sticky { display:none !important; } }
+      .cv-exit-ov { position:fixed; inset:0; z-index:9500; background:rgba(11,42,16,0.55); display:none; align-items:center; justify-content:center; padding:1.25rem; }
+      .cv-exit-ov.show { display:flex; }
+      .cv-exit { background:#fff; border-radius:18px; max-width:440px; width:100%; padding:2rem 1.75rem; text-align:center; box-shadow:0 24px 70px rgba(0,0,0,0.3); }
+      .cv-exit h3 { margin:0 0 0.5rem; font-size:1.5rem; font-weight:800; color:#1a202c; letter-spacing:-0.5px; }
+      .cv-exit p { margin:0 0 1.25rem; color:#4a5568; line-height:1.5; font-size:0.95rem; }
+      .cv-exit .cv-go { background:#1d6df2; color:#fff; border:0; border-radius:11px; padding:0.9rem 1.25rem; font-weight:800; font-size:1rem; width:100%; cursor:pointer; font-family:inherit; }
+      .cv-exit .cv-no { background:none; border:0; color:#a0aec0; font-size:0.85rem; margin-top:0.85rem; cursor:pointer; font-family:inherit; }
+      .cv-exit .cv-proof { font-size:0.78rem; color:#1d7a53; font-weight:700; margin-bottom:0.75rem; }`;
+    document.head.appendChild(css);
+
+    // ── Sticky mobile CTA ──
+    const bar = document.createElement('div');
+    bar.className = 'cv-sticky';
+    bar.innerHTML = `
+      <div class="cv-txt"><div class="cv-t1">Find your Minnesota lake home</div><div class="cv-t2" id="cv-bar-proof">Matched free with a local lake expert</div></div>
+      <button class="cv-go" type="button">Get matched</button>
+      <button class="cv-x" type="button" aria-label="Dismiss">×</button>`;
+    bar.querySelector('.cv-go').addEventListener('click', () => openLead('sticky_cta'));
+    bar.querySelector('.cv-x').addEventListener('click', () => { bar.classList.remove('show'); ss.set('mlh_cta_dismissed', '1'); });
+    document.body.appendChild(bar);
+
+    function maybeShowBar() {
+        if (ss.get('mlh_cta_dismissed') || formOpen()) return;
+        if (window.scrollY > 450) bar.classList.add('show');
+    }
+    window.addEventListener('scroll', maybeShowBar, { passive: true });
+
+    // ── Desktop exit-intent ──
+    const exit = document.createElement('div');
+    exit.className = 'cv-exit-ov';
+    exit.innerHTML = `
+      <div class="cv-exit" role="dialog" aria-modal="true">
+        <div class="cv-proof" id="cv-exit-proof" style="display:none;"></div>
+        <h3>Before you go…</h3>
+        <p>Get matched — free — with a vetted agent who knows your lake bay by bay. No spam, no obligation.</p>
+        <button class="cv-go" type="button">Match me with a lake expert</button>
+        <button class="cv-no" type="button">No thanks, I'm just browsing</button>
+      </div>`;
+    exit.querySelector('.cv-go').addEventListener('click', () => { exit.classList.remove('show'); openLead('exit_intent'); });
+    exit.querySelector('.cv-no').addEventListener('click', () => exit.classList.remove('show'));
+    exit.addEventListener('click', e => { if (e.target === exit) exit.classList.remove('show'); });
+    document.body.appendChild(exit);
+
+    function armExitIntent() {
+        if (window.innerWidth < 768) return;   // desktop only
+        document.addEventListener('mouseout', e => {
+            if (ss.get('mlh_exit_shown') || formOpen()) return;
+            if (!e.relatedTarget && e.clientY <= 0) {
+                ss.set('mlh_exit_shown', '1');
+                exit.classList.add('show');
+                if (typeof window.trackConversion === 'function') window.trackConversion('exit_intent_shown', { page: p });
+            }
+        });
+    }
+    // Only arm after a little engagement so we don't nag instant bouncers.
+    setTimeout(armExitIntent, 12000);
+
+    function hydrateProof() {
+        const line = proofLine(_stats);
+        if (!line) return;
+        const b = document.getElementById('cv-bar-proof'); if (b) b.textContent = '★ ' + line;
+        const x = document.getElementById('cv-exit-proof'); if (x) { x.textContent = '★ ' + line; x.style.display = ''; }
+    }
+})();
+

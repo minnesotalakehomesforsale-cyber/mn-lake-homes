@@ -158,6 +158,31 @@ app.get('/api/site-images', async (req, res) => {
     }
 });
 
+// ─── /api/stats/social-proof ────────────────────────────────────────────────
+// Real, honest platform numbers for the conversion UI (sticky CTA, exit-intent).
+// Cached 10 min. The FRONTEND decides which numbers are big enough to show, so
+// we never surface embarrassing pre-launch zeros — small counts just stay hidden.
+let _spCache = { at: 0, data: null };
+app.get('/api/stats/social-proof', async (req, res) => {
+    res.set('Cache-Control', 'public, max-age=300');
+    const now = Date.now();
+    if (_spCache.data && now - _spCache.at < 10 * 60 * 1000) return res.json(_spCache.data);
+    try {
+        const q = async (sql) => { try { return parseInt((await pool.query(sql)).rows[0].n, 10) || 0; } catch (_) { return 0; } };
+        const [agents, lakes, towns, businesses, matches30d] = await Promise.all([
+            q(`SELECT COUNT(*) n FROM agents WHERE profile_status='published' AND is_published=TRUE`),
+            q(`SELECT COUNT(*) n FROM lakes WHERE status='published' AND hero_image_url IS NOT NULL`),
+            q(`SELECT COUNT(*) n FROM tags WHERE active=TRUE`),
+            q(`SELECT COUNT(*) n FROM businesses WHERE status='active'`),
+            q(`SELECT COUNT(*) n FROM leads WHERE assigned_at >= NOW() - INTERVAL '30 days' AND deleted_at IS NULL`),
+        ]);
+        _spCache = { at: now, data: { agents, lakes, towns, businesses, matches_30d: matches30d } };
+        res.json(_spCache.data);
+    } catch (err) {
+        res.json({ agents: 0, lakes: 0, towns: 0, businesses: 0, matches_30d: 0 });
+    }
+});
+
 // ─── /api/config/public ─────────────────────────────────────────────────────
 // Single source of truth for public, safe-to-expose env values + tunables
 // the frontend needs (GA4/HubSpot tracking pixels, Search Console meta tag,
