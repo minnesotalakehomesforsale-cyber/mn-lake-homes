@@ -185,42 +185,21 @@
 
         <!-- ── TAB 1: DASHBOARD ─────────────────────────────────────── -->
         <div id="pane-overview" class="tab-pane active" role="tabpanel">
-            <div class="mk-stat-grid">
-                <div class="mk-stat subs">
-                    <span class="mk-ico">📧</span>
-                    <span class="mk-lbl">Mailing list</span>
-                    <span class="mk-val" id="mk-stat-subs">—</span>
-                    <span class="mk-sub" id="mk-stat-subs-sub">unique emails</span>
-                </div>
-                <div class="mk-stat blog">
-                    <span class="mk-ico">📝</span>
-                    <span class="mk-lbl">Blog posts</span>
-                    <span class="mk-val" id="mk-stat-blog">—</span>
-                    <span class="mk-sub" id="mk-stat-blog-sub">— published</span>
-                </div>
-                <div class="mk-stat posts">
-                    <span class="mk-ico">📅</span>
-                    <span class="mk-lbl">Post ideas</span>
-                    <span class="mk-val" id="mk-stat-posts">—</span>
-                    <span class="mk-sub" id="mk-stat-posts-sub">— ideas, — scheduled</span>
-                </div>
-                <div class="mk-stat overdue">
-                    <span class="mk-ico">⚠️</span>
-                    <span class="mk-lbl">Overdue</span>
-                    <span class="mk-val" id="mk-stat-overdue">—</span>
-                    <span class="mk-sub">past due, not posted</span>
-                </div>
-            </div>
-
-            <div class="mk-card">
-                <div class="mk-card-hd">
-                    <span class="mk-card-title">This week</span>
-                    <button class="mk-btn ghost" onclick="showMK('social')">Open Social Media →</button>
-                </div>
-                <div class="mk-card-body">
-                    <div class="week-strip" id="mk-week-strip">
-                        <div class="mk-skel">Loading week…</div>
+            <div id="mk-hero" class="md-hero"><div class="mk-skel" style="color:#c7d2fe;">Loading…</div></div>
+            <div class="md-cards" id="mk-cards"></div>
+            <div class="md-cols">
+                <div class="mk-card">
+                    <div class="mk-card-hd">
+                        <span class="mk-card-title">This week</span>
+                        <button class="mk-btn ghost" onclick="showMK('calendar')">Open calendar →</button>
                     </div>
+                    <div class="mk-card-body">
+                        <div class="week-strip" id="mk-week-strip"><div class="mk-skel">Loading week…</div></div>
+                    </div>
+                </div>
+                <div class="mk-card">
+                    <div class="mk-card-hd"><span class="mk-card-title">Needs attention</span></div>
+                    <div class="mk-card-body"><div class="md-attn" id="mk-attn"></div></div>
                 </div>
             </div>
         </div>
@@ -373,6 +352,39 @@
             .cal-field input, .cal-field select, .cal-field textarea { font:inherit; font-size:0.9rem; padding:0.55rem 0.7rem; border:1px solid #e2e8f0; border-radius:9px; outline:none; background:#fff; }
             .cal-field input:focus, .cal-field select:focus, .cal-field textarea:focus { border-color:#1d6df2; }
             .cal-2col { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
+            .cal-day-list { display:flex; flex-direction:column; gap:0.5rem; }
+            .cal-day-item { display:flex; align-items:center; gap:0.7rem; padding:0.65rem 0.75rem; border:1px solid #edf2f7; border-radius:10px; cursor:pointer; transition:border-color 0.12s, background 0.12s; }
+            .cal-day-item:hover { border-color:#cbd5e0; background:#fafbfc; }
+            .cdi-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+            .cdi-t { font-size:0.9rem; font-weight:700; color:#1a202c; line-height:1.25; }
+            .cdi-s { font-size:0.74rem; color:#718096; margin-top:0.1rem; text-transform:capitalize; }
+
+            /* Marketing dashboard (overview) — financials-style */
+            .md-hero { background:linear-gradient(135deg,#4f46e5,#312e81); color:#fff; border-radius:18px; padding:1.6rem 1.8rem; margin-bottom:1.15rem; box-shadow:0 14px 36px rgba(16,24,40,.2); }
+            .md-hero .eyebrow { font-size:.66rem; font-weight:800; letter-spacing:1.3px; text-transform:uppercase; color:#c7d2fe; margin-bottom:.5rem; }
+            .md-hero .nums { display:flex; align-items:baseline; gap:.8rem; flex-wrap:wrap; }
+            .md-hero .big { font-size:clamp(2rem,6vw,2.7rem); font-weight:800; letter-spacing:-1.3px; line-height:1; }
+            .md-hero .lbl { font-size:1rem; color:#c7d2fe; font-weight:600; }
+            .md-hero .chip { margin-left:auto; background:rgba(255,255,255,.14); border-radius:99px; padding:.4rem .95rem; font-size:.82rem; font-weight:800; }
+            .md-hero .chip.warn { background:rgba(251,146,60,.28); color:#fed7aa; }
+            .md-hero .sub { font-size:.82rem; color:#c7d2fe; margin-top:.9rem; }
+            .md-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:.85rem; margin-bottom:1.15rem; }
+            .md-card { background:#fff; border:1px solid #edf2f7; border-radius:14px; padding:1.05rem 1.2rem; text-decoration:none; color:inherit; box-shadow:0 1px 2px rgba(16,24,40,.04),0 8px 22px rgba(16,24,40,.05); transition:transform .12s,box-shadow .15s; display:block; cursor:pointer; }
+            .md-card:hover { transform:translateY(-2px); box-shadow:0 12px 28px rgba(16,24,40,.1); }
+            .md-card .l { font-size:.68rem; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:#a0aec0; }
+            .md-card .v { font-size:1.7rem; font-weight:800; letter-spacing:-.6px; color:#1a202c; line-height:1; margin-top:.3rem; }
+            .md-card .s { font-size:.74rem; color:#718096; margin-top:.3rem; }
+            .md-cols { display:grid; grid-template-columns:1.3fr 1fr; gap:1.1rem; align-items:start; }
+            @media (max-width:900px){ .md-cols { grid-template-columns:1fr; } }
+            .md-attn { display:flex; flex-direction:column; gap:.5rem; }
+            .md-attn a { display:flex; align-items:center; gap:.8rem; padding:.7rem .9rem; border-radius:11px; border:1px solid #edf2f7; text-decoration:none; color:inherit; }
+            .md-attn a:hover { border-color:#cbd5e0; background:#fafbfc; }
+            .md-attn a.warn { border-color:#fbd38d; background:#fffaf0; }
+            .md-attn a.ok { border-color:#c6f6d5; background:#f0fff4; }
+            .md-attn .ct { font-size:1.4rem; font-weight:800; min-width:38px; text-align:center; }
+            .md-attn a.warn .ct { color:#b45309; } .md-attn a.ok .ct { color:#2f855a; }
+            .md-attn .t { font-weight:700; font-size:.88rem; color:#1a202c; } .md-attn .s { font-size:.75rem; color:#718096; }
+            .md-attn .go { margin-left:auto; color:#a0aec0; font-weight:800; font-size:1.05rem; }
         </style>
 
         <!-- ── TAB 5: MARKETING TO AGENTS (coverage-gap insights) ──────── -->
@@ -670,7 +682,7 @@
             const items = (byDate[key] || []).sort((a, b) => CT_ORDER.indexOf(a.content_type) - CT_ORDER.indexOf(b.content_type));
             const evs = items.slice(0, 3).map(it => `<div class="cal-ev" style="background:${CT[it.content_type]?.color || '#718096'};" onclick="event.stopPropagation();openCalItem('${it.kind}','${it.id}')" title="${escHtml(it.title)}"><span class="ev-t">${escHtml(it.title)}</span></div>`).join('');
             const more = items.length > 3 ? `<div class="cal-more">+${items.length - 3} more</div>` : '';
-            cells.push(`<div class="cal-day ${out ? 'out' : ''} ${key === todayKey ? 'today' : ''}" onclick="openCalItem(null,null,'${key}')"><div class="cal-daynum">${d.getDate()}</div>${evs}${more}</div>`);
+            cells.push(`<div class="cal-day ${out ? 'out' : ''} ${key === todayKey ? 'today' : ''}" onclick="openCalDay('${key}')"><div class="cal-daynum">${d.getDate()}</div>${evs}${more}</div>`);
         }
         document.getElementById('cal-grid').innerHTML = cells.join('');
     }
@@ -681,6 +693,30 @@
         const el = document.getElementById('cal-blogs');
         if (!blogs.length) { el.innerHTML = '<div style="color:#a0aec0;font-size:0.8rem;padding:0.5rem 0;">No drafts waiting.</div>'; return; }
         el.innerHTML = blogs.map(b => `<div class="cal-blog" onclick="openCalItem('blog','${b.id}')"><div class="bt">${escHtml(b.title)}</div><div class="bd ${b.date ? 'sched' : ''}">${b.date ? 'Go live ' + fmtDate(b.date) : 'No date set'}</div></div>`).join('');
+    }
+
+    // Open a specific day → list everything on it + add-to-this-day.
+    function openCalDay(key) {
+        const items = _calData.filter(it => it.date === key).sort((a, b) => CT_ORDER.indexOf(a.content_type) - CT_ORDER.indexOf(b.content_type));
+        const dObj = new Date(key + 'T00:00:00');
+        document.getElementById('cal-modal-title').textContent = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        const body = document.getElementById('cal-modal-body');
+        body.innerHTML = items.length
+            ? `<div class="cal-day-list">${items.map(it => `
+                <div class="cal-day-item" onclick="openCalItem('${it.kind}','${it.id}')">
+                    <span class="cdi-dot" style="background:${CT[it.content_type]?.color || '#718096'};"></span>
+                    <div style="flex:1;min-width:0;">
+                        <div class="cdi-t">${escHtml(it.title)}</div>
+                        <div class="cdi-s">${CT[it.content_type]?.label || 'Item'}${it.channel ? ' · ' + it.channel : ''}${it.status ? ' · ' + it.status.replace('_', ' ') : ''}</div>
+                    </div>
+                    <span style="color:#a0aec0;font-size:1.1rem;">&rsaquo;</span>
+                </div>`).join('')}</div>`
+            : '<p style="color:#a0aec0;font-size:0.9rem;padding:0.5rem 0;">Nothing planned for this day yet.</p>';
+        document.getElementById('cal-modal-ft').innerHTML = `
+            <button class="mk-btn ghost" onclick="closeCalModal()">Close</button>
+            <div style="flex:1;"></div>
+            <button class="mk-btn primary" onclick="openCalItem(null,null,'${key}')">+ Add to this day</button>`;
+        document.getElementById('cal-modal').classList.add('open');
     }
 
     function openCalItem(kind, id, presetDate) {
@@ -796,22 +832,48 @@
 
     // ── Dashboard ────────────────────────────────────────────────
     async function loadOverview() {
+        let ov = null, cal = null;
         try {
-            const res = await fetch('/api/admin/marketing/overview');
-            if (!res.ok) throw new Error();
-            const d = await res.json();
+            [ov, cal] = await Promise.all([
+                fetch('/api/admin/marketing/overview').then(r => r.ok ? r.json() : null),
+                fetch('/api/admin/marketing/calendar', { credentials: 'include' }).then(r => r.ok ? r.json() : null),
+            ]);
+        } catch (_) {}
+        if (!ov) { document.getElementById('mk-hero').innerHTML = '<div style="color:#fecaca;">Could not load. Refresh to try again.</div>'; return; }
 
-            document.getElementById('mk-stat-subs').textContent  = d.subscribers ?? 0;
-            document.getElementById('mk-stat-blog').textContent  = d.blog?.total ?? 0;
-            document.getElementById('mk-stat-blog-sub').textContent = `${d.blog?.published ?? 0} published`;
-            document.getElementById('mk-stat-posts').textContent = d.posts?.total ?? 0;
-            document.getElementById('mk-stat-posts-sub').textContent = `${d.posts?.ideas ?? 0} ideas · ${d.posts?.scheduled ?? 0} scheduled`;
-            document.getElementById('mk-stat-overdue').textContent = d.posts?.overdue ?? 0;
+        const items = cal && Array.isArray(cal.items) ? cal.items : [];
+        const todayK = ymd(new Date());
+        const mk = items.filter(i => i.kind === 'marketing');
+        const draftBlogs = (cal ? cal.draftBlogCount : 0) || items.filter(i => i.kind === 'blog').length;
+        const upcoming = mk.filter(i => i.date && i.date >= todayK).length;
+        const unscheduled = mk.filter(i => !i.date && (i.status === 'idea' || i.status === 'in_progress')).length;
+        const thisWeek = (ov.week || []).length;
+        const overdue = ov.posts?.overdue || 0;
 
-            renderWeekStrip(d.week || []);
-        } catch (_) {
-            document.getElementById('mk-week-strip').innerHTML = '<div class="mk-empty" style="color:#c53030;">Could not load. Try again in a moment.</div>';
-        }
+        document.getElementById('mk-hero').innerHTML = `
+            <div class="eyebrow">Content this week</div>
+            <div class="nums">
+                <span class="big">${thisWeek}</span><span class="lbl">piece${thisWeek === 1 ? '' : 's'} scheduled</span>
+                <span class="chip ${overdue ? 'warn' : ''}">${overdue} overdue</span>
+            </div>
+            <div class="sub">${upcoming} scheduled ahead · ${draftBlogs} blog${draftBlogs === 1 ? '' : 's'} to publish · ${unscheduled} unscheduled idea${unscheduled === 1 ? '' : 's'}</div>`;
+
+        const card = (onclick, l, v, s, warn) => `<a class="md-card" href="javascript:void(0)" onclick="${onclick}"><div class="l">${l}</div><div class="v" style="${warn && v ? 'color:#b45309;' : ''}">${v}</div><div class="s">${s}</div></a>`;
+        document.getElementById('mk-cards').innerHTML =
+            card("showMK('newsletter')", 'Mailing list', ov.subscribers || 0, 'unique emails') +
+            card("showMK('calendar')", 'Blog posts', ov.blog?.published || 0, `${draftBlogs} draft${draftBlogs === 1 ? '' : 's'} to publish`) +
+            card("showMK('calendar')", 'Scheduled content', upcoming, 'upcoming on the calendar') +
+            card("showMK('calendar')", 'Overdue', overdue, 'past due, not posted', true);
+
+        renderWeekStrip(ov.week || []);
+
+        const attn = [
+            { n: overdue,     t: 'Overdue content',   s: overdue ? 'past due, not posted' : 'nothing overdue', go: "showMK('calendar')" },
+            { n: draftBlogs,  t: 'Blogs to publish',  s: draftBlogs ? 'drafts waiting to go live' : 'all published', go: "showMK('calendar')" },
+            { n: unscheduled, t: 'Unscheduled ideas', s: unscheduled ? 'no date set yet' : 'everything is scheduled', go: "showMK('calendar')" },
+        ].sort((a, b) => b.n - a.n);
+        document.getElementById('mk-attn').innerHTML = attn.map(a =>
+            `<a href="javascript:void(0)" onclick="${a.go}" class="${a.n > 0 ? 'warn' : 'ok'}"><span class="ct">${a.n > 0 ? a.n : '✓'}</span><span style="flex:1;min-width:0;"><span class="t">${a.t}</span><br><span class="s">${a.s}</span></span><span class="go">→</span></a>`).join('');
     }
 
     function renderWeekStrip(weekPosts) {

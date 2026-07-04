@@ -3002,6 +3002,7 @@ async function ensureTables() {
         await seedBlogContentV2();
         await seedBlogRelatedLinks();
         await seedStagedDraftReset();
+        await seedMarketingPlan();
         await seedTownContent();
         await reconcilePartnerBusinesses();
     } catch (err) {
@@ -3149,6 +3150,78 @@ async function seedStagedDraftReset() {
         if (n) console.log(` Reset ${n} staged blog draft(s) back to draft.`);
     } catch (e) {
         console.warn('[seedStagedDraftReset]', e.message);
+    }
+}
+
+// One-time: fill the content calendar with a starter plan so it isn't blank —
+// a rolling ~6-week cadence of lake-themed social posts, stories, a weekly
+// email, and biweekly DM outreach. Guarded by an app_config flag AND only runs
+// when the calendar is essentially empty, so it never clutters a real plan.
+async function seedMarketingPlan() {
+    const KEY = 'marketing_plan_seeded_v1';
+    try {
+        const flag = await pool.query(`SELECT value FROM app_config WHERE key = $1`, [KEY]);
+        if (flag.rows[0] && (flag.rows[0].value === 1 || flag.rows[0].value === '1' || flag.rows[0].value === true)) return;
+        const cnt = await pool.query(`SELECT COUNT(*)::int n FROM marketing_posts`);
+        const mark = () => pool.query(
+            `INSERT INTO app_config (key, value, description) VALUES ($1, '1'::jsonb, 'content calendar starter plan seeded')
+             ON CONFLICT (key) DO UPDATE SET value = '1'::jsonb, updated_at = NOW()`, [KEY]);
+        if ((cnt.rows[0]?.n || 0) > 5) { await mark(); return; }  // already has a plan
+
+        const social = [
+            'Lake of the week — spotlight a MN lake + why buyers love it',
+            'New listings this week — carousel of fresh lake homes',
+            '3 things to check before buying a lake cabin',
+            'Meet an agent — quick intro reel of a network specialist',
+            'Sunset shot + "Your lake life starts here" CTA',
+            'Buyer tip — shoreland rules explained in 60 seconds',
+            'Featured business — a marina or resort on the directory',
+            'Poll — which lake would you buy on?',
+            'Market snapshot — what lake homes are doing this month',
+            'Buyer testimonial — a happy closing story',
+            'Cabin vs. year-round lake home — which fits you?',
+            'Behind the scenes — touring a lakefront listing',
+        ];
+        const stories = [
+            'Story — tour a new lake listing (swipe-through)',
+            'Story — "ask us anything about lake buying" Q&A sticker',
+            'Story — countdown to new listings dropping',
+            'Story — swipe up to read this week’s blog',
+            'Story — this-or-that: cabin vs. lake home',
+        ];
+        const emails = [
+            'Email — weekly digest: new listings + a buyer tip',
+            'Email — featured lake of the week + agent spotlight',
+            'Email — 5 lake homes in your budget right now',
+            'Email — seller’s guide + market snapshot',
+        ];
+        const dms = [
+            'DM outreach — 10 local agents to recruit this week',
+            'DM outreach — follow up with pending agents',
+            'DM outreach — intro to lake-area businesses (marinas/resorts)',
+        ];
+        const fmt = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const items = [];
+        let si = 0, sti = 0, ei = 0, di = 0;
+        for (let day = 0; day < 42; day++) {
+            const d = new Date(today); d.setDate(today.getDate() + day);
+            const dow = d.getDay(), ymd = fmt(d);
+            if (dow === 1 || dow === 3 || dow === 5) { items.push([social[si % social.length], 'post', si % 2 ? 'facebook' : 'instagram', ymd]); si++; }
+            if (dow === 2 || dow === 4) { items.push([stories[sti % stories.length], 'story', 'instagram', ymd]); sti++; }
+            if (dow === 4) { items.push([emails[ei % emails.length], 'email', 'email', ymd]); ei++; }
+            if (dow === 1 && Math.floor(day / 7) % 2 === 1) { items.push([dms[di % dms.length], 'dm', 'instagram', ymd]); di++; }
+        }
+        for (const [title, ct, ch, ymd] of items) {
+            await pool.query(
+                `INSERT INTO marketing_posts (title, content_type, channel, due_date, status) VALUES ($1, $2, $3, $4, 'idea')`,
+                [title, ct, ch, ymd]
+            );
+        }
+        await mark();
+        console.log(` Seeded ${items.length} content-calendar starter items.`);
+    } catch (e) {
+        console.warn('[seedMarketingPlan]', e.message);
     }
 }
 
