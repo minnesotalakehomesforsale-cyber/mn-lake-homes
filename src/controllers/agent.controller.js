@@ -357,7 +357,8 @@ const getMyLeads = async (req, res) => {
                    l.timeline_text, l.location_text, l.contact_preference,
                    l.source_page_title, l.created_at,
                    l.listing_id, li.title AS listing_title, li.slug AS listing_slug,
-                   l.assigned_at, l.agent_ack_at, l.sla_reassign_count
+                   l.assigned_at, l.agent_ack_at, l.sla_reassign_count,
+                   l.outcome, l.outcome_price, l.outcome_note
             FROM leads l
             JOIN agents a ON l.agent_id = a.id
             JOIN users u ON a.user_id = u.id
@@ -446,7 +447,9 @@ const getMyRoi = async (req, res) => {
             SELECT COUNT(*) FILTER (WHERE created_at >= date_trunc('month', now()))::int AS leads_month,
                    COUNT(*)::int AS leads_total,
                    COUNT(*) FILTER (WHERE listing_id IS NOT NULL AND created_at >= date_trunc('month', now()))::int AS showings_month,
-                   COUNT(*) FILTER (WHERE agent_ack_at IS NOT NULL AND created_at >= date_trunc('month', now()))::int AS worked_month
+                   COUNT(*) FILTER (WHERE agent_ack_at IS NOT NULL AND created_at >= date_trunc('month', now()))::int AS worked_month,
+                   COUNT(*) FILTER (WHERE outcome = 'won')::int AS won_total,
+                   COALESCE(SUM(outcome_price) FILTER (WHERE outcome = 'won'), 0)::bigint AS won_volume
               FROM leads WHERE agent_id = $1 AND deleted_at IS NULL`, [agentId]);
         const listq = await pool.query(`
             SELECT AVG(price)::int AS avg_price,
@@ -471,8 +474,50 @@ const getMyRoi = async (req, res) => {
             per_closed_commission: perClosed, expected_per_lead: perLead,
             month_value: monthValue,
             roi_multiple: planPrice ? +(monthValue / planPrice).toFixed(1) : null,
+            won_total: s.won_total || 0,
+            won_volume: Number(s.won_volume || 0),
+            won_gci: Math.round(Number(s.won_volume || 0) * (ROI_COMMISSION / 100)),
         });
     } catch (e) { console.error('[getMyRoi]', e.message); res.status(500).json({ error: 'Failed to load ROI.' }); }
+};
+
+// PATCH /api/agents/me/leads/:id/outcome — mark a lead won/lost (+ sale price).
+// Closing a lead as won/lost also acks it and moves it to 'closed'.
+const setMyLeadOutcome = async (req, res) => {
+    const userId = req.user.userId;
+    const { id } = req.params;
+    const outcome = (req.body?.outcome || '').trim().toLowerCase();
+    if (!['won', 'lost', 'none'].includes(outcome)) {
+        return res.status(400).json({ error: 'Outcome must be won, lost, or none.' });
+    }
+    const price = outcome === 'won' ? (Number(req.body?.price) || null) : null;
+    const note = (req.body?.note || '').toString().trim().slice(0, 2000) || null;
+    try {
+        const { rows, rowCount } = await pool.query(`
+            UPDATE leads l
+               SET outcome       = $1,
+                   outcome_price = $2,
+                   outcome_note  = $3,
+                   outcome_at    = CASE WHEN $1 = 'none' THEN NULL ELSE NOW() END,
+                   lead_status   = CASE WHEN $1 = 'none' THEN 'in_progress' ELSE 'closed' END,
+                   agent_ack_at  = COALESCE(l.agent_ack_at, NOW()),
+                   updated_at    = NOW()
+              FROM agents a
+             WHERE l.id = $4 AND l.agent_id = a.id AND a.user_id = $5 AND l.deleted_at IS NULL
+            RETURNING l.id, l.outcome, l.outcome_price, l.lead_status AS status`,
+            [outcome === 'none' ? null : outcome, price, note, id, userId]);
+        if (!rowCount) return res.status(404).json({ error: 'Lead not found or not assigned to you.' });
+        logActivity({
+            event_type: 'lead.outcome', event_scope: 'lead',
+            actor: { type: 'agent', id: userId },
+            target: { type: 'lead', id: rows[0].id },
+            details: { outcome: rows[0].outcome, price: rows[0].outcome_price }, req,
+        });
+        res.json({ success: true, ...rows[0] });
+    } catch (err) {
+        console.error('[setMyLeadOutcome]', err.message);
+        res.status(500).json({ error: 'Failed to record outcome.' });
+    }
 };
 
 /**
@@ -661,6 +706,7 @@ module.exports = {
     updateMyProfile,
     getMyLeads,
     getMyRoi,
+    setMyLeadOutcome,
     updateMyLeadStatus,
     getMyLeadNotes,
     addMyLeadNote,

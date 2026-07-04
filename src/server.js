@@ -2779,6 +2779,14 @@ async function ensureTables() {
             CREATE INDEX IF NOT EXISTS idx_leads_sla ON leads(assigned_at)
                 WHERE agent_ack_at IS NULL AND assigned_user_id IS NOT NULL;
 
+            -- Lead outcome tracking: agents mark a lead won/lost with the sale
+            -- price. Powers closed-deal proof (agent ROI, company sales volume,
+            -- testimonials).
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS outcome       VARCHAR(12);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS outcome_price INTEGER;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS outcome_note  TEXT;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS outcome_at    TIMESTAMPTZ;
+
             -- Listing freshness + lifecycle (Phase 3/8): remember the first price
             -- we saw (to detect drops), an optional open-house datetime, and when
             -- a home was marked sold (for the "recently sold" wall).

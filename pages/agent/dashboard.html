@@ -1351,8 +1351,11 @@
                 document.getElementById('roi-showings').textContent = d.showings_month;
                 document.getElementById('roi-listings').textContent = d.active_listings;
                 document.getElementById('roi-inquiries').textContent = d.listing_inquiries;
-                document.getElementById('roi-foot').textContent =
-                    `Estimate: ${d.leads_month} lead${d.leads_month === 1 ? '' : 's'} × ${money(d.expected_per_lead)} expected value each `
+                const wonLine = d.won_total > 0
+                    ? `You've closed ${d.won_total} deal${d.won_total === 1 ? '' : 's'} from platform leads — about ${money(d.won_gci)} in commission tracked. `
+                    : '';
+                document.getElementById('roi-foot').textContent = wonLine
+                    + `Estimate: ${d.leads_month} lead${d.leads_month === 1 ? '' : 's'} × ${money(d.expected_per_lead)} expected value each `
                     + `(≈ ${money(d.avg_sale)} avg sale × ${d.commission_pct}% commission × ${Math.round(d.close_rate * 100)}% close rate). Actual results vary.`;
                 document.getElementById('dash-roi').style.display = 'block';
             } catch (_) {}
@@ -1694,6 +1697,7 @@
             renderStatusButtons(l.status);
             document.getElementById('lp-save-note').textContent = '';
             document.getElementById('lp-save-note').className = 'lp-save-note';
+            renderOutcome(l);
 
             // Notes
             document.getElementById('lp-note-input').value = '';
@@ -1804,6 +1808,53 @@
                 // Re-sync buttons to the true value on failure.
                 const l = allLeads.find(x => String(x.id) === String(_activeLeadId));
                 renderStatusButtons(l ? l.status : status);
+            }
+        }
+
+        // ── Lead outcome (won/lost) ──────────────────────────────────────────
+        function renderOutcome(l) {
+            const won = document.getElementById('lp-outcome-won');
+            const lost = document.getElementById('lp-outcome-lost');
+            const wrap = document.getElementById('lp-won-price-wrap');
+            const note = document.getElementById('lp-outcome-note');
+            won.classList.toggle('on', l.outcome === 'won');
+            lost.classList.toggle('on', l.outcome === 'lost');
+            document.getElementById('lp-won-price').value = l.outcome_price || '';
+            wrap.style.display = l.outcome === 'won' ? 'block' : 'none';
+            note.className = 'lp-save-note';
+            note.textContent = l.outcome === 'won' && l.outcome_price
+                ? `✓ Won — $${Number(l.outcome_price).toLocaleString('en-US')} recorded.`
+                : '';
+        }
+        async function setOutcome(outcome) {
+            if (!_activeLeadId) return;
+            const l = allLeads.find(x => String(x.id) === String(_activeLeadId));
+            const isToggleOff = l && l.outcome === outcome;
+            const payload = isToggleOff ? { outcome: 'none' } : { outcome };
+            if (!isToggleOff && outcome === 'won') payload.price = Number(document.getElementById('lp-won-price').value) || null;
+            await patchOutcome(payload);
+        }
+        async function saveWonPrice() {
+            const price = Number(document.getElementById('lp-won-price').value) || null;
+            await patchOutcome({ outcome: 'won', price });
+        }
+        async function patchOutcome(payload) {
+            const note = document.getElementById('lp-outcome-note');
+            note.className = 'lp-save-note'; note.textContent = 'Saving…';
+            try {
+                const r = await fetch(`/api/agents/me/leads/${encodeURIComponent(_activeLeadId)}/outcome`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include', body: JSON.stringify(payload),
+                });
+                const data = await r.json().catch(() => ({}));
+                if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+                const l = allLeads.find(x => String(x.id) === String(_activeLeadId));
+                if (l) { l.outcome = data.outcome; l.outcome_price = data.outcome_price; l.status = data.status; }
+                renderOutcome(l || {});
+                renderStatusButtons(data.status);
+                renderStats(); applyFilter(); loadRoi();
+            } catch (err) {
+                note.className = 'lp-save-note err'; note.textContent = err.message || 'Could not save outcome.';
             }
         }
 
@@ -2358,6 +2409,19 @@
             <p class="lp-section-label">Status</p>
             <div class="lp-status-grid" id="lp-status-grid"></div>
             <div class="lp-save-note" id="lp-save-note"></div>
+
+            <p class="lp-section-label" style="margin-top:1.75rem;">Outcome</p>
+            <p style="font-size:0.78rem;color:#a0aec0;margin:-0.3rem 0 0.6rem;line-height:1.5;">Closed this lead? Marking it Won (with the sale price) builds your track record and helps us prove the network's value.</p>
+            <div class="lp-status-grid">
+                <button type="button" class="lp-status-btn" id="lp-outcome-won"  onclick="setOutcome('won')">🏆 Won</button>
+                <button type="button" class="lp-status-btn" id="lp-outcome-lost" onclick="setOutcome('lost')">Lost / dead</button>
+            </div>
+            <div id="lp-won-price-wrap" style="display:none;margin-top:0.6rem;">
+                <input id="lp-won-price" type="number" placeholder="Sale price (e.g. 675000)"
+                    style="width:100%;box-sizing:border-box;padding:0.6rem 0.8rem;border:1px solid #e2e8f0;border-radius:9px;font:inherit;">
+                <button type="button" onclick="saveWonPrice()" style="margin-top:0.5rem;padding:0.5rem 1.1rem;background:#059669;color:#fff;border:0;border-radius:8px;font:inherit;font-weight:700;cursor:pointer;">Save sale price</button>
+            </div>
+            <div class="lp-save-note" id="lp-outcome-note"></div>
 
             <p class="lp-section-label" style="margin-top:1.75rem;">Notes</p>
             <p style="font-size:0.78rem;color:#a0aec0;margin:-0.3rem 0 0.75rem;line-height:1.5;">Log your calls, texts, and follow-ups. These are shared with the MN Lake Homes team.</p>
