@@ -1306,9 +1306,10 @@ app.get('/businesses/:slug', async (req, res, next) => {
                 [biz.slug]
             );
             if (bposts.length) {
+                const { coverUrlFor: _bc } = require('./services/blog-cover');
                 const cards = bposts.map(p => `
                     <a class="bz-blog-card" href="/blog/${escapeHtml(p.slug)}">
-                        ${p.cover_image_url ? `<div class="bz-blog-img"><img src="${escapeHtml(p.cover_image_url)}" alt="${escapeHtml(p.title)}" loading="lazy"></div>` : ''}
+                        <div class="bz-blog-img"><img src="${escapeHtml(_bc(p))}" alt="${escapeHtml(p.title)}" loading="lazy"></div>
                         <div class="bz-blog-body">
                             <h3>${escapeHtml(p.title)}</h3>
                             ${p.excerpt ? `<p>${escapeHtml(p.excerpt)}</p>` : ''}
@@ -1766,6 +1767,26 @@ function stripCtaButtons(html) {
     );
 }
 
+// ── Per-post generated blog cover (/blog/cover/<slug>.svg) ──────────────────
+// A unique, on-brand cover generated from the post's slug + title + category —
+// so every post has its OWN image instead of a recycled site photo. Registered
+// before /blog/:slug so the two-segment path wins. Heavily cacheable (art is
+// deterministic per slug).
+app.get('/blog/cover/:slug', async (req, res) => {
+    const { renderCoverSvg } = require('./services/blog-cover');
+    const slug = String(req.params.slug || '').replace(/\.svg$/i, '');
+    let title = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    let tag = 'Lake Living';
+    try {
+        const { rows } = await pool.query(
+            `SELECT title, tag FROM blog_posts WHERE slug = $1 AND deleted_at IS NULL LIMIT 1`, [slug]);
+        if (rows[0]) { title = rows[0].title || title; tag = rows[0].tag || tag; }
+    } catch (_) { /* fall back to slug-derived title */ }
+    res.set('Content-Type', 'image/svg+xml; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+    res.send(renderCoverSvg({ title, tag, slug }));
+});
+
 // ── Blog detail SSR (/blog/:slug) ───────────────────────────────────────────
 // Renders pages/public/blog-post.html with title/meta/JSON-LD baked in so
 // the bot sees the right SEO surface (the client-side JS fallback was fine
@@ -1787,6 +1808,10 @@ app.get('/blog/:slug', async (req, res, next) => {
             renderFriendly404(res, { kind: 'page', slug: req.params.slug });
             return;
         }
+        // Own unique cover (real image if set, else the generated per-slug cover)
+        // — normalized here so hero/og/JSON-LD all inherit it.
+        const { coverUrlFor: _blogCover } = require('./services/blog-cover');
+        post.cover_image_url = _blogCover(post);
         post.body = stripCtaButtons(post.body);
 
         // Related posts ("Featured Blogs" at the foot of the article): same tag
@@ -1814,7 +1839,7 @@ app.get('/blog/:slug', async (req, res, next) => {
             if (rel.length) {
                 const cards = rel.map(p => `
                     <a class="related-card" href="/blog/${escapeHtml(p.slug)}">
-                        ${p.cover_image_url ? `<div class="related-img"><img src="${escapeHtml(p.cover_image_url)}" alt="${escapeHtml(p.title)}" loading="lazy"></div>` : ''}
+                        <div class="related-img"><img src="${escapeHtml(_blogCover(p))}" alt="${escapeHtml(p.title)}" loading="lazy"></div>
                         <div class="related-body">
                             <span class="related-tag">${escapeHtml(p.tag || 'General')}</span>
                             <h3 class="related-title">${escapeHtml(p.title)}</h3>

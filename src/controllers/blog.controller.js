@@ -3,6 +3,7 @@ const path = require('path');
 const fs   = require('fs');
 const multer = require('multer');
 const { logActivity } = require('../services/activity-log');
+const { coverUrlFor } = require('../services/blog-cover');
 
 // ─── Image upload config ─────────────────────────────────────────────────────
 const UPLOAD_DIR = path.join(__dirname, '..', '..', 'assets', 'images');
@@ -53,7 +54,9 @@ const getPublished = async (req, res) => {
             WHERE is_published = true AND deleted_at IS NULL
             ORDER BY published_at DESC NULLS LAST, created_at DESC
         `);
-        res.json(rows);
+        // Every post gets its own cover: real image if it has one, else a unique
+        // generated cover — never a recycled site stock photo.
+        res.json(rows.map(r => ({ ...r, cover_image_url: coverUrlFor(r) })));
     } catch (err) {
         console.error('[blog.getPublished]', err.message);
         res.status(500).json({ error: 'Failed to fetch posts.' });
@@ -68,7 +71,7 @@ const getBySlug = async (req, res) => {
             [req.params.slug]
         );
         if (!rows.length) return res.status(404).json({ error: 'Post not found.' });
-        res.json(rows[0]);
+        res.json({ ...rows[0], cover_image_url: coverUrlFor(rows[0]) });
     } catch (err) {
         console.error('[blog.getBySlug]', err.message);
         res.status(500).json({ error: 'Failed to fetch post.' });

@@ -304,7 +304,8 @@
                     : '';
 
                 const heroImg = document.getElementById('hero-img');
-                const BLOG_FALLBACK_IMG = '/assets/images/mn-aerial-lake-homes.jpg';
+                // Each post has its own cover; if none, the generated per-slug cover.
+                const BLOG_FALLBACK_IMG = '/blog/cover/' + encodeURIComponent(post.slug) + '.svg';
                 heroImg.onerror = function () { this.onerror = null; this.src = BLOG_FALLBACK_IMG; };
                 heroImg.src = post.cover_image_url || BLOG_FALLBACK_IMG;   // every post shows an image
                 heroImg.alt = post.title;

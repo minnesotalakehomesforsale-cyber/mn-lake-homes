@@ -186,7 +186,7 @@
             return `
                 <a href="/pages/public/blog-post.html?slug=${p.slug}" class="blog-card">
                     <div class="blog-image">
-                        <img src="${p.cover_image_url || '/assets/images/mn-aerial-lake-homes.jpg'}" alt="${p.title}" loading="lazy" width="800" height="500" onerror="this.onerror=null;this.src='/assets/images/mn-aerial-lake-homes.jpg'">
+                        <img src="${p.cover_image_url || ('/blog/cover/' + encodeURIComponent(p.slug) + '.svg')}" alt="${p.title}" loading="lazy" width="800" height="500" onerror="this.onerror=null;this.src='/blog/cover/'+encodeURIComponent('${p.slug}')+'.svg'">
                     </div>
                     <div class="blog-meta">
                         <span class="blog-tag">${p.tag || 'General'}</span>
