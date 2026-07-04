@@ -1678,6 +1678,40 @@ document.addEventListener('keydown', e => {
     window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
     window._hsq = window._hsq || [];
 
+    // ── Auto-capture high-intent actions (no per-page wiring needed) ──────────
+    // These are the signals that actually predict a lead: someone tapping an
+    // agent's phone/email, clicking a CTA, or landing on a lake/listing page.
+    // One delegated listener covers the whole site.
+    function initIntentTracking() {
+        // Phone + email taps anywhere (agent cards, profiles, listings, footer).
+        document.addEventListener('click', function (e) {
+            const a = e.target.closest && e.target.closest('a[href^="tel:"], a[href^="mailto:"], [data-track]');
+            if (!a) return;
+            const href = a.getAttribute('href') || '';
+            if (href.startsWith('tel:')) {
+                window.trackConversion('phone_click', { destination: href.replace(/^tel:/, ''), page: location.pathname });
+            } else if (href.startsWith('mailto:')) {
+                window.trackConversion('email_click', { destination: href.replace(/^mailto:/, '').split('?')[0], page: location.pathname });
+            } else if (a.hasAttribute('data-track')) {
+                // Any element can opt in: data-track="cta_name".
+                window.trackConversion(a.getAttribute('data-track') || 'cta_click',
+                    { label: (a.textContent || '').trim().slice(0, 60), page: location.pathname });
+            }
+        }, { passive: true });
+
+        // Key page-type views — a lightweight funnel signal beyond raw pageviews.
+        const p = location.pathname;
+        let view = null, id = null;
+        if (/^\/lakes\//.test(p))          { view = 'view_lake';    id = p.split('/')[2]; }
+        else if (/^\/listings\//.test(p))  { view = 'view_listing'; id = p.split('/')[2]; }
+        else if (/^\/towns\//.test(p))     { view = 'view_town';    id = p.split('/')[2]; }
+        else if (/agent-profile/.test(p))  { view = 'view_agent';   id = new URLSearchParams(location.search).get('slug'); }
+        else if (/^\/blog\//.test(p) || /blog-post/.test(p)) { view = 'view_article'; id = p.split('/')[2] || new URLSearchParams(location.search).get('slug'); }
+        if (view) window.trackConversion(view, { id: id || undefined, page: p });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initIntentTracking);
+    else initIntentTracking();
+
     fetch('/api/config/public', { credentials: 'omit' })
         .then(r => (r.ok ? r.json() : null))
         .then(cfg => {
