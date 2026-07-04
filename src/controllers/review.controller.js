@@ -114,10 +114,10 @@ exports.listForSubject = async (req, res) => {
         if (!SUBJECTS[subjectType] || !subjectId) return res.status(400).json({ error: 'subject_type and subject_id are required.' });
 
         const { rows } = await pool.query(
-            `SELECT id, author_name, rating, title, body, created_at
+            `SELECT id, author_name, rating, title, body, verified, created_at
                FROM reviews
               WHERE subject_type = $1 AND subject_id = $2 AND status = 'approved'
-              ORDER BY created_at DESC
+              ORDER BY verified DESC, created_at DESC
               LIMIT 100`,
             [subjectType, subjectId]
         );
@@ -199,6 +199,58 @@ exports.remove = async (req, res) => {
         console.error('[reviews.remove]', err.message);
         res.status(500).json({ error: 'Could not delete the review.' });
     }
+};
+
+// ── Token-gated verified reviews (from a closed deal) ───────────────────────
+// GET /api/reviews/request/:token — details for the review page.
+exports.getRequest = async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT rr.token, rr.buyer_name, rr.used_at, rr.agent_id,
+                    a.display_name AS agent_name, a.slug AS agent_slug, a.profile_photo_url
+               FROM review_requests rr JOIN agents a ON a.id = rr.agent_id
+              WHERE rr.token = $1 LIMIT 1`, [req.params.token]);
+        if (!rows.length) return res.status(404).json({ error: 'This review link is invalid.' });
+        const r = rows[0];
+        res.json({
+            agent_id: r.agent_id, agent_name: r.agent_name, agent_slug: r.agent_slug,
+            agent_photo: r.profile_photo_url, buyer_name: r.buyer_name,
+            used: !!r.used_at,
+        });
+    } catch (e) { console.error('[reviews.getRequest]', e.message); res.status(500).json({ error: 'Could not load.' }); }
+};
+
+// POST /api/reviews/request/:token — submit a verified review (auto-approved,
+// since the token proves it's a real buyer of that agent). One use per token.
+exports.submitVerified = async (req, res) => {
+    try {
+        const b = req.body || {};
+        const rating = Number(b.rating);
+        if (!Number.isInteger(rating) || rating < 1 || rating > 5) return res.status(400).json({ error: 'Please pick a 1–5 star rating.' });
+        const title = String(b.title || '').trim().slice(0, 160) || null;
+        const bodyText = String(b.body || '').trim().slice(0, 4000) || null;
+
+        const rr = await pool.query(
+            `SELECT rr.id, rr.used_at, rr.agent_id, rr.buyer_name, rr.buyer_email
+               FROM review_requests rr WHERE rr.token = $1 LIMIT 1`, [req.params.token]);
+        if (!rr.rowCount) return res.status(404).json({ error: 'This review link is invalid.' });
+        const request = rr.rows[0];
+        if (request.used_at) return res.status(409).json({ error: 'This review has already been submitted. Thank you!' });
+
+        const authorName = String(b.author_name || request.buyer_name || 'Verified buyer').trim().slice(0, 120);
+        const ins = await pool.query(
+            `INSERT INTO reviews (subject_type, subject_id, author_name, author_email, rating, title, body, status, source, verified, approved_at)
+             VALUES ('agent', $1, $2, $3, $4, $5, $6, 'approved', 'verified_close', TRUE, NOW())
+             RETURNING id`,
+            [request.agent_id, authorName, request.buyer_email, rating, title, bodyText]);
+        await pool.query(`UPDATE review_requests SET used_at = NOW() WHERE id = $1`, [request.id]);
+
+        logActivity({ event_type: 'review.verified.submitted', event_scope: 'agent',
+            actor: { type: 'visitor', label: authorName },
+            target: { type: 'agent', id: request.agent_id },
+            details: { rating, review_id: ins.rows[0].id }, req });
+        res.status(201).json({ success: true });
+    } catch (e) { console.error('[reviews.submitVerified]', e.message); res.status(500).json({ error: 'Could not submit your review.' }); }
 };
 
 exports.aggregateForSubject = aggregateForSubject;

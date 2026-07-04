@@ -1339,6 +1339,14 @@ app.get('/towns', async (req, res, next) => {
     } catch (err) { next(err); }
 });
 
+// Verified-review page (token link emailed to a buyer after a closed deal).
+app.get('/review/:token', (req, res, next) => {
+    fs.readFile(path.join(PROJECT_ROOT, 'pages/public/leave-review.html'), 'utf8', (err, html) => {
+        if (err) return next(err);
+        res.type('html').send(html);
+    });
+});
+
 // Properties map — agents' own listings, pinned to their geocoded address.
 // Its own page (distinct from the lakes/towns and businesses map views).
 app.get('/properties', (req, res, next) => {
@@ -2714,6 +2722,23 @@ async function ensureTables() {
             CREATE INDEX IF NOT EXISTS idx_reviews_subject ON reviews(subject_type, subject_id);
             CREATE INDEX IF NOT EXISTS idx_reviews_status  ON reviews(status);
             CREATE INDEX IF NOT EXISTS idx_reviews_ip_time ON reviews(author_ip, created_at);
+            -- Verified = review came from a token-gated request tied to a closed
+            -- deal (buyer actually worked with the agent). Highest-trust.
+            ALTER TABLE reviews ADD COLUMN IF NOT EXISTS verified BOOLEAN NOT NULL DEFAULT FALSE;
+
+            -- Review requests: when an agent marks a lead Won, we email the buyer
+            -- a token link to leave a verified review. One request per lead.
+            CREATE TABLE IF NOT EXISTS review_requests (
+                id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                token       VARCHAR(64) UNIQUE NOT NULL,
+                lead_id     UUID UNIQUE REFERENCES leads(id) ON DELETE SET NULL,
+                agent_id    UUID NOT NULL,
+                buyer_name  VARCHAR(200),
+                buyer_email VARCHAR(255),
+                used_at     TIMESTAMPTZ,
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_review_requests_token ON review_requests(token);
 
             -- Manual property listings (no MLS feed yet). Each optionally ties to
             -- a lake so lake pages can show a live "N homes for sale" count + grid,

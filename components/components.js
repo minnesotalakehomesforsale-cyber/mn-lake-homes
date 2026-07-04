@@ -592,6 +592,7 @@ function ensureReviewStyles() {
       .rw-card { background:#fff; border:1px solid #edf2f7; border-radius:12px; padding:1.1rem 1.3rem; margin-bottom:0.8rem; }
       .rw-card .top { display:flex; justify-content:space-between; align-items:center; gap:0.75rem; flex-wrap:wrap; }
       .rw-card .nm { font-weight:700; color:#1a202c; }
+      .rw-verified { display:inline-block; background:#e6fffa; color:#0f766e; font-size:0.62rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; border-radius:5px; padding:0.1rem 0.4rem; margin-left:0.3rem; vertical-align:middle; }
       .rw-card .ti { font-weight:700; color:#1a202c; margin-top:0.4rem; }
       .rw-card .bd { color:#4a5568; line-height:1.6; margin:0.3rem 0 0; }
       .rw-stars { white-space:nowrap; }
@@ -668,7 +669,7 @@ class ReviewsWidget extends HTMLElement {
 
         const listHtml = reviews.map(r => `
             <div class="rw-card">
-                <div class="top"><span class="nm">${this._esc(r.author_name)}</span>${this._starRow(r.rating, '0.95rem')}</div>
+                <div class="top"><span class="nm">${this._esc(r.author_name)}${r.verified ? ' <span class="rw-verified" title="Reviewed after a completed purchase">✓ Verified</span>' : ''}</span>${this._starRow(r.rating, '0.95rem')}</div>
                 ${r.title ? `<div class="ti">${this._esc(r.title)}</div>` : ''}
                 ${r.body ? `<p class="bd">${this._esc(r.body)}</p>` : ''}
             </div>`).join('');

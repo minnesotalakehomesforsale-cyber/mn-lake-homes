@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave a review | MN Lake Homes</title>
+    <meta name="robots" content="noindex">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/styles/style.css">
+    <style>
+        html, body { margin: 0; background: #f7f9fa; font-family: 'SF Pro Text', -apple-system, sans-serif; color: #1a202c; }
+        .rv-wrap { max-width: 480px; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+        .rv-card { background: #fff; border: 1px solid #edf2f7; border-radius: 16px; padding: 2rem 1.75rem; box-shadow: 0 10px 30px rgba(16,24,40,0.05); }
+        .rv-agent { display: flex; align-items: center; gap: 0.9rem; margin-bottom: 1.5rem; }
+        .rv-agent img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: #eef2f7; }
+        .rv-agent .ph { width: 56px; height: 56px; border-radius: 50%; background: #1d6df2; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.3rem; }
+        .rv-verified { display:inline-flex; align-items:center; gap:0.3rem; background:#e6fffa; color:#0f766e; font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; border-radius:6px; padding:0.2rem 0.5rem; margin-top:0.3rem; }
+        h1 { font-size: 1.4rem; margin: 0 0 0.3rem; }
+        .rv-sub { color: #718096; margin: 0 0 1.5rem; font-size: 0.95rem; line-height: 1.5; }
+        .stars { display: flex; gap: 0.3rem; margin-bottom: 1.25rem; }
+        .stars button { background: none; border: none; font-size: 2.4rem; line-height: 1; cursor: pointer; color: #e2e8f0; padding: 0; transition: color .1s; }
+        .stars button.on { color: #f6ad14; }
+        label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #4a5568; margin-bottom: 0.35rem; }
+        input, textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 0.95rem; padding: 0.65rem 0.8rem; border: 1px solid #e2e8f0; border-radius: 9px; margin-bottom: 1rem; outline: none; }
+        input:focus, textarea:focus { border-color: #1d6df2; }
+        .rv-btn { width: 100%; background: #1d6df2; color: #fff; border: none; border-radius: 10px; padding: 0.85rem; font: inherit; font-weight: 700; font-size: 1rem; cursor: pointer; }
+        .rv-err { color: #c53030; font-size: 0.88rem; margin-bottom: 0.75rem; display: none; }
+        .rv-state { text-align: center; padding: 2rem 1rem; color: #718096; }
+        .rv-done { text-align: center; }
+        .rv-done .big { font-size: 3rem; }
+    </style>
+</head>
+<body>
+    <div class="rv-wrap">
+        <div class="rv-card" id="rv-card">
+            <div class="rv-state" id="rv-loading">Loading…</div>
+        </div>
+    </div>
+    <script>
+        const token = location.pathname.split('/').filter(Boolean).pop();
+        const card = document.getElementById('rv-card');
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+        let rating = 0;
+
+        async function init() {
+            try {
+                const r = await fetch('/api/reviews/request/' + encodeURIComponent(token));
+                if (!r.ok) throw new Error('This review link is invalid or has expired.');
+                const d = await r.json();
+                if (d.used) { card.innerHTML = `<div class="rv-done"><div class="big">✓</div><h1>Thanks — your review is in!</h1><p class="rv-sub">We appreciate you helping other lake buyers.</p></div>`; return; }
+                renderForm(d);
+            } catch (e) { card.innerHTML = `<div class="rv-state" style="color:#c53030;">${esc(e.message)}</div>`; }
+        }
+
+        function renderForm(d) {
+            const initial = (d.agent_name || '?').trim().charAt(0).toUpperCase();
+            const avatar = d.agent_photo ? `<img src="${esc(d.agent_photo)}" alt="">` : `<div class="ph">${esc(initial)}</div>`;
+            const first = (d.buyer_name || '').split(' ')[0];
+            card.innerHTML = `
+                <div class="rv-agent">${avatar}<div><div style="font-weight:800;font-size:1.05rem;">${esc(d.agent_name)}</div><span class="rv-verified">✓ Verified purchase</span></div></div>
+                <h1>${first ? esc(first) + ', how' : 'How'} was your experience?</h1>
+                <p class="rv-sub">Your honest review helps other buyers find a great lake agent.</p>
+                <div class="stars" id="stars">${[1,2,3,4,5].map(n => `<button type="button" data-n="${n}" onclick="setRating(${n})">★</button>`).join('')}</div>
+                <label>Headline (optional)</label>
+                <input id="rv-title" maxlength="160" placeholder="e.g. Knew every lake inside out">
+                <label>Your review (optional)</label>
+                <textarea id="rv-body" rows="4" maxlength="4000" placeholder="What made working with them great?"></textarea>
+                <label>Your name</label>
+                <input id="rv-name" maxlength="120" value="${esc(d.buyer_name || '')}" placeholder="Your name">
+                <div class="rv-err" id="rv-err"></div>
+                <button class="rv-btn" id="rv-submit" onclick="submit()">Post my review</button>`;
+        }
+
+        window.setRating = function (n) {
+            rating = n;
+            document.querySelectorAll('#stars button').forEach(b => b.classList.toggle('on', Number(b.dataset.n) <= n));
+        };
+
+        window.submit = async function () {
+            const err = document.getElementById('rv-err');
+            err.style.display = 'none';
+            if (!rating) { err.textContent = 'Please pick a star rating.'; err.style.display = 'block'; return; }
+            const btn = document.getElementById('rv-submit'); btn.disabled = true; btn.textContent = 'Posting…';
+            try {
+                const r = await fetch('/api/reviews/request/' + encodeURIComponent(token), {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        rating,
+                        title: document.getElementById('rv-title').value,
+                        body: document.getElementById('rv-body').value,
+                        author_name: document.getElementById('rv-name').value,
+                    }),
+                });
+                if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'Could not submit.'); }
+                card.innerHTML = `<div class="rv-done"><div class="big">🎉</div><h1>Thank you!</h1><p class="rv-sub">Your verified review is now live. It means a lot.</p></div>`;
+            } catch (e) { err.textContent = e.message; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Post my review'; }
+        };
+
+        init();
+    </script>
+</body>
+</html>

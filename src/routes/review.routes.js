@@ -6,6 +6,8 @@ const { verifyToken } = require('../middleware/auth');
 // ─── PUBLIC ───────────────────────────────────────────────────────────────
 router.post('/', c.submit);            // submit a review (lands 'pending')
 router.get('/', c.listForSubject);     // ?subject_type=&subject_id= → approved + aggregate
+router.get ('/request/:token', c.getRequest);       // verified-review link details
+router.post('/request/:token', c.submitVerified);   // submit a verified review
 
 // ─── ADMIN (moderation) ─────────────────────────────────────────────────────
 router.get('/admin',        verifyToken, c.listAdmin);

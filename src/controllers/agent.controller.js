@@ -1,8 +1,43 @@
 const pool = require('../database/pool');
 const multer = require('multer');
+const crypto = require('crypto');
 const cloudinary = require('cloudinary').v2;
 const hubspot = require('../services/hubspot');
+const emailService = require('../services/email');
 const { logActivity } = require('../services/activity-log');
+
+// When an agent marks a lead Won, email the buyer a token link to leave a
+// verified review. One request per lead (ON CONFLICT guards re-marking).
+async function triggerReviewRequest(lead) {
+    if (!lead || !lead.email || !lead.agent_id) return;
+    try {
+        const token = crypto.randomBytes(24).toString('hex');
+        const { rows } = await pool.query(
+            `INSERT INTO review_requests (token, lead_id, agent_id, buyer_name, buyer_email)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (lead_id) DO NOTHING RETURNING token`,
+            [token, lead.id, lead.agent_id, lead.full_name || null, lead.email]);
+        if (!rows.length) return;   // already requested
+        const ag = await pool.query(`SELECT display_name FROM agents WHERE id = $1`, [lead.agent_id]);
+        const agentName = ag.rows[0]?.display_name || 'your agent';
+        const base = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
+        const first = (lead.full_name || '').split(' ')[0] || 'there';
+        emailService.sendEmail({
+            to: lead.email,
+            subject: `How was your experience with ${agentName}?`,
+            html: `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;color:#1a202c;">
+                <h2 style="margin:0 0 0.6rem;">Congrats on your lake home, ${escapeHtmlA(first)}! 🎉</h2>
+                <p style="color:#4a5568;line-height:1.6;">You recently worked with <b>${escapeHtmlA(agentName)}</b> through MN Lake Homes. A quick, honest review helps other lake buyers find a great agent — it takes 30 seconds.</p>
+                <p style="text-align:center;margin:1.4rem 0;"><a href="${base}/review/${token}" style="background:#1d6df2;color:#fff;text-decoration:none;font-weight:700;padding:0.8rem 1.6rem;border-radius:10px;display:inline-block;">Leave a review →</a></p>
+                <p style="font-size:0.75rem;color:#a0aec0;">Your review will show a "Verified purchase" badge.</p>
+            </div>`,
+        });
+        logActivity({ event_type: 'review.request.sent', event_scope: 'review',
+            actor: { type: 'system', label: 'review-request' },
+            target: { type: 'lead', id: lead.id }, details: { agent_id: lead.agent_id } });
+    } catch (e) { console.warn('[triggerReviewRequest]', e.message); }
+}
+function escapeHtmlA(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
 // ── Response-time badge (derived from lead SLA data) ────────────────────────
 // Median time from lead assignment → the agent working it, over the last 120
@@ -534,7 +569,8 @@ const setMyLeadOutcome = async (req, res) => {
                    updated_at    = NOW()
               FROM agents a
              WHERE l.id = $4 AND l.agent_id = a.id AND a.user_id = $5 AND l.deleted_at IS NULL
-            RETURNING l.id, l.outcome, l.outcome_price, l.lead_status AS status`,
+            RETURNING l.id, l.outcome, l.outcome_price, l.lead_status AS status,
+                      l.email, l.full_name, l.agent_id`,
             [outcome === 'none' ? null : outcome, price, note, id, userId]);
         if (!rowCount) return res.status(404).json({ error: 'Lead not found or not assigned to you.' });
         logActivity({
@@ -543,7 +579,10 @@ const setMyLeadOutcome = async (req, res) => {
             target: { type: 'lead', id: rows[0].id },
             details: { outcome: rows[0].outcome, price: rows[0].outcome_price }, req,
         });
-        res.json({ success: true, ...rows[0] });
+        // Won → ask the buyer for a verified review (fire-and-forget).
+        if (rows[0].outcome === 'won') triggerReviewRequest(rows[0]);
+        const { email, full_name, agent_id, ...safe } = rows[0];
+        res.json({ success: true, ...safe });
     } catch (err) {
         console.error('[setMyLeadOutcome]', err.message);
         res.status(500).json({ error: 'Failed to record outcome.' });
