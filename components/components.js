@@ -544,6 +544,7 @@ class GlobalFooter extends HTMLElement {
                     <h4>Explore</h4>
                     <a href="/towns">Lakes &amp; Towns</a>
                     <a href="/properties">Properties Map</a>
+                    <a href="/market-index">Market Index</a>
                     <a href="${bp}resources.html">Resource Library</a>
                     <a href="${bp}blog.html">Blog</a>
                     <a href="${bp}find-your-lake.html">Find Your Lake</a>

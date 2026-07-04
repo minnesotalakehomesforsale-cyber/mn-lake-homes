@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minnesota Lake Home Market Index | MN Lake Homes</title>
+    <meta name="description" content="The Minnesota lake-home market at a glance — median prices, days on market, and inventory statewide and by region, updated monthly from live listings.">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/market-index">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <script src="../../components/components.js" defer></script>
+    <style>
+        html, body { margin: 0; background: #f7f9fa; }
+        .mi-wrap { max-width: 1000px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
+        .mi-eyebrow { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #1d6df2; }
+        .mi-wrap h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 800; letter-spacing: -1.5px; margin: 0.3rem 0 0.4rem; color: #0f2b46; }
+        .mi-sub { color: #4a5568; font-size: 1.05rem; max-width: 640px; line-height: 1.6; margin: 0 0 0.6rem; }
+        .mi-updated { font-size: 0.82rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.5px; }
+        .mi-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin: 2rem 0; }
+        .mi-card { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.3rem 1.4rem; }
+        .mi-card .v { font-size: 2rem; font-weight: 800; color: #0f2b46; letter-spacing: -1px; }
+        .mi-card .l { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #a0aec0; margin-top: 0.2rem; }
+        .mi-section-h { font-size: 1.4rem; font-weight: 800; color: #0f2b46; margin: 2.5rem 0 1rem; }
+        .mi-chart { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.5rem; }
+        .mi-table { width: 100%; background: #fff; border: 1px solid #edf2f7; border-radius: 14px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+        .mi-table th { text-align: left; padding: 0.85rem 1.1rem; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: #a0aec0; background: #f7f9fa; border-bottom: 1px solid #edf2f7; }
+        .mi-table td { padding: 0.85rem 1.1rem; font-size: 0.95rem; border-bottom: 1px solid #f7f9fa; font-variant-numeric: tabular-nums; }
+        .mi-table tr:last-child td { border-bottom: 0; }
+        .mi-table td.num { text-align: right; font-weight: 700; color: #0f2b46; }
+        .mi-cta { background: linear-gradient(135deg, #0f2b46, #1d6df2); color: #fff; border-radius: 16px; padding: 1.75rem; text-align: center; margin-top: 2.5rem; }
+        .mi-cta h2 { margin: 0 0 0.4rem; font-size: 1.4rem; }
+        .mi-cta p { margin: 0 0 1.1rem; opacity: 0.92; }
+        .mi-cta a { display: inline-block; background: #fff; color: #1d6df2; font-weight: 700; text-decoration: none; border-radius: 10px; padding: 0.7rem 1.5rem; }
+        .mi-fine { font-size: 0.78rem; color: #a0aec0; margin-top: 1.5rem; }
+        .mi-state { text-align: center; color: #a0aec0; padding: 3rem 1rem; }
+        @media (max-width: 600px){ .mi-card .v { font-size: 1.6rem; } }
+    </style>
+</head>
+<body>
+    <global-header></global-header>
+    <main class="mi-wrap">
+        <div class="mi-eyebrow">MN Lake Homes · Market Data</div>
+        <h1>Minnesota Lake Home Market Index</h1>
+        <p class="mi-sub">A monthly read on Minnesota's lake real-estate market — median prices, how fast homes sell, and how much is for sale — built from live listings across the state.</p>
+        <div class="mi-updated" id="mi-updated"></div>
+        <div id="mi-body"><div class="mi-state">Loading the latest market data…</div></div>
+    </main>
+    <global-footer></global-footer>
+
+    <script>
+        const money = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US');
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+        function sparkline(points) {
+            const vals = points.map(p => p.median_price).filter(v => v != null);
+            if (vals.length < 2) return '';
+            const w = 640, h = 120, pad = 8;
+            const min = Math.min(...vals), max = Math.max(...vals), span = (max - min) || 1;
+            const step = (w - pad * 2) / (vals.length - 1);
+            const coords = vals.map((v, i) => [pad + i * step, h - pad - ((v - min) / span) * (h - pad * 2)]);
+            const line = coords.map((c, i) => (i ? 'L' : 'M') + c[0].toFixed(1) + ' ' + c[1].toFixed(1)).join(' ');
+            const area = `${line} L ${coords[coords.length - 1][0].toFixed(1)} ${h - pad} L ${coords[0][0].toFixed(1)} ${h - pad} Z`;
+            const last = coords[coords.length - 1];
+            return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:120px;display:block;">
+                <path d="${area}" fill="rgba(29,109,242,0.10)"></path>
+                <path d="${line}" fill="none" stroke="#1d6df2" stroke-width="2.5" stroke-linejoin="round"></path>
+                <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="4" fill="#1d6df2"></circle>
+            </svg>`;
+        }
+
+        fetch('/api/market/index').then(r => r.json()).then(d => {
+            const body = document.getElementById('mi-body');
+            const s = d.statewide;
+            if (!s || !s.active) {
+                body.innerHTML = '<div class="mi-state">The market index will populate as lake listings come online. Check back soon.</div>';
+                return;
+            }
+            const now = new Date();
+            document.getElementById('mi-updated').textContent = 'Updated ' + now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+            const cards = [
+                { v: s.active.toLocaleString('en-US'), l: 'Homes for sale' },
+                { v: money(s.median_price), l: 'Median list price' },
+                { v: s.median_dom != null ? s.median_dom + ' days' : '—', l: 'Median days on market' },
+                { v: money(s.avg_ppsf), l: 'Avg price / sq ft' },
+                { v: s.new_month.toLocaleString('en-US'), l: 'New this month' },
+                { v: s.sold_180.toLocaleString('en-US'), l: 'Sold (6 months)' },
+            ];
+            const cardsHtml = `<div class="mi-cards">${cards.map(c => `<div class="mi-card"><div class="v">${esc(c.v)}</div><div class="l">${esc(c.l)}</div></div>`).join('')}</div>`;
+
+            const chartHtml = (d.history && d.history.length >= 2)
+                ? `<h2 class="mi-section-h">Median list price trend</h2><div class="mi-chart">${sparkline(d.history)}</div>`
+                : '';
+
+            const regionsHtml = (d.regions && d.regions.length)
+                ? `<h2 class="mi-section-h">By region</h2><table class="mi-table"><thead><tr><th>Region</th><th style="text-align:right;">For sale</th><th style="text-align:right;">Median price</th><th style="text-align:right;">Sold (6mo)</th></tr></thead><tbody>${d.regions.map(r => `<tr><td>${esc(r.region)}</td><td class="num">${r.active.toLocaleString('en-US')}</td><td class="num">${money(r.median_price)}</td><td class="num">${r.sold_180.toLocaleString('en-US')}</td></tr>`).join('')}</tbody></table>`
+                : '';
+
+            body.innerHTML = cardsHtml + chartHtml + regionsHtml
+                + `<div class="mi-cta"><h2>Never miss a new lake listing</h2><p>Get an email when homes hit the market on the lakes you care about.</p><a href="/pages/user/dashboard.html#alerts">🔔 Set up price alerts</a></div>`
+                + `<p class="mi-fine">Figures are compiled from active and recently-sold listings on MinnesotaLakeHomesForSale.com and are indicative of the lake-home segment, not the full MLS. Updated monthly.</p>`;
+        }).catch(() => {
+            document.getElementById('mi-body').innerHTML = '<div class="mi-state">Could not load the market index. Please refresh.</div>';
+        });
+    </script>
+</body>
+</html>

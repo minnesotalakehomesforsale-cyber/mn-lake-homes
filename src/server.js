@@ -61,6 +61,7 @@ app.use('/api/reviews', require('./routes/review.routes'));
 app.use('/api/listings', require('./routes/listing.routes'));
 app.use('/api/searches', require('./routes/search.routes'));
 app.use('/api/partners', require('./routes/partner.routes'));
+app.use('/api/market', require('./routes/market.routes'));
 
 app.get('/api/health', (req, res) => {
     res.json({
@@ -501,6 +502,7 @@ app.get('/sitemap.xml', async (req, res) => {
             { url: '/sell',            priority: 0.9, changefreq: 'weekly'  },
             { url: '/towns',           priority: 0.9, changefreq: 'weekly'  },
             { url: '/properties',      priority: 0.8, changefreq: 'daily'   },
+            { url: '/market-index',    priority: 0.7, changefreq: 'weekly'  },
             { url: '/agents',          priority: 0.8, changefreq: 'weekly'  },
             { url: '/cash-offer',      priority: 0.7, changefreq: 'monthly' },
             { url: '/blog',            priority: 0.7, changefreq: 'daily'   },
@@ -1337,6 +1339,14 @@ app.get('/towns', async (req, res, next) => {
             res.type('html').send(out);
         });
     } catch (err) { next(err); }
+});
+
+// Public MN Lake Market Index.
+app.get('/market-index', (req, res, next) => {
+    fs.readFile(path.join(PROJECT_ROOT, 'pages/public/market-index.html'), 'utf8', (err, html) => {
+        if (err) return next(err);
+        res.type('html').send(html);
+    });
 });
 
 // Verified-review page (token link emailed to a buyer after a closed deal).
@@ -2889,6 +2899,22 @@ async function ensureTables() {
             );
             CREATE INDEX IF NOT EXISTS idx_partner_referrals_created ON partner_referrals(created_at DESC);
 
+            -- Monthly market snapshots → the public MN Lake Market Index and
+            -- per-lake trend charts. One row per (scope, month); scope='state'
+            -- or a region/lake slug.
+            CREATE TABLE IF NOT EXISTS market_snapshots (
+                id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                scope        VARCHAR(80) NOT NULL DEFAULT 'state',
+                month        DATE NOT NULL,
+                active       INTEGER,
+                median_price INTEGER,
+                median_dom   INTEGER,
+                sold         INTEGER,
+                sold_median  INTEGER,
+                created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (scope, month)
+            );
+
             -- Lead outcome tracking: agents mark a lead won/lost with the sale
             -- price. Powers closed-deal proof (agent ROI, company sales volume,
             -- testimonials).
@@ -3800,6 +3826,13 @@ app.listen(PORT, async () => {
         const { runWinBackSweep } = require('./services/win-back');
         setTimeout(() => runWinBackSweep().catch(e => console.warn('[win-back]', e.message)), 4 * 60 * 1000);
         setInterval(() => runWinBackSweep().catch(e => console.warn('[win-back]', e.message)), 6 * 60 * 60 * 1000);
+    }
+
+    // Market Index monthly snapshot (idempotent per month; builds trend history).
+    {
+        const { recordMonthlySnapshot } = require('./controllers/market.controller');
+        setTimeout(() => recordMonthlySnapshot().catch(e => console.warn('[market.snapshot]', e.message)), 2 * 60 * 1000);
+        setInterval(() => recordMonthlySnapshot().catch(e => console.warn('[market.snapshot]', e.message)), 12 * 60 * 60 * 1000);
     }
 
     // Push every existing contact (users / leads / inquiries) into HubSpot
