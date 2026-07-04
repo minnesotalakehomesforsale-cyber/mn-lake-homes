@@ -146,6 +146,8 @@
         .lead-tr:hover { background: #fafbfc; }
         .lead-tr .lt-name { font-weight: 800; color: #1a202c; font-size: 0.95rem; }
         .lead-tr .lt-sub  { font-size: 0.78rem; color: #a0aec0; margin-top: 0.15rem; }
+        .sla-badge { display:inline-block; margin-top:0.3rem; font-size:0.68rem; font-weight:800; letter-spacing:0.3px; border-radius:5px; padding:2px 7px; background:#fffbeb; color:#b45309; }
+        .sla-badge.overdue { background:#fee2e2; color:#b91c1c; }
         .lead-tr .lt-date { font-size: 0.8rem; color: #a0aec0; font-weight: 600; text-align: right; white-space: nowrap; }
         @media (max-width: 720px) {
             .lead-tr { grid-template-columns: 1fr auto; gap: 0.5rem; }
@@ -1554,6 +1556,17 @@
             renderLeads(filtered);
         }
 
+        // Response-SLA badge: a countdown until the lead auto-reassigns, or an
+        // overdue flag. Disappears once the lead has been worked (acked).
+        function slaBadge(l) {
+            if (l.agent_ack_at || !l.assigned_at || l.status === 'closed' || l.status === 'archived') return '';
+            const deadline = new Date(l.assigned_at).getTime() + (Number(l.sla_hours) || 4) * 3600000;
+            const ms = deadline - Date.now();
+            if (ms <= 0) return `<span class="sla-badge overdue">⚠ Overdue — respond now</span>`;
+            const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000);
+            return `<span class="sla-badge">⏰ ${h > 0 ? h + 'h ' : ''}${m}m to respond</span>`;
+        }
+
         function renderLeads(leads) {
             const container = document.getElementById('leads-list');
             if (!leads || leads.length === 0) {
@@ -1576,6 +1589,7 @@
                         <div>
                             <div class="lt-name">${escA(l.name || 'Lead')}</div>
                             <div class="lt-sub">${escA(sub)}</div>
+                            ${slaBadge(l)}
                         </div>
                         <div class="lt-type-cell"><span class="lead-badge ${typeClass}">${escA(typeLabel)}</span></div>
                         <div><span class="lead-badge ${statusClass}">${escA(statusLabel)}</span></div>

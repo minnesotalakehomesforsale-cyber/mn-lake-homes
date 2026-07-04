@@ -348,13 +348,16 @@ const submitForReview = async (req, res) => {
 const getMyLeads = async (req, res) => {
     try {
         const userId = req.user.userId;
+        const { getSlaHours } = require('../services/lead-sla');
+        const slaHours = await getSlaHours();
         const { rows } = await pool.query(`
             SELECT l.id, l.full_name as name, l.first_name, l.email, l.phone,
                    l.message, l.lead_type as type, l.lead_source as source,
                    l.lead_status as status, l.budget_min, l.budget_max,
                    l.timeline_text, l.location_text, l.contact_preference,
                    l.source_page_title, l.created_at,
-                   l.listing_id, li.title AS listing_title, li.slug AS listing_slug
+                   l.listing_id, li.title AS listing_title, li.slug AS listing_slug,
+                   l.assigned_at, l.agent_ack_at, l.sla_reassign_count
             FROM leads l
             JOIN agents a ON l.agent_id = a.id
             JOIN users u ON a.user_id = u.id
@@ -363,7 +366,7 @@ const getMyLeads = async (req, res) => {
               AND l.deleted_at IS NULL
             ORDER BY l.created_at DESC
         `, [userId]);
-        res.json(rows);
+        res.json(rows.map(r => ({ ...r, sla_hours: slaHours })));
     } catch (err) {
         console.error('[getMyLeads]', err.message);
         res.status(500).json({ error: 'Failed to fetch leads.' });
@@ -392,7 +395,8 @@ const updateMyLeadStatus = async (req, res) => {
     try {
         const { rows, rowCount } = await pool.query(`
             UPDATE leads l
-               SET lead_status = $1, updated_at = NOW()
+               SET lead_status = $1, updated_at = NOW(),
+                   agent_ack_at = COALESCE(l.agent_ack_at, NOW())
               FROM agents a
              WHERE l.id = $2
                AND l.agent_id = a.id
@@ -477,6 +481,9 @@ const addMyLeadNote = async (req, res) => {
              RETURNING id, note_body AS content, created_at`,
             [id, userId, content.slice(0, 4000)]
         );
+        // Adding a note counts as working the lead → satisfies the response SLA.
+        pool.query(`UPDATE leads SET agent_ack_at = COALESCE(agent_ack_at, NOW()) WHERE id = $1`, [id])
+            .catch(() => {});
         logActivity({
             event_type: 'lead.note.add',
             event_scope: 'lead',

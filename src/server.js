@@ -2768,6 +2768,17 @@ async function ensureTables() {
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS listing_id UUID REFERENCES listings(id) ON DELETE SET NULL;
             CREATE INDEX IF NOT EXISTS idx_leads_listing ON leads(listing_id) WHERE listing_id IS NOT NULL;
 
+            -- Lead SLA / auto-reassign: assigned_at starts the clock, agent_ack_at
+            -- stamps the first time the assigned agent works the lead (status
+            -- change or note). A stale, un-acked lead is re-routed to the next
+            -- eligible agent; sla_tried_user_ids prevents ping-ponging.
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS assigned_at         TIMESTAMPTZ;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS agent_ack_at        TIMESTAMPTZ;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS sla_reassign_count  SMALLINT NOT NULL DEFAULT 0;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS sla_tried_user_ids  UUID[]   NOT NULL DEFAULT '{}';
+            CREATE INDEX IF NOT EXISTS idx_leads_sla ON leads(assigned_at)
+                WHERE agent_ack_at IS NULL AND assigned_user_id IS NOT NULL;
+
             -- Listing freshness + lifecycle (Phase 3/8): remember the first price
             -- we saw (to detect drops), an optional open-house datetime, and when
             -- a home was marked sold (for the "recently sold" wall).
@@ -3638,6 +3649,14 @@ app.listen(PORT, async () => {
     console.log(`=======================================`);
     await ensureTables();
     await backfillBusinessCoords();
+
+    // Lead SLA sweep — re-route leads the assigned agent hasn't worked in time.
+    // Runs shortly after boot, then every 15 min. Disable with LEAD_SLA_ENABLED=false.
+    if (process.env.LEAD_SLA_ENABLED !== 'false') {
+        const { runSlaSweep } = require('./services/lead-sla');
+        setTimeout(() => runSlaSweep().catch(e => console.warn('[lead-sla]', e.message)), 60 * 1000);
+        setInterval(() => runSlaSweep().catch(e => console.warn('[lead-sla]', e.message)), 15 * 60 * 1000);
+    }
 
     // Push every existing contact (users / leads / inquiries) into HubSpot
     // in the background. Idempotent — only touches rows whose hs_contact_id

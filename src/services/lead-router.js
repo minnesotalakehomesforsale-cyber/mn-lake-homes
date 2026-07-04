@@ -204,11 +204,24 @@ async function agentsForLake(lakeId) {
  *
  * Returns { userId, agentId, lakeId|tagId, tierCode } on match, or null.
  */
-async function routeLead({ lat, lng, radiusMiles, lakeId } = {}) {
+// Drop excluded users from tier buckets (used by SLA re-routing so a lead never
+// bounces back to an agent who already had — and sat on — it).
+function stripExcluded(buckets, excludeSet) {
+    if (!excludeSet || !excludeSet.size) return buckets;
+    const out = {};
+    for (const [code, agents] of Object.entries(buckets)) {
+        const kept = (agents || []).filter(a => !excludeSet.has(a.user_id));
+        if (kept.length) out[code] = kept;
+    }
+    return out;
+}
+
+async function routeLead({ lat, lng, radiusMiles, lakeId, excludeUserIds = [] } = {}) {
     const radius = Number(radiusMiles) > 0
         ? Number(radiusMiles)
         : await getDefaultRadiusMiles();
     const weights = await getTierBalls();
+    const exclude = new Set((excludeUserIds || []).filter(Boolean).map(String));
 
     // ── 1. Lake-level routing (founder = exclusive lake owner) ──
     // EXPLICIT lake only: the lead must actually name the lake (buyer picks it
@@ -220,7 +233,7 @@ async function routeLead({ lat, lng, radiusMiles, lakeId } = {}) {
     let lake = null;
     if (lakeId) lake = await getLakeById(lakeId);
     if (lake) {
-        const buckets = await agentsForLake(lake.id);
+        const buckets = stripExcluded(await agentsForLake(lake.id), exclude);
         if (Object.keys(buckets).length) {
             // The seated founder is EXCLUSIVE — 100% of their lake's leads.
             // With no founder seated, the lake's other agents go to the lottery.
@@ -260,7 +273,7 @@ async function routeLead({ lat, lng, radiusMiles, lakeId } = {}) {
     if (!tags.length) return null;
 
     for (const tag of tags) {
-        const buckets = await agentsForTag(tag.id);
+        const buckets = stripExcluded(await agentsForTag(tag.id), exclude);
         if (!Object.keys(buckets).length) continue;
 
         const pick = pickFromBuckets(buckets, weights);
