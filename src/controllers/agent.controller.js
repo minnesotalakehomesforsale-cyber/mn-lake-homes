@@ -804,6 +804,40 @@ const replaceAgentsForBlogPost = async (req, res) => {
     }
 };
 
+// GET /api/agents/me/referrals — the agent's referral code, share link, and the
+// agents they've brought in. "Refer an agent, get a month free" — each signed-up
+// referral is one earned reward (applied by the team as a Stripe credit/coupon).
+const getMyReferrals = async (req, res) => {
+    try {
+        const me = await pool.query(
+            `SELECT id, referral_code FROM agents WHERE user_id = $1 LIMIT 1`, [req.user.userId]);
+        if (!me.rows.length) return res.status(404).json({ error: 'Agent profile not found.' });
+        const { id, referral_code } = me.rows[0];
+
+        const { rows: referrals } = await pool.query(
+            `SELECT r.status, r.reward_granted, r.created_at,
+                    COALESCE(a.display_name, r.referred_email, 'New agent') AS name,
+                    a.profile_status
+               FROM agent_referrals r
+               LEFT JOIN agents a ON a.id = r.referred_agent_id
+              WHERE r.referrer_agent_id = $1
+              ORDER BY r.created_at DESC`, [id]);
+
+        const site = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
+        res.json({
+            code: referral_code,
+            link: `${site}/join?ref=${encodeURIComponent(referral_code || '')}`,
+            total: referrals.length,
+            rewards_earned: referrals.length,          // 1 free month per signed-up referral
+            rewards_applied: referrals.filter(r => r.reward_granted).length,
+            referrals,
+        });
+    } catch (err) {
+        console.error('[getMyReferrals]', err.message);
+        res.status(500).json({ error: 'Failed to load referrals.' });
+    }
+};
+
 module.exports = {
     getPublicAgents,
     getAgentBySlug,
@@ -813,6 +847,7 @@ module.exports = {
     updateMyProfile,
     getMyLeads,
     getMyRoi,
+    getMyReferrals,
     getMyLeaderboard,
     getAtRiskAgents,
     setMyLeadOutcome,

@@ -412,6 +412,12 @@
                             <span class="t">Guides &amp; downloads</span>
                             <span class="d">Open the library and download guides, checklists, and templates.</span>
                         </button>
+                        <button class="dash-card" onclick="openReferrals()" style="--ac:#0ea5e9;">
+                            <span class="pill" id="dash-ref-pill" style="display:none;">0</span>
+                            <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg></span>
+                            <span class="t">Refer &amp; earn</span>
+                            <span class="d">Invite another agent — get a month free for each one who joins.</span>
+                        </button>
                     </div>
 
                     <h3 class="dash-section-h">Articles you may like</h3>
@@ -755,6 +761,29 @@
         </div>
         <p style="color:#718096;font-size:0.9rem;margin:0 0 1rem;">Grab a guide or checklist — opens in a new tab to view or download.</p>
         <div id="guides-list"><div style="color:#a0aec0;padding:1.5rem 0;text-align:center;">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- Refer & earn modal -->
+    <div id="ref-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9000;align-items:center;justify-content:center;padding:1.5rem;">
+      <div style="background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto;padding:1.75rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">
+          <h3 style="font-size:1.25rem;font-weight:800;margin:0;">Refer an agent, get a month free</h3>
+          <button onclick="closeReferrals()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#718096;">&times;</button>
+        </div>
+        <p style="color:#718096;font-size:0.9rem;margin:0 0 1.1rem;">Share your link. Every agent who joins on it earns you <strong>one free month</strong> — no limit.</p>
+        <div style="background:linear-gradient(135deg,#0f2b46,#0ea5e9);color:#fff;border-radius:12px;padding:1.25rem;margin-bottom:1.1rem;">
+          <div style="display:flex;gap:1.5rem;flex-wrap:wrap;">
+            <div><div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;opacity:0.8;font-weight:700;">Agents joined</div><div id="ref-count" style="font-size:2rem;font-weight:800;">0</div></div>
+            <div><div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;opacity:0.8;font-weight:700;">Free months earned</div><div id="ref-rewards" style="font-size:2rem;font-weight:800;">0</div></div>
+          </div>
+        </div>
+        <label style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#718096;">Your referral link</label>
+        <div style="display:flex;gap:0.5rem;margin:0.4rem 0 1.1rem;">
+          <input id="ref-link" readonly style="flex:1;padding:0.65rem 0.8rem;border:1px solid #e2e8f0;border-radius:9px;font-size:0.85rem;background:#f7f9fa;color:#1a202c;">
+          <button id="ref-copy" onclick="copyReferral()" style="background:#1d6df2;color:#fff;border:0;border-radius:9px;padding:0.65rem 1rem;font-weight:800;font-size:0.85rem;cursor:pointer;">Copy</button>
+        </div>
+        <div id="ref-list"></div>
       </div>
     </div>
 
@@ -1451,6 +1480,44 @@
             }).catch(() => { box.innerHTML = '<div style="color:#c53030;padding:1.5rem 0;text-align:center;">Could not load downloads.</div>'; });
         }
         function closeGuides() { document.getElementById('guides-modal').style.display = 'none'; }
+
+        // ── Refer & earn ────────────────────────────────────────────────────
+        let _refData = null;
+        function openReferrals() {
+            document.getElementById('ref-modal').style.display = 'flex';
+            loadReferrals();
+        }
+        function closeReferrals() { document.getElementById('ref-modal').style.display = 'none'; }
+        function loadReferrals() {
+            const list = document.getElementById('ref-list');
+            list.innerHTML = '<div style="color:#a0aec0;padding:1rem 0;text-align:center;">Loading…</div>';
+            fetch('/api/agents/me/referrals').then(r => r.ok ? r.json() : Promise.reject()).then(d => {
+                _refData = d;
+                document.getElementById('ref-link').value = d.link || '';
+                document.getElementById('ref-count').textContent = d.total || 0;
+                document.getElementById('ref-rewards').textContent = d.rewards_earned || 0;
+                const pill = document.getElementById('dash-ref-pill');
+                if (pill && d.total > 0) { pill.textContent = d.total; pill.style.display = ''; }
+                if (!d.referrals || !d.referrals.length) {
+                    list.innerHTML = '<div style="color:#a0aec0;padding:0.5rem 0;font-size:0.88rem;">No referrals yet — share your link to get started.</div>';
+                    return;
+                }
+                list.innerHTML = '<div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#718096;margin-bottom:0.5rem;">Your referrals</div>' +
+                    d.referrals.map(r => `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid #f2f5f8;">
+                            <div><div style="font-weight:700;font-size:0.9rem;">${escA(r.name)}</div>
+                                 <div style="font-size:0.75rem;color:#a0aec0;">Joined ${new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div></div>
+                            <span style="font-size:0.72rem;font-weight:800;color:${r.reward_granted?'#2f855a':'#b7791f'};background:${r.reward_granted?'#f0fff4':'#fffaf0'};border-radius:99px;padding:0.25rem 0.6rem;">${r.reward_granted?'✓ Month credited':'Free month earned'}</span>
+                        </div>`).join('');
+            }).catch(() => { list.innerHTML = '<div style="color:#c53030;padding:1rem 0;text-align:center;">Could not load referrals.</div>'; });
+        }
+        function copyReferral() {
+            const inp = document.getElementById('ref-link');
+            inp.select();
+            const done = () => { const b = document.getElementById('ref-copy'); const t = b.textContent; b.textContent = 'Copied!'; setTimeout(() => b.textContent = t, 1500); };
+            if (navigator.clipboard) navigator.clipboard.writeText(inp.value).then(done).catch(() => { document.execCommand('copy'); done(); });
+            else { document.execCommand('copy'); done(); }
+        }
 
         // Messages card + unread preview on the landing page.
         async function hydrateDashboardMessages() {

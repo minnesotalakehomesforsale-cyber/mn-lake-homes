@@ -2444,7 +2444,32 @@ async function ensureTables() {
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS faq JSONB NOT NULL DEFAULT '{}'::jsonb;
             -- Instant SMS lead alerts (Twilio). Opt-out per agent; on by default.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS sms_alerts BOOLEAN NOT NULL DEFAULT TRUE;
+            -- Agent referral program: each agent's own shareable code + the code
+            -- they signed up under. "Refer an agent, get a month free."
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS referral_code VARCHAR(16);
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS referred_by_code VARCHAR(16);
         `);
+        // Every agent gets a stable short code (backfill any missing ones).
+        await pool.query(`
+            UPDATE agents SET referral_code = UPPER(SUBSTR(MD5(id::text || 'mlh-ref'), 1, 8))
+             WHERE referral_code IS NULL OR referral_code = '';
+        `).catch(e => console.warn('[referral backfill]', e.message));
+        await pool.query(`
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_agents_referral_code ON agents(referral_code);
+            CREATE TABLE IF NOT EXISTS agent_referrals (
+                id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                referrer_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+                referred_agent_id UUID REFERENCES agents(id) ON DELETE SET NULL,
+                referred_email    TEXT,
+                code              VARCHAR(16) NOT NULL,
+                status            VARCHAR(20) NOT NULL DEFAULT 'signed_up',  -- signed_up | rewarded
+                reward_granted    BOOLEAN NOT NULL DEFAULT FALSE,
+                created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                converted_at      TIMESTAMPTZ
+            );
+            CREATE INDEX IF NOT EXISTS idx_agent_referrals_referrer ON agent_referrals(referrer_agent_id);
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_agent_referrals_referred ON agent_referrals(referred_agent_id) WHERE referred_agent_id IS NOT NULL;
+        `).catch(e => console.warn('[agent_referrals table]', e.message));
 
         // HubSpot mirror id — populated by src/services/hubspot.js after a
         // successful upsert. NULL means "not yet synced" (or sync was off

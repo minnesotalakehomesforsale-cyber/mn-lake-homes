@@ -23,6 +23,7 @@ router.post('/upload-photo', agentController.uploadPhoto);
 router.get('/me', verifyToken, requireRole('agent'), agentController.getMyProfile);
 router.get('/me/leads', verifyToken, requireRole('agent'), agentController.getMyLeads);
 router.get('/me/roi',   verifyToken, requireRole('agent'), agentController.getMyRoi);
+router.get('/me/referrals', verifyToken, requireRole('agent'), agentController.getMyReferrals);
 router.get('/me/leaderboard', verifyToken, requireRole('agent'), agentController.getMyLeaderboard);
 router.get('/admin/at-risk', verifyToken, agentController.getAtRiskAgents);
 router.patch('/me/leads/:id/status', verifyToken, requireRole('agent'), agentController.updateMyLeadStatus);

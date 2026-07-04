@@ -317,6 +317,16 @@
                             display_name,
                             phone,
                             brokerage_name: brokerage || null,
+                            // Referral attribution — an agent who came in via a
+                            // colleague's "Refer an agent" link (/join?ref=CODE).
+                            // Persisted so it survives navigation before signup.
+                            ref: (function () {
+                                try {
+                                    const u = (new URLSearchParams(location.search).get('ref') || '').trim();
+                                    if (u) { localStorage.setItem('mlh_agent_ref', u); return u; }
+                                    return (localStorage.getItem('mlh_agent_ref') || '').trim() || null;
+                                } catch (_) { return (new URLSearchParams(location.search).get('ref') || '').trim() || null; }
+                            })(),
                         }),
                     });
                     const data = await res.json().catch(() => ({}));

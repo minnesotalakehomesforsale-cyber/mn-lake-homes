@@ -133,7 +133,8 @@ const waitlist = async (req, res) => {
  * Creates a new user + linked agent record.
  */
 const register = async (req, res) => {
-    let { email, password, display_name, phone, license_number, brokerage_name, service_area_tag_ids } = req.body;
+    let { email, password, display_name, phone, license_number, brokerage_name, service_area_tag_ids, ref } = req.body;
+    const refCode = (ref || '').toString().trim().toUpperCase().slice(0, 16) || null;
 
     email = (email || '').trim().toLowerCase();
     display_name = (display_name || '').trim();
@@ -216,11 +217,15 @@ const register = async (req, res) => {
         // phone, and email is always set. They can override either on
         // the dashboard if they want a different number publicly listed.
         const slugStr = display_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
-        await client.query(
-            `INSERT INTO agents (user_id, membership_id, slug, display_name, license_number, brokerage_name, phone_public, email_public, profile_status, is_published)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'draft', false)`,
-            [userId, basicId, slugStr, display_name, license_number || null, brokerage_name || null, phone || null, email || null]
+        // Assign this agent their own referral code up front (deterministic from
+        // the new user id so it's stable). refCode is the code they SIGNED UP under.
+        const myRefCode = 'REF' + require('crypto').createHash('md5').update(userId + 'mlh-ref').digest('hex').slice(0, 6).toUpperCase();
+        const agentRes = await client.query(
+            `INSERT INTO agents (user_id, membership_id, slug, display_name, license_number, brokerage_name, phone_public, email_public, profile_status, is_published, referral_code, referred_by_code)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'draft', false, $9, $10) RETURNING id`,
+            [userId, basicId, slugStr, display_name, license_number || null, brokerage_name || null, phone || null, email || null, myRefCode, refCode]
         );
+        const newAgentId = agentRes.rows[0].id;
 
         // Attach initial service-area tags. Silently skips any id that
         // doesn't match an active tag in the catalog.
@@ -236,6 +241,19 @@ const register = async (req, res) => {
         }
 
         await client.query('COMMIT');
+
+        // Record the referral (post-commit, fire-and-forget so a hiccup here can
+        // never fail the signup) if they came in on a valid, different agent's code.
+        if (refCode) {
+            pool.query(
+                `INSERT INTO agent_referrals (referrer_agent_id, referred_agent_id, referred_email, code, status)
+                 SELECT a.id, $2, $3, $1, 'signed_up' FROM agents a
+                  WHERE a.referral_code = $1 AND a.id <> $2
+                 ON CONFLICT (referred_agent_id) WHERE referred_agent_id IS NOT NULL DO NOTHING`,
+                [refCode, newAgentId, email]
+            ).then(r => { if (r.rowCount) console.log(`[register] referral recorded via ${refCode}`); })
+             .catch(e => console.error('[register] referral record failed:', e.message));
+        }
 
         // Backfill: claim any leads previously submitted with this email
         // before the account existed. Fire-and-forget on the pool (the
