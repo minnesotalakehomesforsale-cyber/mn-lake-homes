@@ -62,6 +62,21 @@
         .lst-fact-row:last-child { border-bottom:0; }
         .lst-fact-row .k { color:#718096; }
         .lst-fact-row .val { color:#1a202c; font-weight:700; text-align:right; }
+        /* About the area */
+        .lst-area { margin-top:2.75rem; }
+        .lst-area-card { border:1px solid #edf2f7; border-radius:14px; overflow:hidden; background:#fff; }
+        .lst-area-hero { height:150px; background:#dce6f0 center/cover; position:relative; }
+        .lst-area-hero .nm { position:absolute; left:1.1rem; bottom:0.9rem; color:#fff; font-size:1.5rem; font-weight:800; text-shadow:0 2px 10px rgba(0,0,0,0.5); }
+        .lst-area-b { padding:1.25rem 1.4rem; }
+        .lst-area-b p { color:#4a5568; line-height:1.65; margin:0 0 1rem; }
+        .lst-area-stats { display:flex; gap:1.5rem; flex-wrap:wrap; margin:0 0 1rem; }
+        .lst-area-stat .v { font-size:1.35rem; font-weight:800; color:#0f2b46; }
+        .lst-area-stat .l { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:#a0aec0; }
+        .lst-area-link { color:#1d6df2; font-weight:700; text-decoration:none; font-size:0.95rem; }
+        .lst-nearby-h { font-size:0.78rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#a0aec0; margin:1.25rem 0 0.5rem; }
+        .lst-nearby { display:flex; flex-wrap:wrap; gap:0.5rem; }
+        .lst-nearby a { text-decoration:none; background:#f0f4f8; color:#2d3748; border-radius:99px; padding:0.4rem 0.85rem; font-size:0.85rem; font-weight:600; }
+        .lst-nearby a:hover { background:#e2eaf2; }
         /* Related listings */
         .lst-rel { margin-top:2.75rem; }
         .lst-rel-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1rem; }
@@ -337,6 +352,8 @@
         </div>
 
         {{LISTING_GALLERY_HTML}}
+
+        {{LISTING_AREA_HTML}}
 
         {{LISTING_RELATED_HTML}}
 

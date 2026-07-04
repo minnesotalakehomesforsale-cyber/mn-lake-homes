@@ -927,6 +927,24 @@ app.get('/listings/:slug', async (req, res, next) => {
             [l.id, l.agent_id || null, l.lake_id || null]
         ).catch(() => ({ rows: [] }));
 
+        // "About the area" context (Phase: Zillow-feel): lake blurb + live market
+        // + nearby businesses.
+        let areaLake = null, areaMarket = null, areaBiz = [];
+        if (l.lake_id) {
+            areaLake = await pool.query(`SELECT name, slug, intro_text, hero_image_url FROM lakes WHERE id = $1 LIMIT 1`, [l.lake_id]).then(r => r.rows[0]).catch(() => null);
+            areaMarket = await pool.query(
+                `SELECT COUNT(*) FILTER (WHERE status='active')::int AS active,
+                        percentile_cont(0.5) WITHIN GROUP (ORDER BY price) FILTER (WHERE status='active' AND price IS NOT NULL) AS median
+                   FROM listings WHERE lake_id = $1`, [l.lake_id]).then(r => r.rows[0]).catch(() => null);
+        }
+        if (l.city) {
+            areaBiz = await pool.query(
+                `SELECT name, slug, type FROM businesses
+                  WHERE status = 'active' AND city ILIKE $1
+                  ORDER BY (COALESCE(NULLIF(tier,''),'free')='premium') DESC, name ASC LIMIT 6`,
+                [l.city]).then(r => r.rows).catch(() => []);
+        }
+
         const tpl = path.join(PROJECT_ROOT, 'pages/public/listing-detail.html');
         fs.readFile(tpl, 'utf8', (err, html) => {
             if (err) return next(err);
@@ -1049,6 +1067,30 @@ app.get('/listings/:slug', async (req, res, next) => {
             if (fromAgent.length) relatedHtml += `<div class="lst-rel"><h2 class="lst-section-h">More from this agent</h2><div class="lst-rel-grid">${fromAgent.map(relCard).join('')}</div></div>`;
             if (onLake.length)    relatedHtml += `<div class="lst-rel"><h2 class="lst-section-h">More homes${l.lake_name ? ' on ' + escapeHtml(l.lake_name) : ' nearby'}</h2><div class="lst-rel-grid">${onLake.map(relCard).join('')}</div></div>`;
 
+            // Assemble the "About the area" block.
+            let areaHtml = '';
+            {
+                const bits = [];
+                const areaName = areaLake?.name || l.city || null;
+                if (areaLake || (areaMarket && areaMarket.active) || areaBiz.length) {
+                    const heroStyle = areaLake?.hero_image_url ? ` style="background-image:url('${escapeHtml(cldThumb(areaLake.hero_image_url, 900))}')"` : '';
+                    bits.push(`<h2 class="lst-section-h">About ${escapeHtml(areaName || 'the area')}</h2><div class="lst-area-card">`);
+                    bits.push(`<div class="lst-area-hero"${heroStyle}><span class="nm">${escapeHtml(areaName || '')}</span></div><div class="lst-area-b">`);
+                    if (areaLake?.intro_text) bits.push(`<p>${escapeHtml(String(areaLake.intro_text).slice(0, 320))}${areaLake.intro_text.length > 320 ? '…' : ''}</p>`);
+                    if (areaMarket && areaMarket.active) {
+                        const med = areaMarket.median != null ? '$' + Math.round(Number(areaMarket.median)).toLocaleString('en-US') : null;
+                        bits.push(`<div class="lst-area-stats"><div class="lst-area-stat"><div class="v">${areaMarket.active}</div><div class="l">Homes for sale here</div></div>${med ? `<div class="lst-area-stat"><div class="v">${med}</div><div class="l">Median price</div></div>` : ''}</div>`);
+                    }
+                    if (areaLake?.slug) bits.push(`<a class="lst-area-link" href="/lakes/${escapeHtml(areaLake.slug)}">Explore ${escapeHtml(areaLake.name)} →</a>`);
+                    if (areaBiz.length) {
+                        const label = t => ({ marina: '⚓ Marina', restaurant: '🍽 Restaurant', outdoor_recreation: '🏕 Resort', boat_rental: '🚤 Boat rental', builder: '🔨 Builder' }[t] || '📍 Local');
+                        bits.push(`<div class="lst-nearby-h">What's nearby</div><div class="lst-nearby">${areaBiz.map(b => `<a href="/businesses/${escapeHtml(b.slug)}">${escapeHtml(label(b.type))} · ${escapeHtml(b.name)}</a>`).join('')}</div>`);
+                    }
+                    bits.push(`</div></div>`);
+                    areaHtml = `<section class="lst-area">${bits.join('')}</section>`;
+                }
+            }
+
             const backLabel = l.lake_name ? `Back to ${l.lake_name}` : 'Back to lake homes';
             const backUrl   = l.lake_slug ? `/lakes/${l.lake_slug}` : '/towns';
 
@@ -1110,6 +1152,7 @@ app.get('/listings/:slug', async (req, res, next) => {
                 '{{LISTING_FACTS_HTML}}':     factsHtml,
                 '{{LISTING_GALLERY_HTML}}':   galleryHtml,
                 '{{LISTING_RELATED_HTML}}':   relatedHtml,
+                '{{LISTING_AREA_HTML}}':      areaHtml,
                 '{{LISTING_STRUCTURED_DATA}}': sd,
                 '{{LISTING_LAKE_BACK}}':      escapeHtml(backUrl),
                 '{{LISTING_BACK_LABEL}}':     escapeHtml(backLabel),
