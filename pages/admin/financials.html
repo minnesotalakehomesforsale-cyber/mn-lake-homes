@@ -118,6 +118,7 @@
         .attn-item .ai-t { font-weight: 700; font-size: 0.9rem; color: #1a202c; }
         .attn-item .ai-s { font-size: 0.76rem; color: #718096; }
         .attn-item .ai-go { margin-left: auto; color: #a0aec0; font-weight: 800; font-size: 1.1rem; }
+        .growth-svg { width: 100%; height: 210px; display: block; }
     </style>
 </head>
 <body>
@@ -233,12 +234,13 @@
         }
         async function loadCompany() {
             const dash = document.getElementById('co-dash');
-            const [co, proj, bp, ac, rv] = await Promise.all([
+            const [co, proj, bp, ac, rv, rh] = await Promise.all([
                 fetch('/api/admin/financials/company', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
                 fetch('/api/admin/financials/projections', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
                 fetch('/api/admin/financials/business-projections', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
                 fetch('/api/admin/metrics/agent-coverage', { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
                 fetch('/api/reviews/admin?status=pending', { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+                fetch('/api/admin/financials/revenue-history?months=12', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
             ]);
             if (!co) { dash.innerHTML = '<p class="muted">Could not load the dashboard.</p>'; return; }
 
@@ -302,6 +304,15 @@
                     ${goalCard("location.href='cash-offers.html'", ring(coPct, '#7c3aed'), 'Cash offers · mo', `${coWon} / ${coGoal}`, `goal ${c.goalLow}–${c.goalHigh}/mo`)}
                 </div>
 
+                <div class="dash-panel" style="margin-bottom:1.1rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem;">
+                        <h3 style="margin:0;">Company growth · monthly sales</h3>
+                        <span id="co-growth-meta" style="font-size:0.82rem;font-weight:700;color:#718096;"></span>
+                    </div>
+                    <svg id="co-growth-svg" class="growth-svg" preserveAspectRatio="none"></svg>
+                    <p id="co-growth-note" class="muted" style="margin:0.6rem 0 0;"></p>
+                </div>
+
                 <div class="dash-cols">
                     <div class="dash-panel">
                         <h3>Revenue mix at goal</h3>
@@ -322,6 +333,68 @@
                         </div>
                     </div>
                 </div>`;
+
+            _growthData = rh;
+            renderGrowthChart(rh);
+        }
+
+        // ── Company growth chart (monthly sales, month-over-month) ─────────
+        let _growthData = null;
+        function renderGrowthChart(rh) {
+            const svg = document.getElementById('co-growth-svg');
+            if (!svg) return;
+            if (rh) _growthData = rh; else rh = _growthData;
+            const meta = document.getElementById('co-growth-meta');
+            const note = document.getElementById('co-growth-note');
+            const months = (rh && rh.months) || [];
+            const H = 210;
+            const W = Math.max(320, Math.round(svg.clientWidth || svg.getBoundingClientRect().width || 640));
+            svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+            svg.style.height = H + 'px';
+            const NS = 'http://www.w3.org/2000/svg';
+            while (svg.firstChild) svg.removeChild(svg.firstChild);
+            const mk = (t, a, txt) => { const el = document.createElementNS(NS, t); for (const k in a) el.setAttribute(k, a[k]); if (txt != null) el.textContent = txt; return el; };
+            if (!months.length) return;
+
+            const padL = 46, padR = 16, padT = 16, padB = 26;
+            const iW = W - padL - padR, iH = H - padT - padB;
+            const vals = months.map(m => m.revenue);
+            const rawMax = Math.max(...vals, 0);
+            const niceMax = rawMax <= 0 ? 100 : Math.pow(10, Math.floor(Math.log10(rawMax))) * (rawMax / Math.pow(10, Math.floor(Math.log10(rawMax))) <= 2 ? 2 : rawMax / Math.pow(10, Math.floor(Math.log10(rawMax))) <= 5 ? 5 : 10);
+            const yMax = niceMax;
+            // gridlines + y labels
+            for (let i = 0; i <= 4; i++) {
+                const y = padT + iH * i / 4;
+                svg.appendChild(mk('line', { x1: padL, y1: y, x2: W - padR, y2: y, stroke: '#edf2f7', 'stroke-width': 1 }));
+                svg.appendChild(mk('text', { x: padL - 8, y: y + 4, 'text-anchor': 'end', 'font-size': 10, fill: '#a0aec0', 'font-weight': 700 }, '$' + Math.round(yMax * (1 - i / 4)).toLocaleString('en-US')));
+            }
+            const stepX = months.length > 1 ? iW / (months.length - 1) : 0;
+            const pts = months.map((m, i) => [padL + i * stepX, padT + iH - (m.revenue / yMax) * iH]);
+            const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+            const area = line + ` L${pts[pts.length - 1][0].toFixed(1)},${(padT + iH).toFixed(1)} L${pts[0][0].toFixed(1)},${(padT + iH).toFixed(1)} Z`;
+            const grad = mk('linearGradient', { id: 'coGrowthGrad', x1: 0, y1: 0, x2: 0, y2: 1 });
+            grad.appendChild(mk('stop', { offset: '0%', 'stop-color': '#1d6df2', 'stop-opacity': 0.25 }));
+            grad.appendChild(mk('stop', { offset: '100%', 'stop-color': '#1d6df2', 'stop-opacity': 0 }));
+            const defs = mk('defs', {}); defs.appendChild(grad); svg.appendChild(defs);
+            svg.appendChild(mk('path', { d: area, fill: 'url(#coGrowthGrad)' }));
+            svg.appendChild(mk('path', { d: line, fill: 'none', stroke: '#1d6df2', 'stroke-width': 2.5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+            // x labels (every other on small widths) + last-point dot
+            months.forEach((m, i) => {
+                if (months.length > 8 && i % 2 !== 0 && i !== months.length - 1) return;
+                svg.appendChild(mk('text', { x: pts[i][0], y: H - 8, 'text-anchor': 'middle', 'font-size': 10, fill: '#a0aec0', 'font-weight': 600 }, m.label));
+            });
+            const lastP = pts[pts.length - 1];
+            svg.appendChild(mk('circle', { cx: lastP[0], cy: lastP[1], r: 4, fill: '#1d6df2', stroke: '#fff', 'stroke-width': 2 }));
+
+            if (meta) {
+                const mom = rh.momPct;
+                meta.innerHTML = rh.hasData
+                    ? `This month ${money(rh.last)} · ${mom == null ? '—' : (mom >= 0 ? '<span style="color:#059669;">▲ ' + mom + '%' : '<span style="color:#c53030;">▼ ' + Math.abs(mom) + '%') + '</span> vs last month'}`
+                    : '';
+            }
+            if (note) note.textContent = rh.hasData
+                ? `${money(rh.total)} in sales over the last ${months.length} months.`
+                : 'No sales recorded yet — this line fills in month over month as payments come in.';
         }
 
         // ── Business financials + coverage ─────────────────────────────────
@@ -477,6 +550,12 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => showFin('company'));
+        // Keep the growth chart's viewBox matched to its width on resize.
+        let _growthRz;
+        window.addEventListener('resize', () => {
+            clearTimeout(_growthRz);
+            _growthRz = setTimeout(() => { if (_growthData) renderGrowthChart(); }, 160);
+        });
     </script>
 </body>
 </html>

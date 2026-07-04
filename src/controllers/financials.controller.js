@@ -342,6 +342,44 @@ exports.businessProjections = async (req, res) => {
     }
 };
 
+// GET /api/admin/financials/revenue-history?months=12
+// Actual sales month-over-month from the payments table (paid invoices), for
+// the company-growth chart. Missing months are filled with 0 so the line is
+// continuous — mostly empty today, fills in as real payments land.
+exports.revenueHistory = async (req, res) => {
+    try {
+        const months = Math.min(24, Math.max(3, parseInt(req.query.months, 10) || 12));
+        const { rows } = await pool.query(
+            `SELECT to_char(date_trunc('month', created_at), 'YYYY-MM') AS month,
+                    SUM(amount_cents)::bigint AS cents, COUNT(*)::int AS n
+               FROM payments
+              WHERE status = 'paid'
+                AND created_at >= date_trunc('month', NOW()) - (($1::int - 1) * INTERVAL '1 month')
+           GROUP BY 1`,
+            [months]
+        );
+        const map = {};
+        rows.forEach(r => { map[r.month] = { cents: Number(r.cents), n: r.n }; });
+        const now = new Date();
+        const out = [];
+        for (let i = months - 1; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const m = map[key] || { cents: 0, n: 0 };
+            out.push({ month: key, label: d.toLocaleDateString('en-US', { month: 'short' }),
+                       year: d.getFullYear(), revenue: Math.round(m.cents / 100), count: m.n });
+        }
+        const total = out.reduce((s, m) => s + m.revenue, 0);
+        const last = out[out.length - 1]?.revenue || 0;
+        const prev = out[out.length - 2]?.revenue || 0;
+        const momPct = prev > 0 ? Math.round((last - prev) / prev * 100) : null;
+        res.json({ months: out, total, last, prev, momPct, hasData: total > 0 });
+    } catch (err) {
+        console.error('[financials.revenueHistory]', err.message);
+        res.status(500).json({ error: 'Failed to build revenue history.' });
+    }
+};
+
 // GET /api/admin/financials/company — the whole company, agents + businesses.
 exports.companyProjections = async (req, res) => {
     try {

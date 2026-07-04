@@ -45,6 +45,7 @@ const financialsController = require('../controllers/financials.controller');
 router.get ('/financials/projections',            verifyToken, requireRole(['admin', 'super_admin']), financialsController.projections);
 router.get ('/financials/business-projections',   verifyToken, requireRole(['admin', 'super_admin']), financialsController.businessProjections);
 router.get ('/financials/company',                verifyToken, requireRole(['admin', 'super_admin']), financialsController.companyProjections);
+router.get ('/financials/revenue-history',        verifyToken, requireRole(['admin', 'super_admin']), financialsController.revenueHistory);
 router.get ('/financials/lake-seat-values',       verifyToken, requireRole(['admin', 'super_admin']), financialsController.lakeSeatValues);
 router.post('/financials/recompute-seat-values',  verifyToken, requireRole(['admin', 'super_admin']), financialsController.recomputeSeatValues);
 router.put ('/financials/lake/:id/founder-price', verifyToken, requireRole(['admin', 'super_admin']), financialsController.setFounderPrice);
