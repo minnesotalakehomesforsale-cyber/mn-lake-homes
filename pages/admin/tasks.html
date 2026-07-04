@@ -82,7 +82,7 @@
     .prio.low    { background: #f7fafc; color: #a0aec0; }
     .cat-chip { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; font-weight: 700; padding: 0.22rem 0.6rem; border-radius: 99px; }
     .cat-dot { width: 7px; height: 7px; border-radius: 50%; }
-    .task-delete { background: none; border: none; cursor: pointer; padding: 0.3rem; border-radius: 5px; color: #cbd5e0; line-height: 1; }
+    .task-delete { background: none; border: none; cursor: pointer; border-radius: 5px; color: #cbd5e0; line-height: 1; min-width: 40px; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; }
     .task-delete:hover { color: #fc8181; }
     .has-notes { color: #a0aec0; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 0.25rem; }
 
@@ -116,9 +116,21 @@
     .modal-foot { padding: 1rem 1.5rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; }
 
     @media (max-width: 720px) {
-        .task-item { grid-template-columns: 24px 1fr; }
-        .task-item .task-right { grid-column: 2; justify-content: flex-start; }
+        .task-item { grid-template-columns: 24px 1fr auto; }
         .modal-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+        /* Board stacks vertically on phones instead of scrolling sideways */
+        .board { grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: 1fr; padding: 1rem; }
+        /* Toolbar: search takes its own row, controls share the next */
+        .search-box { flex-basis: 100%; max-width: none; }
+        .seg, .sort-select { flex: 1 1 auto; }
+        .new-btn { flex: 1 1 100%; justify-content: center; }
+        .toolbar .spacer { display: none; }
+        /* Prevent iOS zoom-on-focus (needs ≥16px inputs) */
+        .qa-input, .qa-field, .search-box input,
+        .modal-body input, .modal-body textarea, .modal-body select { font-size: 16px; }
+        .modal-body { padding: 1rem; }
     }
 </style>
     <script src="../../components/admin-guard.js"></script>
