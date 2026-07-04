@@ -807,6 +807,8 @@ const _LF_CFG = {
             { q: "What's the property address?",             hint: 'Full street address so we can pull accurate comps.',                        field: { id: 'address',  type: 'text',    ph: 'e.g. 123 Shoreline Dr, Wayzata, MN' } },
             { q: 'Who are we speaking with?',                hint: 'Just your name to get started.',                                            field: { id: 'name',     type: 'text',    ph: 'Your full name',          ac: 'name' } },
             { q: 'When are you looking to sell?',                                                                                                 field: { id: 'timeline', type: 'select',  ph: 'Select a timeline…',      opts: ['As soon as possible','Within 3 months','3–6 months out','Just exploring options'] } },
+            { q: 'Is the property waterfront?',              hint: 'Waterfront homes are matched with a specialist who prices shoreline correctly.',              field: { id: 'waterfront', type: 'select', ph: 'Select one…',           opts: ['Yes — on the water','No — water access or nearby'] } },
+            { q: 'About how many feet of shoreline?',        hint: 'A rough estimate is fine — you can skip this.',                              field: { id: 'waterfront_feet', type: 'text', ph: 'e.g. 100 ft', optional: true }, showIf: d => /^yes/i.test(d.waterfront || '') },
             { q: d => `Great, ${d.first}. How can we reach you?`,            hint: "We'll send your free market analysis within one business day.",                                      field: { id: 'contact', type: 'contact' } }
         ]
     },
@@ -842,6 +844,8 @@ const _LF_CFG = {
             { q: d => `${d.first}, what's the property address?`,           hint: 'Full address or the lake + nearest city works too.',          field: { id: 'address',  type: 'text',    ph: 'e.g. 123 Shoreline Dr, Wayzata, MN' } },
             { q: 'What type of property is it?',                                                                                                  field: { id: 'property_type', type: 'select', ph: 'Select one…',       opts: ['Single-family lake home','Cabin / cottage','Condo or townhouse','Multi-family','Vacant lakefront land','Other'] } },
             { q: 'What condition is the home in?',          hint: 'A ballpark is fine — we\'ll confirm during the walkthrough.',                 field: { id: 'condition', type: 'select', ph: 'Select one…',            opts: ['Move-in ready','Light cosmetic updates needed','Major repairs needed','Tear-down / as-is'] } },
+            { q: 'Is it waterfront?',                        hint: 'Shoreline affects the offer, so this helps us dial it in.',                  field: { id: 'waterfront', type: 'select', ph: 'Select one…',           opts: ['Yes — on the water','No — water access or nearby'] } },
+            { q: 'About how many feet of shoreline?',        hint: 'A rough estimate is fine — you can skip this.',                              field: { id: 'waterfront_feet', type: 'text', ph: 'e.g. 100 ft', optional: true }, showIf: d => /^yes/i.test(d.waterfront || '') },
             { q: 'When would you like to close?',                                                                                                 field: { id: 'timeline', type: 'select',  ph: 'Select a timeline…',      opts: ['As soon as possible (7–14 days)','2–4 weeks','1–2 months','Just exploring options'] } },
             { q: d => `Last step, ${d.first}. How can we reach you?`,        hint: "Your cash offer will arrive within 48 hours.",                                                       field: { id: 'contact', type: 'contact' } }
         ]
@@ -1232,8 +1236,17 @@ window.closeForm = function() {
     _lfUnlockScroll();
 };
 
+// Conditional steps: a step with showIf(data)===false is skipped in both
+// directions (e.g. shoreline feet only shows when waterfront === Yes).
+function _lfVisible(i, steps) {
+    const s = steps[i];
+    return !s || !s.showIf || s.showIf(_lfs.data);
+}
 window._lfBack = function() {
-    if (_lfs.step > 0) { _lfs.step--; _lfSlide(); }
+    const steps = _lfSteps();
+    let pi = _lfs.step - 1;
+    while (pi >= 0 && !_lfVisible(pi, steps)) pi--;
+    if (pi >= 0) { _lfs.step = pi; _lfSlide(); }
 };
 
 window._lfNext = function() {
@@ -1254,7 +1267,7 @@ window._lfNext = function() {
         if (!_lfs.data[f.id]) return;
     } else {
         const val = (document.getElementById('lf-' + f.id)?.value || '').trim();
-        if (!val) { err.textContent = 'This field is required.'; err.style.display = 'block'; return; }
+        if (!val && !f.optional) { err.textContent = 'This field is required.'; err.style.display = 'block'; return; }
         _lfs.data[f.id] = val;
         // Derive the first name from the combined name field so the rest of
         // the conversational flow can keep personalizing (${d.first}).
@@ -1263,8 +1276,11 @@ window._lfNext = function() {
     // GA4 funnel: step completed
     _lfTrack('lead_form_step', { step_index: _lfs.step + 1, step_field: f.id });
 
-    if (_lfs.step === steps.length - 1) { _lfDoSubmit(); return; }
-    _lfs.step++;
+    // Advance to the next VISIBLE step (skips conditional steps); submit if none.
+    let ni = _lfs.step + 1;
+    while (ni < steps.length && !_lfVisible(ni, steps)) ni++;
+    if (ni >= steps.length) { _lfDoSubmit(); return; }
+    _lfs.step = ni;
     _lfSlide();
 };
 
@@ -1313,6 +1329,8 @@ async function _lfDoSubmit() {
                 property_city:     d.property_city   || null,
                 property_state:    d.property_state  || null,
                 property_zip:      d.property_zip    || null,
+                is_waterfront:     d.waterfront ? /^yes/i.test(d.waterfront) : null,
+                waterfront_feet:   (d.waterfront_feet || '').replace(/[^0-9]/g,'') || null,
             })
         });
         if (!res.ok) { const r = await res.json().catch(()=>({})); throw new Error(r.error || 'Submission failed.'); }

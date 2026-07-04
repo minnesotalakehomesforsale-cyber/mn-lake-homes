@@ -12,6 +12,7 @@ const createLead = async (req, res) => {
         name, email, phone, notes, source, agent_id, listing_id,
         property_address, property_street, property_city,
         property_state, property_zip, property_place_id, lake_slug,
+        is_waterfront, waterfront_feet,
     } = req.body;
 
     name = (name || '').trim();
@@ -32,6 +33,10 @@ const createLead = async (req, res) => {
     let   propState   = str(property_state, 50);
     let   propZip     = str(property_zip, 20);
     const propPlaceId = str(property_place_id, 255);
+    // Waterfront flag + shoreline estimate (used for founder/waterfront routing).
+    const isWaterfront = (is_waterfront === true || is_waterfront === false) ? is_waterfront : null;
+    let   wfFeetNum    = parseInt(waterfront_feet, 10);
+    if (!Number.isFinite(wfFeetNum) || wfFeetNum < 0 || wfFeetNum > 100000) wfFeetNum = null;
 
     try {
         // Coerce agent string if dummy provided
@@ -90,9 +95,9 @@ const createLead = async (req, res) => {
                 lead_type, lead_source, agent_id, lead_status,
                 property_address, property_street, property_city,
                 property_state, property_zip, property_place_id,
-                user_id, listing_id
+                user_id, listing_id, is_waterfront, waterfront_feet
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', $9, $10, $11, $12, $13, $14, $15, $16)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
             RETURNING id
         `;
         // We extrapolate first name logically
@@ -113,7 +118,7 @@ const createLead = async (req, res) => {
             name, firstName, email, phone, notes,
             enumType, source, finalAgentId,
             propAddress, propStreet, propCity, propState, propZip, propPlaceId,
-            submittedUserId, listingId,
+            submittedUserId, listingId, isWaterfront, wfFeetNum,
         ]);
         const newLeadId = leadRows[0]?.id;
 

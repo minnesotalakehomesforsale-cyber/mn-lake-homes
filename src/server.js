@@ -2286,6 +2286,8 @@ async function ensureTables() {
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS property_state VARCHAR(50);
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS property_zip VARCHAR(20);
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS property_place_id VARCHAR(255);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS is_waterfront BOOLEAN;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS waterfront_feet INTEGER;
         `);
 
         // Stripe columns on agents table
