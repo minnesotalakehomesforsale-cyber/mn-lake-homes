@@ -13,18 +13,23 @@ const getTasks = async (req, res) => {
     // "smart" = pending first, overdue → today → upcoming (by due_date ASC, nulls last), then created DESC
     // "due"   = by due_date ASC (nulls last), then created DESC
     // "created" = by created_at DESC
+    // priority rank so High floats up: high=0, normal=1, low=2
+    const PRIO = `CASE priority WHEN 'high' THEN 0 WHEN 'normal' THEN 1 ELSE 2 END`;
     let orderClause;
     if (sort === 'due') {
         orderClause = `is_completed ASC, due_date ASC NULLS LAST, created_at DESC`;
     } else if (sort === 'created') {
         orderClause = `is_completed ASC, created_at DESC`;
+    } else if (sort === 'priority') {
+        orderClause = `is_completed ASC, ${PRIO} ASC, due_date ASC NULLS LAST, created_at DESC`;
     } else {
-        orderClause = `is_completed ASC, (due_date IS NULL) ASC, due_date ASC, created_at DESC`;
+        orderClause = `is_completed ASC, ${PRIO} ASC, (due_date IS NULL) ASC, due_date ASC, created_at DESC`;
     }
 
     try {
         const { rows } = await pool.query(
-            `SELECT id, note, details, due_date, is_completed, completed_at, created_at
+            `SELECT id, note, details, due_date, is_completed, completed_at, created_at,
+                    COALESCE(priority,'normal') AS priority, category
              FROM admin_tasks
              ORDER BY ${orderClause}`
         );
@@ -63,13 +68,17 @@ const getTaskCounts = async (req, res) => {
     }
 };
 
+const normPriority = v => (['low', 'normal', 'high'].includes(v) ? v : 'normal');
+const normCategory = v => (v && String(v).trim() ? String(v).trim().slice(0, 40) : null);
+
 const createTask = async (req, res) => {
-    const { note, details, due_date } = req.body;
+    const { note, details, due_date, priority, category } = req.body;
     if (!note || !note.trim()) return res.status(400).json({ error: 'Note is required.' });
     try {
         const { rows } = await pool.query(
-            `INSERT INTO admin_tasks (note, details, due_date) VALUES ($1, $2, $3) RETURNING *`,
-            [note.trim(), details?.trim() || null, parseDueDate(due_date)]
+            `INSERT INTO admin_tasks (note, details, due_date, priority, category)
+             VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+            [note.trim(), details?.trim() || null, parseDueDate(due_date), normPriority(priority), normCategory(category)]
         );
         res.status(201).json(rows[0]);
     } catch (err) {
@@ -81,8 +90,8 @@ const createTask = async (req, res) => {
 // PATCH /:id — unified update: note, details, due_date, is_completed
 // If no body keys provided, falls back to toggling is_completed (backward compatible).
 const updateTask = async (req, res) => {
-    const { note, details, due_date, is_completed } = req.body || {};
-    const hasAny = [note, details, due_date, is_completed].some(v => v !== undefined);
+    const { note, details, due_date, is_completed, priority, category } = req.body || {};
+    const hasAny = [note, details, due_date, is_completed, priority, category].some(v => v !== undefined);
 
     try {
         if (!hasAny) {
@@ -104,6 +113,8 @@ const updateTask = async (req, res) => {
                  details      = CASE WHEN $2::text IS NOT NULL THEN NULLIF($2, '__null__') ELSE details END,
                  due_date     = CASE WHEN $3::text IS NOT NULL THEN NULLIF($3, '__null__')::timestamptz ELSE due_date END,
                  is_completed = COALESCE($4, is_completed),
+                 priority     = COALESCE($6, priority),
+                 category     = CASE WHEN $7::text IS NOT NULL THEN NULLIF($7, '__null__') ELSE category END,
                  completed_at = CASE
                                    WHEN $4 IS TRUE  AND is_completed = false THEN NOW()
                                    WHEN $4 IS FALSE                          THEN NULL
@@ -117,6 +128,8 @@ const updateTask = async (req, res) => {
                 due_date !== undefined ? (due_date === null || due_date === '' ? '__null__' : parseDueDate(due_date)) : null,
                 typeof is_completed === 'boolean' ? is_completed : null,
                 req.params.id,
+                priority !== undefined ? normPriority(priority) : null,
+                category !== undefined ? (category === null || category === '' ? '__null__' : normCategory(category)) : null,
             ]
         );
         if (!rows.length) return res.status(404).json({ error: 'Task not found.' });

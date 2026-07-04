@@ -2582,6 +2582,9 @@ async function ensureTables() {
             ALTER TABLE admin_tasks ADD COLUMN IF NOT EXISTS details TEXT;
             ALTER TABLE admin_tasks ADD COLUMN IF NOT EXISTS due_date TIMESTAMPTZ;
             CREATE INDEX IF NOT EXISTS idx_admin_tasks_due_date ON admin_tasks(due_date) WHERE is_completed = false;
+            -- Richer task workspace: priority + category + sort position.
+            ALTER TABLE admin_tasks ADD COLUMN IF NOT EXISTS priority VARCHAR(10) NOT NULL DEFAULT 'normal';
+            ALTER TABLE admin_tasks ADD COLUMN IF NOT EXISTS category VARCHAR(40);
         `);
 
         // Activity log — site-wide audit trail of everything that happens.
