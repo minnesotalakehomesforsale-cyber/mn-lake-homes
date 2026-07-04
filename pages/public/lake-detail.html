@@ -33,6 +33,7 @@
     <link rel="stylesheet" href="../../styles/style.css">
 <link rel="preload" as="image" href="{{LAKE_HERO_IMAGE}}">
     <script src="../../components/components.js" defer></script>
+    <script src="../../components/card-carousel.js"></script>
 
     <script type="application/ld+json">
     {
@@ -481,12 +482,15 @@
                 .then(list => {
                     if (!Array.isArray(list) || !list.length) return; // section stays hidden
                     grid.innerHTML = list.map(l => {
-                        const img = l.featured_image_url || '/assets/images/agent-placeholder.svg';
+                        let gal = l.gallery; if (typeof gal === 'string') { try { gal = JSON.parse(gal); } catch (_) { gal = []; } }
+                        const imgs = [l.featured_image_url, ...(Array.isArray(gal) ? gal : [])].filter(Boolean);
+                        const carousel = window.cardCarouselHTML ? cardCarouselHTML(imgs, { alt: l.title, width: 640 })
+                            : `<img src="${esc(l.featured_image_url || '/assets/images/agent-placeholder.svg')}" alt="${esc(l.title)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;">`;
                         const specs = [l.beds ? `${l.beds} bd` : '', l.baths ? `${l.baths} ba` : '', l.sqft ? `${Number(l.sqft).toLocaleString('en-US')} sqft` : ''].filter(Boolean).join(' · ');
                         const addr = [l.address, l.city].filter(Boolean).join(', ');
                         return `
                             <a class="ld-lst-card" href="/listings/${encodeURIComponent(l.slug)}">
-                                <div class="ld-lst-img"><img src="${esc(img)}" alt="${esc(l.title)}" loading="lazy"></div>
+                                <div class="ld-lst-img">${carousel}</div>
                                 <div class="ld-lst-body">
                                     <div class="ld-lst-price">${esc(money(l.price))}</div>
                                     ${specs ? `<div class="ld-lst-specs">${esc(specs)}</div>` : ''}

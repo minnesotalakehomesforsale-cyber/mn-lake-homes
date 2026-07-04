@@ -577,7 +577,7 @@ exports.listSaved = async (req, res) => {
         const uid = req.user?.userId;
         if (!uid) return res.status(401).json({ error: 'Please sign in.' });
         const { rows } = await pool.query(
-            `SELECT l.id, l.slug, l.title, l.description, l.featured_image_url, l.external_url,
+            `SELECT l.id, l.slug, l.title, l.description, l.featured_image_url, l.gallery, l.external_url,
                     l.price, l.city, l.state, l.status, l.beds, l.baths, l.sqft,
                     l.lot_acres, l.year_built, l.waterfront, l.property_type,
                     s.created_at AS saved_at,
@@ -633,7 +633,7 @@ exports.mapListings = async (req, res) => {
     if (!LISTINGS_PUBLIC) return res.json([]);
     try {
         const { rows } = await pool.query(
-            `SELECT l.id, l.slug, l.title, l.price, l.original_price, l.city, l.featured_image_url,
+            `SELECT l.id, l.slug, l.title, l.price, l.original_price, l.city, l.featured_image_url, l.gallery,
                     l.latitude, l.longitude, l.beds, l.baths, l.property_type, l.waterfront,
                     l.created_at, l.open_house_at,
                     a.display_name AS agent_name,
@@ -654,7 +654,7 @@ exports.soldRecent = async (req, res) => {
     if (!LISTINGS_PUBLIC) return res.json([]);
     try {
         const { rows } = await pool.query(
-            `SELECT l.slug, l.title, l.price, l.city, l.featured_image_url, l.sold_at,
+            `SELECT l.slug, l.title, l.price, l.city, l.featured_image_url, l.gallery, l.sold_at,
                     a.display_name AS agent_name
                FROM listings l
           LEFT JOIN agents a ON a.id = l.agent_id
