@@ -4,6 +4,34 @@ const cloudinary = require('cloudinary').v2;
 const hubspot = require('../services/hubspot');
 const { logActivity } = require('../services/activity-log');
 
+// ── Response-time badge (derived from lead SLA data) ────────────────────────
+// Median time from lead assignment → the agent working it, over the last 120
+// days. Surfaced on public profiles/cards as social proof + gentle pressure.
+const RESP_SQL = `
+    (SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (l.agent_ack_at - l.assigned_at)))
+       FROM leads l
+      WHERE l.agent_id = a.id AND l.agent_ack_at IS NOT NULL AND l.assigned_at IS NOT NULL
+        AND l.agent_ack_at >= l.assigned_at AND l.assigned_at > NOW() - INTERVAL '120 days') AS resp_seconds,
+    (SELECT COUNT(*) FROM leads l
+      WHERE l.agent_id = a.id AND l.agent_ack_at IS NOT NULL AND l.assigned_at IS NOT NULL
+        AND l.assigned_at > NOW() - INTERVAL '120 days')::int AS resp_sample`;
+
+function withResponseBadge(row) {
+    const sample = Number(row.resp_sample) || 0;
+    const s = row.resp_seconds == null ? null : Number(row.resp_seconds);
+    delete row.resp_seconds; delete row.resp_sample;
+    if (sample < 3 || s == null) { row.response_label = null; row.response_fast = false; return row; }
+    let label;
+    if (s <= 3600) label = 'Responds within an hour';
+    else if (s <= 4 * 3600) label = `Responds in ~${Math.round(s / 3600)} hours`;
+    else if (s <= 12 * 3600) label = 'Responds within hours';
+    else if (s <= 36 * 3600) label = 'Responds same day';
+    else label = 'Responds within a day';
+    row.response_label = label;
+    row.response_fast = s <= 4 * 3600;
+    return row;
+}
+
 // ─── Cloudinary-backed agent profile photo upload ────────────────────────────
 // Files persist across deploys, served from Cloudinary CDN, auto-optimized.
 cloudinary.config({
@@ -105,6 +133,7 @@ const getPublicAgents = async (req, res) => {
                    a.phone_public, a.email_public, a.profile_photo_url,
                    m.display_badge_label as membership_badge,
                    m.code as membership_code, m.sort_priority,
+                   ${RESP_SQL}
                    COALESCE((
                        SELECT json_agg(json_build_object('slug', t.slug, 'name', t.name, 'state', t.state) ORDER BY t.name)
                        FROM user_tags ut
@@ -119,7 +148,7 @@ const getPublicAgents = async (req, res) => {
             ORDER BY m.sort_priority ASC NULLS LAST, a.is_featured DESC, a.display_name ASC
         `;
         const { rows } = await pool.query(query);
-        res.json(rows);
+        res.json(rows.map(withResponseBadge));
     } catch (err) {
         console.error('[getPublicAgents]', err.message);
         res.status(500).json({ error: 'Failed to load agent directory.' });
@@ -138,14 +167,15 @@ const getAgentBySlug = async (req, res) => {
                    a.service_areas, a.specialties, a.is_featured, a.license_number, a.bio,
                    a.years_experience, a.phone_public, a.email_public, a.website_url,
                    a.facebook_url, a.instagram_url, a.linkedin_url, a.profile_photo_url, a.faq,
-                   m.display_badge_label as membership_badge, m.name as membership_name
+                   m.display_badge_label as membership_badge, m.name as membership_name,
+                   ${RESP_SQL}
             FROM agents a
             JOIN memberships m ON a.membership_id = m.id
             WHERE a.slug = $1 AND a.profile_status = 'published' AND a.is_published = true
         `;
         const { rows } = await pool.query(query, [slug]);
         if (rows.length === 0) return res.status(404).json({ error: 'Agent not found.' });
-        res.json(rows[0]);
+        res.json(withResponseBadge(rows[0]));
     } catch (err) {
         console.error('[getAgentBySlug]', err.message);
         res.status(500).json({ error: 'Server error.' });
