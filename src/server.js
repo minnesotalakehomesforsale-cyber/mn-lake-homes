@@ -2338,7 +2338,37 @@ async function ensureTables() {
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS property_place_id VARCHAR(255);
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS is_waterfront BOOLEAN;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS waterfront_feet INTEGER;
+            -- Lead quality score (0-100) + tier (hot/warm/cold) so agents work
+            -- the best leads first. Computed at creation by services/lead-score.js.
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS lead_score INTEGER;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS lead_tier VARCHAR(10);
         `);
+
+        // One-time backfill: score existing leads with a SQL approximation of
+        // services/lead-score.js so the agent inbox tiers everything, not just
+        // new leads. Idempotent — only touches rows that were never scored.
+        await pool.query(`
+            UPDATE leads SET
+              lead_score = s.sc,
+              lead_tier  = CASE WHEN s.sc >= 55 THEN 'hot' WHEN s.sc >= 30 THEN 'warm' ELSE 'cold' END
+            FROM (
+              SELECT id, LEAST(100, GREATEST(0,
+                  (CASE WHEN length(regexp_replace(COALESCE(phone,''),'[^0-9]','','g')) >= 10 THEN 25 ELSE 0 END)
+                + (CASE WHEN COALESCE(email,'') <> '' THEN 8 ELSE 0 END)
+                + (CASE WHEN lead_type IN ('seller','cash_offer') THEN 25
+                        WHEN lead_type = 'buyer' THEN 12
+                        WHEN lead_type = 'property_question' THEN 10 ELSE 0 END)
+                + (CASE WHEN is_waterfront IS TRUE THEN 20 ELSE 0 END)
+                + (CASE WHEN COALESCE(waterfront_feet,0) > 0 THEN 8 ELSE 0 END)
+                + (CASE WHEN length(COALESCE(property_address,'')) > 6 THEN 15 ELSE 0 END)
+                + (CASE WHEN COALESCE(message,'') ~* '(asap|immediately|urgent|this (week|month)|ready to (buy|sell|move)|need to sell)' THEN 15 ELSE 0 END)
+                + (CASE WHEN COALESCE(message,'') ~* '(pre-?approved|cash|financing|budget|\\$\\s?[0-9])' THEN 10 ELSE 0 END)
+                + (CASE WHEN length(COALESCE(message,'')) > 120 THEN 5 ELSE 0 END)
+              )) AS sc
+              FROM leads WHERE lead_tier IS NULL
+            ) s
+            WHERE leads.id = s.id
+        `).catch(e => console.warn('[lead-score backfill] skipped:', e.message));
 
         // Cache for the AI marketing-insights tabs (agent + business). These run
         // a slow OpenAI call, so we persist the whole payload and only regenerate
@@ -2370,6 +2400,8 @@ async function ensureTables() {
             -- Agent-authored FAQ answers, keyed by the fixed question keys in
             -- services/agent-faq.js. Only answered questions render publicly.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS faq JSONB NOT NULL DEFAULT '{}'::jsonb;
+            -- Instant SMS lead alerts (Twilio). Opt-out per agent; on by default.
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS sms_alerts BOOLEAN NOT NULL DEFAULT TRUE;
         `);
 
         // HubSpot mirror id — populated by src/services/hubspot.js after a

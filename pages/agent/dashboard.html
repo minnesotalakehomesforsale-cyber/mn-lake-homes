@@ -64,6 +64,11 @@
         .lead-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.07); }
         .lead-badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
         .lb-buyer { background: #f0fff4; color: #2f855a; }
+        /* Lead-quality tier pills (hot/warm) — cold shows nothing to reduce noise */
+        .tier-pill { display:inline-block; padding:0.18rem 0.5rem; border-radius:999px; font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; margin-right:0.4rem; }
+        .tier-hot  { background:#fff1f0; color:#c53030; border:1px solid #fbd5d0; }
+        .tier-warm { background:#fffaf0; color:#b7791f; border:1px solid #f6e3bd; }
+        .wf-chip   { display:inline-block; padding:0.18rem 0.5rem; border-radius:999px; font-size:0.66rem; font-weight:800; background:#eaf6f0; color:#155e41; border:1px solid #cfe8db; margin-right:0.4rem; }
         .lb-seller { background: #faf5ff; color: #6b46c1; }
         .lb-agent_inquiry { background: #fff5f5; color: #c53030; }
         .lb-general_contact,.lb-property_question,.lb-market_report { background: #edf2f7; color: #4a5568; }
@@ -1695,7 +1700,24 @@
             const filtered = s === 'active'
                 ? allLeads.filter(l => l.status !== 'closed' && l.status !== 'archived')
                 : allLeads.filter(l => l.status === s);
+            // Work the best leads first: hot → warm → cold, then newest.
+            const rank = { hot: 0, warm: 1, cold: 2 };
+            filtered.sort((a, b) => {
+                const ra = rank[a.lead_tier] ?? 3, rb = rank[b.lead_tier] ?? 3;
+                if (ra !== rb) return ra - rb;
+                return new Date(b.created_at) - new Date(a.created_at);
+            });
             renderLeads(filtered);
+        }
+
+        // Lead-quality tier pill (🔥 Hot / Warm). Cold shows nothing to keep the
+        // list calm. A waterfront chip rides alongside since it's a value signal.
+        function tierBadge(l) {
+            let out = '';
+            if (l.lead_tier === 'hot')  out += `<span class="tier-pill tier-hot" title="High-quality lead (score ${l.lead_score ?? ''})">🔥 Hot</span>`;
+            else if (l.lead_tier === 'warm') out += `<span class="tier-pill tier-warm" title="Warm lead (score ${l.lead_score ?? ''})">Warm</span>`;
+            if (l.is_waterfront) out += `<span class="wf-chip" title="${l.waterfront_feet ? l.waterfront_feet + ' ft of shoreline' : 'Waterfront'}">🌊 Waterfront${l.waterfront_feet ? ' · ' + l.waterfront_feet + 'ft' : ''}</span>`;
+            return out;
         }
 
         // Response-SLA badge: a countdown until the lead auto-reassigns, or an
@@ -1730,6 +1752,7 @@
                     <div class="lead-tr" onclick="openLeadPanel('${l.id}')">
                         <div>
                             <div class="lt-name">${escA(l.name || 'Lead')}</div>
+                            <div style="margin:0.2rem 0;">${tierBadge(l)}</div>
                             <div class="lt-sub">${escA(sub)}</div>
                             ${slaBadge(l)}
                         </div>
@@ -1750,7 +1773,7 @@
             document.getElementById('lp-name').textContent = l.name || 'Lead';
             const typeLabel = LEAD_TYPE_LABEL_A[l.type] || (l.type || 'General').replace(/_/g,' ');
             document.getElementById('lp-badges').innerHTML =
-                `<span class="lead-badge lb-${l.type}">${escA(typeLabel)}</span>
+                `${tierBadge(l)}<span class="lead-badge lb-${l.type}">${escA(typeLabel)}</span>
                  ${l.listing_title ? `<a href="/listings/${escA(l.listing_slug)}" target="_blank" style="font-size:0.72rem;color:#1d6df2;font-weight:800;align-self:center;text-decoration:none;">🏠 Showing: ${escA(l.listing_title)} ↗</a>` : ''}
                  ${(!l.listing_title && l.source_page_title) ? `<span style="font-size:0.72rem;color:#a0aec0;font-weight:700;align-self:center;">via ${escA(l.source_page_title)}</span>` : ''}`;
 

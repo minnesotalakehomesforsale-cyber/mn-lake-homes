@@ -6,6 +6,8 @@ const { geocodeAddress } = require('../services/geocoder');
 const { matchTagsAndUsers } = require('../services/tag-matcher');
 const { routeLead } = require('../services/lead-router');
 const { getLeadMagnetForType } = require('../services/lead-magnet');
+const sms = require('../services/sms');
+const { scoreLead } = require('../services/lead-score');
 
 const createLead = async (req, res) => {
     let {
@@ -95,9 +97,10 @@ const createLead = async (req, res) => {
                 lead_type, lead_source, agent_id, lead_status,
                 property_address, property_street, property_city,
                 property_state, property_zip, property_place_id,
-                user_id, listing_id, is_waterfront, waterfront_feet
+                user_id, listing_id, is_waterfront, waterfront_feet,
+                lead_score, lead_tier
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
             RETURNING id
         `;
         // We extrapolate first name logically
@@ -114,11 +117,17 @@ const createLead = async (req, res) => {
         };
         const enumType = enumMap[source] || 'general_contact';
 
+        // Quality-score the lead once; stored on the row and reused for the
+        // 🔥 hot flag in agent SMS/email alerts.
+        const leadScore = scoreLead({ enumType, email, phone, notes, isWaterfront, wfFeetNum,
+            address: propAddress || [propStreet, propCity].filter(Boolean).join(', ') });
+
         const { rows: leadRows } = await pool.query(query, [
             name, firstName, email, phone, notes,
             enumType, source, finalAgentId,
             propAddress, propStreet, propCity, propState, propZip, propPlaceId,
             submittedUserId, listingId, isWaterfront, wfFeetNum,
+            leadScore.score, leadScore.tier,
         ]);
         const newLeadId = leadRows[0]?.id;
 
@@ -234,6 +243,12 @@ const createLead = async (req, res) => {
                             matchedAreas: [listing?.title].filter(Boolean),
                         });
                     }
+                    // Instant SMS to the posting agent (no-op until Twilio set).
+                    sms.notifyAgentNewLead({
+                        userId: ag?.user_id, agentId: finalAgentId,
+                        lead: { name, email, phone, type: enumType, hot: leadScore.tier === 'hot',
+                                address: listing?.title || propAddress || [propStreet, propCity].filter(Boolean).join(', ') || null },
+                    });
                     logActivity({
                         event_type: 'lead.route_assigned', event_scope: 'lead',
                         actor: { type: 'system', label: 'lead-router' },
@@ -348,6 +363,14 @@ const createLead = async (req, res) => {
                         },
                         distanceMiles: pick.distanceMiles,
                         matchedAreas: [pick.lakeName || pick.tagName].filter(Boolean),
+                    });
+
+                    // Instant SMS to the assigned agent (speed-to-lead). No-op
+                    // until Twilio is configured; flags 🔥 hot leads.
+                    sms.notifyAgentNewLead({
+                        userId: pick.userId, agentId: pick.agentId,
+                        lead: { name, email, phone, type: enumType, hot: leadScore.tier === 'hot',
+                                address: geo?.formattedAddress || addressForRouting || pick.lakeName || null },
                     });
 
                     logActivity({

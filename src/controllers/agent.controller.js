@@ -428,7 +428,9 @@ const getMyLeads = async (req, res) => {
                    l.source_page_title, l.created_at,
                    l.listing_id, li.title AS listing_title, li.slug AS listing_slug,
                    l.assigned_at, l.agent_ack_at, l.sla_reassign_count,
-                   l.outcome, l.outcome_price, l.outcome_note
+                   l.outcome, l.outcome_price, l.outcome_note,
+                   l.lead_score, l.lead_tier, l.is_waterfront, l.waterfront_feet,
+                   l.property_address
             FROM leads l
             JOIN agents a ON l.agent_id = a.id
             JOIN users u ON a.user_id = u.id
