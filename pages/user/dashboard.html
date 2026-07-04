@@ -437,6 +437,35 @@
     <script src="../../components/components.js" defer></script>
     <script src="../../components/card-carousel.js"></script>
     <script>
+        // ── Admin impersonation (per-tab) ────────────────────────────────
+        // Opened with ?__imp=<token>: authenticate as that user via a per-tab
+        // Bearer header so the admin's own cookie session stays untouched.
+        (function () {
+            const params = new URLSearchParams(location.search);
+            const incoming = params.get('__imp');
+            if (incoming) {
+                sessionStorage.setItem('imp_token', incoming);
+                params.delete('__imp');
+                const qs = params.toString();
+                history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''));
+            }
+            const impToken = sessionStorage.getItem('imp_token');
+            if (impToken) {
+                window.__IMPERSONATING__ = true;
+                const _fetch = window.fetch;
+                window.fetch = function (input, init) {
+                    init = init || {};
+                    const url = typeof input === 'string' ? input : (input && input.url) || '';
+                    if (url.startsWith('/api/') || url.startsWith(location.origin + '/api/')) {
+                        const headers = new Headers(init.headers || (typeof input !== 'string' && input.headers) || {});
+                        headers.set('Authorization', 'Bearer ' + impToken);
+                        init.headers = headers;
+                    }
+                    return _fetch.call(this, input, init);
+                };
+            }
+        })();
+
         // ── Auth gate: must be signed in to view this page ─────────────
         (async function authGate() {
             try {

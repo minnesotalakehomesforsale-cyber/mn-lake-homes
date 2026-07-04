@@ -374,12 +374,6 @@
                         <p class="roi-foot" id="roi-foot"></p>
                     </div>
 
-                    <!-- Monthly leaderboard -->
-                    <div id="dash-lb" class="dash-lb" style="display:none;">
-                        <div class="lb-head"><h3>This month's leaderboard</h3><span id="lb-myrank"></span></div>
-                        <div id="lb-rows"></div>
-                    </div>
-
                     <div class="dash-links">
                         <a id="dash-link-public" class="dash-card" href="#" target="_blank" rel="noopener" style="--ac:#d97706;">
                             <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></span>
@@ -408,11 +402,11 @@
                             <span class="t">Account & membership</span>
                             <span class="d" id="dash-acct-desc">Your tier, billing & login</span>
                         </button>
-                        <a class="dash-card" href="/pages/public/resources.html" style="--ac:#dc2626;">
+                        <button class="dash-card" onclick="openGuides()" style="--ac:#dc2626;">
                             <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg></span>
-                            <span class="t">Guides for agents</span>
-                            <span class="d">Lead-conversion tips, listing how-tos, and seasonal updates.</span>
-                        </a>
+                            <span class="t">Guides &amp; downloads</span>
+                            <span class="d">Open the library and download guides, checklists, and templates.</span>
+                        </button>
                     </div>
 
                     <h3 class="dash-section-h">Articles you may like</h3>
@@ -747,6 +741,18 @@
     </div>
 
     <!-- Property add/edit modal -->
+    <!-- Guides & downloads modal (simple: open, then download) -->
+    <div id="guides-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9000;align-items:center;justify-content:center;padding:1.5rem;">
+      <div style="background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;padding:1.75rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">
+          <h3 style="font-size:1.25rem;font-weight:800;margin:0;">Guides &amp; downloads</h3>
+          <button onclick="closeGuides()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#718096;">&times;</button>
+        </div>
+        <p style="color:#718096;font-size:0.9rem;margin:0 0 1rem;">Grab a guide or checklist — opens in a new tab to view or download.</p>
+        <div id="guides-list"><div style="color:#a0aec0;padding:1.5rem 0;text-align:center;">Loading…</div></div>
+      </div>
+    </div>
+
     <div id="prop-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9000;align-items:center;justify-content:center;padding:1.5rem;">
       <div style="background:#fff;border-radius:14px;max-width:640px;width:100%;max-height:90vh;overflow-y:auto;padding:1.75rem;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
@@ -1175,7 +1181,6 @@
             hydrateDashboardMessages();
             loadAgentArticles();
             loadRoi();
-            loadLeaderboard();
         });
 
         // ── Messages (read-only, one-way from the MNLH team) ──────────────────────
@@ -1417,24 +1422,30 @@
             } catch (_) {}
         }
 
-        // Monthly leaderboard panel.
-        async function loadLeaderboard() {
-            try {
-                const r = await fetch('/api/agents/me/leaderboard', { credentials: 'include' });
-                if (!r.ok) return;
-                const d = await r.json();
-                if (!d.top || !d.top.length) return;
-                const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-                document.getElementById('lb-myrank').textContent = d.me ? `You're #${d.me.rank} of ${d.total}` : '';
-                document.getElementById('lb-rows').innerHTML = d.top.map(a => `
-                    <div class="lb-row ${a.is_me ? 'me' : ''} ${a.rank === 1 ? 'top1' : ''}">
-                        <div class="lb-rank">${a.rank === 1 ? '🏅' : a.rank}</div>
-                        <div class="lb-name">${esc(a.name)}${a.is_me ? ' (you)' : ''}</div>
-                        <div class="lb-stat">${a.wins} won · ${a.worked} worked</div>
-                    </div>`).join('');
-                document.getElementById('dash-lb').style.display = 'block';
-            } catch (_) {}
+        // Guides & downloads modal.
+        let _guidesLoaded = false;
+        function openGuides() {
+            document.getElementById('guides-modal').style.display = 'flex';
+            if (_guidesLoaded) return;
+            _guidesLoaded = true;
+            const box = document.getElementById('guides-list');
+            const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+            fetch('/api/resources?limit=50', { credentials: 'include' }).then(r => r.ok ? r.json() : null).then(d => {
+                const items = (d && (d.resources || d.rows || d.items || d.data)) || (Array.isArray(d) ? d : []);
+                const withUrl = items.filter(x => x && x.url);
+                if (!withUrl.length) { box.innerHTML = '<div style="color:#a0aec0;padding:1.5rem 0;text-align:center;">No downloads available yet.</div>'; return; }
+                box.innerHTML = withUrl.map(x => `
+                    <a href="${esc(x.url)}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.9rem;text-decoration:none;color:inherit;border:1px solid #edf2f7;border-radius:10px;padding:0.85rem 1rem;margin-bottom:0.6rem;">
+                        <span style="font-size:1.3rem;">📄</span>
+                        <span style="flex:1;min-width:0;">
+                            <span style="display:block;font-weight:700;font-size:0.95rem;color:#1a202c;">${esc(x.title)}</span>
+                            ${x.description ? `<span style="display:block;font-size:0.8rem;color:#718096;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(x.description)}</span>` : ''}
+                        </span>
+                        <span style="background:#1d6df2;color:#fff;font-weight:700;font-size:0.82rem;border-radius:8px;padding:0.4rem 0.8rem;white-space:nowrap;">Download ↓</span>
+                    </a>`).join('');
+            }).catch(() => { box.innerHTML = '<div style="color:#c53030;padding:1.5rem 0;text-align:center;">Could not load downloads.</div>'; });
         }
+        function closeGuides() { document.getElementById('guides-modal').style.display = 'none'; }
 
         // Messages card + unread preview on the landing page.
         async function hydrateDashboardMessages() {

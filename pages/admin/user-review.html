@@ -129,6 +129,10 @@
                     <span id="badge-status" class="s-badge" style="display:none;"></span>
                 </div>
             </div>
+            <button id="btn-impersonate-user" onclick="impersonateUser()" title="Log in as this user — opens the site in a new tab"
+                style="align-self:flex-start;background:#1d6df2;color:#fff;border:none;border-radius:9px;padding:0.55rem 1.05rem;font:inherit;font-weight:700;font-size:0.88rem;cursor:pointer;white-space:nowrap;">
+                ↪ Log in as user
+            </button>
         </div>
 
         <!-- Page tabs -->
@@ -321,6 +325,25 @@
     const params = new URLSearchParams(window.location.search);
     const userId = params.get('id');
     let user = null;
+
+    // Log in as this user — opens the site in a new tab with a per-tab token.
+    async function impersonateUser() {
+        if (!confirm('Open the site logged in as this user in a new tab?\n\nYour admin session stays active — this only affects the new tab.')) return;
+        const btn = document.getElementById('btn-impersonate-user');
+        btn.disabled = true;
+        try {
+            const res = await fetch(`/api/admin/users/${userId}/impersonate`, { method: 'POST', credentials: 'include' });
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(d.error || `Failed (HTTP ${res.status}).`);
+            if (!d.token) throw new Error('No session token was returned.');
+            const base = d.redirect || '/pages/user/dashboard.html';
+            window.open(base + '?__imp=' + encodeURIComponent(d.token), '_blank');
+        } catch (e) {
+            alert(e.message || 'Could not start the session.');
+        } finally {
+            btn.disabled = false;
+        }
+    }
 
     function setMsg(el, text, isErr) {
         el.textContent = text;

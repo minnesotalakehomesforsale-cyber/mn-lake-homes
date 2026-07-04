@@ -1447,6 +1447,41 @@ const impersonateAgent = async (req, res) => {
 };
 
 /**
+ * POST /api/admin/users/:id/impersonate
+ * Admin-only. Same as impersonateAgent but for a regular user account, so an
+ * admin can view the site logged in as that user. Token is returned in the
+ * body (per-tab), never a cookie — the admin's own session is untouched.
+ */
+const impersonateUser = async (req, res) => {
+    const jwt = require('jsonwebtoken');
+    const { id } = req.params;
+    try {
+        const { rows } = await pool.query(
+            `SELECT id, role, account_status, email,
+                    EXTRACT(EPOCH FROM password_changed_at)::bigint AS pwd_iat
+               FROM users WHERE id = $1 LIMIT 1`, [id]);
+        if (!rows.length) return res.status(404).json({ error: 'User not found.' });
+        const user = rows[0];
+        if (user.account_status !== 'active') {
+            return res.status(403).json({ error: "This user's account is not active." });
+        }
+        const token = jwt.sign(
+            { userId: user.id, role: user.role, pwd_iat: user.pwd_iat || null },
+            process.env.JWT_SECRET,
+            { expiresIn: '8h' });
+        logActivity({
+            event_type: 'admin.impersonate', event_scope: 'auth', severity: 'warning',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.role || 'admin' },
+            target: { type: 'user', id: user.id, label: user.email }, req,
+        });
+        res.json({ success: true, token, redirect: '/pages/user/dashboard.html' });
+    } catch (err) {
+        console.error('[impersonateUser]', err.message);
+        res.status(500).json({ error: 'Could not start impersonation session.' });
+    }
+};
+
+/**
  * GET /api/admin/billing/:kind/:id   (kind = 'agent' | 'business')
  * Returns the live Stripe billing reality for one subscriber so the
  * admin can see what they're ACTUALLY paying, alongside the stored
@@ -2593,6 +2628,7 @@ module.exports = {
     updateUserStatus,
     resetUserPassword,
     impersonateAgent,
+    impersonateUser,
     deleteUser,
     syncUserToHubspot,
     getLeadDetail,

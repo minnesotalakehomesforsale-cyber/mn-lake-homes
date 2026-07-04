@@ -158,6 +158,9 @@ router.delete('/:id/notes/:noteId',  verifyToken, requireRole(['admin', 'super_a
 // Payments tab on agent-review.html.
 router.get   ('/:id/payments',       verifyToken, requireRole(['admin', 'super_admin']), adminController.getPaymentsForAgent);
 
+// Impersonate a regular user (log in as them). Specific prefix — before /:id.
+router.post('/users/:id/impersonate', verifyToken, requireRole(['admin', 'super_admin']), adminController.impersonateUser);
+
 // ─── AGENT DETAIL (generic /:id last, so specific prefixes match first) ──────
 router.get('/:id', adminController.getAgentDetail);                      // GET /api/admin/:id
 router.post('/:id/impersonate', verifyToken, requireRole(['admin', 'super_admin']), adminController.impersonateAgent); // POST log in as agent (admin-only)
