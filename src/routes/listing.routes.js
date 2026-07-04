@@ -22,6 +22,8 @@ router.post('/:id/save',   verifyToken, c.toggleSave);
 
 // ─── ADMIN ────────────────────────────────────────────────────────────────
 router.get('/admin',            verifyToken, c.listAdmin);
+router.get('/admin/by-agent/:agentId',     verifyToken, c.listForAgent);   // an agent's listings
+router.get('/admin/saved-by-user/:userId', verifyToken, c.savedForUser);   // a user's saved props
 router.post('/admin/upload',    verifyToken, c.uploadImages);   // Cloudinary image upload
 router.post('/admin/import',    verifyToken, c.importBatch);    // bulk upsert (CSV/JSON)
 router.post('/admin/sync-feed', verifyToken, c.syncFeed);       // pull from RESO/MLS feed

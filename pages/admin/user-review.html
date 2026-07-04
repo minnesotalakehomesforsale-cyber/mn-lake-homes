@@ -204,6 +204,13 @@
                     </div>
                 </div>
 
+                <div class="panel">
+                    <div class="panel-hd">Saved Properties</div>
+                    <div class="panel-body">
+                        <div id="user-saved"><div style="color:#a0aec0;font-size:0.88rem;">Loading…</div></div>
+                    </div>
+                </div>
+
                 <div class="panel" id="agent-panel" style="display:none;">
                     <div class="panel-hd">Linked Agent Profile</div>
                     <div class="panel-body">
@@ -714,6 +721,28 @@
     }
 
     document.addEventListener('DOMContentLoaded', load);
+
+    // Saved properties this user bookmarked.
+    (async function () {
+        const box = document.getElementById('user-saved');
+        if (!userId || !box) return;
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const money = n => n ? '$' + Number(n).toLocaleString('en-US') : '';
+        try {
+            const r = await fetch(`/api/listings/admin/saved-by-user/${userId}`, { credentials: 'include' });
+            if (!r.ok) throw new Error();
+            const rows = await r.json();
+            if (!rows.length) { box.innerHTML = '<div style="color:#a0aec0;font-size:0.88rem;">No saved properties.</div>'; return; }
+            box.innerHTML = rows.map(p => `
+                <a href="/listings/${esc(p.slug)}" target="_blank" style="display:flex;gap:0.75rem;align-items:center;padding:0.6rem 0;border-bottom:1px solid #f2f5f8;text-decoration:none;color:inherit;">
+                    <div style="width:64px;height:48px;border-radius:7px;flex-shrink:0;background:#eef2f7 ${p.featured_image_url ? `url('${esc(p.featured_image_url)}') center/cover` : ''};"></div>
+                    <div style="min-width:0;flex:1;">
+                        <div style="font-weight:700;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.title)}</div>
+                        <div style="font-size:0.76rem;color:#718096;">${[money(p.price), esc(p.city||''), p.agent_name ? 'by ' + esc(p.agent_name) : ''].filter(Boolean).join(' · ')}</div>
+                    </div>
+                </a>`).join('');
+        } catch (_) { box.innerHTML = '<div style="color:#c53030;font-size:0.85rem;">Could not load saved properties.</div>'; }
+    })();
 </script>
 </body>
 </html>

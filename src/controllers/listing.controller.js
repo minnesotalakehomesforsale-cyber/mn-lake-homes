@@ -459,6 +459,32 @@ exports.savedIds = async (req, res) => {
     } catch (_) { res.json({ ids: [] }); }
 };
 
+// ─── ADMIN visibility: an agent's listings / a user's saved properties ──────
+exports.listForAgent = async (req, res) => {
+    if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
+    try {
+        const { rows } = await pool.query(
+            `SELECT id, slug, title, price, city, status, featured_image_url, external_url, created_at
+               FROM listings WHERE agent_id = $1 ORDER BY created_at DESC`, [req.params.agentId]);
+        res.json(rows);
+    } catch (e) { console.error('[listings.listForAgent]', e.message); res.status(500).json({ error: 'Failed to load listings.' }); }
+};
+
+exports.savedForUser = async (req, res) => {
+    if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
+    try {
+        const { rows } = await pool.query(
+            `SELECT l.id, l.slug, l.title, l.price, l.city, l.featured_image_url, l.status,
+                    s.created_at AS saved_at, a.display_name AS agent_name
+               FROM saved_listings s
+               JOIN listings l ON l.id = s.listing_id
+          LEFT JOIN agents   a ON a.id = l.agent_id
+              WHERE s.user_id = $1
+           ORDER BY s.created_at DESC`, [req.params.userId]);
+        res.json(rows);
+    } catch (e) { console.error('[listings.savedForUser]', e.message); res.status(500).json({ error: 'Failed to load saved properties.' }); }
+};
+
 exports.importBatch = async (req, res) => {
     if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
     const items = Array.isArray(req.body?.listings) ? req.body.listings : null;
