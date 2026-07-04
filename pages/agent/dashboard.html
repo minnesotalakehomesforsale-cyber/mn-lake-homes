@@ -114,6 +114,16 @@
         .roi-chip small { font-size: 0.7rem; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.4px; }
         .roi-foot { font-size: 0.76rem; color: #a0aec0; margin: 0.7rem 0.2rem 0; }
         @media (max-width: 600px) { .roi-hero-num { font-size: 2rem; } .roi-hero { padding: 1.3rem; } }
+        .dash-lb { margin-top: 1.5rem; background: #fff; border: 1px solid #edf2f7; border-radius: 16px; padding: 1.3rem 1.5rem; }
+        .lb-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.8rem; }
+        .lb-head h3 { margin: 0; font-size: 1.1rem; font-weight: 800; }
+        .lb-head span { font-size: 0.85rem; font-weight: 700; color: #1d6df2; }
+        .lb-row { display: flex; align-items: center; gap: 0.9rem; padding: 0.55rem 0.6rem; border-radius: 10px; }
+        .lb-row.me { background: #ebf4ff; }
+        .lb-rank { width: 26px; text-align: center; font-weight: 800; color: #a0aec0; }
+        .lb-row.top1 .lb-rank { color: #f6ad14; }
+        .lb-name { flex: 1; font-weight: 700; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .lb-stat { font-size: 0.82rem; color: #718096; white-space: nowrap; }
 
         /* Articles section */
         .dash-section-h { font-size: 1.1rem; font-weight: 800; color: #1a202c; letter-spacing: -0.3px; margin: 2.25rem 0 1rem; }
@@ -362,6 +372,12 @@
                             </div>
                         </div>
                         <p class="roi-foot" id="roi-foot"></p>
+                    </div>
+
+                    <!-- Monthly leaderboard -->
+                    <div id="dash-lb" class="dash-lb" style="display:none;">
+                        <div class="lb-head"><h3>This month's leaderboard</h3><span id="lb-myrank"></span></div>
+                        <div id="lb-rows"></div>
                     </div>
 
                     <div class="dash-links">
@@ -1150,6 +1166,7 @@
             hydrateDashboardMessages();
             loadAgentArticles();
             loadRoi();
+            loadLeaderboard();
         });
 
         // ── Messages (read-only, one-way from the MNLH team) ──────────────────────
@@ -1388,6 +1405,25 @@
                     + `Estimate: ${d.leads_month} lead${d.leads_month === 1 ? '' : 's'} × ${money(d.expected_per_lead)} expected value each `
                     + `(≈ ${money(d.avg_sale)} avg sale × ${d.commission_pct}% commission × ${Math.round(d.close_rate * 100)}% close rate). Actual results vary.`;
                 document.getElementById('dash-roi').style.display = 'block';
+            } catch (_) {}
+        }
+
+        // Monthly leaderboard panel.
+        async function loadLeaderboard() {
+            try {
+                const r = await fetch('/api/agents/me/leaderboard', { credentials: 'include' });
+                if (!r.ok) return;
+                const d = await r.json();
+                if (!d.top || !d.top.length) return;
+                const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+                document.getElementById('lb-myrank').textContent = d.me ? `You're #${d.me.rank} of ${d.total}` : '';
+                document.getElementById('lb-rows').innerHTML = d.top.map(a => `
+                    <div class="lb-row ${a.is_me ? 'me' : ''} ${a.rank === 1 ? 'top1' : ''}">
+                        <div class="lb-rank">${a.rank === 1 ? '🏅' : a.rank}</div>
+                        <div class="lb-name">${esc(a.name)}${a.is_me ? ' (you)' : ''}</div>
+                        <div class="lb-stat">${a.wins} won · ${a.worked} worked</div>
+                    </div>`).join('');
+                document.getElementById('dash-lb').style.display = 'block';
             } catch (_) {}
         }
 

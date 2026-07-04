@@ -183,7 +183,8 @@ const getPublicAgents = async (req, res) => {
             ORDER BY m.sort_priority ASC NULLS LAST, a.is_featured DESC, a.display_name ASC
         `;
         const { rows } = await pool.query(query);
-        res.json(rows.map(withResponseBadge));
+        const topId = await require('../services/leaderboard').getTopPerformerId().catch(() => null);
+        res.json(rows.map(r => { const o = withResponseBadge(r); o.top_performer = (topId && o.id === topId); return o; }));
     } catch (err) {
         console.error('[getPublicAgents]', err.message);
         res.status(500).json({ error: 'Failed to load agent directory.' });
@@ -210,7 +211,10 @@ const getAgentBySlug = async (req, res) => {
         `;
         const { rows } = await pool.query(query, [slug]);
         if (rows.length === 0) return res.status(404).json({ error: 'Agent not found.' });
-        res.json(withResponseBadge(rows[0]));
+        const topId = await require('../services/leaderboard').getTopPerformerId().catch(() => null);
+        const out = withResponseBadge(rows[0]);
+        out.top_performer = (topId && out.id === topId);
+        res.json(out);
     } catch (err) {
         console.error('[getAgentBySlug]', err.message);
         res.status(500).json({ error: 'Server error.' });
@@ -546,6 +550,27 @@ const getMyRoi = async (req, res) => {
     } catch (e) { console.error('[getMyRoi]', e.message); res.status(500).json({ error: 'Failed to load ROI.' }); }
 };
 
+// GET /api/agents/me/leaderboard — this month's ranking + the caller's spot.
+const getMyLeaderboard = async (req, res) => {
+    try {
+        const { computeLeaderboard } = require('../services/leaderboard');
+        const ranked = await computeLeaderboard();
+        const meRow = await pool.query(`SELECT id FROM agents WHERE user_id = $1 LIMIT 1`, [req.user.userId]);
+        const myAgentId = meRow.rows[0]?.id || null;
+        const mine = ranked.find(r => r.agent_id === myAgentId) || null;
+        const top = ranked.slice(0, 5).map(r => ({
+            rank: r.rank, agent_id: r.agent_id, name: r.display_name,
+            wins: r.wins, worked: r.worked, leads: r.leads, score: r.score,
+            is_me: r.agent_id === myAgentId,
+        }));
+        res.json({
+            total: ranked.length,
+            top,
+            me: mine ? { rank: mine.rank, wins: mine.wins, worked: mine.worked, leads: mine.leads, score: mine.score } : null,
+        });
+    } catch (e) { console.error('[getMyLeaderboard]', e.message); res.status(500).json({ error: 'Failed to load leaderboard.' }); }
+};
+
 // PATCH /api/agents/me/leads/:id/outcome — mark a lead won/lost (+ sale price).
 // Closing a lead as won/lost also acks it and moves it to 'closed'.
 const setMyLeadOutcome = async (req, res) => {
@@ -775,6 +800,7 @@ module.exports = {
     updateMyProfile,
     getMyLeads,
     getMyRoi,
+    getMyLeaderboard,
     setMyLeadOutcome,
     updateMyLeadStatus,
     getMyLeadNotes,

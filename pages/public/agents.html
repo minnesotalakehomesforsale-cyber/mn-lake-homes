@@ -382,6 +382,7 @@
                         <h3 class="agent-name">${escHtml(agent.display_name)}${inlineTopIcon}</h3>
                         <div class="agent-title">${escHtml(String(title).toUpperCase())}</div>
                         <p class="agent-bio">${escHtml(shortBio)}</p>
+                        ${agent.top_performer ? `<div style="margin-top:0.5rem;display:inline-flex;align-items:center;gap:0.3rem;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.4px;color:#b45309;">🏅 Top Performer</div>` : ''}
                         ${agent.response_label ? `<div class="agent-resp" style="margin-top:0.5rem;display:inline-flex;align-items:center;gap:0.3rem;font-size:0.74rem;font-weight:700;color:${agent.response_fast ? '#059669' : '#718096'};">⚡ ${escHtml(agent.response_label)}</div>` : ''}
                     </div>
                 </div>`;
