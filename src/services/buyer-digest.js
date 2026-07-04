@@ -54,6 +54,7 @@ async function runWeeklyDigest() {
                     </div>
                 </a>`).join('');
             emailService.sendEmail({
+                category: 'marketing',
                 to: u.email,
                 subject: `${hits.length} new lake home${hits.length === 1 ? '' : 's'} matching your searches`,
                 html: `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:540px;margin:0 auto;color:#1a202c;">

@@ -1434,6 +1434,34 @@ app.get('/towns', async (req, res, next) => {
     } catch (err) { next(err); }
 });
 
+// Email unsubscribe (CAN-SPAM). GET = browser click, POST = one-click
+// (List-Unsubscribe-Post header). Both suppress the address.
+async function doUnsubscribe(req, res, render) {
+    const email = String(req.query.e || '').toLowerCase().trim();
+    const token = String(req.query.t || '');
+    const ok = !!email && require('./services/email').verifyUnsub(email, token);
+    if (ok) {
+        try {
+            await pool.query(
+                `INSERT INTO email_unsubscribes (email, reason) VALUES ($1, 'user') ON CONFLICT (email) DO NOTHING`,
+                [email]);
+        } catch (e) { console.warn('[unsubscribe]', e.message); }
+    }
+    if (!render) return res.status(200).end();
+    const esc = s => String(s ?? '').replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+    res.type('html').send(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Unsubscribe | MN Lake Homes</title>
+        <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:460px;margin:12vh auto;padding:2rem;text-align:center;color:#1a202c;">
+            <div style="font-size:2.5rem;">${ok ? '✓' : '⚠️'}</div>
+            <h1 style="font-size:1.4rem;">${ok ? "You're unsubscribed" : 'Link not valid'}</h1>
+            <p style="color:#718096;line-height:1.6;">${ok
+                ? `${esc(email)} won't receive further marketing emails from MN Lake Homes. Account &amp; transactional messages (like password resets) may still be sent.`
+                : 'This unsubscribe link is invalid or expired. Please use the link from a recent email.'}</p>
+            <a href="/" style="color:#1d6df2;font-weight:700;text-decoration:none;">← Back to MinnesotaLakeHomesForSale.com</a>
+        </div>`);
+}
+app.get('/unsubscribe', (req, res) => doUnsubscribe(req, res, true));
+app.post('/unsubscribe', (req, res) => doUnsubscribe(req, res, false));
+
 // Public MN Lake Market Index.
 app.get('/market-index', (req, res, next) => {
     fs.readFile(path.join(PROJECT_ROOT, 'pages/public/market-index.html'), 'utf8', (err, html) => {
@@ -3029,6 +3057,14 @@ async function ensureTables() {
                 sold_median  INTEGER,
                 created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 UNIQUE (scope, month)
+            );
+
+            -- Email unsubscribe / suppression list (CAN-SPAM). A suppressed
+            -- address is skipped for all marketing/automated email.
+            CREATE TABLE IF NOT EXISTS email_unsubscribes (
+                email      VARCHAR(255) PRIMARY KEY,
+                reason     VARCHAR(120),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
 
             -- Monthly MRR snapshots for the admin revenue cockpit trend.

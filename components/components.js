@@ -295,6 +295,7 @@ class GlobalHeader extends HTMLElement {
                     ]},
                 ]
             },
+            { id: 'listings', label: 'Properties', href: '/towns?view=props' },
             {
                 id: 'agents', label: 'Agents', href: `${bp}agents.html`,
                 columns: [
@@ -354,7 +355,7 @@ class GlobalHeader extends HTMLElement {
             </a>
         `).join('');
 
-        const megamenusHtml = navItems.map(item => `
+        const megamenusHtml = navItems.filter(item => item.columns && item.columns.length).map(item => `
             <div id="nav-${item.id}-megamenu" class="nav-megamenu" data-nav-id="${item.id}" style="display:none;">
                 <div class="nav-megamenu-inner">
                     ${item.columns.map(col => `
@@ -395,7 +396,7 @@ class GlobalHeader extends HTMLElement {
                             </button>
                             <div class="mobile-menu-section-body">
                                 <a href="${item.href}" class="mobile-menu-link mobile-menu-link-primary">All ${item.label} &rarr;</a>
-                                ${item.columns.map(col => `
+                                ${(item.columns || []).map(col => `
                                     <div class="mobile-menu-col">
                                         <div class="mobile-menu-col-heading">${col.heading}</div>
                                         ${col.links.map(lnk => `<a href="${lnk.href}" class="mobile-menu-link">${lnk.prefixIcon || ''}${lnk.label}</a>`).join('')}
@@ -434,7 +435,6 @@ class GlobalHeader extends HTMLElement {
                 ${navLinksHtml}
             </nav>
             <div class="nav-actions">
-                <a href="/towns?view=props" style="display:inline-flex;align-items:center;gap:0.4rem;color:#fff;font-weight:700;font-size:0.9rem;text-decoration:none;border:1px solid rgba(255,255,255,0.28);border-radius:8px;padding:0.5rem 0.95rem;margin-right:0.5rem;white-space:nowrap;" aria-label="Browse lake property listings">🏠 Listings</a>
                 ${authHtml}
             </div>
             ${user ? `

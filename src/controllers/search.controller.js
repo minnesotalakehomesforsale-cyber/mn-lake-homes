@@ -139,6 +139,7 @@ async function notifyListing(listingId, reason = 'new') {
                     <p style="font-size:0.75rem;color:#a0aec0;text-align:center;margin-top:1.25rem;">You saved this search on MinnesotaLakeHomesForSale.com. Manage or remove your alerts from your dashboard.</p>
                 </div>`;
             emailService.sendEmail({
+                category: 'marketing',
                 to: s.email,
                 subject: reason === 'price_drop' ? `Price drop: ${l.title} — ${priceStr}` : `New match: ${l.title} — ${priceStr}`,
                 html,

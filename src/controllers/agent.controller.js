@@ -23,6 +23,7 @@ async function triggerReviewRequest(lead) {
         const base = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
         const first = (lead.full_name || '').split(' ')[0] || 'there';
         emailService.sendEmail({
+            category: 'marketing',
             to: lead.email,
             subject: `How was your experience with ${agentName}?`,
             html: `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;color:#1a202c;">

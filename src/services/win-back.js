@@ -78,7 +78,7 @@ async function runWinBackSweep() {
             const stats = { leads: s.leads, wins: s.wins, volume: Number(s.volume), gci: Math.round(Number(s.volume) * (COMMISSION / 100)) };
             const first = (row.name || '').split(' ')[0] || 'there';
             const mail = stepEmail(row.step, first, stats);
-            emailService.sendEmail({ to: row.email, subject: mail.subject, html: mail.html });
+            emailService.sendEmail({ to: row.email, subject: mail.subject, html: mail.html, category: 'marketing' });
             await pool.query(`UPDATE win_back_queue SET sent_at = NOW() WHERE id = $1`, [row.id]);
             sent++;
         }

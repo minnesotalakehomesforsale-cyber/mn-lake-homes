@@ -81,7 +81,7 @@ async function runMonthlyRoiEmails() {
                     </p>
                     <p style="font-size:0.72rem;color:#a0aec0;text-align:center;margin-top:1.2rem;">Estimate assumes ${money(AVG_SALE)} avg sale × ${COMMISSION}% commission × ${Math.round(CLOSE_RATE * 100)}% close rate. Actual results vary.</p>
                 </div>`;
-            emailService.sendEmail({ to: r.email, subject: `Your ${label} recap — ${money(monthValue)} in lead value`, html });
+            emailService.sendEmail({ to: r.email, subject: `Your ${label} recap — ${money(monthValue)} in lead value`, html, category: 'marketing' });
             sent++;
         }
         console.log(`[agent-roi-email] sent ${sent} monthly recap(s) for ${label}`);

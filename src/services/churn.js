@@ -50,6 +50,7 @@ async function runChurnSweep() {
                     ? `You have leads waiting in your MN Lake Homes inbox that haven't been worked yet. Buyers move fast — leads left unanswered get reassigned to another agent. Jump in and follow up so you don't lose them.`
                     : `We haven't seen you in a while. New lake buyers are coming through every week — log in to catch any leads waiting for you.`;
                 emailService.sendEmail({
+                    category: 'marketing',
                     to: a.email,
                     subject: a.ghosting ? 'You have unworked leads waiting' : 'Your MN Lake Homes leads are waiting',
                     html: `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;color:#1a202c;">

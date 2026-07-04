@@ -628,6 +628,7 @@ async function notifyWatchers(listingId) {
             ? l.featured_image_url.replace('/upload/', '/upload/w_600,h_360,c_fill,q_auto,f_auto/') : l.featured_image_url;
         for (const w of watchers) {
             emailService.sendEmail({
+                category: 'marketing',
                 to: w.email,
                 subject: `Price drop: ${l.title} is now ${now}`,
                 html: `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;color:#1a202c;">

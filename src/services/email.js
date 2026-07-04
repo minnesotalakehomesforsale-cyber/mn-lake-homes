@@ -32,10 +32,49 @@
 
 const { Resend }    = require('resend');
 const nodemailer    = require('nodemailer');
+const crypto        = require('crypto');
 
 const GMAIL_USER     = process.env.GMAIL_USER;
 const GMAIL_PASSWORD = (process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '');
 const RESEND_KEY     = process.env.RESEND_API_KEY;
+
+// ── CAN-SPAM: unsubscribe + suppression ─────────────────────────────────────
+// Marketing/automated email must carry a working unsubscribe + a physical
+// postal address. Set EMAIL_PHYSICAL_ADDRESS in prod.
+const PHYSICAL_ADDRESS = process.env.EMAIL_PHYSICAL_ADDRESS || 'MN Lake Homes, Minnesota, USA';
+const UNSUB_SECRET = process.env.JWT_SECRET || 'mnlakehomes-unsub';
+
+// Stateless, verifiable unsubscribe token (HMAC of the lowercased email).
+function unsubToken(email) {
+    return crypto.createHmac('sha256', UNSUB_SECRET).update(String(email).toLowerCase()).digest('hex').slice(0, 32);
+}
+function verifyUnsub(email, token) {
+    try {
+        const a = Buffer.from(unsubToken(email));
+        const b = Buffer.from(String(token || ''));
+        return a.length === b.length && crypto.timingSafeEqual(a, b);
+    } catch (_) { return false; }
+}
+function unsubUrl(email) {
+    const base = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
+    return `${base}/unsubscribe?e=${encodeURIComponent(String(email).toLowerCase())}&t=${unsubToken(email)}`;
+}
+function unsubFooterHtml(email) {
+    const esc = s => String(s ?? '').replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+    return `<div style="margin-top:1.75rem;padding-top:1rem;border-top:1px solid #edf2f7;font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:0.72rem;color:#a0aec0;line-height:1.5;text-align:center;">
+        You're receiving this from MN Lake Homes. <a href="${unsubUrl(email)}" style="color:#718096;">Unsubscribe</a> from these emails.<br>${esc(PHYSICAL_ADDRESS)}
+    </div>`;
+}
+
+// Suppression check (marketing only). Lazy pool require avoids load-order issues.
+async function isSuppressed(email) {
+    if (!email) return false;
+    try {
+        const pool = require('../database/pool');
+        const { rows } = await pool.query('SELECT 1 FROM email_unsubscribes WHERE email = $1 LIMIT 1', [String(email).toLowerCase()]);
+        return rows.length > 0;
+    } catch (_) { return false; }
+}
 
 const FROM     = process.env.EMAIL_FROM     || (GMAIL_USER
                     ? `MN Lake Homes <${GMAIL_USER}>`
@@ -67,8 +106,20 @@ function logSkip(reason) {
 
 // ─── Low-level sender ────────────────────────────────────────────────────────
 // Same signature as before — templates don't need to know the transport.
-async function sendEmail({ to, subject, html, replyTo }) {
+async function sendEmail({ to, subject, html, replyTo, category }) {
     if (!to) { logSkip('no recipient'); return { skipped: true }; }
+
+    // Marketing/automated email: honor the suppression list + append a
+    // CAN-SPAM-compliant unsubscribe footer and List-Unsubscribe header.
+    let headers;
+    if (category === 'marketing' && !Array.isArray(to)) {
+        if (await isSuppressed(to)) { logSkip(`suppressed (${to})`); return { skipped: true, suppressed: true }; }
+        html = (html || '') + unsubFooterHtml(to);
+        headers = {
+            'List-Unsubscribe': `<${unsubUrl(to)}>`,
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        };
+    }
 
     // Prefer Gmail SMTP if configured.
     if (_gmailTransport) {
@@ -79,6 +130,7 @@ async function sendEmail({ to, subject, html, replyTo }) {
                 subject,
                 html,
                 replyTo: replyTo || REPLY_TO,
+                ...(headers ? { headers } : {}),
             });
             console.log(`[email] sent → ${to} · ${subject} · id=${info.messageId || 'n/a'}`);
             return { data: { id: info.messageId } };
@@ -96,6 +148,7 @@ async function sendEmail({ to, subject, html, replyTo }) {
                 subject,
                 html,
                 replyTo: replyTo || REPLY_TO,
+                ...(headers ? { headers } : {}),
             });
             console.log(`[email] sent → ${to} · ${subject} · id=${res.data?.id || 'n/a'}`);
             return res;
@@ -1224,6 +1277,7 @@ function sendCashOfferToPartner({ to, partnerName, customMessage, offer, fromNam
 
 module.exports = {
     sendEmail,
+    verifyUnsub,
     sendWelcome,
     sendAgentWelcome,
     sendAgentProfileLive,
