@@ -873,8 +873,58 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 }
             }
 
+            // ── "By the numbers" — authoritative MN DNR lake facts ──────────
+            // Unique per lake (depth, acreage, clarity, fish, accesses), so this
+            // is the content that both differentiates the page for SEO and gives
+            // buyers the data Zillow never shows. Only renders facts we actually
+            // have; the whole block hides if the lake was never enriched.
+            let lakeDnrHtml = '';
+            {
+                const ftAcre = n => n != null ? Number(n).toLocaleString('en-US') : null;
+                const facts = [
+                    lake.max_depth_ft    != null ? { v: lake.max_depth_ft + ' ft',  l: 'Max depth' } : null,
+                    lake.mean_depth_ft   != null ? { v: lake.mean_depth_ft + ' ft', l: 'Average depth' } : null,
+                    lake.surface_acres   != null ? { v: ftAcre(lake.surface_acres) + ' ac', l: 'Surface area' } : null,
+                    lake.water_clarity_ft!= null ? { v: lake.water_clarity_ft + ' ft', l: 'Water clarity' } : null,
+                    lake.shoreline_miles != null ? { v: lake.shoreline_miles + ' mi', l: 'Shoreline' } : null,
+                    lake.public_accesses != null ? { v: lake.public_accesses, l: lake.public_accesses === 1 ? 'Public access' : 'Public accesses' } : null,
+                ].filter(Boolean);
+                const fish = Array.isArray(lake.fish_species) ? lake.fish_species
+                    : (typeof lake.fish_species === 'string' ? (() => { try { return JSON.parse(lake.fish_species); } catch { return []; } })() : []);
+                if (facts.length >= 2 || (fish && fish.length)) {
+                    const factGrid = facts.length
+                        ? `<div class="lm-grid">${facts.map(f => `<div class="lm-stat"><div class="lm-v">${escapeHtml(String(f.v))}</div><div class="lm-l">${escapeHtml(f.l)}</div></div>`).join('')}</div>` : '';
+                    const fishHtml = (fish && fish.length)
+                        ? `<div class="lf-fish"><div class="lf-fish-h">Fish species on ${escapeHtml(lake.name)}</div><div class="lf-fish-tags">${fish.slice(0, 16).map(f => `<span class="lf-fish-tag">${escapeHtml(String(f))}</span>`).join('')}</div></div>` : '';
+                    const srcLink = lake.dnr_survey_url
+                        ? ` · <a href="${escapeHtml(lake.dnr_survey_url)}" target="_blank" rel="noopener nofollow">view survey</a>` : '';
+                    lakeDnrHtml = `<div class="lake-facts"><div class="lm-head"><h2>${escapeHtml(lake.name)} by the numbers</h2><span class="lm-date">Source: Minnesota DNR${srcLink}</span></div>`
+                        + factGrid + fishHtml + `</div>`;
+                }
+            }
+            // Enrich the Place schema with the DNR facts as additionalProperty —
+            // extra structured signal for the hyperlocal queries we want to win.
+            let lakeFactsLd = '';
+            {
+                const props = [];
+                const add = (name, value, unit) => { if (value != null) props.push({ '@type': 'PropertyValue', name, value, ...(unit ? { unitText: unit } : {}) }); };
+                add('Maximum depth', lake.max_depth_ft, 'FT');
+                add('Surface area', lake.surface_acres, 'ACR');
+                add('Water clarity (Secchi)', lake.water_clarity_ft, 'FT');
+                add('Shoreline length', lake.shoreline_miles, 'MI');
+                add('Public accesses', lake.public_accesses);
+                if (props.length) {
+                    lakeFactsLd = `<script type="application/ld+json">${JSON.stringify({
+                        '@context': 'https://schema.org', '@type': 'Place',
+                        name: `${lake.name}, ${lake.state}`,
+                        url: `${siteBase}/lakes/${lake.slug}`,
+                        additionalProperty: props,
+                    })}</script>`;
+                }
+            }
+
             const replacements = {
-                '{{LAKE_MARKET_HTML}}':     lakeMarketHtml,
+                '{{LAKE_MARKET_HTML}}':     lakeDnrHtml + lakeMarketHtml,
                 '{{LAKE_SEO_TITLE}}':       escapeHtml(title),
                 '{{LAKE_SEO_DESCRIPTION}}': escapeHtml(desc),
                 '{{LAKE_NAME}}':            escapeHtml(lake.name),
@@ -891,7 +941,7 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 '{{LAKE_REGION}}':          escapeHtml(lake.region || ''),
                 '{{LAKE_COUNTY}}':          escapeHtml(lake.county || ''),
                 '{{LAKE_STATE}}':           escapeHtml(lake.state || ''),
-                '{{LAKE_STRUCTURED_DATA}}': lakeStructuredData + '\n    ' + lakeFaqLd,
+                '{{LAKE_STRUCTURED_DATA}}': lakeStructuredData + '\n    ' + lakeFaqLd + (lakeFactsLd ? '\n    ' + lakeFactsLd : ''),
                 '{{LAKE_LIFESTYLE_BODY}}':  lifestyleBody,
                 '{{LAKE_SEASONS_BODY}}':    seasonsBody,
                 '{{LAKE_FAQ_HTML}}':        lakeFaqHtml,
@@ -2850,6 +2900,21 @@ async function ensureTables() {
             -- cancellation can find the lake and clear its is_founder flag.
             -- Admin-seated founders (lake.controller setFounder) leave this NULL.
             ALTER TABLE lakes ADD COLUMN IF NOT EXISTS founder_seat_subscription_id TEXT;
+            -- MN DNR LakeFinder enrichment. Authoritative, per-lake facts that make
+            -- each lake page genuinely unique (kills thin/duplicate-content SEO risk)
+            -- and give buyers the "should I buy HERE?" data Zillow never shows.
+            -- dow_number is the DNR "DOW" lake id used to look the lake up.
+            ALTER TABLE lakes ADD COLUMN IF NOT EXISTS dow_number       VARCHAR(20);
+            ALTER TABLE lakes ADD COLUMN IF NOT EXISTS max_depth_ft     INTEGER;
+            ALTER TABLE lakes ADD COLUMN IF NOT EXISTS mean_depth_ft    INTEGER;
+            ALTER TABLE lakes ADD COLUMN IF NOT EXISTS surface_acres    INTEGER;
+            ALTER TABLE lakes ADD COLUMN IF NOT EXISTS littoral_acres   INTEGER;
+            ALTER TABLE lakes ADD COLUMN IF NOT EXISTS water_clarity_ft NUMERIC(5,1);
+            ALTER TABLE lakes ADD COLUMN IF NOT EXISTS shoreline_miles  NUMERIC(6,1);
+            ALTER TABLE lakes ADD COLUMN IF NOT EXISTS public_accesses  INTEGER;
+            ALTER TABLE lakes ADD COLUMN IF NOT EXISTS fish_species     JSONB;   -- ["Walleye","Northern Pike",...]
+            ALTER TABLE lakes ADD COLUMN IF NOT EXISTS dnr_survey_url   TEXT;
+            ALTER TABLE lakes ADD COLUMN IF NOT EXISTS dnr_data_at      TIMESTAMPTZ;
             -- A lead can be tied to a specific lake (from the lake page, or the
             -- nearest lake to its geocoded address) so the lake's founder can claim it.
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS lake_id UUID;
@@ -4069,6 +4134,19 @@ app.listen(PORT, async () => {
             .catch(e => console.warn('[mls-feed]', e.message));
         setTimeout(doSync, 4 * 60 * 1000);
         setInterval(doSync, 6 * 60 * 60 * 1000);
+    }
+
+    // MN DNR LakeFinder enrichment — refresh authoritative lake facts (depth,
+    // acreage, clarity, fish, accesses) for lakes with a DOW number. Data changes
+    // only when a new survey posts, so a daily throttled pass is plenty. Only
+    // touches lakes whose data is missing or >30 days old. Disable with DNR_ENRICH_ENABLED=false.
+    if (process.env.DNR_ENRICH_ENABLED !== 'false') {
+        const { enrichAllLakes } = require('./services/dnr-lakefinder');
+        const doDnr = () => enrichAllLakes({})
+            .then(r => { if (r.candidates) console.log(`[dnr] enriched ${r.enriched}/${r.candidates} lakes (${r.empty} no-survey, ${r.failed} failed)`); })
+            .catch(e => console.warn('[dnr]', e.message));
+        setTimeout(doDnr, 8 * 60 * 1000);
+        setInterval(doDnr, 24 * 60 * 60 * 1000);
     }
 
     // Market Index monthly snapshot (idempotent per month; builds trend history).

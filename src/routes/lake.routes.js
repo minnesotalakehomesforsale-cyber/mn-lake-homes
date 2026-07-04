@@ -53,6 +53,10 @@ router.post  ('/',         verifyToken, c.create);
 router.patch ('/:id',      verifyToken, c.patch);
 router.delete('/:id',      verifyToken, c.softDelete);
 
+// DNR LakeFinder enrichment (admin). Static path registered before /:id routes.
+router.post('/enrich-dnr-all', verifyToken, c.enrichDnrAll);   // batch, background
+router.post('/:id/enrich-dnr', verifyToken, c.enrichDnr);      // single lake
+
 // Agent ↔ lake connections
 router.get('/:id/agents',  softAuth,    c.listAgents);
 router.put('/:id/agents',  verifyToken, c.replaceAgents);

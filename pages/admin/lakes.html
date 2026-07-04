@@ -239,6 +239,18 @@
                     <textarea id="f-seo-desc" placeholder="Meta description shown in search results."></textarea>
                 </div>
 
+                <div class="section-label">DNR lake data</div>
+                <div class="field">
+                    <label>DNR DOW number</label>
+                    <input id="f-dow" placeholder="e.g. 11020300 (8-digit, leading zeros kept)">
+                    <span class="hint">The MN DNR lake ID. Find it on <a href="https://www.dnr.state.mn.us/lakefind/index.html" target="_blank" rel="noopener">DNR LakeFinder</a>. Save, then Pull DNR data to fill depth, acreage, clarity, fish &amp; accesses.</span>
+                </div>
+                <div style="display:flex;gap:0.5rem;align-items:center;margin:0 0 0.6rem;">
+                    <button class="btn-ghost" type="button" id="dnr-btn" onclick="pullDnr()">🎣 Pull DNR data</button>
+                    <span id="dnr-status" class="hint" style="margin:0;"></span>
+                </div>
+                <div id="dnr-preview" class="hint" style="margin:0 0 0.4rem;display:none;"></div>
+
                 <div class="section-label">Status</div>
                 <div class="field">
                     <label>Status</label>
@@ -437,10 +449,12 @@
         function openCreate() {
             _editingId = null;
             document.getElementById('modal-title').textContent = 'New lake';
-            ['f-name','f-region','f-county','f-slug','f-lat','f-lng','f-intro','f-desc','f-hero','f-feat','f-seo-title','f-seo-desc']
+            ['f-name','f-region','f-county','f-slug','f-lat','f-lng','f-intro','f-desc','f-hero','f-feat','f-seo-title','f-seo-desc','f-dow']
                 .forEach(id => document.getElementById(id).value = '');
             document.getElementById('f-state').value = 'MN';
             document.getElementById('f-status').value = 'draft';
+            document.getElementById('dnr-preview').style.display = 'none';
+            document.getElementById('dnr-status').textContent = '';
             document.getElementById('view-public-link').style.display = 'none';
             document.getElementById('modal-err').style.display = 'none';
             document.getElementById('modal').classList.add('open');
@@ -465,6 +479,8 @@
             document.getElementById('f-feat').value      = l.featured_image_url || '';
             document.getElementById('f-seo-title').value = l.seo_title       || '';
             document.getElementById('f-seo-desc').value  = l.seo_description || '';
+            document.getElementById('f-dow').value       = l.dow_number || '';
+            renderDnrPreview(l);
             document.getElementById('f-status').value    = l.status || 'draft';
             const link = document.getElementById('view-public-link');
             if (l.status === 'published') {
@@ -479,6 +495,55 @@
 
         function closeModal() {
             document.getElementById('modal').classList.remove('open');
+        }
+
+        // Show whatever DNR facts we already have stored for this lake.
+        function renderDnrPreview(l) {
+            const el = document.getElementById('dnr-preview');
+            const st = document.getElementById('dnr-status');
+            st.textContent = '';
+            const bits = [];
+            if (l.max_depth_ft != null)     bits.push(`${l.max_depth_ft} ft max`);
+            if (l.surface_acres != null)    bits.push(`${Number(l.surface_acres).toLocaleString()} ac`);
+            if (l.water_clarity_ft != null) bits.push(`${l.water_clarity_ft} ft clarity`);
+            if (l.public_accesses != null)  bits.push(`${l.public_accesses} access${l.public_accesses === 1 ? '' : 'es'}`);
+            const fish = Array.isArray(l.fish_species) ? l.fish_species : [];
+            if (fish.length) bits.push(`${fish.length} fish species`);
+            if (bits.length) {
+                el.style.display = 'block';
+                el.innerHTML = `✓ Stored: ${bits.join(' · ')}${l.dnr_data_at ? ' · updated ' + new Date(l.dnr_data_at).toLocaleDateString() : ''}`;
+            } else {
+                el.style.display = 'none';
+                el.innerHTML = '';
+            }
+        }
+
+        // Pull authoritative facts from the MN DNR by the saved DOW number.
+        async function pullDnr() {
+            if (!_editingId) { alert('Save the lake first, then pull DNR data.'); return; }
+            const dow = document.getElementById('f-dow').value.trim();
+            if (!dow) { alert('Enter the DNR DOW number first (and Save).'); return; }
+            const btn = document.getElementById('dnr-btn');
+            const st  = document.getElementById('dnr-status');
+            btn.disabled = true; const label = btn.textContent; btn.textContent = 'Pulling…';
+            st.style.color = '#718096'; st.textContent = 'Contacting MN DNR…';
+            try {
+                // Persist the DOW first so the server can look it up.
+                await fetch(`/api/lakes/${_editingId}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ dow_number: dow }) });
+                const res = await fetch(`/api/lakes/${_editingId}/enrich-dnr`, { method:'POST', credentials:'include' });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || 'DNR lookup failed.');
+                st.style.color = '#1d7a53'; st.textContent = 'Done — facts pulled from DNR.';
+                renderDnrPreview({ ...d.facts, dnr_data_at: new Date().toISOString(),
+                    fish_species: d.facts.fish_species || [] });
+                // Refresh the underlying record so a re-open shows the new data.
+                const item = _all.find(x => x.id === _editingId);
+                if (item) Object.assign(item, d.facts);
+            } catch (e) {
+                st.style.color = '#c53030'; st.textContent = e.message;
+            } finally {
+                btn.disabled = false; btn.textContent = label;
+            }
         }
 
         function onNameChange() {
@@ -509,6 +574,7 @@
                 featured_image_url: document.getElementById('f-feat').value.trim() || null,
                 seo_title:          document.getElementById('f-seo-title').value.trim() || null,
                 seo_description:    document.getElementById('f-seo-desc').value.trim() || null,
+                dow_number:         document.getElementById('f-dow').value.trim() || null,
                 status:             document.getElementById('f-status').value,
             };
 

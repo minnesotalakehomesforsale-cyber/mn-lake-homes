@@ -93,6 +93,9 @@ const LAKE_COLS = `
     hero_image_url, featured_image_url,
     gallery,
     seo_title, seo_description,
+    dow_number, max_depth_ft, mean_depth_ft, surface_acres, littoral_acres,
+    water_clarity_ft, shoreline_miles, public_accesses, fish_species,
+    dnr_survey_url, dnr_data_at,
     status, created_at, updated_at
 `;
 
@@ -299,6 +302,21 @@ exports.patch = async (req, res) => {
         // region-aware copy" — the public template handles both branches.
         if ('lifestyle_text'     in b) push('lifestyle_text',     b.lifestyle_text || null);
         if ('seasons_text'       in b) push('seasons_text',       b.seasons_text   || null);
+        // DNR LakeFinder: dow_number is the lookup key (set it, then run enrich).
+        // The fact columns are also hand-editable so admin can correct/override.
+        if ('dow_number'         in b) push('dow_number',         b.dow_number ? String(b.dow_number).trim().slice(0, 20) : null);
+        if ('max_depth_ft'       in b) push('max_depth_ft',       numOrNull(b.max_depth_ft));
+        if ('mean_depth_ft'      in b) push('mean_depth_ft',      numOrNull(b.mean_depth_ft));
+        if ('surface_acres'      in b) push('surface_acres',      numOrNull(b.surface_acres));
+        if ('littoral_acres'     in b) push('littoral_acres',     numOrNull(b.littoral_acres));
+        if ('water_clarity_ft'   in b) push('water_clarity_ft',   numOrNull(b.water_clarity_ft));
+        if ('shoreline_miles'    in b) push('shoreline_miles',    numOrNull(b.shoreline_miles));
+        if ('public_accesses'    in b) push('public_accesses',    numOrNull(b.public_accesses));
+        if ('fish_species'       in b) {
+            const arr = Array.isArray(b.fish_species) ? b.fish_species.map(s => String(s).trim()).filter(Boolean) : null;
+            fields.push(`fish_species = $${i++}::jsonb`);
+            vals.push(arr && arr.length ? JSON.stringify(arr) : null);
+        }
         if ('status' in b) {
             if (!['draft', 'published', 'archived'].includes(b.status)) {
                 return res.status(400).json({ error: 'Invalid status.' });
@@ -874,4 +892,34 @@ exports.setFounder = async (req, res) => {
     } finally {
         client.release();
     }
+};
+
+// ─── DNR LakeFinder enrichment (admin) ──────────────────────────────────────
+// POST /api/lakes/:id/enrich-dnr — pull authoritative facts for ONE lake by its
+// dow_number (set that first via the lake editor). Returns the stored facts.
+const dnr = require('../services/dnr-lakefinder');
+exports.enrichDnr = async (req, res) => {
+    if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
+    try {
+        const { rows } = await pool.query(`SELECT id, dow_number FROM lakes WHERE id = $1`, [req.params.id]);
+        if (!rows.length) return res.status(404).json({ error: 'Lake not found.' });
+        if (!rows[0].dow_number) return res.status(400).json({ error: 'Set the lake\'s DNR DOW number first, then enrich.' });
+        const facts = await dnr.enrichLake(rows[0]);
+        if (!facts) return res.status(404).json({ error: 'No DNR survey found for that DOW number.' });
+        res.json({ success: true, facts });
+    } catch (err) {
+        console.error('[lakes.enrichDnr]', err.message);
+        res.status(502).json({ error: `DNR lookup failed: ${err.message}` });
+    }
+};
+
+// POST /api/lakes/enrich-dnr-all — batch-enrich every lake with a DOW number.
+// Runs in the background (throttled ~1 req/sec) so the request returns fast.
+exports.enrichDnrAll = async (req, res) => {
+    if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
+    const force = req.query.force === '1' || req.body?.force === true;
+    dnr.enrichAllLakes({ force })
+        .then(r => console.log('[dnr] batch enrich done:', JSON.stringify(r)))
+        .catch(e => console.warn('[dnr] batch enrich failed:', e.message));
+    res.json({ success: true, started: true, note: 'Enriching in the background (~1 lake/sec). Refresh lakes to see facts land.' });
 };
