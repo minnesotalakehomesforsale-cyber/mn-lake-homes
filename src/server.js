@@ -3656,11 +3656,15 @@ async function seedBlogPosts() {
     // regional + investment) — all is_published:false.
     let batch4 = [];
     try { batch4 = require('./data/blog-batch4'); } catch (_) { batch4 = []; }
+    // 45-post draft batch: 3 new categories (Lake Comparisons, Local Guide,
+    // Ownership & Upkeep) — all is_published:false.
+    let batch5 = [];
+    try { batch5 = require('./data/blog-batch5'); } catch (_) { batch5 = []; }
     let added = 0, failed = 0;
     // Per-post try/catch so one bad row (e.g. an over-length title) can't abort
     // the whole loop and silently drop every post after it — the newest drafts
     // are seeded LAST, so a mid-loop throw used to make them vanish.
-    for (const p of [...posts, ...drafts, ...newDrafts, ...batch, ...batch4]) {
+    for (const p of [...posts, ...drafts, ...newDrafts, ...batch, ...batch4, ...batch5]) {
         try {
             const r = await pool.query(`
                 INSERT INTO blog_posts
