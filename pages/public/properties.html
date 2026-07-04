@@ -50,6 +50,17 @@
         .pm-pop-chip.oh { background:#fef3c7; color:#b45309; }
         .pm-legend { display:flex; gap:1.1rem; flex-wrap:wrap; align-items:center; font-size:0.8rem; color:#718096; margin:0.75rem 0 0; }
         .pm-legend i { width:12px; height:12px; border-radius:50%; display:inline-block; vertical-align:-1px; margin-right:0.3rem; border:2px solid #fff; box-shadow:0 0 0 1px #e2e8f0; }
+        .pm-sold { margin-top:2.5rem; }
+        .pm-sold h2 { font-size:1.5rem; font-weight:800; color:#1a202c; letter-spacing:-0.5px; margin:0 0 0.2rem; }
+        .pm-sold-sub { color:#718096; margin:0 0 1.1rem; font-size:0.95rem; }
+        .pm-sold-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1rem; }
+        .pm-sold-card { position:relative; border:1px solid #edf2f7; border-radius:12px; overflow:hidden; background:#fff; }
+        .pm-sold-card .img { width:100%; aspect-ratio:4/3; object-fit:cover; background:#eef2f7; display:block; filter:grayscale(0.15); }
+        .pm-sold-card .ribbon { position:absolute; top:12px; left:-30px; transform:rotate(-45deg); background:#1a202c; color:#fff; font-size:0.68rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; padding:3px 34px; }
+        .pm-sold-card .b { padding:0.7rem 0.85rem 0.9rem; }
+        .pm-sold-card .t { font-weight:700; color:#2d3748; font-size:0.92rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .pm-sold-card .m { color:#a0aec0; font-size:0.82rem; margin-top:0.2rem; }
+        @media (max-width:600px){ .pm-sold-grid { grid-template-columns:1fr 1fr; gap:0.6rem; } }
         @media (max-width: 600px) { .pm-head { padding: 1.5rem 1rem 0.75rem; } .pm-map-wrap { padding: 0 1rem; } }
     </style>
 </head>
@@ -81,6 +92,12 @@
         </div>
         <div id="props-map"></div>
         <p class="pm-count" id="pm-count"></p>
+
+        <section class="pm-sold" id="pm-sold" style="display:none;">
+            <h2>Recently sold</h2>
+            <p class="pm-sold-sub">Homes our agents recently closed on Minnesota's lakes.</p>
+            <div class="pm-sold-grid" id="pm-sold-grid"></div>
+        </section>
     </div>
 
     <global-footer></global-footer>
@@ -169,6 +186,22 @@
             }).catch(() => {
                 count.textContent = 'Could not load properties. Please refresh.';
             });
+
+            // Recently sold wall (social proof).
+            fetch('/api/listings/sold').then(r => r.ok ? r.json() : []).then(rows => {
+                if (!Array.isArray(rows) || !rows.length) return;
+                const fmt = d => { try { return new Date(d).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }); } catch (_) { return ''; } };
+                document.getElementById('pm-sold-grid').innerHTML = rows.map(s => `
+                    <div class="pm-sold-card">
+                        <div class="ribbon">Sold</div>
+                        <span class="img" style="${s.featured_image_url ? `background:#eef2f7 url('${esc(thumb(s.featured_image_url))}') center/cover` : ''}"></span>
+                        <div class="b">
+                            <div class="t">${esc(s.title)}</div>
+                            <div class="m">${[esc(s.city || ''), s.sold_at ? 'Sold ' + fmt(s.sold_at) : ''].filter(Boolean).join(' · ')}</div>
+                        </div>
+                    </div>`).join('');
+                document.getElementById('pm-sold').style.display = 'block';
+            }).catch(() => {});
         })();
     </script>
 </body>

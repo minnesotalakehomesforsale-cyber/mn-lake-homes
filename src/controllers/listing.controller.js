@@ -414,13 +414,14 @@ exports.updateMine = async (req, res) => {
     try {
         const agentId = await agentIdFor(req);
         if (!agentId) return res.status(403).json({ error: 'Create your agent profile first.' });
-        const owns = await pool.query(`SELECT price, status FROM listings WHERE id = $1 AND agent_id = $2`, [req.params.id, agentId]);
+        const owns = await pool.query(`SELECT price, status, sold_at FROM listings WHERE id = $1 AND agent_id = $2`, [req.params.id, agentId]);
         if (!owns.rowCount) return res.status(404).json({ error: 'Property not found.' });
         const prevPrice = owns.rows[0].price;
         const v = bodyToCols(req.body || {});
         if (!v.title) return res.status(400).json({ error: 'A title is required.' });
         delete v.agent_id;                                                     // never reassign owner
-        if (!['active', 'draft'].includes(v.status)) v.status = 'active';
+        if (!['active', 'draft', 'sold'].includes(v.status)) v.status = 'active';
+        v.sold_at = v.status === 'sold' ? (owns.rows[0].sold_at || new Date()) : null;   // stamp/clear sold date
         // Re-geocode when the address changed (agent edits move the pin).
         v.latitude = null; v.longitude = null; await geocodeInto(v);
         const cols = Object.keys(v);
@@ -440,9 +441,14 @@ exports.setStatusMine = async (req, res) => {
     try {
         const agentId = await agentIdFor(req);
         if (!agentId) return res.status(403).json({ error: 'Create your agent profile first.' });
-        const status = req.body?.status === 'active' ? 'active' : 'draft';    // active | inactive(draft)
+        const status = ['active', 'draft', 'sold'].includes(req.body?.status) ? req.body.status : 'draft';
+        // Stamp sold_at when marking sold (keep the first sold date); clear otherwise.
         const { rowCount } = await pool.query(
-            `UPDATE listings SET status = $1, updated_at = NOW() WHERE id = $2 AND agent_id = $3`,
+            `UPDATE listings
+                SET status   = $1,
+                    sold_at  = CASE WHEN $1 = 'sold' THEN COALESCE(sold_at, NOW()) ELSE NULL END,
+                    updated_at = NOW()
+              WHERE id = $2 AND agent_id = $3`,
             [status, req.params.id, agentId]);
         if (!rowCount) return res.status(404).json({ error: 'Property not found.' });
         res.json({ success: true, status });
@@ -537,6 +543,22 @@ exports.mapListings = async (req, res) => {
               ORDER BY featured DESC, tier_rank ASC, l.created_at DESC`);
         res.json(rows);
     } catch (e) { console.error('[listings.mapListings]', e.message); res.status(500).json({ error: 'Failed to load map listings.' }); }
+};
+
+// GET /api/listings/sold — recently sold homes for the social-proof wall.
+exports.soldRecent = async (req, res) => {
+    if (!LISTINGS_PUBLIC) return res.json([]);
+    try {
+        const { rows } = await pool.query(
+            `SELECT l.slug, l.title, l.price, l.city, l.featured_image_url, l.sold_at,
+                    a.display_name AS agent_name
+               FROM listings l
+          LEFT JOIN agents a ON a.id = l.agent_id
+              WHERE l.status = 'sold'
+              ORDER BY COALESCE(l.sold_at, l.updated_at) DESC
+              LIMIT 12`);
+        res.json(rows);
+    } catch (e) { console.error('[listings.soldRecent]', e.message); res.status(500).json({ error: 'Failed to load sold homes.' }); }
 };
 
 // ─── ADMIN visibility: an agent's listings / a user's saved properties ──────
