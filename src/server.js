@@ -59,6 +59,7 @@ app.use('/api/resources', require('./routes/resource.routes'));
 app.use('/api/marketing', require('./routes/marketing.routes'));
 app.use('/api/reviews', require('./routes/review.routes'));
 app.use('/api/listings', require('./routes/listing.routes'));
+app.use('/api/searches', require('./routes/search.routes'));
 
 app.get('/api/health', (req, res) => {
     res.json({
@@ -2742,6 +2743,24 @@ async function ensureTables() {
             );
             CREATE INDEX IF NOT EXISTS idx_saved_listings_user    ON saved_listings(user_id);
             CREATE INDEX IF NOT EXISTS idx_saved_listings_listing ON saved_listings(listing_id);
+
+            -- Saved searches / price alerts (Phase 6). criteria is a small JSON
+            -- bag (q, min/max price, min beds, property_type, waterfront).
+            CREATE TABLE IF NOT EXISTS saved_searches (
+                id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                name       VARCHAR(140),
+                criteria   JSONB NOT NULL DEFAULT '{}'::jsonb,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_saved_searches_user ON saved_searches(user_id);
+            -- One alert email per (search, listing) — dedupes new + drop notices.
+            CREATE TABLE IF NOT EXISTS saved_search_hits (
+                search_id  UUID NOT NULL REFERENCES saved_searches(id) ON DELETE CASCADE,
+                listing_id UUID NOT NULL REFERENCES listings(id)       ON DELETE CASCADE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                PRIMARY KEY (search_id, listing_id)
+            );
 
             -- A lead can be tied to a specific property (e.g. "request a showing"
             -- on a listing page). ON DELETE SET NULL keeps the lead if the

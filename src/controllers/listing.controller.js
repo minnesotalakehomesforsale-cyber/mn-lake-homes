@@ -7,6 +7,9 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { logActivity } = require('../services/activity-log');
 const { geocodeAddress } = require('../services/geocoder');
+// Lazy require to avoid a circular load at module-init (search ctrl is standalone
+// here, but keep the pattern defensive).
+const savedSearch = require('./search.controller');
 
 // Fill lat/lng from the address (city/state help disambiguate) when an agent
 // gives an address but no coordinates — powers the Properties map. Best-effort:
@@ -402,6 +405,7 @@ exports.createMine = async (req, res) => {
         logActivity({ event_type: 'listing.agent_created', event_scope: 'listing',
             actor: { type: 'agent', id: req.user?.userId, label: req.user?.email || 'agent' },
             target: { type: 'listing', id: rows[0].id, label: v.title }, req });
+        if (v.status === 'active') savedSearch.notifyListing(rows[0].id, 'new');   // alert matching buyers
         res.status(201).json({ success: true, id: rows[0].id, slug: rows[0].slug });
     } catch (err) { console.error('[listings.createMine]', err.message); res.status(500).json({ error: 'Could not create the property.' }); }
 };
@@ -410,8 +414,9 @@ exports.updateMine = async (req, res) => {
     try {
         const agentId = await agentIdFor(req);
         if (!agentId) return res.status(403).json({ error: 'Create your agent profile first.' });
-        const owns = await pool.query(`SELECT 1 FROM listings WHERE id = $1 AND agent_id = $2`, [req.params.id, agentId]);
+        const owns = await pool.query(`SELECT price, status FROM listings WHERE id = $1 AND agent_id = $2`, [req.params.id, agentId]);
         if (!owns.rowCount) return res.status(404).json({ error: 'Property not found.' });
+        const prevPrice = owns.rows[0].price;
         const v = bodyToCols(req.body || {});
         if (!v.title) return res.status(400).json({ error: 'A title is required.' });
         delete v.agent_id;                                                     // never reassign owner
@@ -423,6 +428,10 @@ exports.updateMine = async (req, res) => {
         await pool.query(
             `UPDATE listings SET ${set}, updated_at = NOW() WHERE id = $1 AND agent_id = $${cols.length + 2}`,
             [req.params.id, ...cols.map(k => v[k]), agentId]);
+        // Alert saved-search subscribers when the price actually drops.
+        if (v.status === 'active' && v.price != null && prevPrice != null && Number(v.price) < Number(prevPrice)) {
+            savedSearch.notifyListing(req.params.id, 'price_drop');
+        }
         res.json({ success: true });
     } catch (err) { console.error('[listings.updateMine]', err.message); res.status(500).json({ error: 'Could not update the property.' }); }
 };

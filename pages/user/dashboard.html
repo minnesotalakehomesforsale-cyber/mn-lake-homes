@@ -256,6 +256,7 @@
             </button>
             <button class="ud-tab"        data-panel="home"    role="tab">Submissions</button>
             <button class="ud-tab"        data-panel="saved"   role="tab">Saved properties</button>
+            <button class="ud-tab"        data-panel="alerts"  role="tab">Alerts</button>
             <button class="ud-tab"        data-panel="account" role="tab">Account settings</button>
             <a href="#" class="ud-side-signout"
                onclick="event.preventDefault(); fetch('/api/auth/logout',{method:'POST'}).finally(()=>{ window.location.href='/index.html'; });">
@@ -339,6 +340,23 @@
                 <div id="ud-saved" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1rem;margin-top:0.5rem;">
                     <div class="ud-leads-state">Loading…</div>
                 </div>
+            </div>
+        </section>
+
+        <!-- Price alerts / saved searches -->
+        <section class="ud-panel" id="panel-alerts">
+            <div class="ud-card">
+                <h2>Price alerts</h2>
+                <p class="ud-lead">Get an email the moment a new home matches — or an existing one drops in price. Set your criteria and we'll watch for you.</p>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.7rem;margin:0.5rem 0 0.8rem;">
+                    <input id="al-q" type="text" placeholder="Keyword or lake (e.g. Gull)" style="padding:0.6rem 0.75rem;border:1px solid #e2e8f0;border-radius:9px;font:inherit;">
+                    <input id="al-max" type="number" placeholder="Max price" style="padding:0.6rem 0.75rem;border:1px solid #e2e8f0;border-radius:9px;font:inherit;">
+                    <input id="al-beds" type="number" placeholder="Min beds" style="padding:0.6rem 0.75rem;border:1px solid #e2e8f0;border-radius:9px;font:inherit;">
+                    <select id="al-wf" style="padding:0.6rem 0.75rem;border:1px solid #e2e8f0;border-radius:9px;font:inherit;"><option value="">Any</option><option value="yes">Waterfront only</option></select>
+                </div>
+                <button onclick="createAlert()" style="background:#1d6df2;color:#fff;border:none;border-radius:9px;padding:0.6rem 1.2rem;font-weight:700;cursor:pointer;">🔔 Create alert</button>
+                <div id="al-note" class="ud-note" style="margin-top:0.6rem;"></div>
+                <div id="ud-alerts" style="margin-top:1.25rem;display:grid;gap:0.6rem;"></div>
             </div>
         </section>
 
@@ -563,8 +581,51 @@
                 btn.classList.add('active');
                 document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
                 if (btn.dataset.panel === 'saved') loadSaved();
+                if (btn.dataset.panel === 'alerts') loadAlerts();
             });
         });
+        // Deep link: /pages/user/dashboard.html#alerts opens the Alerts tab.
+        if (location.hash === '#alerts') document.querySelector('.ud-tab[data-panel="alerts"]')?.click();
+
+        // ── Price alerts / saved searches ───────────────────────────────
+        async function loadAlerts() {
+            const box = document.getElementById('ud-alerts');
+            const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            try {
+                const res = await fetch('/api/searches/mine', { credentials: 'include' });
+                if (!res.ok) throw new Error();
+                const rows = await res.json();
+                if (!rows.length) { box.innerHTML = '<div class="ud-leads-state">No alerts yet. Create one above.</div>'; return; }
+                box.innerHTML = rows.map(s => `
+                    <div style="display:flex;align-items:center;gap:1rem;border:1px solid #edf2f7;border-radius:10px;padding:0.75rem 0.9rem;">
+                        <div style="min-width:0;">
+                            <div style="font-weight:700;">${esc(s.name)}</div>
+                            <div style="font-size:0.8rem;color:#718096;">${esc(s.summary)}</div>
+                        </div>
+                        <button onclick="deleteAlert('${s.id}')" style="margin-left:auto;border:1px solid #e2e8f0;background:#fff;border-radius:7px;padding:0.35rem 0.7rem;font-size:0.78rem;font-weight:600;color:#c53030;cursor:pointer;">Remove</button>
+                    </div>`).join('');
+            } catch (_) { box.innerHTML = '<div class="ud-leads-state" style="color:#c53030;">Could not load your alerts.</div>'; }
+        }
+        async function createAlert() {
+            const note = document.getElementById('al-note');
+            const body = {
+                q: document.getElementById('al-q').value.trim() || null,
+                max_price: document.getElementById('al-max').value || null,
+                min_beds: document.getElementById('al-beds').value || null,
+                waterfront: document.getElementById('al-wf').value || null,
+            };
+            try {
+                const res = await fetch('/api/searches', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) });
+                if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Could not save.'); }
+                showNote(note, 'Alert created — we\'ll email you when a match appears.', 'ok');
+                document.getElementById('al-q').value = ''; document.getElementById('al-max').value = '';
+                document.getElementById('al-beds').value = ''; document.getElementById('al-wf').value = '';
+                loadAlerts();
+            } catch (e) { showNote(note, e.message, 'err'); }
+        }
+        async function deleteAlert(id) {
+            try { await fetch('/api/searches/' + id, { method: 'DELETE', credentials: 'include' }); loadAlerts(); } catch (_) {}
+        }
 
         // ── Saved properties ────────────────────────────────────────────
         let _savedLoaded = false;
