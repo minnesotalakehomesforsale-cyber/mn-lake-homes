@@ -352,7 +352,7 @@
 
         {{BUSINESS_FEATURED_BLOGS}}
 
-        <section class="bz-reviews" style="margin-top:3.5rem;padding-top:2.5rem;border-top:1px solid #edf2f7;">
+        <section class="bz-reviews" style="margin-top:3.5rem;padding-top:2.5rem;border-top:1px solid #edf2f7;display:none;">
             <reviews-widget subject-type="business" subject-id="{{BUSINESS_ID}}" subject-name="{{BUSINESS_NAME}}"></reviews-widget>
         </section>
 
@@ -431,8 +431,16 @@
             if (BZ.website) buttons.push(`<a class="bz-btn primary" href="${escHtml(BZ.website)}" target="_blank" rel="noopener">Visit website →</a>`);
             if (BZ.phone)   buttons.push(`<a class="bz-btn ghost" href="tel:${escHtml(BZ.phone)}">📞 Call</a>`);
             if (BZ.email)   buttons.push(`<a class="bz-btn ghost" href="mailto:${escHtml(BZ.email)}">✉️ Email</a>`);
+            // Always offer a review entry point — the Reviews section itself stays
+            // hidden until the first review lands, so this is how #1 gets left.
+            buttons.push(`<button type="button" class="bz-btn ghost" id="bz-review-btn">★ Leave a review</button>`);
             cta.innerHTML = buttons.join('');
-            if (!buttons.length) cta.style.display = 'none';
+            cta.style.display = '';
+            const bzReviewBtn = document.getElementById('bz-review-btn');
+            if (bzReviewBtn) bzReviewBtn.addEventListener('click', () => {
+                const w = document.querySelector('.bz-reviews reviews-widget');
+                if (w && typeof w.openModal === 'function') w.openModal();
+            });
 
             // Contact rows
             const contactRows = [];

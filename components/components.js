@@ -686,6 +686,15 @@ class ReviewsWidget extends HTMLElement {
             </div>`;
 
         this.querySelector('.rw-leave').addEventListener('click', () => this.openModal());
+
+        // Only surface the Reviews section once there's a real review. With zero
+        // reviews we hide the whole section (the widget stays in the DOM so the
+        // sidebar "Leave a review" button can still open the modal). It goes live
+        // automatically the moment the first review lands.
+        const section = this.closest('section');
+        if (section) section.style.display = agg.count > 0 ? '' : 'none';
+        // Let a host page react too (e.g. hide a heading it renders itself).
+        this.dispatchEvent(new CustomEvent('reviews:count', { bubbles: true, detail: { count: agg.count } }));
     }
     // Public — lets an external button (e.g. under the contact form) open it.
     openModal() {

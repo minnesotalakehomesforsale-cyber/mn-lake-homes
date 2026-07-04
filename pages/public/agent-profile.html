@@ -164,8 +164,9 @@
         </div>
     </section>
 
-    <!-- Reviews — populated once the agent record loads (needs its id). -->
-    <section id="agent-reviews-section" style="background:#f7f9fa;padding:4.5rem 0;border-top:1px solid #edf2f7;">
+    <!-- Reviews — populated once the agent record loads (needs its id).
+         Hidden until the widget confirms ≥1 review, then it reveals itself. -->
+    <section id="agent-reviews-section" style="background:#f7f9fa;padding:4.5rem 0;border-top:1px solid #edf2f7;display:none;">
         <div style="max-width:820px;margin:0 auto;padding:0 2rem;">
             <reviews-widget subject-type="agent"></reviews-widget>
         </div>
