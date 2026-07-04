@@ -914,6 +914,9 @@ function _lfInit() {
         <!-- Step content (centered) -->
         <div style="display:flex;align-items:center;justify-content:center;height:100%;padding:5rem 1.5rem 3rem;">
             <div id="lf-body" style="width:100%;max-width:520px;transition:opacity 0.15s ease,transform 0.15s ease;">
+                <!-- Honeypot: hidden from humans; bots that auto-fill inputs trip it. -->
+                <input type="text" id="lf-company-website" name="company_website" tabindex="-1" autocomplete="off" aria-hidden="true"
+                    style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;">
                 <h2 id="lf-q" style="font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;color:#1a202c;letter-spacing:-1px;line-height:1.2;margin:0 0 0.75rem;text-align:center;"></h2>
                 <p  id="lf-hint" style="color:#a0aec0;font-size:0.95rem;margin:0 0 2rem;text-align:center;line-height:1.5;"></p>
                 <div id="lf-field" style="margin-bottom:1.25rem;"></div>
@@ -1226,7 +1229,7 @@ window.openForm = function(type, prefill) {
         const v = data[s.field.id];
         return v === undefined || v === null || v === '';
     });
-    _lfs = { type: t, step: 0, data, steps: filtered, _leadref: leadRef, _lake: lakeSlug, _submitted: false };
+    _lfs = { type: t, step: 0, data, steps: filtered, _leadref: leadRef, _lake: lakeSlug, _submitted: false, _openedAt: Date.now() };
     document.getElementById('lf-ok').style.display   = 'none';
     document.getElementById('lf-body').style.display = 'block';
     document.getElementById('lf-overlay').style.display = 'block';
@@ -1340,6 +1343,9 @@ async function _lfDoSubmit() {
                 property_zip:      d.property_zip    || null,
                 is_waterfront:     d.waterfront ? /^yes/i.test(d.waterfront) : null,
                 waterfront_feet:   (d.waterfront_feet || '').replace(/[^0-9]/g,'') || null,
+                // Anti-spam signals (honeypot must be empty; elapsed time proves a human).
+                company_website:   (document.getElementById('lf-company-website') || {}).value || '',
+                _elapsed_ms:       _lfs._openedAt ? (Date.now() - _lfs._openedAt) : undefined,
             })
         });
         if (!res.ok) { const r = await res.json().catch(()=>({})); throw new Error(r.error || 'Submission failed.'); }
