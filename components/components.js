@@ -566,6 +566,14 @@ class GlobalFooter extends HTMLElement {
         <div class="footer-bottom">
             <p class="footer-copyright">&copy; 2026 MinnesotaLakeHomesForSale.com. All rights reserved. <span style="margin:0 0.4rem;opacity:0.5;">·</span> <a href="/privacy" style="color:inherit;text-decoration:underline;">Privacy</a> <span style="margin:0 0.4rem;opacity:0.5;">·</span> <a href="/terms" style="color:inherit;text-decoration:underline;">Terms</a></p>
             <p class="footer-disclaimer">MinnesotaLakeHomesForSale.com is a real estate network and lead generation platform, not a licensed brokerage. We do not represent buyers or sellers directly. All transactions are facilitated by independently licensed real estate professionals. This platform is currently in beta &mdash; we are testing an agent match experience designed to enhance the real estate journey and Minnesota lake life. Results and agent availability may vary.</p>
+            <div class="footer-fairhousing" style="display:flex;align-items:center;gap:0.6rem;justify-content:center;margin-top:1rem;flex-wrap:wrap;text-align:center;">
+                <svg width="26" height="26" viewBox="0 0 48 48" role="img" aria-label="Equal Housing Opportunity" style="flex-shrink:0;">
+                    <rect x="1" y="1" width="46" height="46" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <path d="M24 11 L38 22 L34 22 L34 36 L28 36 L28 27 L20 27 L20 36 L14 36 L14 22 L10 22 Z" fill="currentColor"/>
+                    <rect x="22" y="30" width="4" height="6" fill="none"/>
+                </svg>
+                <span style="font-size:0.72rem;line-height:1.4;opacity:0.85;">We are pledged to the letter and spirit of U.S. policy for the achievement of equal housing opportunity throughout the nation. We encourage and support an affirmative advertising and marketing program in which there are no barriers to obtaining housing because of race, color, religion, sex, handicap, familial status, national origin, or any other class protected by the Fair Housing Act.</span>
+            </div>
         </div>
     </footer>`;
     }

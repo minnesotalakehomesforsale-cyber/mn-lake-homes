@@ -41,7 +41,8 @@ Platform facts (use these in your responses when relevant):
 - Agent tiers: Standard, Prime, Founder (billed monthly or annually via Stripe)
 - Contact inquiries land in /pages/admin/inquiries.html and email minnesotalakehomesforsale@gmail.com (MN Lake Homes) or thecommonrealtor@gmail.com (CommonRealtor)
 
-Be concise, concrete, and actionable. When drafting copy, default to MN Lake Homes voice: confident, local, specific (name real lakes, real towns). When explaining admin workflows, reference the actual tab / button names the user sees. Don't hedge or pad.`;
+Be concise, concrete, and actionable. When drafting copy, default to MN Lake Homes voice: confident, local, specific (name real lakes, real towns). When explaining admin workflows, reference the actual tab / button names the user sees. Don't hedge or pad.
+${require('../services/fair-housing').FAIR_HOUSING_GUARDRAIL}`;
 
 // ─── POST /api/assistant/chat ────────────────────────────────────────────────
 exports.chat = async (req, res) => {

@@ -2543,7 +2543,7 @@ const getAgentMarketingInsights = async (req, res) => {
         const client = getMktOpenAI();
         let recommendations = null;
         if (client) {
-            const sys = 'You are a concise growth strategist for a Minnesota lake-real-estate AGENT network. You advise the platform owner on recruiting and marketing TO real-estate agents (not consumers). Output clean HTML only — use <h4>, <p>, <ul><li>. No markdown, no code fences, no preamble.';
+            const sys = 'You are a concise growth strategist for a Minnesota lake-real-estate AGENT network. You advise the platform owner on recruiting and marketing TO real-estate agents (not consumers). Output clean HTML only — use <h4>, <p>, <ul><li>. No markdown, no code fences, no preamble.' + require('../services/fair-housing').FAIR_HOUSING_GUARDRAIL;
             const user = `Per service-area staffing goals: 1 Founder (the lake owner / exclusive spot), 2 Elite, 5 Prime, 10 Basic agents. Below is the CURRENT coverage vs goal as JSON (deficits = how many more of each tier are needed). Produce a prioritized action plan: (1) the top regions/areas to target first and why, (2) which TIER to push in each and the pitch angle for that tier, (3) 3–5 concrete recruiting tactics for a small MN lake-real-estate brand. Keep it tight and specific to the data.\n\nDATA:\n${JSON.stringify(stats)}`;
             try {
                 const completion = await client.chat.completions.create({
@@ -2624,7 +2624,7 @@ const getBusinessMarketingInsights = async (req, res) => {
         const client = getMktOpenAI();
         let recommendations = null;
         if (client) {
-            const sys = 'You are a concise growth strategist for a Minnesota lake-area LOCAL BUSINESS DIRECTORY (marinas, resorts, restaurants, boat rentals, dock builders, photographers). You advise the platform owner on recruiting local businesses to buy paid directory listings (Featured Partner $79/mo, Local Spotlight $29/mo), organized by service area. Output clean HTML only — use <h4>, <p>, <ul><li>. No markdown, no code fences, no preamble.';
+            const sys = 'You are a concise growth strategist for a Minnesota lake-area LOCAL BUSINESS DIRECTORY (marinas, resorts, restaurants, boat rentals, dock builders, photographers). You advise the platform owner on recruiting local businesses to buy paid directory listings (Featured Partner $79/mo, Local Spotlight $29/mo), organized by service area. Output clean HTML only — use <h4>, <p>, <ul><li>. No markdown, no code fences, no preamble.' + require('../services/fair-housing').FAIR_HOUSING_GUARDRAIL;
             const user = `Per service-area goal: 1 Featured Partner (Premium) + 3 Local Spotlights (Standard), and every area should ideally cover the core types: Marina, Resort/Outdoor, Restaurant, Boat rental. Below is CURRENT coverage vs goal as JSON (deficits = how many more paid listings needed; missing = core business types absent). Produce a prioritized action plan: (1) the top regions/areas to target first and why, (2) which business TYPES to recruit in each area to fill the missing core types, (3) 3–5 concrete outreach tactics to sign local lake businesses to a paid listing — the pitch angle is reaching buyers and vacationers who land on that lake's page. Keep it tight and specific to the data.\n\nDATA:\n${JSON.stringify(stats)}`;
             try {
                 const completion = await client.chat.completions.create({
