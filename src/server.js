@@ -2380,6 +2380,10 @@ async function ensureTables() {
             -- the best leads first. Computed at creation by services/lead-score.js.
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS lead_score INTEGER;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS lead_tier VARCHAR(10);
+            -- Buyer nurture drip: which stage of the re-engagement sequence a lead
+            -- has received (0 = none), and when the last nurture email went out.
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS nurture_stage INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS nurture_last_at TIMESTAMPTZ;
         `);
 
         // One-time backfill: score existing leads with a SQL approximation of
@@ -4220,6 +4224,15 @@ app.listen(PORT, async () => {
         const { runWeeklyDigest } = require('./services/buyer-digest');
         setTimeout(() => runWeeklyDigest().catch(e => console.warn('[buyer-digest]', e.message)), 6 * 60 * 1000);
         setInterval(() => runWeeklyDigest().catch(e => console.warn('[buyer-digest]', e.message)), 12 * 60 * 60 * 1000);
+    }
+
+    // Buyer nurture drip — 3-touch re-engagement for unconverted buyer leads.
+    // Runs ~7 min after boot, then every 6h; each lead advances at most one stage
+    // per day. Disable with NURTURE_ENABLED=false.
+    if (process.env.NURTURE_ENABLED !== 'false') {
+        const { runNurtureSweep } = require('./services/buyer-nurture');
+        setTimeout(() => runNurtureSweep().catch(e => console.warn('[buyer-nurture]', e.message)), 7 * 60 * 1000);
+        setInterval(() => runNurtureSweep().catch(e => console.warn('[buyer-nurture]', e.message)), 6 * 60 * 60 * 1000);
     }
 
     // MLS/IDX feed sync — pulls the whole feed (paginated), upserts inventory,
