@@ -922,6 +922,8 @@ app.get('/listings/:slug', async (req, res, next) => {
                 '{{LISTING_STRUCTURED_DATA}}': sd,
                 '{{LISTING_LAKE_BACK}}':      escapeHtml(backUrl),
                 '{{LISTING_BACK_LABEL}}':     escapeHtml(backLabel),
+                '{{LISTING_ID}}':             escapeHtml(l.id),
+                '{{LISTING_EXTERNAL_URL}}':   escapeHtml(l.external_url || ''),
             };
             let out = html;
             for (const [k, v] of Object.entries(repl)) out = out.split(k).join(v);
@@ -2571,6 +2573,17 @@ async function ensureTables() {
             );
             CREATE INDEX IF NOT EXISTS idx_listings_lake   ON listings(lake_id) WHERE lake_id IS NOT NULL;
             CREATE INDEX IF NOT EXISTS idx_listings_status ON listings(status);
+
+            -- Users saving/liking properties (bookmark). One row per user+listing.
+            CREATE TABLE IF NOT EXISTS saved_listings (
+                id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id    UUID NOT NULL REFERENCES users(id)    ON DELETE CASCADE,
+                listing_id UUID NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (user_id, listing_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_saved_listings_user    ON saved_listings(user_id);
+            CREATE INDEX IF NOT EXISTS idx_saved_listings_listing ON saved_listings(listing_id);
 
             -- Nearby-towns join: reuses the existing tags catalog (each tag
             -- is a town). One lake can be near many towns and one town can

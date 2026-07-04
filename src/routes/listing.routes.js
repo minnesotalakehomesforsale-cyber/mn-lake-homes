@@ -15,6 +15,11 @@ router.put   ('/mine/:id',        verifyToken, requireRole('agent'), c.updateMin
 router.patch ('/mine/:id/status', verifyToken, requireRole('agent'), c.setStatusMine);
 router.delete('/mine/:id',        verifyToken, requireRole('agent'), c.removeMine);
 
+// ─── SAVED / LIKED (any signed-in user) ─────────────────────────────────────
+router.get ('/saved/mine', verifyToken, c.listSaved);
+router.get ('/saved/ids',  verifyToken, c.savedIds);
+router.post('/:id/save',   verifyToken, c.toggleSave);
+
 // ─── ADMIN ────────────────────────────────────────────────────────────────
 router.get('/admin',            verifyToken, c.listAdmin);
 router.post('/admin/upload',    verifyToken, c.uploadImages);   // Cloudinary image upload

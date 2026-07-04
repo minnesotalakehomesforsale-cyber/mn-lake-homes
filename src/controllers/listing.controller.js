@@ -414,6 +414,51 @@ exports.uploadMine = (req, res) => {
     });
 };
 
+// ─── SAVED / LIKED LISTINGS (any signed-in user) ────────────────────────────
+exports.toggleSave = async (req, res) => {
+    try {
+        const uid = req.user?.userId;
+        if (!uid) return res.status(401).json({ error: 'Please sign in to save properties.' });
+        const listingId = req.params.id;
+        const exists = await pool.query(`SELECT 1 FROM saved_listings WHERE user_id = $1 AND listing_id = $2`, [uid, listingId]);
+        if (exists.rowCount) {
+            await pool.query(`DELETE FROM saved_listings WHERE user_id = $1 AND listing_id = $2`, [uid, listingId]);
+            return res.json({ saved: false });
+        }
+        const l = await pool.query(`SELECT 1 FROM listings WHERE id = $1`, [listingId]);
+        if (!l.rowCount) return res.status(404).json({ error: 'Property not found.' });
+        await pool.query(`INSERT INTO saved_listings (user_id, listing_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [uid, listingId]);
+        res.json({ saved: true });
+    } catch (err) { console.error('[listings.toggleSave]', err.message); res.status(500).json({ error: 'Could not update your saved list.' }); }
+};
+
+exports.listSaved = async (req, res) => {
+    try {
+        const uid = req.user?.userId;
+        if (!uid) return res.status(401).json({ error: 'Please sign in.' });
+        const { rows } = await pool.query(
+            `SELECT l.id, l.slug, l.title, l.description, l.featured_image_url, l.external_url,
+                    l.price, l.city, l.state, l.status, s.created_at AS saved_at,
+                    a.display_name AS agent_name, a.slug AS agent_slug
+               FROM saved_listings s
+               JOIN listings l ON l.id = s.listing_id
+          LEFT JOIN agents   a ON a.id = l.agent_id
+              WHERE s.user_id = $1
+           ORDER BY s.created_at DESC`, [uid]);
+        res.json(rows);
+    } catch (err) { console.error('[listings.listSaved]', err.message); res.status(500).json({ error: 'Could not load your saved properties.' }); }
+};
+
+// GET /api/listings/saved/ids — just the ids the user saved (for the ♥ state).
+exports.savedIds = async (req, res) => {
+    try {
+        const uid = req.user?.userId;
+        if (!uid) return res.json({ ids: [] });
+        const { rows } = await pool.query(`SELECT listing_id FROM saved_listings WHERE user_id = $1`, [uid]);
+        res.json({ ids: rows.map(r => r.listing_id) });
+    } catch (_) { res.json({ ids: [] }); }
+};
+
 exports.importBatch = async (req, res) => {
     if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
     const items = Array.isArray(req.body?.listings) ? req.body.listings : null;

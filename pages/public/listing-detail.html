@@ -49,6 +49,44 @@
         <h1 class="lst-title">{{LISTING_TITLE}}</h1>
         <p class="lst-addr">{{LISTING_ADDRESS}}</p>
 
+        <div class="lst-actions" style="display:flex;gap:0.6rem;flex-wrap:wrap;margin:0.5rem 0 1.25rem;">
+            <button id="lst-save-btn" onclick="toggleSaveListing()" style="display:inline-flex;align-items:center;gap:0.4rem;border:1px solid #e2e8f0;background:#fff;border-radius:10px;padding:0.6rem 1.1rem;font:inherit;font-weight:700;font-size:0.9rem;cursor:pointer;color:#1a202c;">
+                <span id="lst-save-heart">♡</span> <span id="lst-save-label">Save</span>
+            </button>
+            <a id="lst-external" href="{{LISTING_EXTERNAL_URL}}" target="_blank" rel="nofollow noopener" style="display:none;align-items:center;gap:0.4rem;background:#1d6df2;color:#fff;border-radius:10px;padding:0.6rem 1.1rem;font-weight:700;font-size:0.9rem;text-decoration:none;">View full listing ↗</a>
+        </div>
+        <script>
+            const LISTING_ID = '{{LISTING_ID}}';
+            (function () {
+                const ext = document.getElementById('lst-external');
+                const url = '{{LISTING_EXTERNAL_URL}}';
+                if (ext && url && url.length > 4) ext.style.display = 'inline-flex'; else if (ext) ext.remove();
+            })();
+            async function refreshSaveState() {
+                try {
+                    const r = await fetch('/api/listings/saved/ids', { credentials: 'include' });
+                    if (!r.ok) return;
+                    const { ids } = await r.json();
+                    setSaved(Array.isArray(ids) && ids.includes(LISTING_ID));
+                } catch (_) {}
+            }
+            function setSaved(on) {
+                document.getElementById('lst-save-heart').textContent = on ? '♥' : '♡';
+                document.getElementById('lst-save-label').textContent = on ? 'Saved' : 'Save';
+                document.getElementById('lst-save-btn').style.color = on ? '#c53030' : '#1a202c';
+                document.getElementById('lst-save-btn').style.borderColor = on ? '#feb2b2' : '#e2e8f0';
+            }
+            async function toggleSaveListing() {
+                try {
+                    const r = await fetch('/api/listings/' + LISTING_ID + '/save', { method: 'POST', credentials: 'include' });
+                    if (r.status === 401) { window.location.href = '/pages/public/login.html?redirect=' + encodeURIComponent(location.pathname); return; }
+                    const d = await r.json();
+                    if (r.ok) setSaved(!!d.saved);
+                } catch (_) {}
+            }
+            document.addEventListener('DOMContentLoaded', refreshSaveState);
+        </script>
+
         {{LISTING_SPECS_HTML}}
 
         <div class="lst-desc">{{LISTING_DESCRIPTION}}</div>
