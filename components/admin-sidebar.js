@@ -236,6 +236,7 @@
         // businesses.html still highlight this entry in the sidebar.
         { key: 'lakes-towns', href: 'lakes-towns.html', label: 'Lakes & Businesses', aliases: ['lakes', 'businesses'] },
         { key: 'listings',    href: 'listings.html',   label: 'Listings' },
+        { key: 'partners',    href: 'partners.html',   label: 'Buyer Partners' },
         { key: 'reviews',     href: 'reviews.html',    label: 'Reviews' },
         // Analytics + system, ONE flat-header page (system.html): Traffic,
         // Conversions, Agent coverage, Database, Lead routing, and Images —

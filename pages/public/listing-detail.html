@@ -87,6 +87,19 @@
         .mtg-break li span { font-weight:700; color:#1a202c; }
         .mtg-fine { font-size:0.8rem; color:#a0aec0; margin:0.8rem 0 0; }
         @media (max-width:640px){ .mtg-card { grid-template-columns:1fr; gap:1.25rem; } .mtg-out { border-left:0; border-top:1px solid #edf2f7; padding-left:0; padding-top:1.25rem; } }
+        /* Buyer services */
+        .lst-services { margin-top:2.75rem; }
+        .svc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:0.75rem; }
+        .svc-grid button { display:flex; align-items:center; gap:0.6rem; justify-content:center; font:inherit; font-weight:700; font-size:0.95rem; color:#1a202c; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:1rem; cursor:pointer; transition:border-color .15s, box-shadow .15s; }
+        .svc-grid button:hover { border-color:#1d6df2; box-shadow:0 6px 16px rgba(29,109,242,0.12); }
+        .svc-grid button span { font-size:1.2rem; }
+        .svc-modal { position:fixed; inset:0; background:rgba(10,15,22,0.55); z-index:9400; display:none; align-items:center; justify-content:center; padding:1.5rem; }
+        .svc-modal.open { display:flex; }
+        .svc-box { position:relative; background:#fff; border-radius:16px; padding:1.75rem; max-width:420px; width:100%; }
+        .svc-box h3 { margin:0; font-size:1.3rem; font-weight:800; }
+        .svc-box input, .svc-box textarea { width:100%; box-sizing:border-box; font:inherit; font-size:0.95rem; padding:0.65rem 0.8rem; border:1px solid #e2e8f0; border-radius:9px; margin-bottom:0.6rem; outline:none; }
+        .svc-box input:focus, .svc-box textarea:focus { border-color:#1d6df2; }
+        .svc-x { position:absolute; top:0.9rem; right:1rem; background:none; border:none; font-size:1.5rem; color:#a0aec0; cursor:pointer; }
         /* Lightbox */
         .lst-lb { position:fixed; inset:0; background:rgba(10,15,22,0.94); z-index:9500; display:none; align-items:center; justify-content:center; }
         .lst-lb.open { display:flex; }
@@ -182,6 +195,44 @@
                 calc();
             })();
 
+            // Buyer-service referrals.
+            const SVC_META = {
+                lender: { title: 'Get pre-approved', sub: 'A local lender will reach out about your mortgage options.' },
+                inspection: { title: 'Schedule an inspection', sub: 'A trusted home inspector will contact you to set it up.' },
+                insurance: { title: 'Insurance quote', sub: 'A local insurance pro will send you a quote for this home.' },
+            };
+            let _svcCat = null;
+            window.openSvc = function (cat) {
+                _svcCat = cat;
+                const m = SVC_META[cat] || { title: 'Request', sub: '' };
+                document.getElementById('svc-title').textContent = m.title;
+                document.getElementById('svc-sub').textContent = m.sub;
+                document.getElementById('svc-err').style.display = 'none';
+                document.getElementById('svc-done').style.display = 'none';
+                document.getElementById('svc-submit').style.display = '';
+                document.getElementById('svc-modal').classList.add('open');
+            };
+            window.closeSvc = function () { document.getElementById('svc-modal').classList.remove('open'); };
+            window.submitSvc = async function () {
+                const err = document.getElementById('svc-err');
+                const name = document.getElementById('svc-name').value.trim();
+                const email = document.getElementById('svc-email').value.trim();
+                const phone = document.getElementById('svc-phone').value.trim();
+                const message = document.getElementById('svc-msg').value.trim();
+                err.style.display = 'none';
+                if (!name || (!email && !phone)) { err.textContent = 'Add your name and an email or phone.'; err.style.display = 'block'; return; }
+                const btn = document.getElementById('svc-submit'); btn.disabled = true; btn.textContent = 'Sending…';
+                try {
+                    const r = await fetch('/api/partners/refer', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ category: _svcCat, name, email, phone, message, listing_id: LISTING_ID }),
+                    });
+                    if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'Something went wrong.'); }
+                    btn.style.display = 'none';
+                    document.getElementById('svc-done').style.display = 'block';
+                } catch (ex) { err.textContent = ex.message; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Send request'; }
+            };
+
             async function shareListing() {
                 const url = location.href;
                 const title = document.querySelector('.lst-title')?.textContent || 'Lake home for sale';
@@ -255,6 +306,33 @@
             </div>
             <p class="mtg-fine">Rough estimate for planning only — not a loan offer. <a href="#lst-showing">Talk to the listing agent →</a></p>
         </section>
+
+        <section class="lst-services">
+            <h2 class="lst-section-h">Getting ready to buy?</h2>
+            <p style="color:#718096;margin:-0.5rem 0 1.1rem;">Connect with a trusted local partner — free, no obligation.</p>
+            <div class="svc-grid">
+                <button type="button" onclick="openSvc('lender')"><span>🏦</span> Get pre-approved</button>
+                <button type="button" onclick="openSvc('inspection')"><span>🔎</span> Schedule an inspection</button>
+                <button type="button" onclick="openSvc('insurance')"><span>🛡️</span> Insurance quote</button>
+            </div>
+        </section>
+
+        <div class="svc-modal" id="svc-modal" onclick="if(event.target===this)closeSvc()">
+            <div class="svc-box">
+                <button class="svc-x" onclick="closeSvc()" aria-label="Close">&times;</button>
+                <h3 id="svc-title">Request</h3>
+                <p id="svc-sub" style="color:#718096;font-size:0.9rem;margin:0.2rem 0 1rem;"></p>
+                <input id="svc-name" type="text" placeholder="Your name" autocomplete="name">
+                <input id="svc-email" type="email" placeholder="Email" autocomplete="email">
+                <input id="svc-phone" type="tel" placeholder="Phone" autocomplete="tel">
+                <textarea id="svc-msg" rows="2" placeholder="Anything to add? (optional)"></textarea>
+                <div id="svc-err" style="color:#c53030;font-size:0.85rem;display:none;margin-bottom:0.5rem;"></div>
+                <button id="svc-submit" class="nb-cta" style="width:100%;border:none;cursor:pointer;" onclick="submitSvc()">Send request</button>
+                <div id="svc-done" style="display:none;text-align:center;padding:0.5rem 0;">
+                    <div style="font-size:2rem;">✓</div><p style="margin:0.3rem 0 0;font-weight:700;">Request sent — they'll be in touch.</p>
+                </div>
+            </div>
+        </div>
 
         {{LISTING_GALLERY_HTML}}
 

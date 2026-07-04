@@ -60,6 +60,7 @@ app.use('/api/marketing', require('./routes/marketing.routes'));
 app.use('/api/reviews', require('./routes/review.routes'));
 app.use('/api/listings', require('./routes/listing.routes'));
 app.use('/api/searches', require('./routes/search.routes'));
+app.use('/api/partners', require('./routes/partner.routes'));
 
 app.get('/api/health', (req, res) => {
     res.json({
@@ -2814,6 +2815,34 @@ async function ensureTables() {
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS sla_tried_user_ids  UUID[]   NOT NULL DEFAULT '{}';
             CREATE INDEX IF NOT EXISTS idx_leads_sla ON leads(assigned_at)
                 WHERE agent_ack_at IS NULL AND assigned_user_id IS NOT NULL;
+
+            -- Buyer-side service partners (lenders, inspectors, insurance, title,
+            -- marine) + the referral requests routed to them. New revenue stream:
+            -- the platform earns a referral fee per hand-off.
+            CREATE TABLE IF NOT EXISTS service_partners (
+                id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                category      VARCHAR(24) NOT NULL,
+                name          VARCHAR(160) NOT NULL,
+                contact_email VARCHAR(255),
+                contact_phone VARCHAR(50),
+                website_url   TEXT,
+                blurb         TEXT,
+                active        BOOLEAN NOT NULL DEFAULT TRUE,
+                priority      SMALLINT NOT NULL DEFAULT 0,
+                last_referred_at TIMESTAMPTZ,
+                created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_service_partners_cat ON service_partners(category) WHERE active;
+            CREATE TABLE IF NOT EXISTS partner_referrals (
+                id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                category    VARCHAR(24) NOT NULL,
+                partner_id  UUID REFERENCES service_partners(id) ON DELETE SET NULL,
+                name        VARCHAR(200), email VARCHAR(255), phone VARCHAR(50),
+                message     TEXT,
+                listing_id  UUID REFERENCES listings(id) ON DELETE SET NULL,
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_partner_referrals_created ON partner_referrals(created_at DESC);
 
             -- Lead outcome tracking: agents mark a lead won/lost with the sale
             -- price. Powers closed-deal proof (agent ROI, company sales volume,

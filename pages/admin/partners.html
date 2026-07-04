@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buyer Partners | MN Lake Homes Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', sans-serif; color: #1a202c; }
+        .pt-table { width: 100%; background: #fff; border: 1px solid #edf2f7; border-radius: 12px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+        .pt-table th { text-align: left; padding: 0.85rem 1rem; font-size: 0.72rem; font-weight: 800; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; background: #f7f9fa; border-bottom: 1px solid #edf2f7; }
+        .pt-table td { padding: 0.8rem 1rem; font-size: 0.9rem; color: #2d3748; border-bottom: 1px solid #f7f9fa; }
+        .pt-cat { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; background: #ebf4ff; color: #1d6df2; padding: 0.2rem 0.55rem; border-radius: 6px; }
+        .pt-off { opacity: 0.5; }
+        .tabs { display:flex; gap:0.5rem; margin-bottom:1.25rem; }
+        .tabs button { border:1px solid #e2e8f0; background:#fff; border-radius:99px; padding:0.5rem 1.1rem; font:inherit; font-weight:700; font-size:0.85rem; color:#4a5568; cursor:pointer; }
+        .tabs button.on { background:#1d6df2; color:#fff; border-color:#1d6df2; }
+        .ovl { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9000; align-items:center; justify-content:center; padding:1.5rem; }
+        .ovl.open { display:flex; }
+        .modal { background:#fff; border-radius:16px; width:100%; max-width:520px; box-shadow:0 30px 60px rgba(0,0,0,0.25); }
+        .m-hdr { display:flex; justify-content:space-between; align-items:center; padding:1.1rem 1.4rem; border-bottom:1px solid #edf2f7; }
+        .m-hdr h2 { margin:0; font-size:1.15rem; }
+        .m-close { background:none; border:0; font-size:1.5rem; color:#718096; cursor:pointer; }
+        .m-body { padding:1.4rem; }
+        .fld { margin-bottom:0.9rem; }
+        .fld label { display:block; font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#4a5568; margin-bottom:0.3rem; }
+        .fld input, .fld select, .fld textarea { width:100%; padding:0.6rem 0.8rem; border:1px solid #e2e8f0; border-radius:8px; font:inherit; box-sizing:border-box; }
+        .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; }
+        .btn-primary { background:#1d6df2; color:#fff; border:0; border-radius:8px; padding:0.65rem 1.2rem; font-weight:700; cursor:pointer; }
+        .btn-ghost { background:#fff; color:#4a5568; border:1px solid #e2e8f0; border-radius:8px; padding:0.65rem 1.2rem; font-weight:700; cursor:pointer; }
+        .err { display:none; background:#fff5f5; color:#c53030; border:1px solid #feb2b2; padding:0.6rem 0.85rem; border-radius:8px; margin-bottom:0.9rem; font-weight:600; font-size:0.88rem; }
+        .empty { padding:3rem; text-align:center; color:#a0aec0; }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-assistant.js" defer></script>
+</head>
+<body>
+    <div class="admin-wrap">
+        <admin-sidebar active="partners"></admin-sidebar>
+        <main class="admin-main">
+            <header style="margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem;">
+                <div>
+                    <h1 style="font-size:1.85rem;font-weight:800;letter-spacing:-0.75px;margin:0 0 0.25rem;">Buyer Partners</h1>
+                    <p style="color:#718096;font-size:0.95rem;margin:0;">Lenders, inspectors, insurance, title &amp; marine pros that buyer-service requests on listing pages route to (round-robin by priority). You earn a referral fee per hand-off.</p>
+                </div>
+                <button class="btn-primary" onclick="openNew()">+ Add partner</button>
+            </header>
+            <div class="tabs">
+                <button id="tab-partners" class="on" onclick="showTab('partners')">Partners</button>
+                <button id="tab-referrals" onclick="showTab('referrals')">Recent referrals</button>
+            </div>
+            <div id="wrap"><div class="empty">Loading…</div></div>
+        </main>
+    </div>
+
+    <div id="modal" class="ovl" onclick="if(event.target===this)closeModal()">
+        <div class="modal">
+            <div class="m-hdr"><h2 id="m-title">Add partner</h2><button class="m-close" onclick="closeModal()">×</button></div>
+            <div class="m-body">
+                <div id="err" class="err"></div>
+                <input type="hidden" id="f-id">
+                <div class="grid2">
+                    <div class="fld"><label>Category *</label><select id="f-category">
+                        <option value="lender">Lender</option><option value="inspection">Home inspection</option>
+                        <option value="insurance">Insurance</option><option value="title">Title &amp; closing</option>
+                        <option value="marine">Dock &amp; marine</option></select></div>
+                    <div class="fld"><label>Priority</label><input id="f-priority" type="number" value="0"></div>
+                </div>
+                <div class="fld"><label>Name *</label><input id="f-name" placeholder="e.g. North Shore Mortgage"></div>
+                <div class="grid2">
+                    <div class="fld"><label>Contact email</label><input id="f-contact_email" type="email"></div>
+                    <div class="fld"><label>Contact phone</label><input id="f-contact_phone" type="tel"></div>
+                </div>
+                <div class="fld"><label>Website</label><input id="f-website_url" type="url" placeholder="https://…"></div>
+                <div class="fld"><label>Short blurb</label><textarea id="f-blurb" rows="2"></textarea></div>
+                <div class="fld"><label><input id="f-active" type="checkbox" checked style="width:auto;margin-right:0.4rem;">Active (receives referrals)</label></div>
+                <div style="display:flex;gap:0.6rem;justify-content:flex-end;">
+                    <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+                    <button class="btn-primary" id="save-btn" onclick="save()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+        const CAT_LABEL = { lender:'Lender', inspection:'Inspection', insurance:'Insurance', title:'Title', marine:'Marine' };
+        let _tab = 'partners';
+
+        function showTab(t) {
+            _tab = t;
+            document.getElementById('tab-partners').classList.toggle('on', t === 'partners');
+            document.getElementById('tab-referrals').classList.toggle('on', t === 'referrals');
+            t === 'partners' ? loadPartners() : loadReferrals();
+        }
+
+        async function loadPartners() {
+            const wrap = document.getElementById('wrap');
+            try {
+                const r = await fetch('/api/partners/admin', { credentials: 'include' });
+                const rows = await r.json();
+                if (!Array.isArray(rows) || !rows.length) { wrap.innerHTML = '<div class="empty">No partners yet. Add lenders, inspectors and insurance pros so listing referrals have somewhere to go.</div>'; return; }
+                wrap.innerHTML = `<table class="pt-table"><thead><tr><th>Category</th><th>Name</th><th>Contact</th><th>Priority</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(p => `
+                    <tr class="${p.active ? '' : 'pt-off'}">
+                        <td><span class="pt-cat">${esc(CAT_LABEL[p.category] || p.category)}</span></td>
+                        <td><strong>${esc(p.name)}</strong>${p.blurb ? `<div style="font-size:0.78rem;color:#a0aec0;">${esc(p.blurb)}</div>` : ''}</td>
+                        <td style="font-size:0.82rem;">${esc(p.contact_email || '')}${p.contact_phone ? '<br>' + esc(p.contact_phone) : ''}</td>
+                        <td>${p.priority}</td>
+                        <td>${p.active ? 'Active' : 'Off'}</td>
+                        <td style="text-align:right;white-space:nowrap;">
+                            <button class="btn-ghost" style="padding:0.35rem 0.7rem;font-size:0.8rem;" onclick='edit(${JSON.stringify(p).replace(/'/g,"&#39;")})'>Edit</button>
+                            <button class="btn-ghost" style="padding:0.35rem 0.7rem;font-size:0.8rem;color:#c53030;" onclick="del('${p.id}')">Delete</button>
+                        </td>
+                    </tr>`).join('')}</tbody></table>`;
+            } catch (_) { wrap.innerHTML = '<div class="empty" style="color:#c53030;">Could not load partners.</div>'; }
+        }
+
+        async function loadReferrals() {
+            const wrap = document.getElementById('wrap');
+            try {
+                const r = await fetch('/api/partners/admin/referrals', { credentials: 'include' });
+                const rows = await r.json();
+                if (!Array.isArray(rows) || !rows.length) { wrap.innerHTML = '<div class="empty">No referrals yet.</div>'; return; }
+                wrap.innerHTML = `<table class="pt-table"><thead><tr><th>Date</th><th>Category</th><th>Buyer</th><th>Routed to</th></tr></thead><tbody>${rows.map(r => `
+                    <tr>
+                        <td>${new Date(r.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}</td>
+                        <td><span class="pt-cat">${esc(CAT_LABEL[r.category] || r.category)}</span></td>
+                        <td><strong>${esc(r.name || '')}</strong><div style="font-size:0.8rem;color:#a0aec0;">${esc(r.email || '')} ${esc(r.phone || '')}</div></td>
+                        <td>${esc(r.partner_name || '—')}</td>
+                    </tr>`).join('')}</tbody></table>`;
+            } catch (_) { wrap.innerHTML = '<div class="empty" style="color:#c53030;">Could not load referrals.</div>'; }
+        }
+
+        function openNew() {
+            document.getElementById('m-title').textContent = 'Add partner';
+            document.getElementById('err').style.display = 'none';
+            ['f-id','f-name','f-contact_email','f-contact_phone','f-website_url','f-blurb'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('f-category').value = 'lender';
+            document.getElementById('f-priority').value = 0;
+            document.getElementById('f-active').checked = true;
+            document.getElementById('modal').classList.add('open');
+        }
+        function edit(p) {
+            openNew();
+            document.getElementById('m-title').textContent = 'Edit partner';
+            document.getElementById('f-id').value = p.id;
+            ['category','name','contact_email','contact_phone','website_url','blurb','priority'].forEach(k => { const el = document.getElementById('f-' + k); if (el) el.value = p[k] ?? ''; });
+            document.getElementById('f-active').checked = !!p.active;
+        }
+        function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+        async function save() {
+            const err = document.getElementById('err');
+            const body = {
+                id: document.getElementById('f-id').value || undefined,
+                category: document.getElementById('f-category').value,
+                name: document.getElementById('f-name').value.trim(),
+                contact_email: document.getElementById('f-contact_email').value.trim(),
+                contact_phone: document.getElementById('f-contact_phone').value.trim(),
+                website_url: document.getElementById('f-website_url').value.trim(),
+                blurb: document.getElementById('f-blurb').value.trim(),
+                priority: Number(document.getElementById('f-priority').value) || 0,
+                active: document.getElementById('f-active').checked,
+            };
+            if (!body.name) { err.textContent = 'Name is required.'; err.style.display = 'block'; return; }
+            const btn = document.getElementById('save-btn'); btn.disabled = true; btn.textContent = 'Saving…';
+            try {
+                const r = await fetch('/api/partners/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) });
+                if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'Save failed.'); }
+                closeModal(); loadPartners();
+            } catch (e) { err.textContent = e.message; err.style.display = 'block'; }
+            finally { btn.disabled = false; btn.textContent = 'Save'; }
+        }
+        async function del(id) {
+            if (!confirm('Delete this partner?')) return;
+            try { await fetch('/api/partners/admin/' + id, { method: 'DELETE', credentials: 'include' }); loadPartners(); } catch (_) {}
+        }
+
+        loadPartners();
+    </script>
+</body>
+</html>
