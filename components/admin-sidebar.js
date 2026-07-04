@@ -102,7 +102,17 @@
             margin-left: auto; min-width: 18px; text-align: center;
         }
         .cash-offer-badge.visible { display: inline-block; }
-        .admin-main { padding: 3rem 3.5rem; background: #f7f9fa; overflow-y: auto; }
+        /* min-width:0 lets the 1fr content column shrink below its content, so a
+           wide table/calendar scrolls inside itself instead of pushing the whole
+           admin page wider than the screen. */
+        .admin-main { padding: 3rem 3.5rem; background: #f7f9fa; overflow-y: auto; min-width: 0; }
+        /* Global admin overflow guards — protect every admin page on mobile. */
+        html { overflow-x: clip; }
+        .admin-main img, .admin-main svg, .admin-main video, .admin-main canvas { max-width: 100%; }
+        .admin-main h1, .admin-main h2, .admin-main h3, .admin-main h4 { overflow-wrap: break-word; }
+        @media (max-width: 720px) {
+            .admin-main { padding: 1.25rem 1rem; }
+        }
     `;
 
     // ── Shared admin design system (cohesive polish) ───────────────────

@@ -326,10 +326,13 @@
             .cal-chip.off { opacity:0.38; }
             .cal-layout { display:grid; grid-template-columns:1fr 278px; gap:1.1rem; align-items:start; }
             @media (max-width:960px){ .cal-layout { grid-template-columns:1fr; } }
-            .cal-weekdays { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:6px; }
+            .cal-weekdays { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; margin-bottom:6px; }
             .cal-weekdays span { font-size:0.64rem; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; color:#a0aec0; text-align:center; }
-            .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
-            .cal-day { background:#fff; border:1px solid #edf2f7; border-radius:10px; min-height:106px; padding:0.4rem; display:flex; flex-direction:column; gap:3px; cursor:pointer; transition:border-color 0.12s, box-shadow 0.12s; }
+            /* minmax(0,1fr) lets each column shrink below its content — without
+               it, the nowrap event chips force the 7 tracks wider than the
+               screen and the whole page over-stretches sideways. */
+            .cal-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; }
+            .cal-day { background:#fff; border:1px solid #edf2f7; border-radius:10px; min-height:106px; min-width:0; padding:0.4rem; display:flex; flex-direction:column; gap:3px; cursor:pointer; transition:border-color 0.12s, box-shadow 0.12s; }
             .cal-day:hover { border-color:#cbd5e0; box-shadow:0 4px 12px rgba(16,24,40,0.06); }
             .cal-day.out { background:#f7f9fa; }
             .cal-day.today { border-color:#1d6df2; box-shadow:0 0 0 1px #1d6df2 inset; }
@@ -358,6 +361,19 @@
             .cdi-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
             .cdi-t { font-size:0.9rem; font-weight:700; color:#1a202c; line-height:1.25; }
             .cdi-s { font-size:0.74rem; color:#718096; margin-top:0.1rem; text-transform:capitalize; }
+            /* Phones: a month grid is tight — shrink cells, wrap the toolbar,
+               single-column the modal. Colours still read at a glance. */
+            @media (max-width:600px) {
+                .cal-toolbar { gap:0.6rem; }
+                .cal-filters { width:100%; margin-left:0; }
+                .cal-title { min-width:0; font-size:1.05rem; }
+                .cal-day { min-height:66px; padding:0.25rem; gap:2px; border-radius:8px; }
+                .cal-daynum { font-size:0.66rem; }
+                .cal-ev { font-size:0.58rem; padding:0.1rem 0.28rem; border-radius:4px; }
+                .cal-more { font-size:0.58rem; }
+                .cal-grid, .cal-weekdays { gap:4px; }
+                .cal-2col { grid-template-columns:1fr; }
+            }
 
             /* Marketing dashboard (overview) — financials-style */
             .md-hero { background:linear-gradient(135deg,#4f46e5,#312e81); color:#fff; border-radius:18px; padding:1.6rem 1.8rem; margin-bottom:1.15rem; box-shadow:0 14px 36px rgba(16,24,40,.2); }
