@@ -373,7 +373,7 @@
                 host.innerHTML = posts.slice(0, 4).map(p => `
                     <a class="rx-blog-card" href="/pages/public/blog-post.html?slug=${encodeURIComponent(p.slug)}">
                         <div class="rx-blog-img">
-                            ${p.cover_image_url ? `<img src="${escAttr(p.cover_image_url)}" alt="${escAttr(p.title)}" loading="lazy">` : ''}
+                            <img src="${escAttr(p.cover_image_url || '/assets/images/mn-aerial-lake-homes.jpg')}" alt="${escAttr(p.title)}" loading="lazy" onerror="this.onerror=null;this.src='/assets/images/mn-aerial-lake-homes.jpg'">
                         </div>
                         <div class="rx-blog-body">
                             <span class="rx-blog-tag">${escHtml(p.tag || 'General')}</span>

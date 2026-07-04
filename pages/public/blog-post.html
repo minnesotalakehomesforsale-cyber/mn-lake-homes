@@ -304,12 +304,10 @@
                     : '';
 
                 const heroImg = document.getElementById('hero-img');
-                if (post.cover_image_url) {
-                    heroImg.src = post.cover_image_url;
-                    heroImg.alt = post.title;
-                } else {
-                    document.getElementById('post-banner-wrap').style.display = 'none';
-                }
+                const BLOG_FALLBACK_IMG = '/assets/images/mn-aerial-lake-homes.jpg';
+                heroImg.onerror = function () { this.onerror = null; this.src = BLOG_FALLBACK_IMG; };
+                heroImg.src = post.cover_image_url || BLOG_FALLBACK_IMG;   // every post shows an image
+                heroImg.alt = post.title;
 
                 // Tailor the primary CTA to the post's category.
                 const tag = post.tag || '';
