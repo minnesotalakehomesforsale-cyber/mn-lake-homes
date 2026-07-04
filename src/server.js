@@ -2743,6 +2743,23 @@ async function ensureTables() {
             );
             CREATE INDEX IF NOT EXISTS idx_review_requests_token ON review_requests(token);
 
+            -- Win-back sequence: when an agent cancels, we queue a few emails
+            -- (day 0/7/30) showing what the platform earned them. A sweep sends
+            -- due steps and skips anyone who has already resubscribed.
+            CREATE TABLE IF NOT EXISTS win_back_queue (
+                id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id    UUID REFERENCES users(id) ON DELETE CASCADE,
+                agent_id   UUID,
+                email      VARCHAR(255),
+                name       VARCHAR(200),
+                step       SMALLINT NOT NULL DEFAULT 0,
+                send_at    TIMESTAMPTZ NOT NULL,
+                sent_at    TIMESTAMPTZ,
+                canceled   BOOLEAN NOT NULL DEFAULT FALSE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_win_back_due ON win_back_queue(send_at) WHERE sent_at IS NULL AND canceled = FALSE;
+
             -- Manual property listings (no MLS feed yet). Each optionally ties to
             -- a lake so lake pages can show a live "N homes for sale" count + grid,
             -- and each gets its own /listings/:slug page with RealEstateListing
@@ -3776,6 +3793,13 @@ app.listen(PORT, async () => {
         const { runChurnSweep } = require('./services/churn');
         setTimeout(() => runChurnSweep().catch(e => console.warn('[churn]', e.message)), 5 * 60 * 1000);
         setInterval(() => runChurnSweep().catch(e => console.warn('[churn]', e.message)), 24 * 60 * 60 * 1000);
+    }
+
+    // Win-back sequence — send due steps to churned agents.
+    if (process.env.WIN_BACK_ENABLED !== 'false') {
+        const { runWinBackSweep } = require('./services/win-back');
+        setTimeout(() => runWinBackSweep().catch(e => console.warn('[win-back]', e.message)), 4 * 60 * 1000);
+        setInterval(() => runWinBackSweep().catch(e => console.warn('[win-back]', e.message)), 6 * 60 * 60 * 1000);
     }
 
     // Push every existing contact (users / leads / inquiries) into HubSpot

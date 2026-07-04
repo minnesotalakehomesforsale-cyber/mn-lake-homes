@@ -889,7 +889,7 @@ exports.handleWebhook = async (req, res) => {
                 // for the admin churn alert).
                 const { rows: agentRows } = await pool.query(
                     `SELECT u.id AS user_id, u.full_name, u.email,
-                            a.display_name, a.paid_membership_code
+                            a.id AS agent_id, a.display_name, a.paid_membership_code, a.tier_comped
                        FROM agents a JOIN users u ON u.id = a.user_id
                       WHERE a.stripe_subscription_id = $1`,
                     [subscriptionId]
@@ -935,6 +935,14 @@ exports.handleWebhook = async (req, res) => {
                     target: { type: 'user', id: agentRows[0].user_id, label: 'agent' },
                     details: { subscription_id: subscriptionId },
                 });
+                // Win-back sequence (skip comped agents — they never paid).
+                if (!agentRows[0].tier_comped) {
+                    const a = agentRows[0];
+                    require('../services/win-back').enqueueWinBack({
+                        userId: a.user_id, agentId: a.agent_id, email: a.email,
+                        name: a.display_name || a.full_name,
+                    }).catch(e => console.warn('[win-back enqueue]', e.message));
+                }
                 break;
             }
 
