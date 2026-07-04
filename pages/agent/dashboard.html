@@ -701,25 +701,77 @@
 
     <!-- Property add/edit modal -->
     <div id="prop-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9000;align-items:center;justify-content:center;padding:1.5rem;">
-      <div style="background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;padding:1.75rem;">
+      <div style="background:#fff;border-radius:14px;max-width:640px;width:100%;max-height:90vh;overflow-y:auto;padding:1.75rem;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
           <h3 id="prop-modal-title" style="font-size:1.25rem;font-weight:800;margin:0;">Add property</h3>
           <button onclick="closePropModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#718096;">&times;</button>
         </div>
+        <p class="pf-note" style="margin:-0.3rem 0 1rem;font-size:0.78rem;color:#a0aec0;">Fill in what you know — anything you leave blank simply won't show on the listing.</p>
+
+        <div class="pf-h">The basics</div>
         <div class="pf"><label>Title *</label><input id="pf-title" type="text" maxlength="200" placeholder="e.g. 3BR lakefront on Gull Lake"></div>
         <div class="pf"><label>Link to your MLS / listing page *</label><input id="pf-url" type="url" placeholder="https://..."></div>
         <div class="pf"><label>Property address</label><input id="pf-address" type="text" placeholder="123 Shoreline Dr" autocomplete="off"><span style="font-size:0.72rem;color:#a0aec0;">Puts it on the Properties map. Street + city is enough.</span></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+        <div class="pf-grid">
           <div class="pf"><label>City</label><input id="pf-city" type="text" placeholder="Nisswa"></div>
-          <div class="pf"><label>Price</label><input id="pf-price" type="number" placeholder="750000"></div>
+          <div class="pf"><label>Price ($)</label><input id="pf-price" type="number" placeholder="750000"></div>
+          <div class="pf"><label>Property type</label><select id="pf-property_type">
+            <option value="">—</option><option>Single Family</option><option>Condo</option><option>Townhouse</option>
+            <option>Cabin / Cottage</option><option>Multi-Family</option><option>Land / Lot</option>
+            <option>Farm / Acreage</option><option>Manufactured</option><option>Other</option></select></div>
+          <div class="pf"><label>Status</label><select id="pf-status"><option value="active">Active — live on the site</option><option value="draft">Inactive — hidden</option></select></div>
         </div>
-        <div class="pf"><label>Short description</label><textarea id="pf-desc" rows="3" maxlength="600" placeholder="A sentence or two about the property…"></textarea></div>
-        <div class="pf"><label>Photo</label>
-          <input id="pf-image-file" type="file" accept="image/*" onchange="uploadPropImage(this)">
-          <div id="pf-image-preview" style="margin-top:0.5rem;"></div>
-          <input id="pf-image-url" type="hidden">
+        <div class="pf"><label>Description</label><textarea id="pf-desc" rows="4" maxlength="8000" placeholder="Tell buyers about the home, the lake, the setting…"></textarea></div>
+
+        <div class="pf-h">Photos <span style="font-weight:600;text-transform:none;letter-spacing:0;color:#a0aec0;">— up to 20. First photo is the cover.</span></div>
+        <div class="pf">
+          <input id="pf-image-file" type="file" accept="image/*" multiple onchange="uploadPropImages(this)">
+          <div id="pf-upload-status" style="font-size:0.8rem;color:#718096;margin-top:0.4rem;"></div>
+          <div id="pf-gallery" class="pf-gallery"></div>
         </div>
-        <div class="pf"><label>Status</label><select id="pf-status"><option value="active">Active — live on the site</option><option value="draft">Inactive — hidden</option></select></div>
+
+        <div class="pf-h">Key facts</div>
+        <div class="pf-grid">
+          <div class="pf"><label>Beds</label><input id="pf-beds" type="number" min="0" placeholder="3"></div>
+          <div class="pf"><label>Baths</label><input id="pf-baths" type="number" min="0" step="0.5" placeholder="2.5"></div>
+          <div class="pf"><label>Living area (sq ft)</label><input id="pf-sqft" type="number" min="0" placeholder="2400"></div>
+          <div class="pf"><label>Lot size (acres)</label><input id="pf-lot_acres" type="number" min="0" step="0.01" placeholder="0.75"></div>
+          <div class="pf"><label>Year built</label><input id="pf-year_built" type="number" min="1800" max="2100" placeholder="1998"></div>
+          <div class="pf"><label>Stories</label><input id="pf-stories" type="number" min="0" step="0.5" placeholder="2"></div>
+        </div>
+
+        <div class="pf-h">Waterfront</div>
+        <div class="pf-grid">
+          <div class="pf"><label>Waterfront?</label><select id="pf-waterfront"><option value="">—</option><option value="yes">Yes</option><option value="no">No</option></select></div>
+          <div class="pf"><label>Lake / water body</label><input id="pf-water_body" type="text" placeholder="Gull Lake"></div>
+          <div class="pf"><label>Shoreline (feet)</label><input id="pf-waterfront_feet" type="number" min="0" placeholder="120"></div>
+          <div class="pf"><label>View</label><input id="pf-listing_view" type="text" placeholder="Panoramic lake"></div>
+        </div>
+
+        <div class="pf-h">Interior</div>
+        <div class="pf-grid">
+          <div class="pf"><label>Heating</label><input id="pf-heating" type="text" placeholder="Forced air"></div>
+          <div class="pf"><label>Cooling</label><input id="pf-cooling" type="text" placeholder="Central A/C"></div>
+          <div class="pf"><label>Basement</label><input id="pf-basement" type="text" placeholder="Finished walkout"></div>
+          <div class="pf"><label>Flooring</label><input id="pf-flooring" type="text" placeholder="Hardwood, tile"></div>
+          <div class="pf"><label>Fireplace?</label><select id="pf-fireplace"><option value="">—</option><option value="yes">Yes</option><option value="no">No</option></select></div>
+          <div class="pf"><label>Appliances</label><input id="pf-appliances" type="text" placeholder="Fridge, range, dishwasher"></div>
+        </div>
+
+        <div class="pf-h">Exterior &amp; parking</div>
+        <div class="pf-grid">
+          <div class="pf"><label>Garage spaces</label><input id="pf-garage_spaces" type="number" min="0" placeholder="2"></div>
+          <div class="pf"><label>Parking</label><input id="pf-parking" type="text" placeholder="Attached garage"></div>
+          <div class="pf"><label>Exterior</label><input id="pf-exterior" type="text" placeholder="Cedar, stone"></div>
+          <div class="pf"><label>Roof</label><input id="pf-roof" type="text" placeholder="Asphalt shingle"></div>
+        </div>
+
+        <div class="pf-h">Financial</div>
+        <div class="pf-grid">
+          <div class="pf"><label>HOA dues ($/mo)</label><input id="pf-hoa_fee" type="number" min="0" placeholder="150"></div>
+          <div class="pf"><label>Annual tax ($)</label><input id="pf-annual_tax" type="number" min="0" placeholder="4200"></div>
+          <div class="pf"><label>MLS #</label><input id="pf-mls_number" type="text" maxlength="40" placeholder="6123456"></div>
+        </div>
         <div id="pf-err" style="color:#c53030;font-size:0.85rem;display:none;margin-bottom:0.5rem;"></div>
         <div style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:0.5rem;">
           <button onclick="closePropModal()" style="border:1px solid #e2e8f0;background:#fff;border-radius:8px;padding:0.6rem 1rem;font-weight:600;cursor:pointer;">Cancel</button>
@@ -731,8 +783,17 @@
       #prop-modal.open { display:flex !important; }
       .pf { display:flex;flex-direction:column;gap:0.3rem;margin-bottom:0.85rem; }
       .pf label { font-size:0.72rem;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:0.4px; }
-      .pf input, .pf select, .pf textarea { font:inherit;font-size:0.92rem;padding:0.55rem 0.7rem;border:1px solid #e2e8f0;border-radius:8px;outline:none; }
+      .pf input, .pf select, .pf textarea { font:inherit;font-size:0.92rem;padding:0.55rem 0.7rem;border:1px solid #e2e8f0;border-radius:8px;outline:none;width:100%;box-sizing:border-box;background:#fff; }
       .pf input:focus, .pf select:focus, .pf textarea:focus { border-color:#1d6df2; }
+      .pf-grid { display:grid;grid-template-columns:1fr 1fr;gap:0 0.75rem; }
+      .pf-h { font-size:0.82rem;font-weight:800;color:#1a202c;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #edf2f7;padding-bottom:0.4rem;margin:1.4rem 0 0.9rem; }
+      .pf-gallery { display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:0.5rem;margin-top:0.6rem; }
+      .pf-gi { position:relative;border-radius:8px;overflow:hidden;aspect-ratio:4/3;background:#eef2f7;border:1px solid #e2e8f0; }
+      .pf-gi img { width:100%;height:100%;object-fit:cover;display:block; }
+      .pf-gi .rm { position:absolute;top:2px;right:2px;width:20px;height:20px;border:none;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;font-size:0.9rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0; }
+      .pf-gi .cover { position:absolute;bottom:0;left:0;right:0;background:#1d6df2;color:#fff;font-size:0.58rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;text-align:center;padding:1px 0; }
+      .pf-gi:not(.is-cover) .mk { position:absolute;bottom:2px;left:2px;background:rgba(255,255,255,0.92);border:none;border-radius:5px;font-size:0.6rem;font-weight:700;padding:2px 5px;cursor:pointer;color:#1a202c; }
+      @media (max-width:560px){ .pf-grid { grid-template-columns:1fr; } }
       .prop-card { display:flex;gap:1rem;border:1px solid #edf2f7;border-radius:12px;padding:0.9rem;align-items:center;margin-bottom:0.7rem; }
       .prop-card .thumb { width:92px;height:68px;border-radius:8px;object-fit:cover;background:#eef2f7;flex-shrink:0; }
       .prop-card .pc-actions { margin-left:auto;display:flex;flex-wrap:wrap;gap:0.35rem;justify-content:flex-end; }
@@ -848,37 +909,72 @@
             } catch (_) { box.innerHTML = '<div style="text-align:center;padding:2rem;color:#c53030;">Could not load your properties.</div>'; }
         }
 
+        // Fields mirrored 1:1 between the form (pf-<key>) and the API body.
+        const PROP_FIELDS = ['title','external_url','address','price','city','property_type','status',
+            'description','beds','baths','sqft','lot_acres','year_built','stories',
+            'waterfront','water_body','waterfront_feet','listing_view',
+            'heating','cooling','basement','flooring','fireplace','appliances',
+            'garage_spaces','parking','exterior','roof','hoa_fee','annual_tax','mls_number'];
+        // A couple of ids are shortened; everything else is pf-<key>.
+        const ID_ALIAS = { external_url: 'url', description: 'desc' };
+        const idFor = k => 'pf-' + (ID_ALIAS[k] || k);
+        let _propImages = [];   // ordered image URLs; first = cover
+
         function openPropModal(p) {
             _propEditId = (p && p.id) ? p.id : null;
             document.getElementById('prop-modal-title').textContent = _propEditId ? 'Edit property' : 'Add property';
             document.getElementById('pf-err').style.display = 'none';
-            document.getElementById('pf-title').value = p?.title || '';
-            document.getElementById('pf-url').value = p?.external_url || '';
-            document.getElementById('pf-address').value = p?.address || '';
-            document.getElementById('pf-price').value = p?.price || '';
-            document.getElementById('pf-city').value = p?.city || '';
-            document.getElementById('pf-desc').value = p?.description || '';
-            document.getElementById('pf-status').value = (p?.status === 'draft') ? 'draft' : 'active';
-            document.getElementById('pf-image-url').value = p?.featured_image_url || '';
+            PROP_FIELDS.forEach(k => {
+                const el = document.getElementById(idFor(k));
+                if (!el) return;
+                let val = p ? p[k] : '';
+                if (k === 'waterfront' || k === 'fireplace') val = (val === true ? 'yes' : (val === false ? 'no' : ''));
+                if (k === 'status') val = (p?.status === 'draft') ? 'draft' : 'active';
+                el.value = (val == null ? '' : val);
+            });
+            // Rebuild the image list from cover + gallery (dedupe).
+            let gal = p?.gallery;
+            if (typeof gal === 'string') { try { gal = JSON.parse(gal); } catch (_) { gal = []; } }
+            gal = Array.isArray(gal) ? gal.map(g => typeof g === 'string' ? g : (g && g.url) || '').filter(Boolean) : [];
+            _propImages = [p?.featured_image_url, ...gal].filter(Boolean).filter((u, i, a) => a.indexOf(u) === i);
             document.getElementById('pf-image-file').value = '';
-            document.getElementById('pf-image-preview').innerHTML = p?.featured_image_url ? `<img src="${p.featured_image_url}" style="width:120px;height:84px;object-fit:cover;border-radius:8px;">` : '';
+            document.getElementById('pf-upload-status').textContent = '';
+            renderPropGallery();
             document.getElementById('prop-modal').classList.add('open');
         }
-        function closePropModal() { document.getElementById('prop-modal').classList.remove('open'); _propEditId = null; }
+        function closePropModal() { document.getElementById('prop-modal').classList.remove('open'); _propEditId = null; _propImages = []; }
 
-        async function uploadPropImage(input) {
-            const file = input.files && input.files[0];
-            if (!file) return;
-            const prev = document.getElementById('pf-image-preview');
-            prev.innerHTML = '<span style="font-size:0.82rem;color:#718096;">Uploading…</span>';
+        function renderPropGallery() {
+            const box = document.getElementById('pf-gallery');
+            box.innerHTML = _propImages.map((u, i) => `
+                <div class="pf-gi ${i === 0 ? 'is-cover' : ''}">
+                    <img src="${u.replace('/upload/', '/upload/w_240,h_180,c_fill,q_auto,f_auto/')}" alt="">
+                    <button class="rm" title="Remove" onclick="removePropImage(${i})">&times;</button>
+                    ${i === 0 ? '<span class="cover">Cover</span>' : '<button class="mk" onclick="makeCover(' + i + ')">Make cover</button>'}
+                </div>`).join('');
+        }
+        function removePropImage(i) { _propImages.splice(i, 1); renderPropGallery(); }
+        function makeCover(i) { const [u] = _propImages.splice(i, 1); _propImages.unshift(u); renderPropGallery(); }
+
+        async function uploadPropImages(input) {
+            const files = Array.from(input.files || []);
+            if (!files.length) return;
+            const room = 20 - _propImages.length;
+            if (room <= 0) { document.getElementById('pf-upload-status').textContent = 'You already have 20 photos — remove some to add more.'; input.value = ''; return; }
+            const batch = files.slice(0, room);
+            const status = document.getElementById('pf-upload-status');
+            status.textContent = `Uploading ${batch.length} photo${batch.length > 1 ? 's' : ''}…`;
             try {
-                const fd = new FormData(); fd.append('images', file);
+                const fd = new FormData();
+                batch.forEach(f => fd.append('images', f));
                 const res = await fetch('/api/listings/mine/upload', { method: 'POST', credentials: 'include', body: fd });
                 const d = await res.json();
                 if (!res.ok || !d.urls?.length) throw new Error(d.error || 'Upload failed.');
-                document.getElementById('pf-image-url').value = d.urls[0];
-                prev.innerHTML = `<img src="${d.urls[0]}" style="width:120px;height:84px;object-fit:cover;border-radius:8px;">`;
-            } catch (e) { prev.innerHTML = `<span style="color:#c53030;font-size:0.82rem;">${e.message}</span>`; }
+                _propImages.push(...d.urls);
+                renderPropGallery();
+                status.textContent = `${_propImages.length} of 20 photos.` + (files.length > room ? ' (Some skipped — 20 max.)' : '');
+            } catch (e) { status.innerHTML = `<span style="color:#c53030;">${e.message}</span>`; }
+            finally { input.value = ''; }
         }
 
         async function savePropModal() {
@@ -887,16 +983,17 @@
             const url = document.getElementById('pf-url').value.trim();
             if (!title) { err.textContent = 'A title is required.'; err.style.display = 'block'; return; }
             if (!url) { err.textContent = 'Add a link to your MLS or listing page.'; err.style.display = 'block'; return; }
-            const body = {
-                title,
-                external_url: url,
-                address: document.getElementById('pf-address').value.trim() || null,
-                price: document.getElementById('pf-price').value || null,
-                city: document.getElementById('pf-city').value.trim() || null,
-                description: document.getElementById('pf-desc').value.trim() || null,
-                featured_image_url: document.getElementById('pf-image-url').value || null,
-                status: document.getElementById('pf-status').value,
-            };
+            const body = {};
+            PROP_FIELDS.forEach(k => {
+                const el = document.getElementById(idFor(k));
+                if (!el) return;
+                const raw = (el.value || '').trim();
+                body[k] = raw === '' ? null : raw;
+            });
+            body.title = title;
+            body.external_url = url;
+            body.featured_image_url = _propImages[0] || null;
+            body.gallery = _propImages.slice(1);   // extras beyond the cover
             const btn = document.getElementById('pf-save'); btn.disabled = true; btn.textContent = 'Saving…';
             try {
                 const u = _propEditId ? `/api/listings/mine/${_propEditId}` : '/api/listings/mine';

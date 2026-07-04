@@ -58,6 +58,7 @@
         (function () {
             const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
             const money = n => n ? '$' + Number(n).toLocaleString('en-US') : 'Contact for price';
+            const thumb = u => (typeof u === 'string' && u.includes('/upload/')) ? u.replace('/upload/', '/upload/w_320,h_180,c_fill,q_auto,f_auto/') : u;
 
             const map = L.map('props-map', { scrollWheelZoom: true }).setView([46.7, -94.6], 6);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
@@ -75,7 +76,7 @@
                     const lat = Number(p.latitude), lng = Number(p.longitude);
                     if (!isFinite(lat) || !isFinite(lng)) return;
                     bounds.push([lat, lng]);
-                    const img = p.featured_image_url ? `<span class="pm-pop-img" style="background-image:url('${esc(p.featured_image_url)}')"></span>` : '';
+                    const img = p.featured_image_url ? `<span class="pm-pop-img" style="background-image:url('${esc(thumb(p.featured_image_url))}')"></span>` : '';
                     const meta = [money(p.price), esc(p.city || ''), p.agent_name ? esc(p.agent_name) : ''].filter(Boolean).join(' · ');
                     const html = `${img}<div class="pm-pop-body"><div class="t">${esc(p.title)}</div><div class="m">${meta}</div><a class="view" href="/listings/${esc(p.slug)}">View listing →</a></div>`;
                     L.marker([lat, lng]).addTo(map).bindPopup(html);

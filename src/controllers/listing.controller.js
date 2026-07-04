@@ -80,6 +80,9 @@ exports.uploadImages = (req, res) => {
 const PUBLIC_COLS = `id, slug, lake_id, agent_id, title, address, city, state, zip,
     price, beds, baths, sqft, lot_acres, waterfront_feet, description,
     featured_image_url, gallery, mls_number, external_url, latitude, longitude,
+    property_type, year_built, stories, garage_spaces, parking, heating, cooling,
+    basement, flooring, appliances, exterior, roof, listing_view, waterfront,
+    water_body, fireplace, hoa_fee, annual_tax,
     status, created_at, updated_at`;
 
 function slugify(s) {
@@ -177,6 +180,13 @@ exports.getAdmin = async (req, res) => {
 };
 
 const numOrNull = (v) => (v === '' || v === null || v === undefined ? null : Number(v));
+// Tri-state: '' / null / undefined → unknown (won't render). 'yes'/true → true, else false.
+const boolOrNull = (v) => {
+    if (v === '' || v === null || v === undefined) return null;
+    if (v === true || v === 'true' || v === 'yes' || v === 'Yes' || v === '1' || v === 1) return true;
+    return false;
+};
+const strOrNull = (v, max) => (String(v ?? '').trim().slice(0, max) || null);
 
 function bodyToCols(b) {
     return {
@@ -201,6 +211,25 @@ function bodyToCols(b) {
         latitude:           numOrNull(b.latitude),
         longitude:          numOrNull(b.longitude),
         status:             ['active', 'pending', 'sold', 'draft'].includes(b.status) ? b.status : 'active',
+        // ── Zillow-style detail fields (all optional; blanks stay null) ──
+        property_type:      strOrNull(b.property_type, 48),
+        year_built:         numOrNull(b.year_built),
+        stories:            numOrNull(b.stories),
+        garage_spaces:      numOrNull(b.garage_spaces),
+        parking:            strOrNull(b.parking, 80),
+        heating:            strOrNull(b.heating, 80),
+        cooling:            strOrNull(b.cooling, 80),
+        basement:           strOrNull(b.basement, 80),
+        flooring:           strOrNull(b.flooring, 120),
+        appliances:         strOrNull(b.appliances, 2000),
+        exterior:           strOrNull(b.exterior, 120),
+        roof:               strOrNull(b.roof, 80),
+        listing_view:       strOrNull(b.listing_view, 120),
+        waterfront:         boolOrNull(b.waterfront),
+        water_body:         strOrNull(b.water_body, 120),
+        fireplace:          boolOrNull(b.fireplace),
+        hoa_fee:            numOrNull(b.hoa_fee),
+        annual_tax:         numOrNull(b.annual_tax),
     };
 }
 
@@ -232,9 +261,13 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
     if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
     try {
-        const v = bodyToCols(req.body || {});
-        if (!v.title) return res.status(400).json({ error: 'Title is required.' });
-        const cols = Object.keys(v);
+        const b = req.body || {};
+        const v = bodyToCols(b);
+        if ('title' in b && !v.title) return res.status(400).json({ error: 'Title is required.' });
+        // Partial update: only write columns the request actually sent, so an
+        // admin edit form that omits the newer detail fields never wipes them.
+        const cols = Object.keys(v).filter(k => b[k] !== undefined);
+        if (!cols.length) return res.status(400).json({ error: 'Nothing to update.' });
         const set = cols.map((k, i) => `${k} = $${i + 2}`).join(', ');
         const { rows } = await pool.query(
             `UPDATE listings SET ${set}, updated_at = NOW() WHERE id = $1 RETURNING id, slug`,
@@ -341,9 +374,7 @@ exports.listMine = async (req, res) => {
         const agentId = await agentIdFor(req);
         if (!agentId) return res.status(403).json({ error: 'Create your agent profile first.' });
         const { rows } = await pool.query(
-            `SELECT id, slug, title, description, featured_image_url, external_url,
-                    price, city, status, created_at, updated_at
-               FROM listings WHERE agent_id = $1 ORDER BY created_at DESC`, [agentId]);
+            `SELECT ${PUBLIC_COLS} FROM listings WHERE agent_id = $1 ORDER BY created_at DESC`, [agentId]);
         res.json(rows);
     } catch (err) { console.error('[listings.listMine]', err.message); res.status(500).json({ error: 'Could not load your properties.' }); }
 };

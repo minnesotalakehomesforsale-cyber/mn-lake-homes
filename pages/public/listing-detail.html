@@ -33,8 +33,32 @@
         .lst-cta h2 { font-size:1.4rem; font-weight:800; color:#1a202c; margin:0 0 0.4rem; }
         .lst-cta p { color:#718096; margin:0 0 1.25rem; }
         .lst-gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:0.75rem; margin:2rem 0; }
-        .lst-gallery img { width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:10px; }
-        @media (max-width:600px){ .lst-price { font-size:2rem; } .lst-wrap { padding:1.5rem 1.25rem 4rem; } }
+        .lst-gallery img { width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:10px; cursor:zoom-in; transition:opacity .15s; }
+        .lst-gallery img:hover { opacity:0.92; }
+        .lst-hero img { cursor:zoom-in; }
+        /* Facts & features — Zillow-style. Blank fields are dropped server-side. */
+        .lst-section-h { font-size:1.25rem; font-weight:800; color:#1a202c; letter-spacing:-0.5px; margin:2.5rem 0 1rem; }
+        .lst-facts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1.5rem 2.5rem; }
+        .lst-fact-group h3 { font-size:0.78rem; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:#1d6df2; margin:0 0 0.6rem; }
+        .lst-fact-row { display:flex; justify-content:space-between; gap:1rem; padding:0.5rem 0; border-bottom:1px solid #f0f3f7; font-size:0.95rem; }
+        .lst-fact-row:last-child { border-bottom:0; }
+        .lst-fact-row .k { color:#718096; }
+        .lst-fact-row .val { color:#1a202c; font-weight:700; text-align:right; }
+        /* Lightbox */
+        .lst-lb { position:fixed; inset:0; background:rgba(10,15,22,0.94); z-index:9500; display:none; align-items:center; justify-content:center; }
+        .lst-lb.open { display:flex; }
+        .lst-lb img { max-width:94vw; max-height:86vh; object-fit:contain; border-radius:8px; }
+        .lst-lb .x, .lst-lb .nav { position:absolute; background:rgba(255,255,255,0.12); color:#fff; border:none; cursor:pointer; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+        .lst-lb .x { top:1rem; right:1rem; width:44px; height:44px; font-size:1.6rem; }
+        .lst-lb .nav { top:50%; transform:translateY(-50%); width:52px; height:52px; font-size:2rem; }
+        .lst-lb .prev { left:1rem; } .lst-lb .next { right:1rem; }
+        .lst-lb .count { position:absolute; bottom:1.25rem; left:0; right:0; text-align:center; color:#cbd5e0; font-size:0.9rem; }
+        @media (max-width:600px){
+            .lst-price { font-size:2rem; } .lst-wrap { padding:1.5rem 1.25rem 4rem; }
+            .lst-facts { grid-template-columns:1fr; gap:1.25rem; }
+            .lst-gallery { grid-template-columns:repeat(2,1fr); gap:0.5rem; }
+            .lst-lb .nav { width:42px; height:42px; font-size:1.5rem; }
+        }
     </style>
     <script src="/components/components.js" defer></script>
 </head>
@@ -91,6 +115,8 @@
 
         <div class="lst-desc">{{LISTING_DESCRIPTION}}</div>
 
+        {{LISTING_FACTS_HTML}}
+
         {{LISTING_GALLERY_HTML}}
 
         <div class="lst-cta">
@@ -99,6 +125,50 @@
             <a href="/pages/public/buy.html" class="nb-cta">Get matched with an agent →</a>
         </div>
     </main>
+
+    <div class="lst-lb" id="lst-lb" onclick="if(event.target===this)lbClose()">
+        <button class="x" onclick="lbClose()" aria-label="Close">&times;</button>
+        <button class="nav prev" onclick="lbStep(-1)" aria-label="Previous">‹</button>
+        <img id="lst-lb-img" src="" alt="">
+        <button class="nav next" onclick="lbStep(1)" aria-label="Next">›</button>
+        <div class="count" id="lst-lb-count"></div>
+    </div>
+    <script>
+        // Lightbox over the hero + gallery. Full-size Cloudinary swapped in.
+        (function () {
+            const full = u => (u || '').replace(/\/upload\/[^/]*\//, '/upload/q_auto,f_auto/');
+            let imgs = [], idx = 0;
+            function collect() {
+                imgs = [];
+                const hero = document.querySelector('.lst-hero img');
+                if (hero && hero.getAttribute('src')) imgs.push(hero.getAttribute('src'));
+                document.querySelectorAll('.lst-gallery img').forEach(im => imgs.push(im.getAttribute('src')));
+                imgs = imgs.filter(Boolean);
+            }
+            window.lbOpen = function (src) {
+                collect();
+                idx = Math.max(0, imgs.indexOf(src));
+                show();
+                document.getElementById('lst-lb').classList.add('open');
+            };
+            window.lbClose = function () { document.getElementById('lst-lb').classList.remove('open'); };
+            window.lbStep = function (d) { if (!imgs.length) return; idx = (idx + d + imgs.length) % imgs.length; show(); };
+            function show() {
+                document.getElementById('lst-lb-img').src = full(imgs[idx]);
+                document.getElementById('lst-lb-count').textContent = imgs.length > 1 ? `${idx + 1} / ${imgs.length}` : '';
+            }
+            document.addEventListener('click', e => {
+                const im = e.target.closest('.lst-hero img, .lst-gallery img');
+                if (im) lbOpen(im.getAttribute('src'));
+            });
+            document.addEventListener('keydown', e => {
+                if (!document.getElementById('lst-lb').classList.contains('open')) return;
+                if (e.key === 'Escape') lbClose();
+                else if (e.key === 'ArrowRight') lbStep(1);
+                else if (e.key === 'ArrowLeft') lbStep(-1);
+            });
+        })();
+    </script>
 
     <global-footer></global-footer>
 </body>

@@ -880,11 +880,64 @@ app.get('/listings/:slug', async (req, res, next) => {
                 ? l.description.split(/\n{2,}/).map(p => `<p>${escapeHtml(p.trim())}</p>`).join('')
                 : '<p>Contact us for full details on this property.</p>';
 
+            // Cloudinary on-the-fly resize + auto format/quality → fast, light
+            // thumbnails without touching the stored originals.
+            const cldThumb = (u, w) => (typeof u === 'string' && u.includes('/upload/'))
+                ? u.replace('/upload/', `/upload/w_${w},c_limit,q_auto,f_auto/`)
+                : u;
+
             let gallery = l.gallery;
             if (typeof gallery === 'string') { try { gallery = JSON.parse(gallery); } catch (_) { gallery = []; } }
-            const galleryHtml = Array.isArray(gallery) && gallery.length
-                ? `<div class="lst-gallery">${gallery.slice(0, 12).map(g => `<img src="${escapeHtml(typeof g === 'string' ? g : (g && g.url) || '')}" alt="${escapeHtml(l.title)}" loading="lazy">`).join('')}</div>`
+            const galleryUrls = (Array.isArray(gallery) ? gallery : [])
+                .map(g => typeof g === 'string' ? g : (g && g.url) || '').filter(Boolean).slice(0, 20);
+            const galleryHtml = galleryUrls.length
+                ? `<h2 class="lst-section-h">Photos</h2><div class="lst-gallery">${galleryUrls.map(g => `<img src="${escapeHtml(cldThumb(g, 800))}" alt="${escapeHtml(l.title)}" loading="lazy">`).join('')}</div>`
                 : '';
+
+            // Facts & features — blank fields are dropped, so nothing shows a gap.
+            const yn  = b => (b === true ? 'Yes' : (b === false ? 'No' : null));
+            const usd = n => (n != null && n !== '' ? '$' + Number(n).toLocaleString('en-US') : null);
+            const num = n => (n != null && n !== '' ? Number(n).toLocaleString('en-US') : null);
+            const factGroups = [
+                { title: 'Home facts', rows: [
+                    ['Property type', l.property_type],
+                    ['Year built', l.year_built],
+                    ['Living area', l.sqft != null ? num(l.sqft) + ' sq ft' : null],
+                    ['Lot size', l.lot_acres != null ? l.lot_acres + ' acres' : null],
+                    ['Stories', l.stories],
+                    ['Price / sq ft', (l.price != null && l.sqft) ? '$' + Math.round(l.price / l.sqft).toLocaleString('en-US') : null],
+                ]},
+                { title: 'Interior', rows: [
+                    ['Bedrooms', l.beds], ['Bathrooms', l.baths],
+                    ['Heating', l.heating], ['Cooling', l.cooling],
+                    ['Basement', l.basement], ['Flooring', l.flooring],
+                    ['Fireplace', yn(l.fireplace)], ['Appliances', l.appliances],
+                ]},
+                { title: 'Exterior & parking', rows: [
+                    ['Garage spaces', l.garage_spaces], ['Parking', l.parking],
+                    ['Exterior', l.exterior], ['Roof', l.roof],
+                ]},
+                { title: 'Waterfront', rows: [
+                    ['Waterfront', yn(l.waterfront)], ['Lake / water body', l.water_body],
+                    ['Shoreline', l.waterfront_feet != null ? num(l.waterfront_feet) + ' ft' : null],
+                    ['View', l.listing_view],
+                ]},
+                { title: 'Financial', rows: [
+                    ['List price', usd(l.price)],
+                    ['HOA dues', l.hoa_fee != null ? usd(l.hoa_fee) + '/mo' : null],
+                    ['Annual tax', usd(l.annual_tax)], ['MLS #', l.mls_number],
+                ]},
+            ];
+            const factsHtml = (() => {
+                const groups = factGroups
+                    .map(g => ({ title: g.title, rows: g.rows.filter(r => r[1] != null && String(r[1]).trim() !== '') }))
+                    .filter(g => g.rows.length);
+                if (!groups.length) return '';
+                return '<h2 class="lst-section-h">Facts &amp; features</h2><div class="lst-facts">' +
+                    groups.map(g => `<div class="lst-fact-group"><h3>${escapeHtml(g.title)}</h3>` +
+                        g.rows.map(r => `<div class="lst-fact-row"><span class="k">${escapeHtml(r[0])}</span><span class="val">${escapeHtml(String(r[1]))}</span></div>`).join('') +
+                        '</div>').join('') + '</div>';
+            })();
 
             const backLabel = l.lake_name ? `Back to ${l.lake_name}` : 'Back to lake homes';
             const backUrl   = l.lake_slug ? `/lakes/${l.lake_slug}` : '/towns';
@@ -916,9 +969,10 @@ app.get('/listings/:slug', async (req, res, next) => {
                 '{{LISTING_TITLE}}':          escapeHtml(l.title),
                 '{{LISTING_PRICE}}':          escapeHtml(price),
                 '{{LISTING_ADDRESS}}':        escapeHtml(locLine || 'Minnesota'),
-                '{{LISTING_IMAGE}}':          escapeHtml(image),
+                '{{LISTING_IMAGE}}':          escapeHtml(cldThumb(image, 1600)),
                 '{{LISTING_SPECS_HTML}}':     specsHtml,
                 '{{LISTING_DESCRIPTION}}':    descHtml,
+                '{{LISTING_FACTS_HTML}}':     factsHtml,
                 '{{LISTING_GALLERY_HTML}}':   galleryHtml,
                 '{{LISTING_STRUCTURED_DATA}}': sd,
                 '{{LISTING_LAKE_BACK}}':      escapeHtml(backUrl),
@@ -2584,6 +2638,27 @@ async function ensureTables() {
             );
             CREATE INDEX IF NOT EXISTS idx_listings_lake   ON listings(lake_id) WHERE lake_id IS NOT NULL;
             CREATE INDEX IF NOT EXISTS idx_listings_status ON listings(status);
+
+            -- Zillow-style detail fields. All nullable — a blank field simply
+            -- doesn't render on the listing page (agents fill in what they know).
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS property_type VARCHAR(48);
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS year_built    SMALLINT;
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS stories       NUMERIC(3,1);
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS garage_spaces SMALLINT;
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS parking       VARCHAR(80);
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS heating       VARCHAR(80);
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS cooling       VARCHAR(80);
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS basement      VARCHAR(80);
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS flooring      VARCHAR(120);
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS appliances    TEXT;
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS exterior      VARCHAR(120);
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS roof          VARCHAR(80);
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS listing_view  VARCHAR(120);
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS waterfront    BOOLEAN;
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS water_body    VARCHAR(120);
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS fireplace     BOOLEAN;
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS hoa_fee       INTEGER;
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS annual_tax    INTEGER;
 
             -- Users saving/liking properties (bookmark). One row per user+listing.
             CREATE TABLE IF NOT EXISTS saved_listings (
