@@ -1720,35 +1720,81 @@ document.addEventListener('keydown', e => {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initIntentTracking);
     else initIntentTracking();
 
+    // The cookie-consent gate: third-party pixels (GA4, HubSpot — both set
+    // cookies) only load once the visitor has ACCEPTED. Until then they stay off.
+    // The first-party /api/analytics/conversion mirror above is cookieless and
+    // keeps working regardless. window.__applyTrackingPixels is called by the
+    // consent banner on Accept (or immediately if consent was already granted).
+    const consentOk = () => { try { return localStorage.getItem('mlh_cookie_consent') === 'accepted'; } catch (_) { return false; } };
+
     fetch('/api/config/public', { credentials: 'omit' })
         .then(r => (r.ok ? r.json() : null))
         .then(cfg => {
             if (!cfg) return;
-
-            // ── GA4 (gtag.js) ──
-            if (cfg.ga4_id) {
-                const s = document.createElement('script');
-                s.async = true;
-                s.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(cfg.ga4_id)}`;
-                document.head.appendChild(s);
-                window.gtag('js', new Date());
-                // anonymize_ip stays on by default — same posture as Plausible.
-                window.gtag('config', cfg.ga4_id, {
-                    anonymize_ip: true,
-                    send_page_view: true,
-                });
-            }
-
-            // ── HubSpot tracking pixel ──
-            if (cfg.hubspot_portal_id) {
-                const h = document.createElement('script');
-                h.async = true; h.defer = true;
-                h.id = 'hs-script-loader';
-                h.src = `//js.hs-scripts.com/${encodeURIComponent(cfg.hubspot_portal_id)}.js`;
-                document.head.appendChild(h);
-            }
+            let loaded = false;
+            window.__applyTrackingPixels = function () {
+                if (loaded) return; loaded = true;
+                // ── GA4 (gtag.js) ──
+                if (cfg.ga4_id) {
+                    const s = document.createElement('script');
+                    s.async = true;
+                    s.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(cfg.ga4_id)}`;
+                    document.head.appendChild(s);
+                    window.gtag('js', new Date());
+                    window.gtag('config', cfg.ga4_id, { anonymize_ip: true, send_page_view: true });
+                }
+                // ── HubSpot tracking pixel ──
+                if (cfg.hubspot_portal_id) {
+                    const h = document.createElement('script');
+                    h.async = true; h.defer = true;
+                    h.id = 'hs-script-loader';
+                    h.src = `//js.hs-scripts.com/${encodeURIComponent(cfg.hubspot_portal_id)}.js`;
+                    document.head.appendChild(h);
+                }
+            };
+            if (consentOk()) window.__applyTrackingPixels();
         })
         .catch(() => { /* config endpoint unreachable — fall through silently */ });
+})();
+
+// ─── Cookie consent banner ──────────────────────────────────────────────────
+// GDPR/CCPA-friendly: no cookie-setting analytics load until the visitor
+// accepts. Decline keeps only the cookieless first-party event mirror. The
+// choice persists in localStorage; the banner never nags again once answered.
+(function cookieConsent() {
+    if (window.__cookieConsentInit) return;
+    window.__cookieConsentInit = true;
+    let choice = null;
+    try { choice = localStorage.getItem('mlh_cookie_consent'); } catch (_) {}
+    if (choice === 'accepted' || choice === 'declined') return;   // already answered
+
+    function render() {
+        const bar = document.createElement('div');
+        bar.setAttribute('role', 'dialog');
+        bar.setAttribute('aria-label', 'Cookie consent');
+        bar.style.cssText = 'position:fixed;left:1rem;right:1rem;bottom:1rem;z-index:9600;max-width:640px;margin:0 auto;background:#0b2a10;color:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.28);padding:1.1rem 1.25rem;font-family:inherit;display:flex;gap:1rem;align-items:center;flex-wrap:wrap;';
+        bar.innerHTML = `
+            <div style="flex:1;min-width:200px;font-size:0.85rem;line-height:1.45;">
+              We use cookies to understand site traffic and improve your experience. See our
+              <a href="/privacy" style="color:#9ae6b4;text-decoration:underline;">Privacy Policy</a>.
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+              <button type="button" data-c="declined" style="background:transparent;color:#cbd5e0;border:1px solid rgba(255,255,255,0.3);border-radius:9px;padding:0.55rem 1rem;font-weight:700;font-size:0.85rem;cursor:pointer;font-family:inherit;">Decline</button>
+              <button type="button" data-c="accepted" style="background:#1d6df2;color:#fff;border:0;border-radius:9px;padding:0.55rem 1.1rem;font-weight:800;font-size:0.85rem;cursor:pointer;font-family:inherit;">Accept</button>
+            </div>`;
+        bar.addEventListener('click', e => {
+            const b = e.target.closest('button[data-c]');
+            if (!b) return;
+            const c = b.getAttribute('data-c');
+            try { localStorage.setItem('mlh_cookie_consent', c); } catch (_) {}
+            bar.remove();
+            if (c === 'accepted' && typeof window.__applyTrackingPixels === 'function') window.__applyTrackingPixels();
+            if (typeof window.trackConversion === 'function') window.trackConversion('cookie_consent', { choice: c });
+        });
+        document.body.appendChild(bar);
+    }
+    if (document.body) render();
+    else document.addEventListener('DOMContentLoaded', render);
 })();
 
 // ─── Conversion boosters ────────────────────────────────────────────────────
