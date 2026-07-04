@@ -32,6 +32,11 @@
         .pm-pop-body .m { font-size: 0.8rem; color: #718096; margin-top: 0.15rem; }
         .pm-pop-body a.view { display: inline-block; margin-top: 0.6rem; background: #1d6df2; color: #fff; font-weight: 700; font-size: 0.82rem; text-decoration: none; border-radius: 8px; padding: 0.4rem 0.8rem; }
         .pm-empty { text-align: center; color: #a0aec0; padding: 3rem 1rem; }
+        .pm-pin span { display:block; width:100%; height:100%; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 4px rgba(16,24,40,0.4); background:#1d6df2; }
+        .pm-pin-feat span { background:#f6ad14; box-shadow:0 0 0 3px rgba(246,173,20,0.35), 0 2px 6px rgba(16,24,40,0.45); }
+        .pm-pop-feat { display:inline-block; background:#fef3c7; color:#b45309; font-size:0.62rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; border-radius:5px; padding:2px 6px; margin-bottom:0.35rem; }
+        .pm-legend { display:flex; gap:1.1rem; flex-wrap:wrap; align-items:center; font-size:0.8rem; color:#718096; margin:0.75rem 0 0; }
+        .pm-legend i { width:12px; height:12px; border-radius:50%; display:inline-block; vertical-align:-1px; margin-right:0.3rem; border:2px solid #fff; box-shadow:0 0 0 1px #e2e8f0; }
         @media (max-width: 600px) { .pm-head { padding: 1.5rem 1rem 0.75rem; } .pm-map-wrap { padding: 0 1rem; } }
     </style>
 </head>
@@ -71,18 +76,25 @@
                     count.textContent = 'No properties on the map yet — agents add them from their dashboard.';
                     return;
                 }
+                const featIcon = L.divIcon({ className: 'pm-pin pm-pin-feat', html: '<span></span>', iconSize: [22, 22], iconAnchor: [11, 11] });
+                const regIcon  = L.divIcon({ className: 'pm-pin',              html: '<span></span>', iconSize: [16, 16], iconAnchor: [8, 8] });
                 const bounds = [];
+                let anyFeat = false;
                 rows.forEach(p => {
                     const lat = Number(p.latitude), lng = Number(p.longitude);
                     if (!isFinite(lat) || !isFinite(lng)) return;
                     bounds.push([lat, lng]);
+                    if (p.featured) anyFeat = true;
                     const img = p.featured_image_url ? `<span class="pm-pop-img" style="background-image:url('${esc(thumb(p.featured_image_url))}')"></span>` : '';
+                    const badge = p.featured ? '<span class="pm-pop-feat">★ Featured</span><br>' : '';
                     const meta = [money(p.price), esc(p.city || ''), p.agent_name ? esc(p.agent_name) : ''].filter(Boolean).join(' · ');
-                    const html = `${img}<div class="pm-pop-body"><div class="t">${esc(p.title)}</div><div class="m">${meta}</div><a class="view" href="/listings/${esc(p.slug)}">View listing →</a></div>`;
-                    L.marker([lat, lng]).addTo(map).bindPopup(html);
+                    const html = `${img}<div class="pm-pop-body">${badge}<div class="t">${esc(p.title)}</div><div class="m">${meta}</div><a class="view" href="/listings/${esc(p.slug)}">View listing →</a></div>`;
+                    L.marker([lat, lng], { icon: p.featured ? featIcon : regIcon, zIndexOffset: p.featured ? 1000 : 0 })
+                        .addTo(map).bindPopup(html);
                 });
                 if (bounds.length) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
-                count.textContent = `${bounds.length} propert${bounds.length === 1 ? 'y' : 'ies'} on the map.`;
+                count.innerHTML = `${bounds.length} propert${bounds.length === 1 ? 'y' : 'ies'} on the map.`
+                    + (anyFeat ? `<span class="pm-legend"><span><i style="background:#f6ad14"></i>Featured agent</span><span><i style="background:#1d6df2"></i>Standard</span></span>` : '');
             }).catch(() => {
                 document.getElementById('pm-count').textContent = 'Could not load properties. Please refresh.';
             });

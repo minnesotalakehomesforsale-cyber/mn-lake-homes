@@ -513,10 +513,16 @@ exports.mapListings = async (req, res) => {
     try {
         const { rows } = await pool.query(
             `SELECT l.id, l.slug, l.title, l.price, l.city, l.featured_image_url,
-                    l.latitude, l.longitude, a.display_name AS agent_name
+                    l.latitude, l.longitude, l.beds, l.baths, l.property_type,
+                    l.created_at, l.open_house_at,
+                    a.display_name AS agent_name,
+                    COALESCE(m.sort_priority, 999) AS tier_rank,
+                    (a.is_featured OR COALESCE(m.sort_priority, 999) <= 100) AS featured
                FROM listings l
-          LEFT JOIN agents a ON a.id = l.agent_id
-              WHERE l.status = 'active' AND l.latitude IS NOT NULL AND l.longitude IS NOT NULL`);
+          LEFT JOIN agents a      ON a.id = l.agent_id
+          LEFT JOIN memberships m ON m.id = a.membership_id
+              WHERE l.status = 'active' AND l.latitude IS NOT NULL AND l.longitude IS NOT NULL
+              ORDER BY featured DESC, tier_rank ASC, l.created_at DESC`);
         res.json(rows);
     } catch (e) { console.error('[listings.mapListings]', e.message); res.status(500).json({ error: 'Failed to load map listings.' }); }
 };
