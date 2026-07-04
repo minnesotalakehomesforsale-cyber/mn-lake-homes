@@ -9,8 +9,11 @@
     <meta property="og:type" content="website">
     <meta property="og:title" content="{{LISTING_SEO_TITLE}}">
     <meta property="og:description" content="{{LISTING_SEO_DESC}}">
-    <meta property="og:image" content="{{LISTING_IMAGE}}">
+    <meta property="og:image" content="{{LISTING_OG_IMAGE}}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="{{LISTING_OG_IMAGE}}">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="/styles/style.css">
     {{LISTING_STRUCTURED_DATA}}
@@ -105,6 +108,7 @@
                 <span id="lst-save-heart">♡</span> <span id="lst-save-label">Save</span>
             </button>
             <a id="lst-external" href="{{LISTING_EXTERNAL_URL}}" target="_blank" rel="nofollow noopener" style="display:none;align-items:center;gap:0.4rem;background:#1d6df2;color:#fff;border-radius:10px;padding:0.6rem 1.1rem;font-weight:700;font-size:0.9rem;text-decoration:none;">View full listing ↗</a>
+            <button id="lst-share-btn" onclick="shareListing()" style="display:inline-flex;align-items:center;gap:0.4rem;border:1px solid #e2e8f0;background:#fff;border-radius:10px;padding:0.6rem 1.1rem;font:inherit;font-weight:700;font-size:0.9rem;cursor:pointer;color:#1a202c;">↗ Share</button>
         </div>
         <script>
             const LISTING_ID = '{{LISTING_ID}}';
@@ -136,6 +140,23 @@
                 } catch (_) {}
             }
             document.addEventListener('DOMContentLoaded', refreshSaveState);
+
+            async function shareListing() {
+                const url = location.href;
+                const title = document.querySelector('.lst-title')?.textContent || 'Lake home for sale';
+                const btn = document.getElementById('lst-share-btn');
+                if (navigator.share) {
+                    try { await navigator.share({ title, url }); } catch (_) {}
+                    return;
+                }
+                try {
+                    await navigator.clipboard.writeText(url);
+                    const old = btn.textContent; btn.textContent = '✓ Link copied';
+                    setTimeout(() => { btn.textContent = old; }, 1800);
+                } catch (_) {
+                    window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url), '_blank', 'noopener,width=600,height=500');
+                }
+            }
 
             async function submitShowing(e) {
                 e.preventDefault();

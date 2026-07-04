@@ -1010,6 +1010,26 @@ app.get('/listings/:slug', async (req, res, next) => {
             };
             const sd = `<script type="application/ld+json">${JSON.stringify(ld)}</script>\n    <script type="application/ld+json">${JSON.stringify(breadcrumb)}</script>`;
 
+            // Branded 1200×630 social card (Phase 5): burn price + specs onto the
+            // hero via Cloudinary text overlays so Facebook/X shares look sharp.
+            // Falls back to the plain image when it isn't a Cloudinary asset.
+            const ogImage = (() => {
+                if (!image.includes('/upload/')) return cldThumb(image, 1200);
+                const cldText = s => encodeURIComponent(String(s).replace(/,/g, '%2C').replace(/\//g, '%2F'));
+                const shortPrice = p => p == null ? 'Contact for price'
+                    : p >= 1e6 ? '$' + (p / 1e6).toFixed(p % 1e6 ? 1 : 0) + 'M'
+                    : p >= 1e3 ? '$' + Math.round(p / 1e3) + 'K' : '$' + p;
+                const sub = [l.beds != null ? l.beds + ' bd' : '', l.baths != null ? l.baths + ' ba' : '', l.city || l.state || 'Minnesota']
+                    .filter(Boolean).join('   -   ');
+                const tf = 'w_1200,h_630,c_fill,g_auto,q_auto,f_jpg,e_brightness:-28';
+                const overlays = [
+                    `co_white,l_text:Arial_86_bold:${cldText(shortPrice(l.price))},g_south_west,x_70,y_150`,
+                    `co_white,l_text:Arial_46:${cldText(sub)},g_south_west,x_74,y_90`,
+                    `co_white,l_text:Arial_34_bold:${cldText('MinnesotaLakeHomesForSale.com')},g_north_west,x_74,y_66`,
+                ].join('/');
+                return image.replace('/upload/', `/upload/${tf}/${overlays}/`);
+            })();
+
             const repl = {
                 '{{LISTING_SEO_TITLE}}':      escapeHtml(seoTitle),
                 '{{LISTING_SEO_DESC}}':       escapeHtml(seoDesc),
@@ -1020,6 +1040,7 @@ app.get('/listings/:slug', async (req, res, next) => {
                 '{{LISTING_PRICE_WAS}}':      priceWasHtml,
                 '{{LISTING_ADDRESS}}':        escapeHtml(locLine || 'Minnesota'),
                 '{{LISTING_IMAGE}}':          escapeHtml(cldThumb(image, 1600)),
+                '{{LISTING_OG_IMAGE}}':       escapeHtml(ogImage),
                 '{{LISTING_SPECS_HTML}}':     specsHtml,
                 '{{LISTING_DESCRIPTION}}':    descHtml,
                 '{{LISTING_FACTS_HTML}}':     factsHtml,
