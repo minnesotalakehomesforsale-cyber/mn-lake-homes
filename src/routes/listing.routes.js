@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const c = require('../controllers/listing.controller');
-const { verifyToken, requireRole } = require('../middleware/auth');
+const { verifyToken, requireRole, attachUserIfPresent } = require('../middleware/auth');
 
 // ─── PUBLIC ───────────────────────────────────────────────────────────────
 router.get('/', c.listPublic);            // ?lake_id=&limit= → active listings
@@ -9,6 +9,7 @@ router.get('/map', c.mapListings);        // active + geocoded → Properties ma
 router.get('/sold', c.soldRecent);        // recently sold → social-proof wall
 router.get('/boost/confirm', c.boostConfirm);   // Stripe success → apply boost + redirect
 router.get('/slug/:slug', c.getBySlug);   // single active listing (JSON)
+router.post('/:id/watch', attachUserIfPresent, c.addWatch);   // watch for price drops (anon OK)
 
 // ─── AGENT (own properties) — instant-live, scoped to the caller's agent ────
 router.get   ('/mine',            verifyToken, requireRole('agent'), c.listMine);

@@ -2947,6 +2947,18 @@ async function ensureTables() {
             CREATE INDEX IF NOT EXISTS idx_recently_viewed_user ON recently_viewed(user_id, viewed_at DESC);
             -- Weekly buyer digest throttle.
             ALTER TABLE users ADD COLUMN IF NOT EXISTS last_digest_at TIMESTAMPTZ;
+
+            -- Per-listing price-drop watchers ("notify me if this home drops").
+            CREATE TABLE IF NOT EXISTS listing_watchers (
+                id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                listing_id    UUID NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+                email         VARCHAR(255) NOT NULL,
+                user_id       UUID REFERENCES users(id) ON DELETE SET NULL,
+                created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                last_notified_at TIMESTAMPTZ,
+                UNIQUE (listing_id, email)
+            );
+            CREATE INDEX IF NOT EXISTS idx_listing_watchers_listing ON listing_watchers(listing_id);
             -- One alert email per (search, listing) — dedupes new + drop notices.
             CREATE TABLE IF NOT EXISTS saved_search_hits (
                 search_id  UUID NOT NULL REFERENCES saved_searches(id) ON DELETE CASCADE,

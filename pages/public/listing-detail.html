@@ -159,6 +159,12 @@
             </button>
             <a id="lst-external" href="{{LISTING_EXTERNAL_URL}}" target="_blank" rel="nofollow noopener" style="display:none;align-items:center;gap:0.4rem;background:#1d6df2;color:#fff;border-radius:10px;padding:0.6rem 1.1rem;font-weight:700;font-size:0.9rem;text-decoration:none;">View full listing ↗</a>
             <button id="lst-share-btn" onclick="shareListing()" style="display:inline-flex;align-items:center;gap:0.4rem;border:1px solid #e2e8f0;background:#fff;border-radius:10px;padding:0.6rem 1.1rem;font:inherit;font-weight:700;font-size:0.9rem;cursor:pointer;color:#1a202c;">↗ Share</button>
+            <button id="lst-watch-btn" onclick="toggleWatch()" style="display:inline-flex;align-items:center;gap:0.4rem;border:1px solid #e2e8f0;background:#fff;border-radius:10px;padding:0.6rem 1.1rem;font:inherit;font-weight:700;font-size:0.9rem;cursor:pointer;color:#1a202c;">🔔 Watch price</button>
+        </div>
+        <div id="lst-watch-form" style="display:none;gap:0.5rem;margin:0 0 1.25rem;max-width:420px;flex-wrap:wrap;">
+            <input id="lst-watch-email" type="email" placeholder="you@email.com" style="flex:1;min-width:180px;box-sizing:border-box;font:inherit;font-size:0.92rem;padding:0.6rem 0.8rem;border:1px solid #e2e8f0;border-radius:9px;outline:none;">
+            <button onclick="submitWatch()" style="background:#1d6df2;color:#fff;border:none;border-radius:9px;padding:0.6rem 1.1rem;font:inherit;font-weight:700;cursor:pointer;">Notify me</button>
+            <div id="lst-watch-msg" style="width:100%;font-size:0.85rem;color:#718096;"></div>
         </div>
         <script>
             const LISTING_ID = '{{LISTING_ID}}';
@@ -256,6 +262,28 @@
                     btn.style.display = 'none';
                     document.getElementById('svc-done').style.display = 'block';
                 } catch (ex) { err.textContent = ex.message; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Send request'; }
+            };
+
+            window.toggleWatch = function () {
+                const f = document.getElementById('lst-watch-form');
+                const show = f.style.display === 'none';
+                f.style.display = show ? 'flex' : 'none';
+                if (show) document.getElementById('lst-watch-email').focus();
+            };
+            window.submitWatch = async function () {
+                const msg = document.getElementById('lst-watch-msg');
+                const email = document.getElementById('lst-watch-email').value.trim();
+                if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg.style.color = '#c53030'; msg.textContent = 'Enter a valid email.'; return; }
+                msg.style.color = '#718096'; msg.textContent = 'Saving…';
+                try {
+                    const r = await fetch('/api/listings/' + LISTING_ID + '/watch', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                        body: JSON.stringify({ email }),
+                    });
+                    if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'Could not set the alert.'); }
+                    msg.style.color = '#0f766e'; msg.textContent = "✓ We'll email you if the price drops.";
+                    document.getElementById('lst-watch-email').disabled = true;
+                } catch (ex) { msg.style.color = '#c53030'; msg.textContent = ex.message; }
             };
 
             async function shareListing() {

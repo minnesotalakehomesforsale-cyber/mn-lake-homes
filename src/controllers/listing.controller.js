@@ -7,6 +7,7 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { logActivity } = require('../services/activity-log');
 const { geocodeAddress } = require('../services/geocoder');
+const emailService = require('../services/email');
 // Lazy require to avoid a circular load at module-init (search ctrl is standalone
 // here, but keep the pattern defensive).
 const savedSearch = require('./search.controller');
@@ -429,9 +430,10 @@ exports.updateMine = async (req, res) => {
         await pool.query(
             `UPDATE listings SET ${set}, updated_at = NOW() WHERE id = $1 AND agent_id = $${cols.length + 2}`,
             [req.params.id, ...cols.map(k => v[k]), agentId]);
-        // Alert saved-search subscribers when the price actually drops.
+        // Alert saved-search subscribers + this listing's watchers when the price drops.
         if (v.status === 'active' && v.price != null && prevPrice != null && Number(v.price) < Number(prevPrice)) {
             savedSearch.notifyListing(req.params.id, 'price_drop');
+            notifyWatchers(req.params.id);
         }
         res.json({ success: true });
     } catch (err) { console.error('[listings.updateMine]', err.message); res.status(500).json({ error: 'Could not update the property.' }); }
@@ -592,6 +594,57 @@ exports.listSaved = async (req, res) => {
 };
 
 // GET /api/listings/saved/ids — just the ids the user saved (for the ♥ state).
+// POST /api/listings/:id/watch { email } — watch a listing for price drops.
+exports.addWatch = async (req, res) => {
+    try {
+        const email = String(req.body?.email || req.user?.email || '').trim().toLowerCase();
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: 'Enter a valid email.' });
+        const l = await pool.query(`SELECT 1 FROM listings WHERE id = $1 AND status = 'active'`, [req.params.id]);
+        if (!l.rowCount) return res.status(404).json({ error: 'Listing not found.' });
+        await pool.query(
+            `INSERT INTO listing_watchers (listing_id, email, user_id) VALUES ($1, $2, $3)
+             ON CONFLICT (listing_id, email) DO NOTHING`,
+            [req.params.id, email, req.user?.userId || null]);
+        res.status(201).json({ success: true });
+    } catch (e) { console.error('[listings.addWatch]', e.message); res.status(500).json({ error: 'Could not set the alert.' }); }
+};
+
+// Email everyone watching a listing that its price dropped. Fire-and-forget.
+async function notifyWatchers(listingId) {
+    try {
+        const { rows: lr } = await pool.query(
+            `SELECT slug, title, price, original_price, city, featured_image_url FROM listings WHERE id = $1`, [listingId]);
+        const l = lr[0];
+        if (!l) return;
+        const { rows: watchers } = await pool.query(`SELECT email FROM listing_watchers WHERE listing_id = $1`, [listingId]);
+        if (!watchers.length) return;
+        const base = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
+        const now = l.price != null ? '$' + Number(l.price).toLocaleString('en-US') : 'new price';
+        const was = l.original_price != null ? '$' + Number(l.original_price).toLocaleString('en-US') : null;
+        const img = (l.featured_image_url && l.featured_image_url.includes('/upload/'))
+            ? l.featured_image_url.replace('/upload/', '/upload/w_600,h_360,c_fill,q_auto,f_auto/') : l.featured_image_url;
+        for (const w of watchers) {
+            emailService.sendEmail({
+                to: w.email,
+                subject: `Price drop: ${l.title} is now ${now}`,
+                html: `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;color:#1a202c;">
+                    <p style="color:#b91c1c;font-weight:800;margin:0 0 0.3rem;">Price drop 🎉</p>
+                    <a href="${base}/listings/${l.slug}" style="text-decoration:none;color:inherit;display:block;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+                        ${img ? `<img src="${img}" alt="" style="width:100%;display:block;">` : ''}
+                        <div style="padding:1rem 1.15rem;"><div style="font-size:1.5rem;font-weight:800;">${now} ${was ? `<span style="font-size:1rem;color:#a0aec0;text-decoration:line-through;font-weight:600;">${was}</span>` : ''}</div>
+                        <div style="font-weight:700;color:#2d3748;margin-top:0.15rem;">${escapeHtmlL(l.title)}</div>
+                        <div style="color:#718096;font-size:0.9rem;">${escapeHtmlL(l.city || '')}</div></div>
+                    </a>
+                    <p style="text-align:center;margin:1.2rem 0 0;"><a href="${base}/listings/${l.slug}" style="background:#1d6df2;color:#fff;text-decoration:none;font-weight:700;padding:0.7rem 1.4rem;border-radius:10px;display:inline-block;">View this home →</a></p>
+                </div>`,
+            });
+        }
+        await pool.query(`UPDATE listing_watchers SET last_notified_at = NOW() WHERE listing_id = $1`, [listingId]);
+    } catch (e) { console.warn('[listings.notifyWatchers]', e.message); }
+}
+exports.notifyWatchers = notifyWatchers;
+function escapeHtmlL(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
 // POST /api/listings/:id/view — record a signed-in user viewing a listing.
 exports.recordView = async (req, res) => {
     try {
