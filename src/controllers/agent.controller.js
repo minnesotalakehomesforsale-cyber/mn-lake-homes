@@ -168,7 +168,7 @@ const getPublicAgents = async (req, res) => {
                    a.phone_public, a.email_public, a.profile_photo_url,
                    m.display_badge_label as membership_badge,
                    m.code as membership_code, m.sort_priority,
-                   ${RESP_SQL}
+                   ${RESP_SQL},
                    COALESCE((
                        SELECT json_agg(json_build_object('slug', t.slug, 'name', t.name, 'state', t.state) ORDER BY t.name)
                        FROM user_tags ut
