@@ -59,6 +59,17 @@
         .lst-fact-row:last-child { border-bottom:0; }
         .lst-fact-row .k { color:#718096; }
         .lst-fact-row .val { color:#1a202c; font-weight:700; text-align:right; }
+        /* Related listings */
+        .lst-rel { margin-top:2.75rem; }
+        .lst-rel-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1rem; }
+        .lst-rel-card { display:block; text-decoration:none; border:1px solid #edf2f7; border-radius:12px; overflow:hidden; transition:box-shadow .15s, transform .15s; color:inherit; background:#fff; }
+        .lst-rel-card:hover { box-shadow:0 8px 22px rgba(16,24,40,0.10); transform:translateY(-2px); }
+        .lst-rel-card .img { width:100%; aspect-ratio:4/3; object-fit:cover; background:#eef2f7; display:block; }
+        .lst-rel-card .b { padding:0.7rem 0.85rem 0.9rem; }
+        .lst-rel-card .p { font-weight:800; color:#1a202c; font-size:1.05rem; }
+        .lst-rel-card .t { color:#4a5568; font-size:0.9rem; margin-top:0.15rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .lst-rel-card .m { color:#a0aec0; font-size:0.8rem; margin-top:0.2rem; }
+        @media (max-width:600px){ .lst-rel-grid { grid-template-columns:1fr 1fr; gap:0.6rem; } }
         /* Lightbox */
         .lst-lb { position:fixed; inset:0; background:rgba(10,15,22,0.94); z-index:9500; display:none; align-items:center; justify-content:center; }
         .lst-lb.open { display:flex; }
@@ -163,6 +174,8 @@
         {{LISTING_FACTS_HTML}}
 
         {{LISTING_GALLERY_HTML}}
+
+        {{LISTING_RELATED_HTML}}
 
         <div class="lst-cta" id="lst-showing">
             <h2>Request a showing</h2>

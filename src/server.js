@@ -853,6 +853,18 @@ app.get('/listings/:slug', async (req, res, next) => {
         const l = rows[0];
         if (!l) { renderFriendly404(res, { kind: 'listing', slug: req.params.slug }); return; }
 
+        // Related listings for internal linking + discovery (Phase 4):
+        // other active homes from the same agent and on the same lake.
+        const { rows: relRows } = await pool.query(
+            `SELECT slug, title, price, city, featured_image_url, beds, baths, agent_id, lake_id
+               FROM listings
+              WHERE status = 'active' AND id <> $1
+                AND (($2::uuid IS NOT NULL AND agent_id = $2)
+                  OR ($3::uuid IS NOT NULL AND lake_id  = $3))
+              ORDER BY created_at DESC LIMIT 12`,
+            [l.id, l.agent_id || null, l.lake_id || null]
+        ).catch(() => ({ rows: [] }));
+
         const tpl = path.join(PROJECT_ROOT, 'pages/public/listing-detail.html');
         fs.readFile(tpl, 'utf8', (err, html) => {
             if (err) return next(err);
@@ -961,6 +973,20 @@ app.get('/listings/:slug', async (req, res, next) => {
                         '</div>').join('') + '</div>';
             })();
 
+            // Related-listing cards (internal links help SEO + keep buyers on-site).
+            const relCard = r => {
+                const rimg = cldThumb(r.featured_image_url || `${siteBase}/assets/images/mn-canoe-shore.webp`, 480);
+                const rprice = r.price != null ? '$' + Number(r.price).toLocaleString('en-US') : 'Contact for price';
+                const rmeta = [r.beds != null ? r.beds + ' bd' : '', r.baths != null ? r.baths + ' ba' : '', r.city || ''].filter(Boolean).join(' · ');
+                return `<a class="lst-rel-card" href="/listings/${escapeHtml(r.slug)}"><img class="img" src="${escapeHtml(rimg)}" alt="${escapeHtml(r.title)}" loading="lazy"><div class="b"><div class="p">${escapeHtml(rprice)}</div><div class="t">${escapeHtml(r.title)}</div><div class="m">${escapeHtml(rmeta)}</div></div></a>`;
+            };
+            const fromAgent = relRows.filter(r => l.agent_id && r.agent_id === l.agent_id).slice(0, 4);
+            const usedSlugs = new Set(fromAgent.map(r => r.slug));
+            const onLake = relRows.filter(r => l.lake_id && r.lake_id === l.lake_id && !usedSlugs.has(r.slug)).slice(0, 4);
+            let relatedHtml = '';
+            if (fromAgent.length) relatedHtml += `<div class="lst-rel"><h2 class="lst-section-h">More from this agent</h2><div class="lst-rel-grid">${fromAgent.map(relCard).join('')}</div></div>`;
+            if (onLake.length)    relatedHtml += `<div class="lst-rel"><h2 class="lst-section-h">More homes${l.lake_name ? ' on ' + escapeHtml(l.lake_name) : ' nearby'}</h2><div class="lst-rel-grid">${onLake.map(relCard).join('')}</div></div>`;
+
             const backLabel = l.lake_name ? `Back to ${l.lake_name}` : 'Back to lake homes';
             const backUrl   = l.lake_slug ? `/lakes/${l.lake_slug}` : '/towns';
 
@@ -998,6 +1024,7 @@ app.get('/listings/:slug', async (req, res, next) => {
                 '{{LISTING_DESCRIPTION}}':    descHtml,
                 '{{LISTING_FACTS_HTML}}':     factsHtml,
                 '{{LISTING_GALLERY_HTML}}':   galleryHtml,
+                '{{LISTING_RELATED_HTML}}':   relatedHtml,
                 '{{LISTING_STRUCTURED_DATA}}': sd,
                 '{{LISTING_LAKE_BACK}}':      escapeHtml(backUrl),
                 '{{LISTING_BACK_LABEL}}':     escapeHtml(backLabel),
