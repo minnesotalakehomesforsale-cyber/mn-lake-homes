@@ -2290,6 +2290,17 @@ async function ensureTables() {
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS waterfront_feet INTEGER;
         `);
 
+        // Cache for the AI marketing-insights tabs (agent + business). These run
+        // a slow OpenAI call, so we persist the whole payload and only regenerate
+        // when the admin explicitly clicks Refresh (?refresh=1).
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS marketing_insights_cache (
+                kind         TEXT PRIMARY KEY,
+                payload      JSONB NOT NULL,
+                generated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+        `);
+
         // Stripe columns on agents table
         await pool.query(`
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT;

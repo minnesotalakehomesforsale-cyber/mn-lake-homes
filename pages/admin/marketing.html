@@ -548,12 +548,14 @@
 
     // ── Marketing to Agents — coverage-gap insights (AI) ───────────────────
     let _agentInsightsLoaded = false;
-    async function loadAgentInsights() {
+    async function loadAgentInsights(force) {
         _agentInsightsLoaded = true;
         const el = document.getElementById('agents-body');
-        el.innerHTML = '<p style="color:#a0aec0;">Analyzing coverage and generating recommendations…</p>';
+        el.innerHTML = force
+            ? '<p style="color:#a0aec0;">Analyzing coverage and generating fresh recommendations…</p>'
+            : '<p style="color:#a0aec0;">Loading saved insights…</p>';
         try {
-            const res = await fetch('/api/admin/marketing/agent-insights', { credentials: 'include' });
+            const res = await fetch('/api/admin/marketing/agent-insights' + (force ? '?refresh=1' : ''), { credentials: 'include' });
             if (!res.ok) throw new Error('Failed to load insights.');
             const d = await res.json();
             const s = d.stats;
@@ -586,21 +588,23 @@
                     <h3>Areas furthest from goal</h3>
                     <table class="ag-table"><thead><tr><th>Area</th><th>Current</th><th style="text-align:right;">Still needs</th></tr></thead><tbody>${worstRows}</tbody></table>
                 </div>
-                <p style="font-size:0.75rem;color:#a0aec0;margin-top:1rem;">Generated ${new Date(d.generatedAt).toLocaleString()}. Goals per area: 1 Founder · 2 Elite · 5 Prime · 10 Basic.</p>`;
+                <p style="font-size:0.75rem;color:#a0aec0;margin-top:1rem;">Last generated ${new Date(d.generatedAt).toLocaleString()}${d.cached ? ' · saved snapshot (click Refresh to regenerate)' : ''}. Goals per area: 1 Founder · 2 Elite · 5 Prime · 10 Basic.</p>`;
         } catch (err) {
             el.innerHTML = `<p style="color:#c53030;">${escHtml(err.message)}</p>`;
         }
     }
-    function refreshAgentInsights() { _agentInsightsLoaded = false; loadAgentInsights(); }
+    function refreshAgentInsights() { _agentInsightsLoaded = false; loadAgentInsights(true); }
 
     // ── Marketing to Businesses — coverage-gap insights (same AI) ──────────
     let _bizInsightsLoaded = false;
-    async function loadBusinessInsights() {
+    async function loadBusinessInsights(force) {
         _bizInsightsLoaded = true;
         const el = document.getElementById('businesses-body');
-        el.innerHTML = '<p style="color:#a0aec0;">Analyzing coverage and generating recommendations…</p>';
+        el.innerHTML = force
+            ? '<p style="color:#a0aec0;">Analyzing coverage and generating fresh recommendations…</p>'
+            : '<p style="color:#a0aec0;">Loading saved insights…</p>';
         try {
-            const res = await fetch('/api/admin/marketing/business-insights', { credentials: 'include' });
+            const res = await fetch('/api/admin/marketing/business-insights' + (force ? '?refresh=1' : ''), { credentials: 'include' });
             if (!res.ok) throw new Error('Failed to load insights.');
             const d = await res.json();
             const s = d.stats;
@@ -636,12 +640,12 @@
                     <h3>Areas furthest from goal</h3>
                     <table class="ag-table"><thead><tr><th>Area</th><th>Current</th><th style="text-align:right;">Still needs</th></tr></thead><tbody>${worstRows}</tbody></table>
                 </div>
-                <p style="font-size:0.75rem;color:#a0aec0;margin-top:1rem;">Generated ${new Date(d.generatedAt).toLocaleString()}. Goal per area: 1 Featured Partner + 3 Local Spotlights · core types: Marina, Resort/Outdoor, Restaurant, Boat rental.</p>`;
+                <p style="font-size:0.75rem;color:#a0aec0;margin-top:1rem;">Last generated ${new Date(d.generatedAt).toLocaleString()}${d.cached ? ' · saved snapshot (click Refresh to regenerate)' : ''}. Goal per area: 1 Featured Partner + 3 Local Spotlights · core types: Marina, Resort/Outdoor, Restaurant, Boat rental.</p>`;
         } catch (err) {
             el.innerHTML = `<p style="color:#c53030;">${escHtml(err.message)}</p>`;
         }
     }
-    function refreshBusinessInsights() { _bizInsightsLoaded = false; loadBusinessInsights(); }
+    function refreshBusinessInsights() { _bizInsightsLoaded = false; loadBusinessInsights(true); }
 
     // ── Content calendar ───────────────────────────────────────────────────
     const CT = {

@@ -2462,8 +2462,34 @@ function getMktOpenAI() {
  * 5 Prime, 10 Basic), then asks the model for a prioritized recruiting/
  * marketing-to-agents plan. Degrades to the computed stats if OpenAI is off.
  */
+// Read/write the persisted insights payload so the tabs load instantly and only
+// re-run the (slow) AI generation when the admin clicks Refresh.
+async function readInsightsCache(kind) {
+    try {
+        const { rows } = await pool.query(
+            'SELECT payload, generated_at FROM marketing_insights_cache WHERE kind = $1', [kind]);
+        if (!rows.length) return null;
+        return { ...rows[0].payload, generatedAt: rows[0].generated_at, cached: true };
+    } catch (_) { return null; }
+}
+async function writeInsightsCache(kind, payload) {
+    try {
+        await pool.query(
+            `INSERT INTO marketing_insights_cache (kind, payload, generated_at)
+             VALUES ($1, $2, NOW())
+             ON CONFLICT (kind) DO UPDATE SET payload = EXCLUDED.payload, generated_at = NOW()`,
+            [kind, payload]);
+    } catch (e) { console.error('[insights-cache write]', e.message); }
+}
+
 const getAgentMarketingInsights = async (req, res) => {
     try {
+        // Serve the saved snapshot unless the admin asked for a fresh run.
+        const force = req.query.refresh === '1' || req.query.refresh === 'true';
+        if (!force) {
+            const cached = await readInsightsCache('agent');
+            if (cached) return res.json(cached);
+        }
         const { rows } = await pool.query(`
             SELECT t.name, t.state, t.region, t.latitude, t.longitude,
                    COUNT(a.id) FILTER (WHERE m.code = 'founder')::int            AS founders,
@@ -2529,7 +2555,9 @@ const getAgentMarketingInsights = async (req, res) => {
             } catch (e) { console.error('[agent-insights AI]', e.message); }
         }
 
-        res.json({ generatedAt: new Date().toISOString(), aiConfigured: !!client, stats, recommendations });
+        const payload = { generatedAt: new Date().toISOString(), aiConfigured: !!client, stats, recommendations };
+        await writeInsightsCache('agent', payload);
+        res.json({ ...payload, cached: false });
     } catch (err) {
         console.error('[getAgentMarketingInsights]', err.message);
         res.status(500).json({ error: 'Failed to build agent marketing insights.' });
@@ -2546,6 +2574,11 @@ const BIZ_TYPE_LABEL = { marina: 'Marina', outdoor_recreation: 'Resort/Outdoor',
 
 const getBusinessMarketingInsights = async (req, res) => {
     try {
+        const force = req.query.refresh === '1' || req.query.refresh === 'true';
+        if (!force) {
+            const cached = await readInsightsCache('business');
+            if (cached) return res.json(cached);
+        }
         const { rows } = await pool.query(`
             SELECT t.name, t.state, t.region, t.latitude, t.longitude,
                    COUNT(b.id) FILTER (WHERE COALESCE(NULLIF(b.tier,''),'free') = 'premium')::int AS premium,
@@ -2603,7 +2636,9 @@ const getBusinessMarketingInsights = async (req, res) => {
             } catch (e) { console.error('[business-insights AI]', e.message); }
         }
 
-        res.json({ generatedAt: new Date().toISOString(), aiConfigured: !!client, stats, recommendations });
+        const payload = { generatedAt: new Date().toISOString(), aiConfigured: !!client, stats, recommendations };
+        await writeInsightsCache('business', payload);
+        res.json({ ...payload, cached: false });
     } catch (err) {
         console.error('[getBusinessMarketingInsights]', err.message);
         res.status(500).json({ error: 'Failed to build business marketing insights.' });
