@@ -275,6 +275,7 @@ class GlobalHeader extends HTMLElement {
                 columns: [
                     { heading: 'Browse', links: [
                         { label: 'Lakes & Towns map',    href: '/towns' },
+                        { label: 'Properties map',       href: '/properties' },
                         { label: 'Featured Agents',      href: `${bp}agents.html?featured=1` },
                         { label: 'List your Business',   href: '/business-signup' },
                     ]},
@@ -542,6 +543,7 @@ class GlobalFooter extends HTMLElement {
                 <div class="link-column">
                     <h4>Explore</h4>
                     <a href="/towns">Lakes &amp; Towns</a>
+                    <a href="/properties">Properties Map</a>
                     <a href="${bp}resources.html">Resource Library</a>
                     <a href="${bp}blog.html">Blog</a>
                     <a href="${bp}find-your-lake.html">Find Your Lake</a>

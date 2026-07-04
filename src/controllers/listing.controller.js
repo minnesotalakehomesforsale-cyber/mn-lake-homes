@@ -6,6 +6,18 @@ const pool = require('../database/pool');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { logActivity } = require('../services/activity-log');
+const { geocodeAddress } = require('../services/geocoder');
+
+// Fill lat/lng from the address (city/state help disambiguate) when an agent
+// gives an address but no coordinates — powers the Properties map. Best-effort:
+// a geocode miss just leaves the listing off the map, never blocks the save.
+async function geocodeInto(v) {
+    if (!v.address || v.latitude != null) return;
+    try {
+        const geo = await geocodeAddress([v.address, v.city, v.state].filter(Boolean).join(', '));
+        if (geo) { v.latitude = geo.lat; v.longitude = geo.lng; }
+    } catch (_) { /* leave uncoordinated */ }
+}
 
 const isAdmin = (req) => req.user && (req.user.role === 'admin' || req.user.role === 'super_admin');
 
@@ -344,6 +356,7 @@ exports.createMine = async (req, res) => {
         if (!v.title) return res.status(400).json({ error: 'A title is required.' });
         v.agent_id = agentId;                                                  // force ownership
         if (!['active', 'draft'].includes(v.status)) v.status = 'active';      // instant-live
+        await geocodeInto(v);                                                  // address → lat/lng for the map
         const slug = await uniqueSlug(slugify(v.title));
         const cols = Object.keys(v);
         const placeholders = cols.map((_, i) => `$${i + 2}`).join(', ');
@@ -367,6 +380,8 @@ exports.updateMine = async (req, res) => {
         if (!v.title) return res.status(400).json({ error: 'A title is required.' });
         delete v.agent_id;                                                     // never reassign owner
         if (!['active', 'draft'].includes(v.status)) v.status = 'active';
+        // Re-geocode when the address changed (agent edits move the pin).
+        v.latitude = null; v.longitude = null; await geocodeInto(v);
         const cols = Object.keys(v);
         const set = cols.map((k, i) => `${k} = $${i + 2}`).join(', ');
         await pool.query(
@@ -457,6 +472,20 @@ exports.savedIds = async (req, res) => {
         const { rows } = await pool.query(`SELECT listing_id FROM saved_listings WHERE user_id = $1`, [uid]);
         res.json({ ids: rows.map(r => r.listing_id) });
     } catch (_) { res.json({ ids: [] }); }
+};
+
+// GET /api/listings/map — active, geocoded listings for the Properties map.
+exports.mapListings = async (req, res) => {
+    if (!LISTINGS_PUBLIC) return res.json([]);
+    try {
+        const { rows } = await pool.query(
+            `SELECT l.id, l.slug, l.title, l.price, l.city, l.featured_image_url,
+                    l.latitude, l.longitude, a.display_name AS agent_name
+               FROM listings l
+          LEFT JOIN agents a ON a.id = l.agent_id
+              WHERE l.status = 'active' AND l.latitude IS NOT NULL AND l.longitude IS NOT NULL`);
+        res.json(rows);
+    } catch (e) { console.error('[listings.mapListings]', e.message); res.status(500).json({ error: 'Failed to load map listings.' }); }
 };
 
 // ─── ADMIN visibility: an agent's listings / a user's saved properties ──────

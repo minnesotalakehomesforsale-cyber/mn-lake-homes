@@ -498,6 +498,7 @@ app.get('/sitemap.xml', async (req, res) => {
             { url: '/buy',             priority: 0.9, changefreq: 'weekly'  },
             { url: '/sell',            priority: 0.9, changefreq: 'weekly'  },
             { url: '/towns',           priority: 0.9, changefreq: 'weekly'  },
+            { url: '/properties',      priority: 0.8, changefreq: 'daily'   },
             { url: '/agents',          priority: 0.8, changefreq: 'weekly'  },
             { url: '/cash-offer',      priority: 0.7, changefreq: 'monthly' },
             { url: '/blog',            priority: 0.7, changefreq: 'daily'   },
@@ -1172,6 +1173,16 @@ app.get('/towns', async (req, res, next) => {
             res.type('html').send(out);
         });
     } catch (err) { next(err); }
+});
+
+// Properties map — agents' own listings, pinned to their geocoded address.
+// Its own page (distinct from the lakes/towns and businesses map views).
+app.get('/properties', (req, res, next) => {
+    if (process.env.LISTINGS_PUBLIC === 'false') return res.redirect(302, '/towns');
+    fs.readFile(path.join(PROJECT_ROOT, 'pages/public/properties.html'), 'utf8', (err, html) => {
+        if (err) return next(err);
+        res.type('html').send(html);
+    });
 });
 
 // ─── Homepage: inject Google Search Console verification meta tag ─────

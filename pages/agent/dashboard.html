@@ -708,9 +708,10 @@
         </div>
         <div class="pf"><label>Title *</label><input id="pf-title" type="text" maxlength="200" placeholder="e.g. 3BR lakefront on Gull Lake"></div>
         <div class="pf"><label>Link to your MLS / listing page *</label><input id="pf-url" type="url" placeholder="https://..."></div>
+        <div class="pf"><label>Property address</label><input id="pf-address" type="text" placeholder="123 Shoreline Dr" autocomplete="off"><span style="font-size:0.72rem;color:#a0aec0;">Puts it on the Properties map. Street + city is enough.</span></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-          <div class="pf"><label>Price</label><input id="pf-price" type="number" placeholder="750000"></div>
           <div class="pf"><label>City</label><input id="pf-city" type="text" placeholder="Nisswa"></div>
+          <div class="pf"><label>Price</label><input id="pf-price" type="number" placeholder="750000"></div>
         </div>
         <div class="pf"><label>Short description</label><textarea id="pf-desc" rows="3" maxlength="600" placeholder="A sentence or two about the property…"></textarea></div>
         <div class="pf"><label>Photo</label>
@@ -853,6 +854,7 @@
             document.getElementById('pf-err').style.display = 'none';
             document.getElementById('pf-title').value = p?.title || '';
             document.getElementById('pf-url').value = p?.external_url || '';
+            document.getElementById('pf-address').value = p?.address || '';
             document.getElementById('pf-price').value = p?.price || '';
             document.getElementById('pf-city').value = p?.city || '';
             document.getElementById('pf-desc').value = p?.description || '';
@@ -888,6 +890,7 @@
             const body = {
                 title,
                 external_url: url,
+                address: document.getElementById('pf-address').value.trim() || null,
                 price: document.getElementById('pf-price').value || null,
                 city: document.getElementById('pf-city').value.trim() || null,
                 description: document.getElementById('pf-desc').value.trim() || null,

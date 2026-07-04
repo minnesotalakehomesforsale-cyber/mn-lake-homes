@@ -5,6 +5,7 @@ const { verifyToken, requireRole } = require('../middleware/auth');
 
 // ─── PUBLIC ───────────────────────────────────────────────────────────────
 router.get('/', c.listPublic);            // ?lake_id=&limit= → active listings
+router.get('/map', c.mapListings);        // active + geocoded → Properties map
 router.get('/slug/:slug', c.getBySlug);   // single active listing (JSON)
 
 // ─── AGENT (own properties) — instant-live, scoped to the caller's agent ────

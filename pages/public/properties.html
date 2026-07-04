@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Lake Properties Map | MN Lake Homes</title>
+    <meta name="description" content="Browse Minnesota lake homes for sale on an interactive map — pinned to their location, straight to the agent's full listing.">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/properties">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJ2yZQcIvj2Wr5V9v0/CO7X4gYtRQ=" crossorigin=""></script>
+    <script src="../../components/components.js" defer></script>
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; }
+        .pm-head { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 1rem; }
+        .pm-head h1 { font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 800; letter-spacing: -1px; margin: 0 0 0.4rem; color: #1a202c; }
+        .pm-head p { color: #4a5568; font-size: 1.02rem; margin: 0 0 0.9rem; max-width: 640px; line-height: 1.55; }
+        .pm-switch { display: inline-flex; background: #edf2f7; border-radius: 999px; padding: 0.3rem; gap: 0.25rem; }
+        .pm-switch a { text-decoration: none; font-size: 0.85rem; font-weight: 700; color: #4a5568; padding: 0.45rem 1rem; border-radius: 999px; }
+        .pm-switch a.on { background: #fff; color: #1d6df2; box-shadow: 0 2px 6px rgba(16,24,40,0.08); }
+        .pm-map-wrap { max-width: 1100px; margin: 1rem auto 3rem; padding: 0 1.5rem; }
+        #props-map { height: min(72vh, 680px); border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; z-index: 0; }
+        .pm-count { font-size: 0.85rem; color: #718096; margin: 0.75rem 0 0; }
+        .leaflet-popup-content-wrapper { border-radius: 14px !important; box-shadow: 0 14px 34px rgba(16,24,40,0.22) !important; padding: 0 !important; overflow: hidden; }
+        .leaflet-popup-content { margin: 0 !important; width: 240px !important; font-family: 'SF Pro Text', -apple-system, sans-serif; }
+        .pm-pop-img { height: 120px; background: #eef2f7 center/cover; display: block; }
+        .pm-pop-body { padding: 0.7rem 0.85rem 0.85rem; }
+        .pm-pop-body .t { font-weight: 800; font-size: 0.95rem; color: #1a202c; line-height: 1.25; }
+        .pm-pop-body .m { font-size: 0.8rem; color: #718096; margin-top: 0.15rem; }
+        .pm-pop-body a.view { display: inline-block; margin-top: 0.6rem; background: #1d6df2; color: #fff; font-weight: 700; font-size: 0.82rem; text-decoration: none; border-radius: 8px; padding: 0.4rem 0.8rem; }
+        .pm-empty { text-align: center; color: #a0aec0; padding: 3rem 1rem; }
+        @media (max-width: 600px) { .pm-head { padding: 1.5rem 1rem 0.75rem; } .pm-map-wrap { padding: 0 1rem; } }
+    </style>
+</head>
+<body>
+    <global-header></global-header>
+
+    <div class="pm-head">
+        <h1>Lake Properties</h1>
+        <p>Homes for sale on Minnesota's lakes, pinned to the map. Click a pin to jump to the agent's full listing.</p>
+        <div class="pm-switch">
+            <a href="/properties" class="on">Properties</a>
+            <a href="/towns">Lakes &amp; Towns</a>
+            <a href="/towns#businesses">Businesses</a>
+        </div>
+    </div>
+    <div class="pm-map-wrap">
+        <div id="props-map"></div>
+        <p class="pm-count" id="pm-count"></p>
+    </div>
+
+    <global-footer></global-footer>
+
+    <script>
+        (function () {
+            const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const money = n => n ? '$' + Number(n).toLocaleString('en-US') : 'Contact for price';
+
+            const map = L.map('props-map', { scrollWheelZoom: true }).setView([46.7, -94.6], 6);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19, subdomains: 'abcd', attribution: ''
+            }).addTo(map);
+
+            fetch('/api/listings/map').then(r => r.ok ? r.json() : []).then(rows => {
+                const count = document.getElementById('pm-count');
+                if (!Array.isArray(rows) || !rows.length) {
+                    count.textContent = 'No properties on the map yet — agents add them from their dashboard.';
+                    return;
+                }
+                const bounds = [];
+                rows.forEach(p => {
+                    const lat = Number(p.latitude), lng = Number(p.longitude);
+                    if (!isFinite(lat) || !isFinite(lng)) return;
+                    bounds.push([lat, lng]);
+                    const img = p.featured_image_url ? `<span class="pm-pop-img" style="background-image:url('${esc(p.featured_image_url)}')"></span>` : '';
+                    const meta = [money(p.price), esc(p.city || ''), p.agent_name ? esc(p.agent_name) : ''].filter(Boolean).join(' · ');
+                    const html = `${img}<div class="pm-pop-body"><div class="t">${esc(p.title)}</div><div class="m">${meta}</div><a class="view" href="/listings/${esc(p.slug)}">View listing →</a></div>`;
+                    L.marker([lat, lng]).addTo(map).bindPopup(html);
+                });
+                if (bounds.length) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+                count.textContent = `${bounds.length} propert${bounds.length === 1 ? 'y' : 'ies'} on the map.`;
+            }).catch(() => {
+                document.getElementById('pm-count').textContent = 'Could not load properties. Please refresh.';
+            });
+        })();
+    </script>
+</body>
+</html>
