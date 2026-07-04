@@ -337,10 +337,13 @@ exports.remove = async (req, res) => {
 // fresh slugged INSERT. Returns { created, updated, skipped }.
 async function upsertMany(items) {
     let created = 0, updated = 0, skipped = 0;
+    const createdIds = [];   // newly-inserted active listings → alert matching buyers
+    const seenMls    = [];    // mls_numbers present in this batch → retire the rest
     for (const raw of items) {
         try {
             const v = bodyToCols(raw);
             if (!v.title) { skipped++; continue; }
+            if (v.mls_number) seenMls.push(v.mls_number);
             const cols = Object.keys(v);
             let existing = null;
             if (v.mls_number) {
@@ -353,7 +356,10 @@ async function upsertMany(items) {
             } else {
                 const slug = await uniqueSlug(slugify(raw.slug || v.title));
                 const ph = cols.map((_, i) => `$${i + 2}`).join(', ');
-                await pool.query(`INSERT INTO listings (slug, ${cols.join(', ')}) VALUES ($1, ${ph})`, [slug, ...cols.map(k => v[k])]);
+                const ins = await pool.query(
+                    `INSERT INTO listings (slug, ${cols.join(', ')}) VALUES ($1, ${ph}) RETURNING id`,
+                    [slug, ...cols.map(k => v[k])]);
+                if (ins.rows[0] && v.status === 'active') createdIds.push(ins.rows[0].id);
                 created++;
             }
         } catch (e) {
@@ -361,7 +367,7 @@ async function upsertMany(items) {
             skipped++;
         }
     }
-    return { created, updated, skipped };
+    return { created, updated, skipped, createdIds, seenMls };
 }
 
 // POST /api/listings/admin/import  { listings: [ {our field shape}, ... ] }
@@ -794,35 +800,83 @@ function mapResoRecord(r) {
     };
 }
 
-// POST /api/listings/admin/sync-feed — pull from a configured RESO Web API /
-// JSON feed and upsert. Ready for real credentials: set MLS_FEED_URL (+ optional
-// MLS_FEED_TOKEN bearer). Until then it returns a clear "not configured" note.
+// Core feed sync — shared by the admin button AND the nightly cron. Pulls every
+// page from a configured RESO Web API / JSON feed (following @odata.nextLink),
+// upserts, alerts matching buyers on new inventory, and (optionally) retires
+// feed listings that have dropped off. Returns a result summary.
+// Config: MLS_FEED_URL (+ optional MLS_FEED_TOKEN bearer, MLS_FEED_RETIRE=true).
+async function runFeedSync() {
+    const startUrl = process.env.MLS_FEED_URL;
+    if (!startUrl) return { configured: false, error: 'No MLS feed configured.' };
+
+    const headers = { Accept: 'application/json' };
+    if (process.env.MLS_FEED_TOKEN) headers.Authorization = `Bearer ${process.env.MLS_FEED_TOKEN}`;
+
+    const MAX_PAGES = parseInt(process.env.MLS_FEED_MAX_PAGES, 10) || 200;   // safety cap (~200k rows)
+    let url = startUrl, page = 0, total = 0;
+    const agg = { created: 0, updated: 0, skipped: 0 };
+    const allCreatedIds = [];
+    const allSeenMls = [];
+
+    while (url && page < MAX_PAGES) {
+        const r = await fetch(url, { headers });
+        if (!r.ok) throw new Error(`Feed responded ${r.status} on page ${page + 1}.`);
+        const data = await r.json();
+        const records = Array.isArray(data) ? data : (Array.isArray(data.value) ? data.value : []);
+        total += records.length;
+        if (records.length) {
+            const mapped = records.map(mapResoRecord).filter(x => x.title);
+            const result = await upsertMany(mapped);
+            agg.created += result.created; agg.updated += result.updated; agg.skipped += result.skipped;
+            allCreatedIds.push(...result.createdIds);
+            allSeenMls.push(...result.seenMls);
+        }
+        // RESO Web API pagination: follow the server-driven nextLink if present.
+        url = (data && typeof data === 'object' && data['@odata.nextLink']) || null;
+        page++;
+    }
+
+    // Retire feed-sourced listings that are no longer in the feed (sold/withdrawn).
+    // Gated so it never touches agent-posted listings (those have no mls_number).
+    let retired = 0;
+    if (process.env.MLS_FEED_RETIRE === 'true' && allSeenMls.length) {
+        try {
+            const { rowCount } = await pool.query(
+                `UPDATE listings SET status = 'inactive', updated_at = NOW()
+                  WHERE mls_number IS NOT NULL AND status = 'active'
+                    AND NOT (mls_number = ANY($1::text[]))`,
+                [allSeenMls]);
+            retired = rowCount || 0;
+        } catch (e) { console.warn('[listings.feed] retire skipped:', e.message); }
+    }
+
+    // Alert buyers whose saved searches match the freshly-imported homes.
+    for (const id of allCreatedIds) {
+        try { savedSearch.notifyListing(id, 'new'); } catch (_) { /* best-effort */ }
+    }
+
+    return { configured: true, total, retired, pages: page, ...agg };
+}
+exports.runFeedSync = runFeedSync;
+
+// POST /api/listings/admin/sync-feed — manual trigger for the feed sync above.
 exports.syncFeed = async (req, res) => {
     if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
-    const url = process.env.MLS_FEED_URL;
-    if (!url) {
+    if (!process.env.MLS_FEED_URL) {
         return res.status(503).json({
             error: 'No MLS feed configured.',
-            howto: 'Set MLS_FEED_URL to your RESO Web API query (or a JSON feed URL) and, if needed, MLS_FEED_TOKEN for the bearer token. Then click Sync again. The importer maps standard RESO fields (ListingKey, ListPrice, BedroomsTotal, LivingArea, UnparsedAddress, Media, etc.) automatically.',
+            howto: 'Set MLS_FEED_URL to your RESO Web API query (or a JSON feed URL) and, if needed, MLS_FEED_TOKEN for the bearer token. Optionally set MLS_FEED_RETIRE=true to auto-hide listings that leave the feed. Then click Sync again. The importer paginates the whole feed and maps standard RESO fields (ListingKey, ListPrice, BedroomsTotal, LivingArea, UnparsedAddress, Media, etc.) automatically.',
             configured: false,
         });
     }
     try {
-        const headers = { Accept: 'application/json' };
-        if (process.env.MLS_FEED_TOKEN) headers.Authorization = `Bearer ${process.env.MLS_FEED_TOKEN}`;
-        const r = await fetch(url, { headers });
-        if (!r.ok) return res.status(502).json({ error: `Feed responded ${r.status}.` });
-        const data = await r.json();
-        const records = Array.isArray(data) ? data : (Array.isArray(data.value) ? data.value : []);
-        if (!records.length) return res.json({ success: true, total: 0, created: 0, updated: 0, skipped: 0, note: 'Feed returned no records.' });
-        const mapped = records.map(mapResoRecord).filter(x => x.title);
-        const result = await upsertMany(mapped);
+        const result = await runFeedSync();
         logActivity({
             event_type: 'listing.feed_sync', event_scope: 'listing',
             actor: { type: 'admin', id: req.user?.userId, label: req.user?.email || 'admin' },
-            target: { type: 'listing' }, details: { ...result, total: records.length }, req,
+            target: { type: 'listing' }, details: result, req,
         });
-        res.json({ success: true, total: records.length, ...result });
+        res.json({ success: true, ...result });
     } catch (err) {
         console.error('[listings.syncFeed]', err.message);
         res.status(500).json({ error: `Feed sync failed: ${err.message}` });

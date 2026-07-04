@@ -4059,6 +4059,18 @@ app.listen(PORT, async () => {
         setInterval(() => runWeeklyDigest().catch(e => console.warn('[buyer-digest]', e.message)), 12 * 60 * 60 * 1000);
     }
 
+    // MLS/IDX feed sync — pulls the whole feed (paginated), upserts inventory,
+    // alerts matching buyers, retires stale listings. No-op until MLS_FEED_URL is
+    // set, so it's safe to leave running. Runs ~4 min after boot, then every 6h.
+    if (process.env.MLS_FEED_URL) {
+        const { runFeedSync } = require('./controllers/listing.controller');
+        const doSync = () => runFeedSync()
+            .then(r => { if (r.configured) console.log(`[mls-feed] synced: +${r.created} new, ${r.updated} updated, ${r.retired} retired (${r.total} in feed)`); })
+            .catch(e => console.warn('[mls-feed]', e.message));
+        setTimeout(doSync, 4 * 60 * 1000);
+        setInterval(doSync, 6 * 60 * 60 * 1000);
+    }
+
     // Market Index monthly snapshot (idempotent per month; builds trend history).
     {
         const { recordMonthlySnapshot } = require('./controllers/market.controller');
