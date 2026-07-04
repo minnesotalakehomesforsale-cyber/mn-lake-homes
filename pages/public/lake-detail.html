@@ -447,8 +447,19 @@
             .ld-lst-specs { color:#4a5568; font-size:0.88rem; font-weight:600; margin:0.3rem 0 0.5rem; }
             .ld-lst-addr { color:#718096; font-size:0.85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
             .ld-listings-cta { text-align:center; margin-top:2.5rem; }
+            .lake-market { background:#f7f9fa; border:1px solid #edf2f7; border-radius:16px; padding:1.6rem 1.75rem; margin-bottom:2.5rem; }
+            .lm-head { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.1rem; }
+            .lm-head h2 { margin:0; font-size:1.35rem; font-weight:800; color:#1a202c; }
+            .lm-date { font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#a0aec0; }
+            .lm-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:0.9rem; }
+            .lm-stat { background:#fff; border:1px solid #edf2f7; border-radius:12px; padding:1rem 1.1rem; text-align:center; }
+            .lm-v { font-size:1.5rem; font-weight:800; color:#1a202c; letter-spacing:-0.5px; }
+            .lm-l { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:#a0aec0; margin-top:0.2rem; }
+            .lm-cta { margin:1.1rem 0 0; }
+            .lm-cta a { color:#1d6df2; font-weight:700; text-decoration:none; font-size:0.92rem; }
         </style>
         <div class="ld-listings-inner">
+            {{LAKE_MARKET_HTML}}
             <h2>{{LAKE_LISTINGS_HEADING}}</h2>
             <div class="ld-listings-grid" id="ld-listings-grid"></div>
             <div class="ld-listings-cta">

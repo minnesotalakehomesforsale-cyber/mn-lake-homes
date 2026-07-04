@@ -711,6 +711,18 @@ app.get('/lakes/:slug', async (req, res, next) => {
         const { activeCountForLake } = require('./controllers/listing.controller');
         const lakeListingCount = await activeCountForLake(lake.id).catch(() => 0);
 
+        // Auto-generated market snapshot from our listing data (Phase 6). Fresh
+        // numbers = fresh crawlable content + an alert-capture hook.
+        const marketStats = (process.env.LISTINGS_PUBLIC === 'false') ? null : await pool.query(`
+            SELECT COUNT(*) FILTER (WHERE status='active')::int AS active,
+                   COUNT(*) FILTER (WHERE status='active' AND created_at >= date_trunc('month', now()))::int AS new_month,
+                   percentile_cont(0.5) WITHIN GROUP (ORDER BY price) FILTER (WHERE status='active' AND price IS NOT NULL) AS median_price,
+                   percentile_cont(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (now()-created_at))/86400) FILTER (WHERE status='active') AS median_dom,
+                   AVG(price/NULLIF(sqft,0)) FILTER (WHERE status='active' AND price IS NOT NULL AND sqft>0) AS avg_ppsf,
+                   COUNT(*) FILTER (WHERE status='sold' AND sold_at >= now() - interval '180 days')::int AS sold_recent,
+                   AVG(price) FILTER (WHERE status='sold' AND sold_at >= now() - interval '180 days' AND price IS NOT NULL) AS sold_avg
+              FROM listings WHERE lake_id = $1`, [lake.id]).then(r => r.rows[0]).catch(() => null);
+
         const templatePath = path.join(PROJECT_ROOT, 'pages/public/lake-detail.html');
         fs.readFile(templatePath, 'utf8', (err, html) => {
             if (err) return next(err);
@@ -784,7 +796,29 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 label: lake.name,
             });
 
+            // Build the market-snapshot block from the stats query.
+            let lakeMarketHtml = '';
+            if (marketStats) {
+                const ms = marketStats;
+                const usd = n => n != null ? '$' + Math.round(Number(n)).toLocaleString('en-US') : null;
+                const monthLabel = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                const cards = [
+                    ms.active ? { v: ms.active, l: 'Active listings' } : null,
+                    ms.median_price != null ? { v: usd(ms.median_price), l: 'Median list price' } : null,
+                    ms.median_dom != null ? { v: Math.round(ms.median_dom) + ' days', l: 'Median days on market' } : null,
+                    ms.avg_ppsf != null ? { v: usd(ms.avg_ppsf), l: 'Avg $/sq ft' } : null,
+                    ms.new_month ? { v: ms.new_month, l: 'New this month' } : null,
+                    ms.sold_recent ? { v: ms.sold_recent, l: 'Sold (6 mo)' } : null,
+                ].filter(Boolean);
+                if (cards.length >= 2) {
+                    lakeMarketHtml = `<div class="lake-market"><div class="lm-head"><h2>${escapeHtml(lake.name)} market snapshot</h2><span class="lm-date">Updated ${escapeHtml(monthLabel)}</span></div>`
+                        + `<div class="lm-grid">${cards.map(c => `<div class="lm-stat"><div class="lm-v">${escapeHtml(String(c.v))}</div><div class="lm-l">${escapeHtml(c.l)}</div></div>`).join('')}</div>`
+                        + `<p class="lm-cta"><a href="/pages/user/dashboard.html#alerts">🔔 Get alerts when new ${escapeHtml(lake.name)} homes hit the market →</a></p></div>`;
+                }
+            }
+
             const replacements = {
+                '{{LAKE_MARKET_HTML}}':     lakeMarketHtml,
                 '{{LAKE_SEO_TITLE}}':       escapeHtml(title),
                 '{{LAKE_SEO_DESCRIPTION}}': escapeHtml(desc),
                 '{{LAKE_NAME}}':            escapeHtml(lake.name),
