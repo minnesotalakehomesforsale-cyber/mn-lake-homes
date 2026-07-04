@@ -234,13 +234,14 @@
         }
         async function loadCompany() {
             const dash = document.getElementById('co-dash');
-            const [co, proj, bp, ac, rv, rh] = await Promise.all([
+            const [co, proj, bp, ac, rv, rh, ck] = await Promise.all([
                 fetch('/api/admin/financials/company', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
                 fetch('/api/admin/financials/projections', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
                 fetch('/api/admin/financials/business-projections', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
                 fetch('/api/admin/metrics/agent-coverage', { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
                 fetch('/api/reviews/admin?status=pending', { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
                 fetch('/api/admin/financials/revenue-history?months=12', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+                fetch('/api/cockpit', { credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
             ]);
             if (!co) { dash.innerHTML = '<p class="muted">Could not load the dashboard.</p>'; return; }
 
@@ -278,11 +279,15 @@
 
             const goalCard = (onclick, r, l, v, s) => `<a href="javascript:void(0)" onclick="${onclick}" class="goal-card">${r}<div><div class="gc-l">${l}</div><div class="gc-v">${v}</div><div class="gc-s">${esc(s)}</div></div></a>`;
 
+            const churn30 = ck ? (ck.churn_30d || 0) : 0;
+            const atRisk = ck ? (ck.at_risk || 0) : 0;
             const attn = [
                 { n: agGaps,         t: 'Areas with no agent',    s: agGaps ? 'gaps in agent coverage' : 'every area has an agent', go: "location.href='system.html?tab=coverage'" },
                 { n: bizGaps,        t: 'Areas with no business', s: bizGaps ? 'directory coverage gaps' : 'every area has a business', go: "location.href='system.html?tab=bizcov'" },
                 { n: foundersOpen,   t: 'Founder seats open',     s: `${fSeated} of ${fTotal} lakes seated`, go: "showFin('seats')" },
                 { n: reviewsPending, t: 'Reviews to moderate',    s: reviewsPending ? 'awaiting approval' : 'all caught up', go: "location.href='agents.html?tab=reviews'" },
+                { n: churn30,        t: 'Cancellations (30d)',    s: churn30 ? 'win-back sequence auto-runs' : 'no churn this month', go: "location.href='agents.html'" },
+                { n: atRisk,         t: 'Agents at risk',         s: atRisk ? 'ghosting leads or dormant' : 'all engaged', go: "location.href='agents.html'" },
             ].sort((a, b) => b.n - a.n);
 
             dash.innerHTML = `
@@ -324,7 +329,7 @@
                                 ${mix.map(m => `<div class="mix-leg-row"><span class="sw" style="background:${m.color};"></span><span class="mn">${m.label}</span><span class="mv">${money(m.val)}</span></div>`).join('')}
                             </div>
                         </div>
-                        <p class="muted" style="margin-top:1rem;">Recurring MRR now ${money(co.mrr.now)} → ${money(co.mrr.full)} at full. Cash offers add ~${money(S.cashOffer.atGoalEst)}/mo at goal (${money(c.perDeal)}/deal).</p>
+                        <p class="muted" style="margin-top:1rem;">Recurring MRR now ${money(co.mrr.now)} → ${money(co.mrr.full)} at full. Cash offers add ~${money(S.cashOffer.atGoalEst)}/mo at goal (${money(c.perDeal)}/deal).${ck ? ` Last 30 days, à la carte: <b>${money(ck.boost_revenue_30d)}</b> in listing boosts · <b>${money(ck.referral_revenue_30d)}</b> in partner referral fees.` : ''}</p>
                     </div>
                     <div class="dash-panel">
                         <h3>Needs attention</h3>
