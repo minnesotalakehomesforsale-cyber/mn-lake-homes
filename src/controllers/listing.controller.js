@@ -314,6 +314,106 @@ async function upsertMany(items) {
 }
 
 // POST /api/listings/admin/import  { listings: [ {our field shape}, ... ] }
+// ─── AGENT-OWNED LISTINGS (agents post their own properties) ────────────────
+// Instant-live: an agent's property publishes immediately (status 'active');
+// admin can deactivate/delete later. Every op is scoped to the caller's own
+// agent row, so one agent can never touch another agent's listings.
+async function agentIdFor(req) {
+    if (!req.user?.userId) return null;
+    const { rows } = await pool.query(`SELECT id FROM agents WHERE user_id = $1 LIMIT 1`, [req.user.userId]);
+    return rows[0]?.id || null;
+}
+
+exports.listMine = async (req, res) => {
+    try {
+        const agentId = await agentIdFor(req);
+        if (!agentId) return res.status(403).json({ error: 'Create your agent profile first.' });
+        const { rows } = await pool.query(
+            `SELECT id, slug, title, description, featured_image_url, external_url,
+                    price, city, status, created_at, updated_at
+               FROM listings WHERE agent_id = $1 ORDER BY created_at DESC`, [agentId]);
+        res.json(rows);
+    } catch (err) { console.error('[listings.listMine]', err.message); res.status(500).json({ error: 'Could not load your properties.' }); }
+};
+
+exports.createMine = async (req, res) => {
+    try {
+        const agentId = await agentIdFor(req);
+        if (!agentId) return res.status(403).json({ error: 'Create your agent profile first.' });
+        const v = bodyToCols(req.body || {});
+        if (!v.title) return res.status(400).json({ error: 'A title is required.' });
+        v.agent_id = agentId;                                                  // force ownership
+        if (!['active', 'draft'].includes(v.status)) v.status = 'active';      // instant-live
+        const slug = await uniqueSlug(slugify(v.title));
+        const cols = Object.keys(v);
+        const placeholders = cols.map((_, i) => `$${i + 2}`).join(', ');
+        const { rows } = await pool.query(
+            `INSERT INTO listings (slug, ${cols.join(', ')}) VALUES ($1, ${placeholders}) RETURNING id, slug`,
+            [slug, ...cols.map(k => v[k])]);
+        logActivity({ event_type: 'listing.agent_created', event_scope: 'listing',
+            actor: { type: 'agent', id: req.user?.userId, label: req.user?.email || 'agent' },
+            target: { type: 'listing', id: rows[0].id, label: v.title }, req });
+        res.status(201).json({ success: true, id: rows[0].id, slug: rows[0].slug });
+    } catch (err) { console.error('[listings.createMine]', err.message); res.status(500).json({ error: 'Could not create the property.' }); }
+};
+
+exports.updateMine = async (req, res) => {
+    try {
+        const agentId = await agentIdFor(req);
+        if (!agentId) return res.status(403).json({ error: 'Create your agent profile first.' });
+        const owns = await pool.query(`SELECT 1 FROM listings WHERE id = $1 AND agent_id = $2`, [req.params.id, agentId]);
+        if (!owns.rowCount) return res.status(404).json({ error: 'Property not found.' });
+        const v = bodyToCols(req.body || {});
+        if (!v.title) return res.status(400).json({ error: 'A title is required.' });
+        delete v.agent_id;                                                     // never reassign owner
+        if (!['active', 'draft'].includes(v.status)) v.status = 'active';
+        const cols = Object.keys(v);
+        const set = cols.map((k, i) => `${k} = $${i + 2}`).join(', ');
+        await pool.query(
+            `UPDATE listings SET ${set}, updated_at = NOW() WHERE id = $1 AND agent_id = $${cols.length + 2}`,
+            [req.params.id, ...cols.map(k => v[k]), agentId]);
+        res.json({ success: true });
+    } catch (err) { console.error('[listings.updateMine]', err.message); res.status(500).json({ error: 'Could not update the property.' }); }
+};
+
+exports.setStatusMine = async (req, res) => {
+    try {
+        const agentId = await agentIdFor(req);
+        if (!agentId) return res.status(403).json({ error: 'Create your agent profile first.' });
+        const status = req.body?.status === 'active' ? 'active' : 'draft';    // active | inactive(draft)
+        const { rowCount } = await pool.query(
+            `UPDATE listings SET status = $1, updated_at = NOW() WHERE id = $2 AND agent_id = $3`,
+            [status, req.params.id, agentId]);
+        if (!rowCount) return res.status(404).json({ error: 'Property not found.' });
+        res.json({ success: true, status });
+    } catch (err) { console.error('[listings.setStatusMine]', err.message); res.status(500).json({ error: 'Could not update status.' }); }
+};
+
+exports.removeMine = async (req, res) => {
+    try {
+        const agentId = await agentIdFor(req);
+        if (!agentId) return res.status(403).json({ error: 'Create your agent profile first.' });
+        const { rowCount } = await pool.query(`DELETE FROM listings WHERE id = $1 AND agent_id = $2`, [req.params.id, agentId]);
+        if (!rowCount) return res.status(404).json({ error: 'Property not found.' });
+        res.json({ success: true });
+    } catch (err) { console.error('[listings.removeMine]', err.message); res.status(500).json({ error: 'Could not delete the property.' }); }
+};
+
+// Agent image upload — same as uploadImages but without the admin gate (the
+// route enforces an authenticated agent).
+exports.uploadMine = (req, res) => {
+    if (!process.env.CLOUDINARY_CLOUD_NAME) return res.status(503).json({ error: 'Image uploads are not configured (Cloudinary env missing).' });
+    listingUpload(req, res, async (err) => {
+        if (err) return res.status(400).json({ error: err.message || 'Upload failed.' });
+        if (!req.files || !req.files.length) return res.status(400).json({ error: 'No image provided.' });
+        try {
+            const urls = [];
+            for (const f of req.files) { const r = await bufferToCloudinary(f.buffer); urls.push(r.secure_url); }
+            res.json({ urls });
+        } catch (e) { console.error('[listings.uploadMine]', e.message); res.status(500).json({ error: 'Image upload failed.' }); }
+    });
+};
+
 exports.importBatch = async (req, res) => {
     if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
     const items = Array.isArray(req.body?.listings) ? req.body.listings : null;

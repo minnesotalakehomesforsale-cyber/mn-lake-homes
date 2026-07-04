@@ -289,6 +289,10 @@
                     Messages
                     <span class="badge-count" id="msg-count" style="display:none;">0</span>
                 </button>
+                <button class="nav-tab" id="tab-btn-properties" onclick="switchView('properties')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    My Properties
+                </button>
                 <button class="nav-tab" id="tab-btn-account" onclick="switchView('account')">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                     Account
@@ -681,9 +685,60 @@
                     </div>
                 </div>
 
+                <!-- ── MY PROPERTIES ─────────────────────────────────────── -->
+                <div id="view-properties" class="view-card" style="display:none; background:#fff; padding:2rem 2.5rem; border-radius:12px; border:1px solid #edf2f7; box-shadow:0 4px 6px rgba(0,0,0,0.02);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem; gap:1rem; flex-wrap:wrap;">
+                        <h2 style="font-size:1.75rem; font-weight:700;">My Properties</h2>
+                        <button onclick="openPropModal()" style="background:#1d6df2;color:#fff;border:none;border-radius:8px;padding:0.6rem 1.15rem;font-weight:700;cursor:pointer;">+ Add property</button>
+                    </div>
+                    <p style="color:#718096; margin-bottom:1.5rem;">Post your listings here. Each gets its own page on MinnesotaLakeHomesForSale.com that you can link to from your MLS, website, and socials — free exposure and backlinks. Active listings appear on the site; set one inactive to hide it without deleting.</p>
+                    <div id="prop-list"><div style="text-align:center;padding:3rem;color:#a0aec0;">Loading…</div></div>
+                </div>
+
             </div>
         </div>
     </div>
+
+    <!-- Property add/edit modal -->
+    <div id="prop-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9000;align-items:center;justify-content:center;padding:1.5rem;">
+      <div style="background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;padding:1.75rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <h3 id="prop-modal-title" style="font-size:1.25rem;font-weight:800;margin:0;">Add property</h3>
+          <button onclick="closePropModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#718096;">&times;</button>
+        </div>
+        <div class="pf"><label>Title *</label><input id="pf-title" type="text" maxlength="200" placeholder="e.g. 3BR lakefront on Gull Lake"></div>
+        <div class="pf"><label>Link to your MLS / listing page *</label><input id="pf-url" type="url" placeholder="https://..."></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div class="pf"><label>Price</label><input id="pf-price" type="number" placeholder="750000"></div>
+          <div class="pf"><label>City</label><input id="pf-city" type="text" placeholder="Nisswa"></div>
+        </div>
+        <div class="pf"><label>Short description</label><textarea id="pf-desc" rows="3" maxlength="600" placeholder="A sentence or two about the property…"></textarea></div>
+        <div class="pf"><label>Photo</label>
+          <input id="pf-image-file" type="file" accept="image/*" onchange="uploadPropImage(this)">
+          <div id="pf-image-preview" style="margin-top:0.5rem;"></div>
+          <input id="pf-image-url" type="hidden">
+        </div>
+        <div class="pf"><label>Status</label><select id="pf-status"><option value="active">Active — live on the site</option><option value="draft">Inactive — hidden</option></select></div>
+        <div id="pf-err" style="color:#c53030;font-size:0.85rem;display:none;margin-bottom:0.5rem;"></div>
+        <div style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:0.5rem;">
+          <button onclick="closePropModal()" style="border:1px solid #e2e8f0;background:#fff;border-radius:8px;padding:0.6rem 1rem;font-weight:600;cursor:pointer;">Cancel</button>
+          <button id="pf-save" onclick="savePropModal()" style="background:#1d6df2;color:#fff;border:none;border-radius:8px;padding:0.6rem 1.25rem;font-weight:700;cursor:pointer;">Save</button>
+        </div>
+      </div>
+    </div>
+    <style>
+      #prop-modal.open { display:flex !important; }
+      .pf { display:flex;flex-direction:column;gap:0.3rem;margin-bottom:0.85rem; }
+      .pf label { font-size:0.72rem;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:0.4px; }
+      .pf input, .pf select, .pf textarea { font:inherit;font-size:0.92rem;padding:0.55rem 0.7rem;border:1px solid #e2e8f0;border-radius:8px;outline:none; }
+      .pf input:focus, .pf select:focus, .pf textarea:focus { border-color:#1d6df2; }
+      .prop-card { display:flex;gap:1rem;border:1px solid #edf2f7;border-radius:12px;padding:0.9rem;align-items:center;margin-bottom:0.7rem; }
+      .prop-card .thumb { width:92px;height:68px;border-radius:8px;object-fit:cover;background:#eef2f7;flex-shrink:0; }
+      .prop-card .pc-actions { margin-left:auto;display:flex;flex-wrap:wrap;gap:0.35rem;justify-content:flex-end; }
+      .prop-card .pc-actions button { border:1px solid #e2e8f0;background:#fff;border-radius:7px;padding:0.32rem 0.7rem;font-size:0.8rem;font-weight:600;cursor:pointer; }
+      .prop-pill { font-size:0.64rem;font-weight:800;text-transform:uppercase;border-radius:99px;padding:0.12rem 0.5rem; }
+      .prop-pill.active { background:#f0fff4;color:#2f855a; } .prop-pill.draft { background:#fffaf0;color:#b45309; }
+    </style>
 
     <script>
         // ── Admin impersonation (per-tab) ────────────────────────────────────
@@ -737,6 +792,7 @@
             document.getElementById('view-dashboard').style.display = topView === 'dashboard' ? 'block' : 'none';
             document.getElementById('view-leads').style.display     = topView === 'leads'     ? 'block' : 'none';
             document.getElementById('view-messages').style.display  = topView === 'messages'  ? 'block' : 'none';
+            document.getElementById('view-properties').style.display = topView === 'properties' ? 'block' : 'none';
             document.getElementById('account-subtabs').style.display = isAccount ? 'flex' : 'none';
 
             if (isAccount) {
@@ -752,9 +808,116 @@
             document.getElementById('tab-btn-leads').classList.toggle('active',     topView === 'leads');
             document.getElementById('tab-btn-account').classList.toggle('active',   topView === 'account');
             document.getElementById('tab-btn-messages').classList.toggle('active',  topView === 'messages');
+            document.getElementById('tab-btn-properties').classList.toggle('active', topView === 'properties');
 
             if (topView === 'leads') loadLeads();
             if (topView === 'messages') loadMessages();
+            if (topView === 'properties') loadProperties();
+        }
+
+        // ── My Properties (agent-owned listings) ─────────────────────────────
+        let _propEditId = null;
+        async function loadProperties() {
+            const box = document.getElementById('prop-list');
+            try {
+                const res = await fetch('/api/listings/mine', { credentials: 'include' });
+                if (!res.ok) throw new Error();
+                const rows = await res.json();
+                if (!rows.length) {
+                    box.innerHTML = '<div style="text-align:center;padding:3rem 1rem;color:#a0aec0;">No properties yet. Click <b>+ Add property</b> to post your first listing.</div>';
+                    return;
+                }
+                const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+                const money = n => n ? '$' + Number(n).toLocaleString('en-US') : '';
+                box.innerHTML = rows.map(p => `
+                    <div class="prop-card">
+                        ${p.featured_image_url ? `<img class="thumb" src="${esc(p.featured_image_url)}" alt="">` : '<div class="thumb"></div>'}
+                        <div style="min-width:0;">
+                            <div style="font-weight:700;font-size:0.98rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.title)}</div>
+                            <div style="font-size:0.8rem;color:#718096;">${[money(p.price), esc(p.city || '')].filter(Boolean).join(' · ')}</div>
+                            <div style="margin-top:0.3rem;"><span class="prop-pill ${p.status === 'active' ? 'active' : 'draft'}">${p.status === 'active' ? 'Active' : 'Inactive'}</span>
+                                ${p.status === 'active' ? `<a href="/listings/${esc(p.slug)}" target="_blank" style="font-size:0.76rem;color:#1d6df2;margin-left:0.5rem;">View page ↗</a>` : ''}</div>
+                        </div>
+                        <div class="pc-actions">
+                            <button onclick="togglePropStatus('${p.id}','${p.status === 'active' ? 'draft' : 'active'}')">${p.status === 'active' ? 'Set inactive' : 'Set active'}</button>
+                            <button onclick='openPropModal(${JSON.stringify(p).replace(/'/g, "&#39;")})'>Edit</button>
+                            <button style="color:#c53030;" onclick="deleteProp('${p.id}','${esc(p.title).replace(/"/g,'')}')">Delete</button>
+                        </div>
+                    </div>`).join('');
+            } catch (_) { box.innerHTML = '<div style="text-align:center;padding:2rem;color:#c53030;">Could not load your properties.</div>'; }
+        }
+
+        function openPropModal(p) {
+            _propEditId = (p && p.id) ? p.id : null;
+            document.getElementById('prop-modal-title').textContent = _propEditId ? 'Edit property' : 'Add property';
+            document.getElementById('pf-err').style.display = 'none';
+            document.getElementById('pf-title').value = p?.title || '';
+            document.getElementById('pf-url').value = p?.external_url || '';
+            document.getElementById('pf-price').value = p?.price || '';
+            document.getElementById('pf-city').value = p?.city || '';
+            document.getElementById('pf-desc').value = p?.description || '';
+            document.getElementById('pf-status').value = (p?.status === 'draft') ? 'draft' : 'active';
+            document.getElementById('pf-image-url').value = p?.featured_image_url || '';
+            document.getElementById('pf-image-file').value = '';
+            document.getElementById('pf-image-preview').innerHTML = p?.featured_image_url ? `<img src="${p.featured_image_url}" style="width:120px;height:84px;object-fit:cover;border-radius:8px;">` : '';
+            document.getElementById('prop-modal').classList.add('open');
+        }
+        function closePropModal() { document.getElementById('prop-modal').classList.remove('open'); _propEditId = null; }
+
+        async function uploadPropImage(input) {
+            const file = input.files && input.files[0];
+            if (!file) return;
+            const prev = document.getElementById('pf-image-preview');
+            prev.innerHTML = '<span style="font-size:0.82rem;color:#718096;">Uploading…</span>';
+            try {
+                const fd = new FormData(); fd.append('images', file);
+                const res = await fetch('/api/listings/mine/upload', { method: 'POST', credentials: 'include', body: fd });
+                const d = await res.json();
+                if (!res.ok || !d.urls?.length) throw new Error(d.error || 'Upload failed.');
+                document.getElementById('pf-image-url').value = d.urls[0];
+                prev.innerHTML = `<img src="${d.urls[0]}" style="width:120px;height:84px;object-fit:cover;border-radius:8px;">`;
+            } catch (e) { prev.innerHTML = `<span style="color:#c53030;font-size:0.82rem;">${e.message}</span>`; }
+        }
+
+        async function savePropModal() {
+            const err = document.getElementById('pf-err');
+            const title = document.getElementById('pf-title').value.trim();
+            const url = document.getElementById('pf-url').value.trim();
+            if (!title) { err.textContent = 'A title is required.'; err.style.display = 'block'; return; }
+            if (!url) { err.textContent = 'Add a link to your MLS or listing page.'; err.style.display = 'block'; return; }
+            const body = {
+                title,
+                external_url: url,
+                price: document.getElementById('pf-price').value || null,
+                city: document.getElementById('pf-city').value.trim() || null,
+                description: document.getElementById('pf-desc').value.trim() || null,
+                featured_image_url: document.getElementById('pf-image-url').value || null,
+                status: document.getElementById('pf-status').value,
+            };
+            const btn = document.getElementById('pf-save'); btn.disabled = true; btn.textContent = 'Saving…';
+            try {
+                const u = _propEditId ? `/api/listings/mine/${_propEditId}` : '/api/listings/mine';
+                const res = await fetch(u, { method: _propEditId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) });
+                if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Save failed.'); }
+                closePropModal(); loadProperties();
+            } catch (e) { err.textContent = e.message; err.style.display = 'block'; }
+            finally { btn.disabled = false; btn.textContent = 'Save'; }
+        }
+
+        async function togglePropStatus(id, status) {
+            try {
+                const res = await fetch(`/api/listings/mine/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ status }) });
+                if (!res.ok) throw new Error();
+                loadProperties();
+            } catch (_) { alert('Could not update status.'); }
+        }
+        async function deleteProp(id, title) {
+            if (!confirm(`Delete "${title || 'this property'}"? This can't be undone.`)) return;
+            try {
+                const res = await fetch(`/api/listings/mine/${id}`, { method: 'DELETE', credentials: 'include' });
+                if (!res.ok) throw new Error();
+                loadProperties();
+            } catch (_) { alert('Delete failed.'); }
         }
 
         // Account section sub-tabs: Account info vs Profile Editor.

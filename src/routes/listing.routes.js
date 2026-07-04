@@ -1,11 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const c = require('../controllers/listing.controller');
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken, requireRole } = require('../middleware/auth');
 
 // ─── PUBLIC ───────────────────────────────────────────────────────────────
 router.get('/', c.listPublic);            // ?lake_id=&limit= → active listings
 router.get('/slug/:slug', c.getBySlug);   // single active listing (JSON)
+
+// ─── AGENT (own properties) — instant-live, scoped to the caller's agent ────
+router.get   ('/mine',            verifyToken, requireRole('agent'), c.listMine);
+router.post  ('/mine',            verifyToken, requireRole('agent'), c.createMine);
+router.post  ('/mine/upload',     verifyToken, requireRole('agent'), c.uploadMine);
+router.put   ('/mine/:id',        verifyToken, requireRole('agent'), c.updateMine);
+router.patch ('/mine/:id/status', verifyToken, requireRole('agent'), c.setStatusMine);
+router.delete('/mine/:id',        verifyToken, requireRole('agent'), c.removeMine);
 
 // ─── ADMIN ────────────────────────────────────────────────────────────────
 router.get('/admin',            verifyToken, c.listAdmin);
