@@ -7,6 +7,7 @@ const { verifyToken, requireRole } = require('../middleware/auth');
 router.get('/', c.listPublic);            // ?lake_id=&limit= → active listings
 router.get('/map', c.mapListings);        // active + geocoded → Properties map
 router.get('/sold', c.soldRecent);        // recently sold → social-proof wall
+router.get('/boost/confirm', c.boostConfirm);   // Stripe success → apply boost + redirect
 router.get('/slug/:slug', c.getBySlug);   // single active listing (JSON)
 
 // ─── AGENT (own properties) — instant-live, scoped to the caller's agent ────
@@ -15,6 +16,7 @@ router.post  ('/mine',            verifyToken, requireRole('agent'), c.createMin
 router.post  ('/mine/upload',     verifyToken, requireRole('agent'), c.uploadMine);
 router.put   ('/mine/:id',        verifyToken, requireRole('agent'), c.updateMine);
 router.patch ('/mine/:id/status', verifyToken, requireRole('agent'), c.setStatusMine);
+router.post  ('/mine/:id/boost',  verifyToken, requireRole('agent'), c.boostCheckout);
 router.delete('/mine/:id',        verifyToken, requireRole('agent'), c.removeMine);
 
 // ─── SAVED / LIKED (any signed-in user) ─────────────────────────────────────

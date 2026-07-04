@@ -2858,6 +2858,10 @@ async function ensureTables() {
             ALTER TABLE listings ADD COLUMN IF NOT EXISTS original_price INTEGER;
             ALTER TABLE listings ADD COLUMN IF NOT EXISTS open_house_at  TIMESTAMPTZ;
             ALTER TABLE listings ADD COLUMN IF NOT EXISTS sold_at        TIMESTAMPTZ;
+            -- À la carte "boost": a paid, time-limited featured slot on the map,
+            -- independent of the agent's membership tier.
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS boosted_until  TIMESTAMPTZ;
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS boost_session  TEXT;
             UPDATE listings SET original_price = price WHERE original_price IS NULL AND price IS NOT NULL;
 
             -- Nearby-towns join: reuses the existing tags catalog (each tag

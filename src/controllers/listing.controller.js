@@ -86,7 +86,7 @@ const PUBLIC_COLS = `id, slug, lake_id, agent_id, title, address, city, state, z
     property_type, year_built, stories, garage_spaces, parking, heating, cooling,
     basement, flooring, appliances, exterior, roof, listing_view, waterfront,
     water_body, fireplace, hoa_fee, annual_tax, original_price, open_house_at,
-    status, created_at, updated_at`;
+    boosted_until, status, created_at, updated_at`;
 
 function slugify(s) {
     return String(s || '').toLowerCase().trim()
@@ -480,6 +480,80 @@ exports.uploadMine = (req, res) => {
     });
 };
 
+// ─── À LA CARTE LISTING BOOST (paid featured slot on the map) ────────────────
+const stripeClient = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
+const BOOST_PRICE_PER_DAY = Number(process.env.BOOST_PRICE_PER_DAY_USD) || 5;   // $/day
+const BOOST_DAYS = [7, 14, 30];
+
+// POST /api/listings/mine/:id/boost { days } → Stripe Checkout URL.
+exports.boostCheckout = async (req, res) => {
+    try {
+        const agentId = await agentIdFor(req);
+        if (!agentId) return res.status(403).json({ error: 'Create your agent profile first.' });
+        if (!stripeClient) return res.status(503).json({ error: 'Payments are not configured on this server.' });
+        const days = BOOST_DAYS.includes(Number(req.body?.days)) ? Number(req.body.days) : 0;
+        if (!days) return res.status(400).json({ error: `Choose ${BOOST_DAYS.join(', ')} days.` });
+        const { rows } = await pool.query(
+            `SELECT l.id, l.slug, l.title, u.email
+               FROM listings l JOIN agents a ON a.id = l.agent_id JOIN users u ON u.id = a.user_id
+              WHERE l.id = $1 AND l.agent_id = $2 LIMIT 1`, [req.params.id, agentId]);
+        const listing = rows[0];
+        if (!listing) return res.status(404).json({ error: 'Property not found.' });
+
+        const amount = days * BOOST_PRICE_PER_DAY;
+        const baseUrl = process.env.BASE_URL || process.env.SITE_URL || 'http://localhost:3000';
+        const session = await stripeClient.checkout.sessions.create({
+            mode: 'payment',
+            payment_method_types: ['card'],
+            line_items: [{
+                quantity: 1,
+                price_data: {
+                    currency: 'usd',
+                    unit_amount: amount * 100,
+                    product_data: { name: `Featured boost (${days} days) — ${listing.title}` },
+                },
+            }],
+            metadata: { kind: 'listing_boost', listing_id: listing.id, days: String(days), agent_id: agentId },
+            customer_email: listing.email || undefined,
+            success_url: `${baseUrl}/api/listings/boost/confirm?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url:  `${baseUrl}/pages/agent/dashboard.html`,
+        });
+        res.json({ url: session.url });
+    } catch (e) { console.error('[listings.boostCheckout]', e.message); res.status(500).json({ error: 'Could not start checkout.' }); }
+};
+
+// GET /api/listings/boost/confirm?session_id= — verify payment, apply the boost,
+// then redirect the agent back to their dashboard. Webhook-free + idempotent
+// (boost_session dedupes a refreshed success URL).
+exports.boostConfirm = async (req, res) => {
+    const dash = '/pages/agent/dashboard.html';
+    try {
+        if (!stripeClient) return res.redirect(dash);
+        const sessionId = String(req.query.session_id || '');
+        if (!sessionId) return res.redirect(dash);
+        const session = await stripeClient.checkout.sessions.retrieve(sessionId);
+        if (!session || session.payment_status !== 'paid' || session.metadata?.kind !== 'listing_boost') {
+            return res.redirect(`${dash}?boost=failed`);
+        }
+        const listingId = session.metadata.listing_id;
+        const days = Number(session.metadata.days) || 0;
+        // Idempotent: only apply once per checkout session.
+        const { rowCount } = await pool.query(
+            `UPDATE listings
+                SET boosted_until = GREATEST(COALESCE(boosted_until, NOW()), NOW()) + ($1 || ' days')::interval,
+                    boost_session = $2, updated_at = NOW()
+              WHERE id = $3 AND (boost_session IS DISTINCT FROM $2)`,
+            [String(days), sessionId, listingId]);
+        logActivity({
+            event_type: 'listing.boost.purchased', event_scope: 'listing',
+            actor: { type: 'agent', label: session.customer_email || 'agent' },
+            target: { type: 'listing', id: listingId },
+            details: { days, applied: rowCount > 0, session: sessionId },
+        });
+        res.redirect(`${dash}?boost=ok`);
+    } catch (e) { console.error('[listings.boostConfirm]', e.message); res.redirect(`${dash}?boost=failed`); }
+};
+
 // ─── SAVED / LIKED LISTINGS (any signed-in user) ────────────────────────────
 exports.toggleSave = async (req, res) => {
     try {
@@ -535,12 +609,13 @@ exports.mapListings = async (req, res) => {
                     l.created_at, l.open_house_at,
                     a.display_name AS agent_name,
                     COALESCE(m.sort_priority, 999) AS tier_rank,
-                    (a.is_featured OR COALESCE(m.sort_priority, 999) <= 100) AS featured
+                    (a.is_featured OR COALESCE(m.sort_priority, 999) <= 100 OR l.boosted_until > NOW()) AS featured,
+                    (l.boosted_until > NOW()) AS boosted
                FROM listings l
           LEFT JOIN agents a      ON a.id = l.agent_id
           LEFT JOIN memberships m ON m.id = a.membership_id
               WHERE l.status = 'active' AND l.latitude IS NOT NULL AND l.longitude IS NOT NULL
-              ORDER BY featured DESC, tier_rank ASC, l.created_at DESC`);
+              ORDER BY (l.boosted_until > NOW()) DESC, featured DESC, tier_rank ASC, l.created_at DESC`);
         res.json(rows);
     } catch (e) { console.error('[listings.mapListings]', e.message); res.status(500).json({ error: 'Failed to load map listings.' }); }
 };
