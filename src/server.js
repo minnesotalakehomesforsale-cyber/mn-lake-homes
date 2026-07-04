@@ -860,6 +860,27 @@ app.get('/listings/:slug', async (req, res, next) => {
             const canonical = `${siteBase}/listings/${l.slug}`;
             const price     = l.price != null ? '$' + Number(l.price).toLocaleString('en-US') : 'Contact for price';
             const locLine   = [l.address, l.city, l.state].filter(Boolean).join(', ');
+
+            // Freshness signals (Phase 3): New / Price reduced / Open house.
+            const DAY = 86400000;
+            const createdMs = l.created_at ? new Date(l.created_at).getTime() : null;
+            const daysOnMarket = createdMs ? Math.max(0, Math.floor((Date.now() - createdMs) / DAY)) : null;
+            const priceReduced = (l.original_price != null && l.price != null && Number(l.price) < Number(l.original_price));
+            const openHouseMs = l.open_house_at ? new Date(l.open_house_at).getTime() : null;
+            const openHouseUpcoming = openHouseMs && openHouseMs > Date.now();
+            const badges = [];
+            if (daysOnMarket != null && daysOnMarket <= 14) badges.push({ t: 'New', c: 'new' });
+            if (priceReduced) badges.push({ t: 'Price reduced', c: 'drop' });
+            if (openHouseUpcoming) {
+                const d = new Date(l.open_house_at);
+                badges.push({ t: 'Open house ' + d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }), c: 'oh' });
+            }
+            const badgesHtml = badges.length
+                ? `<div class="lst-badges">${badges.map(b => `<span class="lst-badge ${b.c}">${escapeHtml(b.t)}</span>`).join('')}</div>`
+                : '';
+            const priceWasHtml = priceReduced
+                ? `<span class="lst-was">$${Number(l.original_price).toLocaleString('en-US')}</span>`
+                : '';
             const seoTitle  = `${l.title}${l.city ? ' — ' + l.city + ', ' + (l.state || 'MN') : ''} | MN Lake Homes`;
             const seoDesc   = l.description
                 ? l.description.replace(/\s+/g, ' ').trim().slice(0, 155)
@@ -906,6 +927,7 @@ app.get('/listings/:slug', async (req, res, next) => {
                     ['Lot size', l.lot_acres != null ? l.lot_acres + ' acres' : null],
                     ['Stories', l.stories],
                     ['Price / sq ft', (l.price != null && l.sqft) ? '$' + Math.round(l.price / l.sqft).toLocaleString('en-US') : null],
+                    ['Days on market', daysOnMarket != null ? (daysOnMarket === 0 ? 'Today' : daysOnMarket + (daysOnMarket === 1 ? ' day' : ' days')) : null],
                 ]},
                 { title: 'Interior', rows: [
                     ['Bedrooms', l.beds], ['Bathrooms', l.baths],
@@ -968,6 +990,8 @@ app.get('/listings/:slug', async (req, res, next) => {
                 '{{LISTING_CANONICAL}}':      escapeHtml(canonical),
                 '{{LISTING_TITLE}}':          escapeHtml(l.title),
                 '{{LISTING_PRICE}}':          escapeHtml(price),
+                '{{LISTING_BADGES_HTML}}':    badgesHtml,
+                '{{LISTING_PRICE_WAS}}':      priceWasHtml,
                 '{{LISTING_ADDRESS}}':        escapeHtml(locLine || 'Minnesota'),
                 '{{LISTING_IMAGE}}':          escapeHtml(cldThumb(image, 1600)),
                 '{{LISTING_SPECS_HTML}}':     specsHtml,

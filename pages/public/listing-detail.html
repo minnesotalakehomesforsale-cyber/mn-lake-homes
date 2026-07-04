@@ -20,6 +20,12 @@
         .lst-hero { width:100%; aspect-ratio:16/9; background:#eceff3; border-radius:16px; overflow:hidden; margin-bottom:1.5rem; }
         .lst-hero img { width:100%; height:100%; object-fit:cover; }
         .lst-price { font-size:2.5rem; font-weight:800; color:#1a202c; letter-spacing:-1.5px; margin:0; }
+        .lst-was { font-size:1.15rem; font-weight:600; color:#a0aec0; text-decoration:line-through; letter-spacing:0; }
+        .lst-badges { display:flex; gap:0.5rem; flex-wrap:wrap; margin:0 0 0.7rem; }
+        .lst-badge { font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; border-radius:6px; padding:0.3rem 0.6rem; }
+        .lst-badge.new { background:#e6fffa; color:#0f766e; }
+        .lst-badge.drop { background:#fee2e2; color:#b91c1c; }
+        .lst-badge.oh { background:#fef3c7; color:#b45309; }
         .lst-title { font-size:1.35rem; font-weight:700; color:#2d3748; margin:0.35rem 0 0.15rem; }
         .lst-addr { color:#718096; font-size:1rem; margin:0 0 1.5rem; }
         .lst-specs { display:flex; gap:0; flex-wrap:wrap; border:1px solid #edf2f7; border-radius:12px; overflow:hidden; margin-bottom:2rem; }
@@ -78,7 +84,8 @@
         <a href="{{LISTING_LAKE_BACK}}" class="lst-back">← {{LISTING_BACK_LABEL}}</a>
         <div class="lst-hero"><img src="{{LISTING_IMAGE}}" alt="{{LISTING_TITLE}}"></div>
 
-        <p class="lst-price">{{LISTING_PRICE}}</p>
+        {{LISTING_BADGES_HTML}}
+        <p class="lst-price">{{LISTING_PRICE}} {{LISTING_PRICE_WAS}}</p>
         <h1 class="lst-title">{{LISTING_TITLE}}</h1>
         <p class="lst-addr">{{LISTING_ADDRESS}}</p>
 

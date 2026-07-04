@@ -720,6 +720,7 @@
             <option>Cabin / Cottage</option><option>Multi-Family</option><option>Land / Lot</option>
             <option>Farm / Acreage</option><option>Manufactured</option><option>Other</option></select></div>
           <div class="pf"><label>Status</label><select id="pf-status"><option value="active">Active — live on the site</option><option value="draft">Inactive — hidden</option></select></div>
+          <div class="pf"><label>Open house (optional)</label><input id="pf-open_house_at" type="datetime-local"><span style="font-size:0.72rem;color:#a0aec0;">Shows an "Open house" badge until it passes.</span></div>
         </div>
         <div class="pf"><label>Description</label><textarea id="pf-desc" rows="4" maxlength="8000" placeholder="Tell buyers about the home, the lake, the setting…"></textarea></div>
 
@@ -911,7 +912,7 @@
         }
 
         // Fields mirrored 1:1 between the form (pf-<key>) and the API body.
-        const PROP_FIELDS = ['title','external_url','address','price','city','property_type','status',
+        const PROP_FIELDS = ['title','external_url','address','price','city','property_type','status','open_house_at',
             'description','beds','baths','sqft','lot_acres','year_built','stories',
             'waterfront','water_body','waterfront_feet','listing_view',
             'heating','cooling','basement','flooring','fireplace','appliances',
@@ -931,6 +932,10 @@
                 let val = p ? p[k] : '';
                 if (k === 'waterfront' || k === 'fireplace') val = (val === true ? 'yes' : (val === false ? 'no' : ''));
                 if (k === 'status') val = (p?.status === 'draft') ? 'draft' : 'active';
+                if (k === 'open_house_at' && val) {   // ISO → local yyyy-MM-ddThh:mm for datetime-local
+                    const d = new Date(val);
+                    if (!isNaN(d)) { d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); val = d.toISOString().slice(0, 16); } else { val = ''; }
+                }
                 el.value = (val == null ? '' : val);
             });
             // Rebuild the image list from cover + gallery (dedupe).

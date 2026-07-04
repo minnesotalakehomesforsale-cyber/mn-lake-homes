@@ -82,7 +82,7 @@ const PUBLIC_COLS = `id, slug, lake_id, agent_id, title, address, city, state, z
     featured_image_url, gallery, mls_number, external_url, latitude, longitude,
     property_type, year_built, stories, garage_spaces, parking, heating, cooling,
     basement, flooring, appliances, exterior, roof, listing_view, waterfront,
-    water_body, fireplace, hoa_fee, annual_tax,
+    water_body, fireplace, hoa_fee, annual_tax, original_price, open_house_at,
     status, created_at, updated_at`;
 
 function slugify(s) {
@@ -230,6 +230,7 @@ function bodyToCols(b) {
         fireplace:          boolOrNull(b.fireplace),
         hoa_fee:            numOrNull(b.hoa_fee),
         annual_tax:         numOrNull(b.annual_tax),
+        open_house_at:      (String(b.open_house_at ?? '').trim() || null),
     };
 }
 
@@ -238,6 +239,7 @@ exports.create = async (req, res) => {
     try {
         const v = bodyToCols(req.body || {});
         if (!v.title) return res.status(400).json({ error: 'Title is required.' });
+        v.original_price = v.price;                                            // baseline for price-drop detection
         const slug = await uniqueSlug(slugify(req.body.slug || v.title));
         const cols = Object.keys(v);
         const placeholders = cols.map((_, i) => `$${i + 2}`).join(', ');
@@ -389,6 +391,7 @@ exports.createMine = async (req, res) => {
         if (!v.title) return res.status(400).json({ error: 'A title is required.' });
         v.agent_id = agentId;                                                  // force ownership
         if (!['active', 'draft'].includes(v.status)) v.status = 'active';      // instant-live
+        v.original_price = v.price;                                            // remember first price → detect drops
         await geocodeInto(v);                                                  // address → lat/lng for the map
         const slug = await uniqueSlug(slugify(v.title));
         const cols = Object.keys(v);
@@ -512,7 +515,7 @@ exports.mapListings = async (req, res) => {
     if (!LISTINGS_PUBLIC) return res.json([]);
     try {
         const { rows } = await pool.query(
-            `SELECT l.id, l.slug, l.title, l.price, l.city, l.featured_image_url,
+            `SELECT l.id, l.slug, l.title, l.price, l.original_price, l.city, l.featured_image_url,
                     l.latitude, l.longitude, l.beds, l.baths, l.property_type,
                     l.created_at, l.open_house_at,
                     a.display_name AS agent_name,

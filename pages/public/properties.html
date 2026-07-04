@@ -35,6 +35,10 @@
         .pm-pin span { display:block; width:100%; height:100%; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 4px rgba(16,24,40,0.4); background:#1d6df2; }
         .pm-pin-feat span { background:#f6ad14; box-shadow:0 0 0 3px rgba(246,173,20,0.35), 0 2px 6px rgba(16,24,40,0.45); }
         .pm-pop-feat { display:inline-block; background:#fef3c7; color:#b45309; font-size:0.62rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; border-radius:5px; padding:2px 6px; margin-bottom:0.35rem; }
+        .pm-pop-chip { display:inline-block; font-size:0.62rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; border-radius:5px; padding:2px 6px; margin-bottom:0.35rem; }
+        .pm-pop-chip.new { background:#e6fffa; color:#0f766e; }
+        .pm-pop-chip.drop { background:#fee2e2; color:#b91c1c; }
+        .pm-pop-chip.oh { background:#fef3c7; color:#b45309; }
         .pm-legend { display:flex; gap:1.1rem; flex-wrap:wrap; align-items:center; font-size:0.8rem; color:#718096; margin:0.75rem 0 0; }
         .pm-legend i { width:12px; height:12px; border-radius:50%; display:inline-block; vertical-align:-1px; margin-right:0.3rem; border:2px solid #fff; box-shadow:0 0 0 1px #e2e8f0; }
         @media (max-width: 600px) { .pm-head { padding: 1.5rem 1rem 0.75rem; } .pm-map-wrap { padding: 0 1rem; } }
@@ -86,7 +90,18 @@
                     bounds.push([lat, lng]);
                     if (p.featured) anyFeat = true;
                     const img = p.featured_image_url ? `<span class="pm-pop-img" style="background-image:url('${esc(thumb(p.featured_image_url))}')"></span>` : '';
-                    const badge = p.featured ? '<span class="pm-pop-feat">★ Featured</span><br>' : '';
+                    const now = Date.now();
+                    const created = p.created_at ? new Date(p.created_at).getTime() : null;
+                    const isNew = created && (now - created) <= 14 * 86400000;
+                    const dropped = p.original_price != null && p.price != null && Number(p.price) < Number(p.original_price);
+                    const oh = p.open_house_at && new Date(p.open_house_at).getTime() > now;
+                    const chips = [
+                        p.featured ? '<span class="pm-pop-feat">★ Featured</span>' : '',
+                        isNew ? '<span class="pm-pop-chip new">New</span>' : '',
+                        dropped ? '<span class="pm-pop-chip drop">Price ↓</span>' : '',
+                        oh ? '<span class="pm-pop-chip oh">Open house</span>' : '',
+                    ].filter(Boolean).join(' ');
+                    const badge = chips ? chips + '<br>' : '';
                     const meta = [money(p.price), esc(p.city || ''), p.agent_name ? esc(p.agent_name) : ''].filter(Boolean).join(' · ');
                     const html = `${img}<div class="pm-pop-body">${badge}<div class="t">${esc(p.title)}</div><div class="m">${meta}</div><a class="view" href="/listings/${esc(p.slug)}">View listing →</a></div>`;
                     L.marker([lat, lng], { icon: p.featured ? featIcon : regIcon, zIndexOffset: p.featured ? 1000 : 0 })
