@@ -3086,25 +3086,28 @@ async function seedBlogPosts() {
     // Newest draft batch (also is_published:false) — kept in its own file.
     let newDrafts = [];
     try { newDrafts = require('./data/blog-new'); } catch (_) { newDrafts = []; }
+    // Latest lake-cluster draft batch (Gull / Leech / Vermilion / Otter Tail).
+    let batch = [];
+    try { batch = require('./data/blog-batch3'); } catch (_) { batch = []; }
     let added = 0, failed = 0;
     // Per-post try/catch so one bad row (e.g. an over-length title) can't abort
     // the whole loop and silently drop every post after it — the newest drafts
     // are seeded LAST, so a mid-loop throw used to make them vanish.
-    for (const p of [...posts, ...drafts, ...newDrafts]) {
+    for (const p of [...posts, ...drafts, ...newDrafts, ...batch]) {
         try {
             const r = await pool.query(`
                 INSERT INTO blog_posts
                     (title, slug, excerpt, body, cover_image_url, tag,
                      read_time_minutes, is_published, published_at, author_name,
-                     seo_title, seo_description, featured_business_slug)
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+                     seo_title, seo_description, featured_business_slug, scheduled_for)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
                 ON CONFLICT (slug) DO NOTHING
             `, [
                 p.title, p.slug, p.excerpt, p.body, p.cover_image_url, p.tag,
                 p.read_time_minutes || 5, p.is_published !== false,
                 p.published_at || new Date(), p.author_name || 'MN Lake Homes Team',
                 p.seo_title || null, p.seo_description || null,
-                p.featured_business_slug || null,
+                p.featured_business_slug || null, p.scheduled_for || null,
             ]);
             added += r.rowCount;
         } catch (e) {
