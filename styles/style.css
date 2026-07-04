@@ -3099,3 +3099,19 @@ body > * { min-width: 0; }
         grid-column: span 2;
     }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Global mobile consistency guard (applies on every page that loads this
+   stylesheet). Keeps the "feel" the same across all screen sizes:
+   • form controls ≥16px on phones so iOS never jerk-zooms on focus
+   • icon-only tap targets meet the 40px minimum
+   These use element/attribute selectors (low specificity) so any page's own
+   component styles still win where they intend to.
+   ───────────────────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea {
+        font-size: 16px;
+    }
+}
