@@ -698,6 +698,7 @@ app.get('/lakes', (req, res) => {
     res.redirect(301, '/towns');
 });
 app.get('/lakes/:slug', async (req, res, next) => {
+    res.set('Cache-Control', 'no-cache');   // always revalidate — never serve stale SSR HTML
     try {
         const { rows } = await pool.query(
             `SELECT id, slug, name, state, region, county, latitude, longitude,
@@ -931,6 +932,7 @@ app.get('/lakes/:slug', async (req, res, next) => {
 // ─── Listings: per-property public detail page + RealEstateListing JSON-LD ──
 // Per-listing visibility (status='active'); LISTINGS_PUBLIC=false force-hides all.
 app.get('/listings/:slug', async (req, res, next) => {
+    res.set('Cache-Control', 'no-cache');   // always revalidate — never serve stale SSR HTML
     if (process.env.LISTINGS_PUBLIC === 'false') { renderFriendly404(res, { kind: 'listing', slug: req.params.slug }); return; }
     try {
         const { rows } = await pool.query(
@@ -1538,6 +1540,7 @@ app.get('/index.html', _injectGscMeta(path.join(PROJECT_ROOT, 'index.html')));
 // Server-renders SEO tokens into the initial HTML (matches the /lakes/:slug
 // pattern). The page itself fetches lakes/agents/businesses client-side.
 app.get('/towns/:slug', async (req, res, next) => {
+    res.set('Cache-Control', 'no-cache');   // always revalidate — never serve stale SSR HTML
     try {
         const { rows } = await pool.query(
             `SELECT t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude,
