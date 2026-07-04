@@ -525,7 +525,7 @@ exports.mapListings = async (req, res) => {
     try {
         const { rows } = await pool.query(
             `SELECT l.id, l.slug, l.title, l.price, l.original_price, l.city, l.featured_image_url,
-                    l.latitude, l.longitude, l.beds, l.baths, l.property_type,
+                    l.latitude, l.longitude, l.beds, l.baths, l.property_type, l.waterfront,
                     l.created_at, l.open_house_at,
                     a.display_name AS agent_name,
                     COALESCE(m.sort_priority, 999) AS tier_rank,
