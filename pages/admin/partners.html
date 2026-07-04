@@ -103,7 +103,7 @@
                 const r = await fetch('/api/partners/admin', { credentials: 'include' });
                 const rows = await r.json();
                 if (!Array.isArray(rows) || !rows.length) { wrap.innerHTML = '<div class="empty">No partners yet. Add lenders, inspectors and insurance pros so listing referrals have somewhere to go.</div>'; return; }
-                wrap.innerHTML = `<table class="pt-table"><thead><tr><th>Category</th><th>Name</th><th>Contact</th><th>Priority</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(p => `
+                wrap.innerHTML = `<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><table class="pt-table" style="min-width:640px;"><thead><tr><th>Category</th><th>Name</th><th>Contact</th><th>Priority</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(p => `
                     <tr class="${p.active ? '' : 'pt-off'}">
                         <td><span class="pt-cat">${esc(CAT_LABEL[p.category] || p.category)}</span></td>
                         <td><strong>${esc(p.name)}</strong>${p.blurb ? `<div style="font-size:0.78rem;color:#a0aec0;">${esc(p.blurb)}</div>` : ''}</td>
@@ -114,7 +114,7 @@
                             <button class="btn-ghost" style="padding:0.35rem 0.7rem;font-size:0.8rem;" onclick='edit(${JSON.stringify(p).replace(/'/g,"&#39;")})'>Edit</button>
                             <button class="btn-ghost" style="padding:0.35rem 0.7rem;font-size:0.8rem;color:#c53030;" onclick="del('${p.id}')">Delete</button>
                         </td>
-                    </tr>`).join('')}</tbody></table>`;
+                    </tr>`).join('')}</tbody></table></div>`;
             } catch (_) { wrap.innerHTML = '<div class="empty" style="color:#c53030;">Could not load partners.</div>'; }
         }
 
@@ -124,13 +124,13 @@
                 const r = await fetch('/api/partners/admin/referrals', { credentials: 'include' });
                 const rows = await r.json();
                 if (!Array.isArray(rows) || !rows.length) { wrap.innerHTML = '<div class="empty">No referrals yet.</div>'; return; }
-                wrap.innerHTML = `<table class="pt-table"><thead><tr><th>Date</th><th>Category</th><th>Buyer</th><th>Routed to</th></tr></thead><tbody>${rows.map(r => `
+                wrap.innerHTML = `<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><table class="pt-table" style="min-width:560px;"><thead><tr><th>Date</th><th>Category</th><th>Buyer</th><th>Routed to</th></tr></thead><tbody>${rows.map(r => `
                     <tr>
                         <td>${new Date(r.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}</td>
                         <td><span class="pt-cat">${esc(CAT_LABEL[r.category] || r.category)}</span></td>
                         <td><strong>${esc(r.name || '')}</strong><div style="font-size:0.8rem;color:#a0aec0;">${esc(r.email || '')} ${esc(r.phone || '')}</div></td>
                         <td>${esc(r.partner_name || '—')}</td>
-                    </tr>`).join('')}</tbody></table>`;
+                    </tr>`).join('')}</tbody></table></div>`;
             } catch (_) { wrap.innerHTML = '<div class="empty" style="color:#c53030;">Could not load referrals.</div>'; }
         }
 

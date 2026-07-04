@@ -93,7 +93,7 @@
                 : '';
 
             const regionsHtml = (d.regions && d.regions.length)
-                ? `<h2 class="mi-section-h">By region</h2><table class="mi-table"><thead><tr><th>Region</th><th style="text-align:right;">For sale</th><th style="text-align:right;">Median price</th><th style="text-align:right;">Sold (6mo)</th></tr></thead><tbody>${d.regions.map(r => `<tr><td>${esc(r.region)}</td><td class="num">${r.active.toLocaleString('en-US')}</td><td class="num">${money(r.median_price)}</td><td class="num">${r.sold_180.toLocaleString('en-US')}</td></tr>`).join('')}</tbody></table>`
+                ? `<h2 class="mi-section-h">By region</h2><div style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><table class="mi-table" style="min-width:420px;"><thead><tr><th>Region</th><th style="text-align:right;">For sale</th><th style="text-align:right;">Median price</th><th style="text-align:right;">Sold (6mo)</th></tr></thead><tbody>${d.regions.map(r => `<tr><td>${esc(r.region)}</td><td class="num">${r.active.toLocaleString('en-US')}</td><td class="num">${money(r.median_price)}</td><td class="num">${r.sold_180.toLocaleString('en-US')}</td></tr>`).join('')}</tbody></table></div>`
                 : '';
 
             body.innerHTML = cardsHtml + chartHtml + regionsHtml
