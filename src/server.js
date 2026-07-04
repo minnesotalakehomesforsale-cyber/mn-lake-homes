@@ -1039,6 +1039,8 @@ app.get('/listings/:slug', async (req, res, next) => {
                 '{{LISTING_PRICE}}':          escapeHtml(price),
                 '{{LISTING_BADGES_HTML}}':    badgesHtml,
                 '{{LISTING_PRICE_WAS}}':      priceWasHtml,
+                '{{LISTING_PRICE_NUM}}':      (l.price != null ? String(l.price) : ''),
+                '{{LISTING_TAX_NUM}}':        (l.annual_tax != null ? String(l.annual_tax) : ''),
                 '{{LISTING_ADDRESS}}':        escapeHtml(locLine || 'Minnesota'),
                 '{{LISTING_IMAGE}}':          escapeHtml(cldThumb(image, 1600)),
                 '{{LISTING_OG_IMAGE}}':       escapeHtml(ogImage),
