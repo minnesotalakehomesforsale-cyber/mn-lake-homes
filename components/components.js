@@ -1003,13 +1003,26 @@ function _lfRender() {
     if (f.type === 'contact') {
         // Email + phone capture. No account required — the lead is linked
         // to a user account later, by email, if/when one exists.
+        // Lake leads (opened with a lake context) get a founder opt-in: checked
+        // → routed straight to that lake's founding agent; unchecked → the normal
+        // agent lottery. Default checked so founders keep their exclusivity.
+        if (_lfs._lake && _lfs.data.want_founder === undefined) _lfs.data.want_founder = true;
+        const founderOptIn = _lfs._lake ? `
+            <label style="display:flex;gap:0.6rem;align-items:flex-start;margin-top:1rem;padding:0.85rem 1rem;background:#f0f7f4;border:1px solid #cfe8db;border-radius:12px;cursor:pointer;text-align:left;">
+                <input type="checkbox" id="lf-want-founder" ${_lfs.data.want_founder ? 'checked' : ''} style="margin-top:0.15rem;width:18px;height:18px;flex-shrink:0;accent-color:#0d9488;">
+                <span style="font-size:0.9rem;line-height:1.4;color:#1a202c;">Match me directly with this lake's <strong>founding agent</strong> — the exclusive local expert.
+                <span style="display:block;color:#718096;font-size:0.8rem;margin-top:0.15rem;">Uncheck to use our full local-agent rotation instead.</span></span>
+            </label>` : '';
         area.innerHTML = `
             <input type="email" id="lf-email" placeholder="Email address"
                 autocomplete="email" style="${iStyle}" ${focus} value="${_lfs.data.email || ''}">
             <div style="height:0.6rem;"></div>
             <input type="tel" id="lf-phone" placeholder="Phone number (optional)"
-                autocomplete="tel" style="${iStyle}" ${focus} value="${_lfs.data.phone || ''}">`;
+                autocomplete="tel" style="${iStyle}" ${focus} value="${_lfs.data.phone || ''}">
+            ${founderOptIn}`;
         setTimeout(() => document.getElementById('lf-email')?.focus(), 60);
+        const wfEl = document.getElementById('lf-want-founder');
+        if (wfEl) wfEl.addEventListener('change', () => { _lfs.data.want_founder = wfEl.checked; });
         // Progressive capture: as soon as a valid email/phone is entered here,
         // save a partial lead so we recover this person even if they don't
         // click submit. Debounced; also captured on blur.
@@ -1379,6 +1392,7 @@ async function _lfDoSubmit() {
         'name','first','last','email','phone',
         'address','placeId',
         'property_street','property_city','property_state','property_zip',
+        'want_founder',
     ]);
     let notes = Object.entries(d).filter(([k,v]) => !skip.has(k) && v)
         .map(([k,v]) => `${k[0].toUpperCase()+k.slice(1).replace(/_/g,' ')}: ${v}`).join('\n');
@@ -1421,6 +1435,9 @@ async function _lfDoSubmit() {
                 _elapsed_ms:       _lfs._openedAt ? (Date.now() - _lfs._openedAt) : undefined,
                 // Converts any partial lead captured for this session in place.
                 lead_session_id:   _lfs._sid || null,
+                // Lake leads: founder opt-in (checked → straight to the founding
+                // agent; unchecked → the lottery). undefined for non-lake leads.
+                want_founder:      _lfs._lake ? (_lfs.data.want_founder !== false) : undefined,
             })
         });
         if (!res.ok) { const r = await res.json().catch(()=>({})); throw new Error(r.error || 'Submission failed.'); }

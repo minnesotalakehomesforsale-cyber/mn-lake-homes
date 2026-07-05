@@ -218,7 +218,7 @@ function stripExcluded(buckets, excludeSet) {
     return out;
 }
 
-async function routeLead({ lat, lng, radiusMiles, lakeId, excludeUserIds = [] } = {}) {
+async function routeLead({ lat, lng, radiusMiles, lakeId, excludeUserIds = [], wantFounder = true } = {}) {
     const radius = Number(radiusMiles) > 0
         ? Number(radiusMiles)
         : await getDefaultRadiusMiles();
@@ -235,11 +235,19 @@ async function routeLead({ lat, lng, radiusMiles, lakeId, excludeUserIds = [] } 
     let lake = null;
     if (lakeId) lake = await getLakeById(lakeId);
     if (lake) {
-        const buckets = stripExcluded(await agentsForLake(lake.id), exclude);
+        let buckets = stripExcluded(await agentsForLake(lake.id), exclude);
+        // Founder opt-OUT: the visitor unchecked "match me with the founding agent",
+        // so drop the founder here and let the lead fall to the lake's OTHER agents
+        // (or through to town routing) — i.e. the normal lottery.
+        if (!wantFounder && buckets.founder) {
+            const { founder: _dropped, ...rest } = buckets;
+            buckets = rest;
+        }
         if (Object.keys(buckets).length) {
-            // The seated founder is EXCLUSIVE — 100% of their lake's leads.
-            // With no founder seated, the lake's other agents go to the lottery.
-            const founder = buckets.founder && buckets.founder[0];
+            // The seated founder is EXCLUSIVE — 100% of their lake's leads (unless
+            // the visitor opted out above). With no founder, the lake's other
+            // agents go to the weighted lottery.
+            const founder = wantFounder && buckets.founder && buckets.founder[0];
             const pick = founder || pickFromBuckets(buckets, weights);
             if (pick) {
                 const client = await pool.connect();

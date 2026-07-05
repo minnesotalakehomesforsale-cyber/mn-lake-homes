@@ -14,8 +14,11 @@ const createLead = async (req, res) => {
         name, email, phone, notes, source, agent_id, listing_id,
         property_address, property_street, property_city,
         property_state, property_zip, property_place_id, lake_slug,
-        is_waterfront, waterfront_feet, lead_session_id,
+        is_waterfront, waterfront_feet, lead_session_id, want_founder,
     } = req.body;
+    // Founder opt-in for lake leads. Defaults TRUE (preserve the founder's
+    // exclusive 100%); only an explicit false sends the lead to the lottery.
+    const wantFounder = want_founder !== false && want_founder !== 'false';
 
     name = (name || '').trim();
     email = (email || '').trim().toLowerCase();
@@ -323,7 +326,7 @@ const createLead = async (req, res) => {
                         return;
                     }
 
-                    const pick = await routeLead({ lat: geo?.lat, lng: geo?.lng, lakeId: leadLakeId });
+                    const pick = await routeLead({ lat: geo?.lat, lng: geo?.lng, lakeId: leadLakeId, wantFounder });
                     if (!pick) {
                         // No eligible agent in any nearby tag — lead stays
                         // unassigned. Log it AND email admin so it doesn't
