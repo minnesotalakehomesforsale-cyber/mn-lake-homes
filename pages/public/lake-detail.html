@@ -333,7 +333,7 @@
                 <h1>Explore<br><span>{{LAKE_NAME}}</span></h1>
                 <p class="lead" id="ld-intro">{{LAKE_INTRO_TEXT}}</p>
                 <div class="lm-hero-actions">
-                    <button onclick="openForm('buy')" class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none; cursor: pointer;">Get new {{LAKE_NAME}} listings</button>
+                    <button onclick="openForm('buy', { _lake: '{{LAKE_SLUG}}' })" class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none; cursor: pointer;">Get new {{LAKE_NAME}} listings</button>
                 </div>
             </div>
             <div class="lm-hero-col">
@@ -473,7 +473,7 @@
             <h2>{{LAKE_LISTINGS_HEADING}}</h2>
             <div class="ld-listings-grid" id="ld-listings-grid"></div>
             <div class="ld-listings-cta">
-                <a href="/pages/public/buy.html" class="nb-cta">Get matched with a {{LAKE_NAME}} agent →</a>
+                <a href="javascript:void(0)" onclick="openForm('buy', { _lake: '{{LAKE_SLUG}}' })" class="nb-cta">Get matched with a {{LAKE_NAME}} agent →</a>
             </div>
         </div>
     </section>
@@ -639,6 +639,8 @@
          admin hasn't uploaded any gallery images for this lake. See
          buildGalleryHtml() in src/server.js. -->
     {{LAKE_GALLERY_HTML}}
+
+    <founder-match-band data-intent="buy" data-lake="{{LAKE_SLUG}}" data-lake-name="{{LAKE_NAME}}"></founder-match-band>
 
     <global-footer></global-footer>
     <lead-modal></lead-modal>
@@ -811,11 +813,12 @@
         function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
         // Final-CTA intent picker — mirrors the homepage's openModalFromSection.
+        // Always tag this lake so the lead routes to its Founder agent.
         window.ldOpenIntent = function () {
             const select = document.getElementById('ld-intent-select');
             if (!select || !select.value) { alert('Please select what you are looking to do first!'); return; }
             const map = { buy: 'buy', sell: 'sell', explore: 'general', agent: 'agent' };
-            window.openForm(map[select.value] || 'general');
+            window.openForm(map[select.value] || 'general', { _lake: '{{LAKE_SLUG}}' });
         };
 
         // ── Shared "businesses nearby" fallback ──────────────────────────

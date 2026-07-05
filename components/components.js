@@ -2040,15 +2040,25 @@ document.addEventListener('keydown', e => {
     class FounderMatchBand extends HTMLElement {
         connectedCallback() {
             const intent = (this.getAttribute('data-intent') || 'general').toLowerCase();
+            // On a lake page, pre-select that lake (data-lake / data-lake-name).
+            const lakeSlug = this.getAttribute('data-lake') || '';
+            const lakeName = this.getAttribute('data-lake-name') || '';
+            const prefill = (lakeSlug && lakeName) ? { slug: lakeSlug, name: lakeName } : null;
+            const headline = lakeName
+                ? `Want to work with the ${esc(lakeName)} expert?`
+                : 'Want to work with the local expert?';
+            const body = lakeName
+                ? `Get matched directly with the <strong>Founder agent for ${esc(lakeName)}</strong> — the one agent who knows this lake better than anyone. We'll connect you straight to their expert.`
+                : `Get matched directly with the <strong>Founder agent</strong> for your lake — the one agent who knows it better than anyone. Tell us the lake (or lakes) you're after and we'll connect you straight to their expert.`;
             this.innerHTML = `
               <section class="fm-band">
                 <div class="fm-eyebrow">One agent per lake · the local expert</div>
-                <h2>Want to work with the local expert?</h2>
-                <p>Get matched directly with the <strong>Founder agent</strong> for your lake — the one agent who knows it better than anyone. Tell us the lake (or lakes) you're after and we'll connect you straight to their expert.</p>
+                <h2>${headline}</h2>
+                <p>${body}</p>
                 <button class="fm-cta" type="button">🎯 Match me with a Founder agent</button>
                 <div class="fm-sub">Free · no obligation · you'll hear from a real local specialist</div>
               </section>`;
-            this.querySelector('.fm-cta').addEventListener('click', () => window.openFounderMatch(intent));
+            this.querySelector('.fm-cta').addEventListener('click', () => window.openFounderMatch(intent, prefill));
         }
     }
     customElements.define('founder-match-band', FounderMatchBand);
@@ -2165,9 +2175,12 @@ document.addEventListener('keydown', e => {
         }));
     }
 
-    window.openFounderMatch = async function (intent) {
+    // openFounderMatch(intent, prefill) — prefill { slug, name } pre-selects a
+    // lake (used on lake pages so the visitor's own lake is already chosen).
+    window.openFounderMatch = async function (intent, prefill) {
         buildModal();
-        _selected = []; _openedAt = Date.now();
+        _selected = (prefill && prefill.slug && prefill.name) ? [{ slug: prefill.slug, name: prefill.name }] : [];
+        _openedAt = Date.now();
         renderChips();
         document.getElementById('fm-form').style.display = '';
         document.getElementById('fm-done').style.display = 'none';
