@@ -360,6 +360,7 @@
                             <div style="flex:1; min-width:240px;">
                                 <div style="font-weight:800; font-size:1.15rem; margin-bottom:0.35rem;">You're on the Free plan</div>
                                 <p style="margin:0; opacity:0.9; font-size:0.93rem; line-height:1.5;">Your profile is live, but Free agents aren't in the lead rotation, aren't featured, and can't post properties. Upgrade to start receiving matched leads and list your homes.</p>
+                                <div id="banner-free-demand" style="display:none; margin-top:0.7rem; padding:0.6rem 0.85rem; background:rgba(255,255,255,0.14); border-radius:9px; font-size:0.88rem; font-weight:700;"></div>
                             </div>
                             <a href="/pages/public/pricing.html" style="flex-shrink:0; background:#fff; color:#0f2b46; border-radius:10px; padding:0.8rem 1.4rem; font-weight:800; text-decoration:none; font-size:0.95rem;">Upgrade my plan →</a>
                         </div>
@@ -1480,6 +1481,19 @@
                     fb.style.display = 'block';
                 } else {
                     fb.style.display = 'none';
+                }
+                // Free agents: show the demand they're missing (real numbers).
+                const dem = document.getElementById('banner-free-demand');
+                if (dem && d.tier === 'free') {
+                    const v = (d.area_demand && d.area_demand.views_30d) || 0;
+                    const l = (d.area_demand && d.area_demand.leads_30d) || 0;
+                    if (v >= 10 || l >= 1) {
+                        const parts = [];
+                        if (v >= 10) parts.push(`${v.toLocaleString()} buyer views`);
+                        if (l >= 1)  parts.push(`${l} lead${l === 1 ? '' : 's'}`);
+                        dem.textContent = `📊 Last 30 days on your lakes: ${parts.join(' + ')} — none routed to you. Upgrade to get matched.`;
+                        dem.style.display = 'block';
+                    } else { dem.style.display = 'none'; }
                 }
             } catch (_) { fb.style.display = 'none'; }
         }

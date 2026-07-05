@@ -838,13 +838,36 @@ const getUpgradeStatus = async (req, res) => {
                  LIMIT 8`, [userId])).rows;
         } catch (_) { claimable = []; }
 
+        // Demand in the agent's service areas over the last 30 days — powers the
+        // "you're missing leads" nudge for free agents (buyers looked at / asked
+        // about their lakes; none of it reached them because they're on Free).
+        let areaDemand = { views_30d: 0, leads_30d: 0 };
+        try {
+            const dr = await pool.query(`
+                WITH area_lakes AS (
+                    SELECT DISTINCT l.id, l.slug FROM lakes l
+                      JOIN lake_tags lt ON lt.lake_id = l.id
+                      JOIN user_tags ut ON ut.tag_id = lt.tag_id AND ut.user_id = $1
+                     WHERE l.status = 'published'
+                )
+                SELECT
+                    (SELECT COUNT(*) FROM leads ld
+                       WHERE ld.lake_id IN (SELECT id FROM area_lakes)
+                         AND ld.deleted_at IS NULL AND ld.created_at >= NOW() - INTERVAL '30 days')::int AS leads_30d,
+                    (SELECT COUNT(*) FROM conversion_events ce
+                       WHERE ce.event_name = 'view_lake'
+                         AND ce.params->>'id' IN (SELECT slug FROM area_lakes)
+                         AND ce.created_at >= NOW() - INTERVAL '30 days')::int AS views_30d`, [userId]);
+            areaDemand = { views_30d: dr.rows[0]?.views_30d || 0, leads_30d: dr.rows[0]?.leads_30d || 0 };
+        } catch (_) { /* leave zeros */ }
+
         // Recommend the next step: free → upgrade to paid; paid non-founder with
         // an open lake → claim founder; otherwise nothing to nudge.
         let recommend = 'none';
         if (!isPaid) recommend = 'upgrade_paid';
         else if (!isFounder && claimable.length) recommend = 'claim_founder';
 
-        res.json({ tier, is_paid: isPaid, is_founder: isFounder, claimable_lakes: claimable, recommend });
+        res.json({ tier, is_paid: isPaid, is_founder: isFounder, claimable_lakes: claimable, area_demand: areaDemand, recommend });
     } catch (err) {
         console.error('[getUpgradeStatus]', err.message);
         res.status(500).json({ error: 'Failed to load upgrade status.' });
