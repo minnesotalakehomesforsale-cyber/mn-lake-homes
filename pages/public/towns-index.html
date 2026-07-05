@@ -204,7 +204,7 @@
         }
         .db-map-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.4rem; vertical-align: -1px; }
         .db-map-legend .dot.town { background: #1d6df2; }
-        .db-map-legend .dot.lake { background: #0d9488; }
+        .db-map-legend .dot.lake { background: #1d6df2; }
         .db-map-legend .dot.biz  { background: #d97706; }
 
         /* Hide the "Leaflet · OpenStreetMap · CARTO" credit strip
@@ -244,11 +244,11 @@
         /* Lake pin — teal */
         .lk-pin {
             width: 22px; height: 22px;
-            background: #0d9488;
+            background: #1d6df2;
             border: 3px solid #fff;
             border-radius: 50% 50% 50% 0;
             transform: rotate(-45deg);
-            box-shadow: 0 5px 12px rgba(13,148,136,0.45);
+            box-shadow: 0 5px 12px rgba(29,109,242,0.45);
             transition: transform 0.15s;
         }
         .lk-pin::after { content: ''; display: block; width: 6px; height: 6px; background: #fff; border-radius: 50%; margin: 5px auto; }
@@ -290,7 +290,7 @@
         .leaflet-popup-content { margin: 0 !important; width: 260px !important; font-family: 'SF Pro Text', sans-serif; }
         .leaflet-popup-tip { box-shadow: 0 4px 10px rgba(16,24,40,0.12); }
         .db-pop-card .thumb { position: relative; height: 145px; background: linear-gradient(135deg, #1d6df2 0%, #155bc8 100%); overflow: hidden; }
-        .db-pop-card.lake .thumb { background: linear-gradient(135deg, #0d9488 0%, #0b7b70 100%); }
+        .db-pop-card.lake .thumb { background: linear-gradient(135deg, #1d6df2 0%, #155bc8 100%); }
         .db-pop-card .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
         /* No-image placeholder — same gradient + initial as the lake/town hero
            and detail-page cards, so an entity looks identical everywhere. */
@@ -312,8 +312,8 @@
         .db-pop-body .meta { font-size: 0.74rem; color: #718096; margin: 0 0 0.85rem; font-weight: 600; }
         .db-pop-btn { display: block; text-align: center; padding: 0.6rem 0.9rem; background: #1d6df2; color: #fff !important; font-weight: 800; font-size: 0.82rem; border-radius: 8px; text-decoration: none; transition: background 0.15s; }
         .db-pop-btn:hover { background: #155bc8; }
-        .db-pop-card.lake .db-pop-btn { background: #0d9488; }
-        .db-pop-card.lake .db-pop-btn:hover { background: #0b7b70; }
+        .db-pop-card.lake .db-pop-btn { background: #1d6df2; }
+        .db-pop-card.lake .db-pop-btn:hover { background: #155bc8; }
         .db-pop-card.biz  .thumb {
             background: linear-gradient(135deg,
                 var(--biz-c, #d97706) 0%,
@@ -367,7 +367,7 @@
             overflow: hidden; position: relative;
         }
         .db-card.lake .db-card-thumb {
-            background: linear-gradient(135deg, #0d9488 0%, #0b7b70 100%);
+            background: linear-gradient(135deg, #1d6df2 0%, #155bc8 100%);
         }
         /* Business cards inherit their per-type color from inline --biz-c.
            color-mix gives the darker stop for the gradient without us
@@ -394,7 +394,7 @@
             letter-spacing: 0.6px; text-transform: uppercase;
             padding: 0.28rem 0.55rem; border-radius: 6px;
         }
-        .db-card.lake .db-card-thumb .type { background: rgba(13,148,136,0.95); }
+        .db-card.lake .db-card-thumb .type { background: rgba(29,109,242,0.95); }
         .db-card.biz  .db-card-thumb .type { background: var(--biz-c, #d97706); }
         .db-card-thumb .type .dot { width: 6px; height: 6px; border-radius: 50%; background: #fff; }
         .db-card-body { padding: 1rem 1.1rem 1.15rem; flex: 1; display: flex; flex-direction: column; }
@@ -406,7 +406,7 @@
             font-size: 0.82rem; font-weight: 800; color: #1d6df2;
             transition: gap 0.15s, color 0.15s;
         }
-        .db-card.lake .db-card-cta { color: #0d9488; }
+        .db-card.lake .db-card-cta { color: #1d6df2; }
         .db-card.biz  .db-card-cta { color: var(--biz-c, #d97706); }
         .db-card:hover .db-card-cta { gap: 0.6rem; }
 

@@ -1301,7 +1301,7 @@ function _lfFillFounderSlot() {
     slot.dataset.filled = '1';
     slot.innerHTML = `
         <label style="display:flex;gap:0.65rem;align-items:center;margin-top:1rem;padding:0.85rem 1rem;background:#f0f7f4;border:1px solid #cfe8db;border-radius:12px;cursor:pointer;text-align:left;">
-            <input type="checkbox" id="lf-want-founder" ${_lfs.data.want_founder ? 'checked' : ''} style="width:18px;height:18px;flex-shrink:0;accent-color:#0d9488;">
+            <input type="checkbox" id="lf-want-founder" ${_lfs.data.want_founder ? 'checked' : ''} style="width:18px;height:18px;flex-shrink:0;accent-color:#1d6df2;">
             ${photo}
             <span style="font-size:0.9rem;line-height:1.4;color:#1a202c;">Match me directly with <strong>${esc(fnd.display_name)}</strong>, the ${lakeName} founding agent.
             <span style="display:block;color:#718096;font-size:0.8rem;margin-top:0.15rem;">Uncheck to use our full local-agent rotation instead.</span></span>
@@ -2047,13 +2047,13 @@ document.addEventListener('keydown', e => {
     // ── Styles ──
     const css = document.createElement('style');
     css.textContent = `
-      .fm-band { background: linear-gradient(135deg,#0b2a10 0%,#0f2b46 55%,#1d6df2 130%); color:#fff; border-radius:22px; padding:2.75rem 2.25rem; margin:3.5rem auto; max-width:1120px; text-align:center; box-shadow:0 24px 60px rgba(11,42,16,0.22); }
-      .fm-band .fm-eyebrow { font-size:0.75rem; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:#9ae6b4; margin-bottom:0.9rem; }
+      .fm-band { background:#1d6df2; color:#fff; border-radius:16px; padding:2.75rem 2.25rem; margin:3.5rem auto; max-width:1120px; text-align:center; }
+      .fm-band .fm-eyebrow { font-size:0.75rem; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:rgba(255,255,255,0.8); margin-bottom:0.9rem; }
       .fm-band h2 { font-size:clamp(1.7rem,4vw,2.4rem); font-weight:800; letter-spacing:-1px; line-height:1.1; margin:0 auto 0.9rem; max-width:720px; }
       .fm-band p { font-size:1.08rem; line-height:1.6; opacity:0.92; max-width:640px; margin:0 auto 1.75rem; }
-      .fm-band .fm-cta { display:inline-flex; align-items:center; gap:0.5rem; background:#fff; color:#0b2a10; border:0; border-radius:12px; padding:0.95rem 1.75rem; font-weight:800; font-size:1.02rem; cursor:pointer; font-family:inherit; text-decoration:none; }
-      .fm-band .fm-cta:hover { transform:translateY(-1px); }
-      .fm-band .fm-sub { margin-top:1rem; font-size:0.85rem; opacity:0.75; }
+      .fm-band .fm-cta { display:inline-flex; align-items:center; gap:0.5rem; background:#fff; color:#1d6df2; border:0; border-radius:10px; padding:0.95rem 1.75rem; font-weight:800; font-size:1.02rem; cursor:pointer; font-family:inherit; text-decoration:none; transition:background 0.12s; }
+      .fm-band .fm-cta:hover { background:#eef4ff; }
+      .fm-band .fm-sub { margin-top:1rem; font-size:0.85rem; opacity:0.8; }
       @media (max-width:640px){ .fm-band { padding:2rem 1.35rem; margin:2.5rem 1rem; border-radius:18px; } }
 
       .fm-ov { position:fixed; inset:0; z-index:9200; background:rgba(11,42,16,0.55); display:none; align-items:flex-start; justify-content:center; padding:2rem 1rem; overflow-y:auto; }
