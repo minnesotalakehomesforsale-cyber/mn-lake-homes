@@ -568,6 +568,7 @@ app.get('/sitemap.xml', async (req, res) => {
             { url: '/resources',       priority: 0.6, changefreq: 'monthly' },
             { url: '/rent',            priority: 0.6, changefreq: 'weekly'  },
             { url: '/join',            priority: 0.5, changefreq: 'monthly' },
+            { url: '/claim-your-lake', priority: 0.7, changefreq: 'weekly'  },
             { url: '/submit-business', priority: 0.5, changefreq: 'monthly' },
             { url: '/business-signup', priority: 0.5, changefreq: 'monthly' },
             { url: '/commonrealtor',   priority: 0.5, changefreq: 'monthly' },

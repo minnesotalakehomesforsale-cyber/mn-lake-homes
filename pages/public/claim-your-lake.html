@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claim Your Lake — Become the Founding Agent | MN Lake Homes</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta name="description" content="One agent per lake. Claim an exclusive Founder seat on a Minnesota lake and receive 100% of its buyer & seller leads. See live demand and what each lake is worth to you.">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/claim-your-lake">
+    <meta property="og:title" content="Claim Your Lake — Become the Founding Agent">
+    <meta property="og:description" content="One agent per lake. 100% of that lake's leads. See real demand and claim your territory.">
+    <meta property="og:url" content="https://minnesotalakehomesforsale.com/claim-your-lake">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        .cl-hero { padding: 8rem 1.5rem 2rem; max-width: 900px; margin: 0 auto; text-align: center; }
+        .cl-eyebrow { color: #0d9488; font-size: 0.78rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 1rem; }
+        .cl-hero h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); font-weight: 800; color: #0f2b46; letter-spacing: -1.5px; line-height: 1.05; margin: 0 0 1rem; }
+        .cl-hero p { font-size: 1.15rem; color: #4a5568; line-height: 1.6; max-width: 640px; margin: 0 auto; }
+        .cl-openpill { display: inline-block; margin-top: 1.4rem; background: #eafaf3; color: #0d7a53; border: 1px solid #b7ecd6; border-radius: 999px; padding: 0.5rem 1.1rem; font-weight: 800; font-size: 0.9rem; }
+
+        .cl-wrap { max-width: 1120px; margin: 0 auto; padding: 1.5rem 1.5rem 5rem; }
+
+        /* ── Earnings calculator ── */
+        .calc { background: linear-gradient(135deg,#0f2b46,#1d6df2); color: #fff; border-radius: 20px; padding: 2rem; margin: 1.5rem 0 3rem; }
+        .calc h2 { margin: 0 0 0.35rem; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
+        .calc .sub { opacity: 0.85; font-size: 0.95rem; margin: 0 0 1.5rem; }
+        .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem 2rem; align-items: end; }
+        .calc-field label { display: block; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85; margin-bottom: 0.5rem; }
+        .calc-field .val { font-size: 1.05rem; font-weight: 800; margin-bottom: 0.25rem; }
+        .calc-field input[type=range] { width: 100%; accent-color: #7cc7ff; }
+        .calc-field select { width: 100%; padding: 0.6rem 0.75rem; border-radius: 9px; border: 0; font: inherit; font-weight: 700; color: #0f2b46; }
+        .calc-out { background: rgba(255,255,255,0.12); border-radius: 14px; padding: 1.4rem; margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center; justify-content: space-between; }
+        .calc-out .big { font-size: 2.4rem; font-weight: 800; letter-spacing: -1.5px; line-height: 1; }
+        .calc-out .lbl { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85; font-weight: 700; margin-bottom: 0.3rem; }
+        .calc-out .roi { font-size: 0.95rem; font-weight: 700; color: #b7ecd6; }
+        .calc-note { font-size: 0.72rem; opacity: 0.7; margin-top: 1rem; line-height: 1.4; }
+
+        /* ── Availability controls + grid ── */
+        .cl-controls { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.25rem; }
+        .cl-search { flex: 1 1 240px; max-width: 360px; padding: 0.7rem 0.9rem; border: 1px solid #e2e8f0; border-radius: 10px; font: inherit; outline: none; }
+        .cl-search:focus { border-color: #1d6df2; }
+        .cl-select { padding: 0.7rem 0.8rem; border: 1px solid #e2e8f0; border-radius: 10px; font: inherit; background: #fff; cursor: pointer; }
+        .cl-toggle { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.9rem; font-weight: 700; color: #4a5568; cursor: pointer; user-select: none; }
+
+        .cl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.1rem; }
+        .cl-card { border: 1px solid #edf2f7; border-radius: 16px; padding: 1.3rem 1.4rem; background: #fff; display: flex; flex-direction: column; transition: box-shadow 0.15s, transform 0.1s; }
+        .cl-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.07); transform: translateY(-1px); }
+        .cl-card .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.6rem; }
+        .cl-card h3 { margin: 0; font-size: 1.15rem; font-weight: 800; color: #1a202c; }
+        .cl-card .region { font-size: 0.78rem; color: #a0aec0; font-weight: 600; margin-top: 0.15rem; }
+        .cl-badge { flex-shrink: 0; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 0.28rem 0.6rem; border-radius: 999px; }
+        .cl-badge.open { background: #eafaf3; color: #0d7a53; border: 1px solid #b7ecd6; }
+        .cl-badge.taken { background: #f2f5f8; color: #a0aec0; border: 1px solid #e2e8f0; }
+        .cl-demand { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 1.1rem 0; }
+        .cl-stat { background: #f7f9fa; border-radius: 10px; padding: 0.6rem 0.4rem; text-align: center; }
+        .cl-stat .n { font-size: 1.15rem; font-weight: 800; color: #0f2b46; }
+        .cl-stat .l { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.4px; color: #a0aec0; font-weight: 700; margin-top: 0.1rem; }
+        .cl-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-top: auto; }
+        .cl-price { font-size: 0.9rem; color: #4a5568; }
+        .cl-price b { font-size: 1.15rem; color: #0f2b46; }
+        .cl-claim { background: #1d6df2; color: #fff; border: 0; border-radius: 10px; padding: 0.6rem 1.1rem; font-weight: 800; font-size: 0.9rem; cursor: pointer; font-family: inherit; white-space: nowrap; }
+        .cl-claim:hover { background: #155bc8; }
+        .cl-claim.taken { background: #edf2f7; color: #a0aec0; cursor: not-allowed; }
+        .cl-empty { text-align: center; color: #a0aec0; padding: 3rem 1rem; grid-column: 1/-1; }
+
+        /* ── How it works ── */
+        .cl-how { margin: 4rem 0 0; }
+        .cl-how h2 { text-align: center; font-size: 1.8rem; font-weight: 800; color: #0f2b46; letter-spacing: -0.5px; margin: 0 0 2rem; }
+        .cl-how-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1.25rem; }
+        .cl-how-card { border: 1px solid #edf2f7; border-radius: 16px; padding: 1.5rem; }
+        .cl-how-card .ic { width: 44px; height: 44px; border-radius: 12px; background: #eaf3ff; color: #1d6df2; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 0.9rem; }
+        .cl-how-card h3 { margin: 0 0 0.4rem; font-size: 1.05rem; font-weight: 800; color: #1a202c; }
+        .cl-how-card p { margin: 0; color: #718096; font-size: 0.92rem; line-height: 1.55; }
+
+        @media (max-width: 640px) {
+            .calc-grid { grid-template-columns: 1fr; }
+            .calc-out .big { font-size: 2rem; }
+        }
+    </style>
+    <script src="../../components/components.js" defer></script>
+</head>
+<body>
+    <global-header></global-header>
+
+    <section class="cl-hero">
+        <div class="cl-eyebrow">For real-estate agents</div>
+        <h1>Own your lake.</h1>
+        <p>One agent per lake. Claim a Founder seat and receive <strong>100% of that lake's buyer &amp; seller leads</strong> — no sharing, no bidding wars. Your exclusive territory, for life.</p>
+        <div class="cl-openpill" id="cl-openpill">Loading available lakes…</div>
+    </section>
+
+    <div class="cl-wrap">
+        <!-- Earnings calculator -->
+        <div class="calc">
+            <h2>What's a lake worth to you?</h2>
+            <p class="sub">Estimate your annual commission from a lake's Founder seat. Pick a lake to use its real demand, or set your own assumptions.</p>
+            <div class="calc-grid">
+                <div class="calc-field">
+                    <label>Lake (uses its real lead demand)</label>
+                    <select id="calc-lake"><option value="">— Choose a lake —</option></select>
+                </div>
+                <div class="calc-field">
+                    <label>Leads per year</label>
+                    <div class="val"><span id="calc-leads-v">40</span> leads/yr</div>
+                    <input type="range" id="calc-leads" min="5" max="300" value="40" step="5">
+                </div>
+                <div class="calc-field">
+                    <label>Avg. sale price</label>
+                    <div class="val">$<span id="calc-price-v">475,000</span></div>
+                    <input type="range" id="calc-price" min="200000" max="2000000" value="475000" step="25000">
+                </div>
+                <div class="calc-field">
+                    <label>Close rate</label>
+                    <div class="val"><span id="calc-close-v">8</span>%</div>
+                    <input type="range" id="calc-close" min="2" max="25" value="8" step="1">
+                </div>
+                <div class="calc-field">
+                    <label>Your commission</label>
+                    <div class="val"><span id="calc-comm-v">2.5</span>%</div>
+                    <input type="range" id="calc-comm" min="1" max="3.5" value="2.5" step="0.1">
+                </div>
+                <div class="calc-field">
+                    <label>Billing</label>
+                    <select id="calc-period"><option value="monthly">Monthly</option><option value="annual">Annual (2 months free)</option></select>
+                </div>
+            </div>
+            <div class="calc-out">
+                <div>
+                    <div class="lbl">Estimated commission / year</div>
+                    <div class="big" id="calc-annual">$0</div>
+                </div>
+                <div>
+                    <div class="lbl">Founder seat</div>
+                    <div class="big" id="calc-seat" style="font-size:1.6rem;">$249<span style="font-size:0.9rem;font-weight:600;opacity:0.8;">/mo</span></div>
+                    <div class="roi" id="calc-roi"></div>
+                </div>
+            </div>
+            <p class="calc-note">Illustrative estimate only — not a guarantee of income. Actual results depend on market conditions, your responsiveness, and how you work each lead. Founder seats are $249–$5,000/mo depending on the lake's demand.</p>
+        </div>
+
+        <!-- Availability -->
+        <h2 style="font-size:1.8rem;font-weight:800;color:#0f2b46;letter-spacing:-0.5px;margin:0 0 1.25rem;">Available lakes</h2>
+        <div class="cl-controls">
+            <input id="cl-search" class="cl-search" type="search" placeholder="Search a lake…" oninput="applyFilters()">
+            <select id="cl-region" class="cl-select" onchange="applyFilters()"><option value="">All regions</option></select>
+            <label class="cl-toggle"><input type="checkbox" id="cl-openonly" onchange="applyFilters()"> Open seats only</label>
+        </div>
+        <div class="cl-grid" id="cl-grid"><div class="cl-empty">Loading lakes…</div></div>
+
+        <!-- How it works -->
+        <section class="cl-how">
+            <h2>How the Founder seat works</h2>
+            <div class="cl-how-grid">
+                <div class="cl-how-card"><div class="ic">📍</div><h3>Claim one lake</h3><p>Pick an open lake. Only one agent can hold each lake's Founder seat — it's exclusively yours.</p></div>
+                <div class="cl-how-card"><div class="ic">🎯</div><h3>Get every lead</h3><p>Every buyer and seller who comes to us for that lake routes straight to you. No shared leads, ever.</p></div>
+                <div class="cl-how-card"><div class="ic">⚡</div><h3>Respond fast</h3><p>Instant email + SMS alerts the moment a lead lands, with quality scoring so you work the hottest ones first.</p></div>
+                <div class="cl-how-card"><div class="ic">📈</div><h3>Grow your name</h3><p>Your profile, reviews, and byline appear across that lake's pages — you become the local expert buyers find.</p></div>
+            </div>
+        </section>
+    </div>
+
+    <global-footer></global-footer>
+
+    <script>
+        let AVAIL = null, LAKES = [];
+        const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+        const esc = s => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+        async function load() {
+            try {
+                const r = await fetch('/api/lakes/founder-availability');
+                AVAIL = await r.json();
+                LAKES = AVAIL.lakes || [];
+            } catch (_) { LAKES = []; }
+
+            document.getElementById('cl-openpill').textContent =
+                AVAIL && AVAIL.open_count != null
+                    ? `${AVAIL.open_count} of ${AVAIL.total} lakes still have an open Founder seat`
+                    : 'Explore available lakes below';
+
+            // region filter
+            const rsel = document.getElementById('cl-region');
+            (AVAIL?.regions || []).forEach(rg => { const o = document.createElement('option'); o.value = rg; o.textContent = rg; rsel.appendChild(o); });
+
+            // calc lake picker
+            const lsel = document.getElementById('calc-lake');
+            LAKES.forEach(l => { const o = document.createElement('option'); o.value = l.slug; o.textContent = l.name + (l.taken ? ' (claimed)' : ''); lsel.appendChild(o); });
+
+            applyFilters();
+            recalc();
+        }
+
+        function applyFilters() {
+            const q = (document.getElementById('cl-search').value || '').toLowerCase().trim();
+            const region = document.getElementById('cl-region').value;
+            const openOnly = document.getElementById('cl-openonly').checked;
+            const list = LAKES.filter(l =>
+                (!q || l.name.toLowerCase().includes(q)) &&
+                (!region || l.region === region) &&
+                (!openOnly || !l.taken));
+            const grid = document.getElementById('cl-grid');
+            if (!list.length) { grid.innerHTML = '<div class="cl-empty">No lakes match your filters.</div>'; return; }
+            grid.innerHTML = list.map(card).join('');
+        }
+
+        function card(l) {
+            const badge = l.taken ? '<span class="cl-badge taken">Claimed</span>' : '<span class="cl-badge open">Open seat</span>';
+            const claim = l.taken
+                ? '<button class="cl-claim taken" disabled>Claimed</button>'
+                : `<button class="cl-claim" onclick="claimLake('${esc(l.slug)}','${esc(l.id)}')">Claim this lake →</button>`;
+            return `
+                <div class="cl-card">
+                    <div class="top">
+                        <div><h3>${esc(l.name)}</h3><div class="region">${esc([l.county && l.county + ' County', l.region].filter(Boolean).join(' · ') || l.state || 'Minnesota')}</div></div>
+                        ${badge}
+                    </div>
+                    <div class="cl-demand">
+                        <div class="cl-stat"><div class="n">${l.leads_90d || 0}</div><div class="l">Leads / 90d</div></div>
+                        <div class="cl-stat"><div class="n">${(l.views_90d || 0).toLocaleString()}</div><div class="l">Views / 90d</div></div>
+                        <div class="cl-stat"><div class="n">${l.active_listings || 0}</div><div class="l">Listings</div></div>
+                    </div>
+                    <div class="cl-foot">
+                        <div class="cl-price"><b>${fmt(l.price)}</b>/mo</div>
+                        ${claim}
+                    </div>
+                </div>`;
+        }
+
+        // Claim: instant Stripe checkout when self-serve is enabled AND the agent
+        // is logged in; otherwise capture their interest (+ lake) as a lead so the
+        // team can seat them. Works today, upgrades to instant checkout on flip.
+        async function claimLake(slug, id) {
+            if (AVAIL && AVAIL.public_checkout && id) {
+                try {
+                    const r = await fetch('/api/stripe/founder-seat/checkout', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                        body: JSON.stringify({ lakeId: id, period: document.getElementById('calc-period').value === 'annual' ? 'annual' : 'monthly' }),
+                    });
+                    if (r.ok) { const j = await r.json(); if (j.url) { location.href = j.url; return; } }
+                    // 401/403 (not a logged-in agent) → fall through to interest capture.
+                } catch (_) {}
+            }
+            if (typeof window.openForm === 'function') window.openForm('agent', { _source: 'claim_lake:' + slug, _lake: slug });
+            else location.href = '/join?ref_lake=' + encodeURIComponent(slug);
+        }
+
+        // ── Earnings calculator ──
+        function recalc() {
+            const leads = +document.getElementById('calc-leads').value;
+            const price = +document.getElementById('calc-price').value;
+            const close = +document.getElementById('calc-close').value / 100;
+            const comm  = +document.getElementById('calc-comm').value / 100;
+            document.getElementById('calc-leads-v').textContent = leads;
+            document.getElementById('calc-price-v').textContent = price.toLocaleString('en-US');
+            document.getElementById('calc-close-v').textContent = (close * 100);
+            document.getElementById('calc-comm-v').textContent = (comm * 100).toFixed(1);
+
+            const annual = leads * close * price * comm;
+            document.getElementById('calc-annual').textContent = fmt(annual);
+
+            // Seat price: from the selected lake if any, else the floor.
+            const slug = document.getElementById('calc-lake').value;
+            const lake = LAKES.find(l => l.slug === slug);
+            const monthly = lake ? lake.price : (AVAIL?.floor || 249);
+            const period = document.getElementById('calc-period').value;
+            const yearlyCost = period === 'annual' ? monthly * 10 : monthly * 12;
+            document.getElementById('calc-seat').innerHTML = period === 'annual'
+                ? fmt(monthly * 10) + '<span style="font-size:0.9rem;font-weight:600;opacity:0.8;">/yr</span>'
+                : fmt(monthly) + '<span style="font-size:0.9rem;font-weight:600;opacity:0.8;">/mo</span>';
+            const roi = yearlyCost > 0 ? annual / yearlyCost : 0;
+            document.getElementById('calc-roi').textContent = roi >= 1 ? `≈ ${roi.toFixed(1)}× your seat cost` : '';
+        }
+
+        // When a lake is picked in the calculator, seed leads/yr from its real
+        // 90-day demand (annualized) so the estimate is grounded in actual traffic.
+        document.getElementById('calc-lake').addEventListener('change', function () {
+            const lake = LAKES.find(l => l.slug === this.value);
+            if (lake) {
+                const annualLeads = Math.max(5, Math.min(300, Math.round((lake.leads_90d || 0) * 4 / 5) * 5)) || 40;
+                const ls = document.getElementById('calc-leads');
+                ls.value = annualLeads;
+            }
+            recalc();
+        });
+        ['calc-leads', 'calc-price', 'calc-close', 'calc-comm', 'calc-period'].forEach(id =>
+            document.getElementById(id).addEventListener('input', recalc));
+
+        load();
+    </script>
+</body>
+</html>

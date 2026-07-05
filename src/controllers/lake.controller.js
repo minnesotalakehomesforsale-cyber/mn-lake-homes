@@ -923,3 +923,45 @@ exports.enrichDnrAll = async (req, res) => {
         .catch(e => console.warn('[dnr] batch enrich failed:', e.message));
     res.json({ success: true, started: true, note: 'Enriching in the background (~1 lake/sec). Refresh lakes to see facts land.' });
 };
+
+// GET /api/lakes/founder-availability — public. Powers the "Claim your lake"
+// page: every published lake with its Founder-seat status (open vs taken), its
+// monthly price (floor $249 / ceiling $5000), and REAL demand signals (buyer
+// leads + page views in the last 90 days, active listings) so an agent can see
+// exactly what a lake is worth before claiming it.
+const FOUNDER_FLOOR = 249, FOUNDER_CEILING = 5000;
+exports.founderAvailability = async (req, res) => {
+    res.set('Cache-Control', 'public, max-age=120');
+    try {
+        let publicCheckout = false;
+        try { publicCheckout = !!require('./stripe.controller').FOUNDER_SEATS_PUBLIC; } catch (_) {}
+
+        const { rows } = await pool.query(`
+            SELECT l.id, l.slug, l.name, l.region, l.county, l.state,
+                   GREATEST($1, LEAST($2, COALESCE(l.founder_seat_price, l.founder_seat_ai_value, $1)))::int AS price,
+                   l.founder_seat_ai_reason AS why,
+                   EXISTS (SELECT 1 FROM agent_lakes al WHERE al.lake_id = l.id AND al.is_founder) AS taken,
+                   (SELECT COUNT(*) FROM leads ld WHERE ld.lake_id = l.id
+                       AND ld.deleted_at IS NULL AND ld.created_at >= NOW() - INTERVAL '90 days')::int AS leads_90d,
+                   (SELECT COUNT(*) FROM listings li WHERE li.lake_id = l.id AND li.status = 'active')::int AS active_listings,
+                   (SELECT COUNT(*) FROM conversion_events ce WHERE ce.event_name = 'view_lake'
+                       AND ce.params->>'id' = l.slug AND ce.created_at >= NOW() - INTERVAL '90 days')::int AS views_90d
+              FROM lakes l
+             WHERE l.status = 'published' AND l.hero_image_url IS NOT NULL
+             ORDER BY taken ASC, leads_90d DESC, views_90d DESC, l.name ASC`,
+            [FOUNDER_FLOOR, FOUNDER_CEILING]);
+
+        const regions = [...new Set(rows.map(r => r.region).filter(Boolean))].sort();
+        res.json({
+            public_checkout: publicCheckout,
+            floor: FOUNDER_FLOOR, ceiling: FOUNDER_CEILING,
+            open_count: rows.filter(r => !r.taken).length,
+            total: rows.length,
+            regions,
+            lakes: rows,
+        });
+    } catch (err) {
+        console.error('[founderAvailability]', err.message);
+        res.status(500).json({ error: 'Failed to load lake availability.' });
+    }
+};
