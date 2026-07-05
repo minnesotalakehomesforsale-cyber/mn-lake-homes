@@ -951,14 +951,16 @@ exports.founderAvailability = async (req, res) => {
              ORDER BY taken ASC, leads_90d DESC, views_90d DESC, l.name ASC`,
             [FOUNDER_FLOOR, FOUNDER_CEILING]);
 
-        const regions = [...new Set(rows.map(r => r.region).filter(Boolean))].sort();
+        // Show only lakes with an OPEN founder seat — claimed lakes are hidden.
+        const open = rows.filter(r => !r.taken);
+        const regions = [...new Set(open.map(r => r.region).filter(Boolean))].sort();
         res.json({
             public_checkout: publicCheckout,
             floor: FOUNDER_FLOOR, ceiling: FOUNDER_CEILING,
-            open_count: rows.filter(r => !r.taken).length,
+            open_count: open.length,
             total: rows.length,
             regions,
-            lakes: rows,
+            lakes: open,
         });
     } catch (err) {
         console.error('[founderAvailability]', err.message);

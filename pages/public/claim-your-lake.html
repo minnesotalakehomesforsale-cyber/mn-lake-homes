@@ -144,7 +144,6 @@
         <div class="cl-controls">
             <input id="cl-search" class="cl-search" type="search" placeholder="Search a lake…" oninput="applyFilters()">
             <select id="cl-region" class="cl-select" onchange="applyFilters()"><option value="">All regions</option></select>
-            <label class="cl-toggle"><input type="checkbox" id="cl-openonly" onchange="applyFilters()"> Open seats only</label>
         </div>
         <div class="cl-grid" id="cl-grid"><div class="cl-empty">Loading lakes…</div></div>
 
@@ -194,13 +193,11 @@
         function applyFilters() {
             const q = (document.getElementById('cl-search').value || '').toLowerCase().trim();
             const region = document.getElementById('cl-region').value;
-            const openOnly = document.getElementById('cl-openonly').checked;
             const list = LAKES.filter(l =>
                 (!q || l.name.toLowerCase().includes(q)) &&
-                (!region || l.region === region) &&
-                (!openOnly || !l.taken));
+                (!region || l.region === region));
             const grid = document.getElementById('cl-grid');
-            if (!list.length) { grid.innerHTML = '<div class="cl-empty">No lakes match your filters.</div>'; return; }
+            if (!list.length) { grid.innerHTML = '<div class="cl-empty">No open lakes match your filters — check back soon.</div>'; return; }
             grid.innerHTML = list.map(card).join('');
         }
 

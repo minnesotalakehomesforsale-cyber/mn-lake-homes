@@ -557,7 +557,6 @@ class GlobalFooter extends HTMLElement {
                     <a href="${bp}contact.html">Contact Us</a>
                     <a href="${bp}faq.html">FAQ</a>
                     <a href="${bp}join.html">Join as an Agent</a>
-                    <a href="/claim-your-lake">Claim Your Lake</a>
                     <a href="/business-signup">List your Business</a>
                     ${isStaff ? `<a href="${rp}pages/admin/dashboard.html">Admin Portal</a>` : ''}
                 </div>
