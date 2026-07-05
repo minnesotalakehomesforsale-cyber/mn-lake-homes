@@ -1010,6 +1010,17 @@ function _lfRender() {
             <input type="tel" id="lf-phone" placeholder="Phone number (optional)"
                 autocomplete="tel" style="${iStyle}" ${focus} value="${_lfs.data.phone || ''}">`;
         setTimeout(() => document.getElementById('lf-email')?.focus(), 60);
+        // Progressive capture: as soon as a valid email/phone is entered here,
+        // save a partial lead so we recover this person even if they don't
+        // click submit. Debounced; also captured on blur.
+        const emailEl = document.getElementById('lf-email');
+        const phoneEl = document.getElementById('lf-phone');
+        const onContactInput = () => {
+            if (emailEl) _lfs.data.email = emailEl.value.trim();
+            if (phoneEl) _lfs.data.phone = phoneEl.value.trim();
+            _lfCapturePartialDebounced();
+        };
+        [emailEl, phoneEl].forEach(el => { if (el) { el.addEventListener('input', onContactInput); el.addEventListener('blur', () => _lfCapturePartial()); } });
     } else if (f.type === 'select') {
         // Render each option as a clickable card. Clicking sets the value
         // and immediately advances the form (same UX as the old <select>
@@ -1237,7 +1248,12 @@ window.openForm = function(type, prefill) {
         const v = data[s.field.id];
         return v === undefined || v === null || v === '';
     });
-    _lfs = { type: t, step: 0, data, steps: filtered, _leadref: leadRef, _lake: lakeSlug, _submitted: false, _openedAt: Date.now() };
+    // Stable per-open session id so progressive/partial capture can converge on
+    // one lead row and the final submit can convert it in place (no duplicate).
+    let _sid;
+    try { _sid = (crypto && crypto.randomUUID) ? crypto.randomUUID() : ('s-' + Date.now() + '-' + Math.round(performance.now())); }
+    catch (_) { _sid = 's-' + Date.now(); }
+    _lfs = { type: t, step: 0, data, steps: filtered, _leadref: leadRef, _lake: lakeSlug, _submitted: false, _openedAt: Date.now(), _sid, _partialSent: null };
     document.getElementById('lf-ok').style.display   = 'none';
     document.getElementById('lf-body').style.display = 'block';
     document.getElementById('lf-overlay').style.display = 'block';
@@ -1304,6 +1320,55 @@ window._lfNext = function() {
     _lfSlide();
 };
 
+// ── Progressive / abandoned-lead capture ────────────────────────────────────
+// Save a partial lead the moment we have a way to reach someone, so a form
+// abandon doesn't mean a lost lead. Best-effort, deduped by _lfs._sid, never
+// blocks the UI. Only sends when the contact info actually changed.
+let _lfPartialTimer = null;
+function _lfCapturePartialDebounced() {
+    clearTimeout(_lfPartialTimer);
+    _lfPartialTimer = setTimeout(() => _lfCapturePartial(), 1400);
+}
+function _lfCapturePartial(useBeacon) {
+    try {
+        if (!_lfs || _lfs._submitted) return;
+        const d = _lfs.data || {};
+        const email = (d.email || '').trim();
+        const phone = (d.phone || '').trim();
+        const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        const phoneOk = phone.replace(/[^0-9]/g, '').length >= 7;
+        if (!emailOk && !phoneOk) return;
+        // Don't resend the same snapshot.
+        const sig = email + '|' + phone;
+        if (_lfs._partialSent === sig) return;
+        _lfs._partialSent = sig;
+
+        const name = (d.name || [d.first, d.last].filter(Boolean).join(' ')).trim() || null;
+        const payload = JSON.stringify({
+            lead_session_id: _lfs._sid,
+            name, email: email || null, phone: phone || null,
+            source: _LF_CFG[_lfs.type]?.source || _lfs.type,
+            lake_slug: _lfs._lake || null,
+            property_address: d.address || null,
+            is_waterfront: d.waterfront ? /^yes/i.test(d.waterfront) : null,
+            waterfront_feet: (d.waterfront_feet || '').replace(/[^0-9]/g, '') || null,
+            company_website: (document.getElementById('lf-company-website') || {}).value || '',
+        });
+        const url = '/api/leads/partial';
+        if (useBeacon && navigator.sendBeacon) {
+            navigator.sendBeacon(url, new Blob([payload], { type: 'application/json' }));
+        } else {
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true, credentials: 'omit' }).catch(() => {});
+        }
+    } catch (_) { /* capture is best-effort */ }
+}
+// Safety net: capture on tab-hide / navigation away with contact in hand.
+if (typeof window !== 'undefined' && !window.__lfPartialUnload) {
+    window.__lfPartialUnload = true;
+    window.addEventListener('pagehide', () => _lfCapturePartial(true));
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') _lfCapturePartial(true); });
+}
+
 async function _lfDoSubmit() {
     const cfg  = _LF_CFG[_lfs.type];
     const d    = _lfs.data;
@@ -1354,6 +1419,8 @@ async function _lfDoSubmit() {
                 // Anti-spam signals (honeypot must be empty; elapsed time proves a human).
                 company_website:   (document.getElementById('lf-company-website') || {}).value || '',
                 _elapsed_ms:       _lfs._openedAt ? (Date.now() - _lfs._openedAt) : undefined,
+                // Converts any partial lead captured for this session in place.
+                lead_session_id:   _lfs._sid || null,
             })
         });
         if (!res.ok) { const r = await res.json().catch(()=>({})); throw new Error(r.error || 'Submission failed.'); }

@@ -2384,6 +2384,13 @@ async function ensureTables() {
             -- has received (0 = none), and when the last nurture email went out.
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS nurture_stage INTEGER NOT NULL DEFAULT 0;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS nurture_last_at TIMESTAMPTZ;
+            -- Progressive / abandoned-lead capture: a partial lead is one the
+            -- visitor started (gave contact info) but didn't complete. Keyed by a
+            -- client session id so the final submit converts it in place instead
+            -- of duplicating. Partials are NEVER routed to agents until completed.
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS is_partial BOOLEAN NOT NULL DEFAULT FALSE;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS lead_session_id VARCHAR(64);
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_leads_session ON leads(lead_session_id) WHERE lead_session_id IS NOT NULL;
         `);
 
         // One-time backfill: score existing leads with a SQL approximation of

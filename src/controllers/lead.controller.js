@@ -14,7 +14,7 @@ const createLead = async (req, res) => {
         name, email, phone, notes, source, agent_id, listing_id,
         property_address, property_street, property_city,
         property_state, property_zip, property_place_id, lake_slug,
-        is_waterfront, waterfront_feet,
+        is_waterfront, waterfront_feet, lead_session_id,
     } = req.body;
 
     name = (name || '').trim();
@@ -23,6 +23,15 @@ const createLead = async (req, res) => {
     // Test 9.6: Block missing fields immediately
     if (!name || (!email && !(phone || '').trim())) {
         return res.status(400).json({ error: 'Name and either Email or Phone are required to dispatch lead.' });
+    }
+
+    // If this submission finishes a form we already captured partially (same
+    // client session), drop the partial row so the full lead inserts fresh and
+    // routes normally — no duplicate in the agent inbox.
+    const sessionId = (lead_session_id || '').toString().trim().slice(0, 64) || null;
+    if (sessionId) {
+        try { await pool.query(`DELETE FROM leads WHERE lead_session_id = $1 AND is_partial = TRUE`, [sessionId]); }
+        catch (e) { console.warn('[createLead] partial cleanup failed:', e.message); }
     }
 
     const str = (v, max) => {
@@ -98,9 +107,9 @@ const createLead = async (req, res) => {
                 property_address, property_street, property_city,
                 property_state, property_zip, property_place_id,
                 user_id, listing_id, is_waterfront, waterfront_feet,
-                lead_score, lead_tier
+                lead_score, lead_tier, lead_session_id, is_partial
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, FALSE)
             RETURNING id
         `;
         // We extrapolate first name logically
@@ -127,7 +136,7 @@ const createLead = async (req, res) => {
             enumType, source, finalAgentId,
             propAddress, propStreet, propCity, propState, propZip, propPlaceId,
             submittedUserId, listingId, isWaterfront, wfFeetNum,
-            leadScore.score, leadScore.tier,
+            leadScore.score, leadScore.tier, sessionId,
         ]);
         const newLeadId = leadRows[0]?.id;
 
@@ -407,7 +416,7 @@ const getAdminLeads = async (req, res) => {
             SELECT l.id, l.full_name as name, l.email, l.phone, l.lead_type as type,
                    l.lead_source as source, l.lead_status as status, l.created_at,
                    a.display_name as assigned_agent_name, u.full_name as assigned_user_name,
-                   l.agent_id
+                   l.agent_id, l.is_partial, l.lead_score, l.lead_tier
             FROM leads l
             LEFT JOIN agents a ON l.agent_id = a.id
             LEFT JOIN users u ON l.assigned_user_id = u.id
@@ -461,4 +470,79 @@ const getMyLeads = async (req, res) => {
     }
 };
 
-module.exports = { createLead, getAdminLeads, getMyLeads };
+// POST /api/leads/partial — progressive capture. Fired the moment a visitor
+// gives contact info (email/phone) in the lead form, and again on abandon. Saves
+// an INCOMPLETE lead keyed by the client's lead_session_id so we recover people
+// who don't finish the form. Partial leads are NEVER routed to an agent and
+// never trigger notifications — they sit in the admin queue (flagged partial)
+// and feed the nurture drip. When the visitor finishes, createLead deletes this
+// row and inserts the complete, routed lead.
+const createPartialLead = async (req, res) => {
+    try {
+        const b = req.body || {};
+        const sessionId = (b.lead_session_id || '').toString().trim().slice(0, 64);
+        if (!sessionId) return res.status(400).json({ error: 'lead_session_id required.' });
+
+        const name  = (b.name || '').toString().trim().slice(0, 200) || 'Incomplete lead';
+        const email = (b.email || '').toString().trim().toLowerCase().slice(0, 255) || null;
+        const phone = (b.phone || '').toString().trim().slice(0, 50) || null;
+        // Nothing to reach them by → nothing worth saving.
+        if (!email && !(phone && phone.replace(/[^0-9]/g, '').length >= 7)) {
+            return res.json({ success: true, saved: false });
+        }
+
+        const firstName = name.split(' ')[0] || 'Lead';
+        const notes = (b.notes || '').toString().slice(0, 4000) || null;
+        const source = (b.source || 'partial').toString().slice(0, 80);
+        const propAddress = (b.property_address || '').toString().trim().slice(0, 500) || null;
+        const isWaterfront = (b.is_waterfront === true || b.is_waterfront === false) ? b.is_waterfront : null;
+        let wf = parseInt(b.waterfront_feet, 10); if (!Number.isFinite(wf) || wf < 0 || wf > 100000) wf = null;
+
+        const enumMap = { buyer: 'buyer', seller: 'seller' };
+        const enumType = enumMap[source] || 'general_contact';
+        const score = scoreLead({ enumType, email, phone, notes, isWaterfront, wfFeetNum: wf, address: propAddress });
+
+        // Resolve lake by slug if the form was opened on a lake page.
+        let leadLakeId = null;
+        const lakeSlug = (b.lake_slug || '').toString().trim().slice(0, 120);
+        if (lakeSlug) {
+            try { leadLakeId = (await pool.query(`SELECT id FROM lakes WHERE slug = $1 LIMIT 1`, [lakeSlug])).rows[0]?.id || null; }
+            catch (_) {}
+        }
+
+        // Link to an existing user account by email (backfill happens on signup too).
+        let userId = null;
+        if (email) {
+            try { userId = (await pool.query(`SELECT id FROM users WHERE LOWER(email) = $1 LIMIT 1`, [email])).rows[0]?.id || null; }
+            catch (_) {}
+        }
+
+        await pool.query(
+            `INSERT INTO leads (
+                full_name, first_name, email, phone, message,
+                lead_type, lead_source, lead_status, property_address,
+                is_waterfront, waterfront_feet, lead_score, lead_tier,
+                lead_session_id, is_partial, user_id, lake_id
+             ) VALUES ($1,$2,$3,$4,$5,$6,$7,'new',$8,$9,$10,$11,$12,$13,TRUE,$14,$15)
+             ON CONFLICT (lead_session_id) WHERE lead_session_id IS NOT NULL
+             DO UPDATE SET
+                full_name = EXCLUDED.full_name, first_name = EXCLUDED.first_name,
+                email = EXCLUDED.email, phone = EXCLUDED.phone, message = EXCLUDED.message,
+                lead_type = EXCLUDED.lead_type, lead_source = EXCLUDED.lead_source,
+                property_address = EXCLUDED.property_address, is_waterfront = EXCLUDED.is_waterfront,
+                waterfront_feet = EXCLUDED.waterfront_feet, lead_score = EXCLUDED.lead_score,
+                lead_tier = EXCLUDED.lead_tier, user_id = COALESCE(EXCLUDED.user_id, leads.user_id),
+                lake_id = COALESCE(EXCLUDED.lake_id, leads.lake_id), updated_at = NOW()
+             WHERE leads.is_partial = TRUE`,
+            [name, firstName, email, phone, notes, enumType, source, propAddress,
+             isWaterfront, wf, score.score, score.tier, sessionId, userId, leadLakeId]);
+
+        res.json({ success: true, saved: true });
+    } catch (err) {
+        console.error('[createPartialLead]', err.message);
+        // Never surface an error to the form — partial capture is best-effort.
+        res.json({ success: true, saved: false });
+    }
+};
+
+module.exports = { createLead, createPartialLead, getAdminLeads, getMyLeads };
