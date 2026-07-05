@@ -361,6 +361,13 @@
             }
             const openReviewBtn = document.getElementById('open-review-btn');
             if (openReviewBtn && reviewsEl) openReviewBtn.addEventListener('click', () => reviewsEl.openModal());
+            // Agents share a ?review=1 link (from their dashboard) to collect
+            // reviews — auto-open the review form for the visitor.
+            try {
+                if (reviewsEl && new URLSearchParams(location.search).get('review') === '1') {
+                    setTimeout(() => { try { reviewsEl.openModal(); } catch (_) {} }, 400);
+                }
+            } catch (_) {}
 
             // Agent FAQ — render only the questions this agent has answered.
             (async () => {

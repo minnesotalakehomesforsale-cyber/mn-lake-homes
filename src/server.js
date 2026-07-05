@@ -1979,6 +1979,37 @@ app.get('/pages/public/blog-post.html', (req, res, next) => {
     res.redirect(301, `/blog/${encodeURIComponent(slug)}`);
 });
 
+// ── Embeddable "Verified agent" badge (/agents/<slug>/badge.svg) ────────────
+// Agents paste this on their own site; it links back here (SEO + referral
+// flywheel). Registered before /agents/:slug so the two-segment path wins.
+app.get('/agents/:slug/badge.svg', async (req, res) => {
+    const slug = String(req.params.slug || '').replace(/\.svg$/i, '');
+    let name = '';
+    try {
+        const { rows } = await pool.query(
+            `SELECT display_name FROM agents WHERE slug = $1 AND profile_status = 'published' AND is_published = TRUE LIMIT 1`, [slug]);
+        name = rows[0]?.display_name || '';
+    } catch (_) {}
+    const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    // Truncate long names so the badge stays a fixed size.
+    const disp = name.length > 22 ? name.slice(0, 21) + '…' : name;
+    const W = 300, H = 76;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Verified MN Lake Homes Agent${name ? ' — ' + esc(name) : ''}">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f2b46"/><stop offset="1" stop-color="#1d6df2"/></linearGradient></defs>
+  <rect width="${W}" height="${H}" rx="12" fill="url(#g)"/>
+  <g transform="translate(18,20)">
+    <circle cx="18" cy="18" r="18" fill="#ffffff" fill-opacity="0.14"/>
+    <path d="M11 18 l5 5 l10 -11" fill="none" stroke="#9ae6b4" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="68" y="30" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="800" letter-spacing="1.5" fill="#9ae6b4">VERIFIED AGENT</text>
+  <text x="68" y="50" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="${disp ? 16 : 15}" font-weight="800" fill="#ffffff">${disp ? esc(disp) : 'MN Lake Homes'}</text>
+  <text x="68" y="66" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#ffffff" fill-opacity="0.8">MinnesotaLakeHomesForSale.com</text>
+</svg>`;
+    res.set('Content-Type', 'image/svg+xml; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.send(svg);
+});
+
 // ── Agent profile SSR (/agents/:slug) ───────────────────────────────────────
 // Clean, crawlable agent URLs with RealEstateAgent + BreadcrumbList JSON-LD and
 // a server-rendered hero. The page (agent-profile.html) renders the rest from
