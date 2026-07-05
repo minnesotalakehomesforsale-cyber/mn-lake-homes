@@ -3507,6 +3507,10 @@ async function ensureTables() {
                 WHERE active = TRUE AND featured = TRUE;
             CREATE INDEX IF NOT EXISTS idx_resources_title_lower
                 ON resources(lower(title));
+            -- Audience gate: 'public' (buyer/seller guides, on the public /resources
+            -- page) vs 'agents' (paid-agent-only library, shown in the dashboard).
+            ALTER TABLE resources ADD COLUMN IF NOT EXISTS audience VARCHAR(20) NOT NULL DEFAULT 'public';
+            CREATE INDEX IF NOT EXISTS idx_resources_audience ON resources(audience) WHERE active = TRUE;
         `);
 
         // Seed resources catalog — same idempotent pattern as tags.
@@ -3795,6 +3799,7 @@ async function ensureTables() {
         await seedBlogPosts();
         await applyBlogCoverMap();
         await seedDemoFreeAgent();
+        await seedAgentResources();
         await seedBlogContentV2();
         await seedBlogRelatedLinks();
         await seedStagedDraftReset();
@@ -3934,6 +3939,31 @@ async function seedDemoFreeAgent() {
         }
     } catch (e) {
         console.warn('[seed] demo free agent skipped:', e.message);
+    }
+}
+
+// Seed the starter agent-only resource library (printable docs under
+// /assets/agent-resources). Idempotent by slug. Admins add more via the resource
+// editor; marketing can replace these with designed assets over time.
+async function seedAgentResources() {
+    const items = [
+        { slug: 'lakefront-listing-presentation', title: 'Lakefront Listing Presentation Script', description: 'Win the listing by pricing and marketing the shoreline, not just the house — full walk-through script + objection answers.', category: 'Listing & Pricing', type: 'guide' },
+        { slug: 'waterfront-cma-worksheet', title: 'Waterfront CMA & Pricing Worksheet', description: 'Price a lake home three ways — sold comps, price-per-front-foot, and land value — and defend your number.', category: 'Listing & Pricing', type: 'template' },
+        { slug: 'lake-buyer-consultation', title: 'Lake Buyer Consultation Guide', description: 'The questions that match a buyer to the right water and turn "just looking" into focused and loyal.', category: 'Buyers', type: 'guide' },
+        { slug: 'lakefront-due-diligence-checklist', title: 'Lakefront Due-Diligence Checklist', description: 'Everything to verify before an offer — shoreline, setbacks, septic/well, access, and documents.', category: 'Buyers', type: 'checklist' },
+        { slug: 'lake-listing-social-captions', title: 'Social Caption Pack — Lake Listings', description: 'Copy-paste captions for every stage: coming soon, just listed, open house, price drop, sold, lead magnets.', category: 'Marketing', type: 'template' },
+    ];
+    for (const r of items) {
+        try {
+            await pool.query(`
+                INSERT INTO resources (slug, title, description, category, resource_type, url, audience, active, featured)
+                VALUES ($1,$2,$3,$4,$5,$6,'agents',TRUE,FALSE)
+                ON CONFLICT (slug) DO UPDATE SET
+                    title = EXCLUDED.title, description = EXCLUDED.description, category = EXCLUDED.category,
+                    resource_type = EXCLUDED.resource_type, url = EXCLUDED.url, audience = 'agents',
+                    active = TRUE, updated_at = NOW()`,
+                [r.slug, r.title, r.description, r.category, r.type, `/assets/agent-resources/${r.slug}.html`]);
+        } catch (e) { console.warn('[seedAgentResources]', r.slug, e.message); }
     }
 }
 

@@ -83,6 +83,9 @@ exports.list = async (req, res) => {
         const where = [];
         const params = [];
         if (!includeInactive) where.push(`active = TRUE`);
+        // The public list never exposes agent-only resources (those are served,
+        // paid-gated, by getAgentResources). Admins can pass ?audience=all.
+        if (!(isAdmin(req) && req.query.audience === 'all')) where.push(`audience = 'public'`);
         if (category) { params.push(category); where.push(`category = $${params.length}`); }
         if (featured) where.push(`featured = TRUE`);
         if (search) {
@@ -116,6 +119,31 @@ exports.list = async (req, res) => {
     } catch (err) {
         console.error('[resources.list]', err.message);
         res.status(500).json({ error: 'Failed to load resources.' });
+    }
+};
+
+// ─── GET /api/resources/agent — the paid-agent-only resource library ────────
+// Requires an agent account on a PAID plan (free agents get 403 → the dashboard
+// shows the locked/upgrade state). Returns audience='agents' resources.
+exports.agentResources = async (req, res) => {
+    try {
+        const { rows: ag } = await pool.query(
+            `SELECT COALESCE(m.code,'basic') AS tier
+               FROM agents a LEFT JOIN memberships m ON m.id = a.membership_id
+              WHERE a.user_id = $1 LIMIT 1`, [req.user.userId]);
+        if (!ag.length) return res.status(403).json({ error: 'Agent profile required.', code: 'no_profile' });
+        if (ag[0].tier === 'free') return res.status(403).json({ error: 'Upgrade to a paid plan to unlock the agent resource library.', code: 'upgrade_required' });
+
+        const { rows } = await pool.query(`
+            SELECT id, slug, title, description, category, resource_type, url, thumbnail_url, tags, featured
+              FROM resources
+             WHERE active = TRUE AND audience = 'agents'
+             ORDER BY featured DESC, category ASC, created_at DESC
+             LIMIT 200`);
+        res.json({ rows });
+    } catch (err) {
+        console.error('[resources.agentResources]', err.message);
+        res.status(500).json({ error: 'Failed to load agent resources.' });
     }
 };
 
@@ -269,15 +297,16 @@ exports.create = async (req, res) => {
         const exists = await pool.query('SELECT 1 FROM resources WHERE slug = $1', [slug]);
         if (exists.rowCount) slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
 
+        const audience = b.audience === 'agents' ? 'agents' : 'public';
         const { rows } = await pool.query(
             `INSERT INTO resources
                (slug, title, description, category, resource_type, url, thumbnail_url,
-                tags, featured, active)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10)
+                tags, featured, active, audience)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11)
              RETURNING *`,
             [slug, title, b.description || null, category, resource_type, url,
              b.thumbnail_url || null, JSON.stringify(tags),
-             !!b.featured, b.active === false ? false : true]
+             !!b.featured, b.active === false ? false : true, audience]
         );
         logActivity({
             event_type: 'resource.create',
@@ -329,6 +358,7 @@ exports.patch = async (req, res) => {
     }
     if ('featured'      in b) push('featured', !!b.featured);
     if ('active'        in b) push('active',   !!b.active);
+    if ('audience'      in b) push('audience', b.audience === 'agents' ? 'agents' : 'public');
 
     if (!sets.length) return res.json({ success: true, noop: true });
     sets.push(`updated_at = NOW()`);

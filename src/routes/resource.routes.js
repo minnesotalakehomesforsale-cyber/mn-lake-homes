@@ -13,7 +13,7 @@ const express = require('express');
 const router  = express.Router();
 const jwt     = require('jsonwebtoken');
 const c       = require('../controllers/resource.controller');
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken, requireRole } = require('../middleware/auth');
 
 // Soft auth — if a valid session cookie is present we attach req.user
 // so the controller can unlock admin-only query params (e.g.
@@ -29,6 +29,9 @@ function softAuth(req, res, next) {
 }
 
 router.get('/categories', softAuth, c.categories);
+
+// Paid-agent-only resource library. Static segment before /:slug.
+router.get('/agent', verifyToken, requireRole('agent'), c.agentResources);
 
 // Admin write + insight endpoints. Static segments here MUST come before
 // the /:slug catch-all below so Express doesn't try to look up resources

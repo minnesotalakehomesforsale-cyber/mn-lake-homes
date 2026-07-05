@@ -296,6 +296,9 @@
                     ['guide','tool','calculator','report','checklist','template','pdf','video','other']
                         .map(t => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }))
                 })}
+                ${selectGroup({ id: 'f-audience', label: 'Audience', value: entity.audience || 'public', hint: 'Agents-only = shown in the paid-agent dashboard library, hidden from the public /resources page.', options:
+                    [{ value: 'public', label: 'Public (buyers & sellers)' }, { value: 'agents', label: 'Agents only (paid tiers)' }]
+                })}
                 ${fieldGroup({ id: 'f-tags',  label: 'Tags (comma-separated)', value: tags, full: true, hint: 'Used for filtering on the public resources page.' })}
             </div>
             <div class="toggle-row">
@@ -430,6 +433,7 @@
         patch({
             title: v('f-title'), slug: v('f-slug'), category: v('f-cat'),
             resource_type: v('f-type'),
+            audience: v('f-audience') || 'public',
             tags,
             active:   document.getElementById('f-active').checked,
             featured: document.getElementById('f-featured').checked,
