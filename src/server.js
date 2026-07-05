@@ -570,7 +570,6 @@ app.get('/sitemap.xml', async (req, res) => {
             { url: '/resources',       priority: 0.6, changefreq: 'monthly' },
             { url: '/rent',            priority: 0.6, changefreq: 'weekly'  },
             { url: '/join',            priority: 0.5, changefreq: 'monthly' },
-            { url: '/claim-your-lake', priority: 0.7, changefreq: 'weekly'  },
             { url: '/submit-business', priority: 0.5, changefreq: 'monthly' },
             { url: '/business-signup', priority: 0.5, changefreq: 'monthly' },
             { url: '/commonrealtor',   priority: 0.5, changefreq: 'monthly' },
@@ -1848,7 +1847,7 @@ app.get('/blog/:slug', async (req, res, next) => {
             if (rel.length) {
                 const cards = rel.map(p => `
                     <a class="related-card" href="/blog/${escapeHtml(p.slug)}">
-                        ${_blogCover(p) ? `<div class="related-img"><img src="${escapeHtml(_blogCover(p))}" alt="${escapeHtml(p.title)}" loading="lazy"></div>` : ''}
+                        ${_blogCover(p) ? `<div class="related-img"><img src="${escapeHtml(_blogCover(p))}" alt="${escapeHtml(p.title)}" loading="lazy"></div>` : `<div class="related-img-ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M4 15l4-6 3 4 3.5-6L20 15"/><path d="M3 20c2-1.2 3.3-1.2 5 0s3.3 1.2 5 0 3.3-1.2 5 0" opacity=".55"/></svg></div>`}
                         <div class="related-body">
                             <span class="related-tag">${escapeHtml(p.tag || 'General')}</span>
                             <h3 class="related-title">${escapeHtml(p.title)}</h3>

@@ -360,22 +360,8 @@
                             <div style="flex:1; min-width:240px;">
                                 <div style="font-weight:800; font-size:1.15rem; margin-bottom:0.35rem;">You're on the Free plan</div>
                                 <p style="margin:0; opacity:0.9; font-size:0.93rem; line-height:1.5;">Your profile is live, but Free agents aren't in the lead rotation, aren't featured, and can't post properties. Upgrade to start receiving matched leads and list your homes.</p>
-                                <div id="banner-free-demand" style="display:none; margin-top:0.7rem; padding:0.6rem 0.85rem; background:rgba(255,255,255,0.14); border-radius:9px; font-size:0.88rem; font-weight:700;"></div>
                             </div>
                             <a href="/pages/public/pricing.html" style="flex-shrink:0; background:#fff; color:#0f2b46; border-radius:10px; padding:0.8rem 1.4rem; font-weight:800; text-decoration:none; font-size:0.95rem;">Upgrade my plan →</a>
-                        </div>
-                    </div>
-
-                    <!-- Become-a-founder nudge — paid, non-founder agents whose service
-                         areas include a lake with an OPEN founder seat. -->
-                    <div id="banner-founder" style="display:none; margin-top:1.5rem; background:linear-gradient(135deg,#0b2a10,#0d9488); color:#fff; border-radius:14px; padding:1.5rem 1.75rem;">
-                        <div style="display:flex; gap:1.25rem; align-items:center; flex-wrap:wrap; justify-content:space-between;">
-                            <div style="flex:1; min-width:240px;">
-                                <div style="font-weight:800; font-size:1.15rem; margin-bottom:0.35rem;">🏆 Own a lake in your area</div>
-                                <p style="margin:0 0 0.4rem; opacity:0.92; font-size:0.93rem; line-height:1.5;" id="banner-founder-msg">A lake in your service area has no Founder yet — claim its Founder seat to receive <strong>100% of its buyer &amp; seller leads</strong>, exclusively.</p>
-                                <div id="banner-founder-lakes" style="font-size:0.85rem; opacity:0.85;"></div>
-                            </div>
-                            <a href="/claim-your-lake" style="flex-shrink:0; background:#fff; color:#0b2a10; border-radius:10px; padding:0.8rem 1.4rem; font-weight:800; text-decoration:none; font-size:0.95rem;">Claim a Founder seat →</a>
                         </div>
                     </div>
 
@@ -443,11 +429,6 @@
                             <span class="t">Refer &amp; earn</span>
                             <span class="d">Invite another agent — get a month free for each one who joins.</span>
                         </button>
-                        <a class="dash-card" href="/claim-your-lake" style="--ac:#0d9488;text-decoration:none;">
-                            <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></span>
-                            <span class="t">Claim your lake</span>
-                            <span class="d">See lakes with an open Founder seat — own 100% of a lake's leads.</span>
-                        </a>
                         <button class="dash-card" onclick="openPromote()" style="--ac:#ec4899;">
                             <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></span>
                             <span class="t">Promote your profile</span>
@@ -1501,39 +1482,9 @@
             loadUpgradeNudge();
         }
 
-        // Context-aware upgrade nudge. Free → push to pay (banner-free, above).
-        // Paid & NOT a founder & a lake in their areas has no founder → push them
-        // to claim that Founder seat (100% of its leads).
-        async function loadUpgradeNudge() {
-            const fb = document.getElementById('banner-founder');
-            if (!fb) return;
-            try {
-                const r = await fetch('/api/agents/me/upgrade-status');
-                if (!r.ok) { fb.style.display = 'none'; return; }
-                const d = await r.json();
-                if (d.recommend === 'claim_founder' && (d.claimable_lakes || []).length) {
-                    const lakes = d.claimable_lakes.slice(0, 3).map(l => l.name).join(', ');
-                    const more = d.claimable_lakes.length > 3 ? ` +${d.claimable_lakes.length - 3} more` : '';
-                    document.getElementById('banner-founder-lakes').textContent = 'Open in your areas: ' + lakes + more;
-                    fb.style.display = 'block';
-                } else {
-                    fb.style.display = 'none';
-                }
-                // Free agents: show the demand they're missing (real numbers).
-                const dem = document.getElementById('banner-free-demand');
-                if (dem && d.tier === 'free') {
-                    const v = (d.area_demand && d.area_demand.views_30d) || 0;
-                    const l = (d.area_demand && d.area_demand.leads_30d) || 0;
-                    if (v >= 10 || l >= 1) {
-                        const parts = [];
-                        if (v >= 10) parts.push(`${v.toLocaleString()} buyer views`);
-                        if (l >= 1)  parts.push(`${l} lead${l === 1 ? '' : 's'}`);
-                        dem.textContent = `📊 Last 30 days on your lakes: ${parts.join(' + ')} — none routed to you. Upgrade to get matched.`;
-                        dem.style.display = 'block';
-                    } else { dem.style.display = 'none'; }
-                }
-            } catch (_) { fb.style.display = 'none'; }
-        }
+        // Upgrade nudges are handled by the static Free-plan banner above.
+        // (Per-lake open-seat / lead-volume prompts were removed.)
+        function loadUpgradeNudge() {}
 
         function hydrateForm(agent) {
             window._agent = agent;

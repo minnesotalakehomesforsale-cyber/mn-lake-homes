@@ -230,7 +230,7 @@ const getMyProfile = async (req, res) => {
     try {
         const query = `
             SELECT a.*, u.email as account_email, u.phone as account_phone, u.full_name as account_full_name,
-                   u.account_status, m.name as membership_name, m.display_badge_label as membership_badge
+                   u.account_status, m.code as membership_code, m.name as membership_name, m.display_badge_label as membership_badge
             FROM agents a
             JOIN users u ON a.user_id = u.id
             JOIN memberships m ON a.membership_id = m.id
