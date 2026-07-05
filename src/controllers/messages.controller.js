@@ -1,5 +1,5 @@
 /**
- * messages.controller.js — one-way admin → agent in-app messages.
+ * messages.controller.js — two-way admin ↔ agent in-app messages.
  *
  * Admin endpoints (mounted under /api/admin, admin-gated):
  *   POST /api/admin/messages                 send a message to an agent
@@ -12,9 +12,10 @@
  *   GET  /api/agents/me/messages/unread-count
  *   POST /api/agents/me/messages/mark-read   mark all mine as read
  *
- * Agents cannot send — there's deliberately no agent write path. The
- * same rows back both the global Messages tab and the per-agent thread
- * inside the agent's admin profile, so they always show identical history.
+ * Agents can now reply (POST /api/agents/me/messages) — stored on the same
+ * thread with from_admin=FALSE. The same rows back both the global Messages tab
+ * and the per-agent thread inside the agent's admin profile, so they always show
+ * identical history.
  */
 
 const pool = require('../database/pool');
@@ -190,9 +191,11 @@ exports.threads = async (req, res) => {
                    COALESCE(a.display_name, u.full_name, u.email) AS name,
                    u.email,
                    COUNT(m.*)::int                                  AS total,
-                   COUNT(*) FILTER (WHERE m.read_at IS NULL)::int   AS unread_by_agent,
+                   COUNT(*) FILTER (WHERE m.from_admin AND m.read_at IS NULL)::int      AS unread_by_agent,
+                   COUNT(*) FILTER (WHERE NOT m.from_admin AND m.admin_read_at IS NULL)::int AS unread_by_admin,
                    MAX(m.created_at)                                AS last_at,
-                   (ARRAY_AGG(m.body ORDER BY m.created_at DESC))[1] AS last_body
+                   (ARRAY_AGG(m.body ORDER BY m.created_at DESC))[1] AS last_body,
+                   (ARRAY_AGG(m.from_admin ORDER BY m.created_at DESC))[1] AS last_from_admin
               FROM agent_messages m
               JOIN users u  ON u.id = m.recipient_user_id
               LEFT JOIN agents a ON a.user_id = u.id
@@ -209,9 +212,16 @@ exports.threads = async (req, res) => {
 // ─── Admin: full thread for one agent ───────────────────────────────────────
 exports.threadForAgent = async (req, res) => {
     try {
+        // Opening a thread marks the agent's replies as read by the admin so the
+        // sidebar badge clears.
+        await pool.query(
+            `UPDATE agent_messages SET admin_read_at = NOW()
+              WHERE recipient_user_id = $1 AND from_admin = FALSE AND admin_read_at IS NULL`,
+            [req.params.userId]).catch(() => {});
         const { rows } = await pool.query(`
-            SELECT m.id, m.body, m.created_at, m.read_at, m.sender_user_id,
-                   COALESCE(s.full_name, s.email, 'Admin') AS sender_name
+            SELECT m.id, m.body, m.created_at, m.read_at, m.sender_user_id, m.from_admin,
+                   CASE WHEN m.from_admin THEN COALESCE(s.full_name, s.email, 'Admin')
+                        ELSE COALESCE(s.full_name, s.email, 'Agent') END AS sender_name
               FROM agent_messages m
               LEFT JOIN users s ON s.id = m.sender_user_id
              WHERE m.recipient_user_id = $1
@@ -267,11 +277,13 @@ exports.remove = async (req, res) => {
 };
 
 // ─── Agent: my messages ─────────────────────────────────────────────────────
+// Returns the whole two-way conversation (admin→me and my replies), newest
+// first. from_admin lets the UI align bubbles left (team) vs right (me).
 exports.myMessages = async (req, res) => {
     try {
         const { rows } = await pool.query(`
-            SELECT m.id, m.body, m.created_at, m.read_at,
-                   COALESCE(s.full_name, 'MN Lake Homes') AS sender_name
+            SELECT m.id, m.body, m.created_at, m.read_at, m.from_admin,
+                   CASE WHEN m.from_admin THEN COALESCE(s.full_name, 'MN Lake Homes') ELSE 'You' END AS sender_name
               FROM agent_messages m
               LEFT JOIN users s ON s.id = m.sender_user_id
              WHERE m.recipient_user_id = $1
@@ -284,15 +296,60 @@ exports.myMessages = async (req, res) => {
     }
 };
 
+// ─── Agent: send a reply to the admin team ──────────────────────────────────
+// Two-way messaging. The reply is stored on the SAME thread (recipient stays the
+// agent) with from_admin=FALSE, so the admin sees it in that agent's thread and
+// the sidebar badge counts it as new. Best-effort admin email notification.
+exports.agentReply = async (req, res) => {
+    const userId = req.user.userId;
+    const body = (req.body?.body || '').trim();
+    if (!body) return res.status(400).json({ error: 'Message cannot be empty.' });
+    try {
+        const { rows } = await pool.query(
+            `INSERT INTO agent_messages (recipient_user_id, sender_user_id, body, from_admin, read_at)
+             VALUES ($1, $1, $2, FALSE, NOW())
+             RETURNING id, body, created_at, from_admin`,
+            [userId, body.slice(0, 4000)]
+        );
+        logActivity({
+            event_type: 'agent.message.reply',
+            event_scope: 'messages',
+            actor: { type: 'agent', id: userId, label: req.user?.email || 'agent' },
+            target: { type: 'user', id: userId, label: 'admin' },
+            req,
+        });
+        // Notify the admin inbox (best-effort).
+        (async () => {
+            try {
+                const adminTo = process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || process.env.GMAIL_USER;
+                if (!adminTo) return;
+                const who = await resolveRecipientForEmail(userId);
+                const name = who?.display_name || who?.email || 'An agent';
+                emailService.sendEmail({
+                    to: adminTo,
+                    subject: `New agent reply from ${name}`,
+                    html: `<p><strong>${name}</strong> replied in the agent Messages:</p>
+                           <blockquote style="border-left:3px solid #1d6df2;padding-left:12px;color:#4a5568;">${body.replace(/</g, '&lt;')}</blockquote>
+                           <p>Open the admin Messages tab to reply.</p>`,
+                });
+            } catch (e) { console.warn('[messages.agentReply] admin notify failed:', e.message); }
+        })();
+        res.status(201).json({ success: true, message: rows[0] });
+    } catch (err) {
+        console.error('[messages.agentReply]', err.message);
+        res.status(500).json({ error: 'Failed to send your message.' });
+    }
+};
+
 // ─── Admin: total unread across every agent ────────────────────────────────
-// Powers the sidebar Messages badge — sum of all agent_messages still
-// unread by their recipient (read_at IS NULL).
+// Powers the admin sidebar Messages badge — now counts AGENT REPLIES the admin
+// hasn't read yet (the actionable inbox), not messages agents haven't opened.
 exports.unreadTotal = async (req, res) => {
     try {
         const { rows } = await pool.query(
             `SELECT COUNT(*)::int AS count
                FROM agent_messages
-              WHERE read_at IS NULL`
+              WHERE from_admin = FALSE AND admin_read_at IS NULL`
         );
         res.json({ count: rows[0].count });
     } catch (err) {
@@ -303,8 +360,10 @@ exports.unreadTotal = async (req, res) => {
 
 exports.myUnreadCount = async (req, res) => {
     try {
+        // Unread to the agent = messages FROM the admin they haven't opened.
         const { rows } = await pool.query(
-            `SELECT COUNT(*)::int AS count FROM agent_messages WHERE recipient_user_id = $1 AND read_at IS NULL`,
+            `SELECT COUNT(*)::int AS count FROM agent_messages
+              WHERE recipient_user_id = $1 AND from_admin = TRUE AND read_at IS NULL`,
             [req.user.userId]
         );
         res.json({ count: rows[0].count });
@@ -317,7 +376,8 @@ exports.myUnreadCount = async (req, res) => {
 exports.markAllRead = async (req, res) => {
     try {
         await pool.query(
-            `UPDATE agent_messages SET read_at = NOW() WHERE recipient_user_id = $1 AND read_at IS NULL`,
+            `UPDATE agent_messages SET read_at = NOW()
+              WHERE recipient_user_id = $1 AND from_admin = TRUE AND read_at IS NULL`,
             [req.user.userId]
         );
         res.json({ success: true });

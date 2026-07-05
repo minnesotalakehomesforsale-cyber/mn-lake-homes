@@ -3711,6 +3711,14 @@ async function ensureTables() {
             );
             CREATE INDEX IF NOT EXISTS idx_agent_messages_recipient ON agent_messages(recipient_user_id, created_at DESC);
             CREATE INDEX IF NOT EXISTS idx_agent_messages_unread    ON agent_messages(recipient_user_id) WHERE read_at IS NULL;
+            -- Two-way messaging: direction + admin-side read tracking. from_admin
+            -- TRUE = admin→agent (read_at = when the agent read it); FALSE = the
+            -- agent replied (admin_read_at = when the admin read it). recipient_user_id
+            -- stays the AGENT in both directions so it's one conversation thread.
+            ALTER TABLE agent_messages ADD COLUMN IF NOT EXISTS from_admin BOOLEAN NOT NULL DEFAULT TRUE;
+            ALTER TABLE agent_messages ADD COLUMN IF NOT EXISTS admin_read_at TIMESTAMPTZ;
+            CREATE INDEX IF NOT EXISTS idx_agent_messages_admin_unread ON agent_messages(recipient_user_id)
+                WHERE from_admin = FALSE AND admin_read_at IS NULL;
         `);
 
         // Admin notes about an agent (internal CRM notes on the agent's

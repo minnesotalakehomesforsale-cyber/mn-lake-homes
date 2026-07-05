@@ -34,6 +34,7 @@ router.post ('/me/leads/:id/notes',  verifyToken, requireRole('agent'), agentCon
 // ─── In-app messages from admin (read-only on the agent side) ───────────────
 const messagesController = require('../controllers/messages.controller');
 router.get ('/me/messages',              verifyToken, requireRole('agent'), messagesController.myMessages);
+router.post('/me/messages',              verifyToken, requireRole('agent'), messagesController.agentReply);   // two-way: agent → admin
 router.get ('/me/messages/unread-count', verifyToken, requireRole('agent'), messagesController.myUnreadCount);
 router.post('/me/messages/mark-read',    verifyToken, requireRole('agent'), messagesController.markAllRead);
 router.patch('/me', verifyToken, requireRole('agent'), agentController.saveDraft);
