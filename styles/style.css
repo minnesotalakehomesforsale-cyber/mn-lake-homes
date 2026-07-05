@@ -2509,6 +2509,12 @@ body > * { min-width: 0; }
     margin: 0 auto;
     padding: 2rem 2rem 4rem 2rem;
 }
+/* A thin 1–2 card row: constrain + center so it reads as curated, not empty. */
+.agents-grid--few {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 340px));
+    justify-content: center;
+    max-width: 760px;
+}
 
 .agent-card {
     background: #fff;

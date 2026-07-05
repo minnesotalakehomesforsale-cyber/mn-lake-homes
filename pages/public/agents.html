@@ -426,11 +426,18 @@
                 return true;
             });
 
-            document.getElementById('ag-result-count').innerHTML =
-                `<strong>${filtered.length}</strong> of ${state.all.length} agents`;
+            // Don't expose the raw total (reads sparse for a young network). Show a
+            // neutral label normally; only show a count when a filter is narrowing.
+            const countEl = document.getElementById('ag-result-count');
+            if (filtered.length < state.all.length) {
+                countEl.innerHTML = `Showing <strong>${filtered.length}</strong> ${filtered.length === 1 ? 'agent' : 'agents'}`;
+            } else {
+                countEl.textContent = 'Verified Minnesota lake agents';
+            }
 
             if (!filtered.length) { renderEmpty(grid); return; }
             grid.innerHTML = '';
+            grid.classList.toggle('agents-grid--few', filtered.length < 3);
             filtered.forEach(a => grid.appendChild(buildCard(a)));
         }
 
