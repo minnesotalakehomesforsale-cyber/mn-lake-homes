@@ -33,10 +33,11 @@
 
         /* Tier grid */
         .tier-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem;
-            max-width: 1180px; margin: 0 auto 4rem; padding: 0 1.5rem;
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.1rem;
+            max-width: 1280px; margin: 0 auto 4rem; padding: 0 1.5rem;
         }
-        @media (max-width: 920px) { .tier-grid { grid-template-columns: 1fr; max-width: 480px; } }
+        @media (max-width: 1100px) { .tier-grid { grid-template-columns: repeat(2, 1fr); max-width: 720px; } }
+        @media (max-width: 620px)  { .tier-grid { grid-template-columns: 1fr; max-width: 480px; } }
         .tier {
             background: #fff; border: 1px solid #edf2f7; border-radius: 18px;
             padding: 2rem 1.8rem;
@@ -49,6 +50,8 @@
             box-shadow: 0 20px 50px rgba(29,109,242,0.15);
             transform: translateY(-4px);
         }
+        .tier.current { border: 2px solid #0d9488; }
+        .tier.current .cta { background: #0d9488; opacity: 0.85; }
         .tier.highlight .tier-badge {
             position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
             background: #1d6df2; color: #fff;
@@ -174,22 +177,36 @@
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         ${esc(f)}
                     </li>`).join('');
-                const disabled = !stripeReady || _gateState.kind !== 'ready';
-                const ctaLabel = _gateState.kind === 'logged_out' ? 'Sign in to subscribe'
-                              : _gateState.kind === 'wrong_role'  ? 'Agent account required'
-                              : _gateState.kind === 'no_profile'  ? 'Create your profile first'
-                              : !stripeReady                       ? 'Coming soon'
-                              : `Choose ${t.name}`;
+                // Map pricing slug → membership code to flag the agent's current plan.
+                const SLUG_TO_CODE = { free: 'free', standard: 'basic', prime: 'mn_lake_specialist', founder_public: 'top_agent' };
+                const isCurrent = _gateState.kind === 'ready' && _gateState.plan && SLUG_TO_CODE[t.tier] === _gateState.plan;
+                const isFree = t.is_free || t.tier === 'free';
+
+                let disabled, ctaLabel;
+                if (isFree) {
+                    if (isCurrent)                          { disabled = true;  ctaLabel = '✓ Your current plan'; }
+                    else if (_gateState.kind === 'logged_out') { disabled = false; ctaLabel = 'Get started free'; }
+                    else                                    { disabled = true;  ctaLabel = 'Free profile included'; }
+                } else if (isCurrent) {
+                    disabled = true; ctaLabel = '✓ Current plan';
+                } else {
+                    disabled = !stripeReady || _gateState.kind !== 'ready';
+                    ctaLabel = _gateState.kind === 'logged_out' ? 'Sign in to subscribe'
+                             : _gateState.kind === 'wrong_role'  ? 'Agent account required'
+                             : _gateState.kind === 'no_profile'  ? 'Create your profile first'
+                             : !stripeReady                       ? 'Coming soon'
+                             : `Upgrade to ${t.name}`;
+                }
                 return `
-                    <div class="tier ${t.highlight ? 'highlight' : ''}">
+                    <div class="tier ${t.highlight ? 'highlight' : ''} ${isCurrent ? 'current' : ''}">
                         ${t.highlight ? '<span class="tier-badge">Most popular</span>' : ''}
                         <h3>${esc(t.name)}</h3>
                         <p class="tagline">${esc(t.tagline)}</p>
                         <div class="price-row">
-                            <span class="price-amt">${dollars(price)}</span>
-                            <span class="price-sub">/ ${_period === 'annual' ? 'year' : 'month'}</span>
+                            <span class="price-amt">${isFree ? 'Free' : dollars(price)}</span>
+                            ${isFree ? '' : `<span class="price-sub">/ ${_period === 'annual' ? 'year' : 'month'}</span>`}
                         </div>
-                        <div class="price-note">${esc(note)}</div>
+                        <div class="price-note">${isFree ? 'No card required · upgrade any time' : esc(note)}</div>
                         <ul>${features}</ul>
                         <button class="cta" ${disabled ? 'disabled' : ''} onclick="subscribe('${esc(t.tier)}')">${ctaLabel}</button>
                     </div>`;
@@ -232,7 +249,8 @@
                     banner.innerHTML = `Almost there — create your agent profile first, then come back to choose a plan. <a href="/pages/agent/dashboard.html">Open your dashboard &rarr;</a>`;
                     return;
                 }
-                _gateState = { kind: 'ready' };
+                const billing = await r.json().catch(() => ({}));
+                _gateState = { kind: 'ready', plan: billing.plan_code || null };
                 banner.className = 'gate-banner';
             } catch (_) {
                 _gateState = { kind: 'ready' }; // best-effort — let server-side gate catch it
@@ -241,6 +259,12 @@
         }
 
         async function subscribe(tier) {
+            // Free plan has no checkout — new agents start free; just send a
+            // logged-out visitor to create their (free) profile.
+            if (tier === 'free') {
+                if (_gateState.kind === 'logged_out') window.location.href = '/pages/public/join.html';
+                return;
+            }
             if (_gateState.kind === 'logged_out') { window.location.href = `/pages/public/agent-login.html?redirect=${encodeURIComponent('/pages/public/pricing.html')}`; return; }
             if (_gateState.kind === 'no_profile')  { window.location.href = '/pages/agent/dashboard.html'; return; }
             if (_gateState.kind !== 'ready') return;

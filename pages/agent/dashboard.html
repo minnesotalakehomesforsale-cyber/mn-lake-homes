@@ -354,6 +354,17 @@
                         <span id="dash-status" class="dash-status yellow"><span class="dot"></span><span id="dash-status-label">Loading…</span></span>
                     </div>
 
+                    <!-- Free-plan upgrade banner — shown only to free-tier agents -->
+                    <div id="banner-free" style="display:none; margin-top:1.5rem; background:linear-gradient(135deg,#0f2b46,#1d6df2); color:#fff; border-radius:14px; padding:1.5rem 1.75rem;">
+                        <div style="display:flex; gap:1.25rem; align-items:center; flex-wrap:wrap; justify-content:space-between;">
+                            <div style="flex:1; min-width:240px;">
+                                <div style="font-weight:800; font-size:1.15rem; margin-bottom:0.35rem;">You're on the Free plan</div>
+                                <p style="margin:0; opacity:0.9; font-size:0.93rem; line-height:1.5;">Your profile is live, but Free agents aren't in the lead rotation, aren't featured, and can't post properties. Upgrade to start receiving matched leads and list your homes.</p>
+                            </div>
+                            <a href="/pages/public/pricing.html" style="flex-shrink:0; background:#fff; color:#0f2b46; border-radius:10px; padding:0.8rem 1.4rem; font-weight:800; text-decoration:none; font-size:0.95rem;">Upgrade my plan →</a>
+                        </div>
+                    </div>
+
                     <!-- Stat strip — at-a-glance numbers populated by updateDashLeads / refreshMsgBadge -->
                     <div class="dash-stats">
                         <div class="dash-stat"><div class="dash-stat-num" id="dash-stat-leads">—</div><div class="dash-stat-lbl">Active leads</div></div>
@@ -751,9 +762,16 @@
                 <div id="view-properties" class="view-card" style="display:none; background:#fff; padding:2rem 2.5rem; border-radius:12px; border:1px solid #edf2f7; box-shadow:0 4px 6px rgba(0,0,0,0.02);">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem; gap:1rem; flex-wrap:wrap;">
                         <h2 style="font-size:1.75rem; font-weight:700;">My Properties</h2>
-                        <button onclick="openPropModal()" style="background:#1d6df2;color:#fff;border:none;border-radius:8px;padding:0.6rem 1.15rem;font-weight:700;cursor:pointer;">+ Add property</button>
+                        <button id="prop-add-btn" onclick="openPropModal()" style="background:#1d6df2;color:#fff;border:none;border-radius:8px;padding:0.6rem 1.15rem;font-weight:700;cursor:pointer;">+ Add property</button>
                     </div>
                     <p style="color:#718096; margin-bottom:1.5rem;">Post your listings here. Each gets its own page on MinnesotaLakeHomesForSale.com that you can link to from your MLS, website, and socials — free exposure and backlinks. Active listings appear on the site; set one inactive to hide it without deleting.</p>
+                    <!-- Free agents can't list — show an upgrade prompt instead of the list. -->
+                    <div id="prop-locked" style="display:none; text-align:center; padding:2.5rem 1.5rem; background:#f7f9fa; border:1px dashed #cbd5e0; border-radius:12px;">
+                        <div style="font-size:2rem; margin-bottom:0.5rem;">🔒</div>
+                        <div style="font-weight:800; font-size:1.1rem; color:#1a202c; margin-bottom:0.4rem;">Listing properties is a paid feature</div>
+                        <p style="color:#718096; max-width:420px; margin:0 auto 1.25rem; line-height:1.5;">Upgrade from Free to post your homes — each gets its own page on the site with free exposure and backlinks.</p>
+                        <a href="/pages/public/pricing.html" style="display:inline-block; background:#1d6df2; color:#fff; border-radius:10px; padding:0.75rem 1.5rem; font-weight:800; text-decoration:none;">Upgrade to list properties →</a>
+                    </div>
                     <div id="prop-list"><div style="text-align:center;padding:3rem;color:#a0aec0;">Loading…</div></div>
                 </div>
 
@@ -1037,6 +1055,7 @@
         let _propImages = [];   // ordered image URLs; first = cover
 
         function openPropModal(p) {
+            if (_isFreeAgent) { window.location.href = '/pages/public/pricing.html'; return; }
             _propEditId = (p && p.id) ? p.id : null;
             document.getElementById('prop-modal-title').textContent = _propEditId ? 'Edit property' : 'Add property';
             document.getElementById('pf-err').style.display = 'none';
@@ -1341,8 +1360,24 @@
             } finally { btn.disabled = false; btn.textContent = label; }
         }
 
+        // True when the signed-in agent is on the Free plan (no leads/featured/listings).
+        let _isFreeAgent = false;
+        function applyPlanGating(agent) {
+            _isFreeAgent = (agent.membership_code === 'free');
+            const banner = document.getElementById('banner-free');
+            if (banner) banner.style.display = _isFreeAgent ? 'block' : 'none';
+            // Properties: free agents see an upgrade prompt instead of add/list.
+            const addBtn = document.getElementById('prop-add-btn');
+            const locked = document.getElementById('prop-locked');
+            const list   = document.getElementById('prop-list');
+            if (addBtn) addBtn.style.display = _isFreeAgent ? 'none' : '';
+            if (locked) locked.style.display = _isFreeAgent ? 'block' : 'none';
+            if (list)   list.style.display   = _isFreeAgent ? 'none' : '';
+        }
+
         function hydrateForm(agent) {
             window._agent = agent;
+            applyPlanGating(agent);
             const nameEl = document.getElementById('sidebar-name');
             const tierEl = document.getElementById('sidebar-tier');
             if (nameEl) nameEl.innerText = agent.display_name || '—';

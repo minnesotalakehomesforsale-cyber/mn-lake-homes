@@ -554,6 +554,21 @@ exports.getAgentPricing = (req, res) => {
         currency: 'usd',
         tiers: [
             {
+                tier: 'free',
+                name: 'Free',
+                tagline: 'Get listed — a public agent profile at no cost. Upgrade any time for leads.',
+                features: [
+                    'Public agent profile on the site',
+                    'Show your bio, photo, specialties & service areas',
+                    'Not featured, and not in the lead rotation',
+                    'No matched leads until you upgrade',
+                    'Cannot post properties (upgrade to list)',
+                ],
+                monthly_price: 0,
+                annual_price: 0,
+                is_free: true,
+            },
+            {
                 tier: 'standard',
                 name: 'Standard',
                 tagline: 'Get on the map — your profile on a lake page, in the lead rotation at base priority.',

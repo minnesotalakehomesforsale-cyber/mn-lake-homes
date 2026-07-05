@@ -207,9 +207,10 @@ const register = async (req, res) => {
         );
         const userId = userRes.rows[0].id;
 
-        // Resolve basic membership
-        const memRes = await client.query(`SELECT id FROM memberships WHERE code = 'basic' LIMIT 1`);
-        const basicId = memRes.rows[0]?.id;
+        // New agents start on the FREE tier — a public profile, but no leads,
+        // no featured placement, and no listings until they upgrade.
+        const memRes = await client.query(`SELECT id FROM memberships WHERE code = 'free' LIMIT 1`);
+        const startingMembershipId = memRes.rows[0]?.id;
 
         // Create Agent record. Seed phone_public + email_public from the
         // account fields so the public profile doesn't start with empty
@@ -223,7 +224,7 @@ const register = async (req, res) => {
         const agentRes = await client.query(
             `INSERT INTO agents (user_id, membership_id, slug, display_name, license_number, brokerage_name, phone_public, email_public, profile_status, is_published, referral_code, referred_by_code)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'draft', false, $9, $10) RETURNING id`,
-            [userId, basicId, slugStr, display_name, license_number || null, brokerage_name || null, phone || null, email || null, myRefCode, refCode]
+            [userId, startingMembershipId, slugStr, display_name, license_number || null, brokerage_name || null, phone || null, email || null, myRefCode, refCode]
         );
         const newAgentId = agentRes.rows[0].id;
 

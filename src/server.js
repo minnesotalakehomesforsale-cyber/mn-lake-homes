@@ -2536,7 +2536,8 @@ async function ensureTables() {
             INSERT INTO memberships (name, code, description, display_badge_label, sort_priority)
             VALUES
                 ('Founder',  'founder',  'Exclusive founding agent for a lake — gets 100% of that lake''s leads, plus top priority (most lottery weight) in their service-area towns.', 'Founder',  50),
-                ('Premium',  'premium',  'Premium network agent — competes in the weighted lead lottery in their service areas.',         'Premium',  150)
+                ('Premium',  'premium',  'Premium network agent — competes in the weighted lead lottery in their service areas.',         'Premium',  150),
+                ('Free',     'free',     'Free community profile — listed on the site, but not featured, not in the lead rotation, and cannot post properties. Upgrade any time for matched leads, featured placement, and listings.', 'Free', 400)
             ON CONFLICT (code) DO UPDATE
                 SET name                = EXCLUDED.name,
                     description         = EXCLUDED.description,
@@ -3762,6 +3763,7 @@ async function ensureTables() {
 
         await seedBlogPosts();
         await applyBlogCoverMap();
+        await seedDemoFreeAgent();
         await seedBlogContentV2();
         await seedBlogRelatedLinks();
         await seedStagedDraftReset();
@@ -3856,6 +3858,52 @@ async function applyBlogCoverMap() {
         } catch (e) { console.warn(`[blog-cover-map] ${slug}: ${e.message}`); }
     }
     console.log(`[blog-cover-map] applied ${updated}/${entries.length} generated covers`);
+}
+
+// Seed a demo FREE-tier agent so the team can preview the free-plan dashboard.
+// Idempotent by email. Log in as demo.free@mnlakehomes.com (password below) or
+// impersonate it from Admin → Agents. Disable with SEED_DEMO_FREE_AGENT=false.
+async function seedDemoFreeAgent() {
+    if (process.env.SEED_DEMO_FREE_AGENT === 'false') return;
+    const EMAIL = 'demo.free@mnlakehomes.com';
+    const PASSWORD = 'DemoFree2026!';
+    try {
+        const mem = await pool.query(`SELECT id FROM memberships WHERE code = 'free' LIMIT 1`);
+        const freeId = mem.rows[0]?.id;
+        if (!freeId) return;   // free tier not seeded yet
+
+        const bcrypt = require('bcrypt');
+        const hash = await bcrypt.hash(PASSWORD, 10);
+
+        // Upsert the user (idempotent by email).
+        let u = await pool.query(
+            `INSERT INTO users (first_name, last_name, full_name, email, phone, password_hash, role, account_status, password_changed_at)
+             VALUES ('Demo','Agent','Demo Agent',$1,'6125550100',$2,'agent','active',NOW())
+             ON CONFLICT (email) DO NOTHING
+             RETURNING id`, [EMAIL, hash]);
+        let userId = u.rows[0]?.id;
+        if (!userId) userId = (await pool.query(`SELECT id FROM users WHERE email = $1 LIMIT 1`, [EMAIL])).rows[0]?.id;
+        if (!userId) return;
+
+        // Upsert the agent profile (published, free tier).
+        const exists = await pool.query(`SELECT id FROM agents WHERE user_id = $1 LIMIT 1`, [userId]);
+        const refCode = 'REF' + require('crypto').createHash('md5').update(userId + 'mlh-ref').digest('hex').slice(0, 6).toUpperCase();
+        if (!exists.rows.length) {
+            await pool.query(
+                `INSERT INTO agents (user_id, membership_id, slug, display_name, brokerage_name, bio,
+                     phone_public, email_public, years_experience, specialties, profile_status, is_published, referral_code)
+                 VALUES ($1,$2,'demo-agent','Demo Agent','Lakeside Realty (Demo)',
+                     'This is a demo profile on the Free plan — a public listing with no leads, featured placement, or property listings until upgraded.',
+                     '(612) 555-0100',$3,7,$4,'published',TRUE,$5)`,
+                [userId, freeId, EMAIL, JSON.stringify(['First-Time Buyers', 'Waterfront Homes', 'Cabins']), refCode]);
+            console.log('[seed] demo free agent created:', EMAIL, '(password:', PASSWORD + ')');
+        } else {
+            // Keep it on the free tier + published for previewing.
+            await pool.query(`UPDATE agents SET membership_id = $2, profile_status = 'published', is_published = TRUE WHERE user_id = $1`, [userId, freeId]);
+        }
+    } catch (e) {
+        console.warn('[seed] demo free agent skipped:', e.message);
+    }
 }
 
 async function seedBlogPosts() {

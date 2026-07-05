@@ -381,6 +381,17 @@ async function agentIdFor(req) {
     return rows[0]?.id || null;
 }
 
+// Free-tier agents cannot post properties — it's a paid-plan benefit.
+async function isFreeAgent(agentId) {
+    try {
+        const { rows } = await pool.query(
+            `SELECT m.code FROM agents a JOIN memberships m ON m.id = a.membership_id WHERE a.id = $1 LIMIT 1`,
+            [agentId]);
+        return rows[0]?.code === 'free';
+    } catch (_) { return false; }
+}
+const UPGRADE_TO_LIST = { error: 'Listing properties is a paid-plan feature. Upgrade your plan to add properties.', code: 'upgrade_required' };
+
 exports.listMine = async (req, res) => {
     try {
         const agentId = await agentIdFor(req);
@@ -400,6 +411,7 @@ exports.createMine = async (req, res) => {
     try {
         const agentId = await agentIdFor(req);
         if (!agentId) return res.status(403).json({ error: 'Create your agent profile first.' });
+        if (await isFreeAgent(agentId)) return res.status(403).json(UPGRADE_TO_LIST);
         const v = bodyToCols(req.body || {});
         if (!v.title) return res.status(400).json({ error: 'A title is required.' });
         v.agent_id = agentId;                                                  // force ownership

@@ -35,7 +35,7 @@ const pool = require('../database/pool');
 // own lake. Unknown/legacy codes fall back to 1 ball so nobody is excluded.
 // Overridable at runtime via app_config key 'tier_lottery_balls' (JSON), so
 // the weights can be tuned from the admin without a redeploy.
-const DEFAULT_TIER_BALLS = { founder: 12, top_agent: 8, premium: 8, mn_lake_specialist: 3, basic: 1 };
+const DEFAULT_TIER_BALLS = { founder: 12, top_agent: 8, premium: 8, mn_lake_specialist: 3, basic: 1, free: 0 };
 const DEFAULT_BALLS = 1;
 
 // Read the tier weights, merging any admin overrides over the defaults. Any
@@ -125,6 +125,7 @@ async function agentsForTag(tagId) {
                           AND a.is_published   = TRUE
         JOIN memberships m ON m.id = a.membership_id
         WHERE ut.tag_id = $1
+          AND m.code <> 'free'                       -- free-tier agents are never routed leads
         ORDER BY u.last_routed_at ASC NULLS FIRST, u.id ASC
     `;
     const { rows } = await pool.query(sql, [tagId]);
@@ -184,6 +185,7 @@ async function agentsForLake(lakeId) {
         JOIN users  u ON u.id = a.user_id AND u.account_status = 'active'
         JOIN memberships m ON m.id = a.membership_id
         WHERE al.lake_id = $1
+          AND (al.is_founder OR m.code <> 'free')     -- free agents never routed (unless they hold the founder seat)
         ORDER BY u.last_routed_at ASC NULLS FIRST, u.id ASC
     `;
     const { rows } = await pool.query(sql, [lakeId]);

@@ -408,6 +408,7 @@
                             <option value="top_agent">Top Agent</option>
                             <option value="mn_lake_specialist">MN Lake Specialist</option>
                             <option value="basic">Basic</option>
+                            <option value="free">Free</option>
                         </select>
                         <label style="display:flex;align-items:center;gap:0.55rem;font-size:0.85rem;color:#1a202c;cursor:pointer;margin-bottom:0.85rem;">
                             <input type="checkbox" id="mem-comped" style="width:17px;height:17px;accent-color:#1d6df2;">
@@ -722,7 +723,7 @@
         if (a.profile_photo_url) {
             document.getElementById('hdr-photo').innerHTML = `<img src="${a.profile_photo_url}" alt="">`;
         }
-        const memLabels = { founder:'Founder', premium:'Premium', top_agent:'Top Agent', mn_lake_specialist:'MN Lake Specialist', basic:'Basic' };
+        const memLabels = { founder:'Founder', premium:'Premium', top_agent:'Top Agent', mn_lake_specialist:'MN Lake Specialist', basic:'Basic', free:'Free' };
         document.getElementById('hdr-membership').textContent   = memLabels[a.membership_code] || a.membership_code || '—';
         document.getElementById('hdr-profile-status').innerHTML = statusBadge(a.profile_status);
         document.getElementById('hdr-account-status').innerHTML = (a.user_status === 'active')
@@ -1242,7 +1243,7 @@
     }
 
     // ── Membership ───────────────────────────────────────────────────────────
-    const AGENT_TIER_LABELS = { founder:'Founder', premium:'Premium', top_agent:'Top Agent', mn_lake_specialist:'MN Lake Specialist', basic:'Basic' };
+    const AGENT_TIER_LABELS = { founder:'Founder', premium:'Premium', top_agent:'Top Agent', mn_lake_specialist:'MN Lake Specialist', basic:'Basic', free:'Free' };
 
     async function loadAgentBilling() {
         const host = document.getElementById('mem-billing');
