@@ -89,6 +89,7 @@ app.use('/api/listings', require('./routes/listing.routes'));
 app.use('/api/searches', require('./routes/search.routes'));
 app.use('/api/partners', require('./routes/partner.routes'));
 app.use('/api/market', require('./routes/market.routes'));
+app.use('/api/valuation', require('./routes/valuation.routes'));
 app.use('/api/dream', require('./routes/dream.routes'));
 app.use('/api/cockpit', require('./routes/cockpit.routes'));
 
@@ -555,6 +556,7 @@ app.get('/sitemap.xml', async (req, res) => {
             { url: '/',                priority: 1.0, changefreq: 'weekly'  },
             { url: '/buy',             priority: 0.9, changefreq: 'weekly'  },
             { url: '/sell',            priority: 0.9, changefreq: 'weekly'  },
+            { url: '/home-value',      priority: 0.8, changefreq: 'weekly'  },
             { url: '/towns',           priority: 0.9, changefreq: 'weekly'  },
             { url: '/towns?view=props', priority: 0.8, changefreq: 'daily'  },
             { url: '/market-index',    priority: 0.7, changefreq: 'weekly'  },
@@ -1500,6 +1502,7 @@ const BLOG_GUIDE_LINKS = [
     { href: '/blog', name: 'All lake guides →' },
 ];
 const LAKE_TOOL_LINKS = [
+    { href: '/home-value', name: 'What’s my home worth?' },
     { href: '/find-your-lake', name: 'Find Your Lake quiz' },
     { href: '/compare-lakes', name: 'Compare lakes' },
     { href: '/lake-mortgage-calculator', name: 'Lake cost calculator' },
