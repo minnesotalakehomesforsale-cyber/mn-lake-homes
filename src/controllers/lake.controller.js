@@ -924,6 +924,29 @@ exports.enrichDnrAll = async (req, res) => {
     res.json({ success: true, started: true, note: 'Enriching in the background (~1 lake/sec). Refresh lakes to see facts land.' });
 };
 
+// GET /api/lakes/:slug/founder — public. Returns the lake's seated founding
+// agent (name + photo) so the lead form can personalize the "match me with the
+// founder" opt-in — or { founder: null } when the lake has none (the UI then
+// simply shows nothing).
+exports.lakeFounder = async (req, res) => {
+    res.set('Cache-Control', 'public, max-age=120');
+    try {
+        const { rows } = await pool.query(`
+            SELECT a.display_name, a.slug, a.profile_photo_url, l.name AS lake_name
+              FROM lakes l
+              JOIN agent_lakes al ON al.lake_id = l.id AND al.is_founder = TRUE
+              JOIN agents a       ON a.id = al.agent_id AND a.profile_status = 'published' AND a.is_published = TRUE
+              JOIN users u        ON u.id = a.user_id AND u.account_status = 'active'
+             WHERE l.slug = $1 LIMIT 1`, [req.params.slug]);
+        if (!rows.length) return res.json({ founder: null });
+        const r = rows[0];
+        res.json({ founder: { display_name: r.display_name, slug: r.slug, profile_photo_url: r.profile_photo_url }, lake_name: r.lake_name });
+    } catch (err) {
+        console.error('[lakeFounder]', err.message);
+        res.json({ founder: null });
+    }
+};
+
 // GET /api/lakes/founder-availability — public. Powers the "Claim your lake"
 // page: every published lake with its Founder-seat status (open vs taken), its
 // monthly price (floor $249 / ceiling $5000), and REAL demand signals (buyer
