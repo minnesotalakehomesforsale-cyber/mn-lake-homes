@@ -115,7 +115,9 @@ const createLead = async (req, res) => {
         // We extrapolate first name logically
         const firstName = name.split(' ')[0] || 'Unknown';
 
-        // Map source to lead_type enum using exact matching
+        // Map source to lead_type enum using exact matching. The founder_match_*
+        // sources are the "work with the founder agent" direct-match flow — each
+        // is tied to a lake so routeLead delivers it straight to that lake's founder.
         const enumMap = {
             'agent_inquiry': 'agent_inquiry',
             'buyer': 'buyer',
@@ -123,6 +125,10 @@ const createLead = async (req, res) => {
             'join_request': 'join_request',
             'market_report': 'market_report',
             'property_question': 'property_question',
+            'founder_match_buyer':  'buyer',
+            'founder_match_seller': 'seller',
+            'founder_match_rent':   'buyer',
+            'founder_match':        'buyer',
         };
         const enumType = enumMap[source] || 'general_contact';
 

@@ -1978,3 +1978,258 @@ document.addEventListener('keydown', e => {
     }
 })();
 
+
+// ─── Founder-match: "work with your lake's founder agent" direct-match flow ───
+// A new DIRECT lead type. The visitor picks the lake(s) they care about; we
+// create one lead per lake, each tied to that lake so the router delivers it
+// straight to the lake's exclusive Founder agent (falling back to the best local
+// agent when a lake has no founder yet). Drop <founder-match-band data-intent=
+// "buy|sell|rent|general"> onto any page to show the CTA; it opens this modal.
+(function founderMatch() {
+    if (window.__founderMatchInit) return;
+    window.__founderMatchInit = true;
+
+    const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const slugify = s => (s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+    // ── Styles ──
+    const css = document.createElement('style');
+    css.textContent = `
+      .fm-band { background: linear-gradient(135deg,#0b2a10 0%,#0f2b46 55%,#1d6df2 130%); color:#fff; border-radius:22px; padding:2.75rem 2.25rem; margin:3.5rem auto; max-width:1120px; text-align:center; box-shadow:0 24px 60px rgba(11,42,16,0.22); }
+      .fm-band .fm-eyebrow { font-size:0.75rem; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:#9ae6b4; margin-bottom:0.9rem; }
+      .fm-band h2 { font-size:clamp(1.7rem,4vw,2.4rem); font-weight:800; letter-spacing:-1px; line-height:1.1; margin:0 auto 0.9rem; max-width:720px; }
+      .fm-band p { font-size:1.08rem; line-height:1.6; opacity:0.92; max-width:640px; margin:0 auto 1.75rem; }
+      .fm-band .fm-cta { display:inline-flex; align-items:center; gap:0.5rem; background:#fff; color:#0b2a10; border:0; border-radius:12px; padding:0.95rem 1.75rem; font-weight:800; font-size:1.02rem; cursor:pointer; font-family:inherit; text-decoration:none; }
+      .fm-band .fm-cta:hover { transform:translateY(-1px); }
+      .fm-band .fm-sub { margin-top:1rem; font-size:0.85rem; opacity:0.75; }
+      @media (max-width:640px){ .fm-band { padding:2rem 1.35rem; margin:2.5rem 1rem; border-radius:18px; } }
+
+      .fm-ov { position:fixed; inset:0; z-index:9200; background:rgba(11,42,16,0.55); display:none; align-items:flex-start; justify-content:center; padding:2rem 1rem; overflow-y:auto; }
+      .fm-ov.open { display:flex; }
+      .fm-modal { background:#fff; border-radius:18px; width:100%; max-width:520px; margin:auto; box-shadow:0 24px 70px rgba(0,0,0,0.3); overflow:hidden; }
+      .fm-head { padding:1.6rem 1.75rem 0; }
+      .fm-head h3 { margin:0 0 0.4rem; font-size:1.5rem; font-weight:800; color:#0f2b46; letter-spacing:-0.5px; }
+      .fm-head p { margin:0; color:#718096; font-size:0.95rem; line-height:1.5; }
+      .fm-body { padding:1.4rem 1.75rem 1.75rem; }
+      .fm-x { position:absolute; top:1rem; right:1.1rem; background:none; border:0; font-size:1.5rem; line-height:1; color:#a0aec0; cursor:pointer; }
+      .fm-label { display:block; font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#718096; margin:1.1rem 0 0.5rem; }
+      .fm-seg { display:flex; gap:0.5rem; }
+      .fm-seg button { flex:1; padding:0.7rem; border:1.5px solid #e2e8f0; background:#fff; border-radius:10px; font:inherit; font-weight:700; color:#4a5568; cursor:pointer; }
+      .fm-seg button.on { border-color:#1d6df2; color:#1d6df2; background:#f5f9ff; }
+      .fm-search { position:relative; }
+      .fm-input { width:100%; padding:0.8rem 0.9rem; border:1px solid #e2e8f0; border-radius:11px; font:inherit; font-size:1rem; outline:none; box-sizing:border-box; }
+      .fm-input:focus { border-color:#1d6df2; }
+      .fm-drop { position:absolute; left:0; right:0; top:calc(100% + 4px); background:#fff; border:1px solid #e2e8f0; border-radius:11px; box-shadow:0 12px 30px rgba(0,0,0,0.12); max-height:230px; overflow-y:auto; z-index:5; display:none; }
+      .fm-drop.show { display:block; }
+      .fm-opt { padding:0.65rem 0.9rem; cursor:pointer; font-size:0.92rem; display:flex; justify-content:space-between; gap:0.75rem; }
+      .fm-opt:hover, .fm-opt.active { background:#f5f9ff; }
+      .fm-opt .r { color:#a0aec0; font-size:0.8rem; }
+      .fm-chips { display:flex; flex-wrap:wrap; gap:0.45rem; margin-top:0.6rem; }
+      .fm-chip { display:inline-flex; align-items:center; gap:0.4rem; background:#eaf6f0; color:#155e41; border:1px solid #cfe8db; border-radius:999px; padding:0.35rem 0.7rem; font-size:0.85rem; font-weight:700; }
+      .fm-chip button { background:none; border:0; color:#155e41; cursor:pointer; font-size:1rem; line-height:1; padding:0; }
+      .fm-row2 { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; }
+      .fm-submit { width:100%; background:#1d6df2; color:#fff; border:0; border-radius:12px; padding:0.95rem; font:inherit; font-weight:800; font-size:1.02rem; cursor:pointer; margin-top:1.4rem; }
+      .fm-submit:hover { background:#155bc8; } .fm-submit:disabled { opacity:0.6; cursor:not-allowed; }
+      .fm-err { display:none; color:#c53030; font-size:0.85rem; background:#fff5f5; border:1px solid #fed7d7; border-radius:10px; padding:0.7rem 0.9rem; margin-top:1rem; text-align:center; }
+      .fm-ok { text-align:center; padding:1rem 0 0.5rem; }
+      .fm-ok .ic { width:64px; height:64px; border-radius:50%; background:#f0fff4; color:#2f855a; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:2rem; }
+      @media (max-width:520px){ .fm-row2 { grid-template-columns:1fr; } }`;
+    document.head.appendChild(css);
+
+    // ── The reusable CTA band ──
+    class FounderMatchBand extends HTMLElement {
+        connectedCallback() {
+            const intent = (this.getAttribute('data-intent') || 'general').toLowerCase();
+            this.innerHTML = `
+              <section class="fm-band">
+                <div class="fm-eyebrow">One agent per lake · the local expert</div>
+                <h2>Want to work with the local expert?</h2>
+                <p>Get matched directly with the <strong>Founder agent</strong> for your lake — the one agent who knows it better than anyone. Tell us the lake (or lakes) you're after and we'll connect you straight to their expert.</p>
+                <button class="fm-cta" type="button">🎯 Match me with a Founder agent</button>
+                <div class="fm-sub">Free · no obligation · you'll hear from a real local specialist</div>
+              </section>`;
+            this.querySelector('.fm-cta').addEventListener('click', () => window.openFounderMatch(intent));
+        }
+    }
+    customElements.define('founder-match-band', FounderMatchBand);
+
+    // ── Modal state ──
+    let _lakes = null, _selected = [], _intent = 'buy', _openedAt = 0, _built = false;
+
+    async function fetchLakes() {
+        if (_lakes) return _lakes;
+        try {
+            const r = await fetch('/api/lakes');
+            const rows = r.ok ? await r.json() : [];
+            _lakes = rows.filter(l => l && l.slug && l.name)
+                         .map(l => ({ slug: l.slug, name: l.name, region: l.region || l.state || '' }));
+        } catch (_) { _lakes = []; }
+        return _lakes;
+    }
+
+    function buildModal() {
+        if (_built) return;
+        _built = true;
+        const ov = document.createElement('div');
+        ov.className = 'fm-ov';
+        ov.id = 'fm-ov';
+        ov.innerHTML = `
+          <div class="fm-modal" role="dialog" aria-modal="true" style="position:relative;">
+            <button class="fm-x" type="button" aria-label="Close" onclick="window.closeFounderMatch()">×</button>
+            <div id="fm-form">
+              <div class="fm-head">
+                <h3>Work with your lake's Founder agent</h3>
+                <p>The exclusive local expert for each lake you pick — matched to you directly.</p>
+              </div>
+              <div class="fm-body">
+                <input type="text" id="fm-hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:1px;width:1px;">
+                <label class="fm-label">I want to</label>
+                <div class="fm-seg" id="fm-seg">
+                  <button type="button" data-i="buy">Buy</button>
+                  <button type="button" data-i="sell">Sell</button>
+                  <button type="button" data-i="rent">Rent</button>
+                </div>
+                <label class="fm-label">Which lake(s)?</label>
+                <div class="fm-search">
+                  <input type="text" class="fm-input" id="fm-lake-input" placeholder="Search a lake — e.g. Gull Lake" autocomplete="off">
+                  <div class="fm-drop" id="fm-drop"></div>
+                </div>
+                <div class="fm-chips" id="fm-chips"></div>
+                <label class="fm-label">Your contact</label>
+                <input type="text" class="fm-input" id="fm-name" placeholder="Full name" autocomplete="name" style="margin-bottom:0.6rem;">
+                <div class="fm-row2">
+                  <input type="email" class="fm-input" id="fm-email" placeholder="Email" autocomplete="email">
+                  <input type="tel" class="fm-input" id="fm-phone" placeholder="Phone (optional)" autocomplete="tel">
+                </div>
+                <div class="fm-err" id="fm-err"></div>
+                <button class="fm-submit" id="fm-submit" type="button">Match me with the Founder agent →</button>
+              </div>
+            </div>
+            <div id="fm-done" style="display:none;">
+              <div class="fm-body">
+                <div class="fm-ok">
+                  <div class="ic">✓</div>
+                  <h3 style="font-size:1.5rem;font-weight:800;color:#0f2b46;margin:0 0 0.5rem;">You're matched!</h3>
+                  <p id="fm-done-msg" style="color:#718096;line-height:1.6;margin:0 auto 1.5rem;max-width:380px;"></p>
+                  <button class="fm-submit" style="max-width:220px;margin:0 auto;" type="button" onclick="window.closeFounderMatch()">Done</button>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        document.body.appendChild(ov);
+        ov.addEventListener('click', e => { if (e.target === ov) window.closeFounderMatch(); });
+
+        // Intent segmented control
+        ov.querySelectorAll('#fm-seg button').forEach(b =>
+            b.addEventListener('click', () => setIntent(b.dataset.i)));
+
+        // Lake autocomplete
+        const input = ov.querySelector('#fm-lake-input');
+        const drop = ov.querySelector('#fm-drop');
+        input.addEventListener('input', () => renderDrop(input.value));
+        input.addEventListener('focus', () => { if (input.value.trim()) renderDrop(input.value); });
+        document.addEventListener('click', e => { if (!ov.querySelector('.fm-search').contains(e.target)) drop.classList.remove('show'); });
+
+        ov.querySelector('#fm-submit').addEventListener('click', submit);
+    }
+
+    function setIntent(i) {
+        _intent = i;
+        document.querySelectorAll('#fm-seg button').forEach(b => b.classList.toggle('on', b.dataset.i === i));
+    }
+
+    function renderDrop(q) {
+        const drop = document.getElementById('fm-drop');
+        q = (q || '').toLowerCase().trim();
+        if (!q || !_lakes) { drop.classList.remove('show'); return; }
+        const taken = new Set(_selected.map(s => s.slug));
+        const matches = _lakes.filter(l => !taken.has(l.slug) && l.name.toLowerCase().includes(q)).slice(0, 8);
+        if (!matches.length) { drop.innerHTML = '<div class="fm-opt" style="cursor:default;color:#a0aec0;">No lakes found — try another spelling.</div>'; drop.classList.add('show'); return; }
+        drop.innerHTML = matches.map(l => `<div class="fm-opt" data-slug="${esc(l.slug)}"><span>${esc(l.name)}</span><span class="r">${esc(l.region)}</span></div>`).join('');
+        drop.classList.add('show');
+        drop.querySelectorAll('.fm-opt[data-slug]').forEach(o => o.addEventListener('click', () => {
+            const l = _lakes.find(x => x.slug === o.dataset.slug);
+            if (l && _selected.length < 6 && !_selected.find(s => s.slug === l.slug)) _selected.push(l);
+            document.getElementById('fm-lake-input').value = '';
+            drop.classList.remove('show');
+            renderChips();
+        }));
+    }
+
+    function renderChips() {
+        const box = document.getElementById('fm-chips');
+        box.innerHTML = _selected.map(l =>
+            `<span class="fm-chip">🌊 ${esc(l.name)}<button type="button" data-slug="${esc(l.slug)}" aria-label="Remove">×</button></span>`).join('');
+        box.querySelectorAll('button[data-slug]').forEach(b => b.addEventListener('click', () => {
+            _selected = _selected.filter(s => s.slug !== b.dataset.slug); renderChips();
+        }));
+    }
+
+    window.openFounderMatch = async function (intent) {
+        buildModal();
+        _selected = []; _openedAt = Date.now();
+        renderChips();
+        document.getElementById('fm-form').style.display = '';
+        document.getElementById('fm-done').style.display = 'none';
+        document.getElementById('fm-err').style.display = 'none';
+        ['fm-name', 'fm-email', 'fm-phone', 'fm-lake-input', 'fm-hp'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        setIntent(['buy', 'sell', 'rent'].includes(intent) ? intent : 'buy');
+        document.getElementById('fm-ov').classList.add('open');
+        document.body.style.overflow = 'hidden';
+        if (typeof window.trackConversion === 'function') window.trackConversion('founder_match_open', { intent: intent || 'general', page: location.pathname });
+        await fetchLakes();
+    };
+    window.closeFounderMatch = function () {
+        const ov = document.getElementById('fm-ov'); if (ov) ov.classList.remove('open');
+        document.body.style.overflow = '';
+    };
+
+    async function submit() {
+        const err = document.getElementById('fm-err');
+        const name = document.getElementById('fm-name').value.trim();
+        const email = document.getElementById('fm-email').value.trim();
+        const phone = document.getElementById('fm-phone').value.trim();
+        const showErr = m => { err.textContent = m; err.style.display = 'block'; };
+        err.style.display = 'none';
+        if (!_selected.length) return showErr('Pick at least one lake so we can match you with its Founder agent.');
+        if (!name) return showErr('Please enter your name.');
+        if (!email && !phone) return showErr('Add an email or phone so your Founder agent can reach you.');
+
+        const btn = document.getElementById('fm-submit');
+        btn.disabled = true; btn.textContent = 'Matching…';
+        const source = 'founder_match_' + _intent;   // founder_match_buy|sell|rent
+        const srcMap = { founder_match_buy: 'founder_match_buyer', founder_match_sell: 'founder_match_seller', founder_match_rent: 'founder_match_rent' };
+        const leadSource = srcMap[source] || 'founder_match';
+        const lakeNames = _selected.map(l => l.name).join(', ');
+        const elapsed = _openedAt ? Date.now() - _openedAt : undefined;
+        const hp = document.getElementById('fm-hp').value || '';
+
+        try {
+            // One lead per lake → each routes straight to that lake's Founder agent.
+            let ok = 0;
+            for (const lake of _selected) {
+                const notes = `🎯 Direct Founder-match request — wants to work with the Founder agent for ${lake.name}.\n`
+                    + `Intent: ${_intent}.` + (_selected.length > 1 ? `\nAlso interested in: ${lakeNames}.` : '');
+                const res = await fetch('/api/leads', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({
+                        name, email: email || null, phone: phone || null,
+                        source: leadSource, notes, lake_slug: lake.slug,
+                        company_website: hp, _elapsed_ms: elapsed,
+                    }),
+                });
+                if (res.ok) ok++;
+            }
+            if (!ok) throw new Error('Something went wrong — please try again.');
+            if (typeof window.trackConversion === 'function') window.trackConversion('generate_lead', { form_name: 'founder_match', lead_type: _intent, lakes: _selected.length });
+            document.getElementById('fm-done-msg').textContent =
+                _selected.length > 1
+                    ? `We've connected you with the local expert for ${_selected.length} lakes. Expect to hear from them shortly.`
+                    : `We've connected you with the local expert for ${_selected[0].name}. Expect to hear from them shortly.`;
+            document.getElementById('fm-form').style.display = 'none';
+            document.getElementById('fm-done').style.display = 'block';
+        } catch (e) {
+            showErr(e.message || 'Something went wrong — please try again.');
+        } finally { btn.disabled = false; btn.textContent = 'Match me with the Founder agent →'; }
+    }
+})();
