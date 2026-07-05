@@ -26,7 +26,7 @@
         .lst-was { font-size:1.15rem; font-weight:600; color:#a0aec0; text-decoration:line-through; letter-spacing:0; }
         .lst-badges { display:flex; gap:0.5rem; flex-wrap:wrap; margin:0 0 0.7rem; }
         .lst-badge { font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; border-radius:6px; padding:0.3rem 0.6rem; }
-        .lst-badge.new { background:#e6fffa; color:#0f766e; }
+        .lst-badge.new { background:#e6fffa; color:#1d6df2; }
         .lst-badge.drop { background:#fee2e2; color:#b91c1c; }
         .lst-badge.oh { background:#fef3c7; color:#b45309; }
         .lst-title { font-size:1.35rem; font-weight:700; color:#2d3748; margin:0.35rem 0 0.15rem; }
@@ -281,7 +281,7 @@
                         body: JSON.stringify({ email }),
                     });
                     if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'Could not set the alert.'); }
-                    msg.style.color = '#0f766e'; msg.textContent = "✓ We'll email you if the price drops.";
+                    msg.style.color = '#1d6df2'; msg.textContent = "✓ We'll email you if the price drops.";
                     document.getElementById('lst-watch-email').disabled = true;
                 } catch (ex) { msg.style.color = '#c53030'; msg.textContent = ex.message; }
             };

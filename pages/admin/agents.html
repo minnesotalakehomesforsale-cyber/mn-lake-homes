@@ -79,7 +79,7 @@
         .ledger-table tr.data-row:hover { background-color: #fcfcfc; cursor: pointer; }
 
         .s-badge { padding: 0.3rem 0.7rem; border-radius: 99px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; border: 1px solid transparent; display: inline-block; }
-        .s-pending   { background: #ebf8ff; color: #2b6cb0; border-color: #bee3f8; }
+        .s-pending   { background: #ebf8ff; color: #1d6df2; border-color: #bee3f8; }
         .s-published { background: #f0fff4; color: #2f855a; border-color: #c6f6d5; }
         .s-draft     { background: #fefcbf; color: #975a16; border-color: #f6e05e; }
         .s-suspended { background: #fff5f5; color: #c53030; border-color: #fed7d7; }
@@ -168,7 +168,7 @@
         <!-- Status filter tabs -->
         <div class="filter-container">
             <button class="filter-tab active" onclick="setStatusFilter('all', this)">All Agents <span id="count-all" style="color:#a0aec0;"></span></button>
-            <button class="filter-tab" onclick="setStatusFilter('pending_review', this)" style="color:#2b6cb0;">Pending Review <span id="count-pending" style="color:#a0aec0;"></span></button>
+            <button class="filter-tab" onclick="setStatusFilter('pending_review', this)" style="color:#1d6df2;">Pending Review <span id="count-pending" style="color:#a0aec0;"></span></button>
             <button class="filter-tab" onclick="setStatusFilter('published', this)">Published <span id="count-published" style="color:#a0aec0;"></span></button>
             <button class="filter-tab" onclick="setStatusFilter('draft', this)">Drafts <span id="count-draft" style="color:#a0aec0;"></span></button>
             <button class="filter-tab" onclick="setStatusFilter('suspended', this)">Suspended <span id="count-suspended" style="color:#a0aec0;"></span></button>
@@ -418,7 +418,7 @@
                 <td>${live}</td>
                 <td onclick="event.stopPropagation()">
                     <button onclick="window.location.href='agent-review.html?id=${a.id}'"
-                        style="border:none;background:#ebf8ff;color:#2b6cb0;font-weight:600;padding:0.4rem 0.9rem;border-radius:6px;cursor:pointer;font-size:0.85rem;">
+                        style="border:none;background:#ebf8ff;color:#1d6df2;font-weight:600;padding:0.4rem 0.9rem;border-radius:6px;cursor:pointer;font-size:0.85rem;">
                         Review
                     </button>
                 </td>

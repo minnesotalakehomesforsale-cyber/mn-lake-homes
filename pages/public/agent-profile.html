@@ -238,7 +238,7 @@
                 ? `<span title="Top-performing agent on MN Lake Homes this month" style="display:inline-flex; align-items:center; gap:0.35rem; background:linear-gradient(135deg,#f6ad14,#dd8a0b); color:#fff; padding:0.4rem 1rem; border-radius:99px; font-size:0.8rem; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; margin-left:0.5rem; vertical-align:middle;">🏅 Top Performer</span>`
                 : '';
             const respPill = agent.response_label
-                ? `<span title="Typical time to respond to a new lead" style="display:inline-flex; align-items:center; gap:0.35rem; background:${agent.response_fast ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.1)'}; color:${agent.response_fast ? '#34d399' : '#cbd5e0'}; padding:0.4rem 1rem; border-radius:99px; font-size:0.8rem; font-weight:700; margin-left:0.5rem; vertical-align:middle;">⚡ ${agent.response_label}</span>`
+                ? `<span title="Typical time to respond to a new lead" style="display:inline-flex; align-items:center; gap:0.35rem; background:${agent.response_fast ? 'rgba(29,109,242,0.9)' : 'rgba(255,255,255,0.1)'}; color:${agent.response_fast ? '#fff' : '#cbd5e0'}; padding:0.4rem 1rem; border-radius:99px; font-size:0.8rem; font-weight:700; margin-left:0.5rem; vertical-align:middle;">⚡ ${agent.response_label}</span>`
                 : '';
 
             hero.innerHTML = `
@@ -266,7 +266,7 @@
             ).join('');
 
             const areaPills = serviceAreas.map(a =>
-                `<span style="display:inline-block; background:#ebf8ff; color:#2b6cb0; padding:0.4rem 0.9rem; border-radius:99px; font-size:0.85rem; font-weight:600; margin:0.25rem;">${a}</span>`
+                `<span style="display:inline-block; background:#ebf4ff; color:#1d6df2; padding:0.4rem 0.9rem; border-radius:99px; font-size:0.85rem; font-weight:600; margin:0.25rem;">${a}</span>`
             ).join('');
 
             // Main content block — white card, matches site card style

@@ -219,7 +219,7 @@ class GlobalHeader extends HTMLElement {
                 <button onclick="window.openForm('agent')" style="background: #1d6df2; color: #fff; font-weight: 600;
                     border: none; padding: 0.6rem 1.5rem; border-radius: 999px; cursor: pointer; font-size: 0.9rem;
                     font-family: inherit; transition: background 0.2s;"
-                    onmouseover="this.style.background='#1558c7'"
+                    onmouseover="this.style.background='#155bc8'"
                     onmouseout="this.style.background='#1d6df2'">Get Started</button>
             </div>`;
         }
@@ -603,7 +603,7 @@ function ensureReviewStyles() {
       .rw-card { background:#fff; border:1px solid #edf2f7; border-radius:12px; padding:1.1rem 1.3rem; margin-bottom:0.8rem; }
       .rw-card .top { display:flex; justify-content:space-between; align-items:center; gap:0.75rem; flex-wrap:wrap; }
       .rw-card .nm { font-weight:700; color:#1a202c; }
-      .rw-verified { display:inline-block; background:#e6fffa; color:#0f766e; font-size:0.62rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; border-radius:5px; padding:0.1rem 0.4rem; margin-left:0.3rem; vertical-align:middle; }
+      .rw-verified { display:inline-block; background:#ebf4ff; color:#1d6df2; font-size:0.62rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; border-radius:5px; padding:0.1rem 0.4rem; margin-left:0.3rem; vertical-align:middle; }
       .rw-card .ti { font-weight:700; color:#1a202c; margin-top:0.4rem; }
       .rw-card .bd { color:#4a5568; line-height:1.6; margin:0.3rem 0 0; }
       .rw-stars { white-space:nowrap; }
@@ -616,7 +616,7 @@ function ensureReviewStyles() {
       .rw-sheet-hd { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; padding:1.4rem 1.5rem 0.5rem; }
       .rw-sheet-hd h3 { margin:0; font-size:1.3rem; font-weight:800; color:#1a202c; }
       .rw-sheet-hd p { margin:0.25rem 0 0; color:#718096; font-size:0.86rem; }
-      .rw-x { background:none; border:0; font-size:1.8rem; line-height:1; color:#a0aec0; cursor:pointer; padding:0 0.2rem; }
+      .rw-x { background:none; border:0; font-size:1.8rem; line-height:1; color:#a0aec0; cursor:pointer; width:40px; height:40px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
       .rw-body { padding:0.75rem 1.5rem 1.5rem; }
       .rw-msg { display:none; padding:0.8rem 1rem; border-radius:8px; margin-bottom:1rem; font-weight:600; font-size:0.9rem; }
       .rw-field { margin-bottom:1rem; }
@@ -1300,7 +1300,7 @@ function _lfFillFounderSlot() {
         : '';
     slot.dataset.filled = '1';
     slot.innerHTML = `
-        <label style="display:flex;gap:0.65rem;align-items:center;margin-top:1rem;padding:0.85rem 1rem;background:#f0f7f4;border:1px solid #cfe8db;border-radius:12px;cursor:pointer;text-align:left;">
+        <label style="display:flex;gap:0.65rem;align-items:center;margin-top:1rem;padding:0.85rem 1rem;background:#f5f9ff;border:1px solid #cfe0f8;border-radius:12px;cursor:pointer;text-align:left;">
             <input type="checkbox" id="lf-want-founder" ${_lfs.data.want_founder ? 'checked' : ''} style="width:18px;height:18px;flex-shrink:0;accent-color:#1d6df2;">
             ${photo}
             <span style="font-size:0.9rem;line-height:1.4;color:#1a202c;">Match me directly with <strong>${esc(fnd.display_name)}</strong>, the ${lakeName} founding agent.
@@ -2063,7 +2063,7 @@ document.addEventListener('keydown', e => {
       .fm-head h3 { margin:0 0 0.4rem; font-size:1.5rem; font-weight:800; color:#0f2b46; letter-spacing:-0.5px; }
       .fm-head p { margin:0; color:#718096; font-size:0.95rem; line-height:1.5; }
       .fm-body { padding:1.4rem 1.75rem 1.75rem; }
-      .fm-x { position:absolute; top:1rem; right:1.1rem; background:none; border:0; font-size:1.5rem; line-height:1; color:#a0aec0; cursor:pointer; }
+      .fm-x { position:absolute; top:0.75rem; right:0.75rem; background:none; border:0; font-size:1.5rem; line-height:1; color:#a0aec0; cursor:pointer; width:40px; height:40px; display:flex; align-items:center; justify-content:center; }
       .fm-label { display:block; font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#718096; margin:1.1rem 0 0.5rem; }
       .fm-seg { display:flex; gap:0.5rem; }
       .fm-seg button { flex:1; padding:0.7rem; border:1.5px solid #e2e8f0; background:#fff; border-radius:10px; font:inherit; font-weight:700; color:#4a5568; cursor:pointer; }
@@ -2077,8 +2077,8 @@ document.addEventListener('keydown', e => {
       .fm-opt:hover, .fm-opt.active { background:#f5f9ff; }
       .fm-opt .r { color:#a0aec0; font-size:0.8rem; }
       .fm-chips { display:flex; flex-wrap:wrap; gap:0.45rem; margin-top:0.6rem; }
-      .fm-chip { display:inline-flex; align-items:center; gap:0.4rem; background:#eaf6f0; color:#155e41; border:1px solid #cfe8db; border-radius:999px; padding:0.35rem 0.7rem; font-size:0.85rem; font-weight:700; }
-      .fm-chip button { background:none; border:0; color:#155e41; cursor:pointer; font-size:1rem; line-height:1; padding:0; }
+      .fm-chip { display:inline-flex; align-items:center; gap:0.4rem; background:#ebf4ff; color:#155bc8; border:1px solid #cfe0f8; border-radius:999px; padding:0.35rem 0.7rem; font-size:0.85rem; font-weight:700; }
+      .fm-chip button { background:none; border:0; color:#155bc8; cursor:pointer; font-size:1rem; line-height:1; padding:0; }
       .fm-row2 { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; }
       .fm-submit { width:100%; background:#1d6df2; color:#fff; border:0; border-radius:12px; padding:0.95rem; font:inherit; font-weight:800; font-size:1.02rem; cursor:pointer; margin-top:1.4rem; }
       .fm-submit:hover { background:#155bc8; } .fm-submit:disabled { opacity:0.6; cursor:not-allowed; }

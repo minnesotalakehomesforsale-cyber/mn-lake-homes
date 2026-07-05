@@ -25,7 +25,7 @@
         /* Status Badges */
         .status-new { background: #e6fffa; color: #319795; border: 1px solid #b2f5ea; }
         .status-unassigned { background: #fffaf0; color: #dd6b20; border: 1px solid #feebc8; }
-        .status-assigned { background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; }
+        .status-assigned { background: #ebf8ff; color: #1d6df2; border: 1px solid #bee3f8; }
         .status-in_progress { background: #ebf4ff; color: #4c51bf; border: 1px solid #c3dafe; }
         
         /* Source Badges */
@@ -128,7 +128,7 @@
                 
                 let assignedNameStr = `<span style="font-size:0.8rem; font-style:italic; color:#a0aec0;">Unclaimed</span>`;
                 if(l.agent_id) {
-                    assignedNameStr = `<span style="font-weight:700; color:#2b6cb0;">${l.assigned_agent_name || 'Agent ID: '+l.agent_id}</span>`;
+                    assignedNameStr = `<span style="font-weight:700; color:#1d6df2;">${l.assigned_agent_name || 'Agent ID: '+l.agent_id}</span>`;
                 } else if(l.assigned_user_name) {
                     assignedNameStr = `<span style="font-weight:700; color:#2f855a;">${l.assigned_user_name}</span>`;
                 }

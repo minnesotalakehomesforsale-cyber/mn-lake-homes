@@ -14,7 +14,7 @@
         .page-header .sub { color: #718096; font-size: 0.95rem; margin-top: 0.25rem; }
 
         .s-badge { padding: 0.4rem 1rem; border-radius: 99px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; border: 1px solid transparent; display: inline-block; }
-        .s-pending   { background: #ebf8ff; color: #2b6cb0; border-color: #bee3f8; }
+        .s-pending   { background: #ebf8ff; color: #1d6df2; border-color: #bee3f8; }
         .s-published { background: #f0fff4; color: #2f855a; border-color: #c6f6d5; }
         .s-draft     { background: #fefcbf; color: #975a16; border-color: #f6e05e; }
         .s-suspended { background: #fff5f5; color: #c53030; border-color: #fed7d7; }
@@ -46,7 +46,7 @@
         .btn-unpublish { background: #edf2f7; color: #2d3748; }
         .btn-draft     { background: #fff; color: #4a5568; border: 1px solid #cbd5e0; }
         .btn-suspend   { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
-        .btn-reactivate{ background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; }
+        .btn-reactivate{ background: #ebf8ff; color: #1d6df2; border: 1px solid #bee3f8; }
         .action-result { display: none; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; margin-top: 0.75rem; text-align: center; }
 
         /* Tab system */
@@ -74,7 +74,7 @@
         .lb-general_contact,.lb-property_question,.lb-market_report { background:#edf2f7; color:#4a5568; }
         .ls-new        { background:#e6fffa; color:#319795; border:1px solid #b2f5ea; }
         .ls-unassigned { background:#fffaf0; color:#dd6b20; border:1px solid #feebc8; }
-        .ls-assigned   { background:#ebf8ff; color:#2b6cb0; border:1px solid #bee3f8; }
+        .ls-assigned   { background:#ebf8ff; color:#1d6df2; border:1px solid #bee3f8; }
         .ls-in_progress{ background:#ebf4ff; color:#4c51bf; border:1px solid #c3dafe; }
         .ls-contacted  { background:#f0fff4; color:#276749; border:1px solid #c6f6d5; }
         .ls-closed     { background:#edf2f7; color:#4a5568; }
@@ -477,7 +477,7 @@
             <!-- Stat Cards -->
             <div class="lead-stats" id="lead-stats">
                 <div class="lead-stat"><div class="ls-label">Total Leads</div><div class="ls-value" id="lst-total">—</div></div>
-                <div class="lead-stat"><div class="ls-label">Active</div><div class="ls-value" id="lst-active" style="color:#2b6cb0;">—</div></div>
+                <div class="lead-stat"><div class="ls-label">Active</div><div class="ls-value" id="lst-active" style="color:#1d6df2;">—</div></div>
                 <div class="lead-stat"><div class="ls-label">In Progress</div><div class="ls-value" id="lst-progress" style="color:#4c51bf;">—</div></div>
                 <div class="lead-stat"><div class="ls-label">Closed</div><div class="ls-value" id="lst-closed" style="color:#718096;">—</div></div>
             </div>
@@ -1618,7 +1618,7 @@
                 ? `$${Number(l.budget_min||0).toLocaleString()} – $${Number(l.budget_max||0).toLocaleString()}`
                 : null;
             const pills = [
-                l.email           ? `<span style="color:#2b6cb0;">${l.email}</span>` : null,
+                l.email           ? `<span style="color:#1d6df2;">${l.email}</span>` : null,
                 l.phone           ? `<span>${l.phone}</span>` : null,
                 l.location_text   ? `<span>📍 ${l.location_text}</span>` : null,
                 budget            ? `<span>💰 ${budget}</span>` : null,

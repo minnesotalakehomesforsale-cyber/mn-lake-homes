@@ -24,7 +24,7 @@
         .json-map-list li { padding: 1rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; }
         .json-map-list li:last-child { border-bottom: none; }
         .json-key { font-weight: 700; color: #4a5568; font-size: 0.9rem; text-transform: capitalize; }
-        .json-value { font-weight: 500; color: #2b6cb0; text-align: right; }
+        .json-value { font-weight: 500; color: #1d6df2; text-align: right; }
 
         .s-badge { padding: 0.35rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: inline-block; }
         .status-unassigned { background: #fffaf0; color: #dd6b20; border: 1px solid #feebc8; }
@@ -227,7 +227,7 @@
             const owner = document.getElementById('current-owner');
             if (lead.assigned_agent_name) {
                 owner.innerText = lead.assigned_agent_name;
-                owner.style.color = '#2b6cb0';
+                owner.style.color = '#1d6df2';
                 owner.style.fontStyle = 'normal';
             } else if (lead.assigned_user_name) {
                 owner.innerText = lead.assigned_user_name + ' (Admin)';
@@ -341,7 +341,7 @@
             const line  = isAgent ? '#fde68a' : '#bee3f8';
             const tag   = isAgent
                 ? '<span style="font-size:0.6rem;font-weight:800;letter-spacing:0.5px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;padding:0.05rem 0.4rem;border-radius:4px;margin-left:0.4rem;">AGENT</span>'
-                : '<span style="font-size:0.6rem;font-weight:800;letter-spacing:0.5px;color:#2b6cb0;background:#ebf8ff;border:1px solid #bee3f8;padding:0.05rem 0.4rem;border-radius:4px;margin-left:0.4rem;">TEAM</span>';
+                : '<span style="font-size:0.6rem;font-weight:800;letter-spacing:0.5px;color:#1d6df2;background:#ebf8ff;border:1px solid #bee3f8;padding:0.05rem 0.4rem;border-radius:4px;margin-left:0.4rem;">TEAM</span>';
             tl.innerHTML += `
                 <div style="border-left: 2px solid ${line}; padding-left: 1rem; margin-bottom: 1.5rem; position: relative;">
                     <div style="position: absolute; left: -5px; top: 0; width: 8px; height: 8px; background: ${dot}; border-radius: 50%;"></div>
