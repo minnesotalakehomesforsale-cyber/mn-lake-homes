@@ -38,6 +38,7 @@
     <script src="../../components/admin-guard.js"></script>
     <script src="../../components/admin-responsive.js" defer></script>
     <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-embed-host.js" defer></script>
     <script src="../../components/admin-assistant.js" defer></script>
     <script src="../../components/admin-nav-badges.js" defer></script>
 </head>
@@ -123,13 +124,8 @@
         history.replaceState(null, '', url);
     }
 
-    // Iframe auto-resize via postMessage from embed-mode pages.
-    window.addEventListener('message', (e) => {
-        const m = e.data;
-        if (!m || m.lt !== 'height' || typeof m.h !== 'number') return;
-        const target = document.getElementById('frame-' + m.frame);
-        if (target) target.style.height = Math.max(600, m.h + 8) + 'px';
-    });
+    // Embedded-editor iframe height + modal fix handled globally by
+    // components/admin-embed-host.js.
 
     document.addEventListener('DOMContentLoaded', () => {
         // The metrics iframe starts on ?tab=traffic; set its src now so Traffic is live.

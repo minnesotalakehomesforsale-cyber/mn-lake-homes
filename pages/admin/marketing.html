@@ -158,6 +158,7 @@
     <script src="../../components/admin-guard.js"></script>
     <script src="../../components/admin-responsive.js" defer></script>
     <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-embed-host.js" defer></script>
     <script src="../../components/admin-assistant.js" defer></script>
     <script src="../../components/admin-nav-badges.js" defer></script>
 </head>
@@ -825,15 +826,8 @@
         } catch (_) { alert('Publish failed.'); }
     }
 
-    // Iframe auto-resize from blog.html embed mode.
-    window.addEventListener('message', (e) => {
-        const m = e.data;
-        if (!m || m.lt !== 'height' || typeof m.h !== 'number') return;
-        if (m.frame === 'blog' || m.frame === 'resources') {
-            const f = document.getElementById('frame-' + m.frame);
-            if (f) f.style.height = Math.max(700, m.h + 8) + 'px';
-        }
-    });
+    // Embedded-editor iframe height + modal fix is handled globally by
+    // components/admin-embed-host.js (included in the head).
 
     // ── Utils ────────────────────────────────────────────────────
     function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }

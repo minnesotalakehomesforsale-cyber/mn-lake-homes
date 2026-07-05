@@ -287,6 +287,7 @@
     <script src="../../components/admin-guard.js"></script>
     <script src="../../components/admin-responsive.js" defer></script>
     <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-embed-host.js" defer></script>
     <script src="../../components/admin-assistant.js" defer></script>
     <script src="../../components/admin-nav-badges.js" defer></script>
 </head>
@@ -529,14 +530,8 @@
         }
     }
 
-    // Auto-resize the embedded Towns (geo tags) iframe — tags.html?embed=1
-    // posts {lt:'height', frame:'towns', h} as its content grows.
-    window.addEventListener('message', (e) => {
-        const m = e.data;
-        if (!m || m.lt !== 'height' || typeof m.h !== 'number') return;
-        const target = document.getElementById('frame-' + m.frame);
-        if (target) target.style.height = Math.max(600, m.h + 8) + 'px';
-    });
+    // Embedded-editor iframe height + modal fix handled globally by
+    // components/admin-embed-host.js.
 
     // ── Data loaders ──────────────────────────────────────────────────
     async function loadOverview() {
