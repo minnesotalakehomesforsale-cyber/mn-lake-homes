@@ -804,6 +804,53 @@ const replaceAgentsForBlogPost = async (req, res) => {
     }
 };
 
+// GET /api/agents/me/upgrade-status — drives the dashboard's context-aware
+// upgrade nudge. Tells us the agent's tier, whether they already hold a founder
+// seat, and which lakes in THEIR service areas have NO founder yet (so a paying
+// non-founder can be pushed to claim one). Free agents get pushed to pay first.
+const getUpgradeStatus = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const ar = await pool.query(
+            `SELECT a.id AS agent_id, COALESCE(m.code,'basic') AS tier
+               FROM agents a LEFT JOIN memberships m ON m.id = a.membership_id
+              WHERE a.user_id = $1 LIMIT 1`, [userId]);
+        if (!ar.rowCount) return res.status(403).json({ error: 'No agent profile yet.' });
+        const { agent_id, tier } = ar.rows[0];
+        const isPaid = tier !== 'free';
+
+        const isFounder = (await pool.query(
+            `SELECT EXISTS (SELECT 1 FROM agent_lakes al WHERE al.agent_id = $1 AND al.is_founder) AS f`,
+            [agent_id])).rows[0].f;
+
+        // Lakes in the agent's service areas (their tags) with no founder seated.
+        let claimable = [];
+        try {
+            claimable = (await pool.query(`
+                SELECT DISTINCT l.slug, l.name, l.region,
+                       GREATEST(249, LEAST(5000, COALESCE(l.founder_seat_price, l.founder_seat_ai_value, 249)))::int AS price
+                  FROM lakes l
+                  JOIN lake_tags lt ON lt.lake_id = l.id
+                  JOIN user_tags ut ON ut.tag_id = lt.tag_id AND ut.user_id = $1
+                 WHERE l.status = 'published'
+                   AND NOT EXISTS (SELECT 1 FROM agent_lakes al WHERE al.lake_id = l.id AND al.is_founder)
+                 ORDER BY price DESC
+                 LIMIT 8`, [userId])).rows;
+        } catch (_) { claimable = []; }
+
+        // Recommend the next step: free → upgrade to paid; paid non-founder with
+        // an open lake → claim founder; otherwise nothing to nudge.
+        let recommend = 'none';
+        if (!isPaid) recommend = 'upgrade_paid';
+        else if (!isFounder && claimable.length) recommend = 'claim_founder';
+
+        res.json({ tier, is_paid: isPaid, is_founder: isFounder, claimable_lakes: claimable, recommend });
+    } catch (err) {
+        console.error('[getUpgradeStatus]', err.message);
+        res.status(500).json({ error: 'Failed to load upgrade status.' });
+    }
+};
+
 // GET /api/agents/me/referrals — the agent's referral code, share link, and the
 // agents they've brought in. "Refer an agent, get a month free" — each signed-up
 // referral is one earned reward (applied by the team as a Stripe credit/coupon).
@@ -847,6 +894,7 @@ module.exports = {
     updateMyProfile,
     getMyLeads,
     getMyRoi,
+    getUpgradeStatus,
     getMyReferrals,
     getMyLeaderboard,
     getAtRiskAgents,

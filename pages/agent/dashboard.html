@@ -365,6 +365,19 @@
                         </div>
                     </div>
 
+                    <!-- Become-a-founder nudge — paid, non-founder agents whose service
+                         areas include a lake with an OPEN founder seat. -->
+                    <div id="banner-founder" style="display:none; margin-top:1.5rem; background:linear-gradient(135deg,#0b2a10,#0d9488); color:#fff; border-radius:14px; padding:1.5rem 1.75rem;">
+                        <div style="display:flex; gap:1.25rem; align-items:center; flex-wrap:wrap; justify-content:space-between;">
+                            <div style="flex:1; min-width:240px;">
+                                <div style="font-weight:800; font-size:1.15rem; margin-bottom:0.35rem;">🏆 Own a lake in your area</div>
+                                <p style="margin:0 0 0.4rem; opacity:0.92; font-size:0.93rem; line-height:1.5;" id="banner-founder-msg">A lake in your service area has no Founder yet — claim its Founder seat to receive <strong>100% of its buyer &amp; seller leads</strong>, exclusively.</p>
+                                <div id="banner-founder-lakes" style="font-size:0.85rem; opacity:0.85;"></div>
+                            </div>
+                            <a href="/claim-your-lake" style="flex-shrink:0; background:#fff; color:#0b2a10; border-radius:10px; padding:0.8rem 1.4rem; font-weight:800; text-decoration:none; font-size:0.95rem;">Claim a Founder seat →</a>
+                        </div>
+                    </div>
+
                     <!-- Stat strip — at-a-glance numbers populated by updateDashLeads / refreshMsgBadge -->
                     <div class="dash-stats">
                         <div class="dash-stat"><div class="dash-stat-num" id="dash-stat-leads">—</div><div class="dash-stat-lbl">Active leads</div></div>
@@ -434,6 +447,11 @@
                             <span class="t">Claim your lake</span>
                             <span class="d">See lakes with an open Founder seat — own 100% of a lake's leads.</span>
                         </a>
+                        <button class="dash-card" id="dash-card-resources" onclick="switchView('resources')" style="--ac:#7c3aed;">
+                            <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg></span>
+                            <span class="t">Agent resources</span>
+                            <span class="d">Templates, marketing assets &amp; training <span style="color:#7c3aed;font-weight:700;">(paid plans)</span>.</span>
+                        </button>
                     </div>
 
                     <h3 class="dash-section-h">Articles you may like</h3>
@@ -775,6 +793,25 @@
                     <div id="prop-list"><div style="text-align:center;padding:3rem;color:#a0aec0;">Loading…</div></div>
                 </div>
 
+                <!-- ── AGENT RESOURCES (paid tiers only) ──────────────────── -->
+                <div id="view-resources" class="view-card" style="display:none; background:#fff; padding:2rem 2.5rem; border-radius:12px; border:1px solid #edf2f7; box-shadow:0 4px 6px rgba(0,0,0,0.02);">
+                    <h2 style="font-size:1.75rem; font-weight:700; margin-bottom:0.25rem;">Agent Resources</h2>
+                    <p style="color:#718096; margin-bottom:1.5rem;">Playbooks, listing templates, marketing assets and training — built to help you close more lake deals.</p>
+                    <!-- Free agents: locked upgrade prompt -->
+                    <div id="res-locked" style="display:none; text-align:center; padding:2.5rem 1.5rem; background:#f7f9fa; border:1px dashed #cbd5e0; border-radius:12px;">
+                        <div style="font-size:2rem; margin-bottom:0.5rem;">🔒</div>
+                        <div style="font-weight:800; font-size:1.1rem; color:#1a202c; margin-bottom:0.4rem;">Resources are a paid-plan feature</div>
+                        <p style="color:#718096; max-width:420px; margin:0 auto 1.25rem; line-height:1.5;">Upgrade from Free to unlock the agent resource library — templates, marketing assets, and training.</p>
+                        <a href="/pages/public/pricing.html" style="display:inline-block; background:#1d6df2; color:#fff; border-radius:10px; padding:0.75rem 1.5rem; font-weight:800; text-decoration:none;">Upgrade to unlock →</a>
+                    </div>
+                    <!-- Paid agents: content (coming soon for now) -->
+                    <div id="res-body" style="display:none; text-align:center; padding:3rem 1.5rem; background:#f7faff; border:1px solid #dbeafe; border-radius:12px;">
+                        <div style="font-size:2rem; margin-bottom:0.5rem;">🧰</div>
+                        <div style="font-weight:800; font-size:1.15rem; color:#1a202c; margin-bottom:0.4rem;">Coming soon</div>
+                        <p style="color:#718096; max-width:460px; margin:0 auto; line-height:1.5;">Your resource library is being built — listing templates, lake-market one-pagers, social assets, and closing playbooks will land here. We'll notify you when it's ready.</p>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -975,6 +1012,8 @@
             document.getElementById('view-leads').style.display     = topView === 'leads'     ? 'block' : 'none';
             document.getElementById('view-messages').style.display  = topView === 'messages'  ? 'block' : 'none';
             document.getElementById('view-properties').style.display = topView === 'properties' ? 'block' : 'none';
+            const vRes = document.getElementById('view-resources');
+            if (vRes) vRes.style.display = topView === 'resources' ? 'block' : 'none';
             document.getElementById('account-subtabs').style.display = isAccount ? 'flex' : 'none';
 
             if (isAccount) {
@@ -1373,6 +1412,35 @@
             if (addBtn) addBtn.style.display = _isFreeAgent ? 'none' : '';
             if (locked) locked.style.display = _isFreeAgent ? 'block' : 'none';
             if (list)   list.style.display   = _isFreeAgent ? 'none' : '';
+            // Resources: a paid-tier benefit.
+            const resLock = document.getElementById('res-locked');
+            const resBody = document.getElementById('res-body');
+            if (resLock) resLock.style.display = _isFreeAgent ? 'block' : 'none';
+            if (resBody) resBody.style.display = _isFreeAgent ? 'none' : 'block';
+            const resCard = document.getElementById('dash-card-resources');
+            if (resCard) resCard.style.opacity = _isFreeAgent ? '0.6' : '';
+            loadUpgradeNudge();
+        }
+
+        // Context-aware upgrade nudge. Free → push to pay (banner-free, above).
+        // Paid & NOT a founder & a lake in their areas has no founder → push them
+        // to claim that Founder seat (100% of its leads).
+        async function loadUpgradeNudge() {
+            const fb = document.getElementById('banner-founder');
+            if (!fb) return;
+            try {
+                const r = await fetch('/api/agents/me/upgrade-status');
+                if (!r.ok) { fb.style.display = 'none'; return; }
+                const d = await r.json();
+                if (d.recommend === 'claim_founder' && (d.claimable_lakes || []).length) {
+                    const lakes = d.claimable_lakes.slice(0, 3).map(l => l.name).join(', ');
+                    const more = d.claimable_lakes.length > 3 ? ` +${d.claimable_lakes.length - 3} more` : '';
+                    document.getElementById('banner-founder-lakes').textContent = 'Open in your areas: ' + lakes + more;
+                    fb.style.display = 'block';
+                } else {
+                    fb.style.display = 'none';
+                }
+            } catch (_) { fb.style.display = 'none'; }
         }
 
         function hydrateForm(agent) {
