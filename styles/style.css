@@ -1972,6 +1972,13 @@ body > * { min-width: 0; }
     margin-bottom: 1.5rem;
 }
 
+/* Blog images hidden for now (markup kept — delete this rule to restore).
+   Covers home cards, the blog index, post hero banners, and related cards. */
+.blog-image,
+.post-banner-wrap,
+.related-img,
+.related-img-ph { display: none !important; }
+
 .blog-image img {
     width: 100%;
     height: 100%;
