@@ -165,6 +165,7 @@ const getPublicAgents = async (req, res) => {
         // filter agents by service area.
         const query = `
             SELECT a.id, a.slug, a.display_name, a.brokerage_name, a.city, a.bio,
+                   a.years_experience,
                    a.service_areas, a.specialties, a.is_featured,
                    a.phone_public, a.email_public, a.profile_photo_url,
                    m.display_badge_label as membership_badge,

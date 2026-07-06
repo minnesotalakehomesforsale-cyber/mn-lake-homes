@@ -265,6 +265,26 @@
             .agents-bottom-cta h2 { font-size: 2rem; }
             .agent-image { height: 190px !important; }
         }
+
+        /* ── Redesigned agent card (avatar · brokerage · years · Serves · button) ── */
+        .agent-card.ac-v2 { padding: 1.5rem; overflow: visible; }
+        .ac-head { display: flex; align-items: center; gap: 0.9rem; margin-bottom: 1rem; }
+        .ac-avatar { position: relative; width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0; background: #e2e8f0; display: flex; align-items: center; justify-content: center; }
+        .ac-avatar img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; }
+        .ac-initials { font-weight: 800; color: #4a5568; font-size: 1.1rem; }
+        .ac-badge { position: absolute; right: -2px; bottom: -2px; width: 20px; height: 20px; border-radius: 50%; background: #1d6df2; color: #fff; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; }
+        .ac-id { min-width: 0; }
+        .ac-name { font-size: 1.05rem; font-weight: 800; color: #1a202c; margin: 0; line-height: 1.2; }
+        .ac-broker { font-size: 0.85rem; color: #718096; margin-top: 0.12rem; }
+        .ac-years { font-size: 0.8rem; font-weight: 700; color: #1d6df2; margin-top: 0.15rem; }
+        .ac-bio { font-size: 0.9rem; color: #4a5568; line-height: 1.55; margin: 0 0 1rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .ac-serves { margin-bottom: 1.1rem; }
+        .ac-serves-label { display: block; font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #a0aec0; margin-bottom: 0.45rem; }
+        .ac-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+        .ac-chip { background: #ebf4ff; color: #1d6df2; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 99px; }
+        .ac-chip--more { background: #edf2f7; color: #718096; }
+        .ac-btn { margin-top: auto; display: block; text-align: center; background: #1a202c; color: #fff; font-weight: 700; padding: 0.8rem; border-radius: 10px; font-size: 0.92rem; transition: background 0.15s; }
+        .agent-link-wrapper:hover .ac-btn { background: #000; }
     </style>
     <script src="../../components/components.js" defer></script>
 </head>
@@ -359,32 +379,38 @@
 
             const starSvg = (w) => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
 
-            const topBadge = featured
-                ? `<div class="top-agent-badge" title="Lake Specialist">
-                       ${starSvg(14)}
-                       <span>Lake Specialist</span>
-                   </div>`
-                : '';
-
-            const inlineTopIcon = featured
-                ? `<span style="vertical-align:-2px; margin-left:0.4rem; color:#1d6df2; display:inline-block;" aria-label="Lake Specialist">${starSvg(16)}</span>`
-                : '';
+            // "Serves" chips — prefer geo tags, fall back to free-text service areas.
+            const areas = Array.isArray(agent.geo_tags) && agent.geo_tags.length
+                ? agent.geo_tags.map(t => t.name)
+                : (Array.isArray(agent.service_areas) ? agent.service_areas : []);
+            const servesChips = areas.slice(0, 3).map(n => `<span class="ac-chip">${escHtml(n)}</span>`).join('')
+                + (areas.length > 3 ? `<span class="ac-chip ac-chip--more">+${areas.length - 3}</span>` : '');
+            const initials = escHtml((agent.display_name || '?').trim().split(/\s+/).map(s => s[0]).slice(0, 2).join('').toUpperCase());
+            const avatar = agent.profile_photo_url
+                ? `<img src="${escHtml(agent.profile_photo_url)}" alt="${escHtml(agent.display_name)}" loading="lazy">`
+                : `<span class="ac-initials">${initials}</span>`;
+            const featBadge = featured ? `<span class="ac-badge" title="Lake Specialist">${starSvg(11)}</span>` : '';
+            const yrs = Number(agent.years_experience);
+            const years = yrs > 0 ? `<div class="ac-years">${yrs} year${yrs === 1 ? '' : 's'} experience</div>` : '';
+            const broker = agent.brokerage_name ? `<div class="ac-broker">${escHtml(agent.brokerage_name)}</div>` : '';
 
             const card = document.createElement('a');
             card.href = `/agents/${encodeURIComponent(agent.slug)}`;
             card.style.cssText = 'text-decoration:none;color:inherit;display:block;';
             card.className = 'agent-link-wrapper';
             card.innerHTML = `
-                <div class="agent-card" style="position:relative;">
-                    ${topBadge}
-                    <img src="${escHtml(photoUrl)}" alt="${escHtml(agent.display_name)} — Minnesota lake home specialist" class="agent-image" loading="lazy" width="600" height="600">
-                    <div class="agent-info">
-                        <h3 class="agent-name">${escHtml(agent.display_name)}${inlineTopIcon}</h3>
-                        <div class="agent-title">${escHtml(String(title).toUpperCase())}</div>
-                        <p class="agent-bio">${escHtml(shortBio)}</p>
-                        ${agent.top_performer ? `<div style="margin-top:0.5rem;display:inline-flex;align-items:center;gap:0.3rem;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.4px;color:#b45309;">🏅 Top Performer</div>` : ''}
-                        ${agent.response_label ? `<div class="agent-resp" style="margin-top:0.5rem;display:inline-flex;align-items:center;gap:0.3rem;font-size:0.74rem;font-weight:700;color:${agent.response_fast ? '#1d6df2' : '#718096'};">⚡ ${escHtml(agent.response_label)}</div>` : ''}
+                <div class="agent-card ac-v2">
+                    <div class="ac-head">
+                        <div class="ac-avatar">${avatar}${featBadge}</div>
+                        <div class="ac-id">
+                            <h3 class="ac-name">${escHtml(agent.display_name)}</h3>
+                            ${broker}
+                            ${years}
+                        </div>
                     </div>
+                    <p class="ac-bio">${escHtml(shortBio)}</p>
+                    ${areas.length ? `<div class="ac-serves"><span class="ac-serves-label">Serves</span><div class="ac-chips">${servesChips}</div></div>` : ''}
+                    <span class="ac-btn">View Profile</span>
                 </div>`;
             return card;
         }
