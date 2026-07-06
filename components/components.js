@@ -271,6 +271,26 @@ class GlobalHeader extends HTMLElement {
                 ]
             },
             {
+                id: 'agents', label: 'Agents', href: `${bp}agents.html`,
+                columns: [
+                    { heading: 'Browse', links: [
+                        { label: 'All Agents', href: `${bp}agents.html` },
+                        { label: 'Featured Agents', href: `${bp}agents.html?featured=1`, prefixIcon: starIcon },
+                    ]},
+                    { heading: 'Become a Partner', links: [
+                        { label: 'Join the Network', href: `${bp}join.html` },
+                        { label: 'Agent Login', href: `${bp}agent-login.html` },
+                        { label: 'Contact Us', href: `${bp}contact.html` },
+                    ]},
+                    { heading: 'Agent Resources', links: [
+                        { label: 'Agent Resource Library', href: `${bp}resources.html` },
+                        { label: 'Working With Agents',    href: `${bp}blog.html?tag=Working%20With%20an%20Agent` },
+                        { label: 'Training & Support',     href: `${bp}join.html` },
+                        { label: 'Blog',                   href: `${bp}blog.html` },
+                    ]},
+                ]
+            },
+            {
                 id: 'lakes', label: 'Lakes & Towns', href: '/towns',
                 columns: [
                     { heading: 'Browse', links: [
@@ -297,27 +317,7 @@ class GlobalHeader extends HTMLElement {
             },
             { id: 'listings', label: 'Properties', href: '/towns?view=props' },
             {
-                id: 'agents', label: 'Agents', href: `${bp}agents.html`,
-                columns: [
-                    { heading: 'Browse', links: [
-                        { label: 'All Agents', href: `${bp}agents.html` },
-                        { label: 'Featured Agents', href: `${bp}agents.html?featured=1`, prefixIcon: starIcon },
-                    ]},
-                    { heading: 'Become a Partner', links: [
-                        { label: 'Join the Network', href: `${bp}join.html` },
-                        { label: 'Agent Login', href: `${bp}agent-login.html` },
-                        { label: 'Contact Us', href: `${bp}contact.html` },
-                    ]},
-                    { heading: 'Agent Resources', links: [
-                        { label: 'Agent Resource Library', href: `${bp}resources.html` },
-                        { label: 'Working With Agents',    href: `${bp}blog.html?tag=Working%20With%20an%20Agent` },
-                        { label: 'Training & Support',     href: `${bp}join.html` },
-                        { label: 'Blog',                   href: `${bp}blog.html` },
-                    ]},
-                ]
-            },
-            {
-                id: 'resources', label: 'Resources', href: `${bp}resources.html`,
+                id: 'resources', label: 'More', href: `${bp}resources.html`,
                 columns: [
                     { heading: 'For you', links: [
                         { label: 'Buyer Resources',   href: `${bp}resources.html?category=Buyer%20Resources` },
