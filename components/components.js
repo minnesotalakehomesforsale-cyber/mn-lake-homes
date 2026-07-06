@@ -1891,7 +1891,7 @@ document.addEventListener('keydown', e => {
         const bar = document.createElement('div');
         bar.setAttribute('role', 'dialog');
         bar.setAttribute('aria-label', 'Cookie consent');
-        bar.style.cssText = 'position:fixed;left:1rem;right:1rem;bottom:1rem;z-index:9600;max-width:640px;margin:0 auto;background:#0b2a10;color:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.28);padding:1.1rem 1.25rem;font-family:inherit;display:flex;gap:1rem;align-items:center;flex-wrap:wrap;';
+        bar.style.cssText = 'position:fixed;left:1rem;right:1rem;bottom:1rem;z-index:9600;max-width:640px;margin:0 auto;background:#0f2b46;color:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.28);padding:1.1rem 1.25rem;font-family:inherit;display:flex;gap:1rem;align-items:center;flex-wrap:wrap;';
         bar.innerHTML = `
             <div style="flex:1;min-width:200px;font-size:0.85rem;line-height:1.45;">
               We use cookies to understand site traffic and improve your experience. See our
@@ -1956,7 +1956,7 @@ document.addEventListener('keydown', e => {
     const css = document.createElement('style');
     css.textContent = `
       .cv-sticky { position:fixed; left:0; right:0; bottom:0; z-index:8000; display:none;
-        background:#0b2a10; color:#fff; padding:0.7rem 0.9rem calc(0.7rem + env(safe-area-inset-bottom));
+        background:#0f2b46; color:#fff; padding:0.7rem 0.9rem calc(0.7rem + env(safe-area-inset-bottom));
         box-shadow:0 -6px 20px rgba(0,0,0,0.18); align-items:center; gap:0.75rem; }
       .cv-sticky.show { display:flex; }
       .cv-sticky .cv-txt { flex:1; min-width:0; line-height:1.25; }
@@ -2020,7 +2020,7 @@ document.addEventListener('keydown', e => {
       .fm-band .fm-sub { margin-top:1rem; font-size:0.85rem; opacity:0.8; }
       @media (max-width:640px){ .fm-band { padding:2rem 1.35rem; margin:2.5rem 1rem; border-radius:18px; } }
 
-      .fm-ov { position:fixed; inset:0; z-index:9200; background:rgba(11,42,16,0.55); display:none; align-items:flex-start; justify-content:center; padding:2rem 1rem; overflow-y:auto; }
+      .fm-ov { position:fixed; inset:0; z-index:9200; background:rgba(15,23,42,0.55); display:none; align-items:flex-start; justify-content:center; padding:2rem 1rem; overflow-y:auto; }
       .fm-ov.open { display:flex; }
       .fm-modal { background:#fff; border-radius:18px; width:100%; max-width:520px; margin:auto; box-shadow:0 24px 70px rgba(0,0,0,0.3); overflow:hidden; }
       .fm-head { padding:1.6rem 1.75rem 0; }
