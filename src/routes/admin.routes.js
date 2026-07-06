@@ -135,6 +135,7 @@ router.post  ('/messages/broadcast',     verifyToken, requireRole(['admin', 'sup
 router.get   ('/messages/unread-total',  verifyToken, requireRole(['admin', 'super_admin']), messagesController.unreadTotal);
 router.get   ('/messages/threads',       verifyToken, requireRole(['admin', 'super_admin']), messagesController.threads);
 router.get   ('/messages/agent/:userId', verifyToken, requireRole(['admin', 'super_admin']), messagesController.threadForAgent);
+router.patch ('/messages/agent/:userId/read-state', verifyToken, requireRole(['admin', 'super_admin']), messagesController.setThreadReadState);
 router.patch ('/messages/:id/read',      verifyToken, requireRole(['admin', 'super_admin']), messagesController.setReadState);
 router.delete('/messages/:id',           verifyToken, requireRole(['admin', 'super_admin']), messagesController.remove);
 

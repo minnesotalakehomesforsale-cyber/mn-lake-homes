@@ -63,6 +63,13 @@ exports.send = async (req, res) => {
              RETURNING id, body, created_at, read_at`,
             [recipientUserId, senderId, body.slice(0, 4000)]
         );
+        // Replying means the admin has read this agent's messages — clear the
+        // thread's unread-by-admin count so it doesn't stay flagged.
+        await pool.query(
+            `UPDATE agent_messages SET admin_read_at = NOW()
+              WHERE recipient_user_id = $1 AND from_admin = FALSE AND admin_read_at IS NULL`,
+            [recipientUserId]
+        );
         logActivity({
             event_type: 'agent.message.send',
             event_scope: 'messages',
@@ -264,6 +271,35 @@ exports.setReadState = async (req, res) => {
     }
 };
 
+// ─── Admin: mark a whole thread (one agent) read or unread ──────────────────
+// Body: { read: boolean }. read=true clears the admin's unread count for that
+// agent's replies; read=false re-flags the thread as unread. Powers the
+// per-conversation "⋯ → Mark as read/unread" control in the Messages list.
+exports.setThreadReadState = async (req, res) => {
+    const wantRead = !!req.body?.read;
+    const userId = req.params.userId;
+    try {
+        await pool.query(
+            `UPDATE agent_messages
+                SET admin_read_at = ${wantRead ? 'NOW()' : 'NULL'}
+              WHERE recipient_user_id = $1 AND from_admin = FALSE`,
+            [userId]
+        );
+        logActivity({
+            event_type: 'agent.message.thread_read_state',
+            event_scope: 'messages',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'user', id: userId, label: 'thread' },
+            details: { read: wantRead },
+            req,
+        });
+        res.json({ success: true, user_id: userId, read: wantRead });
+    } catch (err) {
+        console.error('[messages.setThreadReadState]', err.message);
+        res.status(500).json({ error: 'Failed to update thread read state.' });
+    }
+};
+
 // ─── Admin: delete a message ────────────────────────────────────────────────
 exports.remove = async (req, res) => {
     try {
@@ -310,6 +346,13 @@ exports.agentReply = async (req, res) => {
              VALUES ($1, $1, $2, FALSE, NOW())
              RETURNING id, body, created_at, from_admin`,
             [userId, body.slice(0, 4000)]
+        );
+        // The agent is replying, so they've read the admin's messages — clear
+        // their unread count on this thread.
+        await pool.query(
+            `UPDATE agent_messages SET read_at = NOW()
+              WHERE recipient_user_id = $1 AND from_admin = TRUE AND read_at IS NULL`,
+            [userId]
         );
         logActivity({
             event_type: 'agent.message.reply',
