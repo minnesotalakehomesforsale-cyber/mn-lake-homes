@@ -3897,11 +3897,32 @@ async function applyBlogCoverMap() {
 
 // Seed a demo FREE-tier agent so the team can preview the free-plan dashboard.
 // Opt-in only: set SEED_DEMO_FREE_AGENT=true to (re)create the demo agent.
-// Off by default so it never re-adds itself to the database on deploy.
+// Off by default. When off, it also REMOVES any previously-seeded demo agent
+// so it can't keep reappearing on every deploy.
 async function seedDemoFreeAgent() {
-    if (process.env.SEED_DEMO_FREE_AGENT !== 'true') return;
     const EMAIL = 'demo.free@mnlakehomes.com';
     const PASSWORD = 'DemoFree2026!';
+    if (process.env.SEED_DEMO_FREE_AGENT !== 'true') {
+        // Purge the demo agent so a redeploy removes it instead of re-adding.
+        // FK cascades clean up dependent rows; if a stray FK blocks the hard
+        // delete, fall back to hiding it (unpublish + soft-delete) so it still
+        // disappears from every public and admin view.
+        try {
+            const r = await pool.query(`DELETE FROM users WHERE email = $1`, [EMAIL]);
+            if (r.rowCount) console.log('[seed] removed demo agent (SEED_DEMO_FREE_AGENT not enabled)');
+        } catch (e) {
+            try {
+                const u = await pool.query(`SELECT id FROM users WHERE email = $1 LIMIT 1`, [EMAIL]);
+                const uid = u.rows[0]?.id;
+                if (uid) {
+                    await pool.query(`UPDATE agents SET is_published = FALSE, deleted_at = COALESCE(deleted_at, NOW()) WHERE user_id = $1`, [uid]);
+                    await pool.query(`UPDATE users SET deleted_at = COALESCE(deleted_at, NOW()), account_status = 'suspended' WHERE id = $1`, [uid]);
+                    console.warn('[seed] demo hard-delete blocked; hid it instead:', e.message);
+                }
+            } catch (_) {}
+        }
+        return;
+    }
     try {
         const mem = await pool.query(`SELECT id FROM memberships WHERE code = 'free' LIMIT 1`);
         const freeId = mem.rows[0]?.id;
