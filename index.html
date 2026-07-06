@@ -503,23 +503,7 @@
                 // Center a thin 1–2 card row so it looks intentional, not sparse.
                 if (list.length < 3) grid.classList.add('agents-grid--few');
                 if (section) section.style.display = '';
-                grid.innerHTML = list.map(agent => {
-                    const photo = agent.profile_photo_url || '/assets/images/agent-placeholder.svg';
-                    const title = isFeaturedAgent(agent) ? 'Lake Specialist' : 'Agent';
-                    const bio = agent.bio || 'A dedicated Minnesota lake home specialist ready to help you find your perfect waterfront property.';
-                    const shortBio = bio.length > 180 ? bio.slice(0, 180).trimEnd() + '…' : bio;
-                    return `
-                        <a href="pages/public/agent-profile.html?slug=${agent.slug}" style="text-decoration:none;color:inherit;display:block;" class="agent-link-wrapper">
-                            <div class="agent-card">
-                                <img src="${photo}" alt="${agent.display_name}" class="agent-image">
-                                <div class="agent-info">
-                                    <h3 class="agent-name">${agent.display_name}</h3>
-                                    <div class="agent-title">${title.toUpperCase()}</div>
-                                    <p class="agent-bio">${shortBio}</p>
-                                </div>
-                            </div>
-                        </a>`;
-                }).join('');
+                grid.innerHTML = list.map(a => window.mnlhAgentCard(a)).join('');
             } catch (err) {
                 console.error('Failed to load featured agents:', err);
             }

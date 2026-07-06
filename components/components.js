@@ -7,6 +7,47 @@
  *   No localStorage is used for auth state.
  */
 
+// ── Shared agent card (single source of truth) ──────────────────────────────
+// Returns the markup used on the /agents directory so the home "Featured
+// agents" section and the lake/town pages all render an identical card.
+// Optional fields (brokerage, years, geo tags) degrade gracefully.
+window.mnlhAgentCard = function (agent) {
+    const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const code = agent.membership_code || '';
+    const featured = !!agent.is_featured || ['mn_lake_specialist', 'top_agent', 'premium', 'founder'].includes(code);
+    const bioRaw = agent.bio || 'A dedicated Minnesota lake home specialist ready to help you find your perfect waterfront property.';
+    const shortBio = bioRaw.length > 120 ? bioRaw.slice(0, 120).trimEnd() + '…' : bioRaw;
+    const areas = Array.isArray(agent.geo_tags) && agent.geo_tags.length
+        ? agent.geo_tags.map(t => t.name)
+        : (Array.isArray(agent.service_areas) ? agent.service_areas : []);
+    const chips = areas.slice(0, 3).map(n => `<span class="ac-chip">${esc(n)}</span>`).join('')
+        + (areas.length > 3 ? `<span class="ac-chip ac-chip--more">+${areas.length - 3}</span>` : '');
+    const initials = esc((agent.display_name || '?').trim().split(/\s+/).map(s => s[0]).slice(0, 2).join('').toUpperCase());
+    const avatar = agent.profile_photo_url
+        ? `<img src="${esc(agent.profile_photo_url)}" alt="${esc(agent.display_name)}" loading="lazy">`
+        : `<span class="ac-initials">${initials}</span>`;
+    const star = '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+    const badge = featured ? `<span class="ac-badge" title="Lake Specialist">${star}</span>` : '';
+    const yrs = Number(agent.years_experience);
+    const years = yrs > 0 ? `<div class="ac-years">${yrs} year${yrs === 1 ? '' : 's'} experience</div>` : '';
+    const broker = agent.brokerage_name ? `<div class="ac-broker">${esc(agent.brokerage_name)}</div>` : '';
+    return `<a href="/agents/${encodeURIComponent(agent.slug)}" class="agent-link-wrapper" style="text-decoration:none;color:inherit;display:block;">
+        <div class="agent-card ac-v2">
+            <div class="ac-head">
+                <div class="ac-avatar">${avatar}${badge}</div>
+                <div class="ac-id">
+                    <h3 class="ac-name">${esc(agent.display_name)}</h3>
+                    ${broker}
+                    ${years}
+                </div>
+            </div>
+            <p class="ac-bio">${esc(shortBio)}</p>
+            ${areas.length ? `<div class="ac-serves"><span class="ac-serves-label">Serves</span><div class="ac-chips">${chips}</div></div>` : ''}
+            <span class="ac-btn">View Profile</span>
+        </div>
+    </a>`;
+};
+
 // Always use absolute paths so the header/footer hrefs work from every URL
 // shape the server routes to: /, /pages/public/*, /pages/agent/*,
 // /pages/user/*, /pages/business/*, /pages/admin/*, /towns/:slug,

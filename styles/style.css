@@ -3139,3 +3139,27 @@ body > * { min-width: 0; }
         font-size: 16px;
     }
 }
+
+/* ── Shared agent card (matches the /agents directory) — used site-wide:
+   home featured, lake-detail, town-detail. Paired with window.mnlhAgentCard()
+   in components.js. ─────────────────────────────────────────────────────── */
+.agent-card.ac-v2 { flex-direction: column; padding: 1.5rem; overflow: visible; }
+/* Beat the homepage mobile "row" override (which targets the old .agent-image). */
+.featured-agents-section .agent-card.ac-v2 { flex-direction: column; }
+.ac-head { display: flex; align-items: center; gap: 0.9rem; margin-bottom: 1rem; }
+.ac-avatar { position: relative; width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0; background: #e2e8f0; display: flex; align-items: center; justify-content: center; }
+.ac-avatar img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; }
+.ac-initials { font-weight: 800; color: #4a5568; font-size: 1.1rem; }
+.ac-badge { position: absolute; right: -2px; bottom: -2px; width: 20px; height: 20px; border-radius: 50%; background: #1d6df2; color: #fff; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; }
+.ac-id { min-width: 0; }
+.ac-name { font-size: 1.05rem; font-weight: 800; color: #1a202c; margin: 0; line-height: 1.2; }
+.ac-broker { font-size: 0.85rem; color: #718096; margin-top: 0.12rem; }
+.ac-years { font-size: 0.8rem; font-weight: 700; color: #1d6df2; margin-top: 0.15rem; }
+.ac-bio { font-size: 0.9rem; color: #4a5568; line-height: 1.55; margin: 0 0 1rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.ac-serves { margin-bottom: 1.1rem; }
+.ac-serves-label { display: block; font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #a0aec0; margin-bottom: 0.45rem; }
+.ac-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.ac-chip { background: #ebf4ff; color: #1d6df2; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 99px; }
+.ac-chip--more { background: #edf2f7; color: #718096; }
+.ac-btn { margin-top: auto; display: block; text-align: center; background: #1a202c; color: #fff; font-weight: 700; padding: 0.8rem; border-radius: 10px; font-size: 0.92rem; transition: background 0.15s; }
+.agent-link-wrapper:hover .ac-btn { background: #000; }

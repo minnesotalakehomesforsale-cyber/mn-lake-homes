@@ -645,34 +645,8 @@
                 section.style.display = '';
                 document.getElementById('tn-agents-cta').innerHTML =
                     '<a href="/pages/public/agents.html" class="nb-cta">View all agents →</a>';
-                el.innerHTML = agents.slice(0, 6).map(a => {
-                    const photo = a.profile_photo_url || '/assets/images/agent-placeholder.svg';
-                    const bio   = a.bio || '';
-                    const shortBio = bio.length > 180 ? bio.slice(0, 180).trimEnd() + '…' : bio;
-                    // Featured = pays $39+ (Prime/Elite) or a manual feature →
-                    // blue "Lake Specialist" badge. Basic ($9) → no badge, "Agent".
-                    const code = a.membership_code || '';
-                    const featured = a.is_featured || ['mn_lake_specialist', 'top_agent', 'premium', 'founder'].includes(code);
-                    const title = (featured ? 'Lake Specialist' : 'Agent').toUpperCase();
-                    const topBadge = featured
-                        ? `<div style="position:absolute;top:12px;left:12px;z-index:2;display:inline-flex;align-items:center;gap:0.35rem;background:linear-gradient(135deg,#1d6df2 0%,#155bc8 100%);color:#fff;font-size:0.72rem;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;padding:0.35rem 0.7rem;border-radius:99px;box-shadow:0 4px 12px rgba(29,109,242,0.35);">
-                               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                               Lake Specialist
-                           </div>`
-                        : '';
-                    return `
-                        <a href="/agent-profile?slug=${encodeURIComponent(a.slug)}" style="text-decoration:none;color:inherit;display:block;" class="agent-link-wrapper">
-                            <div class="agent-card" style="position:relative;">
-                                ${topBadge}
-                                <img src="${escHtml(photo)}" alt="${escHtml(a.display_name)} — ${escHtml(TOWN_NAME)} specialist" class="agent-image" loading="lazy">
-                                <div class="agent-info">
-                                    <h3 class="agent-name">${escHtml(a.display_name)}</h3>
-                                    <div class="agent-title">${escHtml(title)}</div>
-                                    <p class="agent-bio">${escHtml(shortBio)}</p>
-                                </div>
-                            </div>
-                        </a>`;
-                }).join('');
+                // Shared card builder (same design as the /agents directory).
+                el.innerHTML = agents.slice(0, 6).map(a => window.mnlhAgentCard(a)).join('');
             } catch (_) {
                 el.innerHTML = `<div class="tn-empty">Could not load agents.</div>`;
             }
