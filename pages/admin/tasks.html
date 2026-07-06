@@ -57,9 +57,21 @@
 
     /* ── List view ──────────────────────────────────────────────────────── */
     .task-list { list-style: none; margin: 0; padding: 0; }
-    .task-item { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 1rem; padding: 0.95rem 1.5rem; border-bottom: 1px solid #f2f5f8; transition: background 0.1s; cursor: pointer; }
+    .task-item { border-bottom: 1px solid #f2f5f8; }
     .task-item:last-child { border-bottom: none; }
-    .task-item:hover { background: #f9fafb; }
+    .task-row { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 1rem; padding: 0.95rem 1.5rem; cursor: pointer; transition: background 0.1s; }
+    .task-row:hover { background: #f9fafb; }
+    .task-caret { color: #cbd5e0; font-size: 0.8rem; transition: transform 0.15s; user-select: none; }
+    .task-item.expanded .task-caret { transform: rotate(180deg); color: #718096; }
+    .task-details { padding: 0 1.5rem 1rem 3.5rem; }
+    .task-details-inner { background: #f9fafb; border: 1px solid #eef2f7; border-radius: 10px; padding: 0.85rem 1rem; }
+    .dt-label { font-size: 0.64rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #a0aec0; margin-bottom: 0.35rem; }
+    .dt-notes { font-size: 0.9rem; color: #2d3748; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+    .dt-empty { font-size: 0.88rem; color: #a0aec0; font-style: italic; }
+    .task-readmore { background: none; border: 0; color: #1d6df2; font-weight: 700; font-size: 0.82rem; cursor: pointer; padding: 0.4rem 0 0; font-family: inherit; }
+    .dt-actions { margin-top: 0.7rem; display: flex; gap: 0.5rem; }
+    .task-edit-btn { background: #fff; border: 1px solid #e2e8f0; color: #1d6df2; font-weight: 700; font-size: 0.8rem; border-radius: 7px; padding: 0.4rem 0.8rem; cursor: pointer; font-family: inherit; }
+    .task-edit-btn:hover { border-color: #1d6df2; }
     .task-item.done .task-note { text-decoration: line-through; color: #a0aec0; }
     .task-item.overdue { box-shadow: inset 3px 0 0 #e53e3e; }
     .task-check { width: 22px; height: 22px; border-radius: 7px; border: 2px solid #e2e8f0; background: #fff; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
@@ -356,25 +368,60 @@
         const dueChip = t.due_date && !t.is_completed
             ? `<span class="chip ${status}">${status==='overdue'?'⚠ ':''}${fmtRelative(t.due_date)}</span>`
             : (t.is_completed ? `<span class="chip muted">✓ ${fmtDate(t.completed_at)}</span>` : '');
+        const details = (t.details || '').trim();
+        const LIMIT = 220;
+        const long = details.length > LIMIT;
+        const preview = long ? esc(details.slice(0, LIMIT)) + '…' : esc(details);
         li.innerHTML = `
-            <div class="task-check ${t.is_completed?'checked':''}" onclick="event.stopPropagation(); toggle('${t.id}')">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5,6 4.5,9 10.5,3"/></svg>
-            </div>
-            <div>
-                <div class="task-note">${esc(t.note)}</div>
-                <div class="task-sub">
-                    ${prioBadge(t.priority)}
-                    ${catChip(t.category)}
-                    ${dueChip}
-                    ${t.details ? `<span class="has-notes">📝 notes</span>` : ''}
+            <div class="task-row">
+                <div class="task-check ${t.is_completed?'checked':''}" onclick="event.stopPropagation(); toggle('${t.id}')">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5,6 4.5,9 10.5,3"/></svg>
+                </div>
+                <div>
+                    <div class="task-note">${esc(t.note)}</div>
+                    <div class="task-sub">
+                        ${prioBadge(t.priority)}
+                        ${catChip(t.category)}
+                        ${dueChip}
+                        ${details ? `<span class="has-notes">📝 notes</span>` : ''}
+                    </div>
+                </div>
+                <div class="task-right">
+                    <span class="task-caret">▾</span>
+                    <button class="task-delete" title="Delete" onclick="event.stopPropagation(); deleteTask('${t.id}')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    </button>
                 </div>
             </div>
-            <div class="task-right">
-                <button class="task-delete" title="Delete" onclick="event.stopPropagation(); deleteTask('${t.id}')">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                </button>
+            <div class="task-details" hidden>
+                <div class="task-details-inner">
+                    <div class="dt-label">Notes</div>
+                    ${details
+                        ? `<div class="dt-notes">${preview}</div>${long ? `<button class="task-readmore" type="button">Read more</button>` : ''}`
+                        : `<div class="dt-empty">No notes on this task.</div>`}
+                    <div class="dt-actions">
+                        <button class="task-edit-btn" type="button">✎ Edit task</button>
+                    </div>
+                </div>
             </div>`;
-        li.addEventListener('click', () => openEdit(t.id));
+        // Click the row → expand/collapse the inline details (pure DOM toggle, no lookup).
+        const detailsEl = li.querySelector('.task-details');
+        li.querySelector('.task-row').addEventListener('click', () => {
+            const open = li.classList.toggle('expanded');
+            detailsEl.hidden = !open;
+        });
+        // Read more / Show less
+        const rm = li.querySelector('.task-readmore');
+        if (rm) {
+            const notesEl = li.querySelector('.dt-notes');
+            rm.addEventListener('click', e => {
+                e.stopPropagation();
+                if (rm.dataset.open === '1') { notesEl.textContent = details.slice(0, LIMIT) + '…'; rm.textContent = 'Read more'; rm.dataset.open = '0'; }
+                else { notesEl.textContent = details; rm.textContent = 'Show less'; rm.dataset.open = '1'; }
+            });
+        }
+        // Full editor still available from the expanded panel.
+        li.querySelector('.task-edit-btn').addEventListener('click', e => { e.stopPropagation(); openEdit(t.id); });
         return li;
     }
 
@@ -479,12 +526,12 @@
     }
 
     async function toggle(id) {
-        const cur = allTasks.find(t => t.id === id);
+        const cur = allTasks.find(t => String(t.id) === String(id));
         try {
             const res = await fetch(`/api/tasks/${id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ is_completed: !cur.is_completed }) });
             if (!res.ok) throw new Error();
             const upd = await res.json();
-            const i = allTasks.findIndex(t => t.id === id); if (i!==-1) allTasks[i] = upd;
+            const i = allTasks.findIndex(t => String(t.id) === String(id)); if (i!==-1) allTasks[i] = upd;
             render();
             if (window.refreshTaskBadge) window.refreshTaskBadge();
         } catch { alert('Failed to update task.'); }
@@ -503,7 +550,7 @@
 
     // ── edit modal ──────────────────────────────────────────────────────────
     function openEdit(id) {
-        const t = allTasks.find(x => x.id === id); if (!t) return;
+        const t = allTasks.find(x => String(x.id) === String(id)); if (!t) return;
         editingId = id;
         document.getElementById('e-title').value  = t.note || '';
         document.getElementById('e-due').value     = toDTLocal(t.due_date);
@@ -535,7 +582,7 @@
             });
             if (!res.ok) throw new Error();
             const upd = await res.json();
-            const i = allTasks.findIndex(t => t.id === editingId); if (i!==-1) allTasks[i] = upd;
+            const i = allTasks.findIndex(t => String(t.id) === String(editingId)); if (i!==-1) allTasks[i] = upd;
             closeEdit(); render();
             if (window.refreshTaskBadge) window.refreshTaskBadge();
         } catch { alert('Failed to save changes.'); }
