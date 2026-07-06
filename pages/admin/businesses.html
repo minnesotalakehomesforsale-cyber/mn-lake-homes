@@ -695,11 +695,14 @@
                     return;
                 }
                 closeInviteBusiness();
+                const header = data.email_sent
+                    ? `✅ Account created and invite EMAILED to ${data.email}.`
+                    : `⚠️ Account created, but the email did NOT send${data.email_error ? `:\n${data.email_error}` : '.'}\n\nShare these credentials with them manually:`;
                 alert(
-                    `Invite sent to ${data.email}.\n\n` +
+                    `${header}\n\n` +
                     `Login URL: ${data.login_url}\n` +
                     `Temporary password: ${data.tempPassword}\n\n` +
-                    `(Save this in case the email fails — you can share it manually.)`
+                    `(Always save these — the business logs in with them, then changes the password from Account.)`
                 );
                 await load();
             } catch (e) {

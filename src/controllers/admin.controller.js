@@ -1828,14 +1828,23 @@ const inviteAgent = async (req, res) => {
 
         await client.query('COMMIT');
 
-        // Fire-and-forget email — surfaces a degradation if the transport
-        // is misconfigured but never blocks the response.
-        emailService.sendAgentInvite({
-            to: email,
-            first_name,
-            tier_label: TIER_LABEL[comp_tier] || comp_tier,
-            tempPassword,
-        }).catch(err => console.error('[inviteAgent] email failed:', err.message));
+        // Await the send so we can report whether it ACTUALLY went out.
+        let inviteEmail;
+        try {
+            inviteEmail = await emailService.sendAgentInvite({
+                to: email,
+                first_name,
+                tier_label: TIER_LABEL[comp_tier] || comp_tier,
+                tempPassword,
+            });
+        } catch (err) {
+            inviteEmail = { error: err.message };
+            console.error('[inviteAgent] email failed:', err.message);
+        }
+        const emailSent  = !!(inviteEmail && inviteEmail.data);
+        const emailError = (inviteEmail && inviteEmail.error)
+            || (inviteEmail && inviteEmail.skipped ? 'No email transport configured on the server (set GMAIL_USER + GMAIL_APP_PASSWORD, or RESEND_API_KEY, in Render).' : null);
+        if (!emailSent) console.warn('[inviteAgent] invite email NOT sent to', email, '—', emailError || 'unknown reason');
 
         logActivity({
             event_type: 'agent.invite.send',
@@ -1852,7 +1861,9 @@ const inviteAgent = async (req, res) => {
             email,
             comp_tier,
             tempPassword,     // returned so admin can copy/paste if email fails
-            login_url: `${process.env.SITE_URL || ''}/pages/public/agent-login.html`,
+            login_url: `${(process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '')}/pages/public/agent-login.html`,
+            email_sent: emailSent,
+            email_error: emailError,
         });
     } catch (err) {
         await client.query('ROLLBACK').catch(() => {});
@@ -1930,13 +1941,25 @@ const inviteBusiness = async (req, res) => {
 
         await client.query('COMMIT');
 
-        emailService.sendBusinessInvite({
-            to: email,
-            first_name,
-            business_name,
-            tier_label: TIER_LABEL[comp_tier] || comp_tier,
-            tempPassword,
-        }).catch(err => console.error('[inviteBusiness] email failed:', err.message));
+        // Await the send and capture whether it ACTUALLY went out, so the admin
+        // is never falsely told "invite sent" when the transport silently drops it.
+        let inviteEmail;
+        try {
+            inviteEmail = await emailService.sendBusinessInvite({
+                to: email,
+                first_name,
+                business_name,
+                tier_label: TIER_LABEL[comp_tier] || comp_tier,
+                tempPassword,
+            });
+        } catch (err) {
+            inviteEmail = { error: err.message };
+            console.error('[inviteBusiness] email failed:', err.message);
+        }
+        const emailSent  = !!(inviteEmail && inviteEmail.data);
+        const emailError = (inviteEmail && inviteEmail.error)
+            || (inviteEmail && inviteEmail.skipped ? 'No email transport configured on the server (set GMAIL_USER + GMAIL_APP_PASSWORD, or RESEND_API_KEY, in Render).' : null);
+        if (!emailSent) console.warn('[inviteBusiness] invite email NOT sent to', email, '—', emailError || 'unknown reason');
 
         logActivity({
             event_type: 'business.invite.send',
@@ -1954,7 +1977,9 @@ const inviteBusiness = async (req, res) => {
             comp_tier,
             business_slug: slug,
             tempPassword,
-            login_url: `${process.env.SITE_URL || ''}/pages/public/business-login.html`,
+            login_url: `${(process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '')}/pages/public/business-login.html`,
+            email_sent: emailSent,
+            email_error: emailError,
         });
     } catch (err) {
         await client.query('ROLLBACK').catch(() => {});
