@@ -1992,41 +1992,13 @@ document.addEventListener('keydown', e => {
     }
     window.addEventListener('scroll', maybeShowBar, { passive: true });
 
-    // ── Desktop exit-intent ──
-    const exit = document.createElement('div');
-    exit.className = 'cv-exit-ov';
-    exit.innerHTML = `
-      <div class="cv-exit" role="dialog" aria-modal="true">
-        <div class="cv-proof" id="cv-exit-proof" style="display:none;"></div>
-        <h3>Before you go…</h3>
-        <p>Get matched — free — with a vetted agent who knows your lake bay by bay. No spam, no obligation.</p>
-        <button class="cv-go" type="button">Match me with a lake expert</button>
-        <button class="cv-no" type="button">No thanks, I'm just browsing</button>
-      </div>`;
-    exit.querySelector('.cv-go').addEventListener('click', () => { exit.classList.remove('show'); openLead('exit_intent'); });
-    exit.querySelector('.cv-no').addEventListener('click', () => exit.classList.remove('show'));
-    exit.addEventListener('click', e => { if (e.target === exit) exit.classList.remove('show'); });
-    document.body.appendChild(exit);
-
-    function armExitIntent() {
-        if (window.innerWidth < 768) return;   // desktop only
-        document.addEventListener('mouseout', e => {
-            if (ss.get('mlh_exit_shown') || formOpen()) return;
-            if (!e.relatedTarget && e.clientY <= 0) {
-                ss.set('mlh_exit_shown', '1');
-                exit.classList.add('show');
-                if (typeof window.trackConversion === 'function') window.trackConversion('exit_intent_shown', { page: p });
-            }
-        });
-    }
-    // Only arm after a little engagement so we don't nag instant bouncers.
-    setTimeout(armExitIntent, 12000);
+    // ── Desktop exit-intent popup: removed per owner request. ──
+    // (The mobile sticky "Get matched" bar below is kept.)
 
     function hydrateProof() {
         const line = proofLine(_stats);
         if (!line) return;
         const b = document.getElementById('cv-bar-proof'); if (b) b.textContent = '★ ' + line;
-        const x = document.getElementById('cv-exit-proof'); if (x) { x.textContent = '★ ' + line; x.style.display = ''; }
     }
 })();
 
