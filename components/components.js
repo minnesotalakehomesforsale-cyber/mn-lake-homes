@@ -1964,15 +1964,7 @@ document.addEventListener('keydown', e => {
       .cv-sticky .cv-t2 { font-size:0.72rem; opacity:0.8; margin-top:0.1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
       .cv-sticky .cv-go { background:#1d6df2; color:#fff; border:0; border-radius:9px; padding:0.6rem 1rem; font-weight:800; font-size:0.9rem; white-space:nowrap; cursor:pointer; font-family:inherit; }
       .cv-sticky .cv-x { background:none; border:0; color:rgba(255,255,255,0.6); font-size:1.3rem; line-height:1; cursor:pointer; padding:0.2rem 0.3rem; }
-      @media (min-width:768px){ .cv-sticky { display:none !important; } }
-      .cv-exit-ov { position:fixed; inset:0; z-index:9500; background:rgba(11,42,16,0.55); display:none; align-items:center; justify-content:center; padding:1.25rem; }
-      .cv-exit-ov.show { display:flex; }
-      .cv-exit { background:#fff; border-radius:18px; max-width:440px; width:100%; padding:2rem 1.75rem; text-align:center; box-shadow:0 24px 70px rgba(0,0,0,0.3); }
-      .cv-exit h3 { margin:0 0 0.5rem; font-size:1.5rem; font-weight:800; color:#1a202c; letter-spacing:-0.5px; }
-      .cv-exit p { margin:0 0 1.25rem; color:#4a5568; line-height:1.5; font-size:0.95rem; }
-      .cv-exit .cv-go { background:#1d6df2; color:#fff; border:0; border-radius:11px; padding:0.9rem 1.25rem; font-weight:800; font-size:1rem; width:100%; cursor:pointer; font-family:inherit; }
-      .cv-exit .cv-no { background:none; border:0; color:#a0aec0; font-size:0.85rem; margin-top:0.85rem; cursor:pointer; font-family:inherit; }
-      .cv-exit .cv-proof { font-size:0.78rem; color:#1d7a53; font-weight:700; margin-bottom:0.75rem; }`;
+      @media (min-width:768px){ .cv-sticky { display:none !important; } }`;
     document.head.appendChild(css);
 
     // ── Sticky mobile CTA ──
