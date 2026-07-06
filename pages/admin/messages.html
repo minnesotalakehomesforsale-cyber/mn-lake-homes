@@ -60,16 +60,26 @@
         .msg-agent .nm-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
         .msg-agent .ag-time { font-size: 0.72rem; color: #a0aec0; flex-shrink: 0; font-weight: 600; }
         .msg-agent .ag-chev { color: #cbd5e0; font-size: 1.1rem; margin-left: auto; flex-shrink: 0; font-weight: 700; }
+        /* Per-conversation "⋯" read/unread menu */
+        .ag-kebab-wrap { position: relative; flex-shrink: 0; margin-left: 0.35rem; }
+        .ag-kebab { background: none; border: 0; color: #a0aec0; font-size: 1.25rem; line-height: 1; cursor: pointer; padding: 0.15rem 0.45rem; border-radius: 6px; }
+        .ag-kebab:hover { background: #edf2f7; color: #4a5568; }
+        .ag-menu { display: none; position: absolute; right: 0; top: calc(100% + 4px); background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 12px 30px rgba(16,24,40,0.16); z-index: 30; min-width: 158px; overflow: hidden; }
+        .ag-menu.open { display: block; }
+        .ag-menu button { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 0.6rem 0.9rem; font: inherit; font-size: 0.85rem; font-weight: 600; color: #2d3748; cursor: pointer; }
+        .ag-menu button:hover { background: #f7f9fa; }
 
         .msg-thread {
             background: #fff; border: 1px solid #edf2f7; border-radius: 14px;
-            display: flex; flex-direction: column; min-height: calc(100vh - 220px);
+            /* Fixed height so the message list scrolls INSIDE the box instead of
+               the box growing with every new message. */
+            display: flex; flex-direction: column; height: calc(100vh - 220px);
         }
         .msg-thread-head { padding: 1.25rem 1.5rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
         .msg-thread-head h2 { font-size: 1.15rem; font-weight: 800; margin: 0; }
         .msg-thread-head .sub { font-size: 0.8rem; color: #718096; margin-top: 0.15rem; }
         /* Chat canvas + message rows (bubbles colored per sender). */
-        .msg-thread-body { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 0.35rem;
+        .msg-thread-body { flex: 1; min-height: 0; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 0.35rem;
             background: linear-gradient(180deg, #f7f9fc 0%, #eef2f8 100%); }
         .m-daydiv { align-self: center; font-size: 0.68rem; color: #a0aec0; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; margin: 0.75rem 0 0.4rem; }
         .m-row { display: flex; gap: 0.55rem; align-items: flex-end; max-width: 80%; margin-top: 0.5rem; }
@@ -313,8 +323,45 @@
                     <div class="nm-row"><span class="nm">${esc(a.name)}</span>${time ? `<span class="ag-time">${time}</span>` : ''}</div>
                     <div class="sub">${preview}</div>
                 </div>
-                ${a.unread ? '<span class="dot" title="Unread by agent"></span>' : '<span class="ag-chev">›</span>'}
+                ${a.unread ? '<span class="dot" title="New replies"></span>' : ''}
+                <div class="ag-kebab-wrap">
+                    <button class="ag-kebab" type="button" title="More" aria-label="More options" onclick="event.stopPropagation(); toggleAgMenu(event, '${a.user_id}')">⋯</button>
+                    <div class="ag-menu" id="agmenu-${a.user_id}">
+                        <button type="button" onclick="event.stopPropagation(); markThread('${a.user_id}', true)">Mark as read</button>
+                        <button type="button" onclick="event.stopPropagation(); markThread('${a.user_id}', false)">Mark as unread</button>
+                    </div>
+                </div>
             </div>`; }).join('');
+    }
+
+    // ── Per-conversation ⋯ menu: mark a whole thread read / unread ──
+    function toggleAgMenu(e, userId) {
+        document.querySelectorAll('.ag-menu.open').forEach(m => { if (m.id !== 'agmenu-' + userId) m.classList.remove('open'); });
+        const m = document.getElementById('agmenu-' + userId);
+        if (m) m.classList.toggle('open');
+    }
+    document.addEventListener('click', () => document.querySelectorAll('.ag-menu.open').forEach(m => m.classList.remove('open')));
+
+    async function refreshThreads() {
+        try {
+            const threads = await fetch('/api/admin/messages/threads', { credentials: 'include' }).then(r => r.ok ? r.json() : []);
+            _threads = {};
+            (threads || []).forEach(t => { _threads[t.user_id] = t; });
+            _agents.forEach(a => { a.unread = _threads[a.user_id]?.unread_by_admin || 0; });
+            renderAgentList();
+        } catch (_) {}
+    }
+
+    async function markThread(userId, read) {
+        document.querySelectorAll('.ag-menu.open').forEach(m => m.classList.remove('open'));
+        try {
+            const r = await fetch(`/api/admin/messages/agent/${encodeURIComponent(userId)}/read-state`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ read: !!read }),
+            });
+            if (!r.ok) throw new Error('failed');
+            await refreshThreads();
+        } catch (_) { alert('Could not update read state — please try again.'); }
     }
 
     // On mobile this class makes the thread slide in full-screen over the list.

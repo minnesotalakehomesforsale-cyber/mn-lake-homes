@@ -753,7 +753,7 @@
                         <button onclick="loadMessages()" style="border:1px solid #e2e8f0; background:#f7f9fa; border-radius:8px; padding:0.5rem 1rem; font-size:0.85rem; font-weight:600; cursor:pointer; color:#4a5568;">↺ Refresh</button>
                     </div>
                     <p style="color:#718096; margin-bottom:1.5rem;">Chat directly with the MN Lake Homes team. Send a message any time — we'll get back to you here.</p>
-                    <div id="messages-list">
+                    <div id="messages-list" style="max-height:55vh; overflow-y:auto;">
                         <div style="text-align:center; padding:3rem; color:#a0aec0;">Loading messages…</div>
                     </div>
                     <!-- Reply composer -->
@@ -1428,6 +1428,8 @@
                         </div>`;
                     }).join('');
                 }
+                // Keep the newest message in view inside the fixed-height scroll box.
+                list.scrollTop = list.scrollHeight;
                 // Mark everything read now that they're viewing the thread.
                 try {
                     await fetch('/api/agents/me/messages/mark-read', { method: 'POST' });
