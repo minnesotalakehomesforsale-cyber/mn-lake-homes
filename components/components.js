@@ -161,50 +161,58 @@ class GlobalHeader extends HTMLElement {
                 dashLink = '/business/dashboard';
             }
 
+            const photoUrl = user.profile_photo_url;
+            const avatarInner = photoUrl
+                ? `<img src="${photoUrl}" alt="" style="width:100%;height:100%;object-fit:cover;">`
+                : initials;
+            const roleLabel = (user.role || 'user').replace(/_/g, ' ');
+            const mi = 'display:block;padding:0.65rem 1.25rem;color:#2d3748;text-decoration:none;font-size:0.9rem;font-weight:600;';
+            let quickLinks = '';
+            if (user.role === 'admin' || user.role === 'super_admin') {
+                quickLinks =
+                    `<a href="${rp}pages/admin/leads.html" style="${mi}" onmouseover="this.style.background='#f7f9fa'" onmouseout="this.style.background='transparent'">Leads</a>`
+                  + `<a href="${rp}pages/admin/messages.html" style="${mi}" onmouseover="this.style.background='#f7f9fa'" onmouseout="this.style.background='transparent'">Messages</a>`
+                  + `<a href="${rp}pages/admin/tasks.html" style="${mi}" onmouseover="this.style.background='#f7f9fa'" onmouseout="this.style.background='transparent'">Tasks</a>`;
+            } else if (user.role === 'agent' && user.slug) {
+                quickLinks = `<a href="${rp}pages/public/agent-profile.html?slug=${user.slug}" style="${mi}" onmouseover="this.style.background='#f7f9fa'" onmouseout="this.style.background='transparent'">My Public Profile</a>`;
+            }
+
             authHtml = `
             <div class="profile-dropdown" style="position: relative; display: inline-block;">
                 <button id="profile-avatar-btn"
                     onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block';"
                     style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.25);
-                           cursor: pointer; background: #2d3748; color: #fff; font-weight: 700; font-size: 0.9rem;
+                           cursor: pointer; background: #1d6df2; color: #fff; font-weight: 700; font-size: 0.9rem;
                            display: flex; align-items: center; justify-content: center; overflow: hidden;
                            padding: 0; transition: border-color 0.2s; font-family: inherit;"
                     onmouseover="this.style.borderColor='rgba(255,255,255,0.7)'"
                     onmouseout="this.style.borderColor='rgba(255,255,255,0.25)'"
                     aria-label="Account menu">
-                    ${initials}
+                    ${avatarInner}
                 </button>
                 <div class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 58px;
-                     background: #fff; border: 1px solid #edf2f7; border-radius: 12px;
-                     box-shadow: 0 10px 40px rgba(0,0,0,0.12); width: 248px; z-index: 1001;
-                     overflow: hidden; font-family: 'Inter', sans-serif;">
-                    <!-- Header -->
-                    <div style="padding: 1.25rem; border-bottom: 1px solid #edf2f7; background: #f7f9fa;">
-                        <div style="font-weight: 700; font-size: 0.95rem; color: #1a202c;">${user.display_name || user.email}</div>
-                        <div style="font-size: 0.75rem; color: #718096; text-transform: capitalize; margin-top: 2px;">${user.role.replace('_', ' ')} Account</div>
+                     background: #fff; border: 1px solid #edf2f7; border-radius: 14px;
+                     box-shadow: 0 16px 48px rgba(16,24,40,0.16); width: 288px; z-index: 1001;
+                     overflow: hidden; font-family: inherit;">
+                    <!-- Header: avatar + name + email + role -->
+                    <div style="display:flex; align-items:center; gap:0.85rem; padding: 1.15rem 1.25rem; border-bottom: 1px solid #edf2f7; background: #f7f9fa;">
+                        <div style="width:48px; height:48px; border-radius:50%; flex-shrink:0; overflow:hidden; background:#1d6df2; color:#fff; font-weight:800; font-size:1rem; display:flex; align-items:center; justify-content:center;">${avatarInner}</div>
+                        <div style="min-width:0;">
+                            <div style="font-weight: 800; font-size: 0.95rem; color: #1a202c; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${user.display_name || user.email}</div>
+                            <div style="font-size: 0.78rem; color: #718096; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${user.email || ''}</div>
+                            <span style="display:inline-block; margin-top:0.3rem; font-size:0.6rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#1d6df2; background:#ebf4ff; padding:0.12rem 0.5rem; border-radius:99px;">${roleLabel}</span>
+                        </div>
                     </div>
                     <!-- Links -->
-                    <div style="padding: 0.4rem 0;">
-                        <a href="${dashLink}" style="display: block; padding: 0.7rem 1.25rem; color: #2d3748;
-                           text-decoration: none; font-size: 0.9rem; font-weight: 500;"
-                           onmouseover="this.style.background='#f7f9fa'" onmouseout="this.style.background='transparent'">
-                           Dashboard
-                        </a>
-                        ${user.role === 'agent' && user.slug ? `
-                        <a href="${rp}pages/public/agent-profile.html?slug=${user.slug}" style="display: block; padding: 0.7rem 1.25rem; color: #2d3748;
-                           text-decoration: none; font-size: 0.9rem; font-weight: 500;"
-                           onmouseover="this.style.background='#f7f9fa'" onmouseout="this.style.background='transparent'">
-                           My Public Profile
-                        </a>` : ''}
+                    <div style="padding: 0.35rem 0;">
+                        <a href="${dashLink}" style="${mi}" onmouseover="this.style.background='#f7f9fa'" onmouseout="this.style.background='transparent'">Dashboard</a>
+                        ${quickLinks}
                     </div>
                     <!-- Sign Out -->
-                    <div style="padding: 0.4rem 0; border-top: 1px solid #edf2f7;">
+                    <div style="padding: 0.35rem 0; border-top: 1px solid #edf2f7;">
                         <a href="#" id="signout-link" onclick="window._signOut(event)"
-                           style="display: block; padding: 0.7rem 1.25rem; color: #e53e3e;
-                           text-decoration: none; font-size: 0.9rem; font-weight: 600;"
-                           onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background='transparent'">
-                           Sign Out
-                        </a>
+                           style="display:block; padding: 0.65rem 1.25rem; color: #e53e3e; text-decoration: none; font-size: 0.9rem; font-weight: 700;"
+                           onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background='transparent'">Sign Out</a>
                     </div>
                 </div>
             </div>`;

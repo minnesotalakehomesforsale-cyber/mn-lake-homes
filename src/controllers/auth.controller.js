@@ -450,7 +450,7 @@ const session = async (req, res) => {
         const userRes = await pool.query(
             `SELECT u.id, u.role, u.full_name, u.email, u.account_status,
                     u.admin_tab_permissions,
-                    a.display_name, a.slug
+                    a.display_name, a.slug, a.profile_photo_url
              FROM users u
              LEFT JOIN agents a ON a.user_id = u.id
              WHERE u.id = $1`,
@@ -481,6 +481,7 @@ const session = async (req, res) => {
             display_name: user.display_name || user.full_name,
             email: user.email,
             slug: user.slug || null,
+            profile_photo_url: user.profile_photo_url || null,
             allowed_tabs,
         });
     } catch (err) {
