@@ -1998,9 +1998,9 @@ app.get('/agents/:slug/badge.svg', async (req, res) => {
   <rect width="${W}" height="${H}" rx="12" fill="url(#g)"/>
   <g transform="translate(18,20)">
     <circle cx="18" cy="18" r="18" fill="#ffffff" fill-opacity="0.14"/>
-    <path d="M11 18 l5 5 l10 -11" fill="none" stroke="#9ae6b4" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M11 18 l5 5 l10 -11" fill="none" stroke="#f6ad14" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
-  <text x="68" y="30" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="800" letter-spacing="1.5" fill="#9ae6b4">VERIFIED AGENT</text>
+  <text x="68" y="30" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="800" letter-spacing="1.5" fill="#f6ad14">VERIFIED AGENT</text>
   <text x="68" y="50" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="${disp ? 16 : 15}" font-weight="800" fill="#ffffff">${disp ? esc(disp) : 'MN Lake Homes'}</text>
   <text x="68" y="66" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#ffffff" fill-opacity="0.8">MinnesotaLakeHomesForSale.com</text>
 </svg>`;
