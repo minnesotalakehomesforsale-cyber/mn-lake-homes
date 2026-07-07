@@ -2529,10 +2529,15 @@ body > * { min-width: 0; }
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 2rem;
+    gap: 1.5rem;
     max-width: 820px;
+    /* Zero the inherited 2rem side padding so two 360px cards + gap actually
+       fit within max-width (with border-box the padding was forcing a wrap). */
+    padding-left: 0;
+    padding-right: 0;
+    box-sizing: border-box;
 }
-.agents-grid--few > .agent-link-wrapper { width: 370px; max-width: 100%; }
+.agents-grid--few > .agent-link-wrapper { width: 360px; max-width: 100%; }
 
 .agent-card {
     background: #fff;

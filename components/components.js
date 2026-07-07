@@ -20,8 +20,11 @@ window.mnlhAgentCard = function (agent) {
     const areas = Array.isArray(agent.geo_tags) && agent.geo_tags.length
         ? agent.geo_tags.map(t => t.name)
         : (Array.isArray(agent.service_areas) ? agent.service_areas : []);
+    // Cap the overflow so an outlier account tagged to dozens of areas doesn't
+    // expose a huge "+51" on its public card.
+    const extra = areas.length - 3;
     const chips = areas.slice(0, 3).map(n => `<span class="ac-chip">${esc(n)}</span>`).join('')
-        + (areas.length > 3 ? `<span class="ac-chip ac-chip--more">+${areas.length - 3}</span>` : '');
+        + (extra > 0 && extra <= 12 ? `<span class="ac-chip ac-chip--more">+${extra}</span>` : '');
     const initials = esc((agent.display_name || '?').trim().split(/\s+/).map(s => s[0]).slice(0, 2).join('').toUpperCase());
     const avatar = agent.profile_photo_url
         ? `<img src="${esc(agent.profile_photo_url)}" alt="${esc(agent.display_name)}" loading="lazy">`

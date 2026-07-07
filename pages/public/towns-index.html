@@ -204,7 +204,7 @@
         }
         .db-map-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.4rem; vertical-align: -1px; }
         .db-map-legend .dot.town { background: #1d6df2; }
-        .db-map-legend .dot.lake { background: #1d6df2; }
+        .db-map-legend .dot.lake { background: #16a34a; }
         .db-map-legend .dot.biz  { background: #d97706; }
 
         /* Hide the "Leaflet · OpenStreetMap · CARTO" credit strip
@@ -241,14 +241,14 @@
         .tx-pin-wrap:hover .tx-pin,
         .tx-pin-wrap.is-hot .tx-pin { transform: rotate(-45deg) scale(1.2); z-index: 900; }
 
-        /* Lake pin — teal */
+        /* Lake pin — green (distinct from the blue town pins on the map) */
         .lk-pin {
             width: 22px; height: 22px;
-            background: #1d6df2;
+            background: #16a34a;
             border: 3px solid #fff;
             border-radius: 50% 50% 50% 0;
             transform: rotate(-45deg);
-            box-shadow: 0 5px 12px rgba(29,109,242,0.45);
+            box-shadow: 0 5px 12px rgba(22,163,74,0.45);
             transition: transform 0.15s;
         }
         .lk-pin::after { content: ''; display: block; width: 6px; height: 6px; background: #fff; border-radius: 50%; margin: 5px auto; }
