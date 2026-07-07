@@ -461,9 +461,7 @@
                 if (!posts.length) return;
                 grid.innerHTML = posts.slice(0, 6).map(p => `
                     <a href="/pages/public/blog-post.html?slug=${p.slug}" class="blog-card">
-                        <div class="blog-image">
-                            <img src="${p.cover_image_url || '/assets/images/beach-style-exterior.jpg'}" alt="${p.title}" loading="lazy">
-                        </div>
+                        ${window.mnlhBlogCover ? window.mnlhBlogCover(p.tag) : ''}
                         <div class="blog-meta">
                             <span class="blog-tag">${p.tag || 'General'}</span>
                             <span class="blog-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Read: ${p.read_time_minutes || 4} minutes</span>

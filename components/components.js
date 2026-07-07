@@ -51,6 +51,31 @@ window.mnlhAgentCard = function (agent) {
     </a>`;
 };
 
+// ── Generated blog "cover" (no photo needed) ────────────────────────────────
+// A lake-themed water tile: an on-brand gradient (chosen per category so the
+// grid has variety) with a subtle wave/topo motif. Used on the blog index and
+// the home "Advice & inspiration" section so text-only posts still look good.
+window.mnlhBlogCover = function (tag) {
+    const grads = [
+        'linear-gradient(135deg,#0f2b46,#1d6df2)',
+        'linear-gradient(135deg,#155bc8,#38bdf8)',
+        'linear-gradient(135deg,#0e7490,#16a34a)',
+        'linear-gradient(135deg,#1e3a5f,#2c7a7b)',
+        'linear-gradient(135deg,#1d6df2,#0f2b46)',
+    ];
+    const t = String(tag || 'General');
+    let h = 0; for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0;
+    const grad = grads[h % grads.length];
+    return `<div class="blog-cover" style="background:${grad}">`
+        + `<svg class="bc-wave" viewBox="0 0 400 250" preserveAspectRatio="none" aria-hidden="true">`
+        + `<g fill="none" stroke="#fff" stroke-width="1.5" opacity="0.35">`
+        + `<path d="M0 55 C 90 15,170 90,260 55 S 430 20,500 55"/>`
+        + `<path d="M0 100 C 90 60,170 135,260 100 S 430 65,500 100"/>`
+        + `<path d="M0 145 C 90 105,170 180,260 145 S 430 110,500 145"/>`
+        + `<path d="M0 190 C 90 150,170 225,260 190 S 430 155,500 190"/>`
+        + `</g></svg></div>`;
+};
+
 // Always use absolute paths so the header/footer hrefs work from every URL
 // shape the server routes to: /, /pages/public/*, /pages/agent/*,
 // /pages/user/*, /pages/business/*, /pages/admin/*, /towns/:slug,
