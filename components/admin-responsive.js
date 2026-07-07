@@ -145,13 +145,25 @@
             }
 
             /* Tighten common admin widgets */
-            .stat-grid, .stat-strip, .stat-row, .lead-stats {
+            .stat-grid, .stat-strip, .stat-row, .lead-stats, .iq-stats {
                 grid-template-columns: 1fr 1fr !important;
                 gap: 0.75rem !important;
             }
-            .stat-grid > *, .stat-strip > *, .stat-row > *, .lead-stats > * {
+            .stat-grid > *, .stat-strip > *, .stat-row > *, .lead-stats > *, .iq-stats > * {
                 padding: 1rem !important;
                 min-width: 0;
+            }
+            /* Any horizontal tab/segment strip scrolls instead of clipping. */
+            .agent-tabs, .view-tabs, .seg, .tabs {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch;
+                flex-wrap: nowrap !important;
+                scrollbar-width: none;
+            }
+            .agent-tabs::-webkit-scrollbar, .view-tabs::-webkit-scrollbar,
+            .seg::-webkit-scrollbar, .tabs::-webkit-scrollbar { display: none; }
+            .agent-tabs > *, .view-tabs > *, .seg > *, .tabs > * {
+                flex-shrink: 0; white-space: nowrap;
             }
             .dash-grid, .review-grid, .detail-grid, .layout, .lm-expert-inner {
                 grid-template-columns: 1fr !important;
@@ -199,7 +211,8 @@
                 max-width: calc(100vw - 1rem) !important;
             }
             .m-grid { grid-template-columns: 1fr !important; gap: 0.85rem !important; }
-            .field-grid, .blog-form-row, .modal-grid { grid-template-columns: 1fr !important; }
+            .field-grid, .blog-form-row, .modal-grid,
+            .grid-2, .grid-3, .grid2, .grid3 { grid-template-columns: 1fr !important; }
 
             /* AI assistant — hidden on mobile. It floats over Send buttons and
                message threads and looks broken on a phone; it's a desktop tool. */
