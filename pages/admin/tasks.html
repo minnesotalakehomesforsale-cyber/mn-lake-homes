@@ -69,9 +69,22 @@
     .dt-notes { font-size: 0.9rem; color: #2d3748; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
     .dt-empty { font-size: 0.88rem; color: #a0aec0; font-style: italic; }
     .task-readmore { background: none; border: 0; color: #1d6df2; font-weight: 700; font-size: 0.82rem; cursor: pointer; padding: 0.4rem 0 0; font-family: inherit; }
-    .dt-actions { margin-top: 0.7rem; display: flex; gap: 0.5rem; }
+    .dt-actions { margin-top: 0.9rem; display: flex; gap: 0.5rem; align-items: center; }
     .task-edit-btn { background: #fff; border: 1px solid #e2e8f0; color: #1d6df2; font-weight: 700; font-size: 0.8rem; border-radius: 7px; padding: 0.4rem 0.8rem; cursor: pointer; font-family: inherit; }
     .task-edit-btn:hover { border-color: #1d6df2; }
+    /* Inline task editor (replaces the modal) */
+    .task-details .dt-label { margin-top: 0.55rem; }
+    .task-details .dt-label:first-child { margin-top: 0; }
+    .ed-inp { width: 100%; box-sizing: border-box; padding: 0.55rem 0.7rem; border: 1px solid #e2e8f0; border-radius: 8px; font: inherit; font-size: 0.9rem; outline: none; background: #fff; color: #1a202c; margin-top: 0.25rem; }
+    .ed-inp:focus { border-color: #1d6df2; }
+    textarea.ed-inp { min-height: 68px; resize: vertical; line-height: 1.5; }
+    .ed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 0.35rem; }
+    @media (max-width: 560px) { .ed-grid { grid-template-columns: 1fr; } }
+    .task-save-btn { background: #1d6df2; color: #fff; border: 0; font-weight: 700; font-size: 0.85rem; border-radius: 8px; padding: 0.55rem 1.15rem; cursor: pointer; font-family: inherit; }
+    .task-save-btn:hover { background: #155bc8; }
+    .task-save-btn:disabled { opacity: 0.6; cursor: default; }
+    .task-del-btn { background: #fff; border: 1px solid #fbd5d0; color: #c53030; font-weight: 700; font-size: 0.85rem; border-radius: 8px; padding: 0.55rem 0.9rem; cursor: pointer; font-family: inherit; }
+    .task-del-btn:hover { background: #fff5f5; }
     .task-item.done .task-note { text-decoration: line-through; color: #a0aec0; }
     .task-item.overdue { box-shadow: inset 3px 0 0 #e53e3e; }
     .task-check { width: 22px; height: 22px; border-radius: 7px; border: 2px solid #e2e8f0; background: #fff; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
@@ -395,33 +408,66 @@
             </div>
             <div class="task-details" hidden>
                 <div class="task-details-inner">
-                    <div class="dt-label">Notes</div>
-                    ${details
-                        ? `<div class="dt-notes">${preview}</div>${long ? `<button class="task-readmore" type="button">Read more</button>` : ''}`
-                        : `<div class="dt-empty">No notes on this task.</div>`}
+                    <label class="dt-label">Title</label>
+                    <input class="ed-inp ed-title" type="text" maxlength="500" value="${esc(t.note)}">
+                    <label class="dt-label">Notes</label>
+                    <textarea class="ed-inp ed-notes" maxlength="4000" placeholder="Add notes…">${esc(details)}</textarea>
+                    <div class="ed-grid">
+                        <div><label class="dt-label">Due date</label><input class="ed-inp ed-due" type="datetime-local" value="${toDTLocal(t.due_date)}"></div>
+                        <div><label class="dt-label">Priority</label><select class="ed-inp ed-prio">
+                            <option value="normal"${t.priority !== 'high' && t.priority !== 'low' ? ' selected' : ''}>Normal</option>
+                            <option value="high"${t.priority === 'high' ? ' selected' : ''}>High</option>
+                            <option value="low"${t.priority === 'low' ? ' selected' : ''}>Low</option>
+                        </select></div>
+                    </div>
+                    <div class="ed-grid">
+                        <div><label class="dt-label">Category</label><input class="ed-inp ed-cat" maxlength="40" value="${esc(t.category || '')}" placeholder="e.g. Marketing"></div>
+                        <div><label class="dt-label">Status</label><select class="ed-inp ed-status">
+                            <option value="false"${!t.is_completed ? ' selected' : ''}>Pending</option>
+                            <option value="true"${t.is_completed ? ' selected' : ''}>Completed</option>
+                        </select></div>
+                    </div>
                     <div class="dt-actions">
-                        <button class="task-edit-btn" type="button">✎ Edit task</button>
+                        <button class="task-save-btn" type="button">Save changes</button>
+                        <button class="task-del-btn" type="button">Delete</button>
                     </div>
                 </div>
             </div>`;
-        // Click the row → expand/collapse the inline details (pure DOM toggle, no lookup).
+        // Click the row → expand/collapse the inline editor (pure DOM toggle).
         const detailsEl = li.querySelector('.task-details');
         li.querySelector('.task-row').addEventListener('click', () => {
             const open = li.classList.toggle('expanded');
             detailsEl.hidden = !open;
         });
-        // Read more / Show less
-        const rm = li.querySelector('.task-readmore');
-        if (rm) {
-            const notesEl = li.querySelector('.dt-notes');
-            rm.addEventListener('click', e => {
-                e.stopPropagation();
-                if (rm.dataset.open === '1') { notesEl.textContent = details.slice(0, LIMIT) + '…'; rm.textContent = 'Read more'; rm.dataset.open = '0'; }
-                else { notesEl.textContent = details; rm.textContent = 'Show less'; rm.dataset.open = '1'; }
-            });
-        }
-        // Full editor still available from the expanded panel.
-        li.querySelector('.task-edit-btn').addEventListener('click', e => { e.stopPropagation(); openEdit(t.id); });
+        // Inline save — read the fields and PATCH (no modal to fail).
+        const saveBtn = li.querySelector('.task-save-btn');
+        saveBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const note = li.querySelector('.ed-title').value.trim();
+            if (!note) { alert("Title can't be empty."); return; }
+            const dueVal = li.querySelector('.ed-due').value;
+            saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+            try {
+                const res = await fetch(`/api/tasks/${t.id}`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        note,
+                        details: li.querySelector('.ed-notes').value.trim() === '' ? null : li.querySelector('.ed-notes').value,
+                        due_date: dueVal ? new Date(dueVal).toISOString() : null,
+                        priority: li.querySelector('.ed-prio').value,
+                        category: li.querySelector('.ed-cat').value.trim() || null,
+                        is_completed: li.querySelector('.ed-status').value === 'true',
+                    })
+                });
+                if (!res.ok) throw new Error();
+                const upd = await res.json();
+                const i = allTasks.findIndex(x => String(x.id) === String(t.id));
+                if (i !== -1) allTasks[i] = upd;
+                if (window.refreshTaskBadge) window.refreshTaskBadge();
+                render();
+            } catch (_) { saveBtn.disabled = false; saveBtn.textContent = 'Save changes'; alert('Failed to save — please try again.'); }
+        });
+        li.querySelector('.task-del-btn').addEventListener('click', (e) => { e.stopPropagation(); deleteTask(t.id); });
         return li;
     }
 
