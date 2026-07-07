@@ -76,6 +76,29 @@ window.mnlhBlogCover = function (tag) {
         + `</g></svg></div>`;
 };
 
+// ── PWA: make the site installable (manifest + icons + service worker) ───────
+// Injected here so every page that loads components.js becomes app-installable
+// without editing each page's <head>.
+(function pwaSetup() {
+    try {
+        const head = document.head;
+        const has = (sel) => document.querySelector(sel);
+        const add = (html) => { const t = document.createElement('template'); t.innerHTML = html; if (t.content.firstElementChild) head.appendChild(t.content.firstElementChild); };
+        if (!has('link[rel="manifest"]')) add('<link rel="manifest" href="/manifest.json">');
+        if (!has('meta[name="theme-color"]')) add('<meta name="theme-color" content="#1d6df2">');
+        // iOS ignores SVG for the home-screen icon — force the PNG apple-touch-icon.
+        document.querySelectorAll('link[rel="apple-touch-icon"]').forEach(l => l.remove());
+        add('<link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">');
+        if (!has('meta[name="apple-mobile-web-app-capable"]'))  add('<meta name="apple-mobile-web-app-capable" content="yes">');
+        if (!has('meta[name="mobile-web-app-capable"]'))         add('<meta name="mobile-web-app-capable" content="yes">');
+        if (!has('meta[name="apple-mobile-web-app-status-bar-style"]')) add('<meta name="apple-mobile-web-app-status-bar-style" content="default">');
+        if (!has('meta[name="apple-mobile-web-app-title"]'))     add('<meta name="apple-mobile-web-app-title" content="MN Lake Homes">');
+    } catch (_) {}
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); });
+    }
+})();
+
 // Always use absolute paths so the header/footer hrefs work from every URL
 // shape the server routes to: /, /pages/public/*, /pages/agent/*,
 // /pages/user/*, /pages/business/*, /pages/admin/*, /towns/:slug,
