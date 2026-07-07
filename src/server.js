@@ -556,7 +556,6 @@ app.get('/sitemap.xml', async (req, res) => {
             { url: '/',                priority: 1.0, changefreq: 'weekly'  },
             { url: '/buy',             priority: 0.9, changefreq: 'weekly'  },
             { url: '/sell',            priority: 0.9, changefreq: 'weekly'  },
-            { url: '/home-value',      priority: 0.8, changefreq: 'weekly'  },
             { url: '/towns',           priority: 0.9, changefreq: 'weekly'  },
             { url: '/towns?view=props', priority: 0.8, changefreq: 'daily'  },
             { url: '/agents',          priority: 0.8, changefreq: 'weekly'  },
@@ -1500,7 +1499,6 @@ const BLOG_GUIDE_LINKS = [
     { href: '/blog', name: 'All lake guides →' },
 ];
 const LAKE_TOOL_LINKS = [
-    { href: '/home-value', name: 'What’s my home worth?' },
     { href: '/find-your-lake', name: 'Find Your Lake quiz' },
     { href: '/compare-lakes', name: 'Compare lakes' },
     { href: '/lake-mortgage-calculator', name: 'Lake cost calculator' },
@@ -2239,6 +2237,10 @@ app.use(express.static(PROJECT_ROOT, {
 }));
 
 // Fallback for Next.js-style clean URL resolution. Most public pages
+// Retired the standalone "instant estimate" page — the cash-offer flow
+// covers home valuation. Redirect any old link to it.
+app.get('/home-value', (req, res) => res.redirect(301, '/cash-offer'));
+
 // live under /pages/public/ — try that first so /buy, /about, /privacy
 // etc. all resolve to their respective files. Falls back to PROJECT_ROOT
 // for the few pages (index.html) that sit at the repo root, then 404.
