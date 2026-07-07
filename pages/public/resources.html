@@ -109,6 +109,8 @@
         .rx-blog-card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,0.06); }
         .rx-blog-img { aspect-ratio: 16/10; background: #f7f9fa; overflow: hidden; }
         .rx-blog-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        /* Generated cover sits flush at the top of the card (card is rounded + clips). */
+        .rx-blog-card .blog-cover { margin-bottom: 0; border-radius: 0; box-shadow: none; }
         .rx-blog-body { padding: 1rem 1.1rem 1.25rem; }
         .rx-blog-tag  { font-size: 0.68rem; font-weight: 700; color: #1d6df2; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.4rem; display: inline-block; background: #ebf4ff; padding: 0.15rem 0.5rem; border-radius: 4px; }
         .rx-blog-title { font-size: 0.92rem; font-weight: 700; color: #1a202c; line-height: 1.35; margin: 0; }
@@ -372,9 +374,7 @@
                 if (!posts.length) { host.innerHTML = '<div class="rx-empty" style="grid-column: 1 / -1;">No posts yet.</div>'; return; }
                 host.innerHTML = posts.slice(0, 4).map(p => `
                     <a class="rx-blog-card" href="/pages/public/blog-post.html?slug=${encodeURIComponent(p.slug)}">
-                        ${p.cover_image_url ? `<div class="rx-blog-img">
-                            <img src="${escAttr(p.cover_image_url)}" alt="${escAttr(p.title)}" loading="lazy">
-                        </div>` : ''}
+                        ${window.mnlhBlogCover ? window.mnlhBlogCover(p.tag) : ''}
                         <div class="rx-blog-body">
                             <span class="rx-blog-tag">${escHtml(p.tag || 'General')}</span>
                             <h3 class="rx-blog-title">${escHtml(p.title)}</h3>
