@@ -746,20 +746,42 @@
                     </div>
                 </div>
 
-                <!-- ── MESSAGES VIEW (read-only — messages from the MNLH team) ── -->
-                <div id="view-messages" class="view-card" style="display:none; background:#fff; padding:2rem 2.5rem; border-radius:12px; border:1px solid #edf2f7; box-shadow:0 4px 6px rgba(0,0,0,0.02);">
-                    <div class="profile-card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
-                        <h2 style="font-size:1.75rem; font-weight:700;">Messages</h2>
-                        <button onclick="loadMessages()" style="border:1px solid #e2e8f0; background:#f7f9fa; border-radius:8px; padding:0.5rem 1rem; font-size:0.85rem; font-weight:600; cursor:pointer; color:#4a5568;">↺ Refresh</button>
+                <!-- ── MESSAGES VIEW — two-way chat with the MNLH team ── -->
+                <style>
+                    .msg-chat { padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; height: calc(100vh - 230px); max-height: 680px; }
+                    .msg-chat-head { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 1.25rem; border-bottom: 1px solid #edf2f7; flex-shrink: 0; }
+                    .msg-chat-head h2 { font-size: 1.2rem; font-weight: 800; margin: 0; }
+                    .msg-refresh { border: 1px solid #e2e8f0; background: #f7f9fa; border-radius: 8px; width: 36px; height: 36px; font-size: 1rem; cursor: pointer; color: #4a5568; }
+                    .msg-refresh:hover { border-color: #1d6df2; color: #1d6df2; }
+                    .msg-chat-body { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 1.1rem 1rem; display: flex; flex-direction: column; gap: 0.45rem; }
+                    .msg-loading { text-align: center; padding: 2.5rem; color: #a0aec0; margin: auto; }
+                    .mc-row { display: flex; flex-direction: column; max-width: 82%; }
+                    .mc-row.mine { align-self: flex-end; align-items: flex-end; }
+                    .mc-row.theirs { align-self: flex-start; align-items: flex-start; }
+                    .mc-bubble { padding: 0.55rem 0.9rem; border-radius: 18px; font-size: 0.95rem; line-height: 1.4; white-space: pre-wrap; word-break: break-word; }
+                    .mc-row.mine .mc-bubble { background: #1d6df2; color: #fff; border-bottom-right-radius: 5px; }
+                    .mc-row.theirs .mc-bubble { background: #e9e9eb; color: #1a202c; border-bottom-left-radius: 5px; }
+                    .mc-time { font-size: 0.65rem; color: #a0aec0; margin: 0.12rem 0.35rem 0; }
+                    .msg-chat-compose { display: flex; gap: 0.5rem; align-items: flex-end; padding: 0.7rem 0.85rem calc(0.7rem + env(safe-area-inset-bottom)); border-top: 1px solid #edf2f7; flex-shrink: 0; background: #fff; }
+                    .msg-chat-compose textarea { flex: 1; border: 1px solid #e2e8f0; border-radius: 20px; padding: 0.6rem 1rem; font: inherit; font-size: 1rem; resize: none; outline: none; max-height: 120px; line-height: 1.4; box-sizing: border-box; }
+                    .msg-chat-compose textarea:focus { border-color: #1d6df2; }
+                    .msg-chat-compose button { flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%; background: #1d6df2; color: #fff; border: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+                    .msg-chat-compose button:hover { background: #155bc8; }
+                    @media (max-width: 900px) { .msg-chat { height: calc(100dvh - 150px); max-height: none; } }
+                </style>
+                <div id="view-messages" class="view-card msg-chat" style="display:none;">
+                    <div class="msg-chat-head">
+                        <h2>Messages</h2>
+                        <button class="msg-refresh" onclick="loadMessages()" title="Refresh" aria-label="Refresh">↺</button>
                     </div>
-                    <p style="color:#718096; margin-bottom:1.5rem;">Chat directly with the MN Lake Homes team. Send a message any time — we'll get back to you here.</p>
-                    <div id="messages-list" style="max-height:55vh; overflow-y:auto;">
-                        <div style="text-align:center; padding:3rem; color:#a0aec0;">Loading messages…</div>
+                    <div id="messages-list" class="msg-chat-body">
+                        <div class="msg-loading">Loading messages…</div>
                     </div>
-                    <!-- Reply composer -->
-                    <div style="display:flex; gap:0.6rem; margin-top:1.25rem; border-top:1px solid #edf2f7; padding-top:1.25rem;">
-                        <textarea id="msg-reply" placeholder="Write a message to the team…" rows="2" style="flex:1; padding:0.75rem 0.9rem; border:1px solid #e2e8f0; border-radius:10px; font:inherit; font-size:0.95rem; resize:vertical; outline:none;"></textarea>
-                        <button id="msg-send" onclick="sendAgentMessage()" style="align-self:flex-end; background:#1d6df2; color:#fff; border:0; border-radius:10px; padding:0.75rem 1.4rem; font-weight:800; cursor:pointer; font-family:inherit;">Send</button>
+                    <div class="msg-chat-compose">
+                        <textarea id="msg-reply" placeholder="Message the MN Lake Homes team…" rows="1"></textarea>
+                        <button id="msg-send" onclick="sendAgentMessage()" aria-label="Send">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        </button>
                     </div>
                 </div>
 
@@ -1031,7 +1053,7 @@
 
             document.getElementById('view-dashboard').style.display = topView === 'dashboard' ? 'block' : 'none';
             document.getElementById('view-leads').style.display     = topView === 'leads'     ? 'block' : 'none';
-            document.getElementById('view-messages').style.display  = topView === 'messages'  ? 'block' : 'none';
+            document.getElementById('view-messages').style.display  = topView === 'messages'  ? 'flex' : 'none';
             document.getElementById('view-properties').style.display = topView === 'properties' ? 'block' : 'none';
             const vRes = document.getElementById('view-resources');
             if (vRes) vRes.style.display = topView === 'resources' ? 'block' : 'none';
@@ -1408,23 +1430,15 @@
                 if (!r.ok) throw new Error('load failed');
                 const msgs = await r.json();
                 if (!msgs.length) {
-                    list.innerHTML = '<div style="text-align:center; padding:2.5rem; color:#a0aec0;">No messages yet — say hello 👋</div>';
+                    list.innerHTML = '<div class="msg-loading">No messages yet — say hello 👋</div>';
                 } else {
                     // Oldest → newest (API returns newest first) so it reads like a chat.
                     list.innerHTML = msgs.slice().reverse().map(m => {
-                        const when = m.created_at ? new Date(m.created_at).toLocaleString() : '';
+                        const when = m.created_at ? new Date(m.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
                         const mine = m.from_admin === false;   // the agent's own message
-                        const bg = mine ? '#1d6df2' : '#f7f9fa';
-                        const fg = mine ? '#fff' : '#2d3748';
-                        const who = mine ? 'You' : 'MN Lake Homes Team';
-                        return `<div style="display:flex; justify-content:${mine ? 'flex-end' : 'flex-start'}; margin-bottom:0.7rem;">
-                            <div style="max-width:78%; background:${bg}; color:${fg}; border:1px solid ${mine ? '#1d6df2' : '#edf2f7'}; border-radius:14px; padding:0.7rem 1rem;">
-                                <div style="display:flex; justify-content:space-between; gap:1rem; align-items:center; margin-bottom:0.3rem;">
-                                    <span style="font-weight:800; font-size:0.78rem; opacity:${mine ? 0.9 : 1}; color:${mine ? '#fff' : '#1a202c'};">${who}</span>
-                                    <span style="font-size:0.72rem; opacity:0.7;">${escMsg(when)}</span>
-                                </div>
-                                <div style="white-space:pre-wrap; line-height:1.5; font-size:0.92rem;">${escMsg(m.body)}</div>
-                            </div>
+                        return `<div class="mc-row ${mine ? 'mine' : 'theirs'}">
+                            <div class="mc-bubble">${escMsg(m.body)}</div>
+                            <div class="mc-time">${escMsg(when)}</div>
                         </div>`;
                     }).join('');
                 }
