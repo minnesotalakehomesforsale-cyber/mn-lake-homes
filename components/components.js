@@ -99,48 +99,22 @@ window.mnlhBlogCover = function (tag) {
     }
 })();
 
-// ── PWA install banner — a visible "Install" prompt (browser menus are hidden) ─
-(function installBanner() {
-    if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return; // already installed
-    if (navigator.standalone) return;
-    try { if (localStorage.getItem('mnlh_install_dismissed') === '1') return; } catch (_) {}
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent || '');
-    let deferred = null, shown = false;
-
-    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; show(); });
-    if (isIOS) window.addEventListener('load', () => setTimeout(show, 1200));
-
-    function show() {
-        if (shown) return; shown = true;
-        const css = document.createElement('style');
-        css.textContent = `
-          #mnlh-install { position:fixed; left:1rem; right:1rem; bottom:calc(1rem + env(safe-area-inset-bottom)); z-index:9700; max-width:520px; margin:0 auto; background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 16px 40px rgba(16,24,40,0.22); padding:0.85rem 1rem; display:flex; align-items:center; gap:0.75rem; font-family:inherit; }
-          #mnlh-install .ib-ic { width:40px; height:40px; border-radius:10px; background:#1d6df2; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
-          #mnlh-install .ib-txt { flex:1; min-width:0; font-size:0.9rem; color:#1a202c; line-height:1.3; }
-          #mnlh-install .ib-txt strong { font-weight:800; }
-          #mnlh-install .ib-hint { display:block; font-size:0.78rem; color:#718096; margin-top:0.1rem; }
-          #mnlh-install .ib-go { background:#1d6df2; color:#fff; border:0; border-radius:10px; padding:0.6rem 1rem; font-weight:800; font-size:0.88rem; cursor:pointer; font-family:inherit; white-space:nowrap; }
-          #mnlh-install .ib-x { background:none; border:0; color:#a0aec0; font-size:1.5rem; line-height:1; cursor:pointer; padding:0.1rem 0.35rem; }`;
-        document.head.appendChild(css);
-        const bar = document.createElement('div');
-        bar.id = 'mnlh-install';
-        bar.innerHTML = `<span class="ib-ic">🏡</span>
-            <span class="ib-txt"><strong>Install MN Lake Homes</strong>${isIOS
-                ? '<span class="ib-hint">Tap the Share button ⬆ below, then “Add to Home Screen”.</span>'
-                : '<span class="ib-hint">Add the app to your home screen.</span>'}</span>
-            ${isIOS ? '' : '<button class="ib-go" type="button">Install</button>'}
-            <button class="ib-x" type="button" aria-label="Dismiss">×</button>`;
-        bar.querySelector('.ib-x').onclick = () => { bar.remove(); try { localStorage.setItem('mnlh_install_dismissed', '1'); } catch (_) {} };
-        const go = bar.querySelector('.ib-go');
-        if (go) go.onclick = async () => {
-            if (!deferred) return;
-            deferred.prompt();
-            try { await deferred.userChoice; } catch (_) {}
-            deferred = null; bar.remove();
-        };
-        document.body.appendChild(bar);
-    }
-})();
+// ── PWA install: capture the prompt + expose a manual trigger (NO auto popup) ──
+// The install lives in the menu (window.mnlhInstallApp) so it never stacks on
+// top of the cookie banner or other bottom bars.
+window.__mnlhInstall = {
+    deferred: null,
+    isIOS: /iphone|ipad|ipod/i.test(navigator.userAgent || ''),
+    installed: (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || !!navigator.standalone,
+};
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); window.__mnlhInstall.deferred = e; });
+window.mnlhInstallApp = async function () {
+    const s = window.__mnlhInstall;
+    if (s.installed) { alert('The app is already installed on this device.'); return; }
+    if (s.deferred)  { s.deferred.prompt(); try { await s.deferred.userChoice; } catch (_) {} s.deferred = null; return; }
+    if (s.isIOS)     { alert('To install: tap the Share button (the square with an ↑) at the bottom of Safari, then choose “Add to Home Screen.”'); return; }
+    alert('To install: open your browser menu (⋮) and choose “Install app” / “Add to Home Screen.”');
+};
 
 // Always use absolute paths so the header/footer hrefs work from every URL
 // shape the server routes to: /, /pages/public/*, /pages/agent/*,
