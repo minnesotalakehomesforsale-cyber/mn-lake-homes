@@ -1005,9 +1005,9 @@ body > * { min-width: 0; }
 }
 
 @media (max-width: 600px) {
-    /* Phones: big, bold headline (~70-75px) with a small eyebrow above it —
+    /* Phones: big, bold headline (~63-68px) with a small eyebrow above it —
        maximum contrast, the way the hero is meant to read. */
-    .title { font-size: clamp(3.25rem, 18vw, 5rem); line-height: 1.02; letter-spacing: -0.02em; }
+    .title { font-size: clamp(2.9rem, 16vw, 4.5rem); line-height: 1.03; letter-spacing: -0.02em; }
     .subtitle { font-size: 0.72rem; letter-spacing: 1.5px; margin-bottom: 0.85rem; }
     .hero-section .btn { padding: 0.75rem 1.25rem; font-size: 0.9rem; font-weight: 700; }
     .left-card, .right-card, .center-card { flex: 0 0 78vw; height: 320px; }

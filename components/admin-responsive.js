@@ -201,8 +201,9 @@
             .m-grid { grid-template-columns: 1fr !important; gap: 0.85rem !important; }
             .field-grid, .blog-form-row, .modal-grid { grid-template-columns: 1fr !important; }
 
-            /* AI assistant bubble — stay out of the way of hamburger */
-            .ai-asst-bubble { bottom: 16px; right: 16px; }
+            /* AI assistant — hidden on mobile. It floats over Send buttons and
+               message threads and looks broken on a phone; it's a desktop tool. */
+            .ai-asst-bubble, .ai-asst-panel { display: none !important; }
 
             /* Sidebar inner tweaks */
             .admin-side h1 { margin-bottom: 2rem; }

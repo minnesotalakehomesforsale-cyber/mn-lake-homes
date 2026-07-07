@@ -50,8 +50,10 @@
         .action-result { display: none; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; margin-top: 0.75rem; text-align: center; }
 
         /* Tab system */
-        .page-tabs { display: flex; gap: 0.25rem; margin-bottom: 2rem; border-bottom: 2px solid #edf2f7; padding-bottom: 0; }
-        .page-tab { padding: 0.75rem 1.5rem; font-size: 0.9rem; font-weight: 600; color: #718096; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; font-family: inherit; transition: all 0.15s; }
+        .page-tabs { display: flex; gap: 0.25rem; margin-bottom: 2rem; border-bottom: 2px solid #edf2f7; padding-bottom: 0;
+            overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .page-tabs::-webkit-scrollbar { display: none; }
+        .page-tab { flex-shrink: 0; white-space: nowrap; padding: 0.75rem 1.5rem; font-size: 0.9rem; font-weight: 600; color: #718096; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; font-family: inherit; transition: all 0.15s; }
         .page-tab:hover { color: #1a202c; }
         .page-tab.active { color: #1d6df2; border-bottom-color: #1d6df2; }
         .page-tab .tab-count { background: #1d6df2; color: #fff; border-radius: 20px; padding: 0.1rem 0.5rem; font-size: 0.7rem; font-weight: 700; margin-left: 0.4rem; }

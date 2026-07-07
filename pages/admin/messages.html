@@ -154,15 +154,22 @@
                 border-radius: 0; height: 100dvh; max-height: 100dvh; overflow: hidden;
                 animation: slideInThread 0.22s ease;
             }
-            body.thread-open { overflow: hidden; }
+            /* Hard scroll-lock: pin the page behind so only the chat scrolls. */
+            body.thread-open { overflow: hidden !important; position: fixed; width: 100%; }
             @keyframes slideInThread { from { transform: translateX(100%); } to { transform: translateX(0); } }
             .msg-thread-head { position: sticky; top: 0; background: #fff; z-index: 2; }
-            .msg-thread-back { display: inline-flex; }
+            /* Back button = a single chevron, small tap target, no label text. */
+            .msg-thread-back { display: inline-flex; align-items: center; justify-content: center;
+                width: 34px; height: 34px; font-size: 1.7rem; line-height: 1; margin-right: 0.25rem; }
             .msg-thread-head h2 { font-size: 1.05rem; }
             .m-row { max-width: 88%; }
+            .msg-thread-body { overscroll-behavior: contain; }
             .msg-compose { flex-shrink: 0; background: #fff; padding: 0.85rem 1rem max(0.9rem, env(safe-area-inset-bottom)); }
-            /* Hide the floating admin hamburger while the full-screen thread is open. */
-            body.thread-open .admin-hamburger { display: none !important; }
+            /* Hide the floating admin hamburger AND the AI assistant while the
+               full-screen thread is open — both otherwise float over the chat. */
+            body.thread-open .admin-hamburger,
+            body.thread-open .ai-asst-bubble,
+            body.thread-open .ai-asst-panel { display: none !important; }
         }
     </style>
     <script src="../../components/admin-guard.js"></script>
@@ -201,7 +208,7 @@
             <!-- Thread -->
             <div class="msg-thread">
                 <div class="msg-thread-head">
-                    <button class="msg-thread-back" onclick="closeThreadMobile()" aria-label="Back to messages"><span style="font-size:1.3rem;line-height:1;">‹</span> Messages</button>
+                    <button class="msg-thread-back" onclick="closeThreadMobile()" aria-label="Back to messages">‹</button>
                     <div style="flex:1; min-width:0;">
                         <h2 id="thread-name">Select an agent</h2>
                         <div class="sub" id="thread-sub">Pick someone on the left to start messaging.</div>
