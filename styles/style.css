@@ -1035,6 +1035,35 @@ body > * { min-width: 0; }
     }
 }
 
+/* ============================================================================
+   MOBILE TOP-SPACING NORMALIZATION
+   The header (.navbar) is position:fixed, so every page's first content block
+   must clear it. Historically each page baked its own top padding into its
+   inline <style> (ranging from 1.5rem — content hidden UNDER the header — to
+   10rem), so content started at a different height on every page. This block
+   forces ONE consistent start position (7rem, clearing the ~79px mobile
+   navbar) across all first-content wrappers. !important is required because
+   these classes are defined in each page's own inline <style>.
+   Excluded on purpose: app-shell pages (.db-shell map, .mi-wrap, portal
+   dashboards) that size to a header variable; pricing (own non-fixed header);
+   headerless auth pages (.signup-split); .search-wrap (reused as an inner
+   search bar elsewhere) and .sp-section (repeats mid-page) — both handled
+   with page-scoped selectors below.
+   ============================================================================ */
+@media (max-width: 600px) {
+    .nf-hero, .about-hero, .ag-hero, .blog-index-header, .post-head,
+    .careers-hero, .co-hero, .page-header, .tool-head, .hv-head, .lm-hero,
+    .legal-hero, .pm-head, .rx-hero, .tn-hero, .bl-shell, .bs-wrap,
+    .sb-shell, .bz-shell, .lst-wrap, #profile-hero {
+        padding-top: 7rem !important;
+    }
+    /* buy/sell/rent: only the FIRST .sp-section (the hero) — the class repeats
+       for mid-page sections, so scope to the one right after the header. */
+    global-header + .sp-section { padding-top: 7rem !important; }
+    /* search.html is normalized in its own inline <style> (7rem) because
+       .search-wrap is reused as an inner search bar on agents/blog/resources. */
+}
+
 /* Hero CTAs */
 .hero-ctas {
     display: flex;
