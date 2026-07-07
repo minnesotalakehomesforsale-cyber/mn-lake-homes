@@ -22,7 +22,7 @@
             .msg-thread { display: none; }
             body.thread-open .msg-thread {
                 display: flex; position: fixed; inset: 0; z-index: 6000;
-                border-radius: 0; min-height: 100vh; height: 100dvh;
+                border-radius: 0; height: 100dvh; max-height: 100dvh; overflow: hidden;
                 animation: slideInThread 0.22s ease;
             }
             body.thread-open { overflow: hidden; }
@@ -31,7 +31,12 @@
             .msg-thread-back { display: inline-flex; }
             .msg-thread-head h2 { font-size: 1.05rem; }
             .m-row { max-width: 88%; }
-            .msg-compose { position: sticky; bottom: 0; background: #fff; padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+            .msg-compose { flex-shrink: 0; background: #fff; padding-bottom: max(0.9rem, env(safe-area-inset-bottom)); }
+            /* When the full-screen thread is open, the floating admin-nav hamburger
+               would otherwise sit on top of the thread header — hide it. */
+            body.thread-open .side-toggle,
+            body.thread-open .mobile-menu-btn,
+            body.thread-open .admin-hamburger { display: none !important; }
         }
 
         .msg-list {
