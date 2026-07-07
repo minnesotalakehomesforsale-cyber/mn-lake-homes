@@ -18,7 +18,7 @@
         .dashboard-container { max-width: none !important; margin: 0 !important; padding: 0 !important; }
         .dash-grid {
             display: grid;
-            grid-template-columns: 284px minmax(0, 1fr);
+            grid-template-columns: 260px minmax(0, 1fr);
             gap: 0;
             align-items: start;
             padding-top: var(--header-h);   /* clear the fixed global header */
@@ -47,6 +47,8 @@
            you switch between Dashboard / Profile / Leads / Messages. */
         .dash-content > .view-card {
             padding: 2.75rem !important;
+            border-radius: 16px !important;
+            box-shadow: 0 2px 10px rgba(16,24,40,0.04) !important;
             margin: 0 0 1.5rem;
             border-radius: 14px;
         }
@@ -82,7 +84,7 @@
         .ls-contacted { background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
         .ls-closed { background: #edf2f7; color: #4a5568; }
         .ls-archived { background: #fff5f5; color: #9b2c2c; }
-        .nav-tab { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 500; color: #718096; text-decoration: none; border: none; background: none; font-size: 1rem; width: 100%; font-family: inherit; transition: all 0.15s; }
+        .nav-tab { display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 0.85rem; border-radius: 9px; cursor: pointer; font-weight: 600; color: #718096; text-decoration: none; border: none; background: none; font-size: 0.95rem; width: 100%; font-family: inherit; transition: all 0.15s; }
         .nav-tab:hover { background: #f7f9fa; color: #1a202c; }
         .nav-tab.active { background: #ebf4ff; color: #1d6df2; font-weight: 700; }
         .nav-tab .badge-count { background: #1d6df2; color: #fff; border-radius: 20px; padding: 0.1rem 0.5rem; font-size: 0.7rem; font-weight: 700; margin-left: auto; }
@@ -94,7 +96,7 @@
         .dash-status.yellow { background: #fffbea; color: #b45309; } .dash-status.yellow .dot { background: #d69e2e; }
         .dash-status.red    { background: #fff5f5; color: #c53030; } .dash-status.red    .dot { background: #e53e3e; }
         .dash-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
-        .dash-card { position: relative; display: flex; flex-direction: column; gap: 0.45rem; text-align: left; background: #fff; border: 1px solid #edf2f7; border-radius: 12px; padding: 1.35rem 1.4rem 1.5rem; cursor: pointer; font: inherit; transition: all 0.15s; text-decoration: none; color: inherit; overflow: hidden; }
+        .dash-card { position: relative; display: flex; flex-direction: column; gap: 0.45rem; text-align: left; background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.35rem 1.4rem 1.5rem; cursor: pointer; font: inherit; transition: all 0.15s; text-decoration: none; color: inherit; overflow: hidden; }
         .dash-card::before {
             content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
             background: var(--ac, #1d6df2); opacity: 0.85;
@@ -134,7 +136,7 @@
         .lb-stat { font-size: 0.82rem; color: #718096; white-space: nowrap; }
 
         /* Articles section */
-        .dash-section-h { font-size: 1.1rem; font-weight: 800; color: #1a202c; letter-spacing: -0.3px; margin: 2.25rem 0 1rem; }
+        .dash-section-h { font-size: 1.15rem; font-weight: 800; color: #1a202c; letter-spacing: -0.3px; margin: 2.25rem 0 1rem; }
         .dash-articles { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
         .dash-article { display: flex; flex-direction: column; background: #fff; border: 1px solid #edf2f7; border-radius: 14px; overflow: hidden; text-decoration: none; color: inherit; transition: all 0.15s; }
         .dash-article:hover { transform: translateY(-3px); border-color: #1d6df2; box-shadow: 0 14px 30px rgba(16,24,40,0.08); }
@@ -161,7 +163,7 @@
         /* ── CRM lead table ─────────────────────────────────────────── */
         .lead-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.85rem; margin-bottom: 1.5rem; }
         @media (max-width: 720px) { .lead-stats { grid-template-columns: repeat(2, 1fr); } }
-        .lead-stat { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; padding: 1.1rem 1.25rem; }
+        .lead-stat { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.1rem 1.25rem; }
         .lead-stat .ls-lbl { font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 0.4rem; }
         .lead-stat .ls-val { font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; line-height: 1; }
         .lead-table { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; overflow: hidden; }
@@ -230,7 +232,7 @@
 
         /* ── Tablet ≤ 1100px: narrow the rail a touch ───────────────────────── */
         @media (max-width: 1100px) {
-            .dash-grid { grid-template-columns: 240px minmax(0, 1fr); }
+            .dash-grid { grid-template-columns: 220px minmax(0, 1fr); }
             .dash-content { padding: 2.25rem 2rem 3.5rem; }
         }
 
@@ -258,7 +260,7 @@
                 width: auto; display: inline-flex; flex-shrink: 0;
                 white-space: nowrap; padding: 0.55rem 0.9rem; font-size: 0.9rem;
             }
-            .dash-content { padding: 1.5rem 1.1rem 3rem; min-height: 0; }
+            .dash-content { padding: 1.75rem 1.25rem 3rem; min-height: 0; }
             .dash-content > .view-card { padding: 1.5rem 1.25rem !important; }
             .view-card .grid-2 { grid-template-columns: 1fr !important; gap: 0.75rem !important; }
             .profile-card-header {
