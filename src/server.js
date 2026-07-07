@@ -559,7 +559,6 @@ app.get('/sitemap.xml', async (req, res) => {
             { url: '/home-value',      priority: 0.8, changefreq: 'weekly'  },
             { url: '/towns',           priority: 0.9, changefreq: 'weekly'  },
             { url: '/towns?view=props', priority: 0.8, changefreq: 'daily'  },
-            { url: '/market-index',    priority: 0.7, changefreq: 'weekly'  },
             { url: '/agents',          priority: 0.8, changefreq: 'weekly'  },
             { url: '/cash-offer',      priority: 0.7, changefreq: 'monthly' },
             { url: '/blog',            priority: 0.7, changefreq: 'daily'   },
@@ -1573,6 +1572,9 @@ app.post('/unsubscribe', (req, res) => doUnsubscribe(req, res, false));
 
 // Public MN Lake Market Index.
 app.get('/market-index', (req, res, next) => {
+    // Hidden until we have enough live listings to make it meaningful.
+    // Re-enable by setting MARKET_INDEX_PUBLIC=true in the environment.
+    if (process.env.MARKET_INDEX_PUBLIC !== 'true') return res.redirect(302, '/towns');
     fs.readFile(path.join(PROJECT_ROOT, 'pages/public/market-index.html'), 'utf8', (err, html) => {
         if (err) return next(err);
         res.type('html').send(html);

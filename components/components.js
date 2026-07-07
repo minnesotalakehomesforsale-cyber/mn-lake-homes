@@ -348,7 +348,6 @@ class GlobalHeader extends HTMLElement {
                     { heading: 'Browse', links: [
                         { label: 'Lakes & Towns map',    href: '/towns' },
                         { label: 'Lake Properties map',  href: '/towns?view=props' },
-                        { label: 'Market Index',         href: '/market-index' },
                         { label: 'Featured Agents',      href: `${bp}agents.html?featured=1` },
                         { label: 'List your Business',   href: '/business-signup' },
                     ]},
@@ -598,7 +597,6 @@ class GlobalFooter extends HTMLElement {
                     <h4>Explore</h4>
                     <a href="/towns">Lakes &amp; Towns</a>
                     <a href="/towns?view=props">Lake Properties Map</a>
-                    <a href="/market-index">Market Index</a>
                     <a href="${bp}resources.html">Resource Library</a>
                     <a href="${bp}blog.html">Blog</a>
                     <a href="${bp}find-your-lake.html">Find Your Lake</a>
