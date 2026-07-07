@@ -329,7 +329,16 @@
 
         // Wrap tables now, and again after any dynamic data loads (observer)
         wrapTables();
-        const mo = new MutationObserver(() => wrapTables());
+        // Singleton guard: kill any duplicate hamburger/backdrop (e.g. a stale
+        // cached copy layered under the fresh one) so only ever ONE shows.
+        const dedupe = () => {
+            ['.admin-hamburger', '.admin-side-backdrop'].forEach(sel => {
+                const els = document.querySelectorAll(sel);
+                for (let i = 1; i < els.length; i++) els[i].remove();
+            });
+        };
+        dedupe();
+        const mo = new MutationObserver(() => { wrapTables(); dedupe(); });
         mo.observe(document.body, { childList: true, subtree: true });
     }
 
