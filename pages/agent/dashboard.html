@@ -137,6 +137,8 @@
 
         /* Articles section */
         .dash-section-h { font-size: 1.15rem; font-weight: 800; color: #1a202c; letter-spacing: -0.3px; margin: 2.25rem 0 1rem; }
+        /* Shared empty state — matches the user dashboard's .ud-leads-state. */
+        .ac-empty { color: #718096; font-size: 0.92rem; padding: 2.5rem 1.5rem; text-align: center; background: #fafbfc; border: 1px dashed #e2e8f0; border-radius: 12px; }
         .dash-articles { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
         .dash-article { display: flex; flex-direction: column; background: #fff; border: 1px solid #edf2f7; border-radius: 14px; overflow: hidden; text-decoration: none; color: inherit; transition: all 0.15s; }
         .dash-article:hover { transform: translateY(-3px); border-color: #1d6df2; box-shadow: 0 14px 30px rgba(16,24,40,0.08); }
@@ -1144,7 +1146,7 @@
                 if (!res.ok) throw new Error();
                 const rows = await res.json();
                 if (!rows.length) {
-                    box.innerHTML = '<div style="text-align:center;padding:3rem 1rem;color:#a0aec0;">No properties yet. Click <b>+ Add property</b> to post your first listing.</div>';
+                    box.innerHTML = '<div class="ac-empty">No properties yet. Click <b>+ Add property</b> to post your first listing.</div>';
                     return;
                 }
                 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1407,7 +1409,7 @@
                 if (!r.ok) throw new Error();
                 const posts = await r.json();
                 if (!Array.isArray(posts) || !posts.length) {
-                    host.innerHTML = '<div style="grid-column:1/-1;color:#a0aec0;font-size:0.92rem;padding:1rem 0;">No articles yet — check back soon.</div>';
+                    host.innerHTML = '<div class="ac-empty" style="grid-column:1/-1;">No articles yet — check back soon.</div>';
                     return;
                 }
                 host.innerHTML = posts.slice(0, 3).map(p => {
