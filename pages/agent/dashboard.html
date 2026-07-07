@@ -12,6 +12,9 @@
         /* ── App shell: fixed left rail + scrolling content (mirrors the admin
               backend). The sidebar stays put; only the right pane changes. ── */
         :root { --header-h: 84px; }
+        /* The fixed navbar shrinks to ~56-60px on phones; reserve a tighter,
+           consistent amount so there's no dead gap above the tab rail. */
+        @media (max-width: 900px) { :root { --header-h: 72px; } }
         .dashboard-container { max-width: none !important; margin: 0 !important; padding: 0 !important; }
         .dash-grid {
             display: grid;
