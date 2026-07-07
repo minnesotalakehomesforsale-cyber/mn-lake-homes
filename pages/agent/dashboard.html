@@ -749,8 +749,9 @@
                 <!-- ── MESSAGES VIEW — two-way chat with the MNLH team ── -->
                 <style>
                     .msg-chat { padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; height: calc(100vh - 230px); max-height: 680px; }
-                    .msg-chat-head { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 1.25rem; border-bottom: 1px solid #edf2f7; flex-shrink: 0; }
-                    .msg-chat-head h2 { font-size: 1.2rem; font-weight: 800; margin: 0; }
+                    .msg-chat-head { display: flex; align-items: center; gap: 0.5rem; padding: 0.9rem 1.25rem; border-bottom: 1px solid #edf2f7; flex-shrink: 0; }
+                    .msg-chat-head h2 { font-size: 1.2rem; font-weight: 800; margin: 0; flex: 1; }
+                    .msg-chat-back { display: none; background: none; border: 0; color: #1d6df2; font-weight: 700; font-size: 1rem; cursor: pointer; padding: 0.2rem 0.2rem 0.2rem 0; align-items: center; }
                     .msg-refresh { border: 1px solid #e2e8f0; background: #f7f9fa; border-radius: 8px; width: 36px; height: 36px; font-size: 1rem; cursor: pointer; color: #4a5568; }
                     .msg-refresh:hover { border-color: #1d6df2; color: #1d6df2; }
                     .msg-chat-body { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 1.1rem 1rem; display: flex; flex-direction: column; gap: 0.45rem; }
@@ -767,10 +768,18 @@
                     .msg-chat-compose textarea:focus { border-color: #1d6df2; }
                     .msg-chat-compose button { flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%; background: #1d6df2; color: #fff; border: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
                     .msg-chat-compose button:hover { background: #155bc8; }
-                    @media (max-width: 900px) { .msg-chat { height: calc(100dvh - 150px); max-height: none; } }
+                    @media (max-width: 900px) {
+                        /* True full-screen chat overlay (like the Messages app): the
+                           composer is pinned to the real viewport bottom, not below the fold. */
+                        .msg-chat { position: fixed; inset: 0; z-index: 5000; height: auto; max-height: none; border-radius: 0; border: 0; box-shadow: none; }
+                        .msg-chat-head { padding-top: calc(0.9rem + env(safe-area-inset-top)); }
+                        .msg-chat-head h2 { text-align: center; }
+                        .msg-chat-back { display: inline-flex; }
+                    }
                 </style>
                 <div id="view-messages" class="view-card msg-chat" style="display:none;">
                     <div class="msg-chat-head">
+                        <button class="msg-chat-back" onclick="switchView('dashboard')" aria-label="Back">‹ Back</button>
                         <h2>Messages</h2>
                         <button class="msg-refresh" onclick="loadMessages()" title="Refresh" aria-label="Refresh">↺</button>
                     </div>
