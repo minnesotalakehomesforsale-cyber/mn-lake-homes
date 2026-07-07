@@ -990,8 +990,7 @@ body > * { min-width: 0; }
 }
 
 @media (max-width: 900px) {
-    /* Cap the headline on tablets so 11vw doesn't blow it up to ~77px. */
-    .title { font-size: clamp(2.4rem, 7vw, 3.4rem); line-height: 1.06; }
+    .title { font-size: clamp(3rem, 9vw, 4.6rem); line-height: 1.04; }
     /* Mobile nav simplifies to: logo + single auth pill + hamburger.
        The full Log In / Get Started pair is desktop-only. */
     .nav-links,
@@ -1006,11 +1005,10 @@ body > * { min-width: 0; }
 }
 
 @media (max-width: 600px) {
-    /* Phones: headline was clamping to ~48px and swallowing the screen, which
-       made the eyebrow look tiny by comparison. ~31px keeps it strong but in
-       proportion with the eyebrow above it. */
-    .title { font-size: clamp(1.9rem, 8vw, 2.6rem); line-height: 1.1; letter-spacing: -0.01em; }
-    .subtitle { font-size: 0.95rem; letter-spacing: 1.5px; margin-bottom: 0.9rem; }
+    /* Phones: big, bold headline (~70-75px) with a small eyebrow above it —
+       maximum contrast, the way the hero is meant to read. */
+    .title { font-size: clamp(3.25rem, 18vw, 5rem); line-height: 1.02; letter-spacing: -0.02em; }
+    .subtitle { font-size: 0.72rem; letter-spacing: 1.5px; margin-bottom: 0.85rem; }
     .hero-section .btn { padding: 0.75rem 1.25rem; font-size: 0.9rem; font-weight: 700; }
     .left-card, .right-card, .center-card { flex: 0 0 78vw; height: 320px; }
     .flex-title { font-size: 2.25rem; }

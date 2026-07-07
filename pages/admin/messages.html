@@ -14,30 +14,6 @@
         .page-head p  { color: #718096; font-size: 0.95rem; margin: 0; }
 
         .msg-layout { display: grid; grid-template-columns: 320px 1fr; gap: 1.25rem; align-items: start; }
-        @media (max-width: 860px) {
-            .msg-layout { grid-template-columns: 1fr; }
-            /* iOS-Messages feel: the list is the whole screen; tapping a person
-               slides the thread in full-screen over it. */
-            .msg-list { max-height: none; border-radius: 12px; }
-            .msg-thread { display: none; }
-            body.thread-open .msg-thread {
-                display: flex; position: fixed; inset: 0; z-index: 6000;
-                border-radius: 0; height: 100dvh; max-height: 100dvh; overflow: hidden;
-                animation: slideInThread 0.22s ease;
-            }
-            body.thread-open { overflow: hidden; }
-            @keyframes slideInThread { from { transform: translateX(100%); } to { transform: translateX(0); } }
-            .msg-thread-head { position: sticky; top: 0; background: #fff; z-index: 2; }
-            .msg-thread-back { display: inline-flex; }
-            .msg-thread-head h2 { font-size: 1.05rem; }
-            .m-row { max-width: 88%; }
-            .msg-compose { flex-shrink: 0; background: #fff; padding-bottom: max(0.9rem, env(safe-area-inset-bottom)); }
-            /* When the full-screen thread is open, the floating admin-nav hamburger
-               would otherwise sit on top of the thread header — hide it. */
-            body.thread-open .side-toggle,
-            body.thread-open .mobile-menu-btn,
-            body.thread-open .admin-hamburger { display: none !important; }
-        }
 
         .msg-list {
             background: #fff; border: 1px solid #edf2f7; border-radius: 14px;
@@ -159,6 +135,35 @@
         .bc-foot .ghost { background: #fff; color: #4a5568; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.65rem 1.2rem; font: inherit; font-weight: 600; cursor: pointer; }
         .bc-foot .send { background: #1d6df2; color: #fff; border: 0; border-radius: 10px; padding: 0.65rem 1.4rem; font: inherit; font-weight: 700; cursor: pointer; }
         .bc-foot .send:disabled { opacity: 0.6; cursor: default; }
+
+        /* ==========================================================
+           MOBILE (iPhone Messages behaviour). Placed LAST on purpose:
+           media queries add no specificity, so these must come after the
+           base rules above or the base rules win and (a) the empty thread
+           box shows below the list and (b) the Back button stays hidden.
+           On phones the list is the whole screen; tapping a person slides
+           the thread + composer in full-screen over it.
+           ========================================================== */
+        @media (max-width: 860px) {
+            .msg-layout { grid-template-columns: 1fr; }
+            .msg-list { max-height: none; border-radius: 12px; }
+            /* Thread is hidden until a conversation is opened. */
+            .msg-thread { display: none; }
+            body.thread-open .msg-thread {
+                display: flex; position: fixed; inset: 0; z-index: 6000;
+                border-radius: 0; height: 100dvh; max-height: 100dvh; overflow: hidden;
+                animation: slideInThread 0.22s ease;
+            }
+            body.thread-open { overflow: hidden; }
+            @keyframes slideInThread { from { transform: translateX(100%); } to { transform: translateX(0); } }
+            .msg-thread-head { position: sticky; top: 0; background: #fff; z-index: 2; }
+            .msg-thread-back { display: inline-flex; }
+            .msg-thread-head h2 { font-size: 1.05rem; }
+            .m-row { max-width: 88%; }
+            .msg-compose { flex-shrink: 0; background: #fff; padding: 0.85rem 1rem max(0.9rem, env(safe-area-inset-bottom)); }
+            /* Hide the floating admin hamburger while the full-screen thread is open. */
+            body.thread-open .admin-hamburger { display: none !important; }
+        }
     </style>
     <script src="../../components/admin-guard.js"></script>
     <script src="../../components/admin-responsive.js" defer></script>
