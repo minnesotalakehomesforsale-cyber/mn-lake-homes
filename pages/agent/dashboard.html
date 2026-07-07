@@ -748,7 +748,7 @@
 
                 <!-- ── MESSAGES VIEW — two-way chat with the MNLH team ── -->
                 <style>
-                    .msg-chat { padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; height: calc(100vh - 230px); max-height: 680px; }
+                    .msg-chat { background: #fff; padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; height: calc(100vh - 230px); max-height: 680px; border: 1px solid #edf2f7; border-radius: 12px; }
                     .msg-chat-head { display: flex; align-items: center; gap: 0.5rem; padding: 0.9rem 1.25rem; border-bottom: 1px solid #edf2f7; flex-shrink: 0; }
                     .msg-chat-head h2 { font-size: 1.2rem; font-weight: 800; margin: 0; flex: 1; }
                     .msg-chat-back { display: none; background: none; border: 0; color: #1d6df2; font-weight: 700; font-size: 1rem; cursor: pointer; padding: 0.2rem 0.2rem 0.2rem 0; align-items: center; }
@@ -771,7 +771,9 @@
                     @media (max-width: 900px) {
                         /* True full-screen chat overlay (like the Messages app): the
                            composer is pinned to the real viewport bottom, not below the fold. */
-                        .msg-chat { position: fixed; inset: 0; z-index: 5000; height: auto; max-height: none; border-radius: 0; border: 0; box-shadow: none; }
+                        .msg-chat { position: fixed; inset: 0; z-index: 5000; height: auto; max-height: none; border-radius: 0; border: 0; box-shadow: none; background: #fff; }
+                        /* Lock the page behind so only the chat scrolls. */
+                        body.agent-chat-open { overflow: hidden; }
                         .msg-chat-head { padding-top: calc(0.9rem + env(safe-area-inset-top)); }
                         .msg-chat-head h2 { text-align: center; }
                         .msg-chat-back { display: inline-flex; }
@@ -1063,6 +1065,7 @@
             document.getElementById('view-dashboard').style.display = topView === 'dashboard' ? 'block' : 'none';
             document.getElementById('view-leads').style.display     = topView === 'leads'     ? 'block' : 'none';
             document.getElementById('view-messages').style.display  = topView === 'messages'  ? 'flex' : 'none';
+            document.body.classList.toggle('agent-chat-open', topView === 'messages');
             document.getElementById('view-properties').style.display = topView === 'properties' ? 'block' : 'none';
             const vRes = document.getElementById('view-resources');
             if (vRes) vRes.style.display = topView === 'resources' ? 'block' : 'none';
