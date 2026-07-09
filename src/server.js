@@ -4039,10 +4039,30 @@ async function seedBlogPosts() {
     let batch6 = [];
     try { batch6 = require('./data/blog-batch6'); } catch (_) { batch6 = []; }
     let added = 0, failed = 0;
+    // Duplicate drafts that shadow an already-live (or cleaner-slug) post.
+    // We (1) skip them below so they never re-seed, and (2) delete any that a
+    // prior deploy already inserted. The is_published=false guard means a live
+    // post can NEVER be deleted here.
+    const DEDUPE_SLUGS = [
+        'winterize-minnesota-lake-cabin',            // dup of live how-to-winterize-a-lake-cabin
+        'lake-vermilion-buyers-guide-2026',          // dup of live lake-vermilion-buyers-guide
+        'mille-lacs-lake-home-buyers-guide-2026',    // dup of live mille-lacs-lake-buyers-guide-2026
+        'best-walleye-lakes-minnesota-cabin-buyers', // dup of best-walleye-lakes-in-minnesota
+    ];
+    const _dedupeSkip = new Set(DEDUPE_SLUGS);
+    try {
+        const del = await pool.query(
+            `DELETE FROM blog_posts WHERE slug = ANY($1) AND is_published = false`,
+            [DEDUPE_SLUGS]
+        );
+        if (del.rowCount) console.log(`[blog dedupe] removed ${del.rowCount} duplicate draft(s)`);
+    } catch (e) { console.error('[blog dedupe]', e.message); }
+
     // Per-post try/catch so one bad row (e.g. an over-length title) can't abort
     // the whole loop and silently drop every post after it — the newest drafts
     // are seeded LAST, so a mid-loop throw used to make them vanish.
     for (const p of [...posts, ...drafts, ...newDrafts, ...batch, ...batch4, ...batch5, ...batch6]) {
+        if (_dedupeSkip.has(p.slug)) continue;
         try {
             const r = await pool.query(`
                 INSERT INTO blog_posts
