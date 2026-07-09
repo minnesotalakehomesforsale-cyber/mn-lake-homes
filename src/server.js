@@ -2222,6 +2222,24 @@ app.get('/api/tools/lakes', async (req, res) => {
     }
 });
 
+// ─── Legacy /pages/public/<name>.html → clean-URL 301 (SEO consolidation) ───
+// The clean routes (/buy, /sell, …) are canonical. Old static paths still
+// resolve via express.static below, which means duplicate content at two URLs.
+// Redirect them so Google collapses each duplicate onto one canonical URL.
+// Dynamic templates (lake-detail, etc.) render from a slug route — leave them.
+const _DYNAMIC_TPL = new Set([
+    'lake-detail', 'town-detail', 'business-detail', 'listing-detail',
+    'agent-profile', 'blog-post', '404',
+]);
+app.use((req, res, next) => {
+    const m = req.path.match(/^\/pages\/public\/([a-z0-9-]+)\.html$/i);
+    if (!m) return next();
+    const name = m[1].toLowerCase();
+    if (_DYNAMIC_TPL.has(name)) return next();
+    const qi = req.originalUrl.indexOf('?');
+    return res.redirect(301, '/' + name + (qi >= 0 ? req.originalUrl.slice(qi) : ''));
+});
+
 app.use(express.static(PROJECT_ROOT, {
     // Freshness policy so edits show up without a manual cache purge:
     //  • HTML: always revalidate (etag → instant 304 when unchanged).
