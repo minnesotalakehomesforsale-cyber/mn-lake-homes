@@ -4044,10 +4044,20 @@ async function seedBlogPosts() {
     // prior deploy already inserted. The is_published=false guard means a live
     // post can NEVER be deleted here.
     const DEDUPE_SLUGS = [
+        // Exact duplicates (first pass)
         'winterize-minnesota-lake-cabin',            // dup of live how-to-winterize-a-lake-cabin
         'lake-vermilion-buyers-guide-2026',          // dup of live lake-vermilion-buyers-guide
         'mille-lacs-lake-home-buyers-guide-2026',    // dup of live mille-lacs-lake-buyers-guide-2026
         'best-walleye-lakes-minnesota-cabin-buyers', // dup of best-walleye-lakes-in-minnesota
+        // Near-duplicates (same topic/angle) — keep the better-titled or live one
+        'year-round-vs-seasonal-lake-homes-minnesota',       // dup of seasonal-cabin-vs-year-round-lake-home-minnesota
+        'best-minnesota-lakes-within-two-hours-twin-cities', // dup of best-minnesota-lakes-near-twin-cities
+        'septic-and-well-inspections-mn-lake-homes',         // dup of minnesota-lake-home-septic-and-well-guide
+        'whitefish-chain-crosslake-buyers-guide-2026',       // dup of live whitefish-chain-buyers-guide
+        'property-taxes-minnesota-lakefront-what-to-expect', // dup of minnesota-lakefront-property-taxes-explained
+        'financing-a-minnesota-lake-home-or-cabin',          // dup of live minnesota-lake-home-financing-guide
+        'understanding-minnesota-shoreland-rules-before-you-buy', // dup of minnesota-shoreland-rules-before-you-buy
+        'best-minnesota-lakes-for-boating-and-water-sports', // dup of live top-10-minnesota-lakes-for-boating
     ];
     const _dedupeSkip = new Set(DEDUPE_SLUGS);
     try {
