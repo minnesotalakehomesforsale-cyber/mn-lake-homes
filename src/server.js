@@ -4058,6 +4058,13 @@ async function seedBlogPosts() {
         'financing-a-minnesota-lake-home-or-cabin',          // dup of live minnesota-lake-home-financing-guide
         'understanding-minnesota-shoreland-rules-before-you-buy', // dup of minnesota-shoreland-rules-before-you-buy
         'best-minnesota-lakes-for-boating-and-water-sports', // dup of live top-10-minnesota-lakes-for-boating
+        // Aggressive pass — content overlaps another post; keep the stronger/live one
+        'first-time-lake-buyer-mistakes-to-avoid-minnesota',    // overlaps live first-time-buyer starter guide
+        'ice-fishing-culture-minnesota-lakes',                  // overlaps best-minnesota-lakes-for-ice-fishing
+        'short-term-rental-rules-minnesota-lake-cabins',        // overlaps renting-out-your-cabin
+        'minnesota-best-fishing-lakes-compared-walleye-bass-panfish', // overlaps live bass + walleye species lists
+        'guide-grand-rapids-pokegama-lake',                    // overlaps Pokegama buyer's guide
+        'exploring-spicer-green-lake',                         // overlaps Green Lake buyer's guide
     ];
     const _dedupeSkip = new Set(DEDUPE_SLUGS);
     try {
