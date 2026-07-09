@@ -1348,7 +1348,10 @@ function _lfTrack(event, params) {
 
 window.openForm = function(type, prefill) {
     _lfInit();
-    const t = type || 'general';
+    // Resolve the flow key. Map legacy aliases and fall back to 'general' so an
+    // unknown type can never throw (which would make a CTA button dead-click).
+    let t = type || 'general';
+    if (!_LF_CFG[t]) t = ({ buyer: 'buy', seller: 'sell' }[t]) || 'general';
     const data = { ...(prefill && typeof prefill === 'object' ? prefill : {}) };
     // Attribution: an explicit prefill._source wins, else a ?ref= URL param
     // (so a tool/page can tag where the lead came from). Stored on _lfs and
@@ -2050,7 +2053,7 @@ document.addEventListener('keydown', e => {
         get: k => { try { return sessionStorage.getItem(k); } catch (_) { return null; } },
         set: (k, v) => { try { sessionStorage.setItem(k, v); } catch (_) {} },
     };
-    const openLead = (src) => { if (typeof window.openForm === 'function') window.openForm('buyer', { _source: src }); };
+    const openLead = (src) => { if (typeof window.openForm === 'function') window.openForm('buy', { _source: src }); };
     const formOpen = () => { const o = document.getElementById('lf-overlay'); return o && o.style.display !== 'none'; };
 
     // Build an honest one-liner from the biggest credible number; null if none
