@@ -1,15 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/inquiry.controller');
+const { verifyToken, requireRole } = require('../middleware/auth');
 
-// Public
+// Admin-only guard for reading/managing submitted inquiries (customer PII).
+const adminOnly = [verifyToken, requireRole(['admin', 'super_admin'])];
+
+// ─── Public — submit an inquiry / job application (contact + careers forms) ──
 router.post('/', ctrl.createInquiry);
 router.post('/upload-resume', ctrl.uploadResume);
 
-// Admin (no auth wall — covered by admin-guard.js on the page)
-router.get('/',              ctrl.getInquiries);
-router.get('/unread-count',  ctrl.getUnreadCount);
-router.patch('/:id',         ctrl.updateInquiry);
-router.delete('/:id',        ctrl.deleteInquiry);
+// ─── Admin — read/manage inquiries. Previously OPEN (leaked customer PII);
+//     now behind admin auth. The public POST routes above stay open. ─────────
+router.get('/',              ...adminOnly, ctrl.getInquiries);
+router.get('/unread-count',  ...adminOnly, ctrl.getUnreadCount);
+router.patch('/:id',         ...adminOnly, ctrl.updateInquiry);
+router.delete('/:id',        ...adminOnly, ctrl.deleteInquiry);
 
 module.exports = router;

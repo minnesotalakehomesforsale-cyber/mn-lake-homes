@@ -1,12 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const taskController = require('../controllers/task.controller');
+const { verifyToken, requireRole } = require('../middleware/auth');
 
-// No auth walls per project convention
-router.get('/counts',  taskController.getTaskCounts); // must come before '/:id'
-router.get('/',        taskController.getTasks);
-router.post('/',       taskController.createTask);
-router.patch('/:id',   taskController.updateTask);     // accepts { note?, details?, due_date?, is_completed? }; empty body = toggle
-router.delete('/:id',  taskController.deleteTask);
+// Every task endpoint is the internal admin task board — admin-only.
+// Previously OPEN to the internet; now auth-walled.
+const adminOnly = [verifyToken, requireRole(['admin', 'super_admin'])];
+
+router.get('/counts',  ...adminOnly, taskController.getTaskCounts); // before '/:id'
+router.get('/',        ...adminOnly, taskController.getTasks);
+router.post('/',       ...adminOnly, taskController.createTask);
+router.patch('/:id',   ...adminOnly, taskController.updateTask);     // { note?, details?, due_date?, is_completed? }; empty body = toggle
+router.delete('/:id',  ...adminOnly, taskController.deleteTask);
 
 module.exports = router;
