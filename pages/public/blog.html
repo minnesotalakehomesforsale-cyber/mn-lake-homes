@@ -38,7 +38,7 @@
       "@context": "https://schema.org",
       "@type": "Blog",
       "name": "MinnesotaLakeHomesForSale.com — Blog &amp; Resources",
-      "url": "https://minnesotalakehomesforsale.com/pages/public/blog.html",
+      "url": "https://minnesotalakehomesforsale.com/blog",
       "description": "Expert advice on buying, selling, and living the Minnesota lake life.",
       "publisher": {
         "@type": "RealEstateAgent",
@@ -185,7 +185,7 @@
         function buildCard(p) {
             // Generated lake-themed cover tile (no photos for now).
             return `
-                <a href="/pages/public/blog-post.html?slug=${p.slug}" class="blog-card">
+                <a href="/blog/${p.slug}" class="blog-card">
                     ${window.mnlhBlogCover ? window.mnlhBlogCover(p.tag) : ''}
                     <div class="blog-meta">
                         <span class="blog-tag">${p.tag || 'General'}</span>

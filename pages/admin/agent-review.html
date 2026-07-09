@@ -806,7 +806,7 @@
 
         // Public profile link
         document.getElementById('link-public-profile').href =
-            `/pages/public/agent-profile.html?slug=${a.slug}`;
+            `/agent-profile?slug=${a.slug}`;
 
         // HubSpot deep link — only renders once sync has populated hs_contact_id.
         const hsLink    = document.getElementById('link-hubspot');

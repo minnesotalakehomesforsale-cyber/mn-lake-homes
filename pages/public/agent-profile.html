@@ -16,7 +16,7 @@
 
     <!-- Back-to-agents link (sits on top of hero background) -->
     <div class="agent-back-wrap">
-        <a href="/pages/public/agents.html" class="agent-back-link" aria-label="Back to all agents">
+        <a href="/agents" class="agent-back-link" aria-label="Back to all agents">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
@@ -337,7 +337,7 @@
                     const sub  = document.getElementById('agent-blog-sub');
                     sub.textContent = `Featuring ${agent.display_name.split(' ')[0]}`;
                     grid.innerHTML = posts.map(p => `
-                        <a href="/pages/public/blog-post.html?slug=${encodeURIComponent(p.slug)}" style="text-decoration:none; color:inherit; display:block; background:#fff; border:1px solid #edf2f7; border-radius:14px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.04); transition:transform .15s, box-shadow .15s;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 28px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.04)'">
+                        <a href="/blog/${encodeURIComponent(p.slug)}" style="text-decoration:none; color:inherit; display:block; background:#fff; border:1px solid #edf2f7; border-radius:14px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.04); transition:transform .15s, box-shadow .15s;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 28px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.04)'">
                             <div style="aspect-ratio:16/10; background:#f0f2f5;">
                                 <img src="${esc(p.cover_image_url || '/assets/images/beach-style-exterior.jpg')}" alt="${esc(p.title)}" loading="lazy" style="width:100%; height:100%; object-fit:cover;">
                             </div>

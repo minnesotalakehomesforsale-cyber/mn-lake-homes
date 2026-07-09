@@ -135,11 +135,11 @@
     </div>
 
     <p class="footnote">
-        Need to manage an existing plan? <a href="/pages/agent/dashboard.html">Open your dashboard</a> — billing, invoices, and cancellation all live in the Stripe Customer Portal linked from there. Questions about plan differences? <a href="/pages/public/contact.html">Get in touch</a>.
+        Need to manage an existing plan? <a href="/pages/agent/dashboard.html">Open your dashboard</a> — billing, invoices, and cancellation all live in the Stripe Customer Portal linked from there. Questions about plan differences? <a href="/contact">Get in touch</a>.
     </p>
 
     <footer class="cko-ftr">
-        Secure checkout via Stripe · Cancel anytime · <a href="/pages/public/terms.html">Terms</a>
+        Secure checkout via Stripe · Cancel anytime · <a href="/terms">Terms</a>
     </footer>
     <script src="../../components/components.js" defer></script>
 
@@ -231,13 +231,13 @@
             if (!session) {
                 _gateState = { kind: 'logged_out' };
                 banner.className = 'gate-banner show';
-                banner.innerHTML = `Sign in as an agent to subscribe. <a href="/pages/public/agent-login.html?redirect=${encodeURIComponent('/pages/public/pricing.html')}">Sign in &rarr;</a> &nbsp;·&nbsp; New to MN Lake Homes? <a href="/pages/public/join.html">Create your agent profile &rarr;</a>`;
+                banner.innerHTML = `Sign in as an agent to subscribe. <a href="/agent-login?redirect=${encodeURIComponent('/pricing')}">Sign in &rarr;</a> &nbsp;·&nbsp; New to MN Lake Homes? <a href="/join">Create your agent profile &rarr;</a>`;
                 return;
             }
             if (session.role !== 'agent') {
                 _gateState = { kind: 'wrong_role' };
                 banner.className = 'gate-banner show';
-                banner.innerHTML = `You're signed in as <b>${esc(session.role)}</b>, but agent plans are only for agents. <a href="/pages/public/join.html">Create an agent account &rarr;</a>`;
+                banner.innerHTML = `You're signed in as <b>${esc(session.role)}</b>, but agent plans are only for agents. <a href="/join">Create an agent account &rarr;</a>`;
                 return;
             }
             // 2) Has agent profile?
@@ -262,10 +262,10 @@
             // Free plan has no checkout — new agents start free; just send a
             // logged-out visitor to create their (free) profile.
             if (tier === 'free') {
-                if (_gateState.kind === 'logged_out') window.location.href = '/pages/public/join.html';
+                if (_gateState.kind === 'logged_out') window.location.href = '/join';
                 return;
             }
-            if (_gateState.kind === 'logged_out') { window.location.href = `/pages/public/agent-login.html?redirect=${encodeURIComponent('/pages/public/pricing.html')}`; return; }
+            if (_gateState.kind === 'logged_out') { window.location.href = `/agent-login?redirect=${encodeURIComponent('/pricing')}`; return; }
             if (_gateState.kind === 'no_profile')  { window.location.href = '/pages/agent/dashboard.html'; return; }
             if (_gateState.kind !== 'ready') return;
             try {

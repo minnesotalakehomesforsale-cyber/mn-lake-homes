@@ -98,8 +98,8 @@
                 <span class="text-slate">smarter and closer</span>
             </h1>
             <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center;">
-                <a href="pages/public/buy.html" class="btn btn-primary">Find a Lake Home</a>
-                <a href="pages/public/sell.html" class="btn btn-outline">Sell Your Property</a>
+                <a href="/buy" class="btn btn-primary">Find a Lake Home</a>
+                <a href="/sell" class="btn btn-outline">Sell Your Property</a>
             </div>
         </div>
 
@@ -138,7 +138,7 @@
                         <div class="flex-split-text">
                             <h3 class="flex-split-heading">Find your Minnesota lake home</h3>
                             <p>Buying lakefront in Minnesota — Lake Minnetonka estates, Brainerd Lakes cabins, the quiet end of Lake Vermilion? We match you with a vetted lake specialist who knows your target lake inside out, including what's coming up locally before it's public. Free, no obligation.</p>
-                            <a href="pages/public/buy.html" class="btn btn-primary" style="text-decoration:none;">Get Started Buying</a>
+                            <a href="/buy" class="btn btn-primary" style="text-decoration:none;">Get Started Buying</a>
                         </div>
                         <div class="flex-split-image">
                             <img src="/assets/images/mn-modern-glass-home.jpg" alt="Modern glass lake home in Minnesota" class="flex-img" loading="lazy" width="800" height="500">
@@ -150,7 +150,7 @@
                         <div class="flex-split-text">
                             <h3 class="flex-split-heading">Sell for every dollar your lake home is worth</h3>
                             <p>List your waterfront property with Minnesota's top lake specialists and get the pricing strategy, staging guidance, and professional marketing that sells lakefront real estate. We evaluate water frontage, dock rights, and shoreline quality — the factors that make a lake home's real value — so your listing hits the market at the right price from day one.</p>
-                            <a href="pages/public/sell.html" class="btn btn-primary" style="text-decoration:none;">Get Started Selling</a>
+                            <a href="/sell" class="btn btn-primary" style="text-decoration:none;">Get Started Selling</a>
                         </div>
                         <div class="flex-split-image">
                             <img src="/assets/images/mn-white-farmhouse.jpg" alt="White farmhouse lake estate in Minnesota" class="flex-img" loading="lazy" width="800" height="500">
@@ -162,7 +162,7 @@
                         <div class="flex-split-text">
                             <h3 class="flex-split-heading">Your lake escape, without the ownership</h3>
                             <p>Rent a Minnesota lake home for a summer week, a long weekend, or the whole season. Our directory covers vacation rentals, long-term leases, and managed seasonal properties across Lake Minnetonka, the Brainerd Lakes, the North Shore, and beyond — vetted, clean, and ready for you to drop your bags and head to the dock.</p>
-                            <a href="pages/public/rent.html" class="btn btn-primary" style="text-decoration:none;">Browse Rentals</a>
+                            <a href="/rent" class="btn btn-primary" style="text-decoration:none;">Browse Rentals</a>
                         </div>
                         <div class="flex-split-image">
                             <img src="/assets/images/mn-adirondack-rocky-shore.jpg" alt="Adirondack chairs on a Minnesota lake shoreline" class="flex-img" loading="lazy" width="800" height="500">
@@ -174,7 +174,7 @@
                         <div class="flex-split-text">
                             <h3 class="flex-split-heading">Talk to a real Minnesota lake specialist</h3>
                             <p>Connect with a local expert who lives and breathes your lake. Our agents are independently licensed, actively closing waterfront deals, and deeply fluent in the quirks that matter — dock permits, septic history, shoreline classifications, off-season access. Whether you're buying your first cabin or selling a generational estate, the right agent changes the outcome.</p>
-                            <a href="pages/public/agents.html" class="btn btn-primary" style="text-decoration:none;">Find an Agent</a>
+                            <a href="/agents" class="btn btn-primary" style="text-decoration:none;">Find an Agent</a>
                         </div>
                         <div class="flex-split-image">
                             <img src="/assets/images/mn-townhome-community.jpg" alt="Minnesota townhome and agent community" class="flex-img" loading="lazy" width="800" height="500">
@@ -246,7 +246,7 @@
             <p class="mission-desc">
                 We’re here to help families who want to invest in the Minnesota lake lifestyle. Because if you’ve got the dream of lakeside living, you ought to have the freedom to <span class="text-slate">find the perfect property</span>. Whether you need expert marketing to sell your estate or local knowledge to find a hidden gem, we work with you to build a strategy tailored to <span class="text-slate">your real estate goals</span>. We believe true local expertise and dedicated agents can make the difference between a house and a home. And we actually care <span class="text-slate">about your lakefront life</span>.
             </p>
-            <a href="pages/public/about.html" class="btn btn-primary btn-lg">Why MN Lake Homes?</a>
+            <a href="/about" class="btn btn-primary btn-lg">Why MN Lake Homes?</a>
         </div>
     </section>
 
@@ -308,7 +308,7 @@
             <!-- JS injects agent cards here; the whole section stays hidden until they load -->
         </div>
         <div class="featured-agents-cta">
-            <a href="pages/public/agents.html" class="btn btn-primary">View all agents &rarr;</a>
+            <a href="/agents" class="btn btn-primary">View all agents &rarr;</a>
         </div>
     </section>
 
@@ -412,7 +412,7 @@
                     <button class="blog-nav-btn" onclick="scrollBlog('left')">&larr;</button>
                     <button class="blog-nav-btn" onclick="scrollBlog('right')">&rarr;</button>
                 </div>
-                <a href="pages/public/blog.html" class="blog-link">Read more &rarr;</a>
+                <a href="/blog" class="blog-link">Read more &rarr;</a>
             </div>
             
             <div class="blog-cards" id="home-blog-cards">
@@ -460,7 +460,7 @@
                 const posts = await res.json();
                 if (!posts.length) return;
                 grid.innerHTML = posts.slice(0, 6).map(p => `
-                    <a href="/pages/public/blog-post.html?slug=${p.slug}" class="blog-card">
+                    <a href="/blog/${p.slug}" class="blog-card">
                         ${window.mnlhBlogCover ? window.mnlhBlogCover(p.tag) : ''}
                         <div class="blog-meta">
                             <span class="blog-tag">${p.tag || 'General'}</span>

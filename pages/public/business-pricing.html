@@ -91,11 +91,11 @@
     </div>
 
     <p class="footnote">
-        Already have a listing? <a href="/business/dashboard">Open your dashboard</a> — billing, invoices, and cancellation all live in the Stripe Customer Portal linked from there. Questions about plans? <a href="/pages/public/contact.html">Get in touch</a>.
+        Already have a listing? <a href="/business/dashboard">Open your dashboard</a> — billing, invoices, and cancellation all live in the Stripe Customer Portal linked from there. Questions about plans? <a href="/contact">Get in touch</a>.
     </p>
 
     <footer class="cko-ftr">
-        Secure checkout via Stripe · Cancel anytime · <a href="/pages/public/terms.html">Terms</a>
+        Secure checkout via Stripe · Cancel anytime · <a href="/terms">Terms</a>
     </footer>
     <script src="../../components/components.js" defer></script>
 
@@ -175,13 +175,13 @@
             if (!session) {
                 _gateState = { kind: 'logged_out' };
                 banner.className = 'gate-banner show';
-                banner.innerHTML = `Sign in to your business account to subscribe. <a href="/pages/public/business-login.html?redirect=${encodeURIComponent('/pages/public/business-pricing.html')}">Sign in &rarr;</a> &nbsp;·&nbsp; New to MN Lake Homes? <a href="/pages/public/business-signup.html">Create a business account &rarr;</a>`;
+                banner.innerHTML = `Sign in to your business account to subscribe. <a href="/business-login?redirect=${encodeURIComponent('/business-pricing')}">Sign in &rarr;</a> &nbsp;·&nbsp; New to MN Lake Homes? <a href="/business-signup">Create a business account &rarr;</a>`;
                 return;
             }
             if (session.role !== 'business_owner') {
                 _gateState = { kind: 'wrong_role' };
                 banner.className = 'gate-banner show';
-                banner.innerHTML = `You're signed in as <b>${esc(session.role)}</b>, but business plans are only for business owners. <a href="/pages/public/business-signup.html">Create a business account &rarr;</a>`;
+                banner.innerHTML = `You're signed in as <b>${esc(session.role)}</b>, but business plans are only for business owners. <a href="/business-signup">Create a business account &rarr;</a>`;
                 return;
             }
             _gateState = { kind: 'ready' };
@@ -190,7 +190,7 @@
 
         async function subscribe(tier) {
             if (_gateState.kind === 'logged_out') {
-                window.location.href = `/pages/public/business-login.html?redirect=${encodeURIComponent('/pages/public/business-pricing.html')}`;
+                window.location.href = `/business-login?redirect=${encodeURIComponent('/business-pricing')}`;
                 return;
             }
             if (_gateState.kind !== 'ready') return;

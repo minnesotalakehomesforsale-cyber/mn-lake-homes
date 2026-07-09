@@ -11,11 +11,11 @@
     <meta name="description" content="Guides, tools, calculators, market reports, and templates for Minnesota lake-home buyers, sellers, and renters — the complete resource library.">
     <meta name="keywords" content="minnesota lake home resources, waterfront buyer guide, lake home calculator, dock permit guide, minnesota lake market report">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
-    <link rel="canonical" href="https://minnesotalakehomesforsale.com/pages/public/resources.html">
+    <link rel="canonical" href="https://minnesotalakehomesforsale.com/resources">
 
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="MinnesotaLakeHomesForSale.com">
-    <meta property="og:url" content="https://minnesotalakehomesforsale.com/pages/public/resources.html">
+    <meta property="og:url" content="https://minnesotalakehomesforsale.com/resources">
     <meta property="og:title" content="Resources &amp; Tools | MN Lake Homes">
     <meta property="og:description" content="Guides, tools, calculators, market reports, and templates for Minnesota lake-home buyers and sellers.">
     <meta property="og:image" content="https://minnesotalakehomesforsale.com/assets/images/mn-chateau-aerial.jpg">
@@ -179,7 +179,7 @@
                 <h2>Latest from the blog</h2>
                 <p>Our editors cover market trends, buyer stories, and lake-life tips.</p>
             </div>
-            <a href="/pages/public/blog.html" class="link">Browse all posts &rarr;</a>
+            <a href="/blog" class="link">Browse all posts &rarr;</a>
         </div>
         <div class="rx-blog-strip" id="rx-blog-strip">
             <div class="rx-empty" style="grid-column: 1 / -1;">Loading posts…</div>
@@ -373,7 +373,7 @@
                 const posts = await res.json();
                 if (!posts.length) { host.innerHTML = '<div class="rx-empty" style="grid-column: 1 / -1;">No posts yet.</div>'; return; }
                 host.innerHTML = posts.slice(0, 4).map(p => `
-                    <a class="rx-blog-card" href="/pages/public/blog-post.html?slug=${encodeURIComponent(p.slug)}">
+                    <a class="rx-blog-card" href="/blog/${encodeURIComponent(p.slug)}">
                         ${window.mnlhBlogCover ? window.mnlhBlogCover(p.tag) : ''}
                         <div class="rx-blog-body">
                             <span class="rx-blog-tag">${escHtml(p.tag || 'General')}</span>

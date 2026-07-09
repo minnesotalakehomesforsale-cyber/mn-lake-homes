@@ -320,7 +320,7 @@
                     <div class="bd-action-t">Account settings</div>
                     <div class="bd-action-d">Login email, password, and admin contact.</div>
                 </button>
-                <a class="bd-action" href="/pages/public/resources.html" style="--ac:#d97706;">
+                <a class="bd-action" href="/resources" style="--ac:#d97706;">
                     <div class="bd-action-ic">📚</div>
                     <div class="bd-action-t">Guides & resources</div>
                     <div class="bd-action-d">Tips, checklists, and seasonal updates for lake businesses.</div>
@@ -451,7 +451,7 @@
             </style>
 
             <div style="margin-top:1.25rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
-                <a   class="btn primary" id="btn-checkout"  href="/pages/public/business-pricing.html" style="display:none;">Choose a plan →</a>
+                <a   class="btn primary" id="btn-checkout"  href="/business-pricing" style="display:none;">Choose a plan →</a>
                 <button class="btn"      id="btn-portal"    onclick="openPortal()" style="display:none;">Manage membership in Stripe →</button>
             </div>
             <p class="hint" style="margin-top:1.25rem;">Your listing only shows on the public directory while your subscription is active and an admin has approved it.</p>
@@ -954,7 +954,7 @@
             }
             if (cancelled) {
                 b.className = 'bd-banner warn';
-                b.innerHTML = `<span>Checkout was cancelled. Your listing won't be visible until the subscription is active.</span><a href="/pages/public/business-pricing.html">Pick a plan →</a>`;
+                b.innerHTML = `<span>Checkout was cancelled. Your listing won't be visible until the subscription is active.</span><a href="/business-pricing">Pick a plan →</a>`;
                 b.style.display = '';
                 return;
             }
@@ -978,13 +978,13 @@
             // Approved but not paying (legacy)
             if (approved && s !== 'active' && s !== 'free') {
                 b.className = 'bd-banner warn';
-                b.innerHTML = `<span>Your listing is approved but you haven't picked a plan yet.</span><a href="/pages/public/business-pricing.html">Choose a plan →</a>`;
+                b.innerHTML = `<span>Your listing is approved but you haven't picked a plan yet.</span><a href="/business-pricing">Choose a plan →</a>`;
                 b.style.display = '';
                 return;
             }
             // Neither paid nor approved
             b.className = 'bd-banner warn';
-            b.innerHTML = `<span>Your listing is hidden. Pick a plan (Free, Standard, or Premium) and we'll review your profile.</span><a href="/pages/public/business-pricing.html">Choose a plan →</a>`;
+            b.innerHTML = `<span>Your listing is hidden. Pick a plan (Free, Standard, or Premium) and we'll review your profile.</span><a href="/business-pricing">Choose a plan →</a>`;
             b.style.display = '';
         }
 

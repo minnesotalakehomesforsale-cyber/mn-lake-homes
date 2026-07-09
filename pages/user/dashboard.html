@@ -283,17 +283,17 @@
             <!-- Action card grid — sales-page style next steps -->
             <h3 class="ud-section-h">What are you looking to do?</h3>
             <div class="ud-action-grid">
-                <a class="ud-action" href="/pages/public/buy.html" style="--ac:#1d6df2;">
+                <a class="ud-action" href="/buy" style="--ac:#1d6df2;">
                     <div class="ud-action-ic">🏡</div>
                     <div class="ud-action-t">Find your lake home</div>
                     <div class="ud-action-d">Browse lake homes, cabins, and waterfront listings across Minnesota.</div>
                 </a>
-                <a class="ud-action" href="/pages/public/sell.html" style="--ac:#1d6df2;">
+                <a class="ud-action" href="/sell" style="--ac:#1d6df2;">
                     <div class="ud-action-ic">🏷️</div>
                     <div class="ud-action-t">Sell your property</div>
                     <div class="ud-action-d">Get a no-obligation estimate or list with a top lake-area agent.</div>
                 </a>
-                <button type="button" class="ud-action" onclick="if(window.openForm){window.openForm('agent');}else{location.href='/pages/public/agents.html';}" style="--ac:#1d6df2;">
+                <button type="button" class="ud-action" onclick="if(window.openForm){window.openForm('agent');}else{location.href='/agents';}" style="--ac:#1d6df2;">
                     <div class="ud-action-ic">👋</div>
                     <div class="ud-action-t">Talk to a specialist</div>
                     <div class="ud-action-d">Connect with a vetted Minnesota lake-area expert today.</div>
@@ -308,7 +308,7 @@
                     <div class="ud-action-t">My submissions</div>
                     <div class="ud-action-d" id="ud-action-sub-desc">Review every form you've sent us and track its status.</div>
                 </button>
-                <a class="ud-action" href="/pages/public/resources.html" style="--ac:#1d6df2;">
+                <a class="ud-action" href="/resources" style="--ac:#1d6df2;">
                     <div class="ud-action-ic">📚</div>
                     <div class="ud-action-t">Guides & resources</div>
                     <div class="ud-action-d">Tax estimators, buyer's guides, and lake-living essentials.</div>
@@ -497,7 +497,7 @@
                 loadMySubmissions();
                 loadWelcomeArticles();
             } catch (_) {
-                window.location.href = '/pages/public/login.html?redirect=/pages/user/dashboard.html';
+                window.location.href = '/login?redirect=/pages/user/dashboard.html';
             }
         })();
 

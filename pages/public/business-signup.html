@@ -648,7 +648,7 @@
                 // Signup no longer hard-redirects to a single Stripe
                 // plan. Land on the pricing page so the owner can pick
                 // tier + period, then check out from there.
-                window.location.href = '/pages/public/business-pricing.html?from=signup';
+                window.location.href = '/business-pricing?from=signup';
             } catch (ex) {
                 err.textContent = ex.message || 'Something went wrong.';
                 err.classList.add('show');

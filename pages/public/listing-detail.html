@@ -190,7 +190,7 @@
             async function toggleSaveListing() {
                 try {
                     const r = await fetch('/api/listings/' + LISTING_ID + '/save', { method: 'POST', credentials: 'include' });
-                    if (r.status === 401) { window.location.href = '/pages/public/login.html?redirect=' + encodeURIComponent(location.pathname); return; }
+                    if (r.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(location.pathname); return; }
                     const d = await r.json();
                     if (r.ok) setSaved(!!d.saved);
                 } catch (_) {}
