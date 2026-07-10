@@ -1091,7 +1091,13 @@
                 const p = item.data;
                 let g = p.gallery; if (typeof g === 'string') { try { g = JSON.parse(g); } catch (_) { g = []; } }
                 const imgs = [p.featured_image_url, ...(Array.isArray(g) ? g : [])].filter(Boolean);
-                const cine = window.cardCarouselHTML ? cardCarouselHTML(imgs, { alt: p.title, width: 320 }) : '';
+                // Always show a photo: use the carousel if available, else a plain
+                // cover image, else a soft placeholder — never a blank grey box.
+                const cine = (window.cardCarouselHTML && imgs.length)
+                    ? cardCarouselHTML(imgs, { alt: p.title, width: 320 })
+                    : (imgs.length
+                        ? `<span style="display:block;width:100%;height:100%;background:#eef2f7 url('${escHtml(imgs[0])}') center/cover;"></span>`
+                        : `<span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:#eef2f7;color:#a0aec0;font-size:0.8rem;">No photo</span>`);
                 const specs = [p.beds != null ? p.beds + ' bd' : '', p.baths != null ? p.baths + ' ba' : '', p.city || ''].filter(Boolean).join(' · ');
                 return `
                     <div class="db-pop-card">
@@ -1178,21 +1184,27 @@
                 const marker = L.marker([d.latitude, d.longitude], { icon })
                     .addTo(_markerLayer);
 
-                marker.bindTooltip(escHtml(d.name || d.title || ''), {
-                    direction: 'top',
-                    offset: [0, -28],
-                    className: 'db-pin-tip',
-                    opacity: 1,
-                });
                 marker.bindPopup(buildPreviewCard(item), {
                     maxWidth: 260, minWidth: 260,
                     closeButton: true,
                     autoPan: true,
                     autoPanPadding: [30, 30],
                 });
-                // Close the hover tooltip while the rich popup is open —
-                // otherwise they stack and look messy.
-                marker.on('popupopen', () => marker.closeTooltip());
+                if (item.kind === 'props') {
+                    // Property pins show the full card on hover (Zillow-style),
+                    // not a bare dark title label.
+                    marker.on('mouseover', () => marker.openPopup());
+                } else {
+                    marker.bindTooltip(escHtml(d.name || d.title || ''), {
+                        direction: 'top',
+                        offset: [0, -28],
+                        className: 'db-pin-tip',
+                        opacity: 1,
+                    });
+                    // Close the hover tooltip while the rich popup is open —
+                    // otherwise they stack and look messy.
+                    marker.on('popupopen', () => marker.closeTooltip());
+                }
                 marker.on('popupclose', () => {/* tooltip re-binds itself */});
 
                 _markers.set(key, marker);
