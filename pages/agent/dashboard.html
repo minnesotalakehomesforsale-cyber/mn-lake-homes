@@ -342,13 +342,15 @@
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                     <div style="flex-grow: 1;">
                         <h3 style="font-weight: 700; margin-bottom: 0.25rem;">Complete your profile to go live</h3>
-                        <p style="font-size: 0.95rem;">Fill in all required fields below, then choose a membership tier to publish your profile on the directory.</p>
+                        <p style="font-size: 0.95rem;">Fill in all required fields below, then publish your profile. A public profile is included free — paid tiers add matched leads, featured placement, and listings.</p>
                         <div class="progress-bar-container">
                             <div id="completion-bar" class="progress-bar"></div>
                         </div>
                         <p id="completion-text" style="font-size: 0.8rem; font-weight: 600; margin-top: 0.4rem;">0% Complete</p>
                     </div>
-                    <a href="/pricing" style="display:inline-flex;align-items:center;justify-content:center;padding:0.7rem 1.25rem;background:#1d6df2;color:#fff;border-radius:8px;font-weight:700;text-decoration:none;font-size:0.92rem;white-space:nowrap;box-shadow:0 4px 12px rgba(29,109,242,0.25);transition:background 0.15s;flex-shrink:0;" onmouseover="this.style.background='#155bc8'" onmouseout="this.style.background='#1d6df2'">Choose a plan →</a>
+                    <!-- Becomes an active "Publish my profile" button at 100% (see calcProgress). -->
+                    <button id="banner-publish-btn" type="button" disabled onclick="publishMyProfile()"
+                            style="display:inline-flex;align-items:center;justify-content:center;padding:0.7rem 1.25rem;background:#1d6df2;color:#fff;border:0;border-radius:8px;font-weight:700;font-family:inherit;font-size:0.92rem;white-space:nowrap;box-shadow:0 4px 12px rgba(29,109,242,0.25);transition:background 0.15s,opacity 0.15s;flex-shrink:0;cursor:pointer;opacity:0.55;">Publish my profile →</button>
                 </div>
 
                 <!-- ── DASHBOARD LANDING VIEW ── -->
@@ -660,7 +662,7 @@
                     <div style="display: inline-block; padding: 0.35rem 0.85rem; background: rgba(29,109,242,0.10); color: #1d6df2; font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; border-radius: 99px; margin-bottom: 1rem;">Last step</div>
                     <h2 style="font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.75px; margin: 0 0 0.6rem;">Your profile is ready.</h2>
                     <p style="color: #4a5568; font-size: 1.02rem; line-height: 1.55; max-width: 520px; margin: 0 auto 2rem;">
-                        Pick a membership plan to publish your profile and start receiving leads in your service area. Monthly or annual — cancel anytime.
+                        Hit <strong>Publish my profile</strong> above to go live for free. Want matched leads in your service area, featured placement, and property listings? Upgrade any time — monthly or annual, cancel anytime.
                     </p>
                     <a href="/pricing" style="display: inline-block; padding: 1rem 2.25rem; background: #1d6df2; color: #fff; border-radius: 12px; font-weight: 700; text-decoration: none; font-size: 1rem; box-shadow: 0 8px 22px rgba(29,109,242,0.30); transition: background 0.15s, transform 0.15s;" onmouseover="this.style.background='#155bc8';this.style.transform='translateY(-1px)';" onmouseout="this.style.background='#1d6df2';this.style.transform='';">Choose a plan →</a>
                     <p style="font-size: 0.82rem; color: #a0aec0; margin: 1.25rem 0 0;">Compare plans, toggle monthly vs annual, then check out securely with Stripe. Your profile auto-publishes the moment payment clears.</p>
@@ -2289,6 +2291,34 @@
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLeadPanel(); });
 
         // ── Progress Bar ─────────────────────────────────────────────────────────
+        // Free agents publish themselves — a public profile is included in the
+        // Free tier. Paid perks (matched leads, featured, listings) still come
+        // from Stripe. Saves any unsaved edits first so the server-side
+        // completeness check sees the same data the progress bar counted.
+        async function publishMyProfile() {
+            const btn = document.getElementById('banner-publish-btn');
+            if (!btn || btn.disabled) return;
+            const original = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Publishing…';
+            try {
+                // Persist any unsaved edits so the server sees the same data the
+                // progress bar counted, otherwise publish can 400 on "incomplete".
+                if (typeof saveDraft === 'function') { try { await saveDraft(); } catch (_) {} }
+                const res = await fetch('/api/agents/me/publish', { method: 'POST', credentials: 'include' });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || 'Could not publish your profile.');
+
+                btn.textContent = 'Published ✓';
+                window.location.reload();
+            } catch (err) {
+                alert(err.message || 'Could not publish your profile. Please try again.');
+                btn.disabled = false;
+                btn.textContent = original;
+            }
+        }
+        window.publishMyProfile = publishMyProfile;
+
         function calcProgress() {
             // Text-input requireds. Specialties + service areas are now
             // chip pickers (not text inputs), so they count toward filled
@@ -2302,9 +2332,18 @@
             const pct = Math.round((filled / totalSteps) * 100);
             document.getElementById('completion-bar').style.width = pct + '%';
 
+            // The publish button only activates once every required field is in.
+            const pubBtn = document.getElementById('banner-publish-btn');
+            if (pubBtn) {
+                pubBtn.disabled = pct !== 100;
+                pubBtn.style.opacity = pct === 100 ? '1' : '0.55';
+                pubBtn.style.cursor = pct === 100 ? 'pointer' : 'not-allowed';
+                pubBtn.title = pct === 100 ? '' : 'Fill in every required field first';
+            }
+
             const activateSection = document.getElementById('view-activate');
             if (pct === 100) {
-                document.getElementById('completion-text').innerText = '100% Complete — choose a plan to publish your profile →';
+                document.getElementById('completion-text').innerText = '100% Complete — publish your profile →';
                 // Only show the "Choose a plan" CTA when the profile-editor
                 // view is the active one — otherwise the agent is on the
                 // lead-inbox / account view and we don't want a card

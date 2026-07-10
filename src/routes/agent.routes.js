@@ -40,5 +40,8 @@ router.get ('/me/messages/unread-count', verifyToken, requireRole('agent'), mess
 router.post('/me/messages/mark-read',    verifyToken, requireRole('agent'), messagesController.markAllRead);
 router.patch('/me', verifyToken, requireRole('agent'), agentController.saveDraft);
 router.post('/me/submit', verifyToken, requireRole('agent'), agentController.submitForReview);
+// Free agents publish their own profile once required fields are complete.
+router.post('/me/publish',   verifyToken, requireRole('agent'), agentController.publishProfile);
+router.post('/me/unpublish', verifyToken, requireRole('agent'), agentController.unpublishProfile);
 
 module.exports = router;

@@ -247,6 +247,87 @@ const getMyProfile = async (req, res) => {
 };
 
 /**
+ * POST /api/agents/me/publish
+ * Lets an agent publish their OWN profile once the required fields are filled.
+ *
+ * Free tier is meant to include a public profile (no matched leads, no featured
+ * placement, no listings — those need a paid tier). But is_published was only
+ * ever set by the Stripe webhook or an admin, so a Free agent could never go
+ * live: the dashboard told them to "choose a plan", and Free isn't purchasable.
+ * This closes that trap. Paid perks still come from Stripe.
+ */
+const publishProfile = async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT display_name, brokerage_name, phone_public, city, bio,
+                    service_areas, specialties, profile_status
+               FROM agents WHERE user_id = $1`,
+            [req.user.userId]
+        );
+        if (rows.length === 0) return res.status(404).json({ error: 'Agent profile not found.' });
+        const agent = rows[0];
+
+        if (agent.profile_status === 'suspended') {
+            return res.status(403).json({ error: 'This profile is suspended. Contact support.' });
+        }
+
+        const toArr = (v) => {
+            if (Array.isArray(v)) return v;
+            try { return JSON.parse(v || '[]'); } catch (_) { return []; }
+        };
+
+        // Same requirements the dashboard's completion bar shows, so a 100%
+        // bar always means "publishable".
+        const missing = [];
+        if (!agent.display_name)   missing.push('Display Name');
+        if (!agent.brokerage_name) missing.push('Brokerage Name');
+        if (!agent.phone_public)   missing.push('Phone');
+        if (!agent.city)           missing.push('Primary City');
+        if (!agent.bio || agent.bio.trim().length < 20) missing.push('Bio (minimum 20 characters)');
+        if (toArr(agent.service_areas).length === 0) missing.push('Service Areas');
+        if (toArr(agent.specialties).length === 0)   missing.push('Specialties');
+
+        if (missing.length > 0) {
+            return res.status(400).json({
+                error: `Profile is incomplete. Please fill in: ${missing.join(', ')}`,
+                missing
+            });
+        }
+
+        await pool.query(
+            `UPDATE agents
+                SET is_published = true, profile_status = 'published', updated_at = NOW()
+              WHERE user_id = $1`,
+            [req.user.userId]
+        );
+        res.json({ success: true, is_published: true, profile_status: 'published' });
+    } catch (err) {
+        console.error('[publishProfile]', err.message);
+        res.status(500).json({ error: 'Could not publish your profile. Please try again.' });
+    }
+};
+
+/**
+ * POST /api/agents/me/unpublish
+ * Takes the agent's public profile back offline (returns it to draft).
+ */
+const unpublishProfile = async (req, res) => {
+    try {
+        const r = await pool.query(
+            `UPDATE agents
+                SET is_published = false, profile_status = 'draft', updated_at = NOW()
+              WHERE user_id = $1 AND profile_status <> 'suspended'`,
+            [req.user.userId]
+        );
+        if (r.rowCount === 0) return res.status(404).json({ error: 'Agent profile not found.' });
+        res.json({ success: true, is_published: false, profile_status: 'draft' });
+    } catch (err) {
+        console.error('[unpublishProfile]', err.message);
+        res.status(500).json({ error: 'Could not hide your profile. Please try again.' });
+    }
+};
+
+/**
  * PATCH /api/agents/me
  * Saves agent profile as draft. Agents cannot change their own status or membership.
  */
@@ -915,6 +996,8 @@ module.exports = {
     getMyProfile,
     saveDraft,
     submitForReview,
+    publishProfile,
+    unpublishProfile,
     updateMyProfile,
     getMyLeads,
     getMyRoi,
