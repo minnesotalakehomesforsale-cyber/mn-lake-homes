@@ -650,6 +650,35 @@
                         <h3 class="form-section-title">Your FAQ</h3>
                         <p class="field-hint">These show as a dropdown FAQ on your public profile. <strong>Only the ones you answer appear</strong> — leave any blank to skip it. Answer as many or as few as you like.</p>
                         <div id="faq-fields"></div>
+
+                        <!-- ── Rich profile sections (render on the public profile when filled) ── -->
+                        <h3 class="form-section-title">By the numbers</h3>
+                        <p class="field-hint">Four headline stats. Leave any blank to hide it. Write them however you like — "$96M", "99.2%", "23".</p>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                            <div class="form-group-sys"><label>Homes sold</label><input id="px-homes-sold" class="input-sys" placeholder="e.g. 214"></div>
+                            <div class="form-group-sys"><label>Total volume</label><input id="px-total-volume" class="input-sys" placeholder="e.g. $96M"></div>
+                            <div class="form-group-sys"><label>Avg days on market</label><input id="px-avg-days" class="input-sys" placeholder="e.g. 23"></div>
+                            <div class="form-group-sys"><label>Sale-to-list price</label><input id="px-sale-to-list" class="input-sys" placeholder="e.g. 99.2%"></div>
+                        </div>
+
+                        <h3 class="form-section-title">Services offered</h3>
+                        <p class="field-hint">One service per line. Shown as checklists on your profile.</p>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                            <div class="form-group-sys"><label>Buyer services</label><textarea id="px-services-buyer" class="input-sys" rows="6" placeholder="Walkthrough video before you drive up&#10;Comp-backed offer strategy"></textarea></div>
+                            <div class="form-group-sys"><label>Seller services</label><textarea id="px-services-seller" class="input-sys" rows="6" placeholder="Pre-list punch list&#10;Professional photography"></textarea></div>
+                        </div>
+
+                        <h3 class="form-section-title">How I work</h3>
+                        <p class="field-hint">Your process, step by step. Each step has a short title and a sentence or two.</p>
+                        <div id="px-how-rows"></div>
+                        <button type="button" onclick="pxAddHowRow()" style="background:#ebf4ff; color:#1d6df2; border:0; border-radius:8px; padding:0.6rem 1rem; font-weight:700; cursor:pointer; font-family:inherit; margin-top:0.5rem;">+ Add step</button>
+
+                        <h3 class="form-section-title">Credentials &amp; recognition</h3>
+                        <div class="form-group-sys"><label>Credentials (one per line)</label>
+                            <textarea id="px-credentials" class="input-sys" rows="4" placeholder="ABR — Accredited Buyer's Representative&#10;GRI — Graduate, REALTOR Institute"></textarea></div>
+                        <label style="display:block; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#718096; margin:0.5rem 0;">Awards &amp; recognition</label>
+                        <div id="px-award-rows"></div>
+                        <button type="button" onclick="pxAddAwardRow()" style="background:#ebf4ff; color:#1d6df2; border:0; border-radius:8px; padding:0.6rem 1rem; font-weight:700; cursor:pointer; font-family:inherit; margin-top:0.5rem;">+ Add award</button>
                     </form>
                 </div>
 
@@ -1593,6 +1622,7 @@
 
             // FAQ answer fields (rendered from the fixed question set, prefilled).
             renderFaqFields(agent.faq);
+            renderProfileExtraEditor(agent.profile_extra);
 
             // Hydrate photo preview
             if (agent.profile_photo_url) {
@@ -2468,10 +2498,77 @@
             return faq;
         }
 
+        // ── Rich profile sections editor (By the numbers / Services / How I work / Credentials) ──
+        function pxEsc(s) { return String(s ?? '').replace(/"/g, '&quot;'); }
+        function pxAddHowRow(title, body) {
+            const wrap = document.getElementById('px-how-rows'); if (!wrap) return;
+            const row = document.createElement('div');
+            row.className = 'px-how-row';
+            row.style.cssText = 'border:1px solid #edf2f7;border-radius:10px;padding:1rem;margin-bottom:0.75rem;background:#fafbfc;';
+            row.innerHTML = `
+                <input class="input-sys px-how-title" placeholder="Step title (e.g. A call before a showing)" value="${pxEsc(title)}" style="margin-bottom:0.5rem;">
+                <textarea class="input-sys px-how-body" rows="2" placeholder="What happens in this step...">${pxEsc(body)}</textarea>
+                <button type="button" onclick="this.closest('.px-how-row').remove()" style="background:none;border:0;color:#c53030;font-weight:600;cursor:pointer;font-size:0.82rem;margin-top:0.4rem;padding:0;">Remove step</button>`;
+            wrap.appendChild(row);
+        }
+        function pxAddAwardRow(year, title, org) {
+            const wrap = document.getElementById('px-award-rows'); if (!wrap) return;
+            const row = document.createElement('div');
+            row.className = 'px-award-row';
+            row.style.cssText = 'display:grid;grid-template-columns:80px 1fr 1fr auto;gap:0.5rem;align-items:center;margin-bottom:0.5rem;';
+            row.innerHTML = `
+                <input class="input-sys px-award-year" placeholder="Year" value="${pxEsc(year)}">
+                <input class="input-sys px-award-title" placeholder="Award / recognition" value="${pxEsc(title)}">
+                <input class="input-sys px-award-org" placeholder="Org (optional)" value="${pxEsc(org)}">
+                <button type="button" onclick="this.closest('.px-award-row').remove()" style="background:none;border:0;color:#c53030;font-weight:700;cursor:pointer;font-size:1.1rem;padding:0 0.3rem;">×</button>`;
+            wrap.appendChild(row);
+        }
+        window.pxAddHowRow = pxAddHowRow;
+        window.pxAddAwardRow = pxAddAwardRow;
+
+        function pxLines(id) { return (document.getElementById(id)?.value || '').split('\n').map(s => s.trim()).filter(Boolean); }
+        function collectProfileExtra() {
+            const val = id => (document.getElementById(id)?.value || '').trim();
+            const stats = {};
+            [['homes_sold','px-homes-sold'],['total_volume','px-total-volume'],['avg_days','px-avg-days'],['sale_to_list','px-sale-to-list']]
+                .forEach(([k, id]) => { const v = val(id); if (v) stats[k] = v; });
+            const how = [...document.querySelectorAll('.px-how-row')]
+                .map(r => ({ title: (r.querySelector('.px-how-title')?.value || '').trim(), body: (r.querySelector('.px-how-body')?.value || '').trim() }))
+                .filter(s => s.title);
+            const awards = [...document.querySelectorAll('.px-award-row')]
+                .map(r => ({ year: (r.querySelector('.px-award-year')?.value || '').trim(), title: (r.querySelector('.px-award-title')?.value || '').trim(), org: (r.querySelector('.px-award-org')?.value || '').trim() }))
+                .filter(a => a.title);
+            return {
+                stats,
+                services_buyer:  pxLines('px-services-buyer'),
+                services_seller: pxLines('px-services-seller'),
+                how_i_work:      how,
+                credentials:     pxLines('px-credentials'),
+                awards,
+            };
+        }
+        function renderProfileExtraEditor(extra) {
+            if (typeof extra === 'string') { try { extra = JSON.parse(extra); } catch (_) { extra = {}; } }
+            extra = (extra && typeof extra === 'object') ? extra : {};
+            const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+            const st = extra.stats || {};
+            set('px-homes-sold', st.homes_sold); set('px-total-volume', st.total_volume);
+            set('px-avg-days', st.avg_days); set('px-sale-to-list', st.sale_to_list);
+            set('px-services-buyer',  (extra.services_buyer  || []).join('\n'));
+            set('px-services-seller', (extra.services_seller || []).join('\n'));
+            set('px-credentials',     (extra.credentials     || []).join('\n'));
+            const howWrap = document.getElementById('px-how-rows'); if (howWrap) howWrap.innerHTML = '';
+            (extra.how_i_work || []).forEach(s => pxAddHowRow(s.title, s.body));
+            const awWrap = document.getElementById('px-award-rows'); if (awWrap) awWrap.innerHTML = '';
+            (extra.awards || []).forEach(a => pxAddAwardRow(a.year, a.title, a.org));
+        }
+        window.renderProfileExtraEditor = renderProfileExtraEditor;
+
         function extractFormPayload() {
             const years = document.getElementById('f-years')?.value.trim();
             const payload = {
                 faq:               collectFaqAnswers(),
+                profile_extra:     collectProfileExtra(),
                 display_name:      document.getElementById('f-name').value.trim(),
                 brokerage_name:    document.getElementById('f-brokerage').value.trim(),
                 phone_public:      document.getElementById('f-phone').value.trim(),
