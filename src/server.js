@@ -2541,6 +2541,11 @@ async function ensureTables() {
             -- Agent-authored FAQ answers, keyed by the fixed question keys in
             -- services/agent-faq.js. Only answered questions render publicly.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS faq JSONB NOT NULL DEFAULT '{}'::jsonb;
+            -- Rich, agent-editable profile sections (By the numbers, Services
+            -- offered, How I work, Credentials + awards, press, testimonials,
+            -- languages, headline). One flexible JSONB blob so agents can fill
+            -- any subset; each renders on the public profile once populated.
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS profile_extra JSONB NOT NULL DEFAULT '{}'::jsonb;
             -- Instant SMS lead alerts (Twilio). Opt-out per agent; on by default.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS sms_alerts BOOLEAN NOT NULL DEFAULT TRUE;
             -- Agent referral program: each agent's own shareable code + the code

@@ -204,7 +204,7 @@ const getAgentBySlug = async (req, res) => {
             SELECT a.id, a.slug, a.display_name, a.brokerage_name, a.city, a.state,
                    a.service_areas, a.specialties, a.is_featured, a.license_number, a.bio,
                    a.years_experience, a.phone_public, a.email_public, a.website_url,
-                   a.facebook_url, a.instagram_url, a.linkedin_url, a.profile_photo_url, a.faq,
+                   a.facebook_url, a.instagram_url, a.linkedin_url, a.profile_photo_url, a.faq, a.profile_extra,
                    m.display_badge_label as membership_badge, m.name as membership_name,
                    ${RESP_SQL}
             FROM agents a
@@ -424,7 +424,7 @@ const saveDraft = async (req, res) => {
     let {
         display_name, brokerage_name, phone_public, email_public, website_url,
         license_number, years_experience, city, service_areas, specialties, bio,
-        profile_photo_url, faq
+        profile_photo_url, faq, profile_extra
     } = req.body;
 
     try {
@@ -440,6 +440,10 @@ const saveDraft = async (req, res) => {
         // FAQ: only persist when the client sent it; sanitize to known keys.
         const { cleanAgentFaq } = require('../services/agent-faq');
         const faqJson = (faq !== undefined) ? JSON.stringify(cleanAgentFaq(faq)) : null;
+        // Rich profile sections (By the numbers, Services, How I work, etc.) —
+        // sanitize the whole blob; only persist when the client sent it.
+        const { cleanProfileExtra } = require('../services/agent-profile-extra');
+        const extraJson = (profile_extra !== undefined) ? JSON.stringify(cleanProfileExtra(profile_extra)) : null;
 
         await pool.query(
             `UPDATE agents SET
@@ -456,8 +460,9 @@ const saveDraft = async (req, res) => {
                 bio = COALESCE(NULLIF($11,''), bio),
                 profile_photo_url = COALESCE(NULLIF($12,''), profile_photo_url),
                 faq = COALESCE($13::jsonb, faq),
+                profile_extra = COALESCE($14::jsonb, profile_extra),
                 updated_at = NOW()
-             WHERE user_id = $14`,
+             WHERE user_id = $15`,
             [
                 display_name?.trim() || null,
                 brokerage_name?.trim() || null,
@@ -472,6 +477,7 @@ const saveDraft = async (req, res) => {
                 bio?.trim() || null,
                 profile_photo_url?.trim() || null,
                 faqJson,
+                extraJson,
                 req.user.userId
             ]
         );
