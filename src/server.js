@@ -431,10 +431,26 @@ app.get('/api/analytics/summary', async (req, res) => {
         const since7  = `NOW() - INTERVAL '7 days'`;
         const since30 = `NOW() - INTERVAL '30 days'`;
 
-        const [totals7, totals30, topPages, topReferrers, daily, leads, inquiries, newBiz, newAgents] = await Promise.all([
+        // Categorize a path into a page-type "section". Kept in SQL so the
+        // section totals count EVERY view (the client rollup only saw the top
+        // 15 pages, which undercounted). Property pages are /listings/:slug.
+        const SECTION_SQL = `
+            CASE
+                WHEN path = '/' OR path = '' OR path = '/index.html'        THEN 'home'
+                WHEN path LIKE '/lakes%'                                    THEN 'lakes'
+                WHEN path LIKE '/towns%'                                    THEN 'towns'
+                WHEN path LIKE '/agents%' OR path LIKE '%agent-profile%'    THEN 'agents'
+                WHEN path LIKE '/businesses%'                               THEN 'businesses'
+                WHEN path LIKE '/listings%' OR path LIKE '/properties%'     THEN 'properties'
+                WHEN path LIKE '/blog%'                                     THEN 'blog'
+                WHEN path LIKE '/resources%'                               THEN 'resources'
+                ELSE 'other'
+            END`;
+
+        const [totals7, totals30, topPages, topReferrers, daily, leads, inquiries, newBiz, newAgents, sections, topByType] = await Promise.all([
             pool.query(`SELECT COUNT(*)::int AS views, COUNT(DISTINCT visitor_hash)::int AS visitors FROM page_views WHERE created_at > ${since7}`),
             pool.query(`SELECT COUNT(*)::int AS views, COUNT(DISTINCT visitor_hash)::int AS visitors FROM page_views WHERE created_at > ${since30}`),
-            pool.query(`SELECT path, COUNT(*)::int AS views FROM page_views WHERE created_at > ${since30} GROUP BY path ORDER BY views DESC LIMIT 15`),
+            pool.query(`SELECT path, COUNT(*)::int AS views FROM page_views WHERE created_at > ${since30} GROUP BY path ORDER BY views DESC LIMIT 40`),
             pool.query(`
                 SELECT COALESCE(NULLIF(SUBSTRING(referrer FROM '^https?://([^/]+)'), ''), 'direct') AS host,
                        COUNT(*)::int AS views
@@ -457,6 +473,24 @@ app.get('/api/analytics/summary', async (req, res) => {
             pool.query(`SELECT COUNT(*)::int AS c7, (SELECT COUNT(*)::int FROM contact_inquiries WHERE created_at > ${since30} AND deleted_at IS NULL) AS c30 FROM contact_inquiries WHERE created_at > ${since7} AND deleted_at IS NULL`),
             pool.query(`SELECT COUNT(*)::int AS c7, (SELECT COUNT(*)::int FROM businesses WHERE created_at > ${since30}) AS c30 FROM businesses WHERE created_at > ${since7}`),
             pool.query(`SELECT COUNT(*)::int AS c7, (SELECT COUNT(*)::int FROM agents WHERE created_at > ${since30} AND deleted_at IS NULL) AS c30 FROM agents WHERE created_at > ${since7} AND deleted_at IS NULL`),
+            // Accurate section totals over ALL views (not just the top 40).
+            pool.query(`
+                SELECT ${SECTION_SQL} AS section,
+                       COUNT(*)::int AS views,
+                       COUNT(DISTINCT visitor_hash)::int AS visitors
+                FROM page_views WHERE created_at > ${since30}
+                GROUP BY section ORDER BY views DESC`),
+            // Top individual pages within the 3 sections the owner compares most
+            // (agents / businesses / properties), so they can rank pages head-to-head.
+            pool.query(`
+                SELECT ${SECTION_SQL} AS section, path, COUNT(*)::int AS views,
+                       COUNT(DISTINCT visitor_hash)::int AS visitors
+                FROM page_views
+                WHERE created_at > ${since30}
+                  AND (path LIKE '/agents/%' OR path LIKE '/businesses/%' OR path LIKE '/listings/%')
+                GROUP BY section, path
+                ORDER BY views DESC
+                LIMIT 60`),
         ]);
 
         res.json({
@@ -469,6 +503,8 @@ app.get('/api/analytics/summary', async (req, res) => {
             inquiries:   inquiries.rows[0],
             new_businesses: newBiz.rows[0],
             new_agents:  newAgents.rows[0],
+            section_breakdown: sections.rows,     // accurate per-type totals
+            top_by_type:       topByType.rows,    // top agent/business/property pages
         });
     } catch (err) {
         console.error('[analytics.summary]', err.message);

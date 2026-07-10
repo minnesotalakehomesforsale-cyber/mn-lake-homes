@@ -284,6 +284,12 @@
                     <h2>Top pages · last 30 days</h2>
                     <div id="m-pages" class="m-list"></div>
                 </div>
+
+                <div class="m-card" style="grid-column:1 / -1;">
+                    <h2>Agent · Business · Property pages — head to head · last 30 days</h2>
+                    <p style="color:#718096;font-size:0.85rem;margin:0 0 1.25rem;">Which individual profiles and listings are pulling the most views. Click any to open it.</p>
+                    <div id="m-top-by-type" style="display:flex;flex-wrap:wrap;gap:2rem;"></div>
+                </div>
             </section>
 
             <!-- CONVERSIONS PANEL -->
@@ -642,24 +648,46 @@
             hit.addEventListener('touchmove',  e => { if (e.touches[0]) show(e.touches[0]); }, { passive: true });
         }
 
-        // ── Page sections breakdown (rolls up top_pages by prefix) ────────
+        const SECTION_LABELS = {
+            home: 'Home', lakes: 'Lakes', towns: 'Towns', agents: 'Agents',
+            businesses: 'Businesses', properties: 'Properties', blog: 'Blog',
+            resources: 'Resources', other: 'Other',
+        };
+
+        // ── Page sections breakdown ───────────────────────────────────────
+        // Prefer the server's section_breakdown (counts EVERY view). Falls back
+        // to rolling up top_pages by prefix for older API responses.
         function renderSections(pages) {
+            const server = _summary && _summary.section_breakdown;
+            let totals;
+            if (Array.isArray(server) && server.length) {
+                totals = {};
+                server.forEach(r => { totals[r.section] = r.views || 0; });
+            } else {
             const buckets = [
                 { key: 'home',       label: 'Home',        test: p => p === '/' || p === '/index.html' || p === '' },
                 { key: 'lakes',      label: 'Lakes',       test: p => p.startsWith('/lakes') },
                 { key: 'towns',      label: 'Towns',       test: p => p.startsWith('/towns') },
                 { key: 'agents',     label: 'Agents',      test: p => p.startsWith('/agents') || p.includes('agent-profile') },
                 { key: 'businesses', label: 'Businesses',  test: p => p.startsWith('/businesses') },
+                { key: 'properties', label: 'Properties',  test: p => p.startsWith('/listings') || p.startsWith('/properties') },
                 { key: 'blog',       label: 'Blog',        test: p => p.startsWith('/blog') },
                 { key: 'resources',  label: 'Resources',   test: p => p.startsWith('/resources') },
                 { key: 'other',      label: 'Other',       test: () => true },
             ];
-            const totals = Object.fromEntries(buckets.map(b => [b.key, 0]));
+            totals = Object.fromEntries(buckets.map(b => [b.key, 0]));
             (pages || []).forEach(r => {
                 const p = (r.path || '').toLowerCase();
                 const b = buckets.find(b => b.test(p));
                 if (b) totals[b.key] += (r.views || 0);
             });
+            }
+            renderSectionBars(totals);
+            renderTopByType();
+        }
+
+        function renderSectionBars(totals) {
+            const buckets = Object.keys(totals).map(key => ({ key, label: SECTION_LABELS[key] || key }));
             const sum = Object.values(totals).reduce((a, b) => a + b, 0);
             const el = document.getElementById('m-sections');
             if (!sum) { el.innerHTML = '<div class="empty">No pageviews yet.</div>'; return; }
@@ -675,6 +703,28 @@
                     <div class="val">${b.views.toLocaleString()} <span style="color:#a0aec0;font-weight:600;font-size:0.78rem;">· ${pct}%</span></div>
                 </div>`;
             }).join('');
+        }
+
+        // Head-to-head: the top individual agent / business / property pages,
+        // so the owner can see which specific pages are performing best.
+        function renderTopByType() {
+            const el = document.getElementById('m-top-by-type');
+            if (!el) return;
+            const rows = (_summary && _summary.top_by_type) || [];
+            const groups = { agents: [], businesses: [], properties: [] };
+            rows.forEach(r => { if (groups[r.section]) groups[r.section].push(r); });
+            const nice = (path) => (path || '').split('/').filter(Boolean).pop() || path;
+            const col = (title, key) => {
+                const list = (groups[key] || []).slice(0, 10);
+                const body = list.length
+                    ? list.map(r => `<div class="m-list-row">
+                            <a class="m-list-label" href="${esc(r.path)}" target="_blank" rel="noopener" style="color:#1d6df2;text-decoration:none;">${esc(nice(r.path))}</a>
+                            <div class="m-list-count">${(r.views||0).toLocaleString()} <span style="color:#a0aec0;font-weight:600;font-size:0.72rem;">· ${(r.visitors||0).toLocaleString()} ppl</span></div>
+                        </div>`).join('')
+                    : '<div class="empty">No views yet.</div>';
+                return `<div style="flex:1;min-width:220px;"><h3 style="font-size:0.82rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#718096;margin:0 0 0.6rem;">${title}</h3>${body}</div>`;
+            };
+            el.innerHTML = col('Top agent pages', 'agents') + col('Top business pages', 'businesses') + col('Top property pages', 'properties');
         }
 
         function renderList(id, rows, mapFn) {
