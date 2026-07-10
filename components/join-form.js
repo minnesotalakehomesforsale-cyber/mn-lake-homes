@@ -25,7 +25,6 @@
         { q: "Do you have a real estate license number?",          hint: 'Optional — you can update this later in your profile.',                                          field: 'license',  type: 'text',     ph: 'e.g. MN-40012345',        required: false },
         { q: "Which areas do you serve?",                          hint: 'Pick up to 10 cities or towns. We route leads near these areas to you. You can change this later.', field: 'service_area_tag_ids', type: 'tags',     required: true },
         { q: "Create a password for your account.",                hint: 'Needed for the upcoming agent portal — this site is launching as the beta. Min 8 characters.', field: 'password', type: 'password', ph: '••••••••',                required: true, minlength: 8 },
-        { q: "One more — confirm your password.",                  hint: 'Must match the password above.',                                                                 field: 'confirm',  type: 'password', ph: '••••••••',                required: true },
     ];
 
     // Admin-tunable via app_config.signup_max_service_areas. We fetch the
@@ -364,7 +363,6 @@
         if (s.required && !val) { err.textContent = 'This field is required.'; err.style.display = 'block'; return; }
         if (s.type === 'email' && val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { err.textContent = 'Please enter a valid email address.'; err.style.display = 'block'; return; }
         if (s.minlength && val.length < s.minlength) { err.textContent = `Password must be at least ${s.minlength} characters.`; err.style.display = 'block'; return; }
-        if (s.field === 'confirm' && val !== _js.data.password) { err.textContent = 'Passwords do not match.'; err.style.display = 'block'; return; }
 
         _js.data[s.field] = val;
 

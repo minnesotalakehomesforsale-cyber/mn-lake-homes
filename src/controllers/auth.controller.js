@@ -217,7 +217,19 @@ const register = async (req, res) => {
         // contact info — the agent's join.html form already collected
         // phone, and email is always set. They can override either on
         // the dashboard if they want a different number publicly listed.
-        const slugStr = display_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
+        // agents.slug is UNIQUE, but two agents can legitimately share a name.
+        // Without this, the second "Jane Smith" to sign up died with a raw
+        // 'duplicate key value violates unique constraint "agents_slug_key"'.
+        // Pick the first free slug: jane-smith, jane-smith-2, jane-smith-3, ...
+        const baseSlug = display_name.toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || 'agent';
+        let slugStr = baseSlug;
+        for (let n = 2; n <= 200; n++) {
+            const taken = await client.query('SELECT 1 FROM agents WHERE slug = $1 LIMIT 1', [slugStr]);
+            if (taken.rowCount === 0) break;
+            slugStr = `${baseSlug}-${n}`;
+        }
         // Assign this agent their own referral code up front (deterministic from
         // the new user id so it's stable). refCode is the code they SIGNED UP under.
         const myRefCode = 'REF' + require('crypto').createHash('md5').update(userId + 'mlh-ref').digest('hex').slice(0, 6).toUpperCase();
@@ -314,7 +326,18 @@ const register = async (req, res) => {
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('[register]', err.message);
-        res.status(400).json({ error: err.message });
+        // Never surface raw Postgres text to the browser. A unique-violation
+        // (23505) or any message that looks like SQL internals gets replaced
+        // with something a human can act on.
+        let msg = err.message || 'Registration failed.';
+        if (err.code === '23505') {
+            msg = /email/i.test(err.constraint || '')
+                ? 'An account with that email already exists — try signing in instead.'
+                : 'We could not create your profile. Please try again.';
+        } else if (/duplicate key|violates|constraint|relation |column |syntax error/i.test(msg)) {
+            msg = 'Something went wrong creating your account. Please try again.';
+        }
+        res.status(400).json({ error: msg });
     } finally {
         client.release();
     }
