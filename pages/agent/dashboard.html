@@ -1914,9 +1914,10 @@
 
             if (!sub) {
                 // No subscription on file → CTA points at the pricing page.
+                // Publishing is free, so this copy is about UPGRADING, not going live.
                 billEl.textContent = 'Not subscribed';
                 btn.textContent = 'Choose a plan →';
-                helpEl.textContent = 'Pick a plan to publish your profile and start receiving leads.';
+                helpEl.textContent = 'Your public profile is free. Upgrade to receive matched leads, featured placement, and property listings.';
                 renewT.style.display = 'none';
                 statusT.style.display = 'none';
                 return;
