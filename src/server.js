@@ -3869,6 +3869,7 @@ async function ensureTables() {
         await seedBlogPosts();
         await applyBlogCoverMap();
         await seedDemoFreeAgent();
+        await seedDemoListing();
         await seedAgentResources();
         await seedBlogContentV2();
         await seedBlogRelatedLinks();
@@ -3970,6 +3971,59 @@ async function applyBlogCoverMap() {
 // Opt-in only: set SEED_DEMO_FREE_AGENT=true to (re)create the demo agent.
 // Off by default. When off, it also REMOVES any previously-seeded demo agent
 // so it can't keep reappearing on every deploy.
+// One rich, Zillow-grade demo listing so the owner can see the property page
+// and edit it. Attached to an active, published agent (properties require one).
+// Guarded by slug ON CONFLICT DO NOTHING, so admin edits are never clobbered.
+// Set SEED_DEMO_LISTING=false to skip.
+async function seedDemoListing() {
+    if (process.env.SEED_DEMO_LISTING === 'false') return;
+    try {
+        const ag = await pool.query(`
+            SELECT a.id FROM agents a JOIN users u ON u.id = a.user_id
+             WHERE a.is_published = TRUE AND a.profile_status = 'published'
+               AND u.account_status = 'active'
+             ORDER BY a.created_at ASC LIMIT 1`);
+        if (!ag.rowCount) return;            // no active agent to own it yet
+        const agentId = ag.rows[0].id;
+        const lake = await pool.query(`SELECT id FROM lakes WHERE slug = 'gull-lake' LIMIT 1`);
+        const lakeId = lake.rows[0]?.id || null;
+        const gallery = JSON.stringify([
+            '/assets/images/mn-colonial-lake-home.jpg',
+            '/assets/images/mn-chateau-aerial.jpg',
+            '/assets/images/mn-beach-craftsman-cabin.jpg',
+            '/assets/images/mn-white-colonial-ivy.jpg',
+            '/assets/images/mn-log-cabin-ducks.jpg',
+        ]);
+        const desc = `Rare west-facing frontage on Gull Lake with 142 feet of hard-sand shoreline and a gradual walk-in bottom — the kind of lot families keep for generations. The main level opens to a wall of glass framing the water, a chef's kitchen with quartzite counters and a walk-in pantry, and a screened porch built for the ice-out-to-first-snow season. Four bedrooms up including a lake-facing primary with a spa bath; a walkout lower level with wet bar, family room, and a bunk room that sleeps six. Recent updates: new steel roof (2023), two high-efficiency furnaces, whole-home Generac, and a permitted shore station with a canopy lift. Two-stall attached garage plus a heated detached shop for the boats and toys. Sold mostly furnished. Showings by appointment — this one won't sit.`;
+        await pool.query(`
+            INSERT INTO listings (
+                slug, agent_id, lake_id, title, address, city, state, zip,
+                price, original_price, beds, baths, sqft, lot_acres, waterfront_feet,
+                description, featured_image_url, gallery, mls_number, latitude, longitude,
+                property_type, year_built, stories, garage_spaces, parking, heating, cooling,
+                basement, flooring, appliances, exterior, roof, listing_view, waterfront,
+                water_body, fireplace, hoa_fee, annual_tax, status
+            ) VALUES (
+                'gull-lake-lakefront-estate-142ft', $1, $2,
+                'Gull Lake Lakefront Estate — 142 ft of Hard-Sand Shoreline',
+                '11480 Interlachen Rd', 'Nisswa', 'MN', '56468',
+                1875000, 1950000, 4, 3.5, 4620, 1.10, 142,
+                $3, '/assets/images/mn-colonial-lake-home.jpg', $4::jsonb, 'MN-6112048',
+                46.5219, -94.3061,
+                'Single Family', 2016, 2, 3, 'Attached + detached heated shop',
+                'Forced air, dual furnace', 'Central air',
+                'Finished walkout', 'Hardwood, tile, luxury vinyl',
+                'Sub-Zero, Wolf, Bosch — all included', 'Fiber cement + stone',
+                'Steel (2023)', 'Panoramic west-facing lake', TRUE,
+                'Gull Lake', TRUE, 0, 14820, 'active'
+            ) ON CONFLICT (slug) DO NOTHING`,
+            [agentId, lakeId, desc, gallery]
+        );
+    } catch (e) {
+        console.error('[seedDemoListing]', e.message);
+    }
+}
+
 async function seedDemoFreeAgent() {
     const EMAIL = 'demo.free@mnlakehomes.com';
     const PASSWORD = 'DemoFree2026!';

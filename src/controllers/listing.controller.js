@@ -89,6 +89,16 @@ const PUBLIC_COLS = `id, slug, lake_id, agent_id, title, address, city, state, z
     water_body, fireplace, hoa_fee, annual_tax, original_price, open_house_at,
     boosted_until, status, created_at, updated_at`;
 
+// "Only active agents can have properties." A listing is public only if its
+// owning agent is active + published — so a deactivated or unpublished agent's
+// listings drop off the site automatically. Admin listings (agent_id IS NULL)
+// are always allowed.
+const AGENT_ACTIVE_GATE = `(agent_id IS NULL OR EXISTS (
+    SELECT 1 FROM agents a JOIN users u ON u.id = a.user_id
+     WHERE a.id = listings.agent_id
+       AND a.is_published = TRUE AND a.profile_status = 'published'
+       AND u.account_status = 'active'))`;
+
 function slugify(s) {
     return String(s || '').toLowerCase().trim()
         .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 180);
@@ -105,7 +115,7 @@ async function uniqueSlug(base) {
 async function activeCountForLake(lakeId) {
     if (!LISTINGS_PUBLIC || !lakeId) return 0;
     const { rows } = await pool.query(
-        `SELECT COUNT(*)::int AS c FROM listings WHERE lake_id = $1 AND status = 'active'`,
+        `SELECT COUNT(*)::int AS c FROM listings WHERE lake_id = $1 AND status = 'active' AND ${AGENT_ACTIVE_GATE}`,
         [lakeId]
     );
     return rows[0].c;
@@ -117,7 +127,7 @@ exports.listPublic = async (req, res) => {
     try {
         const lakeId = String(req.query.lake_id || '').trim() || null;
         const limit  = Math.min(parseInt(req.query.limit, 10) || 24, 60);
-        const where  = ["status = 'active'"];
+        const where  = ["status = 'active'", AGENT_ACTIVE_GATE];
         const params = [];
         if (lakeId) { params.push(lakeId); where.push(`lake_id = $${params.length}`); }
         params.push(limit);
@@ -140,7 +150,7 @@ exports.getBySlug = async (req, res) => {
     if (!LISTINGS_PUBLIC) return res.status(404).json({ error: 'Not found.' });
     try {
         const { rows } = await pool.query(
-            `SELECT ${PUBLIC_COLS} FROM listings WHERE slug = $1 AND status = 'active' LIMIT 1`,
+            `SELECT ${PUBLIC_COLS} FROM listings WHERE slug = $1 AND status = 'active' AND ${AGENT_ACTIVE_GATE} LIMIT 1`,
             [req.params.slug]
         );
         if (!rows.length) return res.status(404).json({ error: 'Listing not found.' });
