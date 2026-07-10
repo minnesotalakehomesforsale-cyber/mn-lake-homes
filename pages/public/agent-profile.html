@@ -269,6 +269,62 @@
                 `<span style="display:inline-block; background:#ebf4ff; color:#1d6df2; padding:0.4rem 0.9rem; border-radius:99px; font-size:0.85rem; font-weight:600; margin:0.25rem;">${a}</span>`
             ).join('');
 
+            // ── Rich agent-authored sections (By the numbers, Services offered,
+            //    How I work, Credentials & recognition). Each renders only when
+            //    the agent has actually filled it in. ──
+            let extra = agent.profile_extra;
+            if (typeof extra === 'string') { try { extra = JSON.parse(extra); } catch (_) { extra = {}; } }
+            extra = (extra && typeof extra === 'object') ? extra : {};
+            const xesc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+            const secHead = (t) => `<h2 style="font-size:1.1rem; font-weight:800; color:#1a202c; text-transform:uppercase; letter-spacing:1px; margin:2.75rem 0 1.25rem; padding-bottom:0.75rem; border-bottom:2px solid #edf2f7;">${t}</h2>`;
+
+            // By the numbers
+            let numbersHtml = '';
+            const st = (extra.stats && typeof extra.stats === 'object') ? extra.stats : {};
+            const statDefs = [['homes_sold','Homes sold'],['total_volume','Total volume'],['avg_days','Avg days on market'],['sale_to_list','Sale-to-list price']].filter(([k]) => st[k]);
+            if (statDefs.length) {
+                numbersHtml = secHead('By the numbers') + `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:1rem;">` +
+                    statDefs.map(([k,label]) => `<div style="background:#f7f9fa; border:1px solid #edf2f7; border-radius:12px; padding:1.25rem 1rem;">
+                        <div style="font-size:1.85rem; font-weight:800; color:#1a202c; letter-spacing:-0.5px; line-height:1.1;">${xesc(st[k])}</div>
+                        <div style="font-size:0.8rem; color:#718096; margin-top:0.35rem;">${label}</div></div>`).join('') + `</div>`;
+            }
+
+            // Services offered
+            const svcList = (arr) => arr.map(s => `<div style="display:flex; align-items:flex-start; gap:0.5rem; margin-bottom:0.55rem;"><span style="color:#1d6df2; font-weight:800; flex-shrink:0;">✓</span><span style="color:#4a5568; font-size:0.95rem; line-height:1.4;">${xesc(s)}</span></div>`).join('');
+            const svcB = Array.isArray(extra.services_buyer) ? extra.services_buyer : [];
+            const svcS = Array.isArray(extra.services_seller) ? extra.services_seller : [];
+            let servicesHtml = '';
+            if (svcB.length || svcS.length) {
+                servicesHtml = secHead('Services offered') + `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:2rem;">
+                    ${svcB.length ? `<div><div style="font-weight:800; color:#1a202c; margin-bottom:0.75rem;">Buyer services</div>${svcList(svcB)}</div>` : ''}
+                    ${svcS.length ? `<div><div style="font-weight:800; color:#1a202c; margin-bottom:0.75rem;">Seller services</div>${svcList(svcS)}</div>` : ''}
+                </div>`;
+            }
+
+            // How I work
+            const steps = Array.isArray(extra.how_i_work) ? extra.how_i_work : [];
+            let howHtml = '';
+            if (steps.length) {
+                howHtml = secHead('How I work') + steps.map((s,i) => `<div style="display:flex; gap:1rem; margin-bottom:1.5rem;">
+                    <div style="flex-shrink:0; width:32px; height:32px; border-radius:50%; background:#ebf4ff; color:#1d6df2; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:0.9rem;">${i+1}</div>
+                    <div><div style="font-weight:800; color:#1a202c; margin-bottom:0.25rem;">${xesc(s.title)}</div>${s.body ? `<div style="color:#4a5568; font-size:0.95rem; line-height:1.6;">${xesc(s.body)}</div>` : ''}</div></div>`).join('');
+            }
+
+            // Credentials & recognition
+            const creds = Array.isArray(extra.credentials) ? extra.credentials : [];
+            const awards = Array.isArray(extra.awards) ? extra.awards : [];
+            let credHtml = '';
+            if (creds.length || awards.length) {
+                credHtml = secHead('Credentials & recognition');
+                if (creds.length) credHtml += `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:0.75rem; margin-bottom:${awards.length ? '2rem' : '0'};">` +
+                    creds.map(c => `<div style="display:flex; gap:0.5rem; align-items:flex-start;"><span style="color:#1d6df2;">🎖</span><span style="color:#4a5568; font-size:0.92rem;">${xesc(c)}</span></div>`).join('') + `</div>`;
+                if (awards.length) credHtml += awards.map(a => `<div style="display:flex; gap:1rem; padding:0.7rem 0; border-top:1px solid #edf2f7;">
+                    <div style="flex-shrink:0; color:#1d6df2; font-weight:800; width:52px;">${xesc(a.year || '')}</div>
+                    <div><div style="font-weight:700; color:#1a202c;">${xesc(a.title)}</div>${a.org ? `<div style="color:#718096; font-size:0.85rem;">${xesc(a.org)}</div>` : ''}</div></div>`).join('');
+            }
+
+            const extraHtml = numbersHtml + servicesHtml + howHtml + credHtml;
+
             // Main content block — white card, matches site card style
             body.innerHTML = `
                 <div style="background:#fff; border-radius:12px; border:1px solid #edf2f7; box-shadow:0 4px 6px rgba(0,0,0,0.02); padding:3rem;">
@@ -284,6 +340,8 @@
                         <h2 style="font-size:1.1rem; font-weight:800; color:#1a202c; text-transform:uppercase; letter-spacing:1px; margin-bottom:1rem; padding-bottom:0.75rem; border-bottom:2px solid #edf2f7;">Specialties</h2>
                         <div>${specPills}</div>
                     ` : ''}
+
+                    ${extraHtml}
                 </div>
 
                 <!-- Inquiry form sidebar -->
