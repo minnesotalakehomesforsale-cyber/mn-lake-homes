@@ -87,6 +87,8 @@ const PUBLIC_COLS = `id, slug, lake_id, agent_id, title, address, city, state, z
     property_type, year_built, stories, garage_spaces, parking, heating, cooling,
     basement, flooring, appliances, exterior, roof, listing_view, waterfront,
     water_body, fireplace, hoa_fee, annual_tax, original_price, open_house_at,
+    highlights, price_history, schools, nearby, walk_score, shoreline_type,
+    lake_depth_ft, dock_included, utilities,
     boosted_until, status, created_at, updated_at`;
 
 // "Only active agents can have properties." A listing is public only if its
@@ -154,7 +156,27 @@ exports.getBySlug = async (req, res) => {
             [req.params.slug]
         );
         if (!rows.length) return res.status(404).json({ error: 'Listing not found.' });
-        res.json(rows[0]);
+        const r = rows[0];
+        // Attach the listing agent block the property page hydrates its contact
+        // card + "Listed by" section from. Separate query so the agent-active
+        // gate's own alias can't collide with this join.
+        r.agent = null;
+        if (r.agent_id) {
+            const ar = await pool.query(
+                `SELECT slug, display_name, brokerage_name, years_experience, profile_photo_url, phone_public, email_public, profile_extra
+                   FROM agents WHERE id = $1 LIMIT 1`, [r.agent_id]);
+            if (ar.rows.length) {
+                const a = ar.rows[0];
+                let extra = a.profile_extra;
+                if (typeof extra === 'string') { try { extra = JSON.parse(extra); } catch (_) { extra = {}; } }
+                r.agent = {
+                    slug: a.slug, display_name: a.display_name, brokerage_name: a.brokerage_name,
+                    years_experience: a.years_experience, profile_photo_url: a.profile_photo_url,
+                    headline: (extra && typeof extra === 'object' && extra.headline) || null,
+                };
+            }
+        }
+        res.json(r);
     } catch (err) {
         console.error('[listings.getBySlug]', err.message);
         res.status(500).json({ error: 'Could not load listing.' });

@@ -3289,6 +3289,16 @@ async function ensureTables() {
             ALTER TABLE listings ADD COLUMN IF NOT EXISTS fireplace     BOOLEAN;
             ALTER TABLE listings ADD COLUMN IF NOT EXISTS hoa_fee       INTEGER;
             ALTER TABLE listings ADD COLUMN IF NOT EXISTS annual_tax    INTEGER;
+            -- Rich, agent-editable detail sections (Zillow-style property page).
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS highlights    JSONB NOT NULL DEFAULT '[]'::jsonb;   -- "What's special" bullets
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS price_history JSONB NOT NULL DEFAULT '[]'::jsonb;   -- [{date,event,price}]
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS schools       JSONB NOT NULL DEFAULT '[]'::jsonb;   -- [{rating,name,level,distance_mi}]
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS nearby        JSONB NOT NULL DEFAULT '[]'::jsonb;   -- [{name,type,distance_mi}]
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS walk_score    SMALLINT;
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS shoreline_type VARCHAR(120);
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS lake_depth_ft NUMERIC(5,1);
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS dock_included BOOLEAN;
+            ALTER TABLE listings ADD COLUMN IF NOT EXISTS utilities     TEXT;
 
             -- Users saving/liking properties (bookmark). One row per user+listing.
             CREATE TABLE IF NOT EXISTS saved_listings (
