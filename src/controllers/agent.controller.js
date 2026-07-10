@@ -328,6 +328,95 @@ const unpublishProfile = async (req, res) => {
 };
 
 /**
+ * POST /api/agents/me/deactivate
+ * Agent-initiated account deactivation (NOT deletion, NOT an admin suspension).
+ *
+ * Sets users.account_status = 'inactive' and takes the profile offline. Both the
+ * public directory and the lead router require account_status = 'active', so the
+ * agent immediately stops appearing anywhere and stops receiving leads.
+ *
+ * They can still sign in afterwards (login allows 'inactive') so they can undo
+ * it themselves via /me/reactivate. Billing is NOT touched — Stripe has to be
+ * cancelled separately, so we tell the caller when a subscription is still live.
+ */
+const deactivateAccount = async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const { rows } = await client.query(
+            `SELECT a.stripe_subscription_id, u.account_status
+               FROM agents a JOIN users u ON u.id = a.user_id
+              WHERE a.user_id = $1`,
+            [req.user.userId]
+        );
+        if (rows.length === 0) return res.status(404).json({ error: 'Agent profile not found.' });
+        if (rows[0].account_status === 'suspended') {
+            return res.status(403).json({ error: 'This account is suspended. Contact support.' });
+        }
+
+        await client.query('BEGIN');
+        await client.query(
+            `UPDATE agents SET is_published = false, profile_status = 'draft', updated_at = NOW()
+              WHERE user_id = $1`,
+            [req.user.userId]
+        );
+        await client.query(
+            `UPDATE users SET account_status = 'inactive' WHERE id = $1`,
+            [req.user.userId]
+        );
+        await client.query('COMMIT');
+
+        logActivity({
+            event_type: 'agent.account.deactivated',
+            event_scope: 'agent',
+            actor: { type: 'agent', id: req.user.userId },
+            req,
+        });
+
+        res.json({
+            success: true,
+            account_status: 'inactive',
+            // Deactivating does not cancel Stripe. Surface it so the UI can warn.
+            subscription_still_active: Boolean(rows[0].stripe_subscription_id),
+        });
+    } catch (err) {
+        await client.query('ROLLBACK').catch(() => {});
+        console.error('[deactivateAccount]', err.message);
+        res.status(500).json({ error: 'Could not deactivate your account. Please try again.' });
+    } finally {
+        client.release();
+    }
+};
+
+/**
+ * POST /api/agents/me/reactivate
+ * Undoes a self-deactivation. The profile stays unpublished until the agent
+ * publishes it again, so reactivating never silently re-lists anyone.
+ */
+const reactivateAccount = async (req, res) => {
+    try {
+        const r = await pool.query(
+            `UPDATE users SET account_status = 'active'
+              WHERE id = $1 AND account_status = 'inactive'
+              RETURNING id`,
+            [req.user.userId]
+        );
+        if (r.rowCount === 0) {
+            return res.status(400).json({ error: 'Account is not deactivated (or is suspended — contact support).' });
+        }
+        logActivity({
+            event_type: 'agent.account.reactivated',
+            event_scope: 'agent',
+            actor: { type: 'agent', id: req.user.userId },
+            req,
+        });
+        res.json({ success: true, account_status: 'active', is_published: false });
+    } catch (err) {
+        console.error('[reactivateAccount]', err.message);
+        res.status(500).json({ error: 'Could not reactivate your account. Please try again.' });
+    }
+};
+
+/**
  * PATCH /api/agents/me
  * Saves agent profile as draft. Agents cannot change their own status or membership.
  */
@@ -998,6 +1087,8 @@ module.exports = {
     submitForReview,
     publishProfile,
     unpublishProfile,
+    deactivateAccount,
+    reactivateAccount,
     updateMyProfile,
     getMyLeads,
     getMyRoi,

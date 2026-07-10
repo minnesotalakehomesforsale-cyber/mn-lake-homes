@@ -416,7 +416,11 @@ const login = async (req, res) => {
             return res.status(403).json({ error: 'This account has been suspended. Contact support.' });
         }
 
-        if (user.account_status !== 'active') {
+        // 'inactive' = the agent deactivated themselves. Let them sign in so they
+        // can reactivate (they're already excluded from the directory and from
+        // lead routing, both of which require account_status = 'active'). Any
+        // other non-active status is still an admin-controlled block.
+        if (user.account_status !== 'active' && user.account_status !== 'inactive') {
             return res.status(403).json({ error: 'Account is not active. Contact support.' });
         }
 

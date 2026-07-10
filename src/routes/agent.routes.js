@@ -43,5 +43,8 @@ router.post('/me/submit', verifyToken, requireRole('agent'), agentController.sub
 // Free agents publish their own profile once required fields are complete.
 router.post('/me/publish',   verifyToken, requireRole('agent'), agentController.publishProfile);
 router.post('/me/unpublish', verifyToken, requireRole('agent'), agentController.unpublishProfile);
+// Self-service account deactivation (reversible; not deletion, not suspension).
+router.post('/me/deactivate', verifyToken, requireRole('agent'), agentController.deactivateAccount);
+router.post('/me/reactivate', verifyToken, requireRole('agent'), agentController.reactivateAccount);
 
 module.exports = router;

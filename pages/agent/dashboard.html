@@ -753,6 +753,33 @@
                             <button type="button" onclick="logoutAgent()" style="margin-left:0.5rem; background:#fff; color:#c53030; font-weight:600; padding:0.6rem 1.1rem; border-radius:8px; border:1px solid #fed7d7; cursor:pointer;">Sign out</button>
                         </div>
                     </div>
+
+                    <!-- ── Deactivate / reactivate (self-service, reversible) ── -->
+                    <h3 class="form-section-title">Account status</h3>
+                    <div id="acct-danger" style="border:1px solid #fed7d7; background:#fff5f5; border-radius:12px; padding:1.5rem;">
+                        <div id="acct-deactivate-block">
+                            <div style="font-weight:800; color:#1a202c; margin-bottom:0.35rem;">Deactivate my account</div>
+                            <p style="margin:0 0 1rem; color:#4a5568; font-size:0.9rem; line-height:1.55;">
+                                Takes your profile off the public directory and stops all new leads. You can sign back in and reactivate any time — nothing is deleted.
+                                <strong>Deactivating does not cancel billing</strong> — cancel your subscription first if you're on a paid tier.
+                            </p>
+                            <button type="button" onclick="deactivateMyAccount()"
+                                style="background:#c53030; color:#fff; font-weight:700; padding:0.65rem 1.2rem; border-radius:8px; border:0; cursor:pointer; font-family:inherit;">
+                                Deactivate my account
+                            </button>
+                        </div>
+
+                        <div id="acct-reactivate-block" style="display:none;">
+                            <div style="font-weight:800; color:#1a202c; margin-bottom:0.35rem;">Your account is deactivated</div>
+                            <p style="margin:0 0 1rem; color:#4a5568; font-size:0.9rem; line-height:1.55;">
+                                You're hidden from the directory and receiving no leads. Reactivate to get access back, then publish your profile again when you're ready.
+                            </p>
+                            <button type="button" onclick="reactivateMyAccount()"
+                                style="background:#1d6df2; color:#fff; font-weight:700; padding:0.65rem 1.2rem; border-radius:8px; border:0; cursor:pointer; font-family:inherit;">
+                                Reactivate my account
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ── MESSAGES VIEW — two-way chat with the MNLH team ── -->
@@ -1856,6 +1883,9 @@
 
             document.getElementById('acct-email').textContent     = agent.account_email     || '—';
             document.getElementById('acct-full-name').textContent = agent.account_full_name || '—';
+
+            // Show "Deactivate" or "Reactivate" depending on the live status.
+            renderAccountStatusBlock(agent.account_status);
         }
 
         // Hydrates the Membership tiles with live Stripe data. Called
@@ -2291,6 +2321,55 @@
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLeadPanel(); });
 
         // ── Progress Bar ─────────────────────────────────────────────────────────
+        // ── Self-service deactivate / reactivate ──────────────────────────────
+        // Deactivating sets account_status='inactive' and unpublishes the profile.
+        // Both the directory and the lead router require 'active', so the agent
+        // disappears immediately. It's reversible: login still allows 'inactive'.
+        async function deactivateMyAccount() {
+            const ok = confirm(
+                "Deactivate your account?\n\n" +
+                "• Your profile comes off the public directory\n" +
+                "• You stop receiving new leads\n" +
+                "• Nothing is deleted — you can sign back in and reactivate\n\n" +
+                "This does NOT cancel billing. Cancel your subscription first if you're on a paid tier."
+            );
+            if (!ok) return;
+            try {
+                const res = await fetch('/api/agents/me/deactivate', { method: 'POST', credentials: 'include' });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || 'Could not deactivate your account.');
+                if (data.subscription_still_active) {
+                    alert('Your account is deactivated.\n\nHeads up: your paid subscription is still active. Cancel it from "Manage membership" so you stop being billed.');
+                }
+                window.location.reload();
+            } catch (err) {
+                alert(err.message || 'Could not deactivate your account. Please try again.');
+            }
+        }
+        window.deactivateMyAccount = deactivateMyAccount;
+
+        async function reactivateMyAccount() {
+            try {
+                const res = await fetch('/api/agents/me/reactivate', { method: 'POST', credentials: 'include' });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || 'Could not reactivate your account.');
+                window.location.reload();
+            } catch (err) {
+                alert(err.message || 'Could not reactivate your account. Please try again.');
+            }
+        }
+        window.reactivateMyAccount = reactivateMyAccount;
+
+        // Swap the deactivate/reactivate blocks based on the live account status.
+        function renderAccountStatusBlock(accountStatus) {
+            const deact = document.getElementById('acct-deactivate-block');
+            const react = document.getElementById('acct-reactivate-block');
+            if (!deact || !react) return;
+            const inactive = accountStatus === 'inactive';
+            deact.style.display = inactive ? 'none' : 'block';
+            react.style.display = inactive ? 'block' : 'none';
+        }
+
         // Free agents publish themselves — a public profile is included in the
         // Free tier. Paid perks (matched leads, featured, listings) still come
         // from Stripe. Saves any unsaved edits first so the server-side
