@@ -415,11 +415,7 @@
                     <div class="ud-row">
                         <div class="ud-field">
                             <label for="p-new">New password</label>
-                            <input type="password" id="p-new" autocomplete="new-password">
-                        </div>
-                        <div class="ud-field">
-                            <label for="p-confirm">Confirm new password</label>
-                            <input type="password" id="p-confirm" autocomplete="new-password">
+                            <input type="password" id="p-new" autocomplete="new-password" minlength="8">
                         </div>
                     </div>
                     <div class="ud-actions">
@@ -804,10 +800,8 @@
             const note = document.getElementById('note-password');
             const current = document.getElementById('p-current').value;
             const next    = document.getElementById('p-new').value;
-            const confirm = document.getElementById('p-confirm').value;
 
             if (next.length < 8)       return showNote(note, 'New password must be at least 8 characters.', 'err');
-            if (next !== confirm)      return showNote(note, 'New passwords do not match.', 'err');
 
             btn.disabled = true;
             btn.textContent = 'Updating…';
