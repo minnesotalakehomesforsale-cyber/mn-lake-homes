@@ -263,57 +263,9 @@
             .stat-number { font-size: 2.4rem !important; }
             #join-question { font-size: 1.5rem !important; }
         }
-
-        /* ── Agent registration form — the target of every "Create your
-              profile" CTA. (The old #join-overlay modal was removed; this is
-              an inline section, which is simpler and works better on phones.) */
-        #register { padding: 6rem 2rem; background: #f7f9fa; }
-        .reg-form-container {
-            max-width: 640px; margin: 0 auto; background: #fff;
-            border: 1px solid #edf2f7; border-radius: 16px;
-            padding: 3rem 3rem 2.5rem; box-shadow: 0 2px 10px rgba(16,24,40,0.04);
-        }
-        .reg-form-container h2 { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.5px; margin: 0 0 0.5rem; color: #1a202c; }
-        .reg-form-container .reg-sub { color: #718096; margin: 0 0 2rem; line-height: 1.6; }
-        .reg-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .reg-form .field { margin-bottom: 1.1rem; }
-        .reg-form label { display: block; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #718096; margin-bottom: 0.4rem; }
-        .reg-form input {
-            width: 100%; box-sizing: border-box; font: inherit; font-size: 1rem;
-            padding: 0.8rem 0.95rem; border: 1px solid #e2e8f0; border-radius: 10px;
-            outline: none; transition: border-color 0.12s, box-shadow 0.12s;
-        }
-        .reg-form input:focus { border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.12); }
-        .reg-form .hint { font-size: 0.78rem; color: #a0aec0; margin-top: 0.35rem; }
-        .reg-form button[type="submit"] {
-            width: 100%; margin-top: 0.5rem; background: #1d6df2; color: #fff;
-            border: 0; border-radius: 10px; padding: 0.95rem 1.5rem;
-            font: inherit; font-weight: 800; font-size: 1rem; cursor: pointer;
-        }
-        .reg-form button[type="submit"]:hover { background: #155bc8; }
-        .reg-form button[type="submit"]:disabled { opacity: 0.6; cursor: default; }
-        #register-alert { display: none; padding: 0.85rem 1rem; border-radius: 10px; font-weight: 600; font-size: 0.92rem; margin-bottom: 1.25rem; }
-        .reg-foot { text-align: center; margin-top: 1.25rem; font-size: 0.9rem; color: #718096; }
-        .reg-foot a { color: #1d6df2; font-weight: 700; text-decoration: none; }
-        @media (max-width: 600px) { #register { padding: 3.5rem 1rem; } }
     </style>
     <script src="../../components/components.js" defer></script>
     <script>
-        // Every "Create your profile" CTA on this page calls openJoinForm().
-        // It used to open a #join-overlay modal that no longer exists, so the
-        // function was undefined and the buttons did nothing. Now it scrolls to
-        // the inline registration section and focuses the first field.
-        function openJoinForm() {
-            const el = document.getElementById('register');
-            if (!el) return;
-            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            setTimeout(() => {
-                const first = document.getElementById('reg-firstName');
-                if (first) first.focus({ preventScroll: true });
-            }, 450);
-        }
-        window.openJoinForm = openJoinForm;
-
         document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('agent-register-form');
             if (!form) return;
@@ -335,7 +287,12 @@
                 const phone     = document.getElementById('reg-phone').value.trim();
                 const brokerage = document.getElementById('reg-brokerage').value.trim();
                 const pwd       = document.getElementById('reg-password').value;
+                const confirm   = document.getElementById('reg-confirm').value;
 
+                if (pwd !== confirm) {
+                    setMsg('#fff5f5', '#c53030', 'Passwords do not match.');
+                    return;
+                }
                 if (pwd.length < 8) {
                     setMsg('#fff5f5', '#c53030', 'Password must be at least 8 characters.');
                     return;
@@ -525,55 +482,6 @@
                 <p style="color: #4a5568; line-height: 1.6; margin-bottom: 1.5rem;"><strong>Instant email + SMS lead alerts</strong>, <strong>lead quality scoring</strong> so you work the hottest leads first, a <strong>response-time badge</strong> on your profile, and our <strong>refer-an-agent, get-a-month-free</strong> program.</p>
                 <a href="#" onclick="event.preventDefault(); openJoinForm();" class="sp-link-blue">Create your profile &rarr;</a>
             </div>
-        </div>
-    </section>
-
-    <!-- Agent registration — target of every "Create your profile" CTA -->
-    <section id="register">
-        <div class="reg-form-container">
-            <h2>Create your agent profile</h2>
-            <p class="reg-sub">Start free with a public profile on your lake's page. Upgrade any time for matched leads, featured placement, and property listings.</p>
-
-            <div id="register-alert"></div>
-
-            <form id="agent-register-form" class="reg-form">
-                <div class="form-row">
-                    <div class="field">
-                        <label for="reg-firstName">First name</label>
-                        <input type="text" id="reg-firstName" autocomplete="given-name" required>
-                    </div>
-                    <div class="field">
-                        <label for="reg-lastName">Last name</label>
-                        <input type="text" id="reg-lastName" autocomplete="family-name" required>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label for="reg-email">Email</label>
-                    <input type="email" id="reg-email" autocomplete="email" required>
-                </div>
-
-                <div class="form-row">
-                    <div class="field">
-                        <label for="reg-phone">Phone</label>
-                        <input type="tel" id="reg-phone" autocomplete="tel">
-                    </div>
-                    <div class="field">
-                        <label for="reg-brokerage">Brokerage</label>
-                        <input type="text" id="reg-brokerage" autocomplete="organization" placeholder="Optional">
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label for="reg-password">Password</label>
-                    <input type="password" id="reg-password" autocomplete="new-password" minlength="8" required>
-                    <div class="hint">At least 8 characters.</div>
-                </div>
-
-                <button type="submit">Create my profile</button>
-            </form>
-
-            <p class="reg-foot">Already have an account? <a href="/agent-login">Sign in &rarr;</a></p>
         </div>
     </section>
 
