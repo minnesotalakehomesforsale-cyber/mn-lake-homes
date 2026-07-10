@@ -382,6 +382,9 @@
                     email:          _js.data.email,
                     password:       _js.data.password,
                     display_name:   `${_js.data.first} ${_js.data.last}`.trim(),
+                    // The form asks for phone (a REQUIRED step) but used to drop it
+                    // here, so it never reached users.phone / agents.phone_public.
+                    phone:          _js.data.phone     || null,
                     license_number: _js.data.license   || null,
                     brokerage_name: _js.data.brokerage || null,
                     service_area_tag_ids: Array.isArray(_js.data.service_area_tag_ids) ? _js.data.service_area_tag_ids : [],

@@ -2720,6 +2720,18 @@ body > * { min-width: 0; }
     text-align: left;
 }
 
+/* The label carries the actual question text (e.g. the agent-profile FAQ
+   fields). It had no styling at all, so it rendered as an unstyled inline
+   node and read as blank space above an anonymous answer box. */
+.form-group-sys label {
+    display: block;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #1a202c;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
 .input-sys {
     width: 100%;
     padding: 1rem;
