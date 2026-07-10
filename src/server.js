@@ -2690,6 +2690,14 @@ async function ensureTables() {
             ALTER TYPE role_type ADD VALUE IF NOT EXISTS 'client';
         EXCEPTION WHEN undefined_object THEN NULL;
         END $$;`);
+        // 'inactive' = the agent deactivated THEMSELVES (reversible, not an admin
+        // ban and not a deletion). account_status_type shipped as
+        // ('active','pending','suspended','archived'), so writing 'inactive'
+        // failed with invalid_text_representation until this value existed.
+        await pool.query(`DO $$ BEGIN
+            ALTER TYPE account_status_type ADD VALUE IF NOT EXISTS 'inactive';
+        EXCEPTION WHEN undefined_object THEN NULL;
+        END $$;`);
         await safeExec(`
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS user_id UUID;
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS stripe_customer_id     TEXT;

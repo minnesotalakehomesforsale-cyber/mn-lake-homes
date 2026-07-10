@@ -15,8 +15,11 @@ DO $$ BEGIN
     CREATE TYPE role_type AS ENUM ('super_admin', 'admin', 'agent');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
+-- 'inactive' = agent deactivated their own account (reversible). Distinct from
+-- 'suspended' (admin ban) and 'archived'. server.js also ALTERs this in for
+-- existing databases.
 DO $$ BEGIN
-    CREATE TYPE account_status_type AS ENUM ('active', 'pending', 'suspended', 'archived');
+    CREATE TYPE account_status_type AS ENUM ('active', 'pending', 'suspended', 'archived', 'inactive');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
