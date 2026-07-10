@@ -234,12 +234,8 @@
                 ? `<span style="display:inline-block; background:var(--accent-blue); color:#fff; padding:0.4rem 1.2rem; border-radius:99px; font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;">${badgeLabel}</span>`
                 : '';
 
-            const topPill = agent.top_performer
-                ? `<span title="Top-performing agent on MN Lake Homes this month" style="display:inline-flex; align-items:center; gap:0.35rem; background:linear-gradient(135deg,#f6ad14,#dd8a0b); color:#fff; padding:0.4rem 1rem; border-radius:99px; font-size:0.8rem; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; margin-left:0.5rem; vertical-align:middle;">🏅 Top Performer</span>`
-                : '';
-            const respPill = agent.response_label
-                ? `<span title="Typical time to respond to a new lead" style="display:inline-flex; align-items:center; gap:0.35rem; background:${agent.response_fast ? 'rgba(29,109,242,0.9)' : 'rgba(255,255,255,0.1)'}; color:${agent.response_fast ? '#fff' : '#cbd5e0'}; padding:0.4rem 1rem; border-radius:99px; font-size:0.8rem; font-weight:700; margin-left:0.5rem; vertical-align:middle;">⚡ ${agent.response_label}</span>`
-                : '';
+            // (Removed per owner: the "Top Performer" and "Responds within an
+            //  hour" badges no longer show on agent profiles.)
 
             hero.innerHTML = `
                 ${avatarHtml}
@@ -248,8 +244,6 @@
                 <div style="display:inline-flex; align-items:center; flex-wrap:wrap; justify-content:center; gap:0.25rem;">
                     ${plainBadge}
                     ${topAgentPill}
-                    ${topPill}
-                    ${respPill}
                 </div>
             `;
 

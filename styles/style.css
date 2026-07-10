@@ -67,6 +67,10 @@
 
 /* 1. VARIABLES & RESETS */
 :root {
+    /* Shared page-shell width. The header bar spans full width but its content
+       centers to this; the footer content matches. 1340px − two 1.5rem gutters
+       = 1292px of content, the same measure as the page shells. */
+    --page-w: 1340px;
     --bg-dark: #000000;
     --text-primary: #ffffff;
     --text-secondary: #a3a3a3;
@@ -182,7 +186,10 @@ body > * { min-width: 0; }
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.25rem 1.5rem;
+    /* Full-width dark bar, but the content centers to --page-w with 1.5rem
+       gutters — so the logo/nav line up with page content on wide screens,
+       and it collapses to a flat 1.5rem gutter below --page-w. */
+    padding: 1.25rem max(1.5rem, calc((100% - var(--page-w)) / 2 + 1.5rem));
     background-color: var(--bg-dark);
     position: fixed;
     width: 100%;
@@ -2148,11 +2155,13 @@ body > * { min-width: 0; }
     display: flex;
     justify-content: space-between;
     gap: 4rem;
-    max-width: 1100px;
+    /* Match the page shell: --page-w with 1.5rem gutters (= 1292px content). */
+    max-width: var(--page-w);
     margin: 0 auto;
-    padding-bottom: 4rem;
+    padding: 0 1.5rem 4rem;
     border-bottom: 1px solid rgba(255,255,255,0.08);
     text-align: left;
+    box-sizing: border-box;
 }
 
 .footer-brand { flex: 0 0 300px; }
@@ -2228,9 +2237,10 @@ body > * { min-width: 0; }
 }
 
 .footer-bottom {
-    max-width: 1100px;
+    max-width: var(--page-w);
     margin: 0 auto;
-    padding: 2rem 0 2.5rem;
+    padding: 2rem 1.5rem 2.5rem;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     align-items: center;
