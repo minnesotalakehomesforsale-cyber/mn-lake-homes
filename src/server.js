@@ -1163,8 +1163,9 @@ app.get('/listings/:slug', async (req, res, next) => {
                 .filter(Boolean).filter((u, i, a) => a.indexOf(u) === i).slice(0, 20);
             const thumb800 = u => escapeHtml(cldThumb(u, 800));
             const total = photoUrls.length;
+            const gridIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`;
             const cell = (u, isLast) =>
-                `<button type="button" class="lst-ph-cell${isLast && total > 5 ? ' has-more' : ''}" style="background-image:url('${escapeHtml(cldThumb(u, 700))}')" onclick="lbOpen('${thumb800(u)}')" aria-label="View photos">${isLast && total > 5 ? `<span class="lst-viewall">View all ${total} photos</span>` : ''}</button>`;
+                `<button type="button" class="lst-ph-cell" style="background-image:url('${escapeHtml(cldThumb(u, 700))}')" onclick="lbOpen('${thumb800(u)}')" aria-label="View photos">${isLast && total > 5 ? `<span class="lst-viewall">${gridIcon}View all ${total} photos</span>` : ''}</button>`;
             const galleryHtml = total
                 ? `<div class="lst-photos">
                      <button type="button" class="lst-ph-main" style="background-image:url('${escapeHtml(cldThumb(photoUrls[0], 1400))}')" onclick="lbOpen('${thumb800(photoUrls[0])}')" aria-label="View photos"></button>
