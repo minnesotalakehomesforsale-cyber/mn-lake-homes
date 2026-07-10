@@ -4028,7 +4028,9 @@ async function seedDemoListing() {
                 description, featured_image_url, gallery, mls_number, latitude, longitude,
                 property_type, year_built, stories, garage_spaces, parking, heating, cooling,
                 basement, flooring, appliances, exterior, roof, listing_view, waterfront,
-                water_body, fireplace, hoa_fee, annual_tax, status
+                water_body, fireplace, hoa_fee, annual_tax,
+                highlights, price_history, schools, nearby, walk_score,
+                shoreline_type, lake_depth_ft, dock_included, utilities, status
             ) VALUES (
                 'gull-lake-lakefront-estate-142ft', $1, $2,
                 'Gull Lake Lakefront Estate — 142 ft of Hard-Sand Shoreline',
@@ -4041,9 +4043,30 @@ async function seedDemoListing() {
                 'Finished walkout', 'Hardwood, tile, luxury vinyl',
                 'Sub-Zero, Wolf, Bosch — all included', 'Fiber cement + stone',
                 'Steel (2023)', 'Panoramic west-facing lake', TRUE,
-                'Gull Lake', TRUE, 0, 14820, 'active'
+                'Gull Lake', TRUE, 0, 14820,
+                $5::jsonb, $6::jsonb, $7::jsonb, $8::jsonb, 42,
+                'Hard sand, gradual walk-in', 8.5, TRUE, 'Municipal water · Private septic (2019) · Xcel Energy · Fiber internet',
+                'active'
             ) ON CONFLICT (slug) DO NOTHING`,
-            [agentId, lakeId, desc, gallery]
+            [agentId, lakeId, desc, gallery,
+                JSON.stringify(['142 ft of hard-sand shoreline', 'West-facing sunsets', 'Studs-out 2016 build quality', 'Screened porch', 'Whole-home Generac', 'Permitted shore station + canopy lift', 'Two-stall attached + heated shop', 'Two high-efficiency furnaces']),
+                JSON.stringify([
+                    { date: '2026-06-21', event: 'Listed for sale', price: 1875000 },
+                    { date: '2026-05-02', event: 'Price change', price: 1950000 },
+                    { date: '2019-08-29', event: 'Sold', price: 1120000 },
+                ]),
+                JSON.stringify([
+                    { rating: 9, name: 'Nisswa Elementary', level: 'Elementary', distance_mi: 2.1 },
+                    { rating: 8, name: 'Forestview Middle', level: 'Middle', distance_mi: 6.4 },
+                    { rating: 8, name: 'Brainerd High School', level: 'High', distance_mi: 8.7 },
+                ]),
+                JSON.stringify([
+                    { name: 'Gull Lake public access', type: 'Recreation', distance_mi: 1.2 },
+                    { name: 'Ernie’s on Gull', type: 'Dining', distance_mi: 2.0 },
+                    { name: 'Nisswa town square', type: 'Shopping', distance_mi: 3.4 },
+                    { name: 'Essentia Health — Baxter', type: 'Health', distance_mi: 12.5 },
+                ]),
+            ]
         );
     } catch (e) {
         console.error('[seedDemoListing]', e.message);

@@ -65,6 +65,41 @@
         .lst-hero img { cursor:zoom-in; }
         /* Facts & features — Zillow-style. Blank fields are dropped server-side. */
         .lst-section-h { font-size:1.25rem; font-weight:800; color:#1a202c; letter-spacing:-0.5px; margin:2.5rem 0 1rem; }
+        /* ── Rich hydrated sections (#lst-extra) — blue theme ── */
+        .lx-sec { margin-top:3rem; padding-top:2rem; border-top:1px solid #e2e8f0; }
+        .lx-hl { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:0.7rem 1.5rem; }
+        .lx-hl li { display:flex; gap:0.6rem; align-items:flex-start; color:#4a5568; }
+        .lx-hl svg { flex:0 0 auto; width:15px; height:15px; margin-top:4px; color:#1d6df2; }
+        .lx-dl { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:1.5rem 2rem; }
+        .lx-dl div { border-top:1px solid #e2e8f0; padding-top:0.6rem; }
+        .lx-dl dt { font-size:0.74rem; letter-spacing:0.06em; text-transform:uppercase; color:#718096; }
+        .lx-dl dd { margin:0.2rem 0 0; font-weight:600; color:#1a202c; }
+        .lx-hist { width:100%; border-collapse:collapse; font-size:0.93rem; }
+        .lx-hist th { text-align:left; font-size:0.72rem; letter-spacing:0.06em; text-transform:uppercase; color:#718096; padding:0 0 0.6rem; }
+        .lx-hist td { padding:0.75rem 0; border-top:1px solid #e2e8f0; color:#4a5568; }
+        .lx-hist td:last-child { text-align:right; font-weight:700; color:#1a202c; }
+        .lx-row { display:flex; align-items:center; gap:1rem; padding:0.85rem 0; border-top:1px solid #e2e8f0; }
+        .lx-row:first-child { border-top:0; }
+        .lx-rate { flex:0 0 auto; width:40px; height:40px; border-radius:8px; display:grid; place-items:center; font-weight:800; background:#ebf4ff; color:#1d6df2; }
+        .lx-row-m { flex:1; min-width:0; }
+        .lx-row-t { font-weight:600; color:#1a202c; }
+        .lx-row-s { font-size:0.84rem; color:#718096; }
+        .lx-row-d { font-size:0.86rem; color:#718096; }
+        .lx-agent { display:flex; gap:1.5rem; align-items:flex-start; flex-wrap:wrap; background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:1.75rem; }
+        .lx-agent-l { flex:1 1 260px; min-width:0; }
+        .lx-avatar { width:64px; height:64px; border-radius:50%; object-fit:cover; display:grid; place-items:center; background:#ebf4ff; color:#1d6df2; font-size:1.5rem; font-weight:800; margin-bottom:0.75rem; }
+        .lx-agent-n { font-size:1.15rem; font-weight:800; color:#1a202c; }
+        .lx-agent-b { color:#718096; font-size:0.92rem; }
+        .lx-agent-h { color:#4a5568; margin:0.6rem 0 0; line-height:1.55; }
+        .lx-form { flex:1 1 300px; display:grid; gap:0.6rem; }
+        .lx-form input, .lx-form textarea { width:100%; box-sizing:border-box; font:inherit; padding:0.7rem 0.8rem; border:1px solid #cbd5e0; border-radius:8px; background:#fff; color:#1a202c; }
+        .lx-form textarea { resize:vertical; min-height:80px; }
+        .lx-form input:focus, .lx-form textarea:focus { outline:none; border-color:#1d6df2; box-shadow:0 0 0 3px rgba(29,109,242,0.12); }
+        .lx-form button { border:none; cursor:pointer; font:inherit; font-weight:700; color:#fff; background:#1d6df2; padding:0.85rem; border-radius:8px; }
+        .lx-form button:hover { background:#155bc8; }
+        .lx-note { font-size:0.76rem; color:#718096; text-align:center; margin:0; }
+        .lx-ok { display:none; padding:0.9rem; background:#f0fff4; color:#2f855a; border:1px solid #c6f6d5; border-radius:8px; font-weight:600; text-align:center; }
+        .lx-err { display:none; color:#c53030; font-size:0.85rem; text-align:center; margin:0; }
         .lst-facts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1.5rem 2.5rem; }
         .lst-fact-group h3 { font-size:0.78rem; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:#1d6df2; margin:0 0 0.6rem; }
         .lst-fact-row { display:flex; justify-content:space-between; gap:1rem; padding:0.5rem 0; border-bottom:1px solid #f0f3f7; font-size:0.95rem; }
@@ -348,6 +383,11 @@
 
         {{LISTING_FACTS_HTML}}
 
+        <!-- Rich agent-editable sections (What's special, Waterfront, Systems,
+             Price & tax history, Schools, Nearby) + the listing agent's contact
+             card. Hydrated from /api/listings/slug/:slug; empty blocks are skipped. -->
+        <div id="lst-extra"></div>
+
         <section class="lst-mortgage" id="lst-mortgage" style="display:none;">
             <h2 class="lst-section-h">Estimate your monthly payment</h2>
             <div class="mtg-card">
@@ -465,6 +505,119 @@
                 if (e.key === 'Escape') lbClose();
                 else if (e.key === 'ArrowRight') lbStep(1);
                 else if (e.key === 'ArrowLeft') lbStep(-1);
+            });
+        })();
+    </script>
+
+    <!-- Hydrate the rich sections + listing-agent contact card. Every block is
+         skipped when its data is absent, so a sparse listing shows nothing extra. -->
+    <script>
+        (async function hydrateExtra() {
+            const host = document.getElementById('lst-extra');
+            const slug = (location.pathname.match(/^\/listings\/([^\/?#]+)/) || [])[1];
+            if (!host || !slug) return;
+            let r;
+            try {
+                const res = await fetch(`/api/listings/slug/${encodeURIComponent(slug)}`);
+                if (!res.ok) return;
+                r = await res.json();
+            } catch (_) { return; }
+
+            const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const arr = v => (Array.isArray(v) ? v : []);
+            const money = n => (n == null || n === '' ? '' : '$' + Number(n).toLocaleString('en-US'));
+            const num = n => (n == null || n === '' ? '' : Number(n).toLocaleString('en-US'));
+            const TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+            const sec = (title, inner) => (inner ? `<section class="lx-sec"><h2 class="lst-section-h" style="margin-top:0">${esc(title)}</h2>${inner}</section>` : '');
+            const dl = rows => { const ok = rows.filter(([, v]) => v != null && v !== '' && v !== false);
+                return ok.length ? `<dl class="lx-dl">${ok.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>` : ''; };
+
+            const highlights = arr(r.highlights).length
+                ? `<ul class="lx-hl">${arr(r.highlights).map(h => `<li>${TICK}<span>${esc(h)}</span></li>`).join('')}</ul>` : '';
+            const water = dl([
+                ['Water body', r.water_body], ['Shoreline', r.waterfront_feet ? `${num(r.waterfront_feet)} ft` : null],
+                ['Shoreline type', r.shoreline_type], ['Depth at dock', r.lake_depth_ft ? `${r.lake_depth_ft} ft` : null],
+                ['Dock', r.dock_included === true ? 'Included' : (r.dock_included === false ? 'Not included' : null)],
+                ['View', r.listing_view],
+            ]);
+            const systems = dl([
+                ['Heating', r.heating], ['Cooling', r.cooling], ['Roof', r.roof], ['Exterior', r.exterior],
+                ['Flooring', r.flooring], ['Basement', r.basement], ['Parking', r.parking],
+                ['Appliances', r.appliances], ['Utilities', r.utilities],
+            ]);
+            const fmtDate = d => { const x = new Date(d); return isNaN(x) ? esc(d) : x.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); };
+            const taxLine = r.annual_tax != null
+                ? `<p style="margin:0.8rem 0 0;color:#718096;font-size:0.9rem;">Annual property tax: <b>${esc(money(r.annual_tax))}</b>${r.hoa_fee != null ? ` · HOA ${esc(money(r.hoa_fee))}/mo` : ''}</p>` : '';
+            const history = arr(r.price_history).length
+                ? `<table class="lx-hist"><thead><tr><th>Date</th><th>Event</th><th style="text-align:right">Price</th></tr></thead><tbody>${
+                    arr(r.price_history).map(e => `<tr><td>${fmtDate(e.date)}</td><td style="color:#1a202c;font-weight:600">${esc(e.event)}</td><td>${esc(money(e.price))}</td></tr>`).join('')
+                  }</tbody></table>${taxLine}` : (taxLine || '');
+            const schools = arr(r.schools).length
+                ? arr(r.schools).map(s => `<div class="lx-row">${s.rating != null ? `<div class="lx-rate">${esc(s.rating)}</div>` : ''}
+                    <div class="lx-row-m"><div class="lx-row-t">${esc(s.name)}</div><div class="lx-row-s">${esc(s.level || '')}</div></div>
+                    ${s.distance_mi != null ? `<div class="lx-row-d">${esc(s.distance_mi)} mi</div>` : ''}</div>`).join('') : '';
+            const walk = r.walk_score != null
+                ? `<div class="lx-row"><div class="lx-rate">${esc(r.walk_score)}</div><div class="lx-row-m">
+                     <div class="lx-row-t">${r.walk_score >= 70 ? 'Very walkable' : r.walk_score >= 50 ? 'Somewhat walkable' : 'Car-dependent'}</div>
+                     <div class="lx-row-s">Walk Score out of 100</div></div></div>` : '';
+            const nearby = walk + arr(r.nearby).map(n => `<div class="lx-row"><div class="lx-row-m">
+                    <div class="lx-row-t">${esc(n.name)}</div><div class="lx-row-s">${esc(n.type || '')}</div></div>
+                    ${n.distance_mi != null ? `<div class="lx-row-d">${esc(n.distance_mi)} mi</div>` : ''}</div>`).join('');
+
+            const a = r.agent;
+            const first = a ? String(a.display_name || '').split(' ')[0] : null;
+            const agentBlock = a ? `<section class="lx-sec" id="lst-agent">
+                <h2 class="lst-section-h" style="margin-top:0">Contact the listing agent</h2>
+                <div class="lx-agent">
+                    <div class="lx-agent-l">
+                        ${a.profile_photo_url ? `<img class="lx-avatar" src="${esc(a.profile_photo_url)}" alt="">` : `<div class="lx-avatar">${esc(String(a.display_name || 'A').trim().charAt(0).toUpperCase())}</div>`}
+                        <div class="lx-agent-n">${esc(a.display_name)}</div>
+                        <div class="lx-agent-b">${esc(a.brokerage_name || 'Independent Realtor')}${a.years_experience ? ` · ${esc(a.years_experience)} yrs` : ''}</div>
+                        ${a.headline ? `<p class="lx-agent-h">${esc(a.headline)}</p>` : ''}
+                        <p style="margin:0.9rem 0 0"><a href="/agents/${esc(a.slug)}" style="color:#1d6df2;font-weight:700;">View ${esc(first)}’s profile →</a></p>
+                    </div>
+                    <form class="lx-form" id="lx-form" novalidate>
+                        <input id="lx-name" type="text" placeholder="Your name" autocomplete="name" required>
+                        <input id="lx-email" type="email" placeholder="Email" autocomplete="email" required>
+                        <input id="lx-phone" type="tel" placeholder="Phone" autocomplete="tel">
+                        <textarea id="lx-notes" placeholder="I'd like to see this home.">I'd like to see ${esc(r.title)}.</textarea>
+                        <button type="submit" id="lx-send">Contact ${esc(first)}</button>
+                        <p class="lx-err" id="lx-err">Something went wrong. Please try again.</p>
+                        <p class="lx-note">Free, and we never sell your information.</p>
+                    </form>
+                    <div class="lx-ok" id="lx-ok">Sent. ${esc(first)} will be in touch.</div>
+                </div></section>` : '';
+
+            host.innerHTML =
+                sec("What's special", highlights) +
+                sec('Waterfront & shoreline', water) +
+                sec('Systems & utilities', systems) +
+                sec('Price & tax history', history) +
+                sec('Schools', schools) +
+                sec("What's nearby", nearby) +
+                agentBlock;
+
+            const form = document.getElementById('lx-form');
+            if (!form) return;
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('lx-name').value.trim();
+                const email = document.getElementById('lx-email').value.trim();
+                const phone = document.getElementById('lx-phone').value.trim();
+                const notes = document.getElementById('lx-notes').value.trim() || `Interested in ${r.title}.`;
+                const err = document.getElementById('lx-err');
+                err.style.display = 'none';
+                if (!name || (!email && !phone)) { err.textContent = 'Add your name and an email or phone.'; err.style.display = 'block'; return; }
+                const btn = document.getElementById('lx-send'); btn.disabled = true; btn.textContent = 'Sending…';
+                try {
+                    const res = await fetch('/api/leads', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, email, phone, notes, source: 'property_question', listing_id: LISTING_ID }),
+                    });
+                    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Something went wrong.'); }
+                    form.style.display = 'none';
+                    document.getElementById('lx-ok').style.display = 'block';
+                } catch (ex) { err.textContent = ex.message; err.style.display = 'block'; btn.disabled = false; btn.textContent = `Contact ${first}`; }
             });
         })();
     </script>
