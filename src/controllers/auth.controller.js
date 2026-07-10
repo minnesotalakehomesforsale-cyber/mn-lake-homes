@@ -71,10 +71,16 @@ const waitlist = async (req, res) => {
         const userRes = await pool.query(
             `INSERT INTO users (first_name, last_name, full_name, email, phone, phone_normalized, password_hash, role, account_status, password_changed_at)
              VALUES ($1, $2, $3, $4, $5, $6, $7, 'client', 'active', NOW())
-             RETURNING id`,
+             RETURNING id, EXTRACT(EPOCH FROM password_changed_at)::bigint AS pwd_iat`,
             [first_name, last_name, `${first_name} ${last_name}`, email, phone, phoneNorm, passwordHash]
         );
         const userId = userRes.rows[0].id;
+        // Take pwd_iat from Postgres, NOT Math.floor(Date.now()/1000). verifyToken
+        // compares it against EXTRACT(EPOCH FROM password_changed_at)::bigint, and
+        // Postgres ROUNDS that cast while JS floors — so a JS-derived value can be
+        // 1s behind and the brand-new token gets rejected as "issued before the
+        // password changed", logging the user straight back out.
+        const pwd_iat = Number(userRes.rows[0].pwd_iat);
 
         // Backfill: claim every lead previously submitted with this email
         // while there was no account. Those become visible on the new
@@ -88,7 +94,6 @@ const waitlist = async (req, res) => {
         }).catch(e => console.error('[signup] lead backfill failed:', e.message));
 
         // Auto-login: issue JWT cookie so they land in their dashboard
-        const pwd_iat = Math.floor(Date.now() / 1000);
         const token = jwt.sign({ userId, role: 'client', pwd_iat }, process.env.JWT_SECRET, { expiresIn: '24h' });
         setAuthCookie(res, token);
 
@@ -194,7 +199,8 @@ const register = async (req, res) => {
         // Create User record
         const userRes = await client.query(
             `INSERT INTO users (first_name, last_name, full_name, email, phone, phone_normalized, password_hash, role, account_status, password_changed_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, 'agent', 'active', NOW()) RETURNING id`,
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'agent', 'active', NOW())
+             RETURNING id, EXTRACT(EPOCH FROM password_changed_at)::bigint AS pwd_iat`,
             [
                 display_name.split(' ')[0],
                 display_name.split(' ').slice(1).join(' ') || '',
@@ -206,6 +212,10 @@ const register = async (req, res) => {
             ]
         );
         const userId = userRes.rows[0].id;
+        // See the client path above: pwd_iat MUST come from Postgres (which rounds
+        // the epoch cast) or verifyToken rejects the fresh token and boots the
+        // agent out the moment they land on the dashboard.
+        const pwd_iat = Number(userRes.rows[0].pwd_iat);
 
         // New agents start on the FREE tier — a public profile, but no leads,
         // no featured placement, and no listings until they upgrade.
@@ -279,7 +289,6 @@ const register = async (req, res) => {
             if (r.rowCount) console.log(`[register] linked ${r.rowCount} prior lead(s) to ${email}`);
         }).catch(e => console.error('[register] lead backfill failed:', e.message));
 
-        const pwd_iat = Math.floor(Date.now() / 1000);
         const token = jwt.sign({ userId, role: 'agent', pwd_iat }, process.env.JWT_SECRET, { expiresIn: '24h' });
         setAuthCookie(res, token);
 
