@@ -1155,9 +1155,22 @@ app.get('/listings/:slug', async (req, res, next) => {
             let gallery = l.gallery;
             if (typeof gallery === 'string') { try { gallery = JSON.parse(gallery); } catch (_) { gallery = []; } }
             const galleryUrls = (Array.isArray(gallery) ? gallery : [])
-                .map(g => typeof g === 'string' ? g : (g && g.url) || '').filter(Boolean).slice(0, 20);
-            const galleryHtml = galleryUrls.length
-                ? `<h2 class="lst-section-h">Photos</h2><div class="lst-gallery">${galleryUrls.map(g => `<img src="${escapeHtml(cldThumb(g, 800))}" alt="${escapeHtml(l.title)}" loading="lazy">`).join('')}</div>`
+                .map(g => typeof g === 'string' ? g : (g && g.url) || '').filter(Boolean);
+            // Zillow-style photo collage: hero + a 2×2 grid, with a "View all N
+            // photos" button on the last cell. Up to 20 photos; every one is kept
+            // in a hidden set so the lightbox can page through all of them.
+            const photoUrls = [image, ...galleryUrls]
+                .filter(Boolean).filter((u, i, a) => a.indexOf(u) === i).slice(0, 20);
+            const thumb800 = u => escapeHtml(cldThumb(u, 800));
+            const total = photoUrls.length;
+            const cell = (u, isLast) =>
+                `<button type="button" class="lst-ph-cell${isLast && total > 5 ? ' has-more' : ''}" style="background-image:url('${escapeHtml(cldThumb(u, 700))}')" onclick="lbOpen('${thumb800(u)}')" aria-label="View photos">${isLast && total > 5 ? `<span class="lst-viewall">View all ${total} photos</span>` : ''}</button>`;
+            const galleryHtml = total
+                ? `<div class="lst-photos">
+                     <button type="button" class="lst-ph-main" style="background-image:url('${escapeHtml(cldThumb(photoUrls[0], 1400))}')" onclick="lbOpen('${thumb800(photoUrls[0])}')" aria-label="View photos"></button>
+                     <div class="lst-ph-grid">${photoUrls.slice(1, 5).map((u, i, arr) => cell(u, i === arr.length - 1)).join('')}</div>
+                     <div class="lst-photos-hidden" hidden>${photoUrls.map(u => `<img src="${thumb800(u)}" alt="">`).join('')}</div>
+                   </div>`
                 : '';
 
             // Facts & features — blank fields are dropped, so nothing shows a gap.
@@ -3988,11 +4001,13 @@ async function seedDemoListing() {
         const lake = await pool.query(`SELECT id FROM lakes WHERE slug = 'gull-lake' LIMIT 1`);
         const lakeId = lake.rows[0]?.id || null;
         const gallery = JSON.stringify([
-            '/assets/images/mn-colonial-lake-home.jpg',
-            '/assets/images/mn-chateau-aerial.jpg',
-            '/assets/images/mn-beach-craftsman-cabin.jpg',
-            '/assets/images/mn-white-colonial-ivy.jpg',
-            '/assets/images/mn-log-cabin-ducks.jpg',
+            '/assets/images/mn-colonial-lake-home.jpg', '/assets/images/mn-chateau-aerial.jpg',
+            '/assets/images/mn-beach-craftsman-cabin.jpg', '/assets/images/mn-white-colonial-ivy.jpg',
+            '/assets/images/mn-log-cabin-ducks.jpg', '/assets/images/mn-aerial-lake-homes.jpg',
+            '/assets/images/mn-gray-craftsman-flag.jpg', '/assets/images/mn-maple-lake-aerial.jpg',
+            '/assets/images/mn-prior-lake-home.jpg', '/assets/images/mn-dock-water-tower.webp',
+            '/assets/images/mn-stillwater-aerial.webp', '/assets/images/mn-most-expensive-listing.jpg',
+            '/assets/images/beach-style-exterior.jpg', '/assets/images/mn-aerial-small-town.jpg',
         ]);
         const desc = `Rare west-facing frontage on Gull Lake with 142 feet of hard-sand shoreline and a gradual walk-in bottom — the kind of lot families keep for generations. The main level opens to a wall of glass framing the water, a chef's kitchen with quartzite counters and a walk-in pantry, and a screened porch built for the ice-out-to-first-snow season. Four bedrooms up including a lake-facing primary with a spa bath; a walkout lower level with wet bar, family room, and a bunk room that sleeps six. Recent updates: new steel roof (2023), two high-efficiency furnaces, whole-home Generac, and a permitted shore station with a canopy lift. Two-stall attached garage plus a heated detached shop for the boats and toys. Sold mostly furnished. Showings by appointment — this one won't sit.`;
         await pool.query(`
