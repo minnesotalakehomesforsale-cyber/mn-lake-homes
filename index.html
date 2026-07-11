@@ -130,18 +130,14 @@
         .hh-stat:nth-child(2) { border-right: 0; }
       }
 
-      /* Stat numbers grow into view on scroll */
-      .hh-stat .v { transform: scale(0.5); opacity: 0; transition: transform .7s cubic-bezier(.2,.85,.25,1), opacity .5s ease; will-change: transform; }
-      .hh-stats.in .hh-stat .v { transform: scale(1); opacity: 1; }
-      .hh-stats.in .hh-stat:nth-child(2) .v { transition-delay: .1s; }
-      .hh-stats.in .hh-stat:nth-child(3) .v { transition-delay: .2s; }
-      .hh-stats.in .hh-stat:nth-child(4) .v { transition-delay: .3s; }
-      @media (prefers-reduced-motion: reduce) { .hh-stat .v { transform: none; opacity: 1; transition: none; } }
+      /* Stat numbers count up (see JS) — fade in as they start ticking */
+      .hh-stat .v { opacity: 0; transition: opacity .35s ease; font-variant-numeric: tabular-nums; }
+      .hh-stats.in .hh-stat .v { opacity: 1; }
 
       /* Home content sections → global header/footer width (--page-w).
          Page-scoped so shared classes on other pages are unaffected. Later in
          source order than style.css, so these win without touching the shared file. */
-      .flex-container, .info-split-container, .business-type-container, .mission-container,
+      .flex-container, .info-split-container, .business-type-container,
       .testimonial-top, .testimonial-bottom, .mn-photo-gallery-container,
       .featured-agents-section .agents-grid, .blog-container {
         max-width: var(--page-w); width: 100%; margin-left: auto; margin-right: auto;
@@ -222,13 +218,35 @@
           if (window.openForm) window.openForm(MODE, { _source: src });
           else location.href = '/' + MODE;
         };
-        // Stat numbers grow in when the strip scrolls into view.
+        // Stat numbers count up fast when the strip scrolls into view.
         var statBox = document.querySelector('.hh-stats');
         if (statBox) {
+          var nums = Array.prototype.slice.call(statBox.querySelectorAll('.hh-stat .v'));
+          nums.forEach(function (el) {
+            var m = el.textContent.match(/^(\D*)(\d+)(\D*)$/);
+            if (m) { el.setAttribute('data-pre', m[1]); el.setAttribute('data-target', m[2]); el.setAttribute('data-suf', m[3]); el.textContent = m[1] + '0' + m[3]; }
+          });
+          var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          function run() {
+            statBox.classList.add('in');
+            nums.forEach(function (el) {
+              var target = parseInt(el.getAttribute('data-target') || '0', 10);
+              var pre = el.getAttribute('data-pre') || '', suf = el.getAttribute('data-suf') || '';
+              if (reduce || !target) { el.textContent = pre + target + suf; return; }
+              var dur = 600, t0 = null;
+              function frame(now) {
+                if (t0 === null) t0 = now;
+                var p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+                el.textContent = pre + Math.round(target * e) + suf;
+                if (p < 1) requestAnimationFrame(frame); else el.textContent = pre + target + suf;
+              }
+              requestAnimationFrame(frame);
+            });
+          }
           if ('IntersectionObserver' in window) {
-            var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { statBox.classList.add('in'); io.disconnect(); } }); }, { threshold: 0.35 });
+            var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { io.disconnect(); run(); } }); }, { threshold: 0.35 });
             io.observe(statBox);
-          } else { statBox.classList.add('in'); }
+          } else { run(); }
         }
 
         startType();
