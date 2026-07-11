@@ -2,7 +2,7 @@
 // shell. Deliberately network-FIRST for pages, CSS and JS so a deploy is never
 // hidden behind a stale cache; images/fonts are stale-while-revalidate; API is
 // never cached. Bump CACHE to invalidate old entries.
-const CACHE = 'mnlh-v1';
+const CACHE = 'mnlh-v2';
 const CORE = ['/', '/styles/style.css', '/components/components.js', '/favicon.svg', '/assets/icons/icon-192.png'];
 
 self.addEventListener('install', e => {
@@ -19,10 +19,11 @@ self.addEventListener('fetch', e => {
   if (url.pathname.startsWith('/api/')) return;      // never cache API
   const isMedia = /\.(png|jpg|jpeg|webp|gif|svg|ico|woff2?|ttf|otf)$/i.test(url.pathname);
   if (!isMedia) {
-    // Pages + CSS + JS: network-first so deploys show immediately; cache is
-    // only a fallback when offline.
+    // Pages + CSS + JS: network-first, and bypass the browser's HTTP cache
+    // (cache:'reload') so a deploy is never hidden behind a still-fresh
+    // max-age entry. Cache is only a fallback when offline.
     e.respondWith(
-      fetch(req).then(res => {
+      fetch(new Request(req.url, { cache: 'reload', credentials: 'same-origin' })).then(res => {
         if (res && res.status === 200) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
         return res;
       }).catch(() => caches.match(req).then(r => r || (req.mode === 'navigate' ? caches.match('/') : undefined)))
