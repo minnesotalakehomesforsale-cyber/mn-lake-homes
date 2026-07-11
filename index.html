@@ -94,7 +94,9 @@
       /* ── Home hero (search-first, image background) ── */
       .hh-hero { position: relative; min-height: 62vh; display: flex; align-items: center; justify-content: center;
                  padding: 6.5rem 1.5rem 3.5rem; background: #1a202c url('/assets/images/mn-colonial-lake-home.jpg') center 40%/cover no-repeat; overflow: hidden; }
-      .hh-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(12,18,28,0.55) 0%, rgba(12,18,28,0.35) 45%, rgba(12,18,28,0.72) 100%); }
+      /* Darken for text legibility up top, then dissolve to solid white at the
+         bottom so the hero blends seamlessly into the white stat band below. */
+      .hh-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,20,30,0.52) 0%, rgba(14,20,30,0.40) 45%, rgba(255,255,255,0) 80%, #fff 100%); }
       .hh-inner { position: relative; z-index: 1; width: 100%; max-width: 880px; text-align: center; }
       .hh-title { color: #fff; font-weight: 800; letter-spacing: -1.5px; line-height: 1.05; margin: 0 0 2rem;
                   font-size: clamp(2.2rem, 5vw, 3.6rem); text-shadow: 0 2px 24px rgba(0,0,0,0.45); text-wrap: balance; }
@@ -112,8 +114,9 @@
       .hh-search-btn:hover { background: #155bc8; }
       .hh-fine { color: rgba(255,255,255,0.9); font-size: 0.9rem; margin: 1rem 0 0; text-shadow: 0 1px 8px rgba(0,0,0,0.4); }
 
-      /* Stat strip beneath the hero */
-      .hh-stats { max-width: var(--page-w); margin: 0 auto; padding: 2.25rem 1.5rem; display: grid; grid-template-columns: repeat(4, 1fr); }
+      /* Stat strip beneath the hero — full-width white band, numbers centered */
+      .hh-statband { background: #fff; }
+      .hh-stats { max-width: var(--page-w); margin: 0 auto; padding: 2.5rem 1.5rem; display: grid; grid-template-columns: repeat(4, 1fr); }
       .hh-stat { text-align: center; padding: 0.5rem 1rem; border-right: 1px solid #e6eaf0; }
       .hh-stat:last-child { border-right: 0; }
       .hh-stat .v { font-size: clamp(2rem, 4vw, 2.9rem); font-weight: 800; color: #1a202c; letter-spacing: -1.5px; line-height: 1; }
@@ -147,11 +150,13 @@
         </div>
     </main>
 
-    <section class="hh-stats" aria-label="Why buyers use us">
+    <section class="hh-statband" aria-label="Why buyers use us">
+      <div class="hh-stats">
         <div class="hh-stat"><div class="v">98%</div><div class="l">Match rate</div></div>
         <div class="hh-stat"><div class="v">30s</div><div class="l">To get matched</div></div>
         <div class="hh-stat"><div class="v">100%</div><div class="l">Local specialists</div></div>
         <div class="hh-stat"><div class="v">$0</div><div class="l">Cost to you</div></div>
+      </div>
     </section>
 
     <script>
