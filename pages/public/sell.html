@@ -32,6 +32,44 @@
     <meta name="twitter:image" content="https://minnesotalakehomesforsale.com/assets/images/mn-log-cabin-ducks.jpg">
 
     <link rel="stylesheet" href="../../styles/style.css">
+
+    <!-- Page-width alignment: every section content matches the header/footer
+         shell (--page-w with 1.5rem gutters = 1292px content). Overrides the
+         narrower per-class caps from style.css for this page only. -->
+    <style>
+        /* Normal centered sections (white bg): pad the page-w box itself. */
+        .sp-section {
+            max-width: var(--page-w);
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+            box-sizing: border-box;
+        }
+        /* Full-bleed bands: keep the edge-to-edge background, drop the band's
+           own horizontal padding, and cap the INNER content at --page-w with
+           1.5rem border-box gutters (matches the footer exactly). */
+        .flex-section { padding-left: 0; padding-right: 0; }
+        .flex-container {
+            max-width: var(--page-w);
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+            box-sizing: border-box;
+        }
+        .testimonial-section { padding-left: 0; padding-right: 0; }
+        .testimonial-top,
+        .testimonial-bottom {
+            max-width: var(--page-w);
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+            box-sizing: border-box;
+        }
+        .mn-photo-gallery { padding-left: 0; padding-right: 0; }
+        .mn-photo-gallery-container {
+            max-width: var(--page-w);
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+            box-sizing: border-box;
+        }
+    </style>
 <!-- LCP hint -->
     <link rel="preload" as="image" href="/assets/images/mn-log-cabin-ducks.jpg">
 
@@ -61,7 +99,7 @@
 
     <global-header></global-header>
 
-    <section class="sp-section" style="padding: 10rem 2rem 8rem 2rem;">
+    <section class="sp-section" style="padding: 10rem 1.5rem 8rem 1.5rem;">
         <div class="sp-grid">
             <div class="sp-media-wrapper sell-hero-media" style="height: 600px; position: relative;">
                 <img src="/assets/images/mn-white-farmhouse.jpg" style="height: 100%; width: 100%; object-fit: cover; border-radius: 20px;" alt="White farmhouse Minnesota lake estate marketed by MN Lake Homes" width="1500" height="997" fetchpriority="high">
@@ -157,8 +195,8 @@
         }
     </style>
 
-    <section class="sp-dark-section" style="padding: 8rem 2rem; margin-bottom: 6rem;">
-        <div class="sp-grid" style="max-width: 1200px; margin: 0 auto; align-items: start;">
+    <section class="sp-dark-section" style="padding: 8rem 0; margin-bottom: 6rem;">
+        <div class="sp-grid" style="max-width: var(--page-w); margin: 0 auto; padding: 0 1.5rem; box-sizing: border-box; align-items: start;">
             <div style="grid-column: 1 / -1; margin-bottom: 2rem;">
                 <h2 class="sp-title" style="font-size: 4rem;">We handle the<br>marketing</h2>
             </div>

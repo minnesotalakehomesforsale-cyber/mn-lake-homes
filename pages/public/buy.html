@@ -57,12 +57,30 @@
     }
     </script>
     <style>
+        /* ── Section widths: match the global header/footer shell ─────────
+           Every major section's content container is capped to --page-w
+           (1340px) with 1.5rem gutters (= 1292px content), so section edges
+           line up exactly with the nav and footer. Full-bleed bands keep
+           their edge-to-edge background; only the INNER container is capped
+           (band horizontal padding is zeroed so gutters don't double). */
+        .sp-section { max-width: var(--page-w); padding-left: 1.5rem; padding-right: 1.5rem; }
+
+        .flex-section { padding-left: 0; padding-right: 0; }
+        .flex-container { max-width: var(--page-w); padding-inline: 1.5rem; }
+
+        .testimonial-section { padding-left: 0; padding-right: 0; }
+        .testimonial-top,
+        .testimonial-bottom { max-width: var(--page-w); padding-inline: 1.5rem; }
+
+        .mn-photo-gallery { padding-left: 0; padding-right: 0; }
+        .mn-photo-gallery-container { max-width: var(--page-w); padding-inline: 1.5rem; }
+
         /* ── Mobile pass ────────────────────────────────────────────────── */
         @media (max-width: 900px) {
             /* Hero + every .sp-section: tighten padding, stack grid, scale title */
             section.sp-section { padding: 6rem 1.25rem 3rem !important; }
             section.sp-section:first-of-type { padding: 7rem 1.25rem 3rem !important; }
-            section.sp-dark-section { padding: 4rem 1.25rem !important; margin-bottom: 3rem !important; }
+            section.sp-dark-section { padding: 4rem 0 !important; margin-bottom: 3rem !important; }
             .sp-grid { grid-template-columns: 1fr !important; gap: 1.5rem !important; }
             .sp-grid > [style*="grid-column"] { margin-bottom: 1rem !important; }
             .sp-title { font-size: 2rem !important; letter-spacing: -1px !important; line-height: 1.15 !important; }
@@ -79,7 +97,7 @@
             section.sp-dark-section .sp-title { font-size: 2.1rem !important; }
 
             /* Flex tabs section */
-            .flex-section { padding: 3.5rem 1.25rem !important; }
+            .flex-section { padding: 3.5rem 0 !important; }
             .flex-title { font-size: 2rem !important; }
             /* .flex-title br stays visible — same reason */
             .flex-tab-container { gap: 0.4rem; }
@@ -102,7 +120,7 @@
 
     <global-header></global-header>
 
-    <section class="sp-section" style="padding: 10rem 2rem 8rem 2rem;">
+    <section class="sp-section" style="padding: 10rem 1.5rem 8rem 1.5rem;">
         <div class="sp-grid">
             <div class="sp-media-wrapper" style="height: 600px; position: relative;">
                 <img src="/assets/images/mn-modern-glass-home.jpg" style="height: 100%; width: 100%; object-fit: cover; border-radius: 20px;" alt="Modern glass lake home in Minnesota" width="1500" height="1001" fetchpriority="high">
@@ -116,8 +134,8 @@
         </div>
     </section>
 
-    <section class="sp-dark-section" style="padding: 8rem 2rem; margin-bottom: 6rem;">
-        <div class="sp-grid" style="max-width: 1200px; margin: 0 auto; align-items: start;">
+    <section class="sp-dark-section" style="padding: 8rem 0; margin-bottom: 6rem;">
+        <div class="sp-grid" style="max-width: var(--page-w); margin: 0 auto; padding-inline: 1.5rem; align-items: start;">
             <div style="grid-column: 1 / -1; margin-bottom: 2rem;">
                 <h2 class="sp-title" style="font-size: 4rem;">We actually care<br>about your journey</h2>
             </div>

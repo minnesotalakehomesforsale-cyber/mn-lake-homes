@@ -525,8 +525,14 @@
 
             const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
             const arr = v => (Array.isArray(v) ? v : []);
-            const money = n => (n == null || n === '' ? '' : '$' + Number(n).toLocaleString('en-US'));
+            // Tolerant of both a raw number (12000) and a free-text string the
+            // agent typed ("$1,875,000"): strip $/commas; if it's still not a
+            // number, show what they typed verbatim.
+            const money = n => { if (n == null || n === '') return ''; const x = Number(String(n).replace(/[$,\s]/g, '')); return isNaN(x) ? String(n) : '$' + x.toLocaleString('en-US'); };
             const num = n => (n == null || n === '' ? '' : Number(n).toLocaleString('en-US'));
+            // Distance: accept a number (2.1) or free text ("2.1 mi", "across the
+            // street"); append " mi" only when it's a bare number/needs it.
+            const dist = v => { if (v == null || v === '') return ''; const s = String(v).trim(); return /[a-z]/i.test(s) ? s : s + ' mi'; };
             const TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
             const sec = (title, inner) => (inner ? `<section class="lx-sec"><h2 class="lst-section-h" style="margin-top:0">${esc(title)}</h2>${inner}</section>` : '');
             const dl = rows => { const ok = rows.filter(([, v]) => v != null && v !== '' && v !== false);
@@ -552,17 +558,19 @@
                 ? `<table class="lx-hist"><thead><tr><th>Date</th><th>Event</th><th style="text-align:right">Price</th></tr></thead><tbody>${
                     arr(r.price_history).map(e => `<tr><td>${fmtDate(e.date)}</td><td style="color:#1a202c;font-weight:600">${esc(e.event)}</td><td>${esc(money(e.price))}</td></tr>`).join('')
                   }</tbody></table>${taxLine}` : (taxLine || '');
+            const schoolDist = s => (s.distance_mi != null ? s.distance_mi : s.distance);
             const schools = arr(r.schools).length
-                ? arr(r.schools).map(s => `<div class="lx-row">${s.rating != null ? `<div class="lx-rate">${esc(s.rating)}</div>` : ''}
+                ? arr(r.schools).map(s => `<div class="lx-row">${(s.rating != null && s.rating !== '') ? `<div class="lx-rate">${esc(s.rating)}</div>` : ''}
                     <div class="lx-row-m"><div class="lx-row-t">${esc(s.name)}</div><div class="lx-row-s">${esc(s.level || '')}</div></div>
-                    ${s.distance_mi != null ? `<div class="lx-row-d">${esc(s.distance_mi)} mi</div>` : ''}</div>`).join('') : '';
+                    ${schoolDist(s) != null && schoolDist(s) !== '' ? `<div class="lx-row-d">${esc(dist(schoolDist(s)))}</div>` : ''}</div>`).join('') : '';
             const walk = r.walk_score != null
                 ? `<div class="lx-row"><div class="lx-rate">${esc(r.walk_score)}</div><div class="lx-row-m">
                      <div class="lx-row-t">${r.walk_score >= 70 ? 'Very walkable' : r.walk_score >= 50 ? 'Somewhat walkable' : 'Car-dependent'}</div>
                      <div class="lx-row-s">Walk Score out of 100</div></div></div>` : '';
+            const nearDist = n => (n.distance_mi != null ? n.distance_mi : n.distance);
             const nearby = walk + arr(r.nearby).map(n => `<div class="lx-row"><div class="lx-row-m">
-                    <div class="lx-row-t">${esc(n.name)}</div><div class="lx-row-s">${esc(n.type || '')}</div></div>
-                    ${n.distance_mi != null ? `<div class="lx-row-d">${esc(n.distance_mi)} mi</div>` : ''}</div>`).join('');
+                    <div class="lx-row-t">${esc(n.name)}</div><div class="lx-row-s">${esc(n.type || n.category || '')}</div></div>
+                    ${nearDist(n) != null && nearDist(n) !== '' ? `<div class="lx-row-d">${esc(dist(nearDist(n)))}</div>` : ''}</div>`).join('');
 
             const a = r.agent;
             const first = a ? String(a.display_name || '').split(' ')[0] : null;
