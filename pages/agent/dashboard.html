@@ -182,6 +182,12 @@
         .sla-badge { display:inline-block; margin-top:0.3rem; font-size:0.68rem; font-weight:800; letter-spacing:0.3px; border-radius:5px; padding:2px 7px; background:#fffbeb; color:#b45309; }
         .sla-badge.overdue { background:#fee2e2; color:#b91c1c; }
         .lead-tr .lt-date { font-size: 0.8rem; color: #a0aec0; font-weight: 600; text-align: right; white-space: nowrap; }
+        .lead-tr .lt-ago { color: #4a5568; font-weight: 700; }
+        .lt-quick-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.55rem; }
+        .lt-quick { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; font-weight: 700; text-decoration: none; padding: 0.35rem 0.7rem; border-radius: 8px; border: 1px solid #e2e8f0; color: #1a202c; background: #fff; }
+        .lt-quick:hover { background: #f7f9fa; border-color: #cbd5e0; }
+        .lt-quick.lt-quick-call { background: #1d6df2; color: #fff; border-color: #1d6df2; }
+        .lt-quick.lt-quick-call:hover { background: #155bc8; }
         @media (max-width: 720px) {
             .lead-tr { grid-template-columns: 1fr auto; gap: 0.5rem; }
             .lead-tr .lt-type-cell, .lead-tr .lt-date { display: none; }
@@ -209,6 +215,9 @@
         .lp-contact a:hover { color: #1d6df2; }
         .lp-msg { background: #f7f9fa; border-left: 3px solid #cbd5e0; border-radius: 0 8px 8px 0; padding: 0.95rem 1.1rem; font-size: 0.9rem; color: #4a5568; line-height: 1.6; margin-bottom: 1.75rem; white-space: pre-line; }
         .lp-status-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+        .lp-log-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .lp-log-btn { flex: 1 1 auto; min-width: 0; font: inherit; font-size: 0.82rem; font-weight: 700; padding: 0.55rem 0.6rem; border: 1px solid #e2e8f0; background: #fff; border-radius: 9px; cursor: pointer; color: #1a202c; white-space: nowrap; }
+        .lp-log-btn:hover { border-color: #1d6df2; background: #f7faff; color: #1d6df2; }
         .lp-status-btn {
             padding: 0.7rem 0.6rem; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #fff;
             font: inherit; font-size: 0.85rem; font-weight: 700; color: #4a5568; cursor: pointer;
@@ -713,7 +722,7 @@
                             <h2 style="font-size: 2.1rem; font-weight: 800;">Lead Inbox</h2>
                             <button onclick="loadLeads()" style="border: 1px solid #e2e8f0; background: #f7f9fa; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #4a5568;">↺ Refresh</button>
                         </div>
-                        <p style="color: #718096; margin-bottom: 1.5rem;">This is your dashboard.</p>
+                        <p style="color: #718096; margin-bottom: 1.5rem;">Your matched buyers, sellers &amp; renters. Respond fast — the first agent to reply usually wins the deal.</p>
 
                         <div class="lead-stats" id="lead-stats">
                             <div class="lead-stat"><div class="ls-lbl">Active</div><div class="ls-val" id="stat-active">—</div></div>
@@ -722,6 +731,14 @@
                             <div class="lead-stat"><div class="ls-lbl">Closed</div><div class="ls-val" id="stat-closed">—</div></div>
                         </div>
 
+                        <div class="lead-searchbar" style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem;">
+                            <input id="lead-search" type="search" placeholder="Search by name, email, phone, or area…" oninput="applyFilter()" style="flex:1;min-width:200px;box-sizing:border-box;font:inherit;font-size:0.9rem;padding:0.6rem 0.9rem;border:1px solid #e2e8f0;border-radius:9px;outline:none;">
+                            <select id="lead-sort" onchange="applyFilter()" style="font:inherit;font-size:0.88rem;padding:0.6rem 0.8rem;border:1px solid #e2e8f0;border-radius:9px;background:#fff;cursor:pointer;">
+                                <option value="hot">Hottest first</option>
+                                <option value="new">Newest first</option>
+                                <option value="old">Oldest first</option>
+                            </select>
+                        </div>
                         <div class="inbox-filter">
                             <button class="inbox-tab active" data-status="active"      onclick="filterLeads('active', this)">Active</button>
                             <button class="inbox-tab"        data-status="new"         onclick="filterLeads('new', this)">New</button>
@@ -2119,6 +2136,7 @@
             property_question: 'Property question', join_request: 'Join request',
         };
         function escA(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+        function timeAgo(d){ const ms = Date.now() - new Date(d).getTime(); if (isNaN(ms)) return ''; const m = Math.floor(ms/60000); if (m < 1) return 'just now'; if (m < 60) return m+'m ago'; const h = Math.floor(m/60); if (h < 24) return h+'h ago'; const days = Math.floor(h/24); return days+'d ago'; }
 
         async function loadLeads() {
             document.getElementById('leads-list').innerHTML =
@@ -2164,12 +2182,22 @@
 
         function applyFilter() {
             const s = currentFilterStatus;
-            const filtered = s === 'active'
+            let filtered = s === 'active'
                 ? allLeads.filter(l => l.status !== 'closed' && l.status !== 'archived')
                 : allLeads.filter(l => l.status === s);
-            // Work the best leads first: hot → warm → cold, then newest.
+            // Search across name / email / phone / location / message.
+            const qEl = document.getElementById('lead-search');
+            const q = qEl ? qEl.value.trim().toLowerCase() : '';
+            if (q) {
+                filtered = filtered.filter(l => [l.name, l.email, l.phone, l.location_text, l.message]
+                    .some(v => (v || '').toString().toLowerCase().includes(q)));
+            }
+            // Sort: hottest (default), newest, or oldest.
+            const mode = (document.getElementById('lead-sort') || {}).value || 'hot';
             const rank = { hot: 0, warm: 1, cold: 2 };
             filtered.sort((a, b) => {
+                if (mode === 'new') return new Date(b.created_at) - new Date(a.created_at);
+                if (mode === 'old') return new Date(a.created_at) - new Date(b.created_at);
                 const ra = rank[a.lead_tier] ?? 3, rb = rank[b.lead_tier] ?? 3;
                 if (ra !== rb) return ra - rb;
                 return new Date(b.created_at) - new Date(a.created_at);
@@ -2215,13 +2243,20 @@
                 const statusLabel = (l.status || '').replace(/_/g,' ');
                 const date = new Date(l.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 const sub  = l.email || l.phone || l.location_text || '—';
+                const quick = [];
+                if (l.phone) {
+                    quick.push(`<a href="tel:${escA(l.phone)}" onclick="event.stopPropagation()" class="lt-quick lt-quick-call">📞 Call</a>`);
+                    quick.push(`<a href="sms:${escA(l.phone)}" onclick="event.stopPropagation()" class="lt-quick">💬 Text</a>`);
+                }
+                if (l.email) quick.push(`<a href="mailto:${escA(l.email)}" onclick="event.stopPropagation()" class="lt-quick">✉️ Email</a>`);
                 return `
                     <div class="lead-tr" onclick="openLeadPanel('${l.id}')">
                         <div>
                             <div class="lt-name">${escA(l.name || 'Lead')}</div>
                             <div style="margin:0.2rem 0;">${tierBadge(l)}</div>
-                            <div class="lt-sub">${escA(sub)}</div>
+                            <div class="lt-sub">${escA(sub)}${timeAgo(l.created_at) ? ` · <span class="lt-ago">${timeAgo(l.created_at)}</span>` : ''}</div>
                             ${slaBadge(l)}
+                            ${quick.length ? `<div class="lt-quick-row">${quick.join('')}</div>` : ''}
                         </div>
                         <div class="lt-type-cell"><span class="lead-badge ${typeClass}">${escA(typeLabel)}</span></div>
                         <div><span class="lead-badge ${statusClass}">${escA(statusLabel)}</span></div>
@@ -2337,6 +2372,25 @@
                 alert(err.message || 'Could not add note.');
             } finally {
                 btn.disabled = false; btn.textContent = 'Add note';
+            }
+        }
+
+        // One-tap contact logging: adds a note and advances a brand-new lead to Contacted.
+        async function logContact(text) {
+            if (!_activeLeadId) return;
+            try {
+                await fetch(`/api/agents/me/leads/${encodeURIComponent(_activeLeadId)}/notes`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ content: text }),
+                });
+                loadLeadNotes(_activeLeadId);
+                const l = allLeads.find(x => String(x.id) === String(_activeLeadId));
+                if (l && l.status === 'new') changeLeadStatus('contacted');
+                const note = document.getElementById('lp-save-note');
+                note.className = 'lp-save-note ok'; note.textContent = '✓ Logged: ' + text;
+            } catch (_) {
+                const note = document.getElementById('lp-save-note');
+                note.className = 'lp-save-note err'; note.textContent = 'Could not log that — try again.';
             }
         }
 
@@ -3124,6 +3178,15 @@
         <div class="lp-body">
             <p class="lp-section-label">Contact</p>
             <div class="lp-contact" id="lp-contact"></div>
+
+            <p class="lp-section-label" style="margin-top:1.25rem;">Log a touch</p>
+            <p style="font-size:0.78rem;color:#a0aec0;margin:-0.3rem 0 0.6rem;line-height:1.5;">One tap logs it as a note and moves a new lead to Contacted.</p>
+            <div class="lp-log-row">
+                <button type="button" class="lp-log-btn" onclick="logContact('📞 Called')">📞 Called</button>
+                <button type="button" class="lp-log-btn" onclick="logContact('💬 Texted')">💬 Texted</button>
+                <button type="button" class="lp-log-btn" onclick="logContact('✉️ Emailed')">✉️ Emailed</button>
+                <button type="button" class="lp-log-btn" onclick="logContact('📵 Called — no answer')">📵 No answer</button>
+            </div>
 
             <div id="lp-msg-wrap" style="display:none;">
                 <p class="lp-section-label">Their message</p>
