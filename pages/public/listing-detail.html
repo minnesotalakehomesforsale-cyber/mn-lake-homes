@@ -340,21 +340,23 @@
       // server-rendered lake link on a direct visit or an external referrer.
       (function initBack() {
         var back = document.querySelector('.pp-back');
-        if (!back || !document.referrer) return;
-        var u; try { u = new URL(document.referrer); } catch (_) { return; }
-        if (u.origin !== location.origin) return;
-        if (u.pathname.replace(/\/$/, '') === location.pathname.replace(/\/$/, '')) return;
-        var p = u.pathname.replace(/\/$/, ''), label = null;
+        if (!back) return;
+        var from; try { from = sessionStorage.getItem('lstFrom'); } catch (_) {}
+        if (!from) return;   // direct visit → keep the server-rendered lake link
+        var path = from.split('?')[0].replace(/\/$/, '');
+        var search = from.indexOf('?') >= 0 ? from.slice(from.indexOf('?')) : '';
+        var label = null;
         var pretty = function (s) { return s.replace(/-/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); }); };
-        if (/^\/properties$/.test(p) || (/^\/towns$/.test(p) && /props/.test(u.search))) label = 'Back to properties';
-        else if (/^\/search$/.test(p)) label = 'Back to search results';
-        else if (/^\/lakes\/[^/]+$/.test(p)) label = 'Back to ' + pretty(p.split('/')[2]);
-        else if (/^\/towns\/[^/]+$/.test(p)) label = 'Back to ' + pretty(p.split('/')[2]);
-        else if (/^\/agents(\/|$)/.test(p)) label = 'Back to agents';
-        else if (p === '' || p === '/index.html') label = 'Back to home';
-        else return;   // another listing or unknown page → keep the default lake link
+        if ((/^\/towns$/.test(path) && /props/.test(search)) || /^\/properties$/.test(path)) label = 'Back to properties';
+        else if (/^\/search$/.test(path)) label = 'Back to search results';
+        else if (/^\/lakes\/[^/]+$/.test(path)) label = 'Back to ' + pretty(path.split('/')[2]);
+        else if (/^\/towns\/[^/]+$/.test(path)) label = 'Back to ' + pretty(path.split('/')[2]);
+        else if (/^\/towns$/.test(path)) label = 'Back to Lakes & Towns';
+        else if (/^\/agents(\/|$)/.test(path)) label = 'Back to agents';
+        else if (path === '' || path === '/index.html') label = 'Back to home';
+        else return;   // unknown page → keep the default lake link
         var arrow = back.querySelector('svg');
-        back.setAttribute('href', document.referrer);
+        back.setAttribute('href', from);
         back.innerHTML = (arrow ? arrow.outerHTML : '') + ' ' + label;
       })();
 

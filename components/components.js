@@ -574,6 +574,20 @@ class GlobalHeader extends HTMLElement {
 }
 customElements.define('global-header', GlobalHeader);
 
+// Remember where a visitor clicks INTO a listing from, so the listing page's
+// "Back to …" button can point back there. Needed because the site sends
+// Referrer-Policy: no-referrer, so document.referrer is always empty.
+document.addEventListener('click', function (e) {
+    try {
+        var a = e.target.closest && e.target.closest('a[href]');
+        if (!a) return;
+        var href = a.getAttribute('href') || '';
+        if (!/\/listings\/[^/]/.test(href)) return;          // only links into a listing
+        if (/\/listings\//.test(location.pathname)) return;   // don't overwrite when hopping listing→listing
+        sessionStorage.setItem('lstFrom', location.pathname + location.search);
+    } catch (_) {}
+}, true);
+
 // Global sign out function — called from header dropdown
 window._signOut = async function(e) {
     e.preventDefault();
