@@ -161,6 +161,24 @@
         .dash-followups-box .fu-when.overdue { color: #b91c1c; }
         @media (max-width: 560px) { .dash-followups-box .fu-row { flex-direction: column; align-items: flex-start; gap: 0.2rem; } }
 
+        /* Share & get seen */
+        .dash-share { margin-top: 1.75rem; border: 1px solid #e6eaf0; background: #fff; border-radius: 16px; padding: 1.75rem; }
+        .dash-share .ds-head { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.1rem; }
+        .dash-share .ds-emoji { font-size: 1.6rem; line-height: 1; }
+        .dash-share h3 { margin: 0 0 0.4rem; font-size: 1.2rem; font-weight: 800; color: #1a202c; }
+        .dash-share p { margin: 0; color: #4a5568; font-size: 0.92rem; line-height: 1.6; }
+        .dash-share .ds-tabs { display: inline-flex; background: #edf2f7; border-radius: 10px; padding: 0.25rem; margin-bottom: 0.9rem; flex-wrap: wrap; }
+        .dash-share .ds-tab { border: 0; background: transparent; color: #4a5568; font: inherit; font-weight: 700; font-size: 0.85rem; padding: 0.45rem 1rem; border-radius: 8px; cursor: pointer; }
+        .dash-share .ds-tab.active { background: #fff; color: #1d6df2; box-shadow: 0 1px 3px rgba(16,24,40,0.08); }
+        .dash-share textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 0.9rem; line-height: 1.55; color: #1a202c; padding: 0.85rem 1rem; border: 1px solid #e2e8f0; border-radius: 10px; resize: vertical; min-height: 90px; outline: none; }
+        .dash-share textarea:focus { border-color: #1d6df2; }
+        .dash-share .ds-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+        .dash-share .ds-btn { font: inherit; font-size: 0.82rem; font-weight: 700; padding: 0.5rem 0.9rem; border: 1px solid #e2e8f0; background: #fff; border-radius: 9px; cursor: pointer; color: #1a202c; }
+        .dash-share .ds-btn:hover { border-color: #1d6df2; color: #1d6df2; background: #f7faff; }
+        .dash-share .ds-btn.ds-btn-primary { background: #1d6df2; color: #fff; border-color: #1d6df2; }
+        .dash-share .ds-btn.ds-btn-primary:hover { background: #155bc8; color: #fff; }
+        @media (max-width: 560px) { .dash-share { padding: 1.35rem 1.1rem; } .dash-share .ds-btn { flex: 1 1 auto; text-align: center; } }
+
         /* Backlink-your-profile encouragement */
         .dash-backlink { margin-top: 2rem; border: 1px solid #cfe0f8; background: linear-gradient(135deg,#f5f9ff,#eef5ff); border-radius: 16px; padding: 1.75rem; }
         .dash-backlink .bl-head { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1rem; }
@@ -526,6 +544,30 @@
                         <label class="bl-label">Ready-made link to paste on your website</label>
                         <div class="bl-row"><input id="bl-embed" readonly value=""><button type="button" onclick="copyField('bl-embed', this)">Copy code</button></div>
                         <p class="bl-tip">Tip: put it wherever your name already appears online — your bio, your "About" page, or your email footer.</p>
+                    </section>
+
+                    <section class="dash-share">
+                        <div class="ds-head">
+                            <div class="ds-emoji">📣</div>
+                            <div>
+                                <h3>Share &amp; get seen</h3>
+                                <p>Ready-made posts for your social channels — they drive buyers to your profile and pull traffic back to the network. Pick what to share, tweak the wording, and post.</p>
+                            </div>
+                        </div>
+                        <div class="ds-tabs">
+                            <button type="button" class="ds-tab active" onclick="shareMode('profile', this)">My profile</button>
+                            <button type="button" class="ds-tab" onclick="shareMode('market', this)">This month's market</button>
+                        </div>
+                        <textarea id="ds-caption" rows="4"></textarea>
+                        <div class="ds-actions">
+                            <button type="button" class="ds-btn ds-btn-primary" onclick="shareNative()">📲 Share</button>
+                            <button type="button" class="ds-btn" onclick="copyField('ds-caption', this)">Copy caption</button>
+                            <button type="button" class="ds-btn" onclick="shareTo('facebook')">Facebook</button>
+                            <button type="button" class="ds-btn" onclick="shareTo('x')">X</button>
+                            <button type="button" class="ds-btn" onclick="shareTo('linkedin')">LinkedIn</button>
+                            <button type="button" class="ds-btn" onclick="downloadShareCard()">🖼 Download image</button>
+                        </div>
+                        <canvas id="ds-canvas" width="1200" height="630" style="display:none;"></canvas>
                     </section>
 
                     <h3 class="dash-section-h">Articles you may like</h3>
@@ -1874,6 +1916,13 @@
                 }
             }
 
+            // Share section — profile URL + name for the captions and image card.
+            _agentName = (agent.display_name || '').replace(/[<>"]/g, '');
+            _agentProfileUrl = (agent.slug && agent.is_published && agent.profile_status === 'published')
+                ? location.origin + '/agents/' + agent.slug
+                : location.origin + '/agents';
+            initShare();
+
             updateDashLeads();
         }
 
@@ -2241,6 +2290,60 @@
             _pwaPrompt = null;
         }
         function pwaDismiss() { try { localStorage.setItem('pwaDismissed', '1'); } catch (_) {} const el = document.getElementById('pwa-install'); if (el) el.style.display = 'none'; }
+
+        // ── Share & get seen ──────────────────────────────────────────────
+        let _shareMode = 'profile';
+        let _agentProfileUrl = location.origin + '/agents';
+        let _agentName = '';
+        function shareUrl() { return _shareMode === 'market' ? location.origin + '/market-index' : _agentProfileUrl; }
+        function shareCaption(mode) {
+            const url = mode === 'market' ? location.origin + '/market-index' : _agentProfileUrl;
+            if (mode === 'market') {
+                return `📊 The Minnesota lake-home market this month — median prices, days on market, and what's actually selling across the state. Thinking about buying or selling on the water? Let's talk.\n\n${url}`;
+            }
+            return `🌲 Looking to buy or sell on a Minnesota lake? I'm a verified local lake specialist — I know the shoreline, the market, and the quirks that matter. Let's find your place on the water. 👇\n\n${url}`;
+        }
+        function shareMode(mode, btn) {
+            _shareMode = mode;
+            document.querySelectorAll('.dash-share .ds-tab').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            document.getElementById('ds-caption').value = shareCaption(mode);
+        }
+        function initShare() { const t = document.getElementById('ds-caption'); if (t) t.value = shareCaption(_shareMode); }
+        async function shareNative() {
+            const text = document.getElementById('ds-caption').value;
+            if (navigator.share) { try { await navigator.share({ title: 'MN Lake Homes', text, url: shareUrl() }); } catch (_) {} return; }
+            if (navigator.clipboard) { try { await navigator.clipboard.writeText(text); } catch (_) {} }
+            alert('Caption copied — paste it into your post.');
+        }
+        function shareTo(net) {
+            const url = encodeURIComponent(shareUrl());
+            const text = encodeURIComponent(document.getElementById('ds-caption').value);
+            let u = '';
+            if (net === 'facebook') u = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+            else if (net === 'x') u = `https://twitter.com/intent/tweet?text=${text}`;
+            else if (net === 'linkedin') u = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
+            if (u) window.open(u, '_blank', 'noopener,width=650,height=560');
+        }
+        function _roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+        function downloadShareCard() {
+            const c = document.getElementById('ds-canvas'); const ctx = c.getContext('2d');
+            const g = ctx.createLinearGradient(0, 0, 1200, 630); g.addColorStop(0, '#1d6df2'); g.addColorStop(1, '#155bc8');
+            ctx.fillStyle = g; ctx.fillRect(0, 0, 1200, 630);
+            ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.font = '700 30px Arial, sans-serif';
+            ctx.fillText('MinnesotaLakeHomesForSale.com', 72, 92);
+            ctx.fillStyle = '#fff'; ctx.font = '800 66px Arial, sans-serif';
+            const lines = _shareMode === 'profile'
+                ? [(_agentName || 'Your Local'), 'Minnesota Lake Home Specialist']
+                : ['Minnesota Lake Homes', 'Market Update'];
+            let y = 290; lines.forEach(t => { ctx.fillText(t, 72, y); y += 80; });
+            ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.font = '400 34px Arial, sans-serif';
+            ctx.fillText(_shareMode === 'profile' ? "Buying or selling on the water? Let's talk." : "Median prices · days on market · what's selling", 72, y + 18);
+            ctx.fillStyle = '#fff'; _roundRect(ctx, 72, 500, 430, 72, 36); ctx.fill();
+            ctx.fillStyle = '#1d6df2'; ctx.font = '800 32px Arial, sans-serif';
+            ctx.fillText(_shareMode === 'profile' ? 'View my profile →' : 'See the market →', 104, 546);
+            c.toBlob(b => { if (!b) return; const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'mn-lake-homes-' + _shareMode + '.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); });
+        }
 
         async function loadLeads() {
             document.getElementById('leads-list').innerHTML =
