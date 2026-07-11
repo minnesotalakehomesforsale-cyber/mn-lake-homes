@@ -2193,10 +2193,14 @@ app.get('/agents', async (req, res, next) => {
             const dir = seoDirectory([
                 { title: 'All Minnesota Lake Agents', items: r.rows.map(a => ({ href: `/agents/${encodeURIComponent(a.slug)}`, name: a.display_name + (a.city ? ` — ${a.city}` : '') })) },
             ]);
+            // Keep the agent links in the HTML for crawlers (the visible cards
+            // load client-side), but hide the block visually — it's redundant
+            // with the on-page directory.
+            const hiddenDir = `<div style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;">${dir}</div>`;
             const footerAnchor = '<global-footer></global-footer>';
             const out = html.includes(footerAnchor)
-                ? html.replace(footerAnchor, `${dir}\n${footerAnchor}`)   // render above the footer
-                : html.replace('</body>', `${dir}\n</body>`);            // fallback (no footer)
+                ? html.replace(footerAnchor, `${hiddenDir}\n${footerAnchor}`)   // SEO-only, above the footer
+                : html.replace('</body>', `${hiddenDir}\n</body>`);            // fallback (no footer)
             res.type('html').send(out);
         });
     } catch (err) { next(err); }
