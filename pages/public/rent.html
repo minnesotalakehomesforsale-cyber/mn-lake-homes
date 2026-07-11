@@ -101,6 +101,16 @@
         .testimonial-section { padding-left: 0; padding-right: 0; }
         .testimonial-top,
         .testimonial-bottom { max-width: var(--page-w); padding-left: 1.5rem; padding-right: 1.5rem; }
+
+        /* Mobile gutters: inner containers → 1.25rem to match the header on phones
+           (desktop stays 1.5rem for header/footer alignment). Placed AFTER the desktop
+           rules above so it wins; bands stay 0 horizontal so the gutter never doubles. */
+        @media (max-width: 900px) {
+            .flex-container,
+            .testimonial-top,
+            .testimonial-bottom { padding-left: 1.25rem; padding-right: 1.25rem; }
+            .sp-dark-section .sp-grid { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
+        }
     </style>
 </head>
 <body style="background-color: #fff;">

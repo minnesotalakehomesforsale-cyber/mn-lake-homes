@@ -108,6 +108,15 @@
             /* Stat card over images stays legible */
             .sp-stat-card { padding: 1rem 1.1rem !important; }
             .sp-stat-value { font-size: 2rem !important; }
+
+            /* Mobile gutters: inner containers → 1.25rem to match the header on phones
+               (desktop stays 1.5rem for header/footer alignment). Bands stay 0 horizontal
+               so the gutter never doubles. */
+            .flex-container,
+            .testimonial-top,
+            .testimonial-bottom,
+            .mn-photo-gallery-container { padding-left: 1.25rem; padding-right: 1.25rem; }
+            .sp-dark-section .sp-grid { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
         }
         @media (max-width: 480px) {
             .sp-title  { font-size: 1.65rem !important; }

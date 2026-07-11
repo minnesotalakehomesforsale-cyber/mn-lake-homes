@@ -69,6 +69,19 @@
             padding-right: 1.5rem;
             box-sizing: border-box;
         }
+
+        /* Mobile gutters: inner containers → 1.25rem to match the header on phones
+           (desktop stays 1.5rem for header/footer alignment). Bands stay 0 horizontal
+           so the gutter never doubles — including the dark band, which otherwise picks
+           up style.css's mobile 1.25rem re-add. */
+        @media (max-width: 900px) {
+            .flex-container,
+            .testimonial-top,
+            .testimonial-bottom,
+            .mn-photo-gallery-container { padding-left: 1.25rem; padding-right: 1.25rem; }
+            section.sp-dark-section { padding-left: 0 !important; padding-right: 0 !important; }
+            .sp-dark-section .sp-grid { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
+        }
     </style>
 <!-- LCP hint -->
     <link rel="preload" as="image" href="/assets/images/mn-log-cabin-ducks.jpg">

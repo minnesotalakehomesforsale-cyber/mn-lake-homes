@@ -40,6 +40,10 @@
         /* a real scroll container: min-width:0 + max-width keep it from growing to
            the table's width and dragging the whole page wider than the viewport. */
         .cmp-scroll { overflow-x: auto; min-width: 0; max-width: 100%; -webkit-overflow-scrolling: touch; }
+        /* match header/footer mobile gutter (1.25rem) instead of the 1.5rem desktop gutter */
+        @media (max-width: 900px) {
+            .tool-head, .cmp-wrap { padding-left: 1.25rem; padding-right: 1.25rem; }
+        }
         @media (max-width: 600px) {
             .tool-head { padding: 6rem 1.25rem 1rem; } .tool-head h1 { font-size: 2.1rem; }
             .cmp-wrap { padding: 1rem 1rem 4rem; } .cmp-pickers select { min-width: 0; flex: 1 1 100%; }

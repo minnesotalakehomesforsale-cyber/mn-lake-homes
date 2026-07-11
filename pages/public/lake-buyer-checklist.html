@@ -38,6 +38,8 @@
         .tool-cta h3 { font-size: 1.6rem; font-weight: 800; margin: 0 0 0.5rem; }
         .tool-cta p { color: rgba(255,255,255,0.9); margin: 0 0 1.5rem; }
         .tool-cta a { display: inline-block; background: #fff; color: #1d6df2; font-weight: 800; padding: 0.9rem 2rem; border-radius: 99px; text-decoration: none; }
+        /* match header/footer mobile gutter (1.25rem) instead of the 1.5rem desktop gutter */
+        @media (max-width: 900px) { .tool-head, .chk-wrap { padding-left: 1.25rem; padding-right: 1.25rem; } }
         @media (max-width: 600px) { .tool-head { padding: 6rem 1.25rem 1rem; } .tool-head h1 { font-size: 2.1rem; } .chk-wrap { padding: 1rem 1.25rem 4rem; } }
         @media print {
             global-header, global-footer, .chk-actions, .tool-cta, .tool-eyebrow { display: none !important; }
