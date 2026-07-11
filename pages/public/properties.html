@@ -47,8 +47,10 @@
         .pm-pin.pm-pin-hi span, .pm-pin-hi span { transform: scale(1.5); box-shadow: 0 0 0 4px rgba(29,109,242,0.35), 0 2px 6px rgba(16,24,40,0.5) !important; }
         .pm-toggle { display: none; }
         @media (max-width: 900px) {
+            .pm-head { padding: 1.5rem 1.25rem 0.75rem; }
+            .pm-map-wrap { padding: 0 1.25rem; }
             .pm-split { flex-direction: column; }
-            #props-map { flex: none; height: 62vh; }
+            #props-map { flex: none; height: 60vh; }
             .pm-list-wrap { flex: none; max-height: none; border: none; padding: 0; overflow: visible; }
             #props-list { grid-template-columns: 1fr 1fr; }
             /* Map/List toggle on small screens */
@@ -147,6 +149,10 @@
             L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
                 maxZoom: 19, subdomains: 'abcd', attribution: ''
             }).addTo(map);
+            // Tiles render blank if the container was sized after init (common on
+            // mobile). Re-measure once layout settles and on orientation change.
+            setTimeout(() => { try { map.invalidateSize(); } catch (_) {} }, 300);
+            window.addEventListener('resize', () => { try { map.invalidateSize(); } catch (_) {} });
 
             const featIcon = L.divIcon({ className: 'pm-pin pm-pin-feat', html: '<span></span>', iconSize: [22, 22], iconAnchor: [11, 11] });
             const regIcon  = L.divIcon({ className: 'pm-pin',              html: '<span></span>', iconSize: [16, 16], iconAnchor: [8, 8] });
