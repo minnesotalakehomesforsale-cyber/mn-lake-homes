@@ -18,6 +18,18 @@
         .ls-status.pending{ background:#fffaf0; color:#dd6b20; }
         .ls-status.sold   { background:#fff5f5; color:#c53030; }
         .ls-status.draft  { background:#edf2f7; color:#4a5568; }
+        /* Property cards — match the public website listing card */
+        .al-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem; }
+        .al-card { border:1px solid #edf2f7; border-radius:12px; overflow:hidden; background:#fff; transition:box-shadow .15s, border-color .15s; }
+        .al-card:hover { box-shadow:0 6px 18px rgba(29,109,242,0.16); border-color:#bcd4fb; }
+        .al-img { height:160px; background:#eef2f7 center/cover; position:relative; }
+        .al-badge { position:absolute; top:10px; left:10px; box-shadow:0 1px 3px rgba(16,24,40,0.16); }
+        .al-body { padding:0.8rem 1rem 1rem; }
+        .al-price { font-weight:800; color:#0f2b46; font-size:1.2rem; letter-spacing:-0.5px; }
+        .al-specs { color:#4a5568; font-size:0.88rem; margin-top:0.15rem; }
+        .al-addr { color:#a0aec0; font-size:0.82rem; margin-top:0.15rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .al-actions { display:flex; flex-wrap:wrap; gap:0.35rem; margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid #f0f3f7; }
+        .al-actions .btn-ghost { padding:0.35rem 0.7rem; text-decoration:none; }
         .ovl { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9000; align-items:flex-start; justify-content:center; padding:3rem 1rem; overflow-y:auto; }
         .ovl.open { display:flex; }
         .modal { background:#fff; border-radius:16px; width:100%; max-width:720px; box-shadow:0 30px 60px rgba(0,0,0,0.25); margin:auto; }
@@ -169,25 +181,26 @@
                 if (!res.ok) throw new Error();
                 const rows = await res.json();
                 if (!rows.length) { wrap.innerHTML = '<div class="ls-empty">No listings yet. Click “+ New listing”.</div>'; return; }
-                wrap.innerHTML = `<table class="ls-table"><thead><tr>
-                    <th></th><th>Title</th><th>Lake</th><th>City</th><th>Price</th><th>Beds/Baths</th><th>Status</th><th></th>
-                    </tr></thead><tbody>${rows.map(r => `
-                    <tr>
-                        <td><img class="ls-thumb" src="${esc(r.featured_image_url||'/assets/images/agent-placeholder.svg')}" alt=""></td>
-                        <td style="font-weight:700;">${esc(r.title)}</td>
-                        <td>${esc(r.lake_name||'—')}</td>
-                        <td>${esc(r.city||'—')}</td>
-                        <td>${money(r.price)}</td>
-                        <td>${r.beds??'—'} / ${r.baths??'—'}</td>
-                        <td><span class="ls-status ${r.status}">${r.status}</span></td>
-                        <td style="text-align:right;white-space:nowrap;">
-                            ${r.status==='active'?`<a href="/listings/${esc(r.slug)}" target="_blank" style="color:#718096;margin-right:0.5rem;text-decoration:none;">View</a>`:''}
-                            ${r.status==='active'
-                                ? `<button class="btn-ghost" style="padding:0.35rem 0.7rem;color:#c05621;border-color:#fbd38d;" onclick='toggleSite(${JSON.stringify(r.id)},"draft")'>Remove from site</button>`
-                                : `<button class="btn-ghost" style="padding:0.35rem 0.7rem;color:#2f855a;border-color:#9ae6b4;" onclick='toggleSite(${JSON.stringify(r.id)},"active")'>Add to site</button>`}
-                            <button class="btn-ghost" style="padding:0.35rem 0.7rem;" onclick='openEdit(${JSON.stringify(r.id)})'>Edit</button>
-                        </td>
-                    </tr>`).join('')}</tbody></table>`;
+                const t = u => u ? esc(u.includes('/upload/') ? u.replace('/upload/', '/upload/w_520,h_320,c_fill,q_auto,f_auto/') : u) : '';
+                wrap.innerHTML = `<div class="al-grid">${rows.map(r => {
+                    const specs = [r.beds != null ? r.beds + ' bd' : '', r.baths != null ? r.baths + ' ba' : '', r.property_type || ''].filter(Boolean).join(' · ');
+                    const img = r.featured_image_url ? `background-image:url('${t(r.featured_image_url)}')` : '';
+                    return `<div class="al-card">
+                        <div class="al-img" style="${img}"><span class="ls-status ${r.status} al-badge">${r.status}</span></div>
+                        <div class="al-body">
+                            <div class="al-price">${money(r.price)}</div>
+                            <div class="al-specs">${esc(specs || r.title || 'Listing')}</div>
+                            <div class="al-addr">${esc([r.city, r.lake_name].filter(Boolean).join(' · ') || r.title)}</div>
+                            <div class="al-actions">
+                                ${r.status === 'active'
+                                    ? `<button class="btn-ghost" style="color:#c05621;border-color:#fbd38d;" onclick='toggleSite(${JSON.stringify(r.id)},"draft")'>Remove from site</button>`
+                                    : `<button class="btn-ghost" style="color:#2f855a;border-color:#9ae6b4;" onclick='toggleSite(${JSON.stringify(r.id)},"active")'>Add to site</button>`}
+                                <button class="btn-ghost" onclick='openEdit(${JSON.stringify(r.id)})'>Edit</button>
+                                ${r.status === 'active' ? `<a class="btn-ghost" href="/listings/${esc(r.slug)}" target="_blank">View ↗</a>` : ''}
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('')}</div>`;
             } catch { wrap.innerHTML = '<div class="ls-empty">Could not load listings.</div>'; }
         }
 
