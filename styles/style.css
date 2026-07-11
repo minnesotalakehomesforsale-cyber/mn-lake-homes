@@ -1913,7 +1913,10 @@ body > * { min-width: 0; }
 
 .blog-container {
     width: 100%;
-    max-width: 1200px;
+    max-width: var(--page-w);
+    padding-inline: 1.5rem;
+    box-sizing: border-box;
+    margin-inline: auto;
     display: flex;
     flex-direction: column;
 }

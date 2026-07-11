@@ -64,8 +64,8 @@
         }
 
         /* Category filter bar */
-        .rx-filter-wrap { background: #fff; border-bottom: 1px solid #edf2f7; padding: 1rem 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
-        .rx-filter-inner { max-width: 1200px; margin: 0 auto; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .rx-filter-wrap { background: #fff; border-bottom: 1px solid #edf2f7; padding: 1rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+        .rx-filter-inner { max-width: var(--page-w); margin: 0 auto; padding: 0 1.5rem; box-sizing: border-box; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .rx-filter-pill { padding: 0.5rem 1rem; border-radius: 999px; border: 1px solid #e2e8f0; background: #fff; font-size: 0.85rem; font-weight: 600; color: #4a5568; cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap; }
         .rx-filter-pill:hover { border-color: #1d6df2; color: #1d6df2; }
         .rx-filter-pill.active { background: #1d6df2; border-color: #1d6df2; color: #fff; }
@@ -73,7 +73,7 @@
         .rx-filter-pill:not(.active) .c { background: #edf2f7; color: #4a5568; }
 
         /* Section wrapper */
-        .rx-section { padding: 4rem 2rem; max-width: 1200px; margin: 0 auto; }
+        .rx-section { padding: 4rem 1.5rem; max-width: var(--page-w); margin: 0 auto; }
         .rx-section-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap; }
         .rx-section-head h2 { font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.75px; margin: 0; }
         .rx-section-head p  { color: #718096; margin: 0.35rem 0 0; font-size: 0.95rem; }

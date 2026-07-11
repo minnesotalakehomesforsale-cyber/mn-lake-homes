@@ -84,7 +84,7 @@
         .blog-filter-btn.active { background: #1d6df2; border-color: #1d6df2; color: #fff; }
 
         .blog-controls {
-            max-width: 1200px;
+            max-width: var(--page-w);
             margin: 0 auto 2.75rem;
             display: flex;
             gap: 1rem;
@@ -127,14 +127,14 @@
         .blog-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .blog-page-ellipsis { padding: 0 0.35rem; color: #a0aec0; }
 
-        .blog-index-section { padding: 5rem 2rem 6rem !important; }
+        .blog-index-section { padding: 5rem 0 6rem !important; }
         #blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 3rem; }
 
         @media (max-width: 900px) {
             .blog-index-header { padding: 7rem 1.25rem 3rem; }
             .blog-index-title { font-size: 2.75rem; letter-spacing: -1.25px; line-height: 1.05; }
             .blog-index-subtitle { font-size: 1.02rem; }
-            .blog-index-section { padding: 3.5rem 1.25rem 4rem !important; }
+            .blog-index-section { padding: 3.5rem 0 4rem !important; }
             #blog-grid { grid-template-columns: 1fr; gap: 1.75rem; }
             .blog-image { aspect-ratio: 16/9; height: auto; margin-bottom: 1rem; }
             .blog-title { font-size: 1.15rem; }
@@ -144,7 +144,7 @@
             .blog-index-header { padding: 6rem 1rem 2.5rem; }
             .blog-index-title { font-size: 2rem; letter-spacing: -1px; }
             .blog-index-subtitle { font-size: 0.95rem; }
-            .blog-index-section { padding: 2.75rem 1rem 3rem !important; }
+            .blog-index-section { padding: 2.75rem 0 3rem !important; }
             #blog-grid { gap: 1.5rem; }
             .blog-meta { gap: 0.6rem; }
         }

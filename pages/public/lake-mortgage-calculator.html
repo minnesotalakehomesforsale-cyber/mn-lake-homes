@@ -13,11 +13,23 @@
     <meta property="og:type" content="website">
     <link rel="stylesheet" href="../../styles/style.css">
     <style>
-        .tool-head { padding: 7.5rem 2rem 1.5rem; max-width: 820px; margin: 0 auto; text-align: center; }
+        .tool-head { padding: 7.5rem 1.5rem 1.5rem; max-width: var(--page-w); margin: 0 auto; text-align: center; }
         .tool-eyebrow { color: #1d6df2; font-size: 0.78rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 1rem; }
         .tool-head h1 { font-size: 3rem; font-weight: 800; color: #1a202c; letter-spacing: -1.5px; line-height: 1.05; margin-bottom: 1rem; }
-        .tool-head p { font-size: 1.15rem; color: #718096; line-height: 1.6; }
-        .calc-wrap { max-width: 960px; margin: 0 auto; padding: 1rem 2rem 6rem; display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 2rem; align-items: start; min-width: 0; }
+        .tool-head p { font-size: 1.15rem; color: #718096; line-height: 1.6; max-width: 720px; margin: 0 auto; }
+        .calc-wrap { max-width: var(--page-w); margin: 0 auto; padding: 1rem 1.5rem 6rem; display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 2rem; align-items: start; min-width: 0; }
+        /* Field label row + info tooltip */
+        .lblrow { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.4rem; }
+        .lblrow label { margin: 0; }
+        .info { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; border-radius: 50%; border: 1px solid #cbd5e0; background: #fff; color: #718096; font-size: 0.68rem; font-weight: 800; font-style: normal; cursor: pointer; flex: none; margin-left: 0.35rem; }
+        .info:hover, .info:focus-visible, .info.open { background: #1d6df2; color: #fff; border-color: #1d6df2; outline: none; }
+        .info .tip { position: absolute; bottom: calc(100% + 9px); left: 50%; transform: translateX(-50%); width: min(230px, 68vw); background: #1a202c; color: #fff; font-size: 0.8rem; font-weight: 500; line-height: 1.45; letter-spacing: 0; text-transform: none; text-align: left; padding: 0.6rem 0.75rem; border-radius: 9px; box-shadow: 0 10px 30px rgba(0,0,0,0.22); opacity: 0; visibility: hidden; transition: opacity .14s; z-index: 30; }
+        .info .tip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: #1a202c; }
+        .info:hover .tip, .info:focus .tip, .info.open .tip { opacity: 1; visibility: visible; }
+        /* Cash / percent segmented toggle */
+        .seg { display: inline-flex; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+        .seg-b { border: 0; background: #f7f9fa; color: #718096; font: inherit; font-weight: 800; font-size: 0.82rem; padding: 0.2rem 0.6rem; cursor: pointer; }
+        .seg-b.on { background: #1d6df2; color: #fff; }
         .calc-card { border: 1px solid #e8edf3; border-radius: 18px; background: #fff; box-shadow: 0 12px 40px rgba(16,24,40,0.06); padding: 2rem; }
         .field { margin-bottom: 1.25rem; }
         .field label { display: block; font-size: 0.85rem; font-weight: 700; color: #4a5568; margin-bottom: 0.4rem; }
@@ -38,11 +50,11 @@
         .breakdown .line span:first-child { color: #718096; }
         .breakdown .line span:last-child { font-weight: 700; color: #1a202c; }
         .result-sub { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid #edf2f7; font-size: 0.85rem; color: #a0aec0; }
-        .calc-note { max-width: 960px; margin: 0 auto; padding: 0 2rem; }
+        .calc-note { max-width: var(--page-w); margin: 0 auto; padding: 0 1.5rem; }
         .calc-note .box { background: #f5f9ff; border: 1px solid #dbeafe; border-radius: 14px; padding: 1.5rem 1.75rem; }
         .calc-note h3 { font-size: 1.1rem; font-weight: 800; color: #1a202c; margin: 0 0 0.6rem; }
         .calc-note ul { margin: 0; padding-left: 1.2rem; color: #4a5568; line-height: 1.7; font-size: 0.95rem; }
-        .tool-cta { max-width: 960px; margin: 2.5rem auto 0; padding: 0 2rem; }
+        .tool-cta { max-width: var(--page-w); margin: 2.5rem auto 0; padding: 0 1.5rem; }
         .tool-cta .inner { text-align: center; background: linear-gradient(135deg,#1d6df2,#155bc8); border-radius: 18px; padding: 2.5rem; color: #fff; }
         .tool-cta h3 { font-size: 1.6rem; font-weight: 800; margin: 0 0 0.5rem; }
         .tool-cta p { color: rgba(255,255,255,0.9); margin: 0 0 1.5rem; }
@@ -81,36 +93,63 @@
     <div class="calc-wrap">
         <div class="calc-card">
             <div class="field">
-                <label for="price">Home price</label>
+                <div class="lblrow">
+                    <label for="price">Home price</label>
+                    <span class="info" tabindex="0" role="button" aria-label="What is home price">i<span class="tip">The purchase price of the home — what you agree to pay the seller. Your loan and taxes are calculated from this.</span></span>
+                </div>
                 <div class="input"><span class="adorn">$</span><input id="price" type="number" value="650000" min="0" step="5000"></div>
             </div>
             <div class="field-row">
                 <div class="field">
-                    <label for="downpct">Down payment</label>
-                    <div class="input"><input id="downpct" type="number" value="20" min="0" max="100" step="1"><span class="adorn">%</span></div>
+                    <div class="lblrow">
+                        <label for="down">Down payment</label>
+                        <span style="display:flex;align-items:center;gap:0.35rem;">
+                            <span class="seg" role="group" aria-label="Down payment mode">
+                                <button type="button" id="down-pct" class="seg-b on" onclick="setDownMode('pct')">%</button>
+                                <button type="button" id="down-cash" class="seg-b" onclick="setDownMode('cash')">$</button>
+                            </span>
+                            <span class="info" tabindex="0" role="button" aria-label="What is a down payment">i<span class="tip">The cash you pay upfront; the rest is financed. Switch between a percentage of the price or a dollar amount. 20% down usually avoids monthly mortgage insurance (PMI).</span></span>
+                        </span>
+                    </div>
+                    <div class="input"><span class="adorn" id="down-adorn-l" style="display:none;">$</span><input id="down" type="number" value="20" min="0" max="100" step="1"><span class="adorn" id="down-adorn-r">%</span></div>
                 </div>
                 <div class="field">
-                    <label for="rate">Interest rate</label>
+                    <div class="lblrow">
+                        <label for="rate">Interest rate</label>
+                        <span class="info" tabindex="0" role="button" aria-label="What is interest rate">i<span class="tip">Your mortgage's yearly interest rate. Even a half-point change moves your monthly payment noticeably — it pays to compare lenders.</span></span>
+                    </div>
                     <div class="input"><input id="rate" type="number" value="6.5" min="0" max="20" step="0.1"><span class="adorn">%</span></div>
                 </div>
             </div>
             <div class="field-row">
                 <div class="field">
-                    <label for="term">Loan term</label>
+                    <div class="lblrow">
+                        <label for="term">Loan term</label>
+                        <span class="info" tabindex="0" role="button" aria-label="What is loan term">i<span class="tip">How many years you take to repay the loan. 30 years is most common; a shorter term means higher monthly payments but far less interest overall.</span></span>
+                    </div>
                     <div class="input"><input id="term" type="number" value="30" min="1" max="40" step="1"><span class="adorn">yrs</span></div>
                 </div>
                 <div class="field">
-                    <label for="tax">Property tax (annual)</label>
+                    <div class="lblrow">
+                        <label for="tax">Property tax (annual)</label>
+                        <span class="info" tabindex="0" role="button" aria-label="What is property tax">i<span class="tip">Yearly property tax as a percent of the home's value. Minnesota lake counties typically run about 1.0–1.3%.</span></span>
+                    </div>
                     <div class="input"><input id="tax" type="number" value="1.1" min="0" max="5" step="0.05"><span class="adorn">%</span></div>
                 </div>
             </div>
             <div class="field-row">
                 <div class="field">
-                    <label for="ins">Home insurance (annual)</label>
+                    <div class="lblrow">
+                        <label for="ins">Home insurance (annual)</label>
+                        <span class="info" tabindex="0" role="button" aria-label="What is home insurance">i<span class="tip">Your yearly homeowner's insurance premium. Waterfront and any flood-zone exposure push this higher than a typical home.</span></span>
+                    </div>
                     <div class="input"><span class="adorn">$</span><input id="ins" type="number" value="2600" min="0" step="100"></div>
                 </div>
                 <div class="field">
-                    <label for="extra">Dues / extras (monthly)</label>
+                    <div class="lblrow">
+                        <label for="extra">Dues / extras (monthly)</label>
+                        <span class="info" tabindex="0" role="button" aria-label="What are dues and extras">i<span class="tip">Any recurring monthly costs — HOA or road-association dues, second-home utilities, dock slip fees, etc.</span></span>
+                    </div>
                     <div class="input"><span class="adorn">$</span><input id="extra" type="number" value="0" min="0" step="25"></div>
                 </div>
             </div>
@@ -159,16 +198,40 @@
     <script>
         const $ = id => document.getElementById(id);
         const usd = n => '$' + Math.round(n).toLocaleString('en-US');
+
+        // Down payment can be entered as a percentage of price or a cash amount.
+        let downMode = 'pct';
+        function setDownMode(mode) {
+            if (mode === downMode) return;
+            const price = +$('price').value || 0;
+            const el = $('down');
+            const cur = +el.value || 0;
+            if (mode === 'cash') {                        // % → $
+                el.value = Math.round(price * cur / 100);
+                el.removeAttribute('max'); el.step = 1000;
+                $('down-adorn-l').style.display = ''; $('down-adorn-r').style.display = 'none';
+            } else {                                       // $ → %
+                el.value = price > 0 ? +(cur / price * 100).toFixed(1) : 20;
+                el.max = 100; el.step = 1;
+                $('down-adorn-l').style.display = 'none'; $('down-adorn-r').style.display = '';
+            }
+            downMode = mode;
+            $('down-pct').classList.toggle('on', mode === 'pct');
+            $('down-cash').classList.toggle('on', mode === 'cash');
+            calc();
+        }
+
         function calc() {
             const price = +$('price').value || 0;
-            const downPct = Math.min(100, Math.max(0, +$('downpct').value || 0));
+            let down, downPct;
+            if (downMode === 'cash') { down = Math.min(price, Math.max(0, +$('down').value || 0)); downPct = price > 0 ? down / price * 100 : 0; }
+            else { downPct = Math.min(100, Math.max(0, +$('down').value || 0)); down = price * downPct / 100; }
             const rate = +$('rate').value || 0;
             const term = +$('term').value || 30;
             const taxPct = +$('tax').value || 0;
             const insYr = +$('ins').value || 0;
             const extra = +$('extra').value || 0;
 
-            const down = price * downPct / 100;
             const loan = Math.max(0, price - down);
             const r = (rate / 100) / 12;
             const n = term * 12;
@@ -183,9 +246,17 @@
             $('r-ins').textContent = usd(ins);
             $('r-extra').textContent = usd(extra);
             $('r-loan').textContent = usd(loan);
-            $('r-down').textContent = usd(down);
+            $('r-down').textContent = usd(down) + (downMode === 'cash' && price > 0 ? ` (${downPct.toFixed(1)}%)` : '');
         }
-        ['price', 'downpct', 'rate', 'term', 'tax', 'ins', 'extra'].forEach(id => $(id).addEventListener('input', calc));
+        ['price', 'down', 'rate', 'term', 'tax', 'ins', 'extra'].forEach(id => $(id).addEventListener('input', calc));
+
+        // Info tooltips: hover shows them; on touch/click, tap to toggle (and tap
+        // elsewhere to close).
+        document.querySelectorAll('.info').forEach(el => {
+            el.addEventListener('click', e => { e.stopPropagation(); document.querySelectorAll('.info.open').forEach(o => { if (o !== el) o.classList.remove('open'); }); el.classList.toggle('open'); });
+        });
+        document.addEventListener('click', () => document.querySelectorAll('.info.open').forEach(o => o.classList.remove('open')));
+
         calc();
     </script>
 </body>
