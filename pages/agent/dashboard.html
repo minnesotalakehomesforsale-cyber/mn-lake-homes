@@ -1044,6 +1044,32 @@
           <div class="pf"><label>Annual tax ($)</label><input id="pf-annual_tax" type="number" min="0" placeholder="4200"></div>
           <div class="pf"><label>MLS #</label><input id="pf-mls_number" type="text" maxlength="40" placeholder="6123456"></div>
         </div>
+
+        <div class="pf-h">Property page details <span style="font-weight:400;color:#718096;font-size:0.8rem;">— these fill out your public listing page</span></div>
+        <div class="pf-grid">
+          <div class="pf"><label>Walk Score (0–100)</label><input id="pf-walk_score" type="number" min="0" max="100" placeholder="42"></div>
+          <div class="pf"><label>Shoreline type</label><input id="pf-shoreline_type" type="text" maxlength="80" placeholder="Hard sand, gradual"></div>
+          <div class="pf"><label>Lake depth (ft)</label><input id="pf-lake_depth_ft" type="number" min="0" step="0.1" placeholder="38"></div>
+          <div class="pf"><label>Dock included?</label><select id="pf-dock_included"><option value="">—</option><option value="yes">Yes</option><option value="no">No</option></select></div>
+          <div class="pf"><label>Utilities</label><input id="pf-utilities" type="text" maxlength="2000" placeholder="Municipal water · Septic · Fiber"></div>
+        </div>
+        <div class="pf" style="margin-top:0.6rem;">
+          <label>What's special <span style="color:#a0aec0;font-weight:400;">(one highlight per line)</span></label>
+          <textarea id="pf-highlights" rows="4" placeholder="142 ft of hard-sand shoreline&#10;West-facing sunsets&#10;Whole-home Generac"></textarea>
+        </div>
+        <div class="pf" style="margin-top:0.6rem;">
+          <label>Price &amp; tax history <span style="color:#a0aec0;font-weight:400;">(one per line — Date | Event | Price)</span></label>
+          <textarea id="pf-price_history" rows="3" placeholder="Jun 21, 2026 | Listed for sale | $1,875,000&#10;Aug 29, 2019 | Sold | $1,120,000"></textarea>
+        </div>
+        <div class="pf" style="margin-top:0.6rem;">
+          <label>Schools <span style="color:#a0aec0;font-weight:400;">(one per line — Name | Level | Rating/10 | Distance)</span></label>
+          <textarea id="pf-schools" rows="3" placeholder="Nisswa Elementary | Elementary | 9 | 2.1 mi&#10;Brainerd High School | High | 8 | 8.7 mi"></textarea>
+        </div>
+        <div class="pf" style="margin-top:0.6rem;">
+          <label>What's nearby <span style="color:#a0aec0;font-weight:400;">(one per line — Name | Category | Distance)</span></label>
+          <textarea id="pf-nearby" rows="3" placeholder="Gull Lake public access | Recreation | 1.2 mi&#10;Ernie's on Gull | Dining | 2.0 mi"></textarea>
+        </div>
+
         <div id="pf-err" style="color:#c53030;font-size:0.85rem;display:none;margin-bottom:0.5rem;"></div>
         <div style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:0.5rem;">
           <button onclick="closePropModal()" style="border:1px solid #e2e8f0;background:#fff;border-radius:8px;padding:0.6rem 1rem;font-weight:600;cursor:pointer;">Cancel</button>
@@ -1246,7 +1272,14 @@
             'description','beds','baths','sqft','lot_acres','year_built','stories',
             'waterfront','water_body','waterfront_feet','listing_view',
             'heating','cooling','basement','flooring','fireplace','appliances',
-            'garage_spaces','parking','exterior','roof','hoa_fee','annual_tax','mls_number'];
+            'garage_spaces','parking','exterior','roof','hoa_fee','annual_tax','mls_number',
+            'walk_score','shoreline_type','lake_depth_ft','dock_included','utilities'];
+        // List-type detail fields edited as line-based textareas (not simple pf-<key> inputs).
+        const asArr = v => { if (Array.isArray(v)) return v; if (typeof v === 'string') { try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch (_) { return []; } } return []; };
+        const _lines = t => (t || '').split('\n').map(s => s.trim()).filter(Boolean);
+        const parsePipeRows = (t, keys) => _lines(t).map(line => { const parts = line.split('|').map(s => s.trim()); const o = {}; keys.forEach((k, i) => { o[k] = parts[i] || ''; }); return o; });
+        const rowsToText = (v, keys) => asArr(v).map(o => keys.map(k => (o && o[k] != null ? o[k] : '')).join(' | ')).join('\n');
+        const listToText = v => asArr(v).map(x => typeof x === 'string' ? x : (x && (x.text || x.label || x.name)) || '').filter(Boolean).join('\n');
         // A couple of ids are shortened; everything else is pf-<key>.
         const ID_ALIAS = { external_url: 'url', description: 'desc' };
         const idFor = k => 'pf-' + (ID_ALIAS[k] || k);
@@ -1261,7 +1294,7 @@
                 const el = document.getElementById(idFor(k));
                 if (!el) return;
                 let val = p ? p[k] : '';
-                if (k === 'waterfront' || k === 'fireplace') val = (val === true ? 'yes' : (val === false ? 'no' : ''));
+                if (k === 'waterfront' || k === 'fireplace' || k === 'dock_included') val = (val === true ? 'yes' : (val === false ? 'no' : ''));
                 if (k === 'status') val = ['active', 'draft', 'sold'].includes(p?.status) ? p.status : 'active';
                 if (k === 'open_house_at' && val) {   // ISO → local yyyy-MM-ddThh:mm for datetime-local
                     const d = new Date(val);
@@ -1269,6 +1302,11 @@
                 }
                 el.value = (val == null ? '' : val);
             });
+            // Prefill the list-type detail fields (round-trip so edits never wipe them).
+            document.getElementById('pf-highlights').value    = listToText(p?.highlights);
+            document.getElementById('pf-price_history').value = rowsToText(p?.price_history, ['date', 'event', 'price']);
+            document.getElementById('pf-schools').value       = rowsToText(p?.schools, ['name', 'level', 'rating', 'distance']);
+            document.getElementById('pf-nearby').value        = rowsToText(p?.nearby, ['name', 'category', 'distance']);
             // Rebuild the image list from cover + gallery (dedupe).
             let gal = p?.gallery;
             if (typeof gal === 'string') { try { gal = JSON.parse(gal); } catch (_) { gal = []; } }
@@ -1331,6 +1369,11 @@
             body.external_url = url;
             body.featured_image_url = _propImages[0] || null;
             body.gallery = _propImages.slice(1);   // extras beyond the cover
+            // List-type detail fields → structured arrays for the JSONB columns.
+            body.highlights    = _lines(document.getElementById('pf-highlights').value);
+            body.price_history = parsePipeRows(document.getElementById('pf-price_history').value, ['date', 'event', 'price']);
+            body.schools       = parsePipeRows(document.getElementById('pf-schools').value, ['name', 'level', 'rating', 'distance']);
+            body.nearby        = parsePipeRows(document.getElementById('pf-nearby').value, ['name', 'category', 'distance']);
             const btn = document.getElementById('pf-save'); btn.disabled = true; btn.textContent = 'Saving…';
             try {
                 const u = _propEditId ? `/api/listings/mine/${_propEditId}` : '/api/listings/mine';

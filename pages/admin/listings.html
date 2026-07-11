@@ -104,6 +104,22 @@
                     <div class="fld"><label>External listing URL</label><input id="f-ext" placeholder="https://…"></div>
                 </div>
                 <div class="fld"><label>Description</label><textarea id="f-desc" rows="5"></textarea></div>
+
+                <div class="fld" style="margin-top:0.75rem;font-weight:700;color:#2d3748;border-top:1px solid #edf2f7;padding-top:0.75rem;">Property page details</div>
+                <div class="grid3">
+                    <div class="fld"><label>Walk Score (0–100)</label><input id="f-walk" type="number" min="0" max="100"></div>
+                    <div class="fld"><label>Lake depth (ft)</label><input id="f-depth" type="number" step="0.1"></div>
+                    <div class="fld"><label>Dock included?</label><select id="f-dock"><option value="">—</option><option value="yes">Yes</option><option value="no">No</option></select></div>
+                </div>
+                <div class="grid2">
+                    <div class="fld"><label>Shoreline type</label><input id="f-shore" placeholder="Hard sand, gradual"></div>
+                    <div class="fld"><label>Utilities</label><input id="f-util" placeholder="Municipal water · Septic · Fiber"></div>
+                </div>
+                <div class="fld"><label>What's special <span style="color:#a0aec0;font-weight:400;">(one per line)</span></label><textarea id="f-highlights" rows="3" placeholder="142 ft of hard-sand shoreline&#10;West-facing sunsets"></textarea></div>
+                <div class="fld"><label>Price &amp; tax history <span style="color:#a0aec0;font-weight:400;">(Date | Event | Price)</span></label><textarea id="f-phist" rows="3" placeholder="Jun 21, 2026 | Listed for sale | $1,875,000"></textarea></div>
+                <div class="fld"><label>Schools <span style="color:#a0aec0;font-weight:400;">(Name | Level | Rating/10 | Distance)</span></label><textarea id="f-schools" rows="3" placeholder="Nisswa Elementary | Elementary | 9 | 2.1 mi"></textarea></div>
+                <div class="fld"><label>What's nearby <span style="color:#a0aec0;font-weight:400;">(Name | Category | Distance)</span></label><textarea id="f-nearby" rows="3" placeholder="Gull Lake public access | Recreation | 1.2 mi"></textarea></div>
+
                 <div style="display:flex;justify-content:space-between;gap:0.5rem;margin-top:0.5rem;">
                     <button class="btn-ghost" style="color:#c53030;border-color:#fc8181;" id="del-btn" onclick="removeListing()" hidden>🗑 Delete</button>
                     <div style="display:flex;gap:0.5rem;margin-left:auto;">
@@ -187,6 +203,12 @@
 
         const V = id => document.getElementById(id).value;
         const setV = (id, v) => document.getElementById(id).value = (v==null?'':v);
+        // Line-based editing helpers for the JSONB detail fields.
+        const asArr = v => { if (Array.isArray(v)) return v; if (typeof v === 'string') { try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch (_) { return []; } } return []; };
+        const _lines = t => (t || '').split('\n').map(s => s.trim()).filter(Boolean);
+        const parsePipeRows = (t, keys) => _lines(t).map(line => { const parts = line.split('|').map(s => s.trim()); const o = {}; keys.forEach((k, i) => { o[k] = parts[i] || ''; }); return o; });
+        const rowsToText = (v, keys) => asArr(v).map(o => keys.map(k => (o && o[k] != null ? o[k] : '')).join(' | ')).join('\n');
+        const listToText = v => asArr(v).map(x => typeof x === 'string' ? x : (x && (x.text || x.label || x.name)) || '').filter(Boolean).join('\n');
 
         function fillForm(r) {
             setV('f-id', r.id); setV('f-title', r.title); setV('f-lake', r.lake_id||'');
@@ -195,6 +217,13 @@
             setV('f-beds', r.beds); setV('f-baths', r.baths); setV('f-sqft', r.sqft);
             setV('f-lot', r.lot_acres); setV('f-wf', r.waterfront_feet); setV('f-image', r.featured_image_url);
             setV('f-mls', r.mls_number); setV('f-ext', r.external_url); setV('f-desc', r.description);
+            setV('f-walk', r.walk_score); setV('f-depth', r.lake_depth_ft);
+            setV('f-dock', r.dock_included === true ? 'yes' : (r.dock_included === false ? 'no' : ''));
+            setV('f-shore', r.shoreline_type); setV('f-util', r.utilities);
+            setV('f-highlights', listToText(r.highlights));
+            setV('f-phist', rowsToText(r.price_history, ['date', 'event', 'price']));
+            setV('f-schools', rowsToText(r.schools, ['name', 'level', 'rating', 'distance']));
+            setV('f-nearby', rowsToText(r.nearby, ['name', 'category', 'distance']));
             let g = r.gallery; if (typeof g === 'string') { try { g = JSON.parse(g); } catch { g = []; } }
             _gallery = Array.isArray(g) ? g.slice() : [];
             renderGalleryPreview();
@@ -268,6 +297,12 @@
                 lot_acres:V('f-lot'), waterfront_feet:V('f-wf'), featured_image_url:V('f-image').trim(),
                 mls_number:V('f-mls').trim(), external_url:V('f-ext').trim(), description:V('f-desc').trim(),
                 gallery:_gallery,
+                walk_score:V('f-walk')||null, lake_depth_ft:V('f-depth')||null, dock_included:V('f-dock')||null,
+                shoreline_type:V('f-shore').trim(), utilities:V('f-util').trim(),
+                highlights:_lines(V('f-highlights')),
+                price_history:parsePipeRows(V('f-phist'), ['date','event','price']),
+                schools:parsePipeRows(V('f-schools'), ['name','level','rating','distance']),
+                nearby:parsePipeRows(V('f-nearby'), ['name','category','distance']),
             };
         }
 

@@ -224,6 +224,22 @@ const boolOrNull = (v) => {
 };
 const strOrNull = (v, max) => (String(v ?? '').trim().slice(0, max) || null);
 
+// Serialize a JSONB detail field. Accepts an array/object, or a JSON string.
+// Returns a JSON string for storage, or null (which also clears the column
+// when an editor sends an empty array to remove all rows).
+const jsonOrNull = (v) => {
+    if (v == null) return null;
+    if (Array.isArray(v)) return v.length ? JSON.stringify(v) : null;
+    if (typeof v === 'object') return Object.keys(v).length ? JSON.stringify(v) : null;
+    if (typeof v === 'string') {
+        const s = v.trim();
+        if (!s) return null;
+        try { const p = JSON.parse(s); return (Array.isArray(p) && !p.length) ? null : JSON.stringify(p); }
+        catch { return null; }
+    }
+    return null;
+};
+
 function bodyToCols(b) {
     return {
         lake_id:            b.lake_id || null,
@@ -267,6 +283,16 @@ function bodyToCols(b) {
         hoa_fee:            numOrNull(b.hoa_fee),
         annual_tax:         numOrNull(b.annual_tax),
         open_house_at:      (String(b.open_house_at ?? '').trim() || null),
+        // ── Rich agent-editable detail fields ──
+        highlights:         jsonOrNull(b.highlights),      // ["142 ft shoreline", ...]
+        price_history:      jsonOrNull(b.price_history),   // [{date,event,price}, ...]
+        schools:            jsonOrNull(b.schools),          // [{rating,name,level,distance}, ...]
+        nearby:             jsonOrNull(b.nearby),           // [{name,category,distance}, ...]
+        walk_score:         numOrNull(b.walk_score),
+        shoreline_type:     strOrNull(b.shoreline_type, 80),
+        lake_depth_ft:      numOrNull(b.lake_depth_ft),
+        dock_included:      boolOrNull(b.dock_included),
+        utilities:          strOrNull(b.utilities, 2000),
     };
 }
 
