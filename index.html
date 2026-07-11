@@ -97,7 +97,7 @@
       /* Darken for text legibility up top, then dissolve to solid white at the
          bottom so the hero blends seamlessly into the white stat band below. */
       .hh-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,20,30,0.52) 0%, rgba(14,20,30,0.40) 45%, rgba(255,255,255,0) 80%, #fff 100%); }
-      .hh-inner { position: relative; z-index: 1; width: 100%; max-width: 880px; text-align: center; }
+      .hh-inner { position: relative; z-index: 1; width: 100%; max-width: 880px; text-align: center; transform: translateY(-6vh); }
       .hh-title { color: #fff; font-weight: 800; letter-spacing: -1.5px; line-height: 1.05; margin: 0 0 2rem;
                   font-size: clamp(2.2rem, 5vw, 3.6rem); text-shadow: 0 2px 24px rgba(0,0,0,0.45); text-wrap: balance; }
       .hh-tabs { display: inline-flex; gap: 2rem; margin-bottom: 1.1rem; flex-wrap: wrap; justify-content: center; }
@@ -152,11 +152,20 @@
          source order than style.css, so these win without touching the shared file. */
       .flex-container, .info-split-container, .business-type-container,
       .testimonial-top, .testimonial-bottom, .mn-photo-gallery-container,
-      .featured-agents-section .agents-grid, .blog-container {
+      .featured-agents-section .agents-grid, .blog-container, .sp-dark-section .sp-grid {
         max-width: var(--page-w); width: 100%; margin-left: auto; margin-right: auto;
         padding-left: 1.5rem; padding-right: 1.5rem; box-sizing: border-box;
       }
-    </style>
+      /* Below the page width the parent sections already supply the side gutter,
+         so drop the container's extra padding — otherwise phones get a double
+         gutter (content ends up thinner, not wider). */
+      @media (max-width: 1340px) {
+        .flex-container, .info-split-container, .business-type-container,
+        .testimonial-top, .testimonial-bottom, .mn-photo-gallery-container,
+        .featured-agents-section .agents-grid, .blog-container, .sp-dark-section .sp-grid {
+          padding-left: 0; padding-right: 0;
+        }
+      }
 
     <main class="hh-hero">
         <div class="hh-inner">
@@ -416,7 +425,7 @@
     </section>
 
     <section class="sp-dark-section" style="padding: 8rem 2rem;">
-        <div class="sp-grid" style="max-width: var(--page-w); margin: 0 auto; padding: 0 1.5rem; box-sizing: border-box; align-items: start;">
+        <div class="sp-grid" style="margin: 0 auto; align-items: start;">
             <div style="grid-column: 1 / -1; margin-bottom: 2rem;">
                 <h2 class="testimonial-main-title">We know<br>Minnesota Lakes.</h2>
             </div>
