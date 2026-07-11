@@ -177,7 +177,11 @@
         async function load() {
             const wrap = document.getElementById('table-wrap');
             try {
-                const res = await fetch('/api/listings/admin');
+                const res = await fetch('/api/listings/admin', { credentials: 'include' });
+                if (res.status === 401 || res.status === 403) {
+                    wrap.innerHTML = '<div class="ls-empty">You need to be signed in as an admin to view listings. <a href="/pages/public/login.html?redirect=' + encodeURIComponent(location.pathname) + '" style="color:#1d6df2;font-weight:700;">Sign in →</a></div>';
+                    return;
+                }
                 if (!res.ok) throw new Error();
                 const rows = await res.json();
                 if (!rows.length) { wrap.innerHTML = '<div class="ls-empty">No listings yet. Click “+ New listing”.</div>'; return; }
