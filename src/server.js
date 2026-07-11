@@ -4004,7 +4004,9 @@ async function applyBlogCoverMap() {
 // Guarded by slug ON CONFLICT DO NOTHING, so admin edits are never clobbered.
 // Set SEED_DEMO_LISTING=false to skip.
 async function seedDemoListing() {
-    if (process.env.SEED_DEMO_LISTING === 'false') return;
+    // Opt-in only: the demo Gull Lake listing is now off by default so deleting
+    // it in admin sticks. Set SEED_DEMO_LISTING=true to (re)create it.
+    if (process.env.SEED_DEMO_LISTING !== 'true') return;
     try {
         const ag = await pool.query(`
             SELECT a.id FROM agents a JOIN users u ON u.id = a.user_id

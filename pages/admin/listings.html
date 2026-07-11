@@ -197,6 +197,7 @@
                                     : `<button class="btn-ghost" style="color:#2f855a;border-color:#9ae6b4;" onclick='toggleSite(${JSON.stringify(r.id)},"active")'>Add to site</button>`}
                                 <button class="btn-ghost" onclick='openEdit(${JSON.stringify(r.id)})'>Edit</button>
                                 ${r.status === 'active' ? `<a class="btn-ghost" href="/listings/${esc(r.slug)}" target="_blank">View ↗</a>` : ''}
+                                <button class="btn-ghost" style="color:#c53030;border-color:#fc8181;" onclick='deleteListing(${JSON.stringify(r.id)}, ${JSON.stringify(r.title || '')})'>Delete</button>
                             </div>
                         </div>
                     </div>`;
@@ -385,6 +386,16 @@
                 const res = await fetch(`/api/listings/admin/${id}`, { method:'DELETE' });
                 if (!res.ok) return alert('Delete failed.');
                 closeModal(); load();
+            } catch { alert('Network error.'); }
+        }
+
+        // Delete straight from a card (no need to open the editor first).
+        async function deleteListing(id, title) {
+            if (!confirm('Delete "' + (title || 'this listing') + '" permanently?')) return;
+            try {
+                const res = await fetch(`/api/listings/admin/${id}`, { method: 'DELETE' });
+                if (!res.ok) return alert('Delete failed.');
+                load();
             } catch { alert('Network error.'); }
         }
 
