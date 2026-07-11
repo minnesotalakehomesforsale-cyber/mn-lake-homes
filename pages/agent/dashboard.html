@@ -399,6 +399,15 @@
                         <p class="roi-foot" id="roi-foot"></p>
                     </div>
 
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin:0.5rem 0 1rem;flex-wrap:wrap;">
+                        <h3 class="dash-section-h" style="margin:0;">My Properties</h3>
+                        <div style="display:flex;gap:0.5rem;">
+                            <button onclick="openPropModal()" style="background:#1d6df2;color:#fff;border:none;border-radius:8px;padding:0.5rem 1rem;font-weight:700;font-size:0.85rem;cursor:pointer;">+ Add property</button>
+                            <button onclick="switchView('properties')" style="background:#fff;color:#1a202c;border:1px solid #e2e8f0;border-radius:8px;padding:0.5rem 1rem;font-weight:700;font-size:0.85rem;cursor:pointer;">Manage all</button>
+                        </div>
+                    </div>
+                    <div id="dash-props" style="margin-bottom:2.5rem;"><div class="pc-msg">Loading…</div></div>
+
                     <div class="dash-links">
                         <a id="dash-link-public" class="dash-card" href="#" target="_blank" rel="noopener" style="--ac:#d97706;">
                             <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></span>
@@ -1094,8 +1103,9 @@
       @media (max-width:560px){ .pf-grid { grid-template-columns:1fr; } }
       /* Property cards — match the public website listing card (image → price →
          specs → address), with the agent's stats + controls below. */
-      #prop-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:1rem; align-items:start; }
-      #prop-list > .pc-msg { grid-column:1/-1; text-align:center; padding:3rem 1rem; color:#a0aec0; }
+      #prop-list, #dash-props { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:1rem; align-items:start; }
+      #prop-list > .pc-msg, #dash-props > .pc-msg { grid-column:1/-1; text-align:center; padding:2rem 1rem; color:#a0aec0; }
+      @media (max-width:560px){ #prop-list, #dash-props { grid-template-columns:1fr; } }
       .prop-card { border:1px solid #edf2f7; border-radius:12px; overflow:hidden; background:#fff; transition:box-shadow .15s, border-color .15s; }
       .prop-card:hover { box-shadow:0 6px 18px rgba(29,109,242,0.16); border-color:#bcd4fb; }
       .prop-card .pc-img { height:160px; background:#eef2f7 center/cover; position:relative; }
@@ -1233,6 +1243,57 @@
             }
         }
 
+        // Shared property card (same look as the public site listing card).
+        function propCardHtml(p) {
+            const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const money = n => n ? '$' + Number(n).toLocaleString('en-US') : 'Contact for price';
+            const thumb = u => u ? esc(u.includes('/upload/') ? u.replace('/upload/', '/upload/w_520,h_320,c_fill,q_auto,f_auto/') : u) : '';
+            const specs = [p.beds != null ? p.beds + ' bd' : '', p.baths != null ? p.baths + ' ba' : '', p.sqft != null ? Number(p.sqft).toLocaleString('en-US') + ' sqft' : '', p.property_type || ''].filter(Boolean).slice(0, 3).join(' · ');
+            const status = p.status === 'sold'
+                ? '<span class="prop-pill sold">Sold</span>'
+                : `<span class="prop-pill ${p.status === 'active' ? 'active' : 'draft'}">${p.status === 'active' ? 'Active' : 'Inactive'}</span>`;
+            const boosted = (p.boosted_until && new Date(p.boosted_until) > new Date()) ? '<span class="prop-pill" style="background:#fef3c7;color:#b45309;">★ Boosted</span>' : '';
+            const img = p.featured_image_url ? `background-image:url('${thumb(p.featured_image_url)}')` : '';
+            return `<div class="prop-card">
+                <div class="pc-img" style="${img}"><div class="pc-badges">${status}${boosted}</div></div>
+                <div class="pc-body">
+                    <div class="pc-price">${money(p.price)}</div>
+                    <div class="pc-specs">${esc(specs || 'Lake home')}</div>
+                    <div class="pc-addr">${esc([p.city, p.state].filter(Boolean).join(', ') || p.address || p.title || '')}</div>
+                    <div class="prop-perf">
+                        <span title="Page views">👁 ${(p.view_count || 0).toLocaleString('en-US')}</span>
+                        <span title="Saved by buyers">♥ ${p.save_count || 0}</span>
+                        <span title="Showing / inquiry requests">✉ ${p.inquiry_count || 0}</span>
+                        <span title="Watching for price drops">🔔 ${p.watch_count || 0}</span>
+                    </div>
+                    <div class="pc-actions">
+                        ${p.status === 'sold'
+                            ? `<button onclick="togglePropStatus('${p.id}','active')">Relist</button>`
+                            : `<button onclick="togglePropStatus('${p.id}','${p.status === 'active' ? 'draft' : 'active'}')">${p.status === 'active' ? 'Set inactive' : 'Set active'}</button>
+                               <button onclick="markSold('${p.id}')">Mark sold</button>
+                               ${p.status === 'active' ? `<button onclick="boostProp('${p.id}')" style="color:#b45309;">★ Boost</button>` : ''}`}
+                        <button onclick='openPropModal(${JSON.stringify(p).replace(/'/g, "&#39;")})'>Edit</button>
+                        <button style="color:#c53030;" onclick="deleteProp('${p.id}','${esc(p.title).replace(/"/g,'')}')">Delete</button>
+                        ${p.status === 'active' ? `<a class="pc-view" href="/listings/${esc(p.slug)}" target="_blank">View ↗</a>` : ''}
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // Overview "My Properties" preview (first few cards, straight on the dashboard).
+        async function loadDashProps() {
+            const box = document.getElementById('dash-props');
+            if (!box) return;
+            const add = '<a href="#" onclick="switchView(\'properties\');return false;" style="color:#1d6df2;font-weight:700;text-decoration:none;">+ Add a property →</a>';
+            try {
+                const res = await fetch('/api/listings/mine', { credentials: 'include' });
+                if (!res.ok) throw new Error();
+                const rows = await res.json();
+                if (!rows.length) { box.innerHTML = `<div class="pc-msg">No properties yet. ${add}</div>`; return; }
+                box.innerHTML = rows.slice(0, 6).map(propCardHtml).join('');
+            } catch (_) { box.innerHTML = ''; }
+        }
+
         async function loadProperties() {
             const box = document.getElementById('prop-list');
             try {
@@ -1243,41 +1304,7 @@
                     box.innerHTML = '<div class="pc-msg">No properties yet. Click <b>+ Add property</b> to post your first listing.</div>';
                     return;
                 }
-                const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-                const money = n => n ? '$' + Number(n).toLocaleString('en-US') : 'Contact for price';
-                const thumb = u => u ? esc(u.includes('/upload/') ? u.replace('/upload/', '/upload/w_520,h_320,c_fill,q_auto,f_auto/') : u) : '';
-                box.innerHTML = rows.map(p => {
-                    const specs = [p.beds != null ? p.beds + ' bd' : '', p.baths != null ? p.baths + ' ba' : '', p.sqft != null ? Number(p.sqft).toLocaleString('en-US') + ' sqft' : '', p.property_type || ''].filter(Boolean).slice(0, 3).join(' · ');
-                    const status = p.status === 'sold'
-                        ? '<span class="prop-pill sold">Sold</span>'
-                        : `<span class="prop-pill ${p.status === 'active' ? 'active' : 'draft'}">${p.status === 'active' ? 'Active' : 'Inactive'}</span>`;
-                    const boosted = (p.boosted_until && new Date(p.boosted_until) > new Date()) ? '<span class="prop-pill" style="background:#fef3c7;color:#b45309;">★ Boosted</span>' : '';
-                    const img = p.featured_image_url ? `background-image:url('${thumb(p.featured_image_url)}')` : '';
-                    return `<div class="prop-card">
-                        <div class="pc-img" style="${img}"><div class="pc-badges">${status}${boosted}</div></div>
-                        <div class="pc-body">
-                            <div class="pc-price">${money(p.price)}</div>
-                            <div class="pc-specs">${esc(specs || 'Lake home')}</div>
-                            <div class="pc-addr">${esc([p.city, p.state].filter(Boolean).join(', ') || p.address || p.title || '')}</div>
-                            <div class="prop-perf">
-                                <span title="Page views">👁 ${(p.view_count || 0).toLocaleString('en-US')}</span>
-                                <span title="Saved by buyers">♥ ${p.save_count || 0}</span>
-                                <span title="Showing / inquiry requests">✉ ${p.inquiry_count || 0}</span>
-                                <span title="Watching for price drops">🔔 ${p.watch_count || 0}</span>
-                            </div>
-                            <div class="pc-actions">
-                                ${p.status === 'sold'
-                                    ? `<button onclick="togglePropStatus('${p.id}','active')">Relist</button>`
-                                    : `<button onclick="togglePropStatus('${p.id}','${p.status === 'active' ? 'draft' : 'active'}')">${p.status === 'active' ? 'Set inactive' : 'Set active'}</button>
-                                       <button onclick="markSold('${p.id}')">Mark sold</button>
-                                       ${p.status === 'active' ? `<button onclick="boostProp('${p.id}')" style="color:#b45309;">★ Boost</button>` : ''}`}
-                                <button onclick='openPropModal(${JSON.stringify(p).replace(/'/g, "&#39;")})'>Edit</button>
-                                <button style="color:#c53030;" onclick="deleteProp('${p.id}','${esc(p.title).replace(/"/g,'')}')">Delete</button>
-                                ${p.status === 'active' ? `<a class="pc-view" href="/listings/${esc(p.slug)}" target="_blank">View ↗</a>` : ''}
-                            </div>
-                        </div>
-                    </div>`;
-                }).join('');
+                box.innerHTML = rows.map(propCardHtml).join('');
             } catch (_) { box.innerHTML = '<div class="pc-msg" style="color:#c53030;">Could not load your properties.</div>'; }
         }
 
@@ -1477,6 +1504,8 @@
                 console.error('[Dashboard Load]', err.message);
                 window.location.href = REDIRECT_LOGIN;
             }
+
+            loadDashProps();   // "My Properties" preview on the overview
 
             // Also pre-fetch lead count for badge
             try {
