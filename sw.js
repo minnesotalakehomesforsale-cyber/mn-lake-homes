@@ -19,11 +19,11 @@ self.addEventListener('fetch', e => {
   if (url.pathname.startsWith('/api/')) return;      // never cache API
   const isMedia = /\.(png|jpg|jpeg|webp|gif|svg|ico|woff2?|ttf|otf)$/i.test(url.pathname);
   if (!isMedia) {
-    // Pages + CSS + JS: network-first, and bypass the browser's HTTP cache
-    // (cache:'reload') so a deploy is never hidden behind a still-fresh
-    // max-age entry. Cache is only a fallback when offline.
+    // Pages + CSS + JS: network-first so deploys show (within the short 5-min
+    // max-age), with the cache only as an offline fallback. No forced reload —
+    // that re-downloaded CSS/JS on every navigation and slowed the site.
     e.respondWith(
-      fetch(new Request(req.url, { cache: 'reload', credentials: 'same-origin' })).then(res => {
+      fetch(req).then(res => {
         if (res && res.status === 200) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
         return res;
       }).catch(() => caches.match(req).then(r => r || (req.mode === 'navigate' ? caches.match('/') : undefined)))
