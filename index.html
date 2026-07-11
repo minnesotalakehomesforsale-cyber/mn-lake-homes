@@ -92,7 +92,7 @@
 
     <style>
       /* ── Home hero (search-first, image background) ── */
-      .hh-hero { position: relative; min-height: 62vh; display: flex; align-items: center; justify-content: center;
+      .hh-hero { position: relative; min-height: 100vh; display: flex; align-items: center; justify-content: center;
                  padding: 6.5rem 1.5rem 3.5rem; background: #1a202c url('/assets/images/mn-colonial-lake-home.jpg') center 40%/cover no-repeat; overflow: hidden; }
       /* Darken for text legibility up top, then dissolve to solid white at the
          bottom so the hero blends seamlessly into the white stat band below. */
@@ -122,12 +122,30 @@
       .hh-stat .v { font-size: clamp(2rem, 4vw, 2.9rem); font-weight: 800; color: #1a202c; letter-spacing: -1.5px; line-height: 1; }
       .hh-stat .l { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #8a94a3; margin-top: 0.5rem; }
       @media (max-width: 700px) {
-        .hh-hero { min-height: 56vh; padding-top: 6rem; }
+        .hh-hero { min-height: 100vh; padding-top: 6rem; }
         .hh-tabs { gap: 1.25rem; }
         .hh-search { flex-wrap: nowrap; padding-left: 1rem; }
         .hh-search-btn { padding: 0.8rem 1.2rem; }
         .hh-stats { grid-template-columns: 1fr 1fr; gap: 1.5rem 0; padding: 1.75rem 1.5rem; }
         .hh-stat:nth-child(2) { border-right: 0; }
+      }
+
+      /* Stat numbers grow into view on scroll */
+      .hh-stat .v { transform: scale(0.5); opacity: 0; transition: transform .7s cubic-bezier(.2,.85,.25,1), opacity .5s ease; will-change: transform; }
+      .hh-stats.in .hh-stat .v { transform: scale(1); opacity: 1; }
+      .hh-stats.in .hh-stat:nth-child(2) .v { transition-delay: .1s; }
+      .hh-stats.in .hh-stat:nth-child(3) .v { transition-delay: .2s; }
+      .hh-stats.in .hh-stat:nth-child(4) .v { transition-delay: .3s; }
+      @media (prefers-reduced-motion: reduce) { .hh-stat .v { transform: none; opacity: 1; transition: none; } }
+
+      /* Home content sections → global header/footer width (--page-w).
+         Page-scoped so shared classes on other pages are unaffected. Later in
+         source order than style.css, so these win without touching the shared file. */
+      .flex-container, .info-split-container, .business-type-container, .mission-container,
+      .testimonial-top, .testimonial-bottom, .mn-photo-gallery-container,
+      .featured-agents-section .agents-grid, .blog-container {
+        max-width: var(--page-w); width: 100%; margin-left: auto; margin-right: auto;
+        padding-left: 1.5rem; padding-right: 1.5rem; box-sizing: border-box;
       }
     </style>
 
@@ -204,6 +222,15 @@
           if (window.openForm) window.openForm(MODE, { _source: src });
           else location.href = '/' + MODE;
         };
+        // Stat numbers grow in when the strip scrolls into view.
+        var statBox = document.querySelector('.hh-stats');
+        if (statBox) {
+          if ('IntersectionObserver' in window) {
+            var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { statBox.classList.add('in'); io.disconnect(); } }); }, { threshold: 0.35 });
+            io.observe(statBox);
+          } else { statBox.classList.add('in'); }
+        }
+
         startType();
       })();
     </script>
@@ -358,7 +385,7 @@
     </section>
 
     <section class="sp-dark-section" style="padding: 8rem 2rem;">
-        <div class="sp-grid" style="max-width: 1200px; margin: 0 auto; align-items: start;">
+        <div class="sp-grid" style="max-width: var(--page-w); margin: 0 auto; padding: 0 1.5rem; box-sizing: border-box; align-items: start;">
             <div style="grid-column: 1 / -1; margin-bottom: 2rem;">
                 <h2 class="testimonial-main-title">We know<br>Minnesota Lakes.</h2>
             </div>
