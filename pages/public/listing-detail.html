@@ -335,6 +335,29 @@
       const TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
       const GRID = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>';
 
+      // Make the "Back to …" button reflect where the visitor actually came
+      // from (properties, a lake, a town, search, home). Falls back to the
+      // server-rendered lake link on a direct visit or an external referrer.
+      (function initBack() {
+        var back = document.querySelector('.pp-back');
+        if (!back || !document.referrer) return;
+        var u; try { u = new URL(document.referrer); } catch (_) { return; }
+        if (u.origin !== location.origin) return;
+        if (u.pathname.replace(/\/$/, '') === location.pathname.replace(/\/$/, '')) return;
+        var p = u.pathname.replace(/\/$/, ''), label = null;
+        var pretty = function (s) { return s.replace(/-/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); }); };
+        if (/^\/properties$/.test(p) || (/^\/towns$/.test(p) && /props/.test(u.search))) label = 'Back to properties';
+        else if (/^\/search$/.test(p)) label = 'Back to search results';
+        else if (/^\/lakes\/[^/]+$/.test(p)) label = 'Back to ' + pretty(p.split('/')[2]);
+        else if (/^\/towns\/[^/]+$/.test(p)) label = 'Back to ' + pretty(p.split('/')[2]);
+        else if (/^\/agents(\/|$)/.test(p)) label = 'Back to agents';
+        else if (p === '' || p === '/index.html') label = 'Back to home';
+        else return;   // another listing or unknown page → keep the default lake link
+        var arrow = back.querySelector('svg');
+        back.setAttribute('href', document.referrer);
+        back.innerHTML = (arrow ? arrow.outerHTML : '') + ' ' + label;
+      })();
+
       let PP_IMAGES = [];
       let R = null;
 
