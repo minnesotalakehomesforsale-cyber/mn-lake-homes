@@ -327,12 +327,12 @@ class GlobalHeader extends HTMLElement {
             </div>`;
         } else {
             authHtml = `<div style="display: flex; gap: 0.6rem; align-items: center;">
-                <a href="${rp}pages/public/login.html" style="color: #fff; font-weight: 600;
+                <a href="${rp}pages/public/login.html" style="color: #1a202c; font-weight: 600;
                     font-size: 0.9rem; font-family: inherit; text-decoration: none;
-                    padding: 0.55rem 1.4rem; border: 1px solid rgba(255,255,255,0.35);
+                    padding: 0.55rem 1.4rem; border: 1px solid #d9e0ea;
                     border-radius: 999px; transition: background 0.2s, border-color 0.2s;"
-                    onmouseover="this.style.background='rgba(255,255,255,0.08)'; this.style.borderColor='rgba(255,255,255,0.6)'"
-                    onmouseout="this.style.background='transparent'; this.style.borderColor='rgba(255,255,255,0.35)'">Log In</a>
+                    onmouseover="this.style.background='#f2f5f8'; this.style.borderColor='#c2ccd8'"
+                    onmouseout="this.style.background='transparent'; this.style.borderColor='#d9e0ea'">Log In</a>
                 <button onclick="window.openForm('agent')" style="background: #1d6df2; color: #fff; font-weight: 600;
                     border: none; padding: 0.6rem 1.5rem; border-radius: 999px; cursor: pointer; font-size: 0.9rem;
                     font-family: inherit; transition: background 0.2s;"
@@ -536,7 +536,7 @@ class GlobalHeader extends HTMLElement {
         `;
 
         return `
-        <header class="navbar" style="background-color: var(--bg-dark); border-bottom: 1px solid rgba(255,255,255,0.08);
+        <header class="navbar" style="background-color: #fff; border-bottom: 1px solid #e6eaf0; box-shadow: 0 1px 4px rgba(16,24,40,0.05);
                 position: fixed; width: 100%; z-index: 1000; top: 0;">
             <div class="logo">
                 <a href="${rp}index.html" class="brand-wordmark" aria-label="Minnesota Lake Homes For Sale">

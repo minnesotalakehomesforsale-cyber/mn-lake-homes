@@ -190,7 +190,7 @@ body > * { min-width: 0; }
        gutters — so the logo/nav line up with page content on wide screens,
        and it collapses to a flat 1.5rem gutter below --page-w. */
     padding: 1.25rem max(1.5rem, calc((100% - var(--page-w)) / 2 + 1.5rem));
-    background-color: var(--bg-dark);
+    background-color: #fff;
     position: fixed;
     width: 100%;
     top: 0;
@@ -217,13 +217,13 @@ body > * { min-width: 0; }
     align-items: center;
     gap: 0.6rem;
     text-decoration: none;
-    color: #fff;
+    color: #1a202c;
     font-family: var(--font-family);
     white-space: nowrap;
     padding: 2px 0;
 }
 .brand-wordmark:hover { opacity: 0.92; }
-.brand-icon { flex-shrink: 0; color: #fff; }
+.brand-icon { flex-shrink: 0; color: #1d6df2; }
 .brand-text {
     display: inline-flex;
     flex-direction: column;
@@ -234,14 +234,14 @@ body > * { min-width: 0; }
     font-size: 1.3rem;
     font-weight: 800;
     letter-spacing: -0.6px;
-    color: #fff;
+    color: #1a202c;
 }
 .brand-bot {
     font-size: 0.64rem;
     font-weight: 700;
     letter-spacing: 0.35px;
     text-transform: none;
-    color: #fff;
+    color: #718096;
     margin-top: 0.2rem;
 }
 
@@ -275,15 +275,15 @@ body > * { min-width: 0; }
 }
 
 .nav-links a {
-    color: var(--text-primary);
+    color: #1a202c;
     text-decoration: none;
     font-size: 0.85rem;
     font-weight: 600;
-    transition: opacity 0.2s ease;
+    transition: color 0.2s ease;
 }
 
 .nav-links a:hover {
-    opacity: 0.7;
+    color: #1d6df2;
 }
 
 /* Full-width header megamenu — matches footer style */
@@ -293,9 +293,9 @@ body > * { min-width: 0; }
     left: 0;
     right: 0;
     width: 100%;
-    background-color: var(--bg-dark);
-    border-top: 1px solid rgba(255,255,255,0.08);
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    background-color: #fff;
+    border-top: 1px solid #e6eaf0;
+    border-bottom: 1px solid #e6eaf0;
     padding: 3rem 3rem;
     box-shadow: 0 20px 40px rgba(0,0,0,0.25);
     animation: nav-megamenu-fade 0.15s ease-out;
@@ -323,31 +323,31 @@ body > * { min-width: 0; }
 }
 .nav-megamenu-col { display: flex; flex-direction: column; }
 .nav-megamenu-heading {
-    color: #fff;
+    color: #1a202c;
     font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     margin: 0 0 1.25rem;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid #e6eaf0;
 }
 .nav-megamenu-col a {
-    color: #cbd5e0;
+    color: #4a5568;
     font-size: 0.95rem;
     font-weight: 500;
     text-decoration: none;
     padding: 0.5rem 0;
     transition: color 0.15s ease;
 }
-.nav-megamenu-col a:hover { color: #fff; opacity: 1; }
+.nav-megamenu-col a:hover { color: #1d6df2; opacity: 1; }
 
 /* ─── Mobile hamburger toggle + slide-out menu ─── */
 .mobile-menu-toggle {
     display: none;
     background: none;
     border: none;
-    color: #fff;
+    color: #1a202c;
     cursor: pointer;
     padding: 0.5rem;
     border-radius: 8px;
@@ -356,7 +356,7 @@ body > * { min-width: 0; }
     align-items: center;
     justify-content: center;
 }
-.mobile-menu-toggle:hover { background: rgba(255,255,255,0.08); }
+.mobile-menu-toggle:hover { background: rgba(0,0,0,0.05); }
 
 /* Inline "Sign in" / "Dashboard" link that sits next to the hamburger
    on phones. Hidden on desktop; the full nav-actions block covers
@@ -364,7 +364,7 @@ body > * { min-width: 0; }
    query below. */
 .mobile-auth-inline {
     display: none;
-    color: #fff;
+    color: #1a202c;
     text-decoration: none;
     font-size: 0.9rem;
     font-weight: 600;
@@ -372,7 +372,7 @@ body > * { min-width: 0; }
     border-radius: 8px;
     transition: background 0.15s, opacity 0.15s;
 }
-.mobile-auth-inline:hover { background: rgba(255,255,255,0.08); opacity: 0.9; }
+.mobile-auth-inline:hover { background: rgba(0,0,0,0.05); opacity: 0.9; }
 
 .mobile-menu-backdrop {
     display: none;
