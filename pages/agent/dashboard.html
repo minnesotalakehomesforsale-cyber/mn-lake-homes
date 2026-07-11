@@ -149,6 +149,20 @@
         .dash-article p { font-size: 0.85rem; color: #4a5568; line-height: 1.5; margin: 0; flex: 1; }
         .dash-article .meta { font-size: 0.74rem; color: #a0aec0; margin-top: 0.15rem; }
 
+        /* Backlink-your-profile encouragement */
+        .dash-backlink { margin-top: 2rem; border: 1px solid #cfe0f8; background: linear-gradient(135deg,#f5f9ff,#eef5ff); border-radius: 16px; padding: 1.75rem; }
+        .dash-backlink .bl-head { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1rem; }
+        .dash-backlink .bl-emoji { font-size: 1.6rem; line-height: 1; }
+        .dash-backlink h3 { margin: 0 0 0.4rem; font-size: 1.2rem; font-weight: 800; color: #16305c; }
+        .dash-backlink p { margin: 0; color: #4a5568; font-size: 0.92rem; line-height: 1.6; }
+        .dash-backlink .bl-label { display: block; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: #718096; margin: 1rem 0 0.4rem; }
+        .dash-backlink .bl-row { display: flex; gap: 0.5rem; }
+        .dash-backlink .bl-row input { flex: 1; min-width: 0; box-sizing: border-box; font: inherit; font-size: 0.85rem; padding: 0.6rem 0.8rem; border: 1px solid #cfe0f8; border-radius: 9px; background: #fff; color: #1a202c; }
+        .dash-backlink .bl-row button { flex: none; background: #1d6df2; color: #fff; border: 0; border-radius: 9px; padding: 0.6rem 1rem; font: inherit; font-weight: 800; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
+        .dash-backlink .bl-row button:hover { background: #155bc8; }
+        .dash-backlink .bl-tip { margin-top: 0.9rem; font-size: 0.82rem; color: #718096; }
+        @media (max-width: 560px) { .dash-backlink { padding: 1.35rem 1.1rem; } .dash-backlink .bl-head { gap: 0.75rem; } .dash-backlink .bl-row { flex-direction: column; } .dash-backlink .bl-row button { width: 100%; } }
+
         .dash-open-msgs { margin-top: 2rem; border: 1px solid #bcd6ff; background: #f0f6ff; border-radius: 12px; padding: 1.25rem 1.5rem; }
         .dash-open-msgs h3 { margin: 0 0 0.75rem; font-size: 1rem; font-weight: 800; color: #1a3a6b; }
         .dash-open-msgs .om { background: #fff; border: 1px solid #dbe9ff; border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 0.6rem; }
@@ -168,29 +182,29 @@
         .lead-stat { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.1rem 1.25rem; }
         .lead-stat .ls-lbl { font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 0.4rem; }
         .lead-stat .ls-val { font-size: 1.85rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; line-height: 1; }
-        .lead-table { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; overflow: hidden; }
-        .lead-tr {
-            display: grid; grid-template-columns: 1.4fr 0.9fr 0.9fr auto;
-            gap: 1rem; align-items: center;
-            padding: 1rem 1.4rem; border-bottom: 1px solid #f3f6f9;
-            cursor: pointer; transition: background 0.12s;
-        }
-        .lead-tr:last-child { border-bottom: none; }
-        .lead-tr:hover { background: #fafbfc; }
-        .lead-tr .lt-name { font-weight: 800; color: #1a202c; font-size: 0.95rem; }
-        .lead-tr .lt-sub  { font-size: 0.78rem; color: #a0aec0; margin-top: 0.15rem; }
-        .sla-badge { display:inline-block; margin-top:0.3rem; font-size:0.68rem; font-weight:800; letter-spacing:0.3px; border-radius:5px; padding:2px 7px; background:#fffbeb; color:#b45309; }
+        /* Lead cards — spaced, self-contained, responsive */
+        .lead-list { display: flex; flex-direction: column; gap: 0.85rem; }
+        .lead-card2 { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.05rem 1.25rem; cursor: pointer; transition: box-shadow 0.15s, border-color 0.15s; }
+        .lead-card2:hover { box-shadow: 0 6px 18px rgba(16,24,40,0.08); border-color: #d6e0ec; }
+        .lc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
+        .lc-id { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; min-width: 0; }
+        .lc-name { font-weight: 800; color: #1a202c; font-size: 1.02rem; }
+        .lc-right { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
+        .lc-ago { font-size: 0.76rem; color: #a0aec0; font-weight: 700; white-space: nowrap; }
+        .lc-meta { display: flex; align-items: center; gap: 0.4rem 0.7rem; flex-wrap: wrap; margin-top: 0.6rem; }
+        .lc-contact { font-size: 0.82rem; color: #718096; font-weight: 600; word-break: break-word; }
+        .sla-badge { display:inline-block; font-size:0.68rem; font-weight:800; letter-spacing:0.3px; border-radius:5px; padding:2px 7px; background:#fffbeb; color:#b45309; }
         .sla-badge.overdue { background:#fee2e2; color:#b91c1c; }
-        .lead-tr .lt-date { font-size: 0.8rem; color: #a0aec0; font-weight: 600; text-align: right; white-space: nowrap; }
-        .lead-tr .lt-ago { color: #4a5568; font-weight: 700; }
-        .lt-quick-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.55rem; }
-        .lt-quick { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; font-weight: 700; text-decoration: none; padding: 0.35rem 0.7rem; border-radius: 8px; border: 1px solid #e2e8f0; color: #1a202c; background: #fff; }
+        .lt-quick-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.7rem; }
+        .lt-quick { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; font-weight: 700; text-decoration: none; padding: 0.4rem 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0; color: #1a202c; background: #fff; }
         .lt-quick:hover { background: #f7f9fa; border-color: #cbd5e0; }
         .lt-quick.lt-quick-call { background: #1d6df2; color: #fff; border-color: #1d6df2; }
         .lt-quick.lt-quick-call:hover { background: #155bc8; }
-        @media (max-width: 720px) {
-            .lead-tr { grid-template-columns: 1fr auto; gap: 0.5rem; }
-            .lead-tr .lt-type-cell, .lead-tr .lt-date { display: none; }
+        @media (max-width: 560px) {
+            .lead-card2 { padding: 1rem; }
+            .lc-top { flex-direction: column; gap: 0.5rem; }
+            .lc-right { align-self: flex-start; }
+            .lt-quick { flex: 1 1 auto; justify-content: center; }
         }
 
         /* ── Slide-over detail panel ────────────────────────────────── */
@@ -467,6 +481,21 @@
                             <span class="d">Templates, marketing assets &amp; training <span style="color:#1d6df2;font-weight:700;">(paid plans)</span>.</span>
                         </button>
                     </div>
+
+                    <section class="dash-backlink">
+                        <div class="bl-head">
+                            <div class="bl-emoji">📈</div>
+                            <div>
+                                <h3>Get found faster — link to your profile</h3>
+                                <p>Add a link to your MN Lake Homes profile from your own website, Facebook, Google Business listing, or email signature. Backlinks are the single best way to help your profile rank on Google — and they pass SEO value back to your own site too. Two minutes, and it works for you around the clock.</p>
+                            </div>
+                        </div>
+                        <label class="bl-label">Your profile link</label>
+                        <div class="bl-row"><input id="bl-url" readonly value=""><button type="button" onclick="copyField('bl-url', this)">Copy link</button></div>
+                        <label class="bl-label">Ready-made link to paste on your website</label>
+                        <div class="bl-row"><input id="bl-embed" readonly value=""><button type="button" onclick="copyField('bl-embed', this)">Copy code</button></div>
+                        <p class="bl-tip">Tip: put it wherever your name already appears online — your bio, your "About" page, or your email footer.</p>
+                    </section>
 
                     <h3 class="dash-section-h">Articles you may like</h3>
                     <div class="dash-articles" id="dash-articles">
@@ -1789,6 +1818,21 @@
             document.getElementById('dash-acct-desc').textContent =
                 (agent.membership_badge || agent.membership_name || 'Agent') + ' · billing & login';
 
+            // Backlink helper — the clean SEO profile URL + a ready-made anchor.
+            const blUrl = document.getElementById('bl-url');
+            const blEmbed = document.getElementById('bl-embed');
+            if (blUrl && blEmbed) {
+                if (agent.slug && agent.is_published && agent.profile_status === 'published') {
+                    const url = location.origin + '/agents/' + agent.slug;
+                    const nm = (agent.display_name || 'Verified agent').replace(/[<>"]/g, '');
+                    blUrl.value = url;
+                    blEmbed.value = `<a href="${url}">${nm} — Verified Minnesota Lake Home Agent</a>`;
+                } else {
+                    blUrl.value = 'Publish your profile to get your shareable link';
+                    blEmbed.value = 'Available once your profile is live';
+                }
+            }
+
             updateDashLeads();
         }
 
@@ -2236,13 +2280,12 @@
                     </div>`;
                 return;
             }
-            container.innerHTML = `<div class="lead-table">${leads.map(l => {
+            container.innerHTML = `<div class="lead-list">${leads.map(l => {
                 const typeClass   = `lb-${l.type}`;
                 const statusClass = `ls-${l.status}`;
                 const typeLabel   = LEAD_TYPE_LABEL_A[l.type] || (l.type || 'General').replace(/_/g,' ');
                 const statusLabel = (l.status || '').replace(/_/g,' ');
-                const date = new Date(l.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                const sub  = l.email || l.phone || l.location_text || '—';
+                const sub  = l.email || l.phone || l.location_text || '';
                 const quick = [];
                 if (l.phone) {
                     quick.push(`<a href="tel:${escA(l.phone)}" onclick="event.stopPropagation()" class="lt-quick lt-quick-call">📞 Call</a>`);
@@ -2250,17 +2293,23 @@
                 }
                 if (l.email) quick.push(`<a href="mailto:${escA(l.email)}" onclick="event.stopPropagation()" class="lt-quick">✉️ Email</a>`);
                 return `
-                    <div class="lead-tr" onclick="openLeadPanel('${l.id}')">
-                        <div>
-                            <div class="lt-name">${escA(l.name || 'Lead')}</div>
-                            <div style="margin:0.2rem 0;">${tierBadge(l)}</div>
-                            <div class="lt-sub">${escA(sub)}${timeAgo(l.created_at) ? ` · <span class="lt-ago">${timeAgo(l.created_at)}</span>` : ''}</div>
-                            ${slaBadge(l)}
-                            ${quick.length ? `<div class="lt-quick-row">${quick.join('')}</div>` : ''}
+                    <div class="lead-card2" onclick="openLeadPanel('${l.id}')">
+                        <div class="lc-top">
+                            <div class="lc-id">
+                                <span class="lc-name">${escA(l.name || 'Lead')}</span>
+                                ${tierBadge(l)}
+                            </div>
+                            <div class="lc-right">
+                                <span class="lead-badge ${statusClass}">${escA(statusLabel)}</span>
+                                <span class="lc-ago">${timeAgo(l.created_at)}</span>
+                            </div>
                         </div>
-                        <div class="lt-type-cell"><span class="lead-badge ${typeClass}">${escA(typeLabel)}</span></div>
-                        <div><span class="lead-badge ${statusClass}">${escA(statusLabel)}</span></div>
-                        <div class="lt-date">${date}</div>
+                        <div class="lc-meta">
+                            <span class="lead-badge ${typeClass}">${escA(typeLabel)}</span>
+                            ${sub ? `<span class="lc-contact">${escA(sub)}</span>` : ''}
+                            ${slaBadge(l)}
+                        </div>
+                        ${quick.length ? `<div class="lt-quick-row">${quick.join('')}</div>` : ''}
                     </div>`;
             }).join('')}</div>`;
         }
