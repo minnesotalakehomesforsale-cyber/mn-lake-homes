@@ -951,6 +951,7 @@ const _LF_CFG = {
         source: 'buyer',
         steps: [
             { q: 'Who are we speaking with?',               hint: 'Just your name to get started.',                                            field: { id: 'name',     type: 'text',    ph: 'Your full name',          ac: 'name' } },
+            { q: d => `Where are you looking, ${d.first}?`,  hint: "The lake, town, or region you're focused on — or say you're still deciding.", field: { id: 'looking_area', type: 'text', ph: "e.g. Gull Lake, Brainerd, or 'still deciding'" } },
             { q: d => `${d.first}, what's your budget range?`,              hint: 'Helps us match you with the right properties.',               field: { id: 'budget',   type: 'select',  ph: 'Select a range…',         opts: ['Under $500K','$500K – $750K','$750K – $1M','$1M – $2M','Over $2M'] } },
             { q: 'When are you hoping to buy?',                                                                                                   field: { id: 'timeline', type: 'select',  ph: 'Select a timeline…',      opts: ['ASAP — ready to move','Within 1–3 months','Within 3–6 months','Just exploring for now'] } },
             { q: d => `Almost done, ${d.first}. How can we reach you?`,      hint: "One contact method is all we need — a local specialist reaches out within one business day.",         field: { id: 'contact', type: 'contact' } }
@@ -971,6 +972,7 @@ const _LF_CFG = {
         source: 'general_contact',
         steps: [
             { q: 'Who are we speaking with?',               hint: 'Just your name to get started.',                                            field: { id: 'name',     type: 'text',    ph: 'Your full name',          ac: 'name' } },
+            { q: d => `Where are you looking, ${d.first}?`,  hint: "The lake, town, or region you're focused on — or say you're still deciding.", field: { id: 'looking_area', type: 'text', ph: "e.g. Gull Lake, Brainerd, or 'still deciding'" } },
             { q: 'When do you need it?',                    hint: 'Helps us check availability.',                                               field: { id: 'timeline', type: 'select',  ph: 'Select a timeframe…',     opts: ['This weekend','This month','Seasonal (summer or winter)','Year-round lease'] } },
             { q: d => `${d.first}, what's your monthly budget?`,                                                                                  field: { id: 'budget',   type: 'select',  ph: 'Select a range…',         opts: ['Under $1,500/mo','$1,500 – $3,000/mo','$3,000 – $5,000/mo','Over $5,000/mo'] } },
             { q: d => `Perfect, ${d.first}. How can we reach you?`,          hint: "We'll start finding your ideal rental right away.",                                                  field: { id: 'contact', type: 'contact' } }
@@ -980,6 +982,7 @@ const _LF_CFG = {
         source: 'agent_inquiry',
         steps: [
             { q: 'Who are we speaking with?',               hint: 'Just your name to get started.',                                            field: { id: 'name',     type: 'text',    ph: 'Your full name',          ac: 'name' } },
+            { q: d => `Which lake or area, ${d.first}?`,     hint: "The lake, town, or region you need an agent for — or say you're still deciding.", field: { id: 'looking_area', type: 'text', ph: "e.g. Gull Lake, Brainerd, or 'still deciding'" } },
             { q: d => `${d.first}, what do you need help with?`,            hint: "We'll match you with the right specialist.",                  field: { id: 'intent',   type: 'select',  ph: 'Select one…',             opts: ['Buying a lake home','Selling my property','Finding a rental','Market information','General question'] } },
             { q: d => `Got it, ${d.first}. How can we reach you?`,           hint: 'A local specialist will be in touch within one business day.',                                        field: { id: 'contact', type: 'contact' } }
         ]
