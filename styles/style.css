@@ -2149,8 +2149,9 @@ body > * { min-width: 0; }
 
 /* Footer Section */
 .site-footer {
-    background-color: var(--bg-dark);
-    color: #fff;
+    background-color: #fff;
+    color: #1a202c;
+    border-top: 1px solid #e6eaf0;
     padding: 5rem 3rem 0;
 }
 
@@ -2162,7 +2163,7 @@ body > * { min-width: 0; }
     max-width: var(--page-w);
     margin: 0 auto;
     padding: 0 1.5rem 4rem;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 1px solid #e6eaf0;
     text-align: left;
     box-sizing: border-box;
 }
@@ -2183,7 +2184,7 @@ body > * { min-width: 0; }
 }
 
 .footer-brand .logo span {
-    color: #fff;
+    color: #1a202c;
     font-weight: 700;
     font-size: 0.95rem;
     letter-spacing: -0.3px;
@@ -2200,9 +2201,9 @@ body > * { min-width: 0; }
 
 .footer-links {
     display: flex;
-    gap: 4.5rem;
+    gap: 3.25rem;
     align-items: flex-start;
-    margin-right: 4rem;
+    margin-right: 0;
 }
 
 .link-column {
@@ -2217,13 +2218,13 @@ body > * { min-width: 0; }
     font-weight: 700;
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: #fff;
+    color: #1a202c;
     margin-bottom: 1.25rem;
 }
 
 .link-column a {
     display: block;
-    color: #6b7280;
+    color: #4a5568;
     text-decoration: none;
     font-size: 0.88rem;
     font-weight: 500;
@@ -2232,7 +2233,7 @@ body > * { min-width: 0; }
 }
 
 .link-column a:hover {
-    color: #fff;
+    color: #1d6df2;
 }
 
 .footer-cta {
@@ -2249,18 +2250,18 @@ body > * { min-width: 0; }
     align-items: center;
     gap: 0.85rem;
     text-align: center;
-    color: #94a3b8;
+    color: #718096;
     font-size: 0.8rem;
     line-height: 1.6;
 }
 
 .footer-bottom .footer-copyright {
-    color: #cbd5e1;
+    color: #4a5568;
     font-size: 0.82rem;
 }
 
 .footer-bottom .footer-disclaimer {
-    color: #8a94a6;
+    color: #718096;
     font-size: 0.75rem;
     max-width: 760px;
     line-height: 1.65;
@@ -2268,7 +2269,7 @@ body > * { min-width: 0; }
 
 .footer-bottom .footer-fairhousing {
     max-width: 760px;
-    color: #8a94a6;
+    color: #718096;
 }
 
 @media (max-width: 900px) {
