@@ -18,618 +18,568 @@
     <link rel="stylesheet" href="/styles/style.css">
     {{LISTING_STRUCTURED_DATA}}
     <style>
-        .lst-wrap { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem 5rem; }
-        .lst-back { display:inline-block; color:#718096; text-decoration:none; font-weight:600; font-size:0.9rem; margin-bottom:1.25rem; }
-        .lst-hero { width:100%; aspect-ratio:16/9; background:#eceff3; border-radius:16px; overflow:hidden; margin-bottom:1.5rem; }
-        .lst-hero img { width:100%; height:100%; object-fit:cover; }
-        /* Zillow-style photo collage: large photo left + 2×2 grid right, equal
-           halves, "View all N photos" pill on the bottom-right cell. */
-        .lst-photos { display:grid; grid-template-columns:1fr 1fr; gap:0.4rem; aspect-ratio:16/9; margin-bottom:1.75rem; border-radius:16px; overflow:hidden; }
-        .lst-ph-main, .lst-ph-cell { border:0; padding:0; cursor:pointer; background-size:cover; background-position:center; background-color:#eceff3; position:relative; transition:filter .12s; }
-        .lst-ph-main:hover, .lst-ph-cell:hover { filter:brightness(0.95); }
-        .lst-ph-grid { display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:0.4rem; }
-        .lst-viewall { position:absolute; right:0.9rem; bottom:0.9rem; z-index:2; display:inline-flex; align-items:center; gap:0.45rem; background:#fff; color:#1a202c; border:1px solid #e2e8f0; border-radius:10px; padding:0.55rem 1rem; font:inherit; font-weight:700; font-size:0.88rem; box-shadow:0 6px 18px rgba(0,0,0,0.18); cursor:pointer; white-space:nowrap; }
-        .lst-viewall svg { width:15px; height:15px; }
-        @media (max-width:640px){ .lst-photos { grid-template-columns:1fr; aspect-ratio:auto; } .lst-ph-main { aspect-ratio:4/3; } .lst-ph-grid { aspect-ratio:2/1; } }
-        .lst-price { font-size:2.5rem; font-weight:800; color:#1a202c; letter-spacing:-1.5px; margin:0; }
-        .lst-was { font-size:1.15rem; font-weight:600; color:#a0aec0; text-decoration:line-through; letter-spacing:0; }
-        .lst-badges { display:flex; gap:0.5rem; flex-wrap:wrap; margin:0 0 0.7rem; }
-        .lst-badge { font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; border-radius:6px; padding:0.3rem 0.6rem; }
-        .lst-badge.new { background:#e6fffa; color:#1d6df2; }
-        .lst-badge.drop { background:#fee2e2; color:#b91c1c; }
-        .lst-badge.oh { background:#fef3c7; color:#b45309; }
-        .lst-title { font-size:1.35rem; font-weight:700; color:#2d3748; margin:0.35rem 0 0.15rem; }
-        .lst-addr { color:#718096; font-size:1rem; margin:0 0 1.5rem; }
-        .lst-specs { display:flex; gap:0; flex-wrap:wrap; border:1px solid #edf2f7; border-radius:12px; overflow:hidden; margin-bottom:2rem; }
-        .lst-spec { flex:1; min-width:110px; padding:1.1rem 1.25rem; text-align:center; border-right:1px solid #edf2f7; }
-        .lst-spec:last-child { border-right:0; }
-        .lst-spec .v { font-size:1.35rem; font-weight:800; color:#1a202c; }
-        .lst-spec .l { font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#a0aec0; margin-top:0.2rem; }
-        .lst-desc { color:#2d3748; line-height:1.8; font-size:1.05rem; }
-        .lst-desc p { margin:0 0 1.1rem; }
-        .lst-cta { background:#f7f9fa; border:1px solid #edf2f7; border-radius:14px; padding:1.75rem; margin-top:2.5rem; text-align:center; }
-        .lst-cta h2 { font-size:1.4rem; font-weight:800; color:#1a202c; margin:0 0 0.4rem; }
-        .lst-cta p { color:#718096; margin:0 0 1.25rem; }
-        #lst-showing-form { max-width:520px; margin:0 auto; text-align:left; }
-        .lst-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; margin-bottom:0.6rem; }
-        #lst-showing-form input, #lst-showing-form textarea { width:100%; box-sizing:border-box; font:inherit; font-size:0.95rem; padding:0.65rem 0.8rem; border:1px solid #e2e8f0; border-radius:9px; background:#fff; outline:none; }
-        #lst-showing-form input:focus, #lst-showing-form textarea:focus { border-color:#1d6df2; }
-        #lst-showing-form textarea { margin-bottom:0.6rem; resize:vertical; }
-        #lst-showing-form .nb-cta { width:100%; border:none; cursor:pointer; font-size:1rem; }
-        .lst-form-err { color:#c53030; font-size:0.86rem; margin:0 0 0.6rem; display:none; }
-        .lst-form-fine { color:#a0aec0; font-size:0.78rem; margin:0.7rem 0 0; text-align:center; }
-        @media (max-width:520px){ .lst-form-grid { grid-template-columns:1fr; } }
-        .lst-gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:0.75rem; margin:2rem 0; }
-        .lst-gallery img { width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:10px; cursor:zoom-in; transition:opacity .15s; }
-        .lst-gallery img:hover { opacity:0.92; }
-        .lst-hero img { cursor:zoom-in; }
-        /* Facts & features — Zillow-style. Blank fields are dropped server-side. */
-        .lst-section-h { font-size:1.25rem; font-weight:800; color:#1a202c; letter-spacing:-0.5px; margin:2.5rem 0 1rem; }
-        /* ── Rich hydrated sections (#lst-extra) — blue theme ── */
-        .lx-sec { margin-top:3rem; padding-top:2rem; border-top:1px solid #e2e8f0; }
-        .lx-hl { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:0.7rem 1.5rem; }
-        .lx-hl li { display:flex; gap:0.6rem; align-items:flex-start; color:#4a5568; }
-        .lx-hl svg { flex:0 0 auto; width:15px; height:15px; margin-top:4px; color:#1d6df2; }
-        .lx-dl { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:1.5rem 2rem; }
-        .lx-dl div { border-top:1px solid #e2e8f0; padding-top:0.6rem; }
-        .lx-dl dt { font-size:0.74rem; letter-spacing:0.06em; text-transform:uppercase; color:#718096; }
-        .lx-dl dd { margin:0.2rem 0 0; font-weight:600; color:#1a202c; }
-        .lx-hist { width:100%; border-collapse:collapse; font-size:0.93rem; }
-        .lx-hist th { text-align:left; font-size:0.72rem; letter-spacing:0.06em; text-transform:uppercase; color:#718096; padding:0 0 0.6rem; }
-        .lx-hist td { padding:0.75rem 0; border-top:1px solid #e2e8f0; color:#4a5568; }
-        .lx-hist td:last-child { text-align:right; font-weight:700; color:#1a202c; }
-        .lx-row { display:flex; align-items:center; gap:1rem; padding:0.85rem 0; border-top:1px solid #e2e8f0; }
-        .lx-row:first-child { border-top:0; }
-        .lx-rate { flex:0 0 auto; width:40px; height:40px; border-radius:8px; display:grid; place-items:center; font-weight:800; background:#ebf4ff; color:#1d6df2; }
-        .lx-row-m { flex:1; min-width:0; }
-        .lx-row-t { font-weight:600; color:#1a202c; }
-        .lx-row-s { font-size:0.84rem; color:#718096; }
-        .lx-row-d { font-size:0.86rem; color:#718096; }
-        .lx-agent { display:flex; gap:1.5rem; align-items:flex-start; flex-wrap:wrap; background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:1.75rem; }
-        .lx-agent-l { flex:1 1 260px; min-width:0; }
-        .lx-avatar { width:64px; height:64px; border-radius:50%; object-fit:cover; display:grid; place-items:center; background:#ebf4ff; color:#1d6df2; font-size:1.5rem; font-weight:800; margin-bottom:0.75rem; }
-        .lx-agent-n { font-size:1.15rem; font-weight:800; color:#1a202c; }
-        .lx-agent-b { color:#718096; font-size:0.92rem; }
-        .lx-agent-h { color:#4a5568; margin:0.6rem 0 0; line-height:1.55; }
-        .lx-form { flex:1 1 300px; display:grid; gap:0.6rem; }
-        .lx-form input, .lx-form textarea { width:100%; box-sizing:border-box; font:inherit; padding:0.7rem 0.8rem; border:1px solid #cbd5e0; border-radius:8px; background:#fff; color:#1a202c; }
-        .lx-form textarea { resize:vertical; min-height:80px; }
-        .lx-form input:focus, .lx-form textarea:focus { outline:none; border-color:#1d6df2; box-shadow:0 0 0 3px rgba(29,109,242,0.12); }
-        .lx-form button { border:none; cursor:pointer; font:inherit; font-weight:700; color:#fff; background:#1d6df2; padding:0.85rem; border-radius:8px; }
-        .lx-form button:hover { background:#155bc8; }
-        .lx-note { font-size:0.76rem; color:#718096; text-align:center; margin:0; }
-        .lx-ok { display:none; padding:0.9rem; background:#f0fff4; color:#2f855a; border:1px solid #c6f6d5; border-radius:8px; font-weight:600; text-align:center; }
-        .lx-err { display:none; color:#c53030; font-size:0.85rem; text-align:center; margin:0; }
-        .lst-facts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1.5rem 2.5rem; }
-        .lst-fact-group h3 { font-size:0.78rem; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:#1d6df2; margin:0 0 0.6rem; }
-        .lst-fact-row { display:flex; justify-content:space-between; gap:1rem; padding:0.5rem 0; border-bottom:1px solid #f0f3f7; font-size:0.95rem; }
-        .lst-fact-row:last-child { border-bottom:0; }
-        .lst-fact-row .k { color:#718096; }
-        .lst-fact-row .val { color:#1a202c; font-weight:700; text-align:right; }
-        /* Recently sold comps */
-        .lst-comp-card { border:1px solid #edf2f7; border-radius:12px; overflow:hidden; background:#fff; }
-        .lst-comp-img { width:100%; aspect-ratio:4/3; background:#eef2f7 center/cover; position:relative; filter:grayscale(0.12); }
-        .lst-comp-tag { position:absolute; top:8px; left:8px; background:#1a202c; color:#fff; font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; padding:2px 8px; border-radius:6px; }
-        .lst-comp-card .b { padding:0.7rem 0.85rem 0.9rem; }
-        .lst-comp-card .p { font-weight:800; color:#1a202c; font-size:1.05rem; }
-        .lst-comp-card .t { color:#4a5568; font-size:0.9rem; margin-top:0.15rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .lst-comp-card .m { color:#a0aec0; font-size:0.8rem; margin-top:0.2rem; }
-        /* About the area */
-        .lst-area { margin-top:2.75rem; }
-        .lst-area-card { border:1px solid #edf2f7; border-radius:14px; overflow:hidden; background:#fff; }
-        .lst-area-hero { height:150px; background:#dce6f0 center/cover; position:relative; }
-        .lst-area-hero .nm { position:absolute; left:1.1rem; bottom:0.9rem; color:#fff; font-size:1.5rem; font-weight:800; text-shadow:0 2px 10px rgba(0,0,0,0.5); }
-        .lst-area-b { padding:1.25rem 1.4rem; }
-        .lst-area-b p { color:#4a5568; line-height:1.65; margin:0 0 1rem; }
-        .lst-area-stats { display:flex; gap:1.5rem; flex-wrap:wrap; margin:0 0 1rem; }
-        .lst-area-stat .v { font-size:1.35rem; font-weight:800; color:#0f2b46; }
-        .lst-area-stat .l { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:#a0aec0; }
-        .lst-area-link { color:#1d6df2; font-weight:700; text-decoration:none; font-size:0.95rem; }
-        .lst-nearby-h { font-size:0.78rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#a0aec0; margin:1.25rem 0 0.5rem; }
-        .lst-nearby { display:flex; flex-wrap:wrap; gap:0.5rem; }
-        .lst-nearby a { text-decoration:none; background:#f0f4f8; color:#2d3748; border-radius:99px; padding:0.4rem 0.85rem; font-size:0.85rem; font-weight:600; }
-        .lst-nearby a:hover { background:#e2eaf2; }
-        /* Related listings */
-        .lst-rel { margin-top:2.75rem; }
-        .lst-rel-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1rem; }
-        .lst-rel-card { display:block; text-decoration:none; border:1px solid #edf2f7; border-radius:12px; overflow:hidden; transition:box-shadow .15s, transform .15s; color:inherit; background:#fff; }
-        .lst-rel-card:hover { box-shadow:0 8px 22px rgba(16,24,40,0.10); transform:translateY(-2px); }
-        .lst-rel-card .img { width:100%; aspect-ratio:4/3; object-fit:cover; background:#eef2f7; display:block; }
-        .lst-rel-card .b { padding:0.7rem 0.85rem 0.9rem; }
-        .lst-rel-card .p { font-weight:800; color:#1a202c; font-size:1.05rem; }
-        .lst-rel-card .t { color:#4a5568; font-size:0.9rem; margin-top:0.15rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .lst-rel-card .m { color:#a0aec0; font-size:0.8rem; margin-top:0.2rem; }
-        @media (max-width:600px){ .lst-rel-grid { grid-template-columns:1fr 1fr; gap:0.6rem; } }
-        /* Mortgage calculator */
-        .mtg-card { border:1px solid #edf2f7; border-radius:14px; padding:1.5rem; display:grid; grid-template-columns:1.2fr 1fr; gap:1.75rem; align-items:center; }
-        .mtg-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.9rem; }
-        .mtg-grid label { display:flex; flex-direction:column; gap:0.3rem; font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:#718096; }
-        .mtg-grid input, .mtg-grid select { font:inherit; font-size:1rem; font-weight:600; color:#1a202c; padding:0.6rem 0.7rem; border:1px solid #e2e8f0; border-radius:9px; outline:none; }
-        .mtg-grid input:focus, .mtg-grid select:focus { border-color:#1d6df2; }
-        .mtg-out { text-align:center; border-left:1px solid #edf2f7; padding-left:1.5rem; }
-        .mtg-total span { font-size:2.4rem; font-weight:800; color:#1a202c; letter-spacing:-1.5px; display:block; }
-        .mtg-total small { color:#a0aec0; font-size:0.8rem; font-weight:600; }
-        .mtg-break { list-style:none; padding:0; margin:1rem 0 0; font-size:0.88rem; }
-        .mtg-break li { display:flex; justify-content:space-between; padding:0.35rem 0; color:#718096; border-top:1px solid #f0f3f7; }
-        .mtg-break li span { font-weight:700; color:#1a202c; }
-        .mtg-fine { font-size:0.8rem; color:#a0aec0; margin:0.8rem 0 0; }
-        @media (max-width:640px){ .mtg-card { grid-template-columns:1fr; gap:1.25rem; } .mtg-out { border-left:0; border-top:1px solid #edf2f7; padding-left:0; padding-top:1.25rem; } }
-        /* Buyer services */
-        .lst-services { margin-top:2.75rem; }
-        .svc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:0.75rem; }
-        .svc-grid button { display:flex; align-items:center; gap:0.6rem; justify-content:center; font:inherit; font-weight:700; font-size:0.95rem; color:#1a202c; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:1rem; cursor:pointer; transition:border-color .15s, box-shadow .15s; }
-        .svc-grid button:hover { border-color:#1d6df2; box-shadow:0 6px 16px rgba(29,109,242,0.12); }
-        .svc-grid button span { font-size:1.2rem; }
-        .svc-modal { position:fixed; inset:0; background:rgba(10,15,22,0.55); z-index:9400; display:none; align-items:center; justify-content:center; padding:1.5rem; }
-        .svc-modal.open { display:flex; }
-        .svc-box { position:relative; background:#fff; border-radius:16px; padding:1.75rem; max-width:420px; width:100%; }
-        .svc-box h3 { margin:0; font-size:1.3rem; font-weight:800; }
-        .svc-box input, .svc-box textarea { width:100%; box-sizing:border-box; font:inherit; font-size:0.95rem; padding:0.65rem 0.8rem; border:1px solid #e2e8f0; border-radius:9px; margin-bottom:0.6rem; outline:none; }
-        .svc-box input:focus, .svc-box textarea:focus { border-color:#1d6df2; }
-        .svc-x { position:absolute; top:0.9rem; right:1rem; background:none; border:none; font-size:1.5rem; color:#a0aec0; cursor:pointer; }
-        /* Lightbox */
-        .lst-lb { position:fixed; inset:0; background:rgba(10,15,22,0.94); z-index:9500; display:none; align-items:center; justify-content:center; }
-        .lst-lb.open { display:flex; }
-        .lst-lb img { max-width:94vw; max-height:86vh; object-fit:contain; border-radius:8px; }
-        .lst-lb .x, .lst-lb .nav { position:absolute; background:rgba(255,255,255,0.12); color:#fff; border:none; cursor:pointer; border-radius:50%; display:flex; align-items:center; justify-content:center; }
-        .lst-lb .x { top:1rem; right:1rem; width:44px; height:44px; font-size:1.6rem; }
-        .lst-lb .nav { top:50%; transform:translateY(-50%); width:52px; height:52px; font-size:2rem; }
-        .lst-lb .prev { left:1rem; } .lst-lb .next { right:1rem; }
-        .lst-lb .count { position:absolute; bottom:1.25rem; left:0; right:0; text-align:center; color:#cbd5e0; font-size:0.9rem; }
-        @media (max-width:600px){
-            .lst-price { font-size:2rem; } .lst-wrap { padding:1.5rem 1.25rem 4rem; }
-            .lst-facts { grid-template-columns:1fr; gap:1.25rem; }
-            .lst-gallery { grid-template-columns:repeat(2,1fr); gap:0.5rem; }
-            .lst-lb .nav { width:42px; height:42px; font-size:1.5rem; }
-        }
+      :root { --blue:#1d6df2; --blue-dark:#155bc8; --ink:#1a202c; --body:#4a5568; --muted:#718096; --faint:#a0aec0; --line:#e6eaf0; --tint:#ebf4ff; --page-w:1340px; }
+      body { background:#fff; color:var(--ink); }
+
+      /* Summary sub-bar */
+      .pp-subbar { position:sticky; top:0; z-index:40; background:#fff; border-bottom:1px solid var(--line); }
+      .pp-subbar-in { position:relative; padding:0; }
+      .pp-back { position:absolute; left:1.5rem; top:50%; transform:translateY(-50%); z-index:1; display:inline-flex; align-items:center; gap:0.4rem; color:var(--blue); font-weight:700; font-size:0.85rem; text-decoration:none; white-space:nowrap; }
+      .pp-back:hover { text-decoration:underline; }
+      .pp-subbar-mid { max-width:var(--page-w); margin:0 auto; padding:0.7rem 1.5rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+      .pp-sum { display:flex; align-items:baseline; gap:0.75rem; min-width:0; flex-wrap:wrap; }
+      .pp-sum .pp-sum-addr { font-size:1.4rem; font-weight:800; color:var(--ink); }
+      .pp-sum .price { font-size:1.4rem; font-weight:800; color:var(--blue); }
+      .pp-sum .specs { color:var(--muted); font-size:1.05rem; }
+      .pp-sum .specs b { color:var(--body); }
+      .pp-subbar-r { display:flex; gap:0.5rem; flex:none; }
+      .pp-iconbtn { display:inline-flex; align-items:center; gap:0.4rem; border:1px solid var(--line); background:#fff; border-radius:9px; padding:0.5rem 0.9rem; font:inherit; font-weight:600; font-size:0.88rem; color:var(--ink); cursor:pointer; }
+      .pp-iconbtn:hover { background:#f7f9fa; }
+
+      .pp-wrap { max-width:var(--page-w); margin:0 auto; padding:1.5rem 1.5rem 4rem; }
+
+      /* Photo collage */
+      .pp-photos { display:grid; grid-template-columns:1.7fr 1fr; gap:0.5rem; aspect-ratio:5/2; border-radius:16px; overflow:hidden; margin-bottom:2rem; }
+      .pp-ph-main, .pp-ph-cell { background-size:cover; background-position:center; background-color:#eceff3; cursor:pointer; position:relative; border:0; padding:0; transition:filter .12s; }
+      .pp-ph-main:hover, .pp-ph-cell:hover { filter:brightness(0.95); }
+      .pp-ph-grid { display:grid; grid-template-columns:1fr; grid-template-rows:1fr 1fr; gap:0.5rem; }
+      .pp-viewall { position:absolute; right:0.9rem; bottom:0.9rem; display:inline-flex; align-items:center; gap:0.45rem; background:#fff; color:var(--ink); border:1px solid var(--line); border-radius:10px; padding:0.55rem 1rem; font:inherit; font-weight:700; font-size:0.88rem; box-shadow:0 6px 18px rgba(0,0,0,0.18); }
+      .pp-viewall svg { width:15px; height:15px; }
+
+      /* Two-column body */
+      .pp-body { display:grid; grid-template-columns:1fr 380px; gap:3rem; align-items:start; }
+      .pp-side { position:sticky; top:5rem; }
+      .pp-h { font-size:1.5rem; font-weight:800; letter-spacing:-0.4px; margin:0 0 0.15rem; }
+      .pp-addr { color:var(--muted); font-size:1rem; margin:0 0 1rem; }
+      .pp-tagrow { display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.5rem; }
+      .pp-tag { background:#f0f3f7; color:#3a4658; font-size:0.72rem; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; border-radius:7px; padding:0.4rem 0.7rem; }
+      .pp-desc { color:var(--body); line-height:1.75; font-size:1.02rem; }
+      .pp-more { display:inline-block; color:var(--blue); font-weight:700; margin-top:0.4rem; cursor:pointer; text-decoration:none; }
+      .pp-meta { display:flex; gap:1.25rem; flex-wrap:wrap; align-items:center; color:var(--body); font-size:0.9rem; border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:0.9rem 0; margin:1.5rem 0; }
+      .pp-meta b { color:var(--ink); }
+      .pp-meta .sep { color:var(--faint); }
+
+      .pp-sec { margin-top:2.75rem; }
+      .pp-sec:first-child { margin-top:0; }
+      .pp-sec-h { font-size:1.4rem; font-weight:800; letter-spacing:-0.4px; margin:0 0 1.1rem; }
+
+      /* What's special */
+      .pp-hl { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(3,1fr); gap:0.7rem 1.5rem; }
+      .pp-hl li { display:flex; gap:0.55rem; align-items:flex-start; color:var(--body); }
+      .pp-hl svg { flex:0 0 auto; width:16px; height:16px; margin-top:3px; color:var(--blue); }
+
+      /* Facts */
+      .pp-facts { display:grid; grid-template-columns:repeat(3,1fr); gap:1.4rem 2rem; }
+      .pp-fact { border-top:1px solid var(--line); padding-top:0.7rem; }
+      .pp-fact dt { font-size:0.72rem; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted); }
+      .pp-fact dd { margin:0.25rem 0 0; font-weight:700; color:var(--ink); }
+
+      /* History table */
+      .pp-hist { width:100%; border-collapse:collapse; font-size:0.94rem; }
+      .pp-hist th { text-align:left; font-size:0.72rem; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted); padding:0 0 0.6rem; }
+      .pp-hist th:last-child, .pp-hist td:last-child { text-align:right; }
+      .pp-hist td { padding:0.8rem 0; border-top:1px solid var(--line); color:var(--body); }
+      .pp-hist td:nth-child(2) { color:var(--ink); font-weight:700; }
+      .pp-hist td:last-child { font-weight:800; color:var(--ink); }
+      .pp-tax { color:var(--muted); font-size:0.9rem; margin:0.9rem 0 0; }
+
+      /* Rows (schools / nearby) */
+      .pp-row { display:flex; align-items:center; gap:1rem; padding:0.9rem 0; border-top:1px solid var(--line); }
+      .pp-row:first-child { border-top:0; }
+      .pp-rate { flex:0 0 auto; width:42px; height:42px; border-radius:9px; display:grid; place-items:center; font-weight:800; background:var(--tint); color:var(--blue); font-size:1.05rem; }
+      .pp-rate small { font-size:0.6rem; font-weight:700; }
+      .pp-row-m { flex:1; min-width:0; }
+      .pp-row-t { font-weight:700; color:var(--ink); }
+      .pp-row-s { font-size:0.85rem; color:var(--muted); }
+      .pp-row-d { font-size:0.88rem; color:var(--muted); }
+
+      .pp-map { height:320px; border-radius:14px; overflow:hidden; margin-top:0.5rem; border:1px solid var(--line); background:#e9edf2; }
+      .pp-map iframe { width:100%; height:100%; border:0; display:block; }
+
+      /* Sidebar cards */
+      .pp-card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:1.5rem; box-shadow:0 2px 10px rgba(16,24,40,0.04); }
+      .pp-card + .pp-card { margin-top:1.25rem; }
+      .pp-oh-h { font-weight:800; font-size:1.05rem; margin:0 0 0.6rem; }
+      .pp-oh-date { font-weight:800; }
+      .pp-oh-time { color:var(--body); font-size:0.92rem; }
+      .pp-oh-cal { display:inline-block; margin-top:0.5rem; color:var(--blue); font-weight:700; text-decoration:none; cursor:pointer; }
+      .pp-listed { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); }
+      .pp-agent { text-align:center; margin:0.75rem 0 1rem; }
+      .pp-avatar { width:64px; height:64px; border-radius:50%; background:var(--tint); color:var(--blue); display:inline-flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:800; object-fit:cover; }
+      .pp-agent-n { font-weight:800; font-size:1.1rem; margin-top:0.5rem; }
+      .pp-agent-b { color:var(--muted); font-size:0.9rem; }
+      .pp-agent-h { color:var(--body); font-size:0.9rem; margin:0.5rem 0 0; }
+      .pp-cform { display:grid; gap:0.6rem; margin-top:0.25rem; }
+      .pp-cform input, .pp-cform textarea { width:100%; box-sizing:border-box; font:inherit; font-size:0.95rem; padding:0.7rem 0.85rem; border:1px solid #cbd5e0; border-radius:9px; outline:none; }
+      .pp-cform input:focus, .pp-cform textarea:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(29,109,242,0.12); }
+      .pp-cform textarea { min-height:78px; resize:vertical; }
+      .pp-contact-btn { background:var(--blue); color:#fff; border:0; border-radius:10px; padding:0.85rem; font:inherit; font-weight:800; cursor:pointer; line-height:1.3; }
+      .pp-contact-btn small { display:block; font-weight:500; font-size:0.78rem; opacity:0.85; }
+      .pp-contact-btn:hover { background:var(--blue-dark); }
+      .pp-fine { text-align:center; color:var(--muted); font-size:0.78rem; margin:0.25rem 0 0; }
+      .pp-ok { display:none; padding:0.9rem; background:#f0fff4; color:#2f855a; border:1px solid #c6f6d5; border-radius:9px; font-weight:600; text-align:center; margin-top:0.5rem; }
+      .pp-viewprofile { display:block; text-align:center; margin-top:0.75rem; border:1px solid var(--blue); color:var(--blue); border-radius:10px; padding:0.75rem; font-weight:800; text-decoration:none; }
+
+      /* Tour band */
+      .pp-tour { margin:3rem 0 0; }
+      .pp-tour-in { background:var(--blue); color:#fff; border-radius:20px; padding:2.5rem 3rem; display:flex; align-items:center; justify-content:space-between; gap:2.5rem; flex-wrap:wrap; box-shadow:0 24px 50px rgba(29,109,242,0.28); }
+      .pp-tour-in h2 { font-size:2.2rem; font-weight:800; letter-spacing:-0.8px; margin:0 0 0.4rem; }
+      .pp-tour-in p { margin:0; opacity:0.92; font-size:1.15rem; max-width:520px; }
+      .pp-tour-btn { background:#fff; color:var(--blue); border:0; border-radius:99px; padding:1.1rem 2.5rem; font:inherit; font-weight:800; font-size:1.1rem; cursor:pointer; white-space:nowrap; }
+      .pp-tour-btn:hover { background:#f0f4ff; }
+
+      /* Mortgage calculator */
+      .pp-mtg { margin-top:3rem; }
+      .mtg-card { border:1px solid var(--line); border-radius:16px; padding:1.75rem; display:grid; grid-template-columns:1.2fr 1fr; gap:1.75rem; align-items:center; }
+      .mtg-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.9rem; }
+      .mtg-grid label { display:flex; flex-direction:column; gap:0.3rem; font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); }
+      .mtg-grid input, .mtg-grid select { font:inherit; font-size:1rem; font-weight:600; color:var(--ink); padding:0.6rem 0.7rem; border:1px solid #d9e0ea; border-radius:9px; outline:none; }
+      .mtg-grid input:focus, .mtg-grid select:focus { border-color:var(--blue); }
+      .mtg-out { text-align:center; border-left:1px solid var(--line); padding-left:1.5rem; }
+      .mtg-total span { font-size:2.4rem; font-weight:800; color:var(--blue); letter-spacing:-1.5px; display:block; }
+      .mtg-total small { color:var(--faint); font-size:0.8rem; font-weight:600; }
+      .mtg-break { list-style:none; padding:0; margin:1rem 0 0; font-size:0.88rem; }
+      .mtg-break li { display:flex; justify-content:space-between; padding:0.35rem 0; color:var(--muted); border-top:1px solid #f0f3f7; }
+      .mtg-break li span { font-weight:700; color:var(--ink); }
+      .mtg-fine { font-size:0.8rem; color:var(--faint); margin:0.8rem 0 0; }
+      @media (max-width:640px){ .mtg-card { grid-template-columns:1fr; gap:1.25rem; } .mtg-out { border-left:0; border-top:1px solid var(--line); padding-left:0; padding-top:1.25rem; } }
+
+      /* Related listings */
+      .pp-rel { margin-top:3rem; }
+      .lst-rel-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1rem; }
+      .lst-rel-card { display:block; text-decoration:none; border:1px solid var(--line); border-radius:12px; overflow:hidden; transition:box-shadow .15s, transform .15s; color:inherit; background:#fff; }
+      .lst-rel-card:hover { box-shadow:0 8px 22px rgba(16,24,40,0.10); transform:translateY(-2px); }
+      .lst-rel-card .img { width:100%; aspect-ratio:4/3; object-fit:cover; background:#eef2f7; display:block; }
+      .lst-rel-card .b { padding:0.7rem 0.85rem 0.9rem; }
+      .lst-rel-card .p { font-weight:800; color:var(--ink); font-size:1.05rem; }
+      .lst-rel-card .t { color:var(--body); font-size:0.9rem; margin-top:0.15rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .lst-rel-card .m { color:var(--faint); font-size:0.8rem; margin-top:0.2rem; }
+      @media (max-width:600px){ .lst-rel-grid { grid-template-columns:1fr 1fr; gap:0.6rem; } }
+
+      /* Responsive */
+      @media (max-width:1100px){ .pp-body { grid-template-columns:1fr 330px; gap:2rem; } .pp-hl, .pp-facts { gap:0.7rem 1.25rem; } }
+      @media (max-width:900px){
+        .pp-body { grid-template-columns:1fr; gap:2rem; }
+        .pp-side { position:static; }
+        .pp-hl, .pp-facts { grid-template-columns:1fr 1fr; }
+        .pp-photos { grid-template-columns:1fr; aspect-ratio:auto; gap:0.4rem; margin-bottom:1.5rem; }
+        .pp-ph-main { aspect-ratio:16/10; }
+        .pp-ph-grid { grid-template-columns:1fr 1fr; grid-template-rows:1fr; aspect-ratio:3/1; }
+        .pp-tour-in { flex-direction:column; align-items:flex-start; gap:1.5rem; padding:2.25rem 2rem; }
+        .pp-tour-in h2 { font-size:1.9rem; } .pp-tour-in p { font-size:1.05rem; }
+      }
+      @media (max-width:760px){ .pp-back { position:static; transform:none; display:inline-flex; padding:0.5rem 1.25rem 0; } .pp-subbar-mid { padding-top:0.35rem; } }
+      @media (max-width:640px){
+        .pp-wrap { padding:1rem 1rem 2.5rem; }
+        .pp-subbar-mid { padding:0.4rem 1rem 0.6rem; gap:0.75rem; }
+        .pp-back { padding:0.6rem 1rem 0; }
+        .pp-sum { gap:0.15rem 0.6rem; }
+        .pp-sum .pp-sum-addr, .pp-sum .price { font-size:1.1rem; }
+        .pp-sum .specs { font-size:0.9rem; flex-basis:100%; }
+        .pp-iconbtn { padding:0.45rem 0.65rem; font-size:0.8rem; }
+        .pp-photos { border-radius:12px; } .pp-ph-main { aspect-ratio:4/3; } .pp-ph-grid { aspect-ratio:2/1; }
+        .pp-viewall { right:0.6rem; bottom:0.6rem; padding:0.45rem 0.7rem; font-size:0.78rem; }
+        .pp-hl, .pp-facts { grid-template-columns:1fr; }
+        .pp-h { font-size:1.35rem; } .pp-sec-h { font-size:1.25rem; } .pp-sec { margin-top:2.25rem; }
+        .pp-map { height:230px; } .pp-card { padding:1.25rem; }
+        .pp-tour { margin-top:2.25rem; } .pp-tour-in { padding:1.75rem 1.5rem; border-radius:16px; gap:1.25rem; }
+        .pp-tour-in h2 { font-size:1.5rem; } .pp-tour-in p { font-size:1rem; }
+        .pp-tour-btn { width:100%; text-align:center; padding:0.95rem; font-size:1.05rem; }
+      }
+      @media (max-width:380px){ .pp-sum .pp-sum-addr, .pp-sum .price { font-size:1rem; } .pp-iconbtn { padding:0.4rem 0.55rem; font-size:0.75rem; } }
+
+      /* Lightbox */
+      .pp-lb { position:fixed; inset:0; z-index:200; background:rgba(10,14,20,0.94); display:none; flex-direction:column; }
+      .pp-lb.open { display:flex; }
+      .pp-lb-top { display:flex; align-items:center; justify-content:space-between; padding:1rem 1.5rem; color:#fff; }
+      .pp-lb-count { font-weight:700; font-size:0.95rem; }
+      .pp-lb-x { background:none; border:0; color:#fff; font-size:1.6rem; cursor:pointer; line-height:1; }
+      .pp-lb-stage { flex:1; display:flex; align-items:center; justify-content:center; gap:1rem; padding:0 1rem 1.5rem; min-height:0; }
+      .pp-lb-img { max-width:min(1100px,92vw); max-height:100%; object-fit:contain; border-radius:10px; }
+      .pp-lb-nav { background:rgba(255,255,255,0.14); border:0; color:#fff; width:52px; height:52px; border-radius:50%; font-size:1.5rem; cursor:pointer; flex:none; }
+      .pp-lb-nav:hover { background:rgba(255,255,255,0.28); }
+      @media (max-width:640px){ .pp-lb-nav { width:42px; height:42px; } }
+
+      /* Tour / generic modal */
+      .pp-modal { position:fixed; inset:0; z-index:210; background:rgba(10,14,20,0.55); display:none; align-items:center; justify-content:center; padding:1.5rem; }
+      .pp-modal.open { display:flex; }
+      .pp-modal-card { background:#fff; border-radius:18px; max-width:440px; width:100%; padding:2rem; box-shadow:0 30px 70px rgba(0,0,0,0.35); }
+      .pp-modal-card h3 { margin:0 0 0.35rem; font-size:1.5rem; font-weight:800; color:var(--ink); }
+      .pp-modal-card .sub { margin:0 0 1.25rem; color:var(--muted); font-size:0.95rem; }
+      .pp-modal-card input, .pp-modal-card textarea { width:100%; box-sizing:border-box; border:1px solid var(--line); border-radius:10px; padding:0.7rem 0.85rem; font:inherit; margin-bottom:0.6rem; }
+      .pp-modal-card textarea { min-height:70px; resize:vertical; }
+      .pp-modal-go { width:100%; background:var(--blue); color:#fff; border:0; border-radius:10px; padding:0.85rem; font:inherit; font-weight:800; cursor:pointer; }
+      .pp-modal-go:hover { background:var(--blue-dark); }
+      .pp-modal-x { float:right; background:none; border:0; font-size:1.4rem; cursor:pointer; color:var(--muted); line-height:1; margin:-0.5rem -0.5rem 0 0; }
+
+      /* Toast */
+      .pp-toast { position:fixed; left:50%; bottom:2rem; transform:translateX(-50%) translateY(1rem); background:var(--ink); color:#fff; padding:0.85rem 1.4rem; border-radius:99px; font-weight:600; font-size:0.9rem; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:220; }
+      .pp-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
     </style>
     <script src="/components/components.js" defer></script>
 </head>
-<body style="background:#fff;">
+<body>
     <global-header></global-header>
+    <div style="height:5rem;"></div><!-- clear fixed header -->
 
-    <main class="lst-wrap">
-        <a href="{{LISTING_LAKE_BACK}}" class="lst-back">← {{LISTING_BACK_LABEL}}</a>
-        {{LISTING_GALLERY_HTML}}
-
-        {{LISTING_BADGES_HTML}}
-        <p class="lst-price">{{LISTING_PRICE}} {{LISTING_PRICE_WAS}}</p>
-        <h1 class="lst-title">{{LISTING_TITLE}}</h1>
-        <p class="lst-addr">{{LISTING_ADDRESS}}</p>
-
-        <div class="lst-actions" style="display:flex;gap:0.6rem;flex-wrap:wrap;margin:0.5rem 0 1.25rem;">
-            <button id="lst-save-btn" onclick="toggleSaveListing()" style="display:inline-flex;align-items:center;gap:0.4rem;border:1px solid #e2e8f0;background:#fff;border-radius:10px;padding:0.6rem 1.1rem;font:inherit;font-weight:700;font-size:0.9rem;cursor:pointer;color:#1a202c;">
-                <span id="lst-save-heart">♡</span> <span id="lst-save-label">Save</span>
-            </button>
-            <a id="lst-external" href="{{LISTING_EXTERNAL_URL}}" target="_blank" rel="nofollow noopener" style="display:none;align-items:center;gap:0.4rem;background:#1d6df2;color:#fff;border-radius:10px;padding:0.6rem 1.1rem;font-weight:700;font-size:0.9rem;text-decoration:none;">View full listing ↗</a>
-            <button id="lst-share-btn" onclick="shareListing()" style="display:inline-flex;align-items:center;gap:0.4rem;border:1px solid #e2e8f0;background:#fff;border-radius:10px;padding:0.6rem 1.1rem;font:inherit;font-weight:700;font-size:0.9rem;cursor:pointer;color:#1a202c;">↗ Share</button>
-            <button id="lst-watch-btn" onclick="toggleWatch()" style="display:inline-flex;align-items:center;gap:0.4rem;border:1px solid #e2e8f0;background:#fff;border-radius:10px;padding:0.6rem 1.1rem;font:inherit;font-weight:700;font-size:0.9rem;cursor:pointer;color:#1a202c;">🔔 Watch price</button>
+    <!-- Summary sub-bar -->
+    <div class="pp-subbar">
+      <div class="pp-subbar-in">
+        <a class="pp-back" href="{{LISTING_LAKE_BACK}}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          {{LISTING_BACK_LABEL}}
+        </a>
+        <div class="pp-subbar-mid">
+          <div class="pp-sum">
+            <span class="pp-sum-addr" id="pp-sum-addr">&nbsp;</span>
+            <span class="price" id="pp-sum-price"></span>
+            <span class="specs" id="pp-sum-specs"></span>
+          </div>
+          <div class="pp-subbar-r">
+            <button class="pp-iconbtn" id="pp-save-btn" onclick="toggleSaveListing()"><span id="pp-save-heart">♡</span> <span id="pp-save-label">Save</span></button>
+            <button class="pp-iconbtn" onclick="shareListing()">↗ Share</button>
+          </div>
         </div>
-        <div id="lst-watch-form" style="display:none;gap:0.5rem;margin:0 0 1.25rem;max-width:420px;flex-wrap:wrap;">
-            <input id="lst-watch-email" type="email" placeholder="you@email.com" style="flex:1;min-width:180px;box-sizing:border-box;font:inherit;font-size:0.92rem;padding:0.6rem 0.8rem;border:1px solid #e2e8f0;border-radius:9px;outline:none;">
-            <button onclick="submitWatch()" style="background:#1d6df2;color:#fff;border:none;border-radius:9px;padding:0.6rem 1.1rem;font:inherit;font-weight:700;cursor:pointer;">Notify me</button>
-            <div id="lst-watch-msg" style="width:100%;font-size:0.85rem;color:#718096;"></div>
-        </div>
-        <script>
-            const LISTING_ID = '{{LISTING_ID}}';
-            (function () {
-                const ext = document.getElementById('lst-external');
-                const url = '{{LISTING_EXTERNAL_URL}}';
-                if (ext && url && url.length > 4) ext.style.display = 'inline-flex'; else if (ext) ext.remove();
-            })();
-            async function refreshSaveState() {
-                try {
-                    const r = await fetch('/api/listings/saved/ids', { credentials: 'include' });
-                    if (!r.ok) return;
-                    const { ids } = await r.json();
-                    setSaved(Array.isArray(ids) && ids.includes(LISTING_ID));
-                } catch (_) {}
-            }
-            function setSaved(on) {
-                document.getElementById('lst-save-heart').textContent = on ? '♥' : '♡';
-                document.getElementById('lst-save-label').textContent = on ? 'Saved' : 'Save';
-                document.getElementById('lst-save-btn').style.color = on ? '#c53030' : '#1a202c';
-                document.getElementById('lst-save-btn').style.borderColor = on ? '#feb2b2' : '#e2e8f0';
-            }
-            async function toggleSaveListing() {
-                try {
-                    const r = await fetch('/api/listings/' + LISTING_ID + '/save', { method: 'POST', credentials: 'include' });
-                    if (r.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(location.pathname); return; }
-                    const d = await r.json();
-                    if (r.ok) setSaved(!!d.saved);
-                } catch (_) {}
-            }
-            document.addEventListener('DOMContentLoaded', refreshSaveState);
-            // Record the view for signed-in users (fire-and-forget; 401 if anon).
-            fetch('/api/listings/' + LISTING_ID + '/view', { method: 'POST', credentials: 'include' }).catch(() => {});
-
-            // Mortgage calculator — prefilled from the listing price/tax.
-            (function () {
-                const priceNum = Number('{{LISTING_PRICE_NUM}}') || 0;
-                const taxNum = Number('{{LISTING_TAX_NUM}}') || 0;
-                if (!priceNum) return;   // no price → skip the calculator
-                const $ = id => document.getElementById(id);
-                const money = n => '$' + Math.round(n).toLocaleString('en-US');
-                $('mtg-price').value = priceNum;
-                function calc() {
-                    const price = Number($('mtg-price').value) || 0;
-                    const downPct = Math.min(100, Math.max(0, Number($('mtg-down').value) || 0));
-                    const rate = Math.max(0, Number($('mtg-rate').value) || 0) / 100 / 12;
-                    const n = (Number($('mtg-term').value) || 30) * 12;
-                    const loan = price * (1 - downPct / 100);
-                    const pi = rate > 0 ? loan * rate * Math.pow(1 + rate, n) / (Math.pow(1 + rate, n) - 1) : loan / n;
-                    const tax = (taxNum > 0 ? taxNum : price * 0.011) / 12;   // MN ~1.1%/yr fallback
-                    const ins = price * 0.0035 / 12;                          // ~0.35%/yr estimate
-                    $('mtg-pi').textContent = money(pi || 0);
-                    $('mtg-tax').textContent = money(tax || 0);
-                    $('mtg-ins').textContent = money(ins || 0);
-                    $('mtg-monthly').textContent = money((pi || 0) + tax + ins);
-                }
-                ['mtg-price', 'mtg-down', 'mtg-rate', 'mtg-term'].forEach(id => $(id).addEventListener('input', calc));
-                $('lst-mortgage').style.display = 'block';
-                calc();
-            })();
-
-            // Buyer-service referrals.
-            const SVC_META = {
-                lender: { title: 'Get pre-approved', sub: 'A local lender will reach out about your mortgage options.' },
-                inspection: { title: 'Schedule an inspection', sub: 'A trusted home inspector will contact you to set it up.' },
-                insurance: { title: 'Insurance quote', sub: 'A local insurance pro will send you a quote for this home.' },
-            };
-            let _svcCat = null;
-            window.openSvc = function (cat) {
-                _svcCat = cat;
-                const m = SVC_META[cat] || { title: 'Request', sub: '' };
-                document.getElementById('svc-title').textContent = m.title;
-                document.getElementById('svc-sub').textContent = m.sub;
-                document.getElementById('svc-err').style.display = 'none';
-                document.getElementById('svc-done').style.display = 'none';
-                document.getElementById('svc-submit').style.display = '';
-                document.getElementById('svc-modal').classList.add('open');
-            };
-            window.closeSvc = function () { document.getElementById('svc-modal').classList.remove('open'); };
-            window.submitSvc = async function () {
-                const err = document.getElementById('svc-err');
-                const name = document.getElementById('svc-name').value.trim();
-                const email = document.getElementById('svc-email').value.trim();
-                const phone = document.getElementById('svc-phone').value.trim();
-                const message = document.getElementById('svc-msg').value.trim();
-                err.style.display = 'none';
-                if (!name || (!email && !phone)) { err.textContent = 'Add your name and an email or phone.'; err.style.display = 'block'; return; }
-                const btn = document.getElementById('svc-submit'); btn.disabled = true; btn.textContent = 'Sending…';
-                try {
-                    const r = await fetch('/api/partners/refer', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ category: _svcCat, name, email, phone, message, listing_id: LISTING_ID }),
-                    });
-                    if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'Something went wrong.'); }
-                    btn.style.display = 'none';
-                    document.getElementById('svc-done').style.display = 'block';
-                } catch (ex) { err.textContent = ex.message; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Send request'; }
-            };
-
-            window.toggleWatch = function () {
-                const f = document.getElementById('lst-watch-form');
-                const show = f.style.display === 'none';
-                f.style.display = show ? 'flex' : 'none';
-                if (show) document.getElementById('lst-watch-email').focus();
-            };
-            window.submitWatch = async function () {
-                const msg = document.getElementById('lst-watch-msg');
-                const email = document.getElementById('lst-watch-email').value.trim();
-                if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg.style.color = '#c53030'; msg.textContent = 'Enter a valid email.'; return; }
-                msg.style.color = '#718096'; msg.textContent = 'Saving…';
-                try {
-                    const r = await fetch('/api/listings/' + LISTING_ID + '/watch', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-                        body: JSON.stringify({ email }),
-                    });
-                    if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'Could not set the alert.'); }
-                    msg.style.color = '#1d6df2'; msg.textContent = "✓ We'll email you if the price drops.";
-                    document.getElementById('lst-watch-email').disabled = true;
-                } catch (ex) { msg.style.color = '#c53030'; msg.textContent = ex.message; }
-            };
-
-            async function shareListing() {
-                const url = location.href;
-                const title = document.querySelector('.lst-title')?.textContent || 'Lake home for sale';
-                const btn = document.getElementById('lst-share-btn');
-                if (navigator.share) {
-                    try { await navigator.share({ title, url }); } catch (_) {}
-                    return;
-                }
-                try {
-                    await navigator.clipboard.writeText(url);
-                    const old = btn.textContent; btn.textContent = '✓ Link copied';
-                    setTimeout(() => { btn.textContent = old; }, 1800);
-                } catch (_) {
-                    window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url), '_blank', 'noopener,width=600,height=500');
-                }
-            }
-
-            async function submitShowing(e) {
-                e.preventDefault();
-                const err = document.getElementById('sh-err');
-                const name = document.getElementById('sh-name').value.trim();
-                const email = document.getElementById('sh-email').value.trim();
-                const phone = document.getElementById('sh-phone').value.trim();
-                const when = document.getElementById('sh-when').value.trim();
-                const msg = document.getElementById('sh-msg').value.trim();
-                err.style.display = 'none';
-                if (!name) { err.textContent = 'Please add your name.'; err.style.display = 'block'; return false; }
-                if (!email && !phone) { err.textContent = 'Add an email or a phone number so the agent can reach you.'; err.style.display = 'block'; return false; }
-                const notes = [when ? 'Preferred time: ' + when : '', msg].filter(Boolean).join('\n') || 'Requested a showing of this property.';
-                const btn = document.getElementById('sh-submit');
-                btn.disabled = true; btn.textContent = 'Sending…';
-                try {
-                    const r = await fetch('/api/leads', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name, email, phone, notes, source: 'property_question', listing_id: LISTING_ID }),
-                    });
-                    if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'Something went wrong.'); }
-                    document.getElementById('lst-showing-form').style.display = 'none';
-                    document.getElementById('lst-showing-done').style.display = 'block';
-                } catch (ex) {
-                    err.textContent = ex.message; err.style.display = 'block';
-                    btn.disabled = false; btn.textContent = 'Request showing →';
-                }
-                return false;
-            }
-        </script>
-
-        {{LISTING_SPECS_HTML}}
-
-        <div class="lst-desc">{{LISTING_DESCRIPTION}}</div>
-
-        {{LISTING_FACTS_HTML}}
-
-        <!-- Rich agent-editable sections (What's special, Waterfront, Systems,
-             Price & tax history, Schools, Nearby) + the listing agent's contact
-             card. Hydrated from /api/listings/slug/:slug; empty blocks are skipped. -->
-        <div id="lst-extra"></div>
-
-        <section class="lst-mortgage" id="lst-mortgage" style="display:none;">
-            <h2 class="lst-section-h">Estimate your monthly payment</h2>
-            <div class="mtg-card">
-                <div class="mtg-grid">
-                    <label>Home price<input id="mtg-price" type="number" inputmode="numeric"></label>
-                    <label>Down payment (%)<input id="mtg-down" type="number" inputmode="numeric" value="20"></label>
-                    <label>Interest rate (%)<input id="mtg-rate" type="number" step="0.1" inputmode="decimal" value="6.9"></label>
-                    <label>Loan term<select id="mtg-term"><option value="30">30 years</option><option value="20">20 years</option><option value="15">15 years</option></select></label>
-                </div>
-                <div class="mtg-out">
-                    <div class="mtg-total"><span id="mtg-monthly">$0</span><small>estimated / month</small></div>
-                    <ul class="mtg-break">
-                        <li>Principal &amp; interest <span id="mtg-pi">$0</span></li>
-                        <li>Property tax <span id="mtg-tax">$0</span></li>
-                        <li>Home insurance <span id="mtg-ins">$0</span></li>
-                    </ul>
-                </div>
-            </div>
-            <p class="mtg-fine">Rough estimate for planning only — not a loan offer. <a href="#lst-showing">Talk to the listing agent →</a></p>
-        </section>
-
-        <section class="lst-services">
-            <h2 class="lst-section-h">Getting ready to buy?</h2>
-            <p style="color:#718096;margin:-0.5rem 0 1.1rem;">Connect with a trusted local partner — free, no obligation.</p>
-            <div class="svc-grid">
-                <button type="button" onclick="openSvc('lender')"><span>🏦</span> Get pre-approved</button>
-                <button type="button" onclick="openSvc('inspection')"><span>🔎</span> Schedule an inspection</button>
-                <button type="button" onclick="openSvc('insurance')"><span>🛡️</span> Insurance quote</button>
-            </div>
-        </section>
-
-        <div class="svc-modal" id="svc-modal" onclick="if(event.target===this)closeSvc()">
-            <div class="svc-box">
-                <button class="svc-x" onclick="closeSvc()" aria-label="Close">&times;</button>
-                <h3 id="svc-title">Request</h3>
-                <p id="svc-sub" style="color:#718096;font-size:0.9rem;margin:0.2rem 0 1rem;"></p>
-                <input id="svc-name" type="text" placeholder="Your name" autocomplete="name">
-                <input id="svc-email" type="email" placeholder="Email" autocomplete="email">
-                <input id="svc-phone" type="tel" placeholder="Phone" autocomplete="tel">
-                <textarea id="svc-msg" rows="2" placeholder="Anything to add? (optional)"></textarea>
-                <div id="svc-err" style="color:#c53030;font-size:0.85rem;display:none;margin-bottom:0.5rem;"></div>
-                <button id="svc-submit" class="nb-cta" style="width:100%;border:none;cursor:pointer;" onclick="submitSvc()">Send request</button>
-                <div id="svc-done" style="display:none;text-align:center;padding:0.5rem 0;">
-                    <div style="font-size:2rem;">✓</div><p style="margin:0.3rem 0 0;font-weight:700;">Request sent — they'll be in touch.</p>
-                </div>
-            </div>
-        </div>
-
-        {{LISTING_COMPS_HTML}}
-
-        {{LISTING_AREA_HTML}}
-
-        {{LISTING_RELATED_HTML}}
-
-        <div class="lst-cta" id="lst-showing">
-            <h2>Request a showing</h2>
-            <p>Tell the listing agent when you'd like to see this home — they'll reach out to set it up.</p>
-            <form id="lst-showing-form" onsubmit="return submitShowing(event)">
-                <div class="lst-form-grid">
-                    <input id="sh-name" type="text" placeholder="Your name" autocomplete="name" required>
-                    <input id="sh-email" type="email" placeholder="Email" autocomplete="email">
-                    <input id="sh-phone" type="tel" placeholder="Phone" autocomplete="tel">
-                    <input id="sh-when" type="text" placeholder="Preferred day/time (optional)">
-                </div>
-                <textarea id="sh-msg" rows="2" placeholder="Anything the agent should know? (optional)"></textarea>
-                <div id="sh-err" class="lst-form-err"></div>
-                <button type="submit" id="sh-submit" class="nb-cta">Request showing →</button>
-                <p class="lst-form-fine">One of email or phone is required so the agent can reach you.</p>
-            </form>
-            <div id="lst-showing-done" style="display:none;">
-                <div style="font-size:2.2rem;line-height:1;margin-bottom:0.5rem;">✓</div>
-                <h2 style="margin:0 0 0.3rem;">Request sent</h2>
-                <p style="margin:0;">The listing agent will be in touch shortly. Keep an eye on your email or phone.</p>
-            </div>
-        </div>
-    </main>
-
-    <div class="lst-lb" id="lst-lb" onclick="if(event.target===this)lbClose()">
-        <button class="x" onclick="lbClose()" aria-label="Close">&times;</button>
-        <button class="nav prev" onclick="lbStep(-1)" aria-label="Previous">‹</button>
-        <img id="lst-lb-img" src="" alt="">
-        <button class="nav next" onclick="lbStep(1)" aria-label="Next">›</button>
-        <div class="count" id="lst-lb-count"></div>
+      </div>
     </div>
-    <script>
-        // Lightbox over the hero + gallery. Full-size Cloudinary swapped in.
-        (function () {
-            const full = u => (u || '').replace(/\/upload\/[^/]*\//, '/upload/q_auto,f_auto/');
-            let imgs = [], idx = 0;
-            function collect() {
-                // The full ordered photo set lives in the hidden collage list;
-                // this is what the lightbox pages through (all up to 20).
-                imgs = [];
-                document.querySelectorAll('.lst-photos-hidden img').forEach(im => imgs.push(im.getAttribute('src')));
-                imgs = imgs.filter(Boolean);
-            }
-            window.lbOpen = function (src) {
-                collect();
-                idx = Math.max(0, imgs.indexOf(src));
-                show();
-                document.getElementById('lst-lb').classList.add('open');
-            };
-            window.lbClose = function () { document.getElementById('lst-lb').classList.remove('open'); };
-            window.lbStep = function (d) { if (!imgs.length) return; idx = (idx + d + imgs.length) % imgs.length; show(); };
-            function show() {
-                document.getElementById('lst-lb-img').src = full(imgs[idx]);
-                document.getElementById('lst-lb-count').textContent = imgs.length > 1 ? `${idx + 1} / ${imgs.length}` : '';
-            }
-            document.addEventListener('click', e => {
-                const im = e.target.closest('.lst-hero img, .lst-gallery img');
-                if (im) lbOpen(im.getAttribute('src'));
-            });
-            document.addEventListener('keydown', e => {
-                if (!document.getElementById('lst-lb').classList.contains('open')) return;
-                if (e.key === 'Escape') lbClose();
-                else if (e.key === 'ArrowRight') lbStep(1);
-                else if (e.key === 'ArrowLeft') lbStep(-1);
-            });
-        })();
-    </script>
 
-    <!-- Hydrate the rich sections + listing-agent contact card. Every block is
-         skipped when its data is absent, so a sparse listing shows nothing extra. -->
-    <script>
-        (async function hydrateExtra() {
-            const host = document.getElementById('lst-extra');
-            const slug = (location.pathname.match(/^\/listings\/([^\/?#]+)/) || [])[1];
-            if (!host || !slug) return;
-            let r;
-            try {
-                const res = await fetch(`/api/listings/slug/${encodeURIComponent(slug)}`);
-                if (!res.ok) return;
-                r = await res.json();
-            } catch (_) { return; }
+    <div class="pp-wrap">
+      <!-- Photo collage -->
+      <div class="pp-photos" id="pp-photos"></div>
 
-            const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-            const arr = v => (Array.isArray(v) ? v : []);
-            // Tolerant of both a raw number (12000) and a free-text string the
-            // agent typed ("$1,875,000"): strip $/commas; if it's still not a
-            // number, show what they typed verbatim.
-            const money = n => { if (n == null || n === '') return ''; const x = Number(String(n).replace(/[$,\s]/g, '')); return isNaN(x) ? String(n) : '$' + x.toLocaleString('en-US'); };
-            const num = n => (n == null || n === '' ? '' : Number(n).toLocaleString('en-US'));
-            // Distance: accept a number (2.1) or free text ("2.1 mi", "across the
-            // street"); append " mi" only when it's a bare number/needs it.
-            const dist = v => { if (v == null || v === '') return ''; const s = String(v).trim(); return /[a-z]/i.test(s) ? s : s + ' mi'; };
-            const TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
-            const sec = (title, inner) => (inner ? `<section class="lx-sec"><h2 class="lst-section-h" style="margin-top:0">${esc(title)}</h2>${inner}</section>` : '');
-            const dl = rows => { const ok = rows.filter(([, v]) => v != null && v !== '' && v !== false);
-                return ok.length ? `<dl class="lx-dl">${ok.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>` : ''; };
+      <div class="pp-body">
+        <!-- LEFT -->
+        <div id="pp-main"></div>
 
-            const highlights = arr(r.highlights).length
-                ? `<ul class="lx-hl">${arr(r.highlights).map(h => `<li>${TICK}<span>${esc(h)}</span></li>`).join('')}</ul>` : '';
-            const water = dl([
-                ['Water body', r.water_body], ['Shoreline', r.waterfront_feet ? `${num(r.waterfront_feet)} ft` : null],
-                ['Shoreline type', r.shoreline_type], ['Depth at dock', r.lake_depth_ft ? `${r.lake_depth_ft} ft` : null],
-                ['Dock', r.dock_included === true ? 'Included' : (r.dock_included === false ? 'Not included' : null)],
-                ['View', r.listing_view],
-            ]);
-            const systems = dl([
-                ['Heating', r.heating], ['Cooling', r.cooling], ['Roof', r.roof], ['Exterior', r.exterior],
-                ['Flooring', r.flooring], ['Basement', r.basement], ['Parking', r.parking],
-                ['Appliances', r.appliances], ['Utilities', r.utilities],
-            ]);
-            const fmtDate = d => { const x = new Date(d); return isNaN(x) ? esc(d) : x.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); };
-            const taxLine = r.annual_tax != null
-                ? `<p style="margin:0.8rem 0 0;color:#718096;font-size:0.9rem;">Annual property tax: <b>${esc(money(r.annual_tax))}</b>${r.hoa_fee != null ? ` · HOA ${esc(money(r.hoa_fee))}/mo` : ''}</p>` : '';
-            const history = arr(r.price_history).length
-                ? `<table class="lx-hist"><thead><tr><th>Date</th><th>Event</th><th style="text-align:right">Price</th></tr></thead><tbody>${
-                    arr(r.price_history).map(e => `<tr><td>${fmtDate(e.date)}</td><td style="color:#1a202c;font-weight:600">${esc(e.event)}</td><td>${esc(money(e.price))}</td></tr>`).join('')
-                  }</tbody></table>${taxLine}` : (taxLine || '');
-            const schoolDist = s => (s.distance_mi != null ? s.distance_mi : s.distance);
-            const schools = arr(r.schools).length
-                ? arr(r.schools).map(s => `<div class="lx-row">${(s.rating != null && s.rating !== '') ? `<div class="lx-rate">${esc(s.rating)}</div>` : ''}
-                    <div class="lx-row-m"><div class="lx-row-t">${esc(s.name)}</div><div class="lx-row-s">${esc(s.level || '')}</div></div>
-                    ${schoolDist(s) != null && schoolDist(s) !== '' ? `<div class="lx-row-d">${esc(dist(schoolDist(s)))}</div>` : ''}</div>`).join('') : '';
-            const walk = r.walk_score != null
-                ? `<div class="lx-row"><div class="lx-rate">${esc(r.walk_score)}</div><div class="lx-row-m">
-                     <div class="lx-row-t">${r.walk_score >= 70 ? 'Very walkable' : r.walk_score >= 50 ? 'Somewhat walkable' : 'Car-dependent'}</div>
-                     <div class="lx-row-s">Walk Score out of 100</div></div></div>` : '';
-            const nearDist = n => (n.distance_mi != null ? n.distance_mi : n.distance);
-            const nearby = walk + arr(r.nearby).map(n => `<div class="lx-row"><div class="lx-row-m">
-                    <div class="lx-row-t">${esc(n.name)}</div><div class="lx-row-s">${esc(n.type || n.category || '')}</div></div>
-                    ${nearDist(n) != null && nearDist(n) !== '' ? `<div class="lx-row-d">${esc(dist(nearDist(n)))}</div>` : ''}</div>`).join('');
+        <!-- RIGHT sticky sidebar -->
+        <div class="pp-side" id="pp-side"></div>
+      </div>
 
-            const a = r.agent;
-            const first = a ? String(a.display_name || '').split(' ')[0] : null;
-            const agentBlock = a ? `<section class="lx-sec" id="lst-agent">
-                <h2 class="lst-section-h" style="margin-top:0">Contact the listing agent</h2>
-                <div class="lx-agent">
-                    <div class="lx-agent-l">
-                        ${a.profile_photo_url ? `<img class="lx-avatar" src="${esc(a.profile_photo_url)}" alt="">` : `<div class="lx-avatar">${esc(String(a.display_name || 'A').trim().charAt(0).toUpperCase())}</div>`}
-                        <div class="lx-agent-n">${esc(a.display_name)}</div>
-                        <div class="lx-agent-b">${esc(a.brokerage_name || 'Independent Realtor')}${a.years_experience ? ` · ${esc(a.years_experience)} yrs` : ''}</div>
-                        ${a.headline ? `<p class="lx-agent-h">${esc(a.headline)}</p>` : ''}
-                        <p style="margin:0.9rem 0 0"><a href="/agents/${esc(a.slug)}" style="color:#1d6df2;font-weight:700;">View ${esc(first)}’s profile →</a></p>
-                    </div>
-                    <form class="lx-form" id="lx-form" novalidate>
-                        <input id="lx-name" type="text" placeholder="Your name" autocomplete="name" required>
-                        <input id="lx-email" type="email" placeholder="Email" autocomplete="email" required>
-                        <input id="lx-phone" type="tel" placeholder="Phone" autocomplete="tel">
-                        <textarea id="lx-notes" placeholder="I'd like to see this home.">I'd like to see ${esc(r.title)}.</textarea>
-                        <button type="submit" id="lx-send">Contact ${esc(first)}</button>
-                        <p class="lx-err" id="lx-err">Something went wrong. Please try again.</p>
-                        <p class="lx-note">Free, and we never sell your information.</p>
-                    </form>
-                    <div class="lx-ok" id="lx-ok">Sent. ${esc(first)} will be in touch.</div>
-                </div></section>` : '';
+      <!-- Request a tour band -->
+      <div class="pp-tour">
+        <div class="pp-tour-in">
+          <div><h2>Want to see it in person?</h2><p>Thirty seconds, no account, no obligation — and it never costs you anything.</p></div>
+          <button class="pp-tour-btn" onclick="ppTour('a tour')">Request a tour</button>
+        </div>
+      </div>
 
-            host.innerHTML =
-                sec("What's special", highlights) +
-                sec('Waterfront & shoreline', water) +
-                sec('Systems & utilities', systems) +
-                sec('Price & tax history', history) +
-                sec('Schools', schools) +
-                sec("What's nearby", nearby) +
-                agentBlock;
+      <!-- Mortgage calculator -->
+      <section class="pp-mtg" id="pp-mtg" style="display:none;">
+        <h2 class="pp-sec-h">Estimate your monthly payment</h2>
+        <div class="mtg-card">
+          <div class="mtg-grid">
+            <label>Home price<input id="mtg-price" type="number" inputmode="numeric"></label>
+            <label>Down payment (%)<input id="mtg-down" type="number" inputmode="numeric" value="20"></label>
+            <label>Interest rate (%)<input id="mtg-rate" type="number" step="0.1" inputmode="decimal" value="6.9"></label>
+            <label>Loan term<select id="mtg-term"><option value="30">30 years</option><option value="20">20 years</option><option value="15">15 years</option></select></label>
+          </div>
+          <div class="mtg-out">
+            <div class="mtg-total"><span id="mtg-monthly">$0</span><small>estimated / month</small></div>
+            <ul class="mtg-break">
+              <li>Principal &amp; interest <span id="mtg-pi">$0</span></li>
+              <li>Property tax <span id="mtg-tax">$0</span></li>
+              <li>Home insurance <span id="mtg-ins">$0</span></li>
+            </ul>
+          </div>
+        </div>
+        <p class="mtg-fine">Rough estimate for planning only — not a loan offer.</p>
+      </section>
 
-            const form = document.getElementById('lx-form');
-            if (!form) return;
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const name = document.getElementById('lx-name').value.trim();
-                const email = document.getElementById('lx-email').value.trim();
-                const phone = document.getElementById('lx-phone').value.trim();
-                const notes = document.getElementById('lx-notes').value.trim() || `Interested in ${r.title}.`;
-                const err = document.getElementById('lx-err');
-                err.style.display = 'none';
-                if (!name || (!email && !phone)) { err.textContent = 'Add your name and an email or phone.'; err.style.display = 'block'; return; }
-                const btn = document.getElementById('lx-send'); btn.disabled = true; btn.textContent = 'Sending…';
-                try {
-                    const res = await fetch('/api/leads', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name, email, phone, notes, source: 'property_question', listing_id: LISTING_ID }),
-                    });
-                    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Something went wrong.'); }
-                    form.style.display = 'none';
-                    document.getElementById('lx-ok').style.display = 'block';
-                } catch (ex) { err.textContent = ex.message; err.style.display = 'block'; btn.disabled = false; btn.textContent = `Contact ${first}`; }
-            });
-        })();
-    </script>
+      <!-- Related listings -->
+      <section class="pp-rel">{{LISTING_RELATED_HTML}}</section>
+    </div>
+
+    <!-- Lightbox -->
+    <div class="pp-lb" id="ppLb" onclick="ppLbBackdrop(event)">
+      <div class="pp-lb-top">
+        <span class="pp-lb-count" id="ppLbCount">1 / 1</span>
+        <button class="pp-lb-x" onclick="ppLbClose()" aria-label="Close">&times;</button>
+      </div>
+      <div class="pp-lb-stage">
+        <button class="pp-lb-nav" onclick="ppLbStep(-1)" aria-label="Previous">&#8249;</button>
+        <img class="pp-lb-img" id="ppLbImg" alt="Property photo">
+        <button class="pp-lb-nav" onclick="ppLbStep(1)" aria-label="Next">&#8250;</button>
+      </div>
+    </div>
+
+    <!-- Tour modal -->
+    <div class="pp-modal" id="ppModal" onclick="if(event.target===this)ppTourClose()">
+      <div class="pp-modal-card">
+        <button class="pp-modal-x" onclick="ppTourClose()" aria-label="Close">&times;</button>
+        <h3>Request a tour</h3>
+        <p class="sub" id="ppModalSub">The listing agent will reach out to schedule.</p>
+        <form onsubmit="ppTourSubmit(event)">
+          <input id="ppm-name" placeholder="Your name" required>
+          <input id="ppm-email" placeholder="Email" type="email">
+          <input id="ppm-phone" placeholder="Phone">
+          <textarea id="ppm-msg"></textarea>
+          <button class="pp-modal-go" type="submit">Send request</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="pp-toast" id="ppToast"></div>
 
     <global-footer></global-footer>
+
+    <script>
+      const LISTING_ID = '{{LISTING_ID}}';
+      const PRICE_NUM = Number('{{LISTING_PRICE_NUM}}') || 0;
+      const TAX_NUM = Number('{{LISTING_TAX_NUM}}') || 0;
+      const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const arr = v => (Array.isArray(v) ? v : (typeof v === 'string' ? (()=>{try{const p=JSON.parse(v);return Array.isArray(p)?p:[];}catch(_){return [];}})() : []));
+      const money = n => { if (n == null || n === '') return ''; const x = Number(String(n).replace(/[$,\s]/g, '')); return isNaN(x) ? String(n) : '$' + x.toLocaleString('en-US'); };
+      const numf = n => (n == null || n === '' ? '' : Number(n).toLocaleString('en-US'));
+      const dist = v => { if (v == null || v === '') return ''; const s = String(v).trim(); return /[a-z]/i.test(s) ? s : s + ' mi'; };
+      const cld = (u, w) => (typeof u === 'string' && u.includes('/upload/')) ? u.replace('/upload/', `/upload/w_${w},c_limit,q_auto,f_auto/`) : u;
+      const TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+      const GRID = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>';
+
+      let PP_IMAGES = [];
+      let R = null;
+
+      (async function hydrate() {
+        const slug = (location.pathname.match(/^\/listings\/([^\/?#]+)/) || [])[1];
+        if (!slug) return;
+        try {
+          const res = await fetch(`/api/listings/slug/${encodeURIComponent(slug)}`);
+          if (!res.ok) return;
+          R = await res.json();
+        } catch (_) { return; }
+        renderAll(R);
+        // Fire-and-forget view tracking + saved state.
+        fetch('/api/listings/' + LISTING_ID + '/view', { method: 'POST', credentials: 'include' }).catch(() => {});
+        refreshSaveState();
+      })();
+
+      function renderAll(r) {
+        const cityLine = [r.address, r.city, r.state].filter(Boolean).join(', ');
+        const priceStr = r.price != null ? '$' + Number(r.price).toLocaleString('en-US') : 'Contact for price';
+
+        // Sub-bar
+        document.getElementById('pp-sum-addr').textContent = cityLine || r.title || '';
+        document.getElementById('pp-sum-price').textContent = priceStr;
+        const specBits = [];
+        if (r.beds != null) specBits.push(`<b>${esc(r.beds)}</b> bd`);
+        if (r.baths != null) specBits.push(`<b>${esc(r.baths)}</b> ba`);
+        if (r.sqft != null) specBits.push(`<b>${numf(r.sqft)}</b> sqft`);
+        document.getElementById('pp-sum-specs').innerHTML = specBits.join(' · ');
+        document.title = (r.title || 'Lake home') + ' | MN Lake Homes';
+
+        // Photos
+        let gal = arr(r.gallery).map(g => typeof g === 'string' ? g : (g && g.url) || '').filter(Boolean);
+        PP_IMAGES = [r.featured_image_url, ...gal].filter(Boolean).filter((u, i, a) => a.indexOf(u) === i).slice(0, 20);
+        const ph = document.getElementById('pp-photos');
+        if (PP_IMAGES.length) {
+          const cellVA = (i, last) => `<button class="pp-ph-cell" onclick="ppLightbox(${i})" style="background-image:url('${esc(cld(PP_IMAGES[i], 700))}')">${last && PP_IMAGES.length > 3 ? `<span class="pp-viewall">${GRID}View all ${PP_IMAGES.length} photos</span>` : ''}</button>`;
+          ph.innerHTML = `<button class="pp-ph-main" onclick="ppLightbox(0)" style="background-image:url('${esc(cld(PP_IMAGES[0], 1400))}')"></button>
+            <div class="pp-ph-grid">${PP_IMAGES[1] ? cellVA(1, PP_IMAGES.length <= 2) : ''}${PP_IMAGES[2] ? cellVA(2, true) : (PP_IMAGES[1] ? '' : '')}</div>`;
+        } else { ph.style.display = 'none'; }
+
+        // LEFT column
+        const tags = [];
+        if (r.waterfront === true) tags.push('Waterfront');
+        if (r.water_body) tags.push(esc(r.water_body));
+        if (r.fireplace === true) tags.push('Fireplace');
+        if (r.listing_view) tags.push(esc(r.listing_view));
+        if (r.year_built) tags.push('Built ' + esc(r.year_built));
+        const tagRow = tags.length ? `<div class="pp-tagrow">${tags.map(t => `<span class="pp-tag">${t}</span>`).join('')}</div>` : '';
+
+        const descFull = (r.description || '').trim();
+        let descHtml = '';
+        if (descFull) {
+          if (descFull.length > 340) {
+            const cut = descFull.slice(0, 340).replace(/\s+\S*$/, '');
+            descHtml = `<p class="pp-desc">${esc(cut)}<span class="pp-desc-more" hidden> ${esc(descFull.slice(cut.length).trim())}</span><br><a class="pp-more" href="javascript:void(0)" onclick="ppToggleDesc(this)">Show more</a></p>`;
+          } else { descHtml = `<p class="pp-desc">${esc(descFull)}</p>`; }
+        }
+
+        const DAY = 86400000;
+        const dom = r.created_at ? Math.max(0, Math.floor((Date.now() - new Date(r.created_at).getTime()) / DAY)) : null;
+        const cut = (r.original_price != null && r.price != null && Number(r.price) < Number(r.original_price)) ? Number(r.original_price) - Number(r.price) : null;
+        const metaBits = [];
+        if (dom != null) metaBits.push(`<span><b>${dom === 0 ? 'New' : dom}</b>${dom === 0 ? '' : (dom === 1 ? ' day' : ' days') + ' on MN Lake Homes'}</span>`);
+        if (r.mls_number) metaBits.push(`<span>MLS# <b>${esc(r.mls_number)}</b></span>`);
+        if (cut) metaBits.push(`<span>Price cut: <b>$${cut.toLocaleString('en-US')}</b></span>`);
+        const metaHtml = metaBits.length ? `<div class="pp-meta">${metaBits.join('<span class="sep">|</span>')}</div>` : '';
+
+        // What's special
+        const hi = arr(r.highlights);
+        const special = hi.length ? section("What's special", `<ul class="pp-hl">${hi.map(h => `<li>${TICK}<span>${esc(typeof h === 'string' ? h : (h.text || h.label || h.name || ''))}</span></li>`).join('')}</ul>`) : '';
+
+        // Facts
+        const facts = [
+          ['Property type', r.property_type], ['Year built', r.year_built],
+          ['Bedrooms', r.beds], ['Bathrooms', r.baths],
+          ['Square feet', r.sqft != null ? numf(r.sqft) : null], ['Lot size', r.lot_acres != null ? r.lot_acres + ' acres' : null],
+          ['Stories', r.stories], ['Garage', r.garage_spaces != null ? r.garage_spaces + ' spaces' : null],
+          ['Heating', r.heating], ['Cooling', r.cooling], ['Basement', r.basement], ['Flooring', r.flooring],
+          ['Exterior', r.exterior], ['Roof', r.roof], ['Parking', r.parking], ['Appliances', r.appliances],
+          ['Waterfront', r.waterfront === true ? (r.waterfront_feet ? numf(r.waterfront_feet) + ' ft' : 'Yes') : null],
+          ['Shoreline type', r.shoreline_type], ['Lake depth', r.lake_depth_ft != null ? r.lake_depth_ft + ' ft' : null],
+          ['Dock', r.dock_included === true ? 'Included' : (r.dock_included === false ? 'Not included' : null)],
+          ['Utilities', r.utilities], ['HOA dues', r.hoa_fee != null ? money(r.hoa_fee) + '/mo' : null],
+        ].filter(f => f[1] != null && String(f[1]).trim() !== '');
+        const factsSec = facts.length ? section('Facts & features', `<div class="pp-facts">${facts.map(f => `<div class="pp-fact"><dt>${esc(f[0])}</dt><dd>${esc(f[1])}</dd></div>`).join('')}</div>`) : '';
+
+        // Price & tax history
+        const fmtDate = d => { const x = new Date(d); return isNaN(x) ? esc(d) : x.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); };
+        const hist = arr(r.price_history);
+        const taxLine = r.annual_tax != null ? `<p class="pp-tax">Annual property tax: <b>${esc(money(r.annual_tax))}</b></p>` : '';
+        const histSec = (hist.length || taxLine) ? section('Price & tax history',
+          (hist.length ? `<table class="pp-hist"><thead><tr><th>Date</th><th>Event</th><th>Price</th></tr></thead><tbody>${hist.map(e => `<tr><td>${fmtDate(e.date)}</td><td>${esc(e.event || '')}</td><td>${esc(money(e.price))}</td></tr>`).join('')}</tbody></table>` : '') + taxLine) : '';
+
+        // Schools
+        const sd = s => (s.distance_mi != null ? s.distance_mi : s.distance);
+        const sch = arr(r.schools);
+        const schSec = sch.length ? section('Schools', sch.map(s => `<div class="pp-row">${(s.rating != null && s.rating !== '') ? `<div class="pp-rate">${esc(s.rating)}<small>/10</small></div>` : ''}<div class="pp-row-m"><div class="pp-row-t">${esc(s.name || '')}</div><div class="pp-row-s">${esc(s.level || '')}</div></div>${sd(s) != null && sd(s) !== '' ? `<div class="pp-row-d">${esc(dist(sd(s)))}</div>` : ''}</div>`).join('')) : '';
+
+        // Nearby + walk score
+        const nd = n => (n.distance_mi != null ? n.distance_mi : n.distance);
+        const nb = arr(r.nearby);
+        let nbRows = '';
+        if (r.walk_score != null) nbRows += `<div class="pp-row"><div class="pp-rate">${esc(r.walk_score)}</div><div class="pp-row-m"><div class="pp-row-t">${r.walk_score >= 70 ? 'Very walkable' : r.walk_score >= 50 ? 'Somewhat walkable' : 'Car-dependent'}</div><div class="pp-row-s">Walk Score out of 100</div></div></div>`;
+        nbRows += nb.map(n => `<div class="pp-row"><div class="pp-row-m"><div class="pp-row-t">${esc(n.name || '')}</div><div class="pp-row-s">${esc(n.type || n.category || '')}</div></div>${nd(n) != null && nd(n) !== '' ? `<div class="pp-row-d">${esc(dist(nd(n)))}</div>` : ''}</div>`).join('');
+        const nbSec = nbRows ? section("What's nearby", nbRows) : '';
+
+        // Map
+        let mapSec = '';
+        if (r.latitude != null && r.longitude != null) {
+          const la = Number(r.latitude), lo = Number(r.longitude), d = 0.012;
+          const bbox = `${lo - d}%2C${la - d}%2C${lo + d}%2C${la + d}`;
+          mapSec = section('Location', `<div class="pp-map"><iframe loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${la}%2C${lo}"></iframe></div>`);
+        }
+
+        document.getElementById('pp-main').innerHTML =
+          `<h1 class="pp-h">${esc(r.address || r.title || '')}</h1>
+           <p class="pp-addr">${esc(cityLine)}${r.zip ? ' ' + esc(r.zip) : ''}</p>
+           ${tagRow}${descHtml}${metaHtml}${special}${factsSec}${histSec}${schSec}${nbSec}${mapSec}`;
+
+        // RIGHT sidebar
+        let side = '';
+        if (r.open_house_at && new Date(r.open_house_at).getTime() > Date.now()) {
+          const oh = new Date(r.open_house_at);
+          side += `<div class="pp-card"><div class="pp-oh-h">Open house</div><div class="pp-oh-date">${oh.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div><div class="pp-oh-time">${oh.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div><a class="pp-oh-cal" onclick="ppTour('the open house')">Request details</a></div>`;
+        }
+        const a = r.agent;
+        if (a) {
+          const first = String(a.display_name || '').split(' ')[0] || 'the agent';
+          side += `<div class="pp-card">
+            <div class="pp-listed">Listed by</div>
+            <div class="pp-agent">
+              ${a.profile_photo_url ? `<img class="pp-avatar" src="${esc(a.profile_photo_url)}" alt="">` : `<div class="pp-avatar">${esc(String(a.display_name || 'A').trim().charAt(0).toUpperCase())}</div>`}
+              <div class="pp-agent-n">${esc(a.display_name || 'Listing agent')}</div>
+              <div class="pp-agent-b">${esc(a.brokerage_name || 'Independent Realtor')}${a.years_experience ? ' · ' + esc(a.years_experience) + ' yrs' : ''}</div>
+              ${a.headline ? `<p class="pp-agent-h">${esc(a.headline)}</p>` : ''}
+            </div>
+            <form class="pp-cform" onsubmit="ppContact(event)">
+              <input id="pp-c-name" placeholder="Your name" required>
+              <input id="pp-c-email" placeholder="Email" type="email">
+              <input id="pp-c-phone" placeholder="Phone">
+              <textarea id="pp-c-msg">I'd like to see ${esc(r.title || 'this property')}.</textarea>
+              <button class="pp-contact-btn" type="submit">Contact ${esc(first)}<small>Replies land in their inbox directly</small></button>
+              <p class="pp-fine">Free, and we never sell your information.</p>
+            </form>
+            <div class="pp-ok" id="pp-c-ok">Sent — ${esc(first)} will be in touch.</div>
+            ${a.slug ? `<a class="pp-viewprofile" href="/agents/${esc(a.slug)}">View ${esc(first)}'s profile</a>` : ''}
+          </div>`;
+        } else {
+          side += `<div class="pp-card"><div class="pp-listed">Interested?</div><form class="pp-cform" onsubmit="ppContact(event)" style="margin-top:0.75rem;"><input id="pp-c-name" placeholder="Your name" required><input id="pp-c-email" placeholder="Email" type="email"><input id="pp-c-phone" placeholder="Phone"><textarea id="pp-c-msg">I'd like to see ${esc(r.title || 'this property')}.</textarea><button class="pp-contact-btn" type="submit">Request a showing</button><p class="pp-fine">Free, and we never sell your information.</p></form><div class="pp-ok" id="pp-c-ok">Sent — an agent will be in touch.</div></div>`;
+        }
+        document.getElementById('pp-side').innerHTML = side;
+
+        // Mortgage
+        if (PRICE_NUM > 0) initMortgage();
+      }
+
+      function section(title, inner) { return inner ? `<section class="pp-sec"><h2 class="pp-sec-h">${esc(title)}</h2>${inner}</section>` : ''; }
+
+      // ── Lightbox ──
+      let ppLbI = 0;
+      function ppLightbox(i) { if (!PP_IMAGES.length) return; ppLbI = i; ppLbRender(); document.getElementById('ppLb').classList.add('open'); document.body.style.overflow = 'hidden'; }
+      function ppLbRender() { document.getElementById('ppLbImg').src = cld(PP_IMAGES[ppLbI], 1400); document.getElementById('ppLbCount').textContent = (ppLbI + 1) + ' / ' + PP_IMAGES.length; }
+      function ppLbStep(d) { ppLbI = (ppLbI + d + PP_IMAGES.length) % PP_IMAGES.length; ppLbRender(); }
+      function ppLbClose() { document.getElementById('ppLb').classList.remove('open'); document.body.style.overflow = ''; }
+      function ppLbBackdrop(e) { if (!e.target.closest('.pp-lb-img, .pp-lb-nav')) ppLbClose(); }
+
+      function ppToggleDesc(el) { const m = el.parentNode.querySelector('.pp-desc-more'); if (!m) return; const open = m.hasAttribute('hidden'); if (open) { m.removeAttribute('hidden'); el.textContent = 'Show less'; } else { m.setAttribute('hidden', ''); el.textContent = 'Show more'; } }
+
+      // ── Tour modal → lead ──
+      function ppTour(what) { document.getElementById('ppModalSub').textContent = 'The listing agent will reach out about ' + what + '.'; document.getElementById('ppm-msg').value = R ? `I'd like to tour ${R.title || 'this property'}.` : "I'd like to tour this property."; document.getElementById('ppModal').classList.add('open'); document.body.style.overflow = 'hidden'; }
+      function ppTourClose() { document.getElementById('ppModal').classList.remove('open'); document.body.style.overflow = ''; }
+      async function ppTourSubmit(e) {
+        e.preventDefault();
+        const name = document.getElementById('ppm-name').value.trim();
+        const email = document.getElementById('ppm-email').value.trim();
+        const phone = document.getElementById('ppm-phone').value.trim();
+        const notes = document.getElementById('ppm-msg').value.trim() || 'Requested a tour.';
+        if (!name || (!email && !phone)) { ppToast('Add your name and an email or phone.'); return; }
+        try {
+          const res = await fetch('/api/leads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, phone, notes, source: 'property_question', listing_id: LISTING_ID }) });
+          if (!res.ok) throw new Error();
+          ppTourClose(); ppToast("Request sent — the agent will be in touch.");
+        } catch (_) { ppToast('Something went wrong — please try again.'); }
+      }
+      async function ppContact(e) {
+        e.preventDefault();
+        const name = document.getElementById('pp-c-name').value.trim();
+        const email = document.getElementById('pp-c-email').value.trim();
+        const phone = document.getElementById('pp-c-phone').value.trim();
+        const notes = document.getElementById('pp-c-msg').value.trim() || 'Interested in this property.';
+        const err = () => ppToast('Add your name and an email or phone.');
+        if (!name || (!email && !phone)) { err(); return; }
+        try {
+          const res = await fetch('/api/leads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, phone, notes, source: 'property_question', listing_id: LISTING_ID }) });
+          if (!res.ok) throw new Error();
+          e.target.style.display = 'none';
+          const ok = document.getElementById('pp-c-ok'); if (ok) ok.style.display = 'block';
+        } catch (_) { ppToast('Something went wrong — please try again.'); }
+      }
+
+      // ── Save / Share ──
+      async function refreshSaveState() {
+        try { const r = await fetch('/api/listings/saved/ids', { credentials: 'include' }); if (!r.ok) return; const { ids } = await r.json(); setSaved(Array.isArray(ids) && ids.includes(LISTING_ID)); } catch (_) {}
+      }
+      function setSaved(on) { document.getElementById('pp-save-heart').textContent = on ? '♥' : '♡'; document.getElementById('pp-save-label').textContent = on ? 'Saved' : 'Save'; document.getElementById('pp-save-btn').style.color = on ? '#c53030' : ''; }
+      async function toggleSaveListing() {
+        try { const r = await fetch('/api/listings/' + LISTING_ID + '/save', { method: 'POST', credentials: 'include' }); if (r.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(location.pathname); return; } const d = await r.json(); if (r.ok) { setSaved(!!d.saved); ppToast(d.saved ? 'Saved to your favorites.' : 'Removed from favorites.'); } } catch (_) {}
+      }
+      async function shareListing() {
+        const url = location.href;
+        if (navigator.share) { try { await navigator.share({ title: document.title, url }); } catch (_) {} return; }
+        try { await navigator.clipboard.writeText(url); ppToast('Link copied to clipboard.'); } catch (_) { ppToast(url); }
+      }
+
+      // ── Toast ──
+      let toastT;
+      function ppToast(msg) { const t = document.getElementById('ppToast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600); }
+
+      // ── Mortgage ──
+      function initMortgage() {
+        const $ = id => document.getElementById(id);
+        const usd = n => '$' + Math.round(n).toLocaleString('en-US');
+        $('mtg-price').value = PRICE_NUM;
+        function calc() {
+          const price = Number($('mtg-price').value) || 0;
+          const downPct = Math.min(100, Math.max(0, Number($('mtg-down').value) || 0));
+          const rate = Math.max(0, Number($('mtg-rate').value) || 0) / 100 / 12;
+          const n = (Number($('mtg-term').value) || 30) * 12;
+          const loan = price * (1 - downPct / 100);
+          const pi = rate > 0 ? loan * rate * Math.pow(1 + rate, n) / (Math.pow(1 + rate, n) - 1) : loan / n;
+          const tax = (TAX_NUM > 0 ? TAX_NUM : price * 0.011) / 12;
+          const ins = price * 0.0035 / 12;
+          $('mtg-pi').textContent = usd(pi || 0); $('mtg-tax').textContent = usd(tax || 0); $('mtg-ins').textContent = usd(ins || 0);
+          $('mtg-monthly').textContent = usd((pi || 0) + tax + ins);
+        }
+        ['mtg-price', 'mtg-down', 'mtg-rate', 'mtg-term'].forEach(id => $(id).addEventListener('input', calc));
+        $('pp-mtg').style.display = 'block';
+        calc();
+      }
+
+      document.addEventListener('keydown', function (e) {
+        if (document.getElementById('ppLb').classList.contains('open')) { if (e.key === 'Escape') ppLbClose(); if (e.key === 'ArrowRight') ppLbStep(1); if (e.key === 'ArrowLeft') ppLbStep(-1); }
+        if (e.key === 'Escape' && document.getElementById('ppModal').classList.contains('open')) ppTourClose();
+      });
+    </script>
 </body>
 </html>
