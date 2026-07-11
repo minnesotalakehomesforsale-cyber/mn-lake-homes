@@ -2477,6 +2477,7 @@ async function ensureTables() {
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS form_payload_json JSONB;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS source_page_url VARCHAR(1000);
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS source_page_title VARCHAR(255);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS follow_up_at TIMESTAMPTZ;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE SET NULL;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS property_address TEXT;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS property_street VARCHAR(255);
@@ -2553,6 +2554,7 @@ async function ensureTables() {
             -- tier than they pay for.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS paid_membership_code VARCHAR(50);
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS tier_comped BOOLEAN NOT NULL DEFAULT FALSE;
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS leads_paused BOOLEAN NOT NULL DEFAULT FALSE;
             -- Throttle for churn-risk nudges so a disengaged agent isn't emailed
             -- more than every couple of weeks.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS last_churn_nudge_at TIMESTAMPTZ;

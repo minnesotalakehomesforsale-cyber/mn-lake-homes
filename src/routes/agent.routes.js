@@ -28,6 +28,8 @@ router.get('/me/referrals', verifyToken, requireRole('agent'), agentController.g
 router.get('/me/leaderboard', verifyToken, requireRole('agent'), agentController.getMyLeaderboard);
 router.get('/admin/at-risk', verifyToken, agentController.getAtRiskAgents);
 router.patch('/me/leads/:id/status', verifyToken, requireRole('agent'), agentController.updateMyLeadStatus);
+router.patch('/me/leads/:id/followup', verifyToken, requireRole('agent'), agentController.setMyLeadFollowUp);
+router.patch('/me/pause', verifyToken, requireRole('agent'), agentController.setMyPause);
 router.patch('/me/leads/:id/outcome', verifyToken, requireRole('agent'), agentController.setMyLeadOutcome);
 router.get  ('/me/leads/:id/notes',  verifyToken, requireRole('agent'), agentController.getMyLeadNotes);
 router.post ('/me/leads/:id/notes',  verifyToken, requireRole('agent'), agentController.addMyLeadNote);

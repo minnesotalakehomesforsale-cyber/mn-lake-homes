@@ -149,6 +149,18 @@
         .dash-article p { font-size: 0.85rem; color: #4a5568; line-height: 1.5; margin: 0; flex: 1; }
         .dash-article .meta { font-size: 0.74rem; color: #a0aec0; margin-top: 0.15rem; }
 
+        /* Follow-ups due */
+        .dash-followups-box { border: 1px solid #fed7aa; background: #fffbeb; border-radius: 14px; padding: 1.25rem 1.4rem; margin-bottom: 1.75rem; }
+        .dash-followups-box h3 { margin: 0 0 0.6rem; font-size: 1.05rem; font-weight: 800; color: #b45309; }
+        .dash-followups-box .fu-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.65rem 0.4rem; border-top: 1px solid #fde9c8; cursor: pointer; border-radius: 8px; }
+        .dash-followups-box .fu-row:first-of-type { border-top: 0; }
+        .dash-followups-box .fu-row:hover { background: rgba(255,255,255,0.6); }
+        .dash-followups-box .fu-name { font-weight: 800; color: #1a202c; font-size: 0.92rem; }
+        .dash-followups-box .fu-sub { color: #a0aec0; font-size: 0.8rem; margin-left: 0.5rem; }
+        .dash-followups-box .fu-when { font-size: 0.78rem; font-weight: 800; color: #b45309; white-space: nowrap; flex-shrink: 0; }
+        .dash-followups-box .fu-when.overdue { color: #b91c1c; }
+        @media (max-width: 560px) { .dash-followups-box .fu-row { flex-direction: column; align-items: flex-start; gap: 0.2rem; } }
+
         /* Backlink-your-profile encouragement */
         .dash-backlink { margin-top: 2rem; border: 1px solid #cfe0f8; background: linear-gradient(135deg,#f5f9ff,#eef5ff); border-radius: 16px; padding: 1.75rem; }
         .dash-backlink .bl-head { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1rem; }
@@ -232,6 +244,14 @@
         .lp-log-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
         .lp-log-btn { flex: 1 1 auto; min-width: 0; font: inherit; font-size: 0.82rem; font-weight: 700; padding: 0.55rem 0.6rem; border: 1px solid #e2e8f0; background: #fff; border-radius: 9px; cursor: pointer; color: #1a202c; white-space: nowrap; }
         .lp-log-btn:hover { border-color: #1d6df2; background: #f7faff; color: #1d6df2; }
+        .lp-tpl-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .lp-tpl-btn { font: inherit; font-size: 0.8rem; font-weight: 700; padding: 0.45rem 0.8rem; border: 1px solid #e2e8f0; background: #fff; border-radius: 20px; cursor: pointer; color: #1a202c; }
+        .lp-tpl-btn:hover { border-color: #1d6df2; color: #1d6df2; background: #f7faff; }
+        .lp-followup-row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+        .lp-followup-row input[type=date] { flex: 1; min-width: 140px; box-sizing: border-box; font: inherit; font-size: 0.88rem; padding: 0.55rem 0.7rem; border: 1px solid #e2e8f0; border-radius: 9px; }
+        .lp-fu-set { background: #1d6df2; color: #fff; border: 0; border-radius: 9px; padding: 0.55rem 1rem; font: inherit; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+        .lp-fu-set:hover { background: #155bc8; }
+        .lp-fu-clear { background: #fff; color: #718096; border: 1px solid #e2e8f0; border-radius: 9px; padding: 0.55rem 0.9rem; font: inherit; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
         .lp-status-btn {
             padding: 0.7rem 0.6rem; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #fff;
             font: inherit; font-size: 0.85rem; font-weight: 700; color: #4a5568; cursor: pointer;
@@ -421,6 +441,17 @@
                         </div>
                         <p class="roi-foot" id="roi-foot"></p>
                     </div>
+
+                    <div id="pwa-install" style="display:none;align-items:center;gap:1rem;background:linear-gradient(135deg,#1d6df2,#155bc8);color:#fff;border-radius:14px;padding:1rem 1.4rem;margin-bottom:1.75rem;flex-wrap:wrap;">
+                        <div style="flex:1;min-width:200px;">
+                            <div style="font-weight:800;font-size:1rem;">📲 Add the portal to your phone</div>
+                            <div style="font-size:0.85rem;opacity:0.92;">Install MN Lake Homes for one-tap access to your leads — no app store needed.</div>
+                        </div>
+                        <button onclick="pwaInstall()" style="background:#fff;color:#1d6df2;border:0;border-radius:10px;padding:0.6rem 1.3rem;font:inherit;font-weight:800;font-size:0.9rem;cursor:pointer;white-space:nowrap;">Install</button>
+                        <button onclick="pwaDismiss()" style="background:transparent;color:rgba(255,255,255,0.9);border:0;font:inherit;font-weight:700;font-size:0.85rem;cursor:pointer;">Not now</button>
+                    </div>
+
+                    <div id="dash-followups"></div>
 
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin:0.5rem 0 1rem;flex-wrap:wrap;">
                         <h3 class="dash-section-h" style="margin:0;">My Properties</h3>
@@ -749,7 +780,10 @@
                     <div class="view-card" style="background: #fff; padding: 2rem 2.5rem; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 1.5rem;">
                         <div class="profile-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
                             <h2 style="font-size: 2.1rem; font-weight: 800;">Lead Inbox</h2>
-                            <button onclick="loadLeads()" style="border: 1px solid #e2e8f0; background: #f7f9fa; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #4a5568;">↺ Refresh</button>
+                            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                                <button id="lead-pause-btn" onclick="togglePause()" style="border: 1px solid #e2e8f0; background: #fff; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 700; cursor: pointer; color: #4a5568;">⏸ Pause leads</button>
+                                <button onclick="loadLeads()" style="border: 1px solid #e2e8f0; background: #f7f9fa; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #4a5568;">↺ Refresh</button>
+                            </div>
                         </div>
                         <p style="color: #718096; margin-bottom: 1.5rem;">Your matched buyers, sellers &amp; renters. Respond fast — the first agent to reply usually wins the deal.</p>
 
@@ -776,6 +810,8 @@
                             <button class="inbox-tab"        data-status="closed"      onclick="filterLeads('closed', this)">Closed</button>
                         </div>
                     </div>
+
+                    <div id="lead-paused-banner" style="display:none;background:#fffbeb;border:1px solid #fed7aa;color:#92400e;border-radius:12px;padding:0.9rem 1.25rem;margin-bottom:1.25rem;font-weight:600;font-size:0.9rem;line-height:1.5;">⏸ You're paused — new leads are routing to other agents so your response time isn't affected. Hit <b>Resume leads</b> above whenever you're ready.</div>
 
                     <div id="leads-list">
                         <div style="text-align:center; padding: 3rem; color: #a0aec0;">Loading leads...</div>
@@ -1566,6 +1602,7 @@
                         badge.style.display = 'inline-block';
                     }
                     updateDashLeads();
+                    renderDueFollowups();
                 }
             } catch(_) {}
 
@@ -1817,6 +1854,10 @@
 
             document.getElementById('dash-acct-desc').textContent =
                 (agent.membership_badge || agent.membership_name || 'Agent') + ' · billing & login';
+
+            // Pause-leads (vacation) state.
+            _leadsPaused = !!agent.leads_paused;
+            renderPauseState();
 
             // Backlink helper — the clean SEO profile URL + a ready-made anchor.
             const blUrl = document.getElementById('bl-url');
@@ -2182,6 +2223,25 @@
         function escA(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
         function timeAgo(d){ const ms = Date.now() - new Date(d).getTime(); if (isNaN(ms)) return ''; const m = Math.floor(ms/60000); if (m < 1) return 'just now'; if (m < 60) return m+'m ago'; const h = Math.floor(m/60); if (h < 24) return h+'h ago'; const days = Math.floor(h/24); return days+'d ago'; }
 
+        // PWA "add to home screen" install prompt.
+        let _pwaPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            _pwaPrompt = e;
+            try { if (localStorage.getItem('pwaDismissed') === '1') return; } catch (_) {}
+            const el = document.getElementById('pwa-install');
+            if (el) el.style.display = 'flex';
+        });
+        async function pwaInstall() {
+            const el = document.getElementById('pwa-install');
+            if (el) el.style.display = 'none';
+            if (!_pwaPrompt) return;
+            _pwaPrompt.prompt();
+            try { await _pwaPrompt.userChoice; } catch (_) {}
+            _pwaPrompt = null;
+        }
+        function pwaDismiss() { try { localStorage.setItem('pwaDismissed', '1'); } catch (_) {} const el = document.getElementById('pwa-install'); if (el) el.style.display = 'none'; }
+
         async function loadLeads() {
             document.getElementById('leads-list').innerHTML =
                 '<div style="text-align:center;padding:3rem;color:#a0aec0;">Loading...</div>';
@@ -2215,6 +2275,63 @@
                 c.textContent = n;
             });
             updateDashLeads();
+            renderDueFollowups();
+        }
+
+        // "Follow-ups due" list on the overview — leads with a reminder for today or earlier.
+        function renderDueFollowups() {
+            const host = document.getElementById('dash-followups');
+            if (!host || !Array.isArray(allLeads)) return;
+            const startToday = new Date(); startToday.setHours(0, 0, 0, 0);
+            const endToday = new Date(); endToday.setHours(23, 59, 59, 999);
+            const due = allLeads
+                .filter(l => l.follow_up_at && l.status !== 'closed' && l.status !== 'archived'
+                    && new Date(l.follow_up_at).getTime() <= endToday.getTime())
+                .sort((a, b) => new Date(a.follow_up_at) - new Date(b.follow_up_at));
+            if (!due.length) { host.innerHTML = ''; return; }
+            host.innerHTML = `
+                <div class="dash-followups-box">
+                    <h3>🔔 Follow-ups due (${due.length})</h3>
+                    ${due.map(l => {
+                        const overdue = new Date(l.follow_up_at).getTime() < startToday.getTime();
+                        const when = new Date(l.follow_up_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        return `<div class="fu-row" onclick="openLeadPanel('${l.id}')">
+                            <div><span class="fu-name">${escA(l.name || 'Lead')}</span><span class="fu-sub">${escA(l.email || l.phone || '')}</span></div>
+                            <span class="fu-when${overdue ? ' overdue' : ''}">${overdue ? 'Overdue' : 'Due'} · ${when}</span>
+                        </div>`;
+                    }).join('')}
+                </div>`;
+        }
+
+        // Vacation / pause-leads toggle.
+        let _leadsPaused = false;
+        function renderPauseState() {
+            const btn = document.getElementById('lead-pause-btn');
+            const banner = document.getElementById('lead-paused-banner');
+            if (btn) {
+                btn.textContent = _leadsPaused ? '▶ Resume leads' : '⏸ Pause leads';
+                btn.style.background = _leadsPaused ? '#1d6df2' : '#fff';
+                btn.style.color = _leadsPaused ? '#fff' : '#4a5568';
+                btn.style.borderColor = _leadsPaused ? '#1d6df2' : '#e2e8f0';
+            }
+            if (banner) banner.style.display = _leadsPaused ? 'block' : 'none';
+        }
+        async function togglePause() {
+            const next = !_leadsPaused;
+            if (next && !confirm("Pause new leads? You won't receive new matched leads until you resume — your existing leads stay in your inbox.")) return;
+            const btn = document.getElementById('lead-pause-btn');
+            if (btn) btn.disabled = true;
+            try {
+                const r = await fetch('/api/agents/me/pause', {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ paused: next }),
+                });
+                if (!r.ok) throw new Error();
+                const data = await r.json();
+                _leadsPaused = !!data.leads_paused;
+                renderPauseState();
+            } catch (_) { alert('Could not update — try again.'); }
+            finally { if (btn) btn.disabled = false; }
         }
 
         function filterLeads(status, el) {
@@ -2359,6 +2476,16 @@
             document.getElementById('lp-save-note').className = 'lp-save-note';
             renderOutcome(l);
 
+            // Follow-up reminder
+            const fu = document.getElementById('lp-followup');
+            fu.value = l.follow_up_at ? new Date(l.follow_up_at).toISOString().slice(0, 10) : '';
+            const fnote = document.getElementById('lp-followup-note');
+            fnote.textContent = l.follow_up_at ? '🔔 Reminder set for ' + new Date(l.follow_up_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+            fnote.className = 'lp-save-note' + (l.follow_up_at ? ' ok' : '');
+
+            // Quick-reply templates (personalized to this lead)
+            renderTemplates(l);
+
             // Notes
             document.getElementById('lp-note-input').value = '';
             loadLeadNotes(id);
@@ -2441,6 +2568,47 @@
                 const note = document.getElementById('lp-save-note');
                 note.className = 'lp-save-note err'; note.textContent = 'Could not log that — try again.';
             }
+        }
+
+        // Quick-reply templates — personalized first-touch messages to copy.
+        function renderTemplates(l) {
+            const first = (l.name || 'there').toString().split(' ')[0];
+            const area = l.location_text || 'the lake';
+            window._leadTemplates = [
+                { label: '👋 Intro', text: `Hi ${first}, this is [Your Name] with MN Lake Homes — thanks for reaching out about ${area}! I'd love to help you find the right place. When's a good time for a quick call?` },
+                { label: '🏡 Send options', text: `Hi ${first}, I pulled a few ${area} listings that might be a great fit. Want me to send them over?` },
+                { label: '📞 Follow-up', text: `Hi ${first}, just checking in on your ${area} search — happy to help whenever you're ready. No pressure at all!` },
+            ];
+            document.getElementById('lp-tpl-row').innerHTML = window._leadTemplates
+                .map((t, i) => `<button type="button" class="lp-tpl-btn" onclick="copyTemplate(${i}, this)">${escA(t.label)}</button>`).join('');
+        }
+        function copyTemplate(i, btn) {
+            const t = (window._leadTemplates || [])[i]; if (!t) return;
+            const done = () => { const o = btn.textContent; btn.textContent = '✓ Copied'; setTimeout(() => btn.textContent = o, 1400); };
+            if (navigator.clipboard) navigator.clipboard.writeText(t.text).then(done).catch(done); else done();
+        }
+
+        // Follow-up reminders.
+        function setFollowUp() { const v = document.getElementById('lp-followup').value; if (!v) { document.getElementById('lp-followup').focus(); return; } saveFollowUp(v); }
+        function clearFollowUp() { document.getElementById('lp-followup').value = ''; saveFollowUp(null); }
+        async function saveFollowUp(dateStr) {
+            if (!_activeLeadId) return;
+            const note = document.getElementById('lp-followup-note');
+            note.className = 'lp-save-note'; note.textContent = 'Saving…';
+            const iso = dateStr ? new Date(dateStr + 'T09:00:00').toISOString() : null;
+            try {
+                const r = await fetch(`/api/agents/me/leads/${encodeURIComponent(_activeLeadId)}/followup`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ follow_up_at: iso }),
+                });
+                if (!r.ok) throw new Error();
+                const data = await r.json();
+                const l = allLeads.find(x => String(x.id) === String(_activeLeadId));
+                if (l) l.follow_up_at = data.follow_up_at;
+                note.className = 'lp-save-note ok';
+                note.textContent = data.follow_up_at ? '🔔 Reminder set for ' + new Date(data.follow_up_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '✓ Reminder cleared.';
+                renderDueFollowups();
+            } catch (_) { note.className = 'lp-save-note err'; note.textContent = 'Could not save the reminder.'; }
         }
 
         function renderStatusButtons(current) {
@@ -3237,6 +3405,10 @@
                 <button type="button" class="lp-log-btn" onclick="logContact('📵 Called — no answer')">📵 No answer</button>
             </div>
 
+            <p class="lp-section-label" style="margin-top:1.25rem;">Quick reply templates</p>
+            <p style="font-size:0.78rem;color:#a0aec0;margin:-0.3rem 0 0.6rem;line-height:1.5;">Tap to copy a personalized first message, then paste into your text or email.</p>
+            <div class="lp-tpl-row" id="lp-tpl-row"></div>
+
             <div id="lp-msg-wrap" style="display:none;">
                 <p class="lp-section-label">Their message</p>
                 <div class="lp-msg" id="lp-msg"></div>
@@ -3250,6 +3422,14 @@
             <p class="lp-section-label">Status</p>
             <div class="lp-status-grid" id="lp-status-grid"></div>
             <div class="lp-save-note" id="lp-save-note"></div>
+
+            <p class="lp-section-label" style="margin-top:1.75rem;">Follow-up reminder</p>
+            <div class="lp-followup-row">
+                <input id="lp-followup" type="date">
+                <button type="button" onclick="setFollowUp()" class="lp-fu-set">Set reminder</button>
+                <button type="button" onclick="clearFollowUp()" class="lp-fu-clear">Clear</button>
+            </div>
+            <div class="lp-save-note" id="lp-followup-note"></div>
 
             <p class="lp-section-label" style="margin-top:1.75rem;">Outcome</p>
             <p style="font-size:0.78rem;color:#a0aec0;margin:-0.3rem 0 0.6rem;line-height:1.5;">Closed this lead? Marking it Won (with the sale price) builds your track record and helps us prove the network's value.</p>

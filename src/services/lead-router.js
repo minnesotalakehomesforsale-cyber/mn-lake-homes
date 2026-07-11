@@ -123,6 +123,7 @@ async function agentsForTag(tagId) {
         JOIN agents     a ON a.user_id = u.id
                           AND a.profile_status = 'published'
                           AND a.is_published   = TRUE
+                          AND COALESCE(a.leads_paused, FALSE) = FALSE
         JOIN memberships m ON m.id = a.membership_id
         WHERE ut.tag_id = $1
           AND m.code <> 'free'                       -- free-tier agents are never routed leads
@@ -182,6 +183,7 @@ async function agentsForLake(lakeId) {
         FROM agent_lakes al
         JOIN agents a ON a.id = al.agent_id
                      AND a.profile_status = 'published' AND a.is_published = TRUE
+                     AND COALESCE(a.leads_paused, FALSE) = FALSE
         JOIN users  u ON u.id = a.user_id AND u.account_status = 'active'
         JOIN memberships m ON m.id = a.membership_id
         WHERE al.lake_id = $1

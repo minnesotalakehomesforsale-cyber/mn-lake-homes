@@ -607,7 +607,7 @@ const getMyLeads = async (req, res) => {
                    l.assigned_at, l.agent_ack_at, l.sla_reassign_count,
                    l.outcome, l.outcome_price, l.outcome_note,
                    l.lead_score, l.lead_tier, l.is_waterfront, l.waterfront_feet,
-                   l.property_address
+                   l.property_address, l.follow_up_at
             FROM leads l
             JOIN agents a ON l.agent_id = a.id
             JOIN users u ON a.user_id = u.id
@@ -669,6 +669,52 @@ const updateMyLeadStatus = async (req, res) => {
     } catch (err) {
         console.error('[updateMyLeadStatus]', err.message);
         res.status(500).json({ error: 'Failed to update lead status.' });
+    }
+};
+
+/**
+ * PATCH /api/agents/me/leads/:id/followup  { follow_up_at: ISO string | null }
+ * Sets or clears a follow-up reminder date on the agent's own lead.
+ */
+const setMyLeadFollowUp = async (req, res) => {
+    const userId = req.user.userId;
+    const { id } = req.params;
+    let when = req.body?.follow_up_at ?? null;
+    if (when) { const d = new Date(when); if (isNaN(d)) return res.status(400).json({ error: 'Invalid date.' }); when = d.toISOString(); }
+    try {
+        const { rows, rowCount } = await pool.query(`
+            UPDATE leads l SET follow_up_at = $1, updated_at = NOW()
+              FROM agents a
+             WHERE l.id = $2 AND l.agent_id = a.id AND a.user_id = $3 AND l.deleted_at IS NULL
+            RETURNING l.id, l.follow_up_at
+        `, [when, id, userId]);
+        if (!rowCount) return res.status(404).json({ error: 'Lead not found or not assigned to you.' });
+        res.json({ success: true, id: rows[0].id, follow_up_at: rows[0].follow_up_at });
+    } catch (err) {
+        console.error('[setMyLeadFollowUp]', err.message);
+        res.status(500).json({ error: 'Failed to set the reminder.' });
+    }
+};
+
+/**
+ * PATCH /api/agents/me/pause  { paused: boolean }
+ * Vacation mode — while paused, routeLead skips this agent so they don't get
+ * leads they can't work (and their response-time SLA isn't hurt).
+ */
+const setMyPause = async (req, res) => {
+    const userId = req.user.userId;
+    const paused = req.body?.paused === true || req.body?.paused === 'true';
+    try {
+        const { rows, rowCount } = await pool.query(
+            `UPDATE agents a SET leads_paused = $1, updated_at = NOW()
+               FROM users u WHERE a.user_id = u.id AND u.id = $2
+             RETURNING a.leads_paused`,
+            [paused, userId]);
+        if (!rowCount) return res.status(404).json({ error: 'Agent profile not found.' });
+        res.json({ success: true, leads_paused: rows[0].leads_paused });
+    } catch (err) {
+        console.error('[setMyPause]', err.message);
+        res.status(500).json({ error: 'Failed to update your lead status.' });
     }
 };
 
@@ -1104,6 +1150,8 @@ module.exports = {
     getAtRiskAgents,
     setMyLeadOutcome,
     updateMyLeadStatus,
+    setMyLeadFollowUp,
+    setMyPause,
     getMyLeadNotes,
     addMyLeadNote,
     uploadPhoto,
