@@ -3896,6 +3896,7 @@ async function ensureTables() {
              WHERE profile_photo_url LIKE '/assets/images/agents/%';
         `);
 
+        await ensureBootstrapAdmin();
         await seedBlogPosts();
         await applyBlogCoverMap();
         await seedDemoFreeAgent();
@@ -4141,6 +4142,41 @@ async function seedDemoFreeAgent() {
         }
     } catch (e) {
         console.warn('[seed] demo free agent skipped:', e.message);
+    }
+}
+
+// Bootstrap / repair the owner admin account from env vars. DISABLED unless
+// BOTH ADMIN_BOOTSTRAP_EMAIL and ADMIN_BOOTSTRAP_PASSWORD are set. When set,
+// on every boot it ensures that email is an ACTIVE super_admin with the given
+// password (creating the user if needed). This is the break-glass path for
+// regaining admin access without shell/DB access. Remove the two env vars once
+// you're back in; the password persists in the DB (bcrypt-hashed).
+async function ensureBootstrapAdmin() {
+    const email    = process.env.ADMIN_BOOTSTRAP_EMAIL;
+    const password = process.env.ADMIN_BOOTSTRAP_PASSWORD;
+    if (!email || !password) return;   // feature off unless both provided
+    try {
+        const bcrypt = require('bcrypt');
+        const em   = String(email).trim().toLowerCase();
+        const hash = await bcrypt.hash(String(password), 10);
+        const existing = await pool.query(`SELECT id FROM users WHERE LOWER(email) = $1 LIMIT 1`, [em]);
+        if (existing.rows.length) {
+            await pool.query(
+                `UPDATE users
+                    SET password_hash = $2, role = 'super_admin', account_status = 'active',
+                        password_changed_at = NOW(), deleted_at = NULL
+                  WHERE id = $1`,
+                [existing.rows[0].id, hash]);
+            console.log('[bootstrap-admin] repaired existing account as active super_admin:', em);
+        } else {
+            await pool.query(
+                `INSERT INTO users (first_name, last_name, full_name, email, password_hash, role, account_status, password_changed_at)
+                 VALUES ('Site','Admin','Site Admin', $1, $2, 'super_admin', 'active', NOW())`,
+                [em, hash]);
+            console.log('[bootstrap-admin] created new super_admin:', em);
+        }
+    } catch (e) {
+        console.warn('[bootstrap-admin] skipped:', e.message);
     }
 }
 
