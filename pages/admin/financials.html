@@ -139,6 +139,7 @@
                 <button id="tab-btn-revenue"  class="page-tab"        role="tab" onclick="showFin('revenue')">Agents</button>
                 <button id="tab-btn-seats"    class="page-tab"        role="tab" onclick="showFin('seats')">Founder Seats</button>
                 <button id="tab-btn-business" class="page-tab"        role="tab" onclick="showFin('business')">Businesses</button>
+                <button id="tab-btn-billing"  class="page-tab"        role="tab" onclick="showFin('billing')">⚠ Billing Alerts <span id="billing-alert-count" style="display:none;background:#c53030;color:#fff;border-radius:20px;padding:0.05rem 0.5rem;font-size:0.72rem;margin-left:0.3rem;">0</span></button>
             </div>
 
             <!-- ── COMPANY: goals + charts dashboard ─────────────────────── -->
@@ -205,6 +206,27 @@
                     <div id="bz-gaps"></div>
                 </div>
             </div>
+
+            <!-- ── BILLING ALERTS: canceled / at-risk agent subscriptions ──── -->
+            <div id="pane-billing" class="tab-pane" role="tabpanel">
+                <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+                    <div>
+                        <h3 style="font-size:1.05rem;font-weight:800;margin:0 0 0.2rem;">Subscriptions that need attention</h3>
+                        <p class="muted" style="margin:0;">Live from Stripe. <b>Resumable</b> (cancels at period end) can be restored with one click — no charge today, no gap. <b>Canceled</b> ones must be recreated in Stripe.</p>
+                    </div>
+                    <button class="btn-primary" onclick="loadBilling(true)">↻ Refresh</button>
+                </div>
+                <div id="billing-msg"></div>
+                <div class="fin-section" style="padding:0.4rem 0.6rem;">
+                    <table class="fin-table" id="billing-table">
+                        <thead><tr>
+                            <th>Agent</th><th>Plan</th><th>Status</th><th>Canceled</th>
+                            <th>Paid through</th><th style="text-align:right;">Action</th>
+                        </tr></thead>
+                        <tbody><tr><td colspan="6" class="muted" style="padding:2rem;text-align:center;">Loading…</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -212,10 +234,10 @@
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         const money = n => '$' + Math.round(n).toLocaleString('en-US');
         let _seatsLoaded = false;
-        const _loaded = { company: false, revenue: false, business: false };
+        const _loaded = { company: false, revenue: false, business: false, billing: false };
 
         function showFin(name) {
-            ['company', 'revenue', 'seats', 'business'].forEach(k => {
+            ['company', 'revenue', 'seats', 'business', 'billing'].forEach(k => {
                 document.getElementById('tab-btn-' + k).classList.toggle('active', k === name);
                 document.getElementById('pane-' + k).classList.toggle('active', k === name);
             });
@@ -223,6 +245,72 @@
             if (name === 'revenue'  && !_loaded.revenue)  { _loaded.revenue  = true; loadRevenue(); }
             if (name === 'seats'    && !_seatsLoaded)     { loadSeats(); }
             if (name === 'business' && !_loaded.business) { _loaded.business = true; loadBusiness(); }
+            if (name === 'billing'  && !_loaded.billing)  { _loaded.billing  = true; loadBilling(); }
+        }
+
+        // ── Billing Alerts: canceled / at-risk agent subscriptions ─────────
+        async function loadBilling(force) {
+            const tbody = document.querySelector('#billing-table tbody');
+            const msg = document.getElementById('billing-msg');
+            if (force) tbody.innerHTML = '<tr><td colspan="6" class="muted" style="padding:2rem;text-align:center;">Loading…</td></tr>';
+            msg.innerHTML = '';
+            let data;
+            try {
+                data = await fetch('/api/admin/billing/report', { credentials: 'include' }).then(r => r.ok ? r.json() : Promise.reject(r.status));
+            } catch (status) {
+                tbody.innerHTML = `<tr><td colspan="6" class="muted" style="padding:2rem;text-align:center;color:#c53030;">Could not load billing report${status === 401 ? ' — please sign in again.' : '.'}</td></tr>`;
+                return;
+            }
+            if (!data.configured) {
+                tbody.innerHTML = '<tr><td colspan="6" class="muted" style="padding:2rem;text-align:center;">Stripe isn\'t configured, so there\'s nothing to report.</td></tr>';
+                return;
+            }
+            const agents = data.agents || [];
+            const badge = document.getElementById('billing-alert-count');
+            const resumable = agents.filter(a => a.resumable).length;
+            if (agents.length) { badge.textContent = agents.length; badge.style.display = 'inline-block'; }
+            else { badge.style.display = 'none'; }
+            if (!agents.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="muted" style="padding:2rem;text-align:center;">✓ No canceled or at-risk subscriptions. Everyone\'s current.</td></tr>';
+                return;
+            }
+            if (resumable) msg.innerHTML = `<div style="background:#fffaf0;border:1px solid #feebc8;color:#7b341e;border-radius:8px;padding:0.7rem 1rem;font-size:0.85rem;margin-bottom:0.75rem;"><b>${resumable}</b> can be resumed in one click below — do these first, the window closes at each period end.</div>`;
+            const fmt = d => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+            const pill = (a) => {
+                if (a.resumable) return '<span style="background:#fffaf0;color:#b7791f;border:1px solid #feebc8;border-radius:99px;padding:0.15rem 0.6rem;font-size:0.72rem;font-weight:800;">Cancels at period end</span>';
+                if (a.status === 'canceled') return '<span style="background:#fff5f5;color:#9b2c2c;border:1px solid #fed7d7;border-radius:99px;padding:0.15rem 0.6rem;font-size:0.72rem;font-weight:800;">Canceled</span>';
+                if (a.status === 'lookup_error') return '<span style="color:#a0aec0;font-size:0.75rem;">Stripe lookup failed</span>';
+                return `<span style="background:#ebf8ff;color:#1d6df2;border:1px solid #bee3f8;border-radius:99px;padding:0.15rem 0.6rem;font-size:0.72rem;font-weight:800;">${esc(a.status)}</span>`;
+            };
+            tbody.innerHTML = agents.map(a => {
+                const action = a.resumable
+                    ? `<button class="btn-primary" style="padding:0.4rem 0.9rem;font-size:0.82rem;" onclick="resumeAgent('${a.agent_id}', this)">Resume + relist</button>`
+                    : a.status === 'canceled'
+                        ? '<span class="muted" style="font-size:0.78rem;">Recreate in Stripe</span>'
+                        : '<span class="muted" style="font-size:0.78rem;">—</span>';
+                return `<tr>
+                    <td><a href="/pages/admin/agent-review.html?id=${encodeURIComponent(a.agent_id)}" style="color:#1d6df2;font-weight:700;text-decoration:none;">${esc(a.name)}</a>${a.email ? `<div style="color:#a0aec0;font-size:0.75rem;">${esc(a.email)}</div>` : ''}${a.comped ? '<div style="color:#b45309;font-size:0.72rem;font-weight:700;">★ comped</div>' : ''}</td>
+                    <td>${esc(a.tier)}</td>
+                    <td>${pill(a)}</td>
+                    <td>${fmt(a.canceled_at)}</td>
+                    <td>${fmt(a.current_period_end)}</td>
+                    <td style="text-align:right;">${action}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        async function resumeAgent(agentId, btn) {
+            if (btn) { btn.disabled = true; btn.textContent = 'Resuming…'; }
+            try {
+                const res = await fetch(`/api/admin/billing/agent/${encodeURIComponent(agentId)}/resume`, { method: 'POST', credentials: 'include' });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) { alert(d.error || 'Could not resume.'); if (btn) { btn.disabled = false; btn.textContent = 'Resume + relist'; } return; }
+                if (btn) { btn.textContent = '✓ Resumed'; btn.style.background = '#2f855a'; }
+                loadBilling(true);   // refresh the list + badge
+            } catch (_) {
+                alert('Network error resuming subscription.');
+                if (btn) { btn.disabled = false; btn.textContent = 'Resume + relist'; }
+            }
         }
 
         // ── Company dashboard: goals + charts + what needs attention ───────

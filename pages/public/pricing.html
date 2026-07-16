@@ -105,6 +105,8 @@
         /* Checkout-mode minimal chrome — strip the site header/footer so the
            visitor is focused on a single decision: pick a tier and check out. */
         .cko-hdr { display: flex; align-items: center; padding: 1rem 2rem; background: #fff; border-bottom: 1px solid #edf2f7; }
+        .cko-back { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; font-weight: 600; color: #718096; text-decoration: none; margin-right: 1.25rem; }
+        .cko-back:hover { color: #1d6df2; }
         .cko-logo { font-size: 1.05rem; font-weight: 800; color: #1a202c; text-decoration: none; letter-spacing: -0.3px; }
         .cko-logo:hover { color: #1d6df2; }
         .cko-ftr { text-align: center; padding: 2rem 1rem 2.5rem; color: #a0aec0; font-size: 0.82rem; margin-top: 2rem; }
@@ -113,7 +115,13 @@
     </style>
 </head>
 <body>
-    <header class="cko-hdr"><a href="/" class="cko-logo">MN Lake Homes</a></header>
+    <header class="cko-hdr">
+        <a href="/" class="cko-back" onclick="if(window.history.length>1){history.back();return false;}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Back
+        </a>
+        <a href="/" class="cko-logo">MN Lake Homes</a>
+    </header>
 
     <section class="pricing-hero">
         <div class="eyebrow">Agent membership</div>

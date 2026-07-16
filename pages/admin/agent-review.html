@@ -158,6 +158,9 @@
             <button class="page-tab active" id="ptab-details" onclick="switchPageTab('details')">Details</button>
             <button class="page-tab" id="ptab-profile" onclick="switchPageTab('profile')">Profile</button>
             <button class="page-tab" id="ptab-areas" onclick="switchPageTab('areas')">Service Areas</button>
+            <button class="page-tab" id="ptab-listings" onclick="switchPageTab('listings')">
+                Listings <span class="tab-count" id="listings-tab-count" style="display:none;">0</span>
+            </button>
             <button class="page-tab" id="ptab-controls" onclick="switchPageTab('controls')">Membership &amp; Status</button>
             <button class="page-tab" id="ptab-leads" onclick="switchPageTab('leads')">
                 Lead Tracker <span class="tab-count" id="lead-tab-count" style="display:none;">0</span>
@@ -374,6 +377,23 @@
                     </div>
                 </div>
         </div><!-- end tab-content-areas -->
+
+        <!-- TAB: Listings -->
+        <div id="tab-content-listings" style="display:none;">
+                <div class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-title">Properties</div>
+                            <div style="font-size:0.78rem;color:#718096;margin-top:0.2rem;">Every listing this agent owns. Click one to open its public page.</div>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div id="agt-listings-host">
+                            <div style="color:#a0aec0;font-size:0.9rem;padding:1.5rem 0;">Loading properties…</div>
+                        </div>
+                    </div>
+                </div>
+        </div><!-- end tab-content-listings -->
 
         <!-- TAB: Membership & Status -->
         <div id="tab-content-controls" style="display:none;">
@@ -1260,8 +1280,13 @@
             if (sub) {
                 if (sub.amount != null) lines.push(`<strong>Amount:</strong> $${sub.amount.toFixed(2)} / ${sub.interval || 'period'}`);
                 lines.push(`<strong>Status:</strong> ${sub.status}`);
-                if (sub.current_period_end) lines.push(`<strong>Renews:</strong> ${new Date(sub.current_period_end).toLocaleDateString()}`);
-                if (sub.cancel_at_period_end) lines.push('<strong>Cancels at period end</strong>');
+                if (sub.current_period_end) lines.push(`<strong>${sub.cancel_at_period_end ? 'Paid through' : 'Renews'}:</strong> ${new Date(sub.current_period_end).toLocaleDateString()}`);
+                if (sub.cancel_at_period_end && sub.status !== 'canceled') {
+                    lines.push('<strong style="color:#b7791f;">⚠ Set to cancel at period end</strong>');
+                    lines.push(`<button id="resume-sub-btn" onclick="resumeThisAgentSub(this)" style="margin-top:0.6rem;background:#1d6df2;color:#fff;border:0;border-radius:8px;padding:0.55rem 1.1rem;font:inherit;font-weight:700;font-size:0.85rem;cursor:pointer;">Resume subscription + relist — no charge today</button>`);
+                } else if (sub.status === 'canceled') {
+                    lines.push('<strong style="color:#9b2c2c;">✕ Canceled</strong> — must be recreated in Stripe (resume isn\'t possible once fully canceled).');
+                }
             } else if (!b.configured) {
                 lines.push('<em>Stripe not configured — showing stored tier only.</em>');
             } else {
@@ -1270,6 +1295,23 @@
             if (b.comped) lines.push('<span style="color:#b45309;font-weight:700;">★ Comped — effective tier is pinned</span>');
             host.innerHTML = lines.join('<br>');
         } catch (_) { host.textContent = 'Could not load billing.'; }
+    }
+
+    async function resumeThisAgentSub(btn) {
+        if (btn) { btn.disabled = true; btn.textContent = 'Resuming…'; }
+        try {
+            const res = await fetch(`/api/admin/billing/agent/${encodeURIComponent(agentId)}/resume`, { method: 'POST', credentials: 'include' });
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok) { showActionResult(d.error || 'Could not resume.', false); if (btn) { btn.disabled = false; btn.textContent = 'Resume subscription + relist — no charge today'; } return; }
+            const bits = ['Subscription resumed — it will keep billing normally, no charge today'];
+            if (d.republished) bits.push('agent re-published');
+            if (d.winbackCleared) bits.push(`${d.winbackCleared} win-back email(s) canceled`);
+            showActionResult(bits.join(' · '), true);
+            setTimeout(() => { loadAgentBilling(); loadAgent(); }, 700);
+        } catch (_) {
+            showActionResult('Network error resuming subscription.', false);
+            if (btn) { btn.disabled = false; btn.textContent = 'Resume subscription + relist — no charge today'; }
+        }
     }
 
     async function changeMembership() {
@@ -1308,16 +1350,71 @@
 
     // ── Page Tab Switching ───────────────────────────────────────────────────
     function switchPageTab(tab) {
-        const tabs = ['details', 'profile', 'areas', 'controls', 'leads', 'messages', 'notes', 'payments', 'activity'];
+        const tabs = ['details', 'profile', 'areas', 'listings', 'controls', 'leads', 'messages', 'notes', 'payments', 'activity'];
         tabs.forEach(t => {
             document.getElementById('tab-content-' + t).style.display = (t === tab) ? 'block' : 'none';
             document.getElementById('ptab-' + t).classList.toggle('active', t === tab);
         });
+        if (tab === 'listings' && agentListingsLoaded === false) loadAgentListings();
         if (tab === 'leads'    && agentLeadsAll === null) loadAgentLeads();
         if (tab === 'messages') loadAgentMessages();
         if (tab === 'notes')    loadAgentNotes();
         if (tab === 'payments') loadAgentPayments();
         if (tab === 'activity') loadAgentActivity();
+    }
+
+    // ── Listings tab (properties owned by this agent) ───────────────────────
+    let agentListingsLoaded = false;
+    async function loadAgentListings() {
+        agentListingsLoaded = true;
+        const host = document.getElementById('agt-listings-host');
+        try {
+            const rows = await fetch(`/api/listings/admin/by-agent/${encodeURIComponent(agentId)}`, { credentials: 'include' })
+                .then(r => r.ok ? r.json() : Promise.reject(r.status));
+            const badge = document.getElementById('listings-tab-count');
+            if (Array.isArray(rows) && rows.length) { badge.textContent = rows.length; badge.style.display = 'inline'; }
+            else { badge.style.display = 'none'; }
+            host.innerHTML = renderAgentListings(rows || []);
+        } catch (status) {
+            agentListingsLoaded = false;   // allow a retry next time the tab opens
+            host.innerHTML = `<div style="color:#c53030;font-size:0.9rem;">Could not load properties${status === 403 ? ' — admin only.' : status === 401 ? ' — your session expired, please sign in again.' : '.'}</div>`;
+        }
+    }
+
+    function renderAgentListings(rows) {
+        if (!rows.length) {
+            return '<div style="color:#a0aec0;font-size:0.9rem;padding:1.5rem 0;">No properties — this agent hasn\'t listed anything yet.</div>';
+        }
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const money = n => (n == null || n === '') ? 'Contact for price' : '$' + Number(n).toLocaleString('en-US');
+        const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+        const pill = (s) => {
+            const st = String(s || 'draft').toLowerCase();
+            const styles = st === 'active'
+                ? 'background:#f0fff4;color:#2f855a;border-color:#c6f6d5;'
+                : (st === 'sold' || st === 'archived')
+                    ? 'background:#fff5f5;color:#9b2c2c;border-color:#fed7d7;'
+                    : 'background:#ebf8ff;color:#1d6df2;border-color:#bee3f8;';
+            const label = st.charAt(0).toUpperCase() + st.slice(1);
+            return `<span style="display:inline-block;margin-top:0.5rem;padding:0.2rem 0.6rem;border:1px solid transparent;border-radius:99px;font-size:0.68rem;font-weight:700;text-transform:uppercase;${styles}">${esc(label)}</span>`;
+        };
+        return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;">${rows.map(l => {
+            const href = l.external_url || (l.slug ? '/listings/' + encodeURIComponent(l.slug) : null);
+            const img = l.featured_image_url
+                ? `<div style="height:140px;background:#eef2f7 url('${esc(l.featured_image_url)}') center/cover;"></div>`
+                : `<div style="height:140px;background:#eef2f7;display:grid;place-items:center;color:#a0aec0;font-size:0.8rem;">No photo</div>`;
+            const inner = `${img}
+                <div style="padding:0.7rem 0.85rem 0.9rem;">
+                    <div style="font-weight:800;color:#1a202c;font-size:1.05rem;">${esc(money(l.price))}</div>
+                    <div style="color:#4a5568;font-size:0.9rem;margin-top:0.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(l.title || 'Untitled listing')}</div>
+                    <div style="color:#718096;font-size:0.8rem;margin-top:0.2rem;">${esc(l.city || '')}${l.city ? ' · ' : ''}${fmtDate(l.created_at)}</div>
+                    ${pill(l.status)}
+                </div>`;
+            const cardStyle = 'display:block;text-decoration:none;color:inherit;border:1px solid #edf2f7;border-radius:12px;overflow:hidden;background:#fff;transition:box-shadow .15s;';
+            return href
+                ? `<a href="${esc(href)}" target="_blank" rel="noopener" style="${cardStyle}" onmouseover="this.style.boxShadow='0 8px 22px rgba(16,24,40,0.10)'" onmouseout="this.style.boxShadow='none'">${inner}</a>`
+                : `<div style="${cardStyle}">${inner}</div>`;
+        }).join('')}</div>`;
     }
 
     // ── Payments tab (Stripe invoices mirrored locally + to HubSpot) ────────

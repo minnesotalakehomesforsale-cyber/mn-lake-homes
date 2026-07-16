@@ -1545,6 +1545,146 @@ const getSubscriberBilling = async (req, res) => {
     }
 };
 
+// ─── BILLING ALERTS REPORT + RESUME ─────────────────────────────────────────
+// Live Stripe reads are the source of truth. These power the Financials →
+// "Billing Alerts" tab and the one-click Resume in an agent's profile.
+const _PLAN_LABELS = { basic: 'Standard ($9)', mn_lake_specialist: 'Prime ($39)', top_agent: 'Elite ($149)' };
+const _PROBLEM_STATUSES = new Set(['canceled', 'past_due', 'unpaid', 'incomplete', 'incomplete_expired']);
+
+function _billingBase(r) {
+    return {
+        agent_id: r.agent_id,
+        name: r.full_name || '—',
+        email: r.email || null,
+        tier: _PLAN_LABELS[r.paid_membership_code] || r.paid_membership_code || '—',
+        comped: !!r.tier_comped,
+        profile_status: r.profile_status,
+        is_published: r.is_published,
+    };
+}
+
+/**
+ * GET /api/admin/billing/report
+ * Scans every agent with a Stripe subscription on file and returns only the
+ * ones in a problem state — canceled, cancels-at-period-end, past_due,
+ * unpaid, incomplete(_expired). Resumable ones (cancel-at-period-end, not yet
+ * lapsed) are flagged and sorted first because that window is time-sensitive.
+ */
+const getBillingStatusReport = async (req, res) => {
+    let stripe = null;
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (key) { try { stripe = require('stripe')(key); } catch (_) { stripe = null; } }
+    if (!stripe) return res.json({ configured: false, count: 0, agents: [] });
+
+    try {
+        const { rows } = await pool.query(
+            `SELECT a.id AS agent_id, a.stripe_subscription_id, a.paid_membership_code,
+                    a.profile_status, a.is_published, a.tier_comped,
+                    u.full_name, u.email
+               FROM agents a JOIN users u ON u.id = a.user_id
+              WHERE a.stripe_subscription_id IS NOT NULL
+              ORDER BY a.updated_at DESC
+              LIMIT 500`);
+
+        const out = [];
+        const CHUNK = 5;   // modest concurrency to stay under Stripe rate limits
+        for (let i = 0; i < rows.length; i += CHUNK) {
+            const slice = rows.slice(i, i + CHUNK);
+            const results = await Promise.all(slice.map(r =>
+                stripe.subscriptions.retrieve(r.stripe_subscription_id, { expand: ['items.data.price'] })
+                    .then(s => ({ r, s }))
+                    .catch(e => ({ r, err: e.message }))));
+            for (const { r, s, err } of results) {
+                if (err) { out.push({ ..._billingBase(r), status: 'lookup_error', error: err }); continue; }
+                const isProblem = _PROBLEM_STATUSES.has(s.status) || s.cancel_at_period_end;
+                if (!isProblem) continue;
+                const price = s.items?.data?.[0]?.price;
+                out.push({
+                    ..._billingBase(r),
+                    status: s.status,
+                    cancel_at_period_end: !!s.cancel_at_period_end,
+                    canceled_at:        s.canceled_at        ? new Date(s.canceled_at * 1000).toISOString()        : null,
+                    current_period_end: s.current_period_end ? new Date(s.current_period_end * 1000).toISOString() : null,
+                    amount:             price?.unit_amount != null ? price.unit_amount / 100 : null,
+                    interval:           price?.recurring?.interval || null,
+                    resumable:          !!s.cancel_at_period_end && s.status !== 'canceled',
+                });
+            }
+        }
+        out.sort((a, b) =>
+            (Number(b.resumable) - Number(a.resumable)) ||
+            String(b.canceled_at || '').localeCompare(String(a.canceled_at || '')));
+        res.json({ configured: true, count: out.length, agents: out });
+    } catch (err) {
+        console.error('[getBillingStatusReport]', err.message);
+        res.status(500).json({ error: 'Failed to build billing report.' });
+    }
+};
+
+/**
+ * POST /api/admin/billing/agent/:id/resume
+ * Reverses a "cancel at period end" on an agent's Stripe subscription and, if
+ * the cancel had auto-unpublished them, restores them to published. Only works
+ * while the subscription is still live — a fully 'canceled' one can't be
+ * resumed and must be recreated.
+ */
+const resumeAgentSubscription = async (req, res) => {
+    let stripe = null;
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (key) { try { stripe = require('stripe')(key); } catch (_) { stripe = null; } }
+    if (!stripe) return res.status(400).json({ error: 'Stripe is not configured.' });
+
+    try {
+        const { rows } = await pool.query(
+            `SELECT id, stripe_subscription_id, profile_status FROM agents WHERE id = $1 LIMIT 1`, [req.params.id]);
+        const a = rows[0];
+        if (!a) return res.status(404).json({ error: 'Agent not found.' });
+        if (!a.stripe_subscription_id) return res.status(400).json({ error: 'No Stripe subscription on file for this agent.' });
+
+        const sub = await stripe.subscriptions.retrieve(a.stripe_subscription_id);
+        if (sub.status === 'canceled') {
+            return res.status(409).json({ error: 'This subscription is fully canceled and cannot be resumed. It must be recreated — the agent re-subscribes, or you start a new subscription on their existing Stripe customer.' });
+        }
+        if (!sub.cancel_at_period_end) {
+            return res.json({ ok: true, already_active: true, status: sub.status, message: 'Subscription is already set to continue — nothing to resume.' });
+        }
+
+        const updated = await stripe.subscriptions.update(a.stripe_subscription_id, { cancel_at_period_end: false });
+
+        // If the cancel had bumped a non-comped agent to pending_review, undo that.
+        let republished = false;
+        if (a.profile_status === 'pending_review') {
+            await pool.query(
+                `UPDATE agents SET profile_status = 'published', is_published = true, updated_at = NOW() WHERE id = $1`, [a.id]);
+            republished = true;
+        }
+
+        // Kill any pending "sorry you left / reactivate" win-back emails — this
+        // cancel was a mistake, so the agent should never get churn outreach.
+        let winbackCleared = 0;
+        try {
+            const wb = await pool.query(
+                `UPDATE win_back_queue SET canceled = TRUE WHERE agent_id = $1 AND sent_at IS NULL`, [a.id]);
+            winbackCleared = wb.rowCount || 0;
+        } catch (_) { /* table may not exist in older envs — non-fatal */ }
+
+        logActivity({
+            event_type: 'agent.subscription.resumed',
+            event_scope: 'billing',
+            severity: 'info',
+            actor: { type: req.user?.role || 'admin', id: req.user?.userId, label: req.user?.email || 'admin' },
+            target: { type: 'agent', id: a.id, label: 'agent' },
+            details: { subscription_id: a.stripe_subscription_id, republished, winbackCleared },
+            req,
+        });
+
+        res.json({ ok: true, status: updated.status, republished, winbackCleared });
+    } catch (err) {
+        console.error('[resumeAgentSubscription]', err.message);
+        res.status(500).json({ error: 'Could not resume the subscription: ' + err.message });
+    }
+};
+
 // ─── Tag launch presets ──────────────────────────────────────────────────────
 // One-shot bulk active flip on the tags table. Currently supports the
 // 'top-20-mn-cities' preset — activates the 20 largest MN cities by 2020
@@ -2677,6 +2817,8 @@ module.exports = {
     getLedger,
     getAgentDetail,
     getSubscriberBilling,
+    getBillingStatusReport,
+    resumeAgentSubscription,
     createAgent,
     updateAgentProfile,
     updateStatus,

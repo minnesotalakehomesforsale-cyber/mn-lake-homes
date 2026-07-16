@@ -125,7 +125,11 @@ router.get('/metrics/business-coverage', adminController.getBusinessCoverage);
 router.get('/system/alerts-count', adminController.getSystemAlertsCount);
 
 // ─── BILLING (live Stripe view for a subscriber: agent | business) ──────────
-router.get('/billing/:kind/:id', adminController.getSubscriberBilling);
+// Billing Alerts report: every agent whose subscription is canceled / at risk.
+router.get ('/billing/report',           verifyToken, requireRole(['admin', 'super_admin']), adminController.getBillingStatusReport);
+// One-click resume of a "cancels at period end" agent subscription.
+router.post('/billing/agent/:id/resume', verifyToken, requireRole(['admin', 'super_admin']), adminController.resumeAgentSubscription);
+router.get('/billing/:kind/:id', verifyToken, requireRole(['admin', 'super_admin']), adminController.getSubscriberBilling);
 
 // ─── MESSAGES (one-way admin → agent in-app messages) ───────────────────────
 // Admin-gated. Static prefixes here sit before the catch-all /:id agent route.
