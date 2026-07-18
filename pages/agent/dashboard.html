@@ -326,6 +326,9 @@
             .dash-content { padding: 1.75rem 1.25rem 3rem; min-height: 0; }
             .dash-content > .view-card { padding: 1.5rem 1.25rem !important; }
             .view-card .grid-2 { grid-template-columns: 1fr !important; gap: 0.75rem !important; }
+            /* Catch every inline two-column grid in the editor (By the numbers,
+               Services offered, account rows, etc.) so none stay cramped on phones. */
+            .dash-content div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
             .profile-card-header {
                 flex-direction: column !important;
                 align-items: flex-start !important;
