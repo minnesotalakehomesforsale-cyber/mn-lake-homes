@@ -408,6 +408,7 @@
                             <div id="completion-bar" class="progress-bar"></div>
                         </div>
                         <p id="completion-text" style="font-size: 0.8rem; font-weight: 600; margin-top: 0.4rem;">0% Complete</p>
+                        <p id="completion-missing" style="font-size: 0.8rem; margin-top: 0.15rem; line-height: 1.5;"></p>
                     </div>
                     <!-- Becomes an active "Publish my profile" button at 100% (see calcProgress). -->
                     <button id="banner-publish-btn" type="button" disabled onclick="publishMyProfile()"
@@ -2890,17 +2891,33 @@
         window.publishMyProfile = publishMyProfile;
 
         function calcProgress() {
-            // Text-input requireds. Specialties + service areas are now
-            // chip pickers (not text inputs), so they count toward filled
-            // when their Set has at least one entry.
-            const reqds = ['f-name', 'f-brokerage', 'f-phone', 'f-city', 'f-bio'];
-            let filled = 0;
-            reqds.forEach(id => { const el = document.getElementById(id); if (el && el.value.trim() !== '') filled++; });
-            const totalSteps = reqds.length + 2; // + service areas + specialties
-            if (window._selectedAreaIds && window._selectedAreaIds.size > 0) filled++;
-            if (window._selectedSpecs    && window._selectedSpecs.size    > 0) filled++;
+            // Each check mirrors the server's publish gate (publishProfile) EXACTLY,
+            // so 100% here always means "publishable" — including the bio's 20-char
+            // minimum, which used to be missed here (bar hit 100%, server rejected).
+            const BIO_MIN = 20;
+            const val = id => (document.getElementById(id)?.value || '').trim();
+            const checks = [
+                { label: 'Display Name',   ok: val('f-name')      !== '' },
+                { label: 'Brokerage Name', ok: val('f-brokerage') !== '' },
+                { label: 'Phone',          ok: val('f-phone')     !== '' },
+                { label: 'Primary City',   ok: val('f-city')      !== '' },
+                { label: `Bio (min ${BIO_MIN} characters)`, ok: val('f-bio').length >= BIO_MIN },
+                { label: 'Service Areas (pick at least 1)', ok: !!(window._selectedAreaIds && window._selectedAreaIds.size > 0) },
+                { label: 'Specialties (pick at least 1)',   ok: !!(window._selectedSpecs    && window._selectedSpecs.size    > 0) },
+            ];
+            const totalSteps = checks.length;
+            const filled = checks.filter(c => c.ok).length;
+            const missing = checks.filter(c => !c.ok).map(c => c.label);
             const pct = Math.round((filled / totalSteps) * 100);
             document.getElementById('completion-bar').style.width = pct + '%';
+
+            // Spell out exactly what's left, so agents never have to hunt for it.
+            const missEl = document.getElementById('completion-missing');
+            if (missEl) {
+                missEl.innerHTML = missing.length
+                    ? `<span style="color:#c05621;font-weight:600;">Still needed:</span> ${missing.map(m => `<span style="display:inline-block;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.35);border-radius:6px;padding:0.05rem 0.45rem;margin:0.1rem 0.15rem 0.1rem 0;font-weight:600;">${m}</span>`).join('')}`
+                    : '';
+            }
 
             // The publish button only activates once every required field is in.
             const pubBtn = document.getElementById('banner-publish-btn');
