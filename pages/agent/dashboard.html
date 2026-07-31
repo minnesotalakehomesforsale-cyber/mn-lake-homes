@@ -425,7 +425,10 @@
                             <h2 style="font-size:2.1rem; font-weight:800; margin-bottom:0.25rem;">Welcome back<span id="dash-firstname"></span></h2>
                             <p style="color:#718096;">Everything for your profile, in one place.</p>
                         </div>
-                        <span id="dash-status" class="dash-status yellow"><span class="dot"></span><span id="dash-status-label">Loading…</span></span>
+                        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                            <span id="dash-streak" class="dash-status" style="display:none; background:#fff7ed; color:#c05621;">🔥 <span id="streak-n"></span>-day streak</span>
+                            <span id="dash-status" class="dash-status yellow"><span class="dot"></span><span id="dash-status-label">Loading…</span></span>
+                        </div>
                     </div>
 
                     <!-- Free-plan upgrade banner — shown only to free-tier agents -->
@@ -437,6 +440,16 @@
                             </div>
                             <a href="/pricing" style="flex-shrink:0; background:#fff; color:#0f2b46; border-radius:10px; padding:0.8rem 1.4rem; font-weight:800; text-decoration:none; font-size:0.95rem;">Upgrade my plan →</a>
                         </div>
+                    </div>
+
+                    <!-- Speed-to-lead nudge — shown only when new (uncontacted) leads are waiting -->
+                    <div id="dash-speed-nudge" style="display:none; align-items:center; gap:1rem; flex-wrap:wrap; margin-top:1.5rem; background:#fffaf0; border:1px solid #feebc8; border-radius:14px; padding:1rem 1.35rem;">
+                        <div style="font-size:1.6rem; line-height:1;">⏱️</div>
+                        <div style="flex:1; min-width:200px;">
+                            <div style="font-weight:800; color:#7b341e;"><span id="sn-count"></span> new lead<span id="sn-plural"></span> waiting — oldest <span id="sn-wait"></span></div>
+                            <div style="font-size:0.88rem; color:#9c4221; margin-top:0.1rem;">Agents who reply within minutes win far more deals. Reach out now.</div>
+                        </div>
+                        <button onclick="switchView('leads')" style="flex-shrink:0; background:#dd6b20; color:#fff; border:0; border-radius:10px; padding:0.7rem 1.25rem; font:inherit; font-weight:800; cursor:pointer;">Respond now →</button>
                     </div>
 
                     <!-- Stat strip — at-a-glance numbers populated by updateDashLeads / refreshMsgBadge -->
@@ -1649,8 +1662,11 @@
                     }
                     updateDashLeads();
                     renderDueFollowups();
+                    renderSpeedNudge();
                 }
             } catch(_) {}
+
+            updateStreak();   // daily login streak (local, no backend)
 
             // Unread message badge + dashboard messages card/preview
             refreshMsgBadge();
@@ -1658,6 +1674,40 @@
             loadAgentArticles();
             loadRoi();
         });
+
+        // ── Retention: daily login streak (localStorage, no backend) ──────────────
+        // Counts consecutive days the agent opened their dashboard. Shown only at
+        // 2+ days so it reads as an accomplishment, not a nag.
+        function updateStreak() {
+            const KEY = 'mnlh_streak';
+            const dayStr = d => { const x = new Date(d); x.setHours(0,0,0,0); return x.toISOString().slice(0,10); };
+            const today = dayStr(Date.now());
+            let data = {}; try { data = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(_) {}
+            if (data.last !== today) {
+                const y = new Date(); y.setDate(y.getDate() - 1);
+                data.streak = (data.last === dayStr(y)) ? (Number(data.streak) || 0) + 1 : 1;
+                data.last = today;
+                try { localStorage.setItem(KEY, JSON.stringify(data)); } catch(_) {}
+            }
+            const n = Number(data.streak) || 1;
+            const el = document.getElementById('dash-streak');
+            if (el && n >= 2) { document.getElementById('streak-n').textContent = n; el.style.display = 'inline-flex'; }
+        }
+
+        // ── Retention: speed-to-lead nudge — surfaces the oldest un-contacted lead ─
+        function renderSpeedNudge() {
+            const host = document.getElementById('dash-speed-nudge');
+            if (!host || !Array.isArray(allLeads)) return;
+            const fresh = allLeads.filter(l => String(l.status || '').toLowerCase() === 'new' && l.created_at);
+            if (!fresh.length) { host.style.display = 'none'; return; }
+            fresh.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            const mins = Math.max(0, Math.floor((Date.now() - new Date(fresh[0].created_at)) / 60000));
+            const wait = mins < 60 ? mins + ' min' : mins < 1440 ? Math.floor(mins / 60) + 'h' : Math.floor(mins / 1440) + 'd';
+            document.getElementById('sn-count').textContent = fresh.length;
+            document.getElementById('sn-plural').textContent = fresh.length === 1 ? '' : 's';
+            document.getElementById('sn-wait').textContent = wait + ' ago';
+            host.style.display = 'flex';
+        }
 
         // ── Messages (two-way chat with the MNLH team) ────────────────────────────
         async function refreshMsgBadge() {
