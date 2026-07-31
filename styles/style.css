@@ -2294,7 +2294,7 @@ body > * { min-width: 0; }
 .sp-title span { color: #6e7a8a; } /* Slate gray highlight */
 .sp-subtitle { font-size: 1.15rem; color: #4a5568; line-height: 1.6; max-width: 600px; margin: 0 auto; }
 
-.sp-section { padding: 5rem 2rem; max-width: 1200px; margin: 0 auto; clear: both; }
+.sp-section { padding: 5rem 1.5rem; max-width: var(--page-w); margin: 0 auto; clear: both; }
 .sp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
 
 @media (max-width: 900px) {
