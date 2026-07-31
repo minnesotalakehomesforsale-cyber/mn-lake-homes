@@ -23,3 +23,6 @@ Thumbs.db
 .claude/
 SFProExtracted copy/
 .env.local.bak*
+
+# Raw source images (optimize into assets/images before use)
+New Images/
