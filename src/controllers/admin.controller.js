@@ -1685,6 +1685,73 @@ const resumeAgentSubscription = async (req, res) => {
     }
 };
 
+// ─── AGENT BILLING EMAILS ────────────────────────────────────────────────────
+// Admin-triggered billing notices to an agent (e.g. a failed-payment grace
+// notice). Sent to the agent's account email via the shared email service.
+const AGENT_BILLING_EMAIL_TYPES = {
+    payment_failed_grace: { subject: 'Your MN Lake Homes payment didn’t go through — action needed' },
+};
+
+function buildGraceEmailHtml({ first, graceStr, dashUrl }) {
+    return `<div style="font-family:-apple-system,'Segoe UI',Roboto,sans-serif;max-width:540px;margin:0 auto;color:#1a202c;">
+        <h2 style="margin:0 0 0.75rem;font-size:1.35rem;">Hi ${first},</h2>
+        <p style="color:#4a5568;line-height:1.6;">We noticed your most recent <strong>MN Lake Homes</strong> membership payment didn't go through.</p>
+        <p style="color:#4a5568;line-height:1.6;">Good news — your profile is <strong>still live</strong>. We've extended a grace period through <strong>${graceStr}</strong> so you don't lose your placement or lead access while you sort it out.</p>
+        <p style="color:#4a5568;line-height:1.6;">To keep everything active, please update your payment method before <strong>${graceStr}</strong>. If it isn't resolved by then, your account will lose its access and drop out of the lead rotation.</p>
+        <p style="text-align:center;margin:1.6rem 0;"><a href="${dashUrl}" style="background:#1d6df2;color:#fff;text-decoration:none;font-weight:700;padding:0.85rem 1.7rem;border-radius:10px;display:inline-block;">Update my payment →</a></p>
+        <p style="color:#718096;font-size:0.9rem;line-height:1.6;">Already fixed it? You can ignore this note. Questions or think this is a mistake? Just reply to this email and we'll help.</p>
+        <p style="color:#4a5568;line-height:1.6;margin-top:1.25rem;">— The MN Lake Homes team</p>
+    </div>`;
+}
+
+/**
+ * POST /api/admin/billing/agent/:id/email   { type, grace_until }
+ * Sends a billing email to the agent's account email. Reports precisely when
+ * email transport isn't configured so the admin knows it didn't actually send.
+ */
+const sendAgentBillingEmail = async (req, res) => {
+    const { type, grace_until } = req.body || {};
+    if (!AGENT_BILLING_EMAIL_TYPES[type]) return res.status(400).json({ error: 'Unknown email type.' });
+    try {
+        const { rows } = await pool.query(
+            `SELECT u.email, u.full_name, a.display_name
+               FROM agents a JOIN users u ON u.id = a.user_id WHERE a.id = $1 LIMIT 1`, [req.params.id]);
+        const a = rows[0];
+        if (!a) return res.status(404).json({ error: 'Agent not found.' });
+        if (!a.email) return res.status(400).json({ error: 'This agent has no email on file.' });
+
+        const first = (String(a.display_name || a.full_name || 'there').trim().split(/\s+/)[0]) || 'there';
+        let graceStr = 'the date on your account';
+        if (grace_until) {
+            const d = new Date(grace_until + 'T00:00:00');
+            if (!isNaN(d.getTime())) graceStr = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        }
+        const dashUrl = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '') + '/pages/agent/dashboard.html';
+        const html = buildGraceEmailHtml({ first, graceStr, dashUrl });
+
+        const emailService = require('../services/email');
+        const result = await emailService.sendEmail({ to: a.email, subject: AGENT_BILLING_EMAIL_TYPES[type].subject, html, category: 'billing' });
+
+        if (result && result.error) return res.status(502).json({ error: 'Email service error: ' + result.error, to: a.email });
+        if (result && result.skipped) {
+            return res.status(503).json({
+                error: 'Email NOT sent — no email transport is configured on the server. Add RESEND_API_KEY (or GMAIL_USER + GMAIL_APP_PASSWORD) in Render, then try again.',
+                to: a.email, not_configured: true,
+            });
+        }
+        logActivity({
+            event_type: 'agent.billing_email.sent', event_scope: 'billing', severity: 'info',
+            actor: { type: req.user?.role || 'admin', id: req.user?.userId, label: req.user?.email || 'admin' },
+            target: { type: 'agent', id: req.params.id, label: 'agent' },
+            details: { type, grace_until: grace_until || null, to: a.email }, req,
+        });
+        res.json({ ok: true, to: a.email });
+    } catch (err) {
+        console.error('[sendAgentBillingEmail]', err.message);
+        res.status(500).json({ error: 'Could not send the email.' });
+    }
+};
+
 // ─── Tag launch presets ──────────────────────────────────────────────────────
 // One-shot bulk active flip on the tags table. Currently supports the
 // 'top-20-mn-cities' preset — activates the 20 largest MN cities by 2020
@@ -2819,6 +2886,7 @@ module.exports = {
     getSubscriberBilling,
     getBillingStatusReport,
     resumeAgentSubscription,
+    sendAgentBillingEmail,
     createAgent,
     updateAgentProfile,
     updateStatus,

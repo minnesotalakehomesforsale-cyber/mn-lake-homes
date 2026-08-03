@@ -589,6 +589,26 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Billing emails — send the agent a payment notice -->
+            <div class="panel">
+                <div class="panel-header"><div class="panel-title">Billing emails</div></div>
+                <div class="panel-body" style="padding:1.5rem;">
+                    <p class="hint" style="margin:0 0 1.1rem;font-size:0.82rem;color:#718096;">Send a billing notice to this agent's account email — e.g. when a Stripe payment fails and you're granting a grace period.</p>
+                    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
+                        <label style="flex:1;min-width:220px;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#a0aec0;">Email
+                            <select id="billing-email-type" class="field-input" style="margin-top:0.3rem;width:100%;">
+                                <option value="payment_failed_grace">Payment failed — grace period</option>
+                            </select>
+                        </label>
+                        <label style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#a0aec0;">Grace period until
+                            <input type="date" id="billing-grace-date" class="field-input" style="margin-top:0.3rem;display:block;">
+                        </label>
+                        <button class="btn-save" id="billing-email-btn" onclick="sendBillingEmail()">Send email</button>
+                    </div>
+                    <div id="billing-email-result" class="action-result" style="margin-top:1rem;"></div>
+                </div>
+            </div>
         </div><!-- end tab-content-payments -->
 
         <!-- TAB: Activity (everything this agent did + everything done to them) -->
@@ -1431,6 +1451,9 @@
     async function loadAgentPayments() {
         const host = document.getElementById('agt-payments-list');
         const hsLink = document.getElementById('agt-payments-hslink');
+        // Default the grace-period date to one week out (only if not already set).
+        const gd = document.getElementById('billing-grace-date');
+        if (gd && !gd.value) { const d = new Date(); d.setDate(d.getDate() + 7); gd.value = d.toISOString().slice(0, 10); }
         try {
             const data = await fetch(`/api/admin/${encodeURIComponent(agentId)}/payments`, { credentials: 'include' })
                 .then(r => r.ok ? r.json() : { payments: [] });
@@ -1443,6 +1466,39 @@
             host.innerHTML = renderPaymentsTable(data.payments || []);
         } catch (_) {
             host.innerHTML = '<div style="color:#c53030;font-size:0.9rem;">Could not load payments.</div>';
+        }
+    }
+
+    // ── Billing emails (admin → agent payment notices) ──────────────────────
+    async function sendBillingEmail() {
+        const type  = document.getElementById('billing-email-type').value;
+        const grace = document.getElementById('billing-grace-date').value;
+        const btn   = document.getElementById('billing-email-btn');
+        const box   = document.getElementById('billing-email-result');
+        if (type === 'payment_failed_grace' && !grace) {
+            box.style.display = 'block'; box.style.background = '#fff5f5'; box.style.color = '#c53030';
+            box.textContent = 'Pick a grace-period date first.'; return;
+        }
+        btn.disabled = true; btn.textContent = 'Sending…';
+        try {
+            const res = await fetch(`/api/admin/billing/agent/${encodeURIComponent(agentId)}/email`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({ type, grace_until: grace }),
+            });
+            const d = await res.json().catch(() => ({}));
+            box.style.display = 'block';
+            if (res.ok) {
+                box.style.background = '#f0fff4'; box.style.color = '#276749';
+                box.textContent = `✓ Sent to ${d.to}`;
+            } else {
+                box.style.background = '#fff5f5'; box.style.color = '#c53030';
+                box.textContent = d.error || 'Could not send the email.';
+            }
+        } catch (_) {
+            box.style.display = 'block'; box.style.background = '#fff5f5'; box.style.color = '#c53030';
+            box.textContent = 'Network error — please try again.';
+        } finally {
+            btn.disabled = false; btn.textContent = 'Send email';
         }
     }
 
