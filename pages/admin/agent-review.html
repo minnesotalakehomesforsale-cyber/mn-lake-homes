@@ -183,6 +183,19 @@
 
         <!-- TAB: Details -->
         <div id="tab-content-details">
+                <!-- RECENT ACTIVITY — at-a-glance on open (full feed in the Activity tab) -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Recent activity</div>
+                        <a onclick="switchPageTab('activity')" style="font-size:0.8rem;color:#1d6df2;text-decoration:none;font-weight:600;cursor:pointer;">View all →</a>
+                    </div>
+                    <div class="panel-body" style="padding:1.25rem 1.5rem;">
+                        <div id="agt-details-activity" style="display:flex;flex-direction:column;gap:0.5rem;">
+                            <div style="color:#a0aec0;font-size:0.9rem;">Loading…</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ACCOUNT SECTION -->
                 <div class="panel">
                     <div class="panel-header">
@@ -682,6 +695,7 @@
             agentData = await res.json();
             renderAgent(agentData);
             loadAgentTags();  // async — populates the Geo Tags panel
+            loadDetailsActivity();  // recent-activity preview on the Details tab
         } catch(e) {
             document.getElementById('agent-headline').textContent = 'Agent Not Found';
             document.getElementById('agent-sub').textContent = 'This agent ID does not exist in the database.';
@@ -1627,6 +1641,21 @@
         if (!uid) { host.innerHTML = '<div style="color:#c53030;font-size:0.9rem;">Agent account not loaded yet.</div>'; return; }
         try {
             const rows = await fetch(`/api/activity?entity_id=${encodeURIComponent(uid)}&limit=200`, { credentials: 'include' })
+                .then(r => r.ok ? r.json() : []);
+            host.innerHTML = renderActivityFeed(rows, uid);
+        } catch (_) {
+            host.innerHTML = '<div style="color:#c53030;font-size:0.9rem;">Could not load activity.</div>';
+        }
+    }
+
+    // Compact recent-activity preview shown at the top of the Details tab.
+    async function loadDetailsActivity() {
+        const host = document.getElementById('agt-details-activity');
+        const uid  = agentData?.user_id_ref;
+        if (!host) return;
+        if (!uid) { host.innerHTML = '<div style="color:#a0aec0;font-size:0.9rem;">No account linked yet.</div>'; return; }
+        try {
+            const rows = await fetch(`/api/activity?entity_id=${encodeURIComponent(uid)}&limit=8`, { credentials: 'include' })
                 .then(r => r.ok ? r.json() : []);
             host.innerHTML = renderActivityFeed(rows, uid);
         } catch (_) {
