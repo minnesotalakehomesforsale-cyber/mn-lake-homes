@@ -129,6 +129,14 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Recent activity — routing, assignment, status changes for this lead -->
+            <div class="review-panel">
+                <h3 class="data-title">Recent activity</h3>
+                <div id="lead-activity" style="display:flex;flex-direction:column;gap:0.15rem;">
+                    <div style="color:#a0aec0;font-size:0.9rem;">Loading…</div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -163,7 +171,30 @@
 
             if (lead) renderLead(lead);
             if (agents) renderAgentDropdown(agents, lead && lead.agent_id);
+            loadLeadActivity();
         });
+
+        // Recent activity for this lead (routing, assignment, status changes).
+        async function loadLeadActivity() {
+            const host = document.getElementById('lead-activity');
+            if (!host || !leadId) return;
+            try {
+                const rows = await fetch(`/api/activity?entity_id=${encodeURIComponent(leadId)}&limit=15`, { credentials: 'include' })
+                    .then(r => r.ok ? r.json() : []);
+                if (!rows.length) { host.innerHTML = '<div style="color:#a0aec0;font-size:0.9rem;">No activity yet.</div>'; return; }
+                const eh = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+                const sev = s => s === 'error' ? '#c53030' : s === 'warning' ? '#b45309' : '#4a5568';
+                host.innerHTML = rows.map(r => {
+                    const when = r.created_at ? new Date(r.created_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : '';
+                    return `<div style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;flex-wrap:wrap;padding:0.5rem 0;border-top:1px solid #f2f5f8;">
+                        <code style="font-size:0.75rem;color:${sev(r.severity)};font-weight:700;background:#f7f9fa;padding:0.1rem 0.4rem;border-radius:4px;">${eh(r.event_type)}</code>
+                        ${r.actor_label ? `<span style="color:#4a5568;">${eh(r.actor_label)}</span>` : ''}
+                        ${r.target_label ? `<span style="color:#a0aec0;">→</span><span style="color:#4a5568;">${eh(r.target_label)}</span>` : ''}
+                        <span style="margin-left:auto;color:#a0aec0;font-size:0.74rem;white-space:nowrap;">${eh(when)}</span>
+                    </div>`;
+                }).join('');
+            } catch (_) { host.innerHTML = '<div style="color:#c53030;font-size:0.9rem;">Could not load activity.</div>'; }
+        }
 
         async function loadLead() {
             try {
