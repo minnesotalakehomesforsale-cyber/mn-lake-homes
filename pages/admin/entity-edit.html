@@ -432,7 +432,7 @@
     // ── Tab content renderers ────────────────────────────────────────
     function renderTabContent() {
         const tc = document.getElementById('tab-content');
-        if (activeTab === 'details')    tc.innerHTML = renderDetailsTab();
+        if (activeTab === 'details')  { tc.innerHTML = renderDetailsTab() + renderActivityPreviewPanel(); loadEntityActivityPreview(); }
         if (activeTab === 'editorial')  tc.innerHTML = renderEditorialTab();
         if (activeTab === 'seo')        tc.innerHTML = renderSeoTab();
         if (activeTab === 'contact')    tc.innerHTML = renderContactTab();
@@ -650,6 +650,42 @@
         } finally {
             btn.disabled = false; btn.textContent = 'Save Gallery';
         }
+    }
+
+    // Compact recent-activity preview shown at the bottom of the Details tab.
+    function renderActivityPreviewPanel() {
+        return `
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Recent activity</div>
+                    <a onclick="switchTab('activity')" style="font-size:0.8rem;color:#1d6df2;text-decoration:none;font-weight:600;cursor:pointer;">View all →</a>
+                </div>
+                <div class="panel-body">
+                    <div id="ent-activity-preview" style="display:flex;flex-direction:column;gap:0.15rem;">
+                        <div style="color:#a0aec0;font-size:0.9rem;">Loading…</div>
+                    </div>
+                </div>
+            </div>`;
+    }
+    async function loadEntityActivityPreview() {
+        const host = document.getElementById('ent-activity-preview');
+        if (!host) return;
+        const ids = [entity.id, entity.user_id].filter(Boolean).join(',');
+        if (!ids) { host.innerHTML = '<div style="color:#a0aec0;font-size:0.9rem;">No activity yet.</div>'; return; }
+        try {
+            const rows = await fetch(`/api/activity?entity_id=${encodeURIComponent(ids)}&limit=8`, { credentials: 'include' })
+                .then(r => r.ok ? r.json() : []);
+            if (!rows.length) { host.innerHTML = '<div style="color:#a0aec0;font-size:0.9rem;">No activity yet.</div>'; return; }
+            const sev = s => s === 'error' ? '#c53030' : s === 'warning' ? '#b45309' : '#4a5568';
+            host.innerHTML = rows.map(r => {
+                const when = r.created_at ? new Date(r.created_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : '';
+                return `<div style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;flex-wrap:wrap;padding:0.45rem 0;border-top:1px solid #f2f5f8;">
+                    <code style="font-size:0.75rem;color:${sev(r.severity)};font-weight:700;background:#f7f9fa;padding:0.1rem 0.4rem;border-radius:4px;">${esc(r.event_type)}</code>
+                    ${r.actor_label ? `<span style="color:#4a5568;">${esc(r.actor_label)}</span>` : ''}
+                    <span style="margin-left:auto;color:#a0aec0;font-size:0.74rem;white-space:nowrap;">${esc(when)}</span>
+                </div>`;
+            }).join('');
+        } catch (_) { host.innerHTML = '<div style="color:#c53030;font-size:0.9rem;">Could not load activity.</div>'; }
     }
 
     // ── Activity tab (per-business feed; queries actor=owner OR target=biz) ─
