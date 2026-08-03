@@ -1752,6 +1752,27 @@ const sendAgentBillingEmail = async (req, res) => {
     }
 };
 
+/**
+ * GET /api/admin/:id/emails — every email the app has sent to this agent's
+ * account address (welcome, lead notices, billing, etc.), newest first.
+ */
+const getAgentEmailHistory = async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT u.email FROM agents a JOIN users u ON u.id = a.user_id WHERE a.id = $1 LIMIT 1`, [req.params.id]);
+        const email = rows[0]?.email;
+        if (!email) return res.json({ email: null, emails: [] });
+        const logs = await pool.query(
+            `SELECT subject, category, status, detail, created_at
+               FROM email_log WHERE LOWER(to_email) = LOWER($1)
+              ORDER BY created_at DESC LIMIT 200`, [email]);
+        res.json({ email, emails: logs.rows });
+    } catch (err) {
+        console.error('[getAgentEmailHistory]', err.message);
+        res.status(500).json({ error: 'Failed to load email history.' });
+    }
+};
+
 // ─── Tag launch presets ──────────────────────────────────────────────────────
 // One-shot bulk active flip on the tags table. Currently supports the
 // 'top-20-mn-cities' preset — activates the 20 largest MN cities by 2020
@@ -2887,6 +2908,7 @@ module.exports = {
     getBillingStatusReport,
     resumeAgentSubscription,
     sendAgentBillingEmail,
+    getAgentEmailHistory,
     createAgent,
     updateAgentProfile,
     updateStatus,

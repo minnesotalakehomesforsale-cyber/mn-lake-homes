@@ -594,19 +594,50 @@
             <div class="panel">
                 <div class="panel-header"><div class="panel-title">Billing emails</div></div>
                 <div class="panel-body" style="padding:1.5rem;">
-                    <p class="hint" style="margin:0 0 1.1rem;font-size:0.82rem;color:#718096;">Send a billing notice to this agent's account email — e.g. when a Stripe payment fails and you're granting a grace period.</p>
-                    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
-                        <label style="flex:1;min-width:220px;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#a0aec0;">Email
-                            <select id="billing-email-type" class="field-input" style="margin-top:0.3rem;width:100%;">
+                    <style>
+                        .be-field { display:flex; flex-direction:column; gap:0.4rem; }
+                        .be-lbl { font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:#a0aec0; }
+                        .be-select, .be-date {
+                            appearance:none; -webkit-appearance:none;
+                            font:inherit; font-size:0.92rem; font-weight:600; color:#1a202c;
+                            background:#fff; border:1px solid #e2e8f0; border-radius:10px;
+                            padding:0.7rem 0.95rem; cursor:pointer; transition:border-color .15s, box-shadow .15s;
+                        }
+                        .be-select {
+                            width:100%; padding-right:2.6rem;
+                            background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+                            background-repeat:no-repeat; background-position:right 0.95rem center; background-size:16px 16px;
+                        }
+                        .be-select:hover, .be-date:hover { border-color:#cbd5e0; }
+                        .be-select:focus, .be-date:focus { outline:none; border-color:#1d6df2; box-shadow:0 0 0 3px rgba(29,109,242,0.12); }
+                        .be-row { display:flex; gap:0.85rem; flex-wrap:wrap; align-items:flex-end; }
+                        .be-row .be-email { flex:1 1 340px; max-width:440px; }
+                        .be-row .be-send { padding:0.72rem 1.5rem; }
+                    </style>
+                    <p class="hint" style="margin:0 0 1.25rem;font-size:0.82rem;color:#718096;">Send a billing notice to this agent's account email — e.g. when a Stripe payment fails and you're granting a grace period.</p>
+                    <div class="be-row">
+                        <div class="be-field be-email">
+                            <span class="be-lbl">Email</span>
+                            <select id="billing-email-type" class="be-select">
                                 <option value="payment_failed_grace">Payment failed — grace period</option>
                             </select>
-                        </label>
-                        <label style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#a0aec0;">Grace period until
-                            <input type="date" id="billing-grace-date" class="field-input" style="margin-top:0.3rem;display:block;">
-                        </label>
-                        <button class="btn-save" id="billing-email-btn" onclick="sendBillingEmail()">Send email</button>
+                        </div>
+                        <div class="be-field">
+                            <span class="be-lbl">Grace period until</span>
+                            <input type="date" id="billing-grace-date" class="be-date">
+                        </div>
+                        <button class="btn-save be-send" id="billing-email-btn" onclick="sendBillingEmail()">Send email</button>
                     </div>
-                    <div id="billing-email-result" class="action-result" style="margin-top:1rem;"></div>
+                    <div id="billing-email-result" class="action-result" style="margin-top:1.1rem;"></div>
+                </div>
+            </div>
+
+            <!-- Email history — every email sent to this agent -->
+            <div class="panel">
+                <div class="panel-header"><div class="panel-title">Email history</div></div>
+                <div class="panel-body" style="padding:1.25rem 1.5rem;">
+                    <p class="hint" style="margin:0 0 1rem;font-size:0.82rem;color:#718096;">Every email we've sent to this agent's account address — welcome, lead notices, billing, and more.</p>
+                    <div id="agt-email-history"><div style="color:#a0aec0;font-size:0.9rem;">Loading…</div></div>
                 </div>
             </div>
         </div><!-- end tab-content-payments -->
@@ -1466,6 +1497,42 @@
             host.innerHTML = renderPaymentsTable(data.payments || []);
         } catch (_) {
             host.innerHTML = '<div style="color:#c53030;font-size:0.9rem;">Could not load payments.</div>';
+        }
+        loadAgentEmailHistory();
+    }
+
+    async function loadAgentEmailHistory() {
+        const host = document.getElementById('agt-email-history');
+        if (!host) return;
+        try {
+            const data = await fetch(`/api/admin/${encodeURIComponent(agentId)}/emails`, { credentials: 'include' })
+                .then(r => r.ok ? r.json() : { emails: [] });
+            const rows = data.emails || [];
+            if (!rows.length) { host.innerHTML = '<div style="color:#a0aec0;font-size:0.9rem;">No emails sent to this agent yet.</div>'; return; }
+            const when = d => d ? new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
+            const pill = s => {
+                const st = String(s || '').toLowerCase();
+                const style = st === 'sent' ? 'background:#f0fff4;color:#276749;border-color:#c6f6d5;'
+                    : st === 'error' ? 'background:#fff5f5;color:#c53030;border-color:#fed7d7;'
+                    : 'background:#f7fafc;color:#718096;border-color:#e2e8f0;';
+                return `<span style="display:inline-block;padding:0.1rem 0.55rem;border:1px solid transparent;border-radius:99px;font-size:0.68rem;font-weight:700;text-transform:uppercase;${style}">${esc(st || '—')}</span>`;
+            };
+            host.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+                <thead><tr>
+                    <th style="text-align:left;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.5px;color:#a0aec0;font-weight:800;padding:0 0.6rem 0.5rem;">Date</th>
+                    <th style="text-align:left;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.5px;color:#a0aec0;font-weight:800;padding:0 0.6rem 0.5rem;">Subject</th>
+                    <th style="text-align:left;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.5px;color:#a0aec0;font-weight:800;padding:0 0.6rem 0.5rem;">Type</th>
+                    <th style="text-align:left;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.5px;color:#a0aec0;font-weight:800;padding:0 0.6rem 0.5rem;">Status</th>
+                </tr></thead><tbody>
+                ${rows.map(e => `<tr>
+                    <td style="padding:0.55rem 0.6rem;border-top:1px solid #f2f5f8;color:#718096;white-space:nowrap;">${when(e.created_at)}</td>
+                    <td style="padding:0.55rem 0.6rem;border-top:1px solid #f2f5f8;color:#1a202c;">${esc(e.subject || '—')}</td>
+                    <td style="padding:0.55rem 0.6rem;border-top:1px solid #f2f5f8;color:#4a5568;">${esc(e.category || '—')}</td>
+                    <td style="padding:0.55rem 0.6rem;border-top:1px solid #f2f5f8;">${pill(e.status)}</td>
+                </tr>`).join('')}
+                </tbody></table></div>`;
+        } catch (_) {
+            host.innerHTML = '<div style="color:#c53030;font-size:0.9rem;">Could not load email history.</div>';
         }
     }
 

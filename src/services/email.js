@@ -104,6 +104,19 @@ function logSkip(reason) {
     console.log(`[email] skipped — ${reason}`);
 }
 
+// Best-effort record of every send attempt, for per-recipient email history.
+// Fire-and-forget: never blocks or throws into the send path.
+function recordEmail(to, subject, category, status, detail) {
+    if (!to || Array.isArray(to)) return;   // history is per single recipient
+    try {
+        const pool = require('../database/pool');
+        pool.query(
+            `INSERT INTO email_log (to_email, subject, category, status, detail) VALUES ($1,$2,$3,$4,$5)`,
+            [String(to).toLowerCase(), subject || null, category || null, status, (detail == null ? null : String(detail).slice(0, 500))]
+        ).catch(() => {});
+    } catch (_) {}
+}
+
 // ─── Low-level sender ────────────────────────────────────────────────────────
 // Same signature as before — templates don't need to know the transport.
 async function sendEmail({ to, subject, html, replyTo, category }) {
@@ -113,7 +126,7 @@ async function sendEmail({ to, subject, html, replyTo, category }) {
     // CAN-SPAM-compliant unsubscribe footer and List-Unsubscribe header.
     let headers;
     if (category === 'marketing' && !Array.isArray(to)) {
-        if (await isSuppressed(to)) { logSkip(`suppressed (${to})`); return { skipped: true, suppressed: true }; }
+        if (await isSuppressed(to)) { logSkip(`suppressed (${to})`); recordEmail(to, subject, category, 'skipped', 'suppressed'); return { skipped: true, suppressed: true }; }
         html = (html || '') + unsubFooterHtml(to);
         headers = {
             'List-Unsubscribe': `<${unsubUrl(to)}>`,
@@ -133,9 +146,11 @@ async function sendEmail({ to, subject, html, replyTo, category }) {
                 ...(headers ? { headers } : {}),
             });
             console.log(`[email] sent → ${to} · ${subject} · id=${info.messageId || 'n/a'}`);
+            recordEmail(to, subject, category, 'sent', info.messageId || null);
             return { data: { id: info.messageId } };
         } catch (err) {
             console.error(`[email] FAILED (gmail) → ${to} · ${subject}:`, err.message);
+            recordEmail(to, subject, category, 'error', err.message);
             return { error: err.message };
         }
     }
@@ -151,14 +166,17 @@ async function sendEmail({ to, subject, html, replyTo, category }) {
                 ...(headers ? { headers } : {}),
             });
             console.log(`[email] sent → ${to} · ${subject} · id=${res.data?.id || 'n/a'}`);
+            recordEmail(to, subject, category, 'sent', res.data?.id || null);
             return res;
         } catch (err) {
             console.error(`[email] FAILED (resend) → ${to} · ${subject}:`, err.message);
+            recordEmail(to, subject, category, 'error', err.message);
             return { error: err.message };
         }
     }
 
     logSkip('no transport configured');
+    recordEmail(to, subject, category, 'skipped', 'no transport configured');
     return { skipped: true };
 }
 

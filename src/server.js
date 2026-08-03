@@ -3427,6 +3427,19 @@ async function ensureTables() {
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
 
+            -- Every email the app attempts to send, for per-recipient history.
+            CREATE TABLE IF NOT EXISTS email_log (
+                id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                to_email   TEXT NOT NULL,
+                subject    TEXT,
+                category   VARCHAR(60),
+                status     VARCHAR(20) NOT NULL,   -- sent | error | skipped
+                detail     TEXT,                   -- provider id, error, or skip reason
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_email_log_to      ON email_log(LOWER(to_email));
+            CREATE INDEX IF NOT EXISTS idx_email_log_created  ON email_log(created_at DESC);
+
             -- Monthly MRR snapshots for the admin revenue cockpit trend.
             CREATE TABLE IF NOT EXISTS mrr_snapshots (
                 month       DATE PRIMARY KEY,
