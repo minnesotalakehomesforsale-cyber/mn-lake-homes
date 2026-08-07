@@ -4664,6 +4664,24 @@ async function seedTownContent() {
     }
     if (lakeBodies > 0) console.log(` Refreshed ${lakeBodies} lake body section(s).`);
 
+    // Unique SEO title + meta description per lake (src/data/lake-seo.js).
+    // FILL-EMPTY via COALESCE so an admin-entered value is never overwritten;
+    // fills the gap where every lake was falling back to intro_text.
+    const lakeSeo = require('./data/lake-seo');
+    let lakeSeoN = 0;
+    for (const [slug, s] of Object.entries(lakeSeo)) {
+        const r = await pool.query(
+            `UPDATE lakes
+                SET seo_title       = COALESCE(NULLIF(seo_title, ''), $2),
+                    seo_description = COALESCE(NULLIF(seo_description, ''), $3),
+                    updated_at      = NOW()
+              WHERE slug = $1`,
+            [slug, s.title, s.description]
+        );
+        lakeSeoN += r.rowCount;
+    }
+    if (lakeSeoN > 0) console.log(` Applied SEO meta to ${lakeSeoN} lake(s).`);
+
     // Unique town body copy (description only — never touches hero/intro, so
     // the fully-curated towns in town-content.js are untouched). Replaces the
     // templated about-section fallback on every other rendering town.
