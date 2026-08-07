@@ -4682,6 +4682,25 @@ async function seedTownContent() {
     }
     if (lakeSeoN > 0) console.log(` Applied SEO meta to ${lakeSeoN} lake(s).`);
 
+    // Real, sourced lake facts (surface acres / max & mean depth) from
+    // src/data/lake-data.js. FILL-EMPTY via COALESCE so admin/DNR-verified
+    // values are never overwritten. Powers the on-page facts strip.
+    const lakeData = require('./data/lake-data');
+    let lakeDataN = 0;
+    for (const [slug, d] of Object.entries(lakeData)) {
+        const r = await pool.query(
+            `UPDATE lakes
+                SET surface_acres = COALESCE(surface_acres, $2),
+                    max_depth_ft  = COALESCE(max_depth_ft,  $3),
+                    mean_depth_ft = COALESCE(mean_depth_ft, $4),
+                    updated_at    = NOW()
+              WHERE slug = $1`,
+            [slug, d.surface_acres ?? null, d.max_depth_ft ?? null, d.mean_depth_ft ?? null]
+        );
+        lakeDataN += r.rowCount;
+    }
+    if (lakeDataN > 0) console.log(` Applied physical facts to ${lakeDataN} lake(s).`);
+
     // Unique town body copy (description only — never touches hero/intro, so
     // the fully-curated towns in town-content.js are untouched). Replaces the
     // templated about-section fallback on every other rendering town.
