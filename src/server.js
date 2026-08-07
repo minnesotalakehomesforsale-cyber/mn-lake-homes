@@ -4695,6 +4695,23 @@ async function seedTownContent() {
         townDescN += r.rowCount;
     }
     if (townDescN > 0) console.log(` Set ${townDescN} town description(s).`);
+
+    // Unique SEO title + meta description for the active "thin" towns
+    // (src/data/town-seo.js). FILL-EMPTY so curated/admin values always win.
+    const townSeo = require('./data/town-seo');
+    let townSeoN = 0;
+    for (const [slug, s] of Object.entries(townSeo)) {
+        const r = await pool.query(
+            `UPDATE tags
+                SET seo_title       = COALESCE(NULLIF(seo_title, ''), $2),
+                    seo_description = COALESCE(NULLIF(seo_description, ''), $3),
+                    updated_at      = NOW()
+              WHERE slug = $1 AND active = TRUE`,
+            [slug, s.title, s.description]
+        );
+        townSeoN += r.rowCount;
+    }
+    if (townSeoN > 0) console.log(` Applied SEO meta to ${townSeoN} town(s).`);
 }
 
 // ==========================================
