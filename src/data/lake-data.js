@@ -35,4 +35,5 @@ module.exports = {
   'lake-minnewaska':     { surface_acres: 8050,   max_depth_ft: 32,  mean_depth_ft: 17 },
   'big-sandy-lake':      { surface_acres: 6526,   max_depth_ft: 84 },
   'bay-lake':            { surface_acres: 2393,   max_depth_ft: 74 },
+  'chisago-lake':        { surface_acres: 809 },
 };

@@ -417,4 +417,52 @@ Life in Annandale balances lakes and town — boating and swimming on the area's
         seo_description: "Annandale, MN homes for sale — the Heart of the Lakes, ringed by Clearwater, Sugar, and Sylvia lakes an hour from the Twin Cities. Get new listings.",
         hero_image_url: '/assets/images/mn-lake-town-sunset-aerial.jpg',
     },
+    {
+        slug: 'lindstrom',
+        intro_text: "Lindström is the heart of the Chisago Lakes — 'America's Little Sweden,' a historic lake town on the chain about 45 minutes from the Twin Cities.",
+        description: `Lindström sits at the center of the Chisago Lakes chain in Chisago County, about 45 minutes northeast of the Twin Cities. Known as 'America's Little Sweden' for its heritage and its role as the setting of Vilhelm Moberg's Emigrants novels, it's a genuine lake town wrapped around connected water — a walkable Swedish-themed downtown with the lakes right at its edge.
+
+Real estate ranges from lakefront homes on the Chisago Lakes chain to in-town and near-lake houses, with a mix of historic character and newer construction. The combination of real lake living and a commutable metro location keeps demand strong from year-round families as well as weekenders — and gives buyers a range of price points that's increasingly rare this close to the Cities.
+
+Life in Lindström is lake-and-heritage: boating and swimming across the connected chain, a downtown of Swedish bakeries and shops, and festivals that lean into the town's history. The wider Chisago Lakes towns of Center City and Chisago City are minutes away. For buyers who want a real lake town with a short metro commute, Lindström is a standout.`,
+        seo_title: 'Lindstrom MN Homes for Sale | Chisago Lakes Real Estate',
+        seo_description: "Lindström, MN homes for sale on the Chisago Lakes chain — 'America's Little Sweden,' a historic lake town 45 minutes from the Twin Cities. Get new listings.",
+        hero_image_url: '/assets/images/mn-harbor-town.webp',
+    },
+    {
+        slug: 'chisago-city',
+        intro_text: "Chisago City is a growing lake town on the Chisago Lakes chain in the northeast metro — connected water and an easy Twin Cities commute.",
+        description: `Chisago City sits on the Chisago Lakes chain in Chisago County, at the southern end of the connected lakes about 40 minutes northeast of the Twin Cities. It's a growing community that pairs genuine lake access with a commutable metro location, part of the historic Swedish-settlement lake country along US-8.
+
+Real estate spans lakefront homes on the chain to established and newer neighborhoods set back from the water. The city has grown steadily as buyers discover that they can own on real connected lakes and still commute to the Cities — a value proposition that keeps year-round demand strong alongside the weekend market. Lakefront is competitive, especially in spring.
+
+Life in Chisago City runs on the chain and the trail — boating and fishing across the connected lakes, regional parks, and quick access to Lindström and Center City. For buyers who want connected-lake living with an easy commute and more attainable pricing than the west-metro lakes, Chisago City is a smart pick.`,
+        seo_title: 'Chisago City MN Homes for Sale | Chisago Lakes Real Estate',
+        seo_description: "Chisago City, MN homes for sale on the Chisago Lakes chain — connected northeast-metro lakes with an easy Twin Cities commute. Get new listings.",
+        hero_image_url: '/assets/images/mn-stillwater-aerial.webp',
+    },
+    {
+        slug: 'center-city',
+        intro_text: "Center City is the historic Chisago County seat on the Chisago Lakes chain — a small, scenic lake town in the northeast metro's Swedish settlement country.",
+        description: `Center City is the county seat of Chisago County, a small, historic town on the Chisago Lakes chain about 45 minutes northeast of the Twin Cities. One of the oldest Swedish settlements in Minnesota, it sits right on the connected lakes with a quiet, scenic character and a well-preserved historic core.
+
+Real estate here is anchored by the Chisago Lakes chain — lakefront homes and cottages on connected water — along with in-town homes in a small, walkable community. Because Center City is tiny and historic, inventory is limited and closely held, and the setting on the chain keeps lakefront in demand. Its commutable location adds year-round appeal beyond the second-home market.
+
+Life in Center City is small-town and lake-forward — boating across the chain, historic architecture, and the wider Chisago Lakes towns of Lindström and Chisago City minutes away. For buyers who want a quiet, historic lake town on connected water within metro reach, Center City is a rare, characterful option.`,
+        seo_title: 'Center City MN Homes for Sale | Chisago Lakes Real Estate',
+        seo_description: "Center City, MN homes for sale on the Chisago Lakes chain — the historic Chisago County seat on connected northeast-metro water. Get new listings.",
+        hero_image_url: '/assets/images/mn-purple-sunset-marina.webp',
+    },
+    {
+        slug: 'park-rapids',
+        intro_text: "Park Rapids is a classic north-central Minnesota lake town on Fish Hook Lake — a walkable Main Street at the gateway to hundreds of lakes and Itasca State Park.",
+        description: `Park Rapids is a north-central Minnesota town in Hubbard County, set on Fish Hook Lake about three and a half hours from the Twin Cities. It's one of the state's classic lake destinations — a genuine, walkable downtown at the gateway to hundreds of area lakes and to Itasca State Park, where the Mississippi River begins.
+
+Real estate ranges from lakefront homes and cabins on Fish Hook Lake and the surrounding waters to in-town homes walkable to Main Street. The density of lakes around Park Rapids gives buyers an enormous range of options and price points, while the real, year-round town keeps the market active beyond the summer season. Good frontage clusters in spring listings and moves quickly.
+
+Life in Park Rapids is lakes and the northwoods — boating and fishing across the area's water, the Heartland State Trail, Itasca State Park, and a downtown known for its wide Main Street and summer buzz. For buyers who want a real town surrounded by hundreds of lakes, Park Rapids is one of the best bases in north-central Minnesota.`,
+        seo_title: 'Park Rapids MN Homes for Sale | Fish Hook Lake Real Estate',
+        seo_description: "Park Rapids, MN homes for sale on Fish Hook Lake — a walkable north-central Minnesota town at the gateway to hundreds of lakes. Get new listings.",
+        hero_image_url: '/assets/images/mn-lake-town-sunset-aerial.jpg',
+    },
 ];

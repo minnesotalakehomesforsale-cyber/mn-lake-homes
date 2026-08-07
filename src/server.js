@@ -4659,6 +4659,9 @@ async function seedTownContent() {
         'crosby': 'serpent-lake',        'deerwood': 'bay-lake',
         'aitkin': 'big-sandy-lake',      'cass-lake': 'cass-lake',
         'ottertail': 'otter-tail-lake',  'annandale': 'clearwater-lake',
+        // Newly-added lakes unlock these towns.
+        'lindstrom': 'chisago-lake',     'chisago-city': 'chisago-lake',
+        'center-city': 'chisago-lake',   'park-rapids': 'fish-hook-lake',
     };
     let townLinks = 0;
     for (const [townSlug, lakeSlug] of Object.entries(TOWN_LAKE_LINKS)) {

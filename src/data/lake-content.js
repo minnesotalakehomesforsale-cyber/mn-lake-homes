@@ -319,4 +319,20 @@ The market is cabins and year-round homes; size, clarity, and the Glenwood water
 
 Winter offers ice fishing and quiet, reopening at spring ice-out.`,
     },
+    'chisago-lake': {
+        lifestyle: `Chisago Lake anchors the Chisago Lakes chain in the northeast metro, about 45 minutes from the Twin Cities. The chain's connected lakes are wrapped in the historic Swedish settlement towns of Lindström, Center City, and Chisago City — the real-life setting for Vilhelm Moberg's Emigrants novels — giving the area a distinct heritage and a genuine walk-to-water town character.
+
+The market pairs true lake living with a commutable location, which keeps demand strong from year-round families as well as weekenders. Expect lakefront homes on the chain alongside more attainable in-town and near-lake houses — a range that's increasingly rare this close to the metro.`,
+        seasons: `Summer runs on the chain — boating between the connected lakes, swimming, and the Swedish-heritage festivals that fill the lake towns. Early fall quiets to color tours and the last warm days on the water.
+
+Because these are commuter communities, winter stays lively — plowed roads, open downtowns, and ice fishing on the chain until spring ice-out reopens the boating season.`,
+    },
+    'fish-hook-lake': {
+        lifestyle: `Fish Hook Lake sits right at the edge of Park Rapids in north-central Minnesota, one of the relatively few lakes wrapped around a real, year-round town rather than a resort strip. Clear water, a walkable downtown, and a location at the gateway to the Park Rapids lakes and Itasca State Park give it a character all its own.
+
+The market supports both second homes and year-round living — lakefront on Fish Hook and the connected waters alongside in-town homes walkable to Park Rapids' Main Street. That combination of genuine lake and genuine town is the draw.`,
+        seasons: `Summer is boating, fishing, and the Park Rapids waterfront, with the Heartland State Trail and Itasca State Park close by. Fall brings north-country color and thinner crowds.
+
+Winter keeps the town open — ice fishing, skiing, and a downtown that runs year-round — until spring ice-out returns the lake to open water.`,
+    },
 };
