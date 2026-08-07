@@ -1780,15 +1780,18 @@ const getSeoAudit = async (req, res) => {
 
         const lakeInvisible = lakes.filter(l => l.status !== 'published' || !l.has_hero)
             .map(l => ({ name: l.name, slug: l.slug, reason: l.status !== 'published' ? 'status=' + l.status : 'no hero image' }));
-        const lakeThin = lakes.filter(l => l.status === 'published' && l.has_hero &&
-            (l.desc_len < MIN_DESC || !l.has_seo_desc || !l.has_data))
-            .map(l => ({ name: l.name, slug: l.slug, issues: [l.desc_len < MIN_DESC ? `desc ${l.desc_len}c` : '', !l.has_seo_desc ? 'no seo desc' : '', !l.has_data ? 'no lake data' : ''].filter(Boolean) }));
+        // "Thin" = published + rendering but missing a custom meta description
+        // (the real, rankable gap). The `description` COLUMN is intentionally NOT
+        // counted — lake/town pages render lifestyle/seasons copy, not it, so an
+        // empty `description` is a false signal. Lake data (depth/acres) is an
+        // enrichment, surfaced as a note but not counted as thin.
+        const lakeThin = lakes.filter(l => l.status === 'published' && l.has_hero && !l.has_seo_desc)
+            .map(l => ({ name: l.name, slug: l.slug, issues: ['no meta description'] }));
 
         const townInvisible = towns.filter(t => !t.active || !t.has_hero || !t.has_linked_lake)
             .map(t => ({ name: t.name, slug: t.slug, reason: !t.active ? 'inactive' : !t.has_hero ? 'no hero image' : 'no published lake linked' }));
-        const townThin = towns.filter(t => t.active && t.has_hero && t.has_linked_lake &&
-            (t.desc_len < MIN_DESC || !t.has_seo_desc))
-            .map(t => ({ name: t.name, slug: t.slug, issues: [t.desc_len < MIN_DESC ? `desc ${t.desc_len}c` : '', !t.has_seo_desc ? 'no seo desc' : ''].filter(Boolean) }));
+        const townThin = towns.filter(t => t.active && t.has_hero && t.has_linked_lake && !t.has_seo_desc)
+            .map(t => ({ name: t.name, slug: t.slug, issues: ['no meta description'] }));
 
         res.json({
             lakes: { total: lakes.length, invisible: lakeInvisible, thin: lakeThin,
