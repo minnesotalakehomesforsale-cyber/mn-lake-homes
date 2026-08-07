@@ -345,4 +345,76 @@ Life in Pequot Lakes is Brainerd-Lakes summer at its best — boating and waters
         seo_description: "Pequot Lakes, MN homes for sale near Pelican Lake and the Whitefish Chain — a walkable Brainerd Lakes resort town. Get new listings with a local agent.",
         hero_image_url: '/assets/images/mn-aerial-small-town.jpg',
     },
+    {
+        slug: 'crosby',
+        intro_text: "Crosby is a Cuyuna Range town on Serpent Lake — former mining country reborn as a mountain-biking and clear-water lake destination in central Minnesota.",
+        description: `Crosby sits on Serpent Lake on the Cuyuna Iron Range in Crow Wing County, about two and a half hours north of the Twin Cities. Once an iron-mining town, it has been reborn as an outdoor destination — the flooded mine pits left behind a string of deep, remarkably clear lakes, and the Cuyuna Country State Recreation Area has made the area a nationally known mountain-biking hub.
+
+Real estate here is anchored by Serpent Lake and the clear Cuyuna mine lakes, from cabins to year-round lake homes, along with an increasingly sought-after in-town market driven by the biking economy. The clear water and the recreation draw have pushed demand up in recent years, while prices still run below the metro and Brainerd markets — a combination that has put Crosby on a lot of buyers' radar.
+
+Life in Crosby blends lake and trail — swimming and boating on clear water, world-class mountain biking out the back door, and a walkable downtown that has grown a real food-and-coffee scene. For buyers who want clear water, a genuine town, and a recreation lifestyle at a relative value, Crosby and Serpent Lake are one of central Minnesota's most interesting markets.`,
+        seo_title: 'Crosby MN Homes for Sale | Serpent Lake Real Estate',
+        seo_description: "Crosby, MN homes for sale on Serpent Lake — clear Cuyuna Range mine lakes and a mountain-biking town in central Minnesota. Get new listings.",
+        hero_image_url: '/assets/images/mn-purple-sunset-marina.webp',
+    },
+    {
+        slug: 'deerwood',
+        intro_text: "Deerwood is a small Cuyuna-area town near Bay Lake, home of the historic Ruttger's resort — quiet, clear-water lake country in central Minnesota.",
+        description: `Deerwood is a small town in Crow Wing County near Bay Lake, in the Cuyuna lake country about two hours north of the Twin Cities. It's best known as the home of Ruttger's Bay Lake Resort, one of Minnesota's oldest family resorts, and the area keeps a quiet, established lake-country character.
+
+Real estate centers on Bay Lake and the surrounding waters — clear, spring-fed lakes with a long resort history — ranging from cabins to year-round lake homes, along with in-town and near-lake houses. Bay Lake's clarity and the resort legacy keep frontage sought after, while the smaller area lakes and Deerwood itself offer more accessible options. Nearby Crosby and the Cuyuna recreation area add to the draw.
+
+Life in Deerwood is quiet and lake-forward — golf and boating at Ruttger's, clear-water swimming and fishing, and the Cuyuna biking trails minutes away. For buyers who want a settled, clear-water lake community with a bit of resort history, Deerwood and Bay Lake are a calm, classic choice.`,
+        seo_title: 'Deerwood MN Homes for Sale | Bay Lake Real Estate',
+        seo_description: "Deerwood, MN homes for sale near Bay Lake — clear Cuyuna-area water and the historic Ruttger's resort in central Minnesota. Get new listings.",
+        hero_image_url: '/assets/images/mn-lake-home-from-water.jpg',
+    },
+    {
+        slug: 'aitkin',
+        intro_text: "Aitkin is a classic county-seat river town near Big Sandy Lake and the upper Mississippi — a gateway to central Minnesota's lakes and northwoods.",
+        description: `Aitkin is the county seat of Aitkin County, a classic small river town on the upper Mississippi about two hours north of the Twin Cities, near Big Sandy Lake and a scatter of northwoods lakes. It's a genuine year-round town — a real Main Street and county services — set at the southern gateway to central Minnesota's lake and forest country.
+
+Real estate ranges from lakefront homes and cabins on Big Sandy Lake and the surrounding waters to in-town and riverfront homes. Big Sandy's size and fishing reputation anchor the lake market, while Aitkin itself offers some of the more affordable housing in the region. It's a value area — big water and northwoods access at prices well below the metro and Brainerd lakes.
+
+Life in Aitkin is river, lake, and small-town — fishing and boating on Big Sandy, the Mississippi and Rice Lake wildlife refuge nearby, and a walkable downtown with a working-town feel. For buyers who want an affordable base near big water and the northwoods, Aitkin and Big Sandy Lake are a practical, uncrowded pick.`,
+        seo_title: 'Aitkin MN Homes for Sale | Big Sandy Lake Real Estate',
+        seo_description: "Aitkin, MN homes for sale near Big Sandy Lake and the upper Mississippi — an affordable gateway to central Minnesota's lakes. Get new listings.",
+        hero_image_url: '/assets/images/mn-harbor-town.webp',
+    },
+    {
+        slug: 'cass-lake',
+        intro_text: "Cass Lake is a northwoods town on the lake of the same name, deep in the Chippewa National Forest near Bemidji — clear water and legendary fishing.",
+        description: `Cass Lake is a small town in Cass County, set on the shore of Cass Lake within the Chippewa National Forest, near Bemidji in north-central Minnesota about three and a half hours from the Twin Cities. Surrounded by forest and water on the Leech Lake reservation, it's classic northwoods fishing country.
+
+Real estate centers on Cass Lake and the surrounding forest lakes — cabins and year-round lake homes on clear, wooded frontage — at prices that run well below the metro markets. Because so much of the shoreline is within the national forest, development is limited and much of the water stays wild, which is a large part of the appeal. As with the wider reservation-and-forest region, buyers benefit from a local specialist who knows the parcel and access details.
+
+Life in Cass Lake is fishing, boating, and the northwoods — walleye and muskie water, the Chippewa National Forest, and a quiet, lake-first pace. Bemidji's services and college-town amenities are a short drive west. For buyers who want affordable, wild, clear-water lake country, Cass Lake delivers the real northwoods.`,
+        seo_title: 'Cass Lake MN Homes for Sale | Chippewa Forest Waterfront',
+        seo_description: "Cass Lake, MN homes for sale on Cass Lake — clear northwoods water in the Chippewa National Forest near Bemidji. Get new listings with a local agent.",
+        hero_image_url: '/assets/images/mn-clearwater-lakeshore.jpg',
+    },
+    {
+        slug: 'ottertail',
+        intro_text: "Ottertail is a small town on the shore of Otter Tail Lake — a big, sandy recreation lake in the heart of Otter Tail County's lake country.",
+        description: `Ottertail is a small town on the north shore of Otter Tail Lake, in the middle of Otter Tail County's dense lake country in west-central Minnesota, about three hours from the Twin Cities. It's a genuine lake town built around one of the region's premier recreation lakes — big, sandy-bottomed water that has drawn cabin families for generations.
+
+Real estate here is anchored by Otter Tail Lake frontage — from classic cabins to rebuilt year-round homes on the lake's sandy shoreline — along with in-town and near-lake homes. The lake's size, clean sand, and reputation keep frontage sought after, while the surrounding smaller lakes and the town offer a range of options. It's a second-home-heavy market where the best water clusters in spring listings.
+
+Life in Ottertail runs on the lake — boating and watersports on big open water, swimming off sandy beaches, and fishing across the county's many lakes. Nearby Perham and Battle Lake add services and small-town charm. For buyers who want big, sandy recreation water in the heart of Otter Tail lake country, Ottertail is right on it.`,
+        seo_title: 'Ottertail MN Homes for Sale | Otter Tail Lake Real Estate',
+        seo_description: "Ottertail, MN homes for sale on Otter Tail Lake — big, sandy recreation water in the heart of Otter Tail County. Get new listings with a local agent.",
+        hero_image_url: '/assets/images/mn-lake-dock-golden.jpg',
+    },
+    {
+        slug: 'annandale',
+        intro_text: "Annandale calls itself the Heart of the Lakes — a central Minnesota town among Clearwater, Sugar, and Sylvia lakes, halfway between the Twin Cities and St. Cloud.",
+        description: `Annandale sits in central Minnesota's lake country in Wright County, about an hour northwest of the Twin Cities and a short drive from St. Cloud. It bills itself as the Heart of the Lakes for good reason — it's ringed by popular recreation lakes including Clearwater, Sugar, and Sylvia — and its commutable location has made it a growing four-season community.
+
+Real estate ranges from lakefront homes and cabins on Clearwater, Sugar, Sylvia, and the surrounding waters to in-town homes in a genuine, growing town. The mix of clear recreation lakes and an easy metro/St. Cloud commute is Annandale's strength: buyers can own on the water and still commute, which keeps year-round demand strong alongside the second-home market. Good frontage is competitive, especially in spring.
+
+Life in Annandale balances lakes and town — boating and swimming on the area's clear water, a walkable downtown, and quick access to both the Cities and St. Cloud. For buyers who want central-Minnesota lake living within commuting distance, Annandale and its ring of lakes are one of the most convenient options in the region.`,
+        seo_title: 'Annandale MN Homes for Sale | Central MN Lakes Real Estate',
+        seo_description: "Annandale, MN homes for sale — the Heart of the Lakes, ringed by Clearwater, Sugar, and Sylvia lakes an hour from the Twin Cities. Get new listings.",
+        hero_image_url: '/assets/images/mn-lake-town-sunset-aerial.jpg',
+    },
 ];

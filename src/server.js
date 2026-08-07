@@ -4655,6 +4655,10 @@ async function seedTownContent() {
         'perham': 'otter-tail-lake',     'pelican-rapids': 'lake-lida',
         'battle-lake': 'battle-lake',    'pine-river': 'whitefish-chain',
         'pequot-lakes': 'pelican-lake',
+        // Cuyuna / central-MN lake towns.
+        'crosby': 'serpent-lake',        'deerwood': 'bay-lake',
+        'aitkin': 'big-sandy-lake',      'cass-lake': 'cass-lake',
+        'ottertail': 'otter-tail-lake',  'annandale': 'clearwater-lake',
     };
     let townLinks = 0;
     for (const [townSlug, lakeSlug] of Object.entries(TOWN_LAKE_LINKS)) {
