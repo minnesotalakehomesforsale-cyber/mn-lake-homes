@@ -4636,6 +4636,28 @@ async function seedTownContent() {
     }
     if (curated > 0) console.log(` Curated ${curated} town page(s).`);
 
+    // Link curated lake-towns to their lake so the town page resolves and
+    // renders (a town needs a published lake linked via lake_tags). Safe every
+    // boot via ON CONFLICT; admin-created links are never touched.
+    const TOWN_LAKE_LINKS = {
+        'excelsior': 'lake-minnetonka', 'wayzata': 'lake-minnetonka',
+        'nisswa': 'gull-lake',          'walker': 'leech-lake',
+        'crosslake': 'whitefish-chain', 'breezy-point': 'pelican-lake',
+        'glenwood': 'lake-minnewaska',  'spicer': 'green-lake',
+        'waconia': 'lake-waconia',      'chanhassen': 'lake-minnewashta',
+    };
+    let townLinks = 0;
+    for (const [townSlug, lakeSlug] of Object.entries(TOWN_LAKE_LINKS)) {
+        const r = await pool.query(
+            `INSERT INTO lake_tags (lake_id, tag_id)
+             SELECT l.id, t.id FROM lakes l, tags t
+              WHERE l.slug = $1 AND t.slug = $2
+             ON CONFLICT (lake_id, tag_id) DO NOTHING`,
+            [lakeSlug, townSlug]);
+        townLinks += r.rowCount;
+    }
+    if (townLinks > 0) console.log(` Linked ${townLinks} town(s) to their lake.`);
+
     // Refresh lake hero subtitles to the curated 20-25 word versions. Prod is
     // deploy-only, so this runs on boot rather than via a direct DB write.
     // Source of truth for these slugs (re-applied each deploy).

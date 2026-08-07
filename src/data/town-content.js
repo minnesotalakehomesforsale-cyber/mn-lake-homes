@@ -105,4 +105,76 @@ module.exports = [
         seo_description: "Walker, MN homes for sale. A northwoods fishing town on Leech Lake — cabins, year-round homes, and frontage near the Chippewa National Forest. Get new listings.",
         hero_image_url: '/assets/images/mn-log-cabin-ducks.jpg',
     },
+    {
+        slug: 'crosslake',
+        intro_text: "Crosslake sits at the center of the Whitefish Chain — 14 connected lakes in the Brainerd Lakes area, with clear water, a walkable town center, and some of the north's most coveted frontage.",
+        description: `Crosslake sits at the heart of the Whitefish Chain — 14 connected lakes in the northern reaches of the Brainerd Lakes area, about two and a half hours north of the Twin Cities. It's one of Minnesota's premier resort-and-cabin destinations, with a walkable town center, golf, and a summer economy built entirely around the water.
+
+Real estate on the Whitefish Chain runs from legacy family cabins to fully rebuilt year-round lake homes and luxury estates on the most coveted frontage. The chain's clear water and connected big-lake boating make it one of the most sought-after — and tightly held — markets in the north. Inventory is seasonal and competitive, and the best frontage often sells before it reaches the portals.
+
+Summers run on the chain — boating between the 14 lakes, golf at nearby courses, and a town center with dining and shops. Winter brings ice fishing and snowmobiling, and the community stays lively year-round. For buyers who want big-water boating and a real town in the northwoods, Crosslake is the Brainerd Lakes at their best.`,
+        seo_title: 'Crosslake MN Homes for Sale | MN Lake Homes',
+        seo_description: "Crosslake, MN homes for sale on the Whitefish Chain — 14 connected lakes in the Brainerd Lakes area, clear water and a walkable town. Get new listings.",
+        hero_image_url: '/assets/images/mn-lake-town-sunset-aerial.jpg',
+    },
+    {
+        slug: 'breezy-point',
+        intro_text: "Breezy Point is a resort town on Pelican Lake in the Brainerd Lakes — big open water, golf, and a mix of resort condos and lake homes about two hours north of the Cities.",
+        description: `Breezy Point is a resort community on Pelican Lake in the Brainerd Lakes area, roughly two hours north of the Twin Cities. Anchored by the long-running Breezy Point Resort, it pairs big open water with destination golf and a summer-resort atmosphere that has drawn Twin Cities families for generations.
+
+The real estate here spans resort condominiums and townhomes to classic cabins and year-round lake homes on Pelican Lake's frontage. It's a heavily second-home market, so listings cluster in spring and the best water moves quickly. The resort setting makes lower-maintenance condo ownership a real option alongside traditional lakefront — a flexibility a lot of northern lakes don't offer.
+
+Life in Breezy Point runs on the lake and the fairways: boating and watersports on Pelican, golf at the resort courses, and an easy resort-town social scene in summer. Winter keeps snowmobiling and ice fishing going. For buyers who want big Brainerd-Lakes water with resort amenities on tap, Breezy Point is a natural fit.`,
+        seo_title: 'Breezy Point MN Homes for Sale | MN Lake Homes',
+        seo_description: "Breezy Point, MN homes for sale on Pelican Lake — a Brainerd Lakes resort town with big water, golf, and lake homes and condos. Get new listings.",
+        hero_image_url: '/assets/images/mn-purple-sunset-marina.webp',
+    },
+    {
+        slug: 'glenwood',
+        intro_text: "Glenwood wraps around Lake Minnewaska, Minnesota's 13th-largest lake, in west-central Minnesota — a classic lake town with a big-water shoreline and a walkable main street.",
+        description: `Glenwood sits on the shore of Lake Minnewaska, Minnesota's 13th-largest lake, in the rolling country of west-central Minnesota about two and a half hours from the Twin Cities. It's a genuine lake town — a real main street and year-round community wrapped around big, open water — rather than a summer-only resort strip.
+
+Real estate ranges from in-town homes walkable to downtown and the lakefront park to lake homes and cabins along Minnewaska's shoreline. Because Glenwood is a four-season community with its own services and schools, the market supports year-round living as well as second homes, and prices tend to be more attainable than the metro and Brainerd lakes for comparable water.
+
+Summers center on Lake Minnewaska — boating, fishing, and the town's Waterama festival — with a lakefront beach and park right in town. The surrounding Pope County lakes and rolling terrain add to the appeal. For buyers who want a real lake town on big water without a resort price tag, Glenwood is one of the best values in the region.`,
+        seo_title: 'Glenwood MN Homes for Sale | MN Lake Homes',
+        seo_description: "Glenwood, MN homes for sale on Lake Minnewaska — a classic west-central Minnesota lake town on big water with a walkable downtown. Get new listings.",
+        hero_image_url: '/assets/images/mn-lake-town-street.jpg',
+    },
+    {
+        slug: 'spicer',
+        intro_text: "Spicer sits on Green Lake, one of central Minnesota's deepest, clearest lakes, near Willmar — a small resort town with a lakefront beach and a lively summer scene.",
+        description: `Spicer is a small lake town on the shore of Green Lake, one of the deepest and clearest lakes in central Minnesota, just north of Willmar and about two hours west of the Twin Cities. Green Lake's exceptional water quality has made Spicer a recreation destination for generations, and the town is built squarely around the lake.
+
+Real estate here is anchored by Green Lake frontage — from classic cabins to rebuilt year-round homes and higher-end waterfront on the most desirable stretches — along with in-town and near-lake homes. The lake's clarity and depth keep demand strong and frontage tightly held; the best water is competitive and often moves fast in spring.
+
+Life in Spicer is the lake: swimming and boating on clean, deep water, a lakefront beach, and a compact downtown with dining and shops. The surrounding Kandiyohi County lakes add to the options. For buyers who want clear, swimmable water and a friendly small lake town, Spicer and Green Lake are a standout in central Minnesota.`,
+        seo_title: 'Spicer MN Homes for Sale | MN Lake Homes',
+        seo_description: "Spicer, MN homes for sale on Green Lake — a central Minnesota resort town on deep, clear water near Willmar, with a lakefront beach. Get new listings.",
+        hero_image_url: '/assets/images/mn-harbor-town.webp',
+    },
+    {
+        slug: 'waconia',
+        intro_text: "Waconia wraps around Lake Waconia, the largest lake in the southwest metro — a fast-growing city with a real downtown, an easy Twin Cities commute, and genuine open water.",
+        description: `Waconia sits on the shore of Lake Waconia, the largest lake in the southwest Twin Cities metro, in Carver County about 35 miles from downtown Minneapolis. Close enough for a daily commute yet genuinely a lake destination, Waconia has become one of the most sought-after lake communities on the metro's western edge.
+
+Real estate ranges from lakefront homes on Lake Waconia's broad open water to newer construction and established neighborhoods in the growing city. Because Waconia pairs real open-water boating with an easy metro commute, demand is strong from year-round families as well as weekend boaters, and lakefront is competitive — turn-key homes tend to move quickly, especially in spring.
+
+Life here is boating, fishing, and a revitalized downtown. Lake Waconia's big water is excellent for sailing and watersports, historic Coney Island sits near the center of the lake, and the walkable downtown and waterfront keep the social scene close. For buyers who want real lake living within commuting distance of the Cities, Waconia is one of the metro's best options.`,
+        seo_title: 'Waconia MN Homes for Sale | MN Lake Homes',
+        seo_description: "Waconia, MN homes for sale on Lake Waconia — the largest lake in the southwest metro, with a real downtown and an easy Twin Cities commute. Get new listings.",
+        hero_image_url: '/assets/images/mn-stillwater-aerial.webp',
+    },
+    {
+        slug: 'chanhassen',
+        intro_text: "Chanhassen is an upscale southwest-metro community built around a string of clear lakes — Minnewashta, Riley, and more — with top schools and a short drive to the Cities.",
+        description: `Chanhassen is a sought-after southwest-metro community in Carver County, wrapped around a string of clear lakes including Lake Minnewashta, Lake Riley, and Lotus Lake, about 20 miles from downtown Minneapolis. It consistently ranks among the best places to live in the country, and the combination of lakes, parks, and top schools is a big part of why.
+
+Real estate spans lakefront homes on Minnewashta and the surrounding lakes to upscale neighborhoods and newer construction throughout the city. Lakefront here is tightly held and commands a premium — the clear water and metro-close location keep demand high — while the broader market draws year-round families for the schools and the easy commute. Turn-key lake homes move quickly, especially in spring.
+
+Life in Chanhassen balances the lakes with real amenities: boating and swimming on clear metro water, an extensive park and trail system, a walkable downtown, and the Minnesota Landscape Arboretum nearby. For buyers who want clear-water lake living with big-city convenience and standout schools, Chanhassen is one of the metro's most desirable addresses.`,
+        seo_title: 'Chanhassen MN Homes for Sale | MN Lake Homes',
+        seo_description: "Chanhassen, MN homes for sale on Lake Minnewashta and nearby lakes — an upscale southwest-metro community with clear water and top schools. Get new listings.",
+        hero_image_url: '/assets/images/mn-aerial-small-town.jpg',
+    },
 ];
