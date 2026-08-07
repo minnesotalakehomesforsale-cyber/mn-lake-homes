@@ -1753,6 +1753,56 @@ const sendAgentBillingEmail = async (req, res) => {
 };
 
 /**
+ * GET /api/admin/seo-audit — which lakes & towns are lacking SEO, computed
+ * server-side (where the DB is reachable). Buckets: INVISIBLE (404s Google:
+ * no hero image / not published / no linked lake) and THIN (renders but weak).
+ */
+const getSeoAudit = async (req, res) => {
+    const MIN_DESC = 300;
+    try {
+        const lakes = (await pool.query(`
+            SELECT slug, name, status,
+                (COALESCE(hero_image_url,'') <> '')                                  AS has_hero,
+                COALESCE(LENGTH(description),0)                                      AS desc_len,
+                (COALESCE(seo_description,'') <> '')                                 AS has_seo_desc,
+                (max_depth_ft IS NOT NULL OR surface_acres IS NOT NULL
+                   OR water_clarity_ft IS NOT NULL OR shoreline_miles IS NOT NULL)   AS has_data
+            FROM lakes ORDER BY name`)).rows;
+
+        const towns = (await pool.query(`
+            SELECT t.slug, t.name, t.active,
+                (COALESCE(t.hero_image_url,'') <> '')          AS has_hero,
+                COALESCE(LENGTH(t.description),0)              AS desc_len,
+                (COALESCE(t.seo_description,'') <> '')          AS has_seo_desc,
+                EXISTS (SELECT 1 FROM lake_tags lt JOIN lakes l ON l.id = lt.lake_id
+                         WHERE lt.tag_id = t.id AND l.status = 'published') AS has_linked_lake
+            FROM tags t ORDER BY t.name`)).rows;
+
+        const lakeInvisible = lakes.filter(l => l.status !== 'published' || !l.has_hero)
+            .map(l => ({ name: l.name, slug: l.slug, reason: l.status !== 'published' ? 'status=' + l.status : 'no hero image' }));
+        const lakeThin = lakes.filter(l => l.status === 'published' && l.has_hero &&
+            (l.desc_len < MIN_DESC || !l.has_seo_desc || !l.has_data))
+            .map(l => ({ name: l.name, slug: l.slug, issues: [l.desc_len < MIN_DESC ? `desc ${l.desc_len}c` : '', !l.has_seo_desc ? 'no seo desc' : '', !l.has_data ? 'no lake data' : ''].filter(Boolean) }));
+
+        const townInvisible = towns.filter(t => !t.active || !t.has_hero || !t.has_linked_lake)
+            .map(t => ({ name: t.name, slug: t.slug, reason: !t.active ? 'inactive' : !t.has_hero ? 'no hero image' : 'no published lake linked' }));
+        const townThin = towns.filter(t => t.active && t.has_hero && t.has_linked_lake &&
+            (t.desc_len < MIN_DESC || !t.has_seo_desc))
+            .map(t => ({ name: t.name, slug: t.slug, issues: [t.desc_len < MIN_DESC ? `desc ${t.desc_len}c` : '', !t.has_seo_desc ? 'no seo desc' : ''].filter(Boolean) }));
+
+        res.json({
+            lakes: { total: lakes.length, invisible: lakeInvisible, thin: lakeThin,
+                     solid: lakes.length - lakeInvisible.length - lakeThin.length },
+            towns: { total: towns.length, invisible: townInvisible, thin: townThin,
+                     solid: towns.length - townInvisible.length - townThin.length },
+        });
+    } catch (err) {
+        console.error('[getSeoAudit]', err.message);
+        res.status(500).json({ error: 'Failed to run SEO audit: ' + err.message });
+    }
+};
+
+/**
  * GET /api/admin/:id/emails — every email the app has sent to this agent's
  * account address (welcome, lead notices, billing, etc.), newest first.
  */
@@ -2909,6 +2959,7 @@ module.exports = {
     resumeAgentSubscription,
     sendAgentBillingEmail,
     getAgentEmailHistory,
+    getSeoAudit,
     createAgent,
     updateAgentProfile,
     updateStatus,

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Health | MN Lake Homes Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', -apple-system, sans-serif; color: #1a202c; }
+        .seo-head { margin-bottom: 1.75rem; }
+        .seo-head h1 { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.75px; margin: 0 0 0.25rem; }
+        .seo-head p { color: #718096; font-size: 0.95rem; margin: 0; max-width: 60ch; }
+        .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0; }
+        @media (max-width: 720px) { .cards { grid-template-columns: 1fr; } }
+        .card { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.25rem 1.4rem; }
+        .card .n { font-size: 2.1rem; font-weight: 800; letter-spacing: -1px; line-height: 1; font-variant-numeric: tabular-nums; }
+        .card .l { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-top: 0.4rem; }
+        .n.bad { color: #c53030; } .n.warn { color: #b45309; } .n.good { color: #2f855a; }
+        .section { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; margin-bottom: 1.5rem; overflow: hidden; }
+        .section-hd { padding: 1.1rem 1.5rem; border-bottom: 1px solid #edf2f7; display: flex; align-items: center; gap: 0.6rem; }
+        .section-hd h2 { font-size: 1rem; font-weight: 800; margin: 0; }
+        .section-hd .pill { font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.6rem; border-radius: 99px; }
+        .pill.bad { background: #fff5f5; color: #c53030; } .pill.warn { background: #fffaf0; color: #b45309; }
+        .section-bd { padding: 0.5rem 1.5rem 1.25rem; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th { text-align: left; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; color: #a0aec0; font-weight: 800; padding: 0.6rem 0.5rem 0.5rem; }
+        td { padding: 0.6rem 0.5rem; border-top: 1px solid #f2f5f8; }
+        td a { color: #1d6df2; font-weight: 600; text-decoration: none; }
+        .tag { display: inline-block; background: #f7f9fa; border: 1px solid #edf2f7; border-radius: 6px; padding: 0.05rem 0.45rem; font-size: 0.72rem; color: #4a5568; margin: 0 0.2rem 0.15rem 0; }
+        .empty { color: #2f855a; font-size: 0.9rem; padding: 0.75rem 0; }
+        .note { background: #ebf8ff; border: 1px solid #bee3f8; color: #2c5282; border-radius: 12px; padding: 1rem 1.25rem; font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.5rem; }
+        .muted { color: #a0aec0; }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+</head>
+<body>
+<div class="admin-wrap">
+    <admin-sidebar active="seo"></admin-sidebar>
+    <main class="admin-main">
+        <div class="seo-head">
+            <h1>SEO Health</h1>
+            <p>Which lake &amp; town pages are hurting your search visibility — live from your database. <strong>Invisible</strong> pages 404 to Google (no hero image, unpublished, or no linked lake) so they can't rank at all; <strong>thin</strong> pages render but have weak content.</p>
+        </div>
+
+        <div class="note" id="seo-note" style="display:none;"></div>
+        <div id="seo-body"><p class="muted">Running audit…</p></div>
+    </main>
+</div>
+
+<script>
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    function bucketTable(kind, items, cols) {
+        if (!items.length) return '<div class="empty">✓ None — all good here.</div>';
+        return `<table><thead><tr><th>Name</th><th>${cols}</th><th>Page</th></tr></thead><tbody>${items.map(x => `
+            <tr>
+                <td><strong>${esc(x.name)}</strong></td>
+                <td>${x.reason ? `<span class="tag">${esc(x.reason)}</span>` : (x.issues || []).map(i => `<span class="tag">${esc(i)}</span>`).join('')}</td>
+                <td><a href="/${kind}/${encodeURIComponent(x.slug)}" target="_blank" rel="noopener">/${kind}/${esc(x.slug)} ↗</a></td>
+            </tr>`).join('')}</tbody></table>`;
+    }
+
+    function group(title, kind, data) {
+        return `
+            <div class="cards">
+                <div class="card"><div class="n bad">${data.invisible.length}</div><div class="l">Invisible (404 to Google)</div></div>
+                <div class="card"><div class="n warn">${data.thin.length}</div><div class="l">Thin content</div></div>
+                <div class="card"><div class="n good">${data.solid}</div><div class="l">Solid · of ${data.total} total</div></div>
+            </div>
+            <div class="section">
+                <div class="section-hd"><h2>${title} — Invisible</h2><span class="pill bad">${data.invisible.length}</span></div>
+                <div class="section-bd">${bucketTable(kind, data.invisible, 'Why hidden')}</div>
+            </div>
+            <div class="section">
+                <div class="section-hd"><h2>${title} — Thin content</h2><span class="pill warn">${data.thin.length}</span></div>
+                <div class="section-bd">${bucketTable(kind, data.thin, "What's missing")}</div>
+            </div>`;
+    }
+
+    (async () => {
+        const body = document.getElementById('seo-body');
+        let data;
+        try {
+            const res = await fetch('/api/admin/seo-audit', { credentials: 'include' });
+            if (res.status === 401 || res.status === 403) { body.innerHTML = '<p class="muted">Please sign in as an admin to view this.</p>'; return; }
+            data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Audit failed');
+        } catch (e) {
+            body.innerHTML = `<p style="color:#c53030;">Could not run the audit: ${esc(e.message)}</p>`;
+            return;
+        }
+        const totalInvisible = data.lakes.invisible.length + data.towns.invisible.length;
+        const note = document.getElementById('seo-note');
+        note.style.display = 'block';
+        note.innerHTML = totalInvisible
+            ? `<strong>${totalInvisible} page${totalInvisible === 1 ? '' : 's'} are invisible to Google right now.</strong> Fix these first — the quickest win is giving each a hero image (in Lakes &amp; Businesses), which makes it render and enter your sitemap. Then fill in the thin pages' descriptions.`
+            : `<strong>No invisible pages — every lake &amp; town is indexable.</strong> Focus next on the thin-content pages below.`;
+        body.innerHTML =
+            `<h2 style="font-size:1.15rem;font-weight:800;margin:0.5rem 0 0.25rem;">Lakes</h2>` + group('Lakes', 'lakes', data.lakes) +
+            `<h2 style="font-size:1.15rem;font-weight:800;margin:2rem 0 0.25rem;">Towns</h2>` + group('Towns', 'towns', data.towns);
+    })();
+</script>
+</body>
+</html>
