@@ -4645,6 +4645,11 @@ async function seedTownContent() {
         'crosslake': 'whitefish-chain', 'breezy-point': 'pelican-lake',
         'glenwood': 'lake-minnewaska',  'spicer': 'green-lake',
         'waconia': 'lake-waconia',      'chanhassen': 'lake-minnewashta',
+        // Lake Minnetonka towns.
+        'orono': 'lake-minnetonka',            'deephaven': 'lake-minnetonka',
+        'tonka-bay': 'lake-minnetonka',        'minnetonka-beach': 'lake-minnetonka',
+        'shorewood': 'lake-minnetonka',        'spring-park': 'lake-minnetonka',
+        'minnetrista': 'lake-minnetonka',      'mound': 'lake-minnetonka',
     };
     let townLinks = 0;
     for (const [townSlug, lakeSlug] of Object.entries(TOWN_LAKE_LINKS)) {

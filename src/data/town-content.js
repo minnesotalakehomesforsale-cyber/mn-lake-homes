@@ -177,4 +177,88 @@ Life in Chanhassen balances the lakes with real amenities: boating and swimming 
         seo_description: "Chanhassen, MN homes for sale on Lake Minnewashta and nearby lakes — an upscale southwest-metro community with clear water and top schools. Get new listings.",
         hero_image_url: '/assets/images/mn-aerial-small-town.jpg',
     },
+    {
+        slug: 'orono',
+        intro_text: "Orono is the large, low-density community wrapping the north and west shores of Lake Minnetonka — big wooded lots, estate frontage, and some of the most valuable waterfront in Minnesota.",
+        description: `Orono spreads across the north and west shores of Lake Minnetonka, a large, low-density community about 20 miles west of Minneapolis. Where the south-shore towns are walkable and compact, Orono is defined by space — big wooded lots, long private driveways, and estate-scale frontage — which is a large part of why it holds some of the highest property values in the state.
+
+Real estate here skews toward the top of the Minnetonka market: substantial lake homes and estates on prime open-water and protected frontage, along with large non-lakefront acreage set back in the woods. Bays and exposure drive value enormously, and the best frontage is tightly held and often trades quietly. Buyers here are usually after privacy and scale as much as the water itself.
+
+Day to day, Orono pairs a rural, wooded feel with quick access to Wayzata's lakefront downtown and the rest of the metro. It's served by the well-regarded Orono schools, and the lake — boating, sailing, and the full sweep of Minnetonka's open water — is the backyard. For buyers who want privacy, land, and premier frontage, Orono is Minnetonka at its most exclusive.`,
+        seo_title: 'Orono MN Homes for Sale | Lake Minnetonka Real Estate',
+        seo_description: "Orono, MN homes for sale on Lake Minnetonka — big wooded lots and estate frontage on the lake's north and west shores. Get new listings with a local agent.",
+        hero_image_url: '/assets/images/mn-lakefront-estate-dusk.jpg',
+    },
+    {
+        slug: 'deephaven',
+        intro_text: "Deephaven is an established, wooded community on Lake Minnetonka's south shore — mature neighborhoods, private frontage, and a quiet, old-Minnetonka character.",
+        description: `Deephaven sits on the south shore of Lake Minnetonka, one of the lake's most established and understated communities. Wrapped around Carsons Bay, St. Louis Bay, and the wooded Cottagewood neighborhood, it has a mature, settled character — big trees, winding streets, and a sense of old Minnetonka that newer developments can't manufacture.
+
+Real estate ranges from historic lake homes and cottages to rebuilt and newly constructed waterfront on the south shore's protected bays. Frontage here is highly sought after and tightly held, and even the non-lakefront homes command a premium for the neighborhood, the trees, and the walk-to-water pockets like Cottagewood. Inventory is limited and competitive.
+
+Life in Deephaven is quiet and lake-centered — private beaches, the historic Cottagewood store, and easy access to Excelsior and Wayzata for dining and shopping. It's served by the top-ranked Minnetonka schools, and the protected south-shore bays make for calm, family-friendly boating. For buyers who want mature, private, quintessential Minnetonka, Deephaven is hard to beat.`,
+        seo_title: 'Deephaven MN Homes for Sale | Lake Minnetonka Real Estate',
+        seo_description: "Deephaven, MN homes for sale on Lake Minnetonka's south shore — established wooded neighborhoods and private frontage. Get new listings with a local agent.",
+        hero_image_url: '/assets/images/mn-lake-home-dusk.jpg',
+    },
+    {
+        slug: 'tonka-bay',
+        intro_text: "Tonka Bay is a small peninsula community surrounded on three sides by Lake Minnetonka — an unusually high share of lakefront and a boating-first way of life.",
+        description: `Tonka Bay occupies a narrow peninsula reaching into the south-central part of Lake Minnetonka, surrounded by water on three sides. That geography gives it an unusually high ratio of lakefront to land, and it shapes everything about the community — this is a boating-first, water-on-both-sides kind of place.
+
+Real estate is dominated by lakefront and near-lake homes, from classic Minnetonka cottages to rebuilt and new luxury waterfront on the surrounding bays. Because so much of the town touches the water, frontage is the market here, and it's competitive and tightly held. The peninsula setting means many homes have water views even when they aren't directly on the shore.
+
+Life in Tonka Bay runs on the lake — quick access to the open water, protected bays for calmer days, and a short hop to Excelsior's downtown for dining. It's served by the top-rated Minnetonka schools, and the small, water-wrapped footprint gives it a tight-knit feel. For buyers who want to be on the water in the heart of Minnetonka, Tonka Bay delivers.`,
+        seo_title: 'Tonka Bay MN Homes for Sale | Lake Minnetonka Real Estate',
+        seo_description: "Tonka Bay, MN homes for sale on Lake Minnetonka — a peninsula community surrounded by water with a high share of lakefront. Get new listings with a local agent.",
+        hero_image_url: '/assets/images/mn-lake-dock-golden.jpg',
+    },
+    {
+        slug: 'minnetonka-beach',
+        intro_text: "Minnetonka Beach is a tiny, exclusive village on a narrow Lake Minnetonka peninsula — home to the historic Lafayette Club and some of the lake's most prestigious frontage.",
+        description: `Minnetonka Beach is one of the smallest and most exclusive communities on Lake Minnetonka — a tiny village occupying a narrow peninsula between Lafayette Bay and Crystal Bay on the lake's north-central shore. Home to the historic Lafayette Club, it has long been one of the lake's most prestigious addresses.
+
+Real estate here is nearly all lakefront or near-lake, and it sits firmly at the top of the Minnetonka market. Expect substantial, well-appointed lake homes and estates on prized open-water and bay frontage. With so few homes in such a sought-after spot, inventory is scarce and closely held — properties here often change hands quietly, and rarely.
+
+Life in Minnetonka Beach is private and lake-centered, anchored by the Lafayette Club's golf and social scene and the open water just off the shore. It's minutes from Wayzata's lakefront downtown and served by the Orono schools. For buyers seeking a small, historic, prestige address on premier Minnetonka frontage, few places compare.`,
+        seo_title: 'Minnetonka Beach MN Homes for Sale | Lake Minnetonka',
+        seo_description: "Minnetonka Beach, MN homes for sale — a tiny, exclusive Lake Minnetonka peninsula village with prestigious frontage. Get new listings with a local agent.",
+        hero_image_url: '/assets/images/mn-lakefront-sunset-dock.jpg',
+    },
+    {
+        slug: 'shorewood',
+        intro_text: "Shorewood is a family-friendly community on Lake Minnetonka's south shore — a range of neighborhoods and price points with easy access to Excelsior and the water.",
+        description: `Shorewood sits on the south shore of Lake Minnetonka, one of the larger and more family-oriented lake communities. Wrapped around Gideons Bay and neighboring the walkable downtown of Excelsior, it offers a broader range of neighborhoods and price points than the lake's most exclusive enclaves — which makes it a common starting point for buyers who want the Minnetonka lifestyle.
+
+Real estate spans lakefront homes on the south-shore bays to established and newer neighborhoods set back from the water. That range is Shorewood's strength: genuine lakefront alongside more attainable non-lakefront homes that still put the water, the schools, and Excelsior within reach. Lakefront is competitive, while the broader market draws year-round families.
+
+Life in Shorewood balances the lake with everyday convenience — boating and swimming on the south shore, a short trip to Excelsior's Water Street and Commons beach, and top-rated Minnetonka schools. For buyers who want real access to Lake Minnetonka with more flexibility on price, Shorewood is one of the south shore's most practical choices.`,
+        seo_title: 'Shorewood MN Homes for Sale | Lake Minnetonka Real Estate',
+        seo_description: "Shorewood, MN homes for sale on Lake Minnetonka's south shore — family neighborhoods, lakefront, and a short hop to Excelsior. Get new listings with a local agent.",
+        hero_image_url: '/assets/images/mn-lake-home-from-water.jpg',
+    },
+    {
+        slug: 'spring-park',
+        intro_text: "Spring Park is a compact community on Lake Minnetonka's west side — marinas, denser lakefront, and one of the more attainable ways onto the lake.",
+        description: `Spring Park is a small, compact community on the west side of Lake Minnetonka, wrapped around the water near the West Arm and Black Lake. Denser and more walkable than the sprawling estate towns, it's long been one of the more attainable ways onto Minnetonka — a place to own on the lake without the north-shore estate price tag.
+
+Real estate here includes lakefront homes, townhomes, and condominiums along with near-lake single-family homes, giving buyers a range of entry points that's unusual for Minnetonka. The marinas and denser waterfront make it a boating hub, and the lower-maintenance options appeal to buyers who want the lake without a large property to manage. Inventory moves, and the value proposition keeps demand steady.
+
+Life in Spring Park is lake-forward and low-key — marinas and boat access, quick trips to Mound and Wayzata, and the full open water of Minnetonka just off the shore. It's served by the Westonka schools. For buyers who want to be on Lake Minnetonka at a more accessible price, Spring Park is one of the best doors in.`,
+        seo_title: 'Spring Park MN Homes for Sale | Lake Minnetonka Real Estate',
+        seo_description: "Spring Park, MN homes for sale on Lake Minnetonka's west side — marinas, condos, and a more attainable way onto the lake. Get new listings with a local agent.",
+        hero_image_url: '/assets/images/mn-purple-sunset-marina.webp',
+    },
+    {
+        slug: 'minnetrista',
+        intro_text: "Minnetrista wraps the western bays of Lake Minnetonka — larger lots, newer construction, and a mix of lake living and open country on the metro's edge.",
+        description: `Minnetrista covers the western reaches of Lake Minnetonka, wrapping Halsted Bay, Jennings Bay, and the quieter west-end water. It's a larger, less-dense community than the eastern lake towns — a mix of lakefront living and open country that appeals to buyers who want space and newer homes near the water.
+
+Real estate here ranges from lakefront on the western bays to large-lot and newer-construction neighborhoods set in the rolling country west of the lake. Because it's less built-out than the south and east shores, Minnetrista offers more room and more new homes, often at a better value per square foot than the lake's most established enclaves — while still delivering genuine Minnetonka frontage on the west end.
+
+Life in Minnetrista balances the lake with a semi-rural feel — boating the quieter western bays, room to spread out, and quick access to Mound, Wayzata, and the metro beyond. It's served by the Westonka schools. For buyers who want newer homes, larger lots, and western Minnetonka water, Minnetrista is the space-and-value end of the lake.`,
+        seo_title: 'Minnetrista MN Homes for Sale | Lake Minnetonka Real Estate',
+        seo_description: "Minnetrista, MN homes for sale on western Lake Minnetonka — larger lots, newer construction, and quieter bays. Get new listings with a local agent.",
+        hero_image_url: '/assets/images/mn-lake-sunset-firepit.jpg',
+    },
 ];
