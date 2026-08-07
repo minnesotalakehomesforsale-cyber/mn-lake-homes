@@ -3920,6 +3920,7 @@ async function ensureTables() {
         await seedStagedDraftReset();
         await seedMarketingPlan();
         await seedTownContent();
+        await seedLakeIndexability();
         await reconcilePartnerBusinesses();
     } catch (err) {
         console.error(' Table migration warning:', err.message);
@@ -4541,6 +4542,68 @@ async function seedBlogRelatedLinks() {
         n += r.rowCount;
     }
     if (n > 0) console.log(` Added internal-link blocks to ${n} blog post(s).`);
+}
+
+// One-time fix for the "invisible" lakes surfaced by the SEO audit: every lake
+// with no hero image 404s and is dropped from the sitemap, and draft lakes never
+// render. This gives each a hero (only if it has none — a real hero is never
+// overwritten) and publishes it, so it renders and enters the sitemap. Guarded
+// by seed_flags so it runs ONCE; after that, admin fully controls these lakes
+// (un-publish or swap the placeholder photo in Lakes & Businesses and it sticks).
+// The heroes for currently-heroless lakes are REPRESENTATIVE placeholders — swap
+// in real lake photos when available.
+async function seedLakeIndexability() {
+    try {
+        await pool.query(`CREATE TABLE IF NOT EXISTS seed_flags (key TEXT PRIMARY KEY, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
+        const done = await pool.query(`SELECT 1 FROM seed_flags WHERE key = 'lake_indexability_v1'`);
+        if (done.rowCount) return;   // already ran once — leave these lakes to admin
+
+        const HEROES = {
+            // Heroless lakes → representative placeholder photo.
+            'clearwater-lake':      'mn-clearwater-lakeshore.jpg',
+            'forest-lake':          'mn-lakefront-sunset-dock.jpg',
+            'lake-hubert':          'mn-lake-dock-golden.jpg',
+            'lake-le-homme-dieu':   'mn-lake-sunset-firepit.jpg',
+            'lake-miltona':         'mn-lakefront-estate-dusk.jpg',
+            'lake-okabena':         'mn-lake-home-from-water.jpg',
+            'lake-osakis':          'mn-lakefront-sunset-dock.jpg',
+            'lake-riley':           'mn-lake-dock-golden.jpg',
+            'lake-sallie':          'mn-lake-sunset-firepit.jpg',
+            'lake-shamineau':       'mn-clearwater-lakeshore.jpg',
+            'lake-sylvia':          'mn-lakefront-estate-dusk.jpg',
+            'serpent-lake':         'mn-lake-home-from-water.jpg',
+            'sugar-lake':           'mn-lake-dock-golden.jpg',
+            'ten-mile-lake':        'mn-lakefront-sunset-dock.jpg',
+            // Draft lakes (kept out of the sitemap) → publish; set a hero only if missing.
+            'battle-lake':          'mn-lake-home-dusk.jpg',
+            'bde-maka-ska':         'mn-lake-home-from-water.jpg',
+            'cedar-lake-minneapolis': 'mn-lakefront-sunset-dock.jpg',
+            'lake-harriet':         'mn-lake-dock-golden.jpg',
+            'lake-lida':            'mn-clearwater-lakeshore.jpg',
+            'lake-nokomis':         'mn-lake-sunset-firepit.jpg',
+            'lake-phalen':          'mn-lakefront-estate-dusk.jpg',
+            'lake-sakatah':         'mn-lake-home-from-water.jpg',
+        };
+
+        let heroSet = 0;
+        for (const [slug, img] of Object.entries(HEROES)) {
+            const r = await pool.query(
+                `UPDATE lakes SET hero_image_url = $2, updated_at = NOW()
+                  WHERE slug = $1 AND COALESCE(hero_image_url, '') = ''`,
+                [slug, '/assets/images/' + img]);
+            heroSet += r.rowCount;
+        }
+        const pub = await pool.query(
+            `UPDATE lakes SET status = 'published', updated_at = NOW()
+              WHERE slug = ANY($1) AND status <> 'published'
+                AND COALESCE(hero_image_url, '') <> ''`,
+            [Object.keys(HEROES)]);
+
+        await pool.query(`INSERT INTO seed_flags (key) VALUES ('lake_indexability_v1') ON CONFLICT DO NOTHING`);
+        console.log(`[seed] lake indexability: set ${heroSet} placeholder hero(s), published ${pub.rowCount} lake(s).`);
+    } catch (e) {
+        console.warn('[seed] lake indexability skipped:', e.message);
+    }
 }
 
 async function seedTownContent() {
