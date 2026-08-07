@@ -4650,6 +4650,11 @@ async function seedTownContent() {
         'tonka-bay': 'lake-minnetonka',        'minnetonka-beach': 'lake-minnetonka',
         'shorewood': 'lake-minnetonka',        'spring-park': 'lake-minnetonka',
         'minnetrista': 'lake-minnetonka',      'mound': 'lake-minnetonka',
+        // Up-north lake towns.
+        'hackensack': 'ten-mile-lake',   'osakis': 'lake-osakis',
+        'perham': 'otter-tail-lake',     'pelican-rapids': 'lake-lida',
+        'battle-lake': 'battle-lake',    'pine-river': 'whitefish-chain',
+        'pequot-lakes': 'pelican-lake',
     };
     let townLinks = 0;
     for (const [townSlug, lakeSlug] of Object.entries(TOWN_LAKE_LINKS)) {

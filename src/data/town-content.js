@@ -261,4 +261,88 @@ Life in Minnetrista balances the lake with a semi-rural feel — boating the qui
         seo_description: "Minnetrista, MN homes for sale on western Lake Minnetonka — larger lots, newer construction, and quieter bays. Get new listings with a local agent.",
         hero_image_url: '/assets/images/mn-lake-sunset-firepit.jpg',
     },
+    {
+        slug: 'hackensack',
+        intro_text: "Hackensack is a small northwoods town on Birch and Ten Mile lakes, deep in the Chippewa National Forest — clear, deep water and a classic cabin-country main street.",
+        description: `Hackensack is a small northwoods town in Cass County, set between Birch Lake and Ten Mile Lake in the heart of the Chippewa National Forest, about three hours north of the Twin Cities. Ten Mile Lake is one of the deepest and clearest lakes in Minnesota, and that water quality is the whole draw here — this is quiet, clear-water cabin country.
+
+Real estate ranges from classic family cabins to rebuilt year-round lake homes on Ten Mile, Birch, and the surrounding lakes. Ten Mile's depth and clarity keep its frontage highly prized and tightly held, while the smaller lakes offer more accessible entry points. Inventory is seasonal and second-home heavy, so the best water tends to move quickly and often quietly.
+
+Life in Hackensack is the lake and the woods — swimming and boating on exceptionally clear water, fishing, and a compact main street with the northwoods charm the area is known for. The Chippewa National Forest and the Paul Bunyan State Trail surround the town. For buyers who want some of the clearest water in the state in a quiet cabin setting, Hackensack and Ten Mile Lake are a rare find.`,
+        seo_title: 'Hackensack MN Homes for Sale | Ten Mile Lake Real Estate',
+        seo_description: "Hackensack, MN homes for sale on Ten Mile Lake — one of the state's deepest, clearest lakes in the Chippewa National Forest. Get new listings with a local agent.",
+        hero_image_url: '/assets/images/mn-clearwater-lakeshore.jpg',
+    },
+    {
+        slug: 'osakis',
+        intro_text: "Osakis is a friendly lake town on Lake Osakis, a big, well-known fishing lake between Alexandria and Sauk Centre in west-central Minnesota.",
+        description: `Osakis sits on the shore of Lake Osakis, a large, well-known fishing lake straddling Douglas and Todd counties in west-central Minnesota, between Alexandria and Sauk Centre off I-94. It's a genuine small lake town — a real main street and year-round community built around one of the region's classic recreation lakes.
+
+Real estate here is anchored by Lake Osakis frontage — from traditional cabins to year-round lake homes — along with in-town and near-lake houses. The lake's size and reputation for fishing keep demand steady, and prices tend to be more attainable than the Alexandria chain just to the west, which makes Osakis a value option for buyers who want big water without the premium.
+
+Life in Osakis runs on the lake: fishing, boating, and a lakefront park, with an easy-going small-town pace and quick interstate access to Alexandria and St. Cloud. For buyers who want an affordable spot on a big, established fishing lake in central Minnesota, Osakis is a solid pick.`,
+        seo_title: 'Osakis MN Homes for Sale | Lake Osakis Real Estate',
+        seo_description: "Osakis, MN homes for sale on Lake Osakis — a big, well-known fishing lake between Alexandria and Sauk Centre. Get new listings with a local agent.",
+        hero_image_url: '/assets/images/mn-harbor-town.webp',
+    },
+    {
+        slug: 'perham',
+        intro_text: "Perham is a thriving small town in the heart of Otter Tail County's lake country — near Otter Tail Lake and dozens of others, with a strong Main Street and resort economy.",
+        description: `Perham sits in the middle of Otter Tail County's lake country, one of the most lake-dense regions in Minnesota, about three hours northwest of the Twin Cities. Unlike a lot of resort areas, Perham is a thriving, diversified town — home to real industry and a lively Main Street — set within easy reach of Otter Tail Lake and dozens of others.
+
+Real estate ranges from lakefront homes and cabins on Otter Tail Lake and the surrounding waters to in-town homes in a genuine four-season community. Otter Tail Lake's big, sandy-bottomed water anchors the premium end, while the many smaller lakes nearby offer a wide range of options and price points. The combination of real jobs and abundant lakes keeps the market active year-round.
+
+Life in Perham balances the lakes with a real town — boating and fishing across the county's water, a walkable downtown, and community events that run all year. For buyers who want to be surrounded by lakes while living in a genuine, working town rather than a resort strip, Perham is one of the best bases in Otter Tail County.`,
+        seo_title: 'Perham MN Homes for Sale | Otter Tail Lakes Real Estate',
+        seo_description: "Perham, MN homes for sale near Otter Tail Lake — the hub of Otter Tail County's lake country, a real town among dozens of lakes. Get new listings.",
+        hero_image_url: '/assets/images/mn-lake-town-sunset-aerial.jpg',
+    },
+    {
+        slug: 'pelican-rapids',
+        intro_text: "Pelican Rapids is a small, diverse town near Lake Lida and the Pelican River in Otter Tail County's lake country in west-central Minnesota.",
+        description: `Pelican Rapids is a small town in Otter Tail County, set on the Pelican River near Lake Lida and a scatter of other lakes in west-central Minnesota, about three and a half hours from the Twin Cities. Known for its striking mix of cultures and its friendly Main Street, it sits right in the heart of the region's lake country.
+
+Real estate here spans lakefront homes and cabins on Lake Lida and the surrounding waters to affordable in-town homes. Lake Lida's clear water makes its frontage the sought-after tier, while the town itself offers some of the more attainable housing in the lakes region. It's a market that appeals to both second-home buyers chasing the water and year-round residents drawn by the value.
+
+Life in Pelican Rapids is small-town and lake-adjacent — fishing and boating on Lida and the nearby lakes, a walkable downtown, and a strong community feel. For buyers who want clear-water lake access with an affordable, genuine town nearby, Pelican Rapids and Lake Lida are a west-central Minnesota value.`,
+        seo_title: 'Pelican Rapids MN Homes for Sale | Lake Lida Real Estate',
+        seo_description: "Pelican Rapids, MN homes for sale near Lake Lida — clear-water lake country and an affordable small town in Otter Tail County. Get new listings.",
+        hero_image_url: '/assets/images/mn-lake-dock-golden.jpg',
+    },
+    {
+        slug: 'battle-lake',
+        intro_text: "Battle Lake is a small resort-and-arts town on West Battle Lake, a gateway to Otter Tail County's lakes with a lively summer Main Street.",
+        description: `Battle Lake is a small town on the shore of West Battle Lake in Otter Tail County, west-central Minnesota, about three hours from the Twin Cities. It's a classic lake-and-arts town — a compact, walkable Main Street that fills with visitors in summer, set on a clear, popular chain of lakes at the edge of the county's dense lake country.
+
+Real estate is anchored by West Battle Lake and the neighboring lakes — from cabins to year-round lake homes on clear, swimmable frontage — along with in-town homes walkable to the shops and lake. The clear water and the town's charm keep demand strong through the season, and good frontage is competitive, clustering in spring listings.
+
+Life in Battle Lake runs on the lake and the arts — boating and swimming on clear water, a summer Main Street of galleries, shops, and dining, and the wider Otter Tail lakes a short drive in any direction. For buyers who want a genuine small resort town on clear water, Battle Lake is one of the most charming spots in the region.`,
+        seo_title: 'Battle Lake MN Homes for Sale | West Battle Lake Real Estate',
+        seo_description: "Battle Lake, MN homes for sale on West Battle Lake — a clear-water resort-and-arts town in Otter Tail County's lake country. Get new listings.",
+        hero_image_url: '/assets/images/mn-lake-home-from-water.jpg',
+    },
+    {
+        slug: 'pine-river',
+        intro_text: "Pine River is the northern gateway to the Whitefish Chain — a small northwoods town on the water in the Brainerd Lakes area with a walkable Main Street.",
+        description: `Pine River is a small northwoods town in Cass County, the northern gateway to the Whitefish Chain and the Brainerd Lakes area, about two and a half hours north of the Twin Cities. Set on the Pine River and Norway Lake, it's a genuine small town — walkable Main Street, real services — at the doorstep of one of the north's premier chains of lakes.
+
+Real estate ranges from cabins and year-round homes on Norway Lake and the nearby waters to in-town homes, with the coveted Whitefish Chain just to the south. That proximity is Pine River's advantage: more attainable in-town and small-lake options within easy reach of the big-water boating and clear frontage of the chain. Inventory is seasonal and competitive on the best water.
+
+Life in Pine River is northwoods and lake-forward — boating and fishing, the Paul Bunyan State Trail running through town, and a friendly Main Street. The Whitefish Chain, Crosslake, and the wider Brainerd Lakes are all close. For buyers who want a real town and a more accessible foothold near the Whitefish Chain, Pine River is a smart base.`,
+        seo_title: 'Pine River MN Homes for Sale | Whitefish Chain Real Estate',
+        seo_description: "Pine River, MN homes for sale — the northern gateway to the Whitefish Chain in the Brainerd Lakes, a walkable northwoods town. Get new listings.",
+        hero_image_url: '/assets/images/mn-lake-town-street.jpg',
+    },
+    {
+        slug: 'pequot-lakes',
+        intro_text: "Pequot Lakes is a Brainerd Lakes town near Pelican Lake and the Whitefish Chain — resort-and-cabin country with a walkable Main Street and its famous bobber water tower.",
+        description: `Pequot Lakes sits in the heart of the Brainerd Lakes area in Crow Wing County, about two and a half hours north of the Twin Cities, near Pelican Lake and within easy reach of the Whitefish Chain. Known for its bobber-topped water tower and a walkable Main Street, it's a classic resort-and-cabin town at the center of one of Minnesota's top lake regions.
+
+Real estate ranges from cabins and year-round lake homes on Pelican Lake and the surrounding waters to in-town homes near the shops and trail. Pelican Lake's big open water anchors the premium end, while smaller lakes and off-water homes offer more accessible options. Like the rest of the Brainerd Lakes, it's a competitive, second-home-heavy market where the best frontage moves fast.
+
+Life in Pequot Lakes is Brainerd-Lakes summer at its best — boating and watersports, golf nearby, the Paul Bunyan State Trail through town, and a lively Main Street. Breezy Point, Nisswa, and Crosslake are all minutes away. For buyers who want a walkable town in the middle of the Brainerd Lakes, Pequot Lakes is a natural fit.`,
+        seo_title: 'Pequot Lakes MN Homes for Sale | Brainerd Lakes Real Estate',
+        seo_description: "Pequot Lakes, MN homes for sale near Pelican Lake and the Whitefish Chain — a walkable Brainerd Lakes resort town. Get new listings with a local agent.",
+        hero_image_url: '/assets/images/mn-aerial-small-town.jpg',
+    },
 ];
