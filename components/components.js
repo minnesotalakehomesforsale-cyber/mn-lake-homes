@@ -238,6 +238,8 @@ class GlobalHeader extends HTMLElement {
         const hideAll = () => {
             Object.values(menus).forEach(m => { m.style.display = 'none'; });
             activeMenu = null;
+            // Transparent-over-hero header goes solid while a menu is closed.
+            document.body.classList.remove('nav-menu-open');
         };
 
         const showMenu = (id) => {
@@ -245,6 +247,9 @@ class GlobalHeader extends HTMLElement {
             Object.values(menus).forEach(m => { m.style.display = 'none'; });
             if (menus[id]) menus[id].style.display = 'block';
             activeMenu = id;
+            // An open white megamenu needs a solid white bar above it, not the
+            // transparent hero bar — force the solid state while open.
+            document.body.classList.add('nav-menu-open');
         };
 
         // Hovering a trigger shows its menu immediately
