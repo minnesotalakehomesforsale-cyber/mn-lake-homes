@@ -53,6 +53,46 @@
                 <p style="color: #718096; font-size: 1rem;">Centralized operational triage for all public endpoints.</p>
             </header>
 
+            <!-- HubSpot setup — one-click provisioning (owner only). Safe to re-run. -->
+            <div id="hs-setup" style="background:#fff;border:1px solid #e6eaf0;border-radius:14px;padding:1.1rem 1.35rem;margin-bottom:1.75rem;box-shadow:0 2px 8px rgba(16,24,40,0.04);">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+                    <div>
+                        <div style="font-weight:800;color:#1a202c;font-size:1rem;">HubSpot setup</div>
+                        <div style="color:#718096;font-size:0.88rem;margin-top:0.2rem;">Create/update the 4 lead-qualification properties + the Agent Acquisition deal pipeline. Safe to re-run.</div>
+                    </div>
+                    <button id="hsSetupBtn" onclick="runHubspotSetup()" style="background:#1d6df2;color:#fff;border:0;border-radius:9px;padding:0.7rem 1.25rem;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap;">Create / update HubSpot properties + pipeline</button>
+                </div>
+                <div id="hsSetupOut" style="margin-top:0.85rem;font-size:0.88rem;"></div>
+            </div>
+            <script>
+                async function runHubspotSetup() {
+                    var btn = document.getElementById('hsSetupBtn'), out = document.getElementById('hsSetupOut');
+                    if (!confirm('Create/update the HubSpot properties + Agent Acquisition pipeline now?')) return;
+                    btn.disabled = true; var orig = btn.textContent; btn.textContent = 'Working…';
+                    out.innerHTML = '<span style="color:#718096;">Talking to HubSpot…</span>';
+                    try {
+                        var res = await fetch('/api/admin/hubspot/ensure-schema', { method: 'POST', credentials: 'include' });
+                        var d = await res.json().catch(function () { return {}; });
+                        if (res.status === 401 || res.status === 403) { out.innerHTML = '<span style="color:#c53030;">Sign in as the owner (super admin) to run this.</span>'; return; }
+                        if (!res.ok || !d.ok) { out.innerHTML = '<span style="color:#c53030;">⚠️ ' + ((d && d.error) || 'Failed') + (/scope/i.test((d && d.error) || '') ? ' — add the crm.schemas.*.write scopes to your HubSpot private app, then retry.' : '') + '</span>'; return; }
+                        var r = d.report;
+                        var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); };
+                        var line = function (label, x) { return '<div>' + label + ': <strong>' + esc(x && x.action || 'ok') + '</strong>' + (x && x.added && x.added.length ? ' (' + x.added.map(esc).join(', ') + ')' : '') + '</div>'; };
+                        var html = '<div style="color:#276749;font-weight:700;margin-bottom:0.5rem;">✓ Done — everything below now exists in HubSpot.</div><div style="color:#4a5568;line-height:1.7;">';
+                        html += line('Property group', r.contact_group);
+                        (r.contact_properties || []).forEach(function (p) { html += line('Contact · ' + p.name, p); });
+                        html += line('Deal pipeline (Agent Acquisition)', r.deal_pipeline);
+                        (r.deal_properties || []).forEach(function (p) { html += line('Deal · ' + p.name, p); });
+                        html += '</div>';
+                        out.innerHTML = html;
+                    } catch (e) {
+                        out.innerHTML = '<span style="color:#c53030;">Network error: ' + e.message + '</span>';
+                    } finally {
+                        btn.disabled = false; btn.textContent = orig;
+                    }
+                }
+            </script>
+
             <div class="filter-container">
                 <button class="filter-tab active" onclick="filterTable('all', this)">All Leads</button>
                 <button class="filter-tab" onclick="filterTable('unassigned', this)">Requires Assignment</button>
