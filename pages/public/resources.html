@@ -80,8 +80,11 @@
         .rx-section-head .link { color: #1d6df2; font-weight: 600; font-size: 0.9rem; text-decoration: none; }
         .rx-section-head .link:hover { text-decoration: underline; }
 
-        /* Card grid */
-        .rx-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.75rem; }
+        /* Card grid — auto-FILL (not auto-fit) so cards keep a consistent size
+           and never stretch to fill a sparse row (e.g. the Featured strip). The
+           blog strip below uses the identical track + gap so every content
+           section lines up on the same columns and the same width. */
+        .rx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
         .rx-card {
             display: flex; flex-direction: column;
             background: #fff; border: 1px solid #edf2f7; border-radius: 14px;
@@ -103,8 +106,9 @@
         .rx-card-desc { color: #718096; font-size: 0.88rem; line-height: 1.55; margin-bottom: 1rem; flex: 1; }
         .rx-card-cta { color: #1d6df2; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem; }
 
-        /* Newest blog strip */
-        .rx-blog-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; }
+        /* Newest blog strip — identical track + gap to .rx-grid so columns and
+           edges line up section-to-section. */
+        .rx-blog-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
         .rx-blog-card { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; overflow: hidden; text-decoration: none; color: inherit; transition: transform 0.15s, box-shadow 0.15s; }
         .rx-blog-card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,0.06); }
         .rx-blog-img { aspect-ratio: 16/10; background: #f7f9fa; overflow: hidden; }
@@ -131,13 +135,14 @@
             .rx-filter-inner { padding-inline: 1.25rem; }
             .rx-section { padding: 2.5rem 1.25rem; }
             .rx-section-head h2 { font-size: 1.5rem; }
-            .rx-grid { gap: 1.25rem; grid-template-columns: 1fr; }
-            .rx-blog-strip { grid-template-columns: 1fr 1fr; }
+            /* Both grids share one smaller track on tablet/mobile so they stay
+               identical (auto-fill handles the column count responsively). */
+            .rx-grid, .rx-blog-strip { gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
             .rx-card-image { aspect-ratio: 16/9; }
         }
         @media (max-width: 480px) {
             .rx-hero h1 { font-size: 2rem; }
-            .rx-blog-strip { grid-template-columns: 1fr; }
+            .rx-grid, .rx-blog-strip { grid-template-columns: 1fr; }
         }
     </style>
     <script src="../../components/components.js" defer></script>
