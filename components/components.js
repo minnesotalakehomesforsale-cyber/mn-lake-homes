@@ -1658,6 +1658,11 @@ async function _lfDoSubmit() {
                 lead_ref: _lfs._leadref || undefined,
                 has_address: !!d.address,
             });
+            // Analytics spec event: lead_submitted (lake_name, intent_type).
+            window.trackConversion('lead_submitted', {
+                lake_name: _lfs._lakeName || undefined,
+                intent_type: intent_type || undefined,
+            });
         }
 
         document.getElementById('lf-bar').style.width  = '100%';
@@ -1983,13 +1988,16 @@ document.addEventListener('keydown', e => {
     function initIntentTracking() {
         // Phone + email taps anywhere (agent cards, profiles, listings, footer).
         document.addEventListener('click', function (e) {
-            const a = e.target.closest && e.target.closest('a[href^="tel:"], a[href^="mailto:"], [data-track]');
+            const a = e.target.closest && e.target.closest('a[href^="tel:"], a[href^="mailto:"], [data-cta], [data-track]');
             if (!a) return;
             const href = a.getAttribute('href') || '';
             if (href.startsWith('tel:')) {
                 window.trackConversion('phone_click', { destination: href.replace(/^tel:/, ''), page: location.pathname });
             } else if (href.startsWith('mailto:')) {
                 window.trackConversion('email_click', { destination: href.replace(/^mailto:/, '').split('?')[0], page: location.pathname });
+            } else if (a.hasAttribute('data-cta')) {
+                // Analytics: every tagged CTA fires cta_clicked with its cta_id.
+                window.trackConversion('cta_clicked', { cta_id: a.getAttribute('data-cta'), page: location.pathname });
             } else if (a.hasAttribute('data-track')) {
                 // Any element can opt in: data-track="cta_name".
                 window.trackConversion(a.getAttribute('data-track') || 'cta_click',

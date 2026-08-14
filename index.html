@@ -177,12 +177,12 @@
             <p class="hh-sub">Tell us your lake and what you&rsquo;re after. We&rsquo;ll connect you with a local specialist who actually knows that shoreline &mdash; free, and no obligation.</p>
             <form class="hh-search" onsubmit="hhMatch(event)">
                 <input id="hh-input" type="text" autocomplete="off" aria-label="Which lake or town are you focused on?">
-                <button type="submit" class="hh-search-btn"><span id="hh-btn-label">Find my agent</span>
+                <button type="submit" class="hh-search-btn" data-cta="home_hero_find_agent"><span id="hh-btn-label">Find my agent</span>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M13 6l6 6-6 6"></path></svg>
                 </button>
             </form>
             <p class="hh-fine">Free, and we never sell your information.</p>
-            <p class="hh-secondary">Or start with <a onclick="hhStart('buy')">buying</a> &middot; <a onclick="hhStart('sell')">selling</a> &middot; <a href="/rent">renting</a></p>
+            <p class="hh-secondary">Or start with <a onclick="hhStart('buy')" data-cta="home_hero_buy">buying</a> &middot; <a onclick="hhStart('sell')" data-cta="home_hero_sell">selling</a> &middot; <a href="/rent" data-cta="home_hero_rent">renting</a></p>
         </div>
     </main>
 

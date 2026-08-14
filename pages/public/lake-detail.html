@@ -333,7 +333,7 @@
                 <h1>Explore<br><span>{{LAKE_NAME}}</span></h1>
                 <p class="lead" id="ld-intro">{{LAKE_INTRO_TEXT}}</p>
                 <div class="lm-hero-actions">
-                    <button onclick="openForm('buy', { _lake: '{{LAKE_SLUG}}' })" class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none; cursor: pointer;">Get new {{LAKE_NAME}} listings</button>
+                    <button onclick="openForm('buy', { _lake: '{{LAKE_SLUG}}' })" data-cta="lake_hero_match" class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none; cursor: pointer;">Get new {{LAKE_NAME}} listings</button>
                 </div>
             </div>
             <div class="lm-hero-col">
@@ -473,7 +473,7 @@
             <h2>{{LAKE_LISTINGS_HEADING}}</h2>
             <div class="ld-listings-grid" id="ld-listings-grid"></div>
             <div class="ld-listings-cta">
-                <a href="javascript:void(0)" onclick="openForm('buy', { _lake: '{{LAKE_SLUG}}' })" class="nb-cta">Get matched with a {{LAKE_NAME}} agent →</a>
+                <a href="javascript:void(0)" onclick="openForm('buy', { _lake: '{{LAKE_SLUG}}' })" data-cta="lake_agents_match" class="nb-cta">Get matched with a {{LAKE_NAME}} agent →</a>
             </div>
         </div>
     </section>
@@ -556,8 +556,8 @@
             <h2>Ready to make a move on {{LAKE_NAME}}?</h2>
             <p>Whether you're buying your place on the water or thinking about selling, start with a local {{LAKE_NAME}} specialist who knows this shoreline. It's free to get matched.</p>
             <div class="ld-leadcta-actions">
-                <a href="javascript:void(0)" onclick="openForm('buy', { _lake: '{{LAKE_SLUG}}' })" class="ld-leadcta-btn primary">Get matched with a {{LAKE_NAME}} agent →</a>
-                <a href="javascript:void(0)" onclick="openForm('sell', { _lake: '{{LAKE_SLUG}}' })" class="ld-leadcta-btn ghost">Selling on {{LAKE_NAME}}? Get a free valuation →</a>
+                <a href="javascript:void(0)" onclick="openForm('buy', { _lake: '{{LAKE_SLUG}}' })" data-cta="lake_footer_match" class="ld-leadcta-btn primary">Get matched with a {{LAKE_NAME}} agent →</a>
+                <a href="javascript:void(0)" onclick="openForm('sell', { _lake: '{{LAKE_SLUG}}' })" data-cta="lake_footer_sell" class="ld-leadcta-btn ghost">Selling on {{LAKE_NAME}}? Get a free valuation →</a>
             </div>
         </div>
     </section>
@@ -683,6 +683,11 @@
                 const res = await fetch(`/api/lakes/${encodeURIComponent(LAKE_SLUG)}`);
                 if (!res.ok) return;
                 const lake = await res.json();
+                // Analytics: lake_page_viewed (lake_name) — fired once per page load.
+                if (window.trackConversion && !window.__lakeViewFired) {
+                    window.__lakeViewFired = true;
+                    window.trackConversion('lake_page_viewed', { lake_name: lake.name });
+                }
                 if (lake.intro_text) document.getElementById('ld-intro').textContent = lake.intro_text;
 
                 // Eyebrow above the H2: "Region · County, State"
