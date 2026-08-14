@@ -308,13 +308,21 @@
                     ? new Date(pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                     : '';
 
-                // Show the banner only when the post has its own image; otherwise
-                // hide it entirely (no recycled site photos, no placeholder).
+                // Top image: a real cover when the post has one, otherwise the
+                // generated colored cover (same one used on the blog cards) — so
+                // every blog page opens with an image, never a bare headline.
                 const heroImg = document.getElementById('hero-img');
                 const bannerWrap = document.getElementById('post-banner-wrap');
+                const banner = bannerWrap ? bannerWrap.querySelector('.post-banner') : null;
                 if (post.cover_image_url) {
                     heroImg.src = post.cover_image_url;
                     heroImg.alt = post.title;
+                    if (bannerWrap) bannerWrap.style.display = '';
+                } else if (banner && typeof window.mnlhBlogCover === 'function') {
+                    banner.style.position = 'relative';
+                    banner.innerHTML = window.mnlhBlogCover(post.tag);
+                    const bc = banner.querySelector('.blog-cover');
+                    if (bc) bc.style.cssText += ';position:absolute;inset:0;width:100%;height:100%;border-radius:0;margin:0;box-shadow:none;';
                     if (bannerWrap) bannerWrap.style.display = '';
                 } else if (bannerWrap) {
                     bannerWrap.style.display = 'none';
