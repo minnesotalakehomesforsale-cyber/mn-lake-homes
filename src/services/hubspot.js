@@ -489,15 +489,32 @@ async function ensureDealPipeline(pipelineDef) {
 }
 
 // Provision the entire schema. Returns a structured report (safe to show admin).
+// Each step is fault-tolerant: one failing property (e.g. a pre-existing prop of
+// the wrong type that "cannot have options", or a name archived by HubSpot for
+// 90 days after deletion) is recorded as an error and the run CONTINUES, so a
+// bad contact property never blocks the deal pipeline + deal properties.
 async function ensureSchema() {
     if (!isConfigured()) throw new Error('HubSpot not configured (HUBSPOT_ACCESS_TOKEN / HUBSPOT_PORTAL_ID).');
     const schema = require('../data/hubspot-schema');
-    const report = { contact_group: null, contact_properties: [], deal_pipeline: null, deal_properties: [] };
+    const report = { contact_group: null, contact_properties: [], deal_pipeline: null, deal_properties: [], errors: [] };
 
-    report.contact_group = await ensurePropertyGroup('contacts', schema.CONTACT_PROPERTY_GROUP);
-    for (const def of schema.CONTACT_PROPERTIES) report.contact_properties.push(await ensureProperty('contacts', def));
-    report.deal_pipeline = await ensureDealPipeline(schema.DEAL_PIPELINE);
-    for (const def of schema.DEAL_PROPERTIES) report.deal_properties.push(await ensureProperty('deals', def));
+    const safe = async (label, fn) => {
+        try { return await fn(); }
+        catch (e) {
+            console.error(`[hubspot.ensureSchema] ${label} failed:`, e.message);
+            report.errors.push({ step: label, error: e.message });
+            return { name: label.replace(/^(contact|deal):/, ''), action: 'error', error: e.message };
+        }
+    };
+
+    report.contact_group = await safe('contact_group', () => ensurePropertyGroup('contacts', schema.CONTACT_PROPERTY_GROUP));
+    for (const def of schema.CONTACT_PROPERTIES) {
+        report.contact_properties.push(await safe(`contact:${def.name}`, () => ensureProperty('contacts', def)));
+    }
+    report.deal_pipeline = await safe('deal_pipeline', () => ensureDealPipeline(schema.DEAL_PIPELINE));
+    for (const def of schema.DEAL_PROPERTIES) {
+        report.deal_properties.push(await safe(`deal:${def.name}`, () => ensureProperty('deals', def)));
+    }
     return report;
 }
 

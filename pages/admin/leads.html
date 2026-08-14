@@ -77,8 +77,9 @@
                         if (!res.ok || !d.ok) { out.innerHTML = '<span style="color:#c53030;">⚠️ ' + ((d && d.error) || 'Failed') + (/scope/i.test((d && d.error) || '') ? ' — add the crm.schemas.*.write scopes to your HubSpot private app, then retry.' : '') + '</span>'; return; }
                         var r = d.report;
                         var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); };
-                        var line = function (label, x) { return '<div>' + label + ': <strong>' + esc(x && x.action || 'ok') + '</strong>' + (x && x.added && x.added.length ? ' (' + x.added.map(esc).join(', ') + ')' : '') + '</div>'; };
-                        var html = '<div style="color:#276749;font-weight:700;margin-bottom:0.5rem;">✓ Done — everything below now exists in HubSpot.</div><div style="color:#4a5568;line-height:1.7;">';
+                        var line = function (label, x) { return '<div>' + label + ': <strong style="color:' + (x && x.action === 'error' ? '#c53030' : '#276749') + ';">' + esc(x && x.action || 'ok') + '</strong>' + (x && x.action === 'error' && x.error ? ' — ' + esc(x.error) : '') + (x && x.added && x.added.length ? ' (' + x.added.map(esc).join(', ') + ')' : '') + '</div>'; };
+                        var errs = (r.errors || []).length;
+                        var html = '<div style="color:' + (errs ? '#b7791f' : '#276749') + ';font-weight:700;margin-bottom:0.5rem;">' + (errs ? '⚠️ Completed with ' + errs + ' error(s) — everything else was created:' : '✓ Done — everything below now exists in HubSpot.') + '</div><div style="color:#4a5568;line-height:1.7;">';
                         html += line('Property group', r.contact_group);
                         (r.contact_properties || []).forEach(function (p) { html += line('Contact · ' + p.name, p); });
                         html += line('Deal pipeline (Agent Acquisition)', r.deal_pipeline);
