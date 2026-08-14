@@ -501,9 +501,8 @@ class GlobalHeader extends HTMLElement {
                     ]},
                 ]
             },
-            { id: 'listings', label: 'Properties', href: '/towns?view=props' },
             {
-                id: 'resources', label: 'More', href: `${bp}resources.html`,
+                id: 'resources', label: 'More',
                 columns: [
                     { heading: 'For you', links: [
                         { label: 'Buyer Resources',   href: `${bp}resources.html?category=Buyer%20Resources` },
@@ -536,7 +535,7 @@ class GlobalHeader extends HTMLElement {
         ];
 
         const navLinksHtml = navItems.map(item => `
-            <a href="${item.href}" id="nav-${item.id}-trigger" data-nav-id="${item.id}" style="display:inline-flex; align-items:center;">
+            <a ${item.href ? `href="${item.href}"` : 'href="javascript:void(0)" role="button" aria-haspopup="true"'} id="nav-${item.id}-trigger" data-nav-id="${item.id}" style="display:inline-flex; align-items:center;">
                 ${item.label}
             </a>
         `).join('');
@@ -581,7 +580,7 @@ class GlobalHeader extends HTMLElement {
                                 <svg class="mobile-menu-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                             </button>
                             <div class="mobile-menu-section-body">
-                                <a href="${item.href}" class="mobile-menu-link mobile-menu-link-primary">All ${item.label} &rarr;</a>
+                                ${item.href ? `<a href="${item.href}" class="mobile-menu-link mobile-menu-link-primary">All ${item.label} &rarr;</a>` : ''}
                                 ${(item.columns || []).map(col => `
                                     <div class="mobile-menu-col">
                                         <div class="mobile-menu-col-heading">${col.heading}</div>
