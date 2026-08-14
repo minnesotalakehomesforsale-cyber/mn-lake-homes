@@ -485,6 +485,119 @@
         </div>
     </section>
 
+    <!-- DEV-03: live pricing pulled from Stripe (env-driven), free-first. -->
+    <style>
+        #join-pricing .jp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; align-items: stretch; }
+        @media (max-width: 1024px) { #join-pricing .jp-grid { grid-template-columns: repeat(2, 1fr); max-width: 640px; margin: 0 auto; } }
+        @media (max-width: 560px)  { #join-pricing .jp-grid { grid-template-columns: 1fr; max-width: 380px; } }
+        #join-pricing .jp-tier { background: #fff; border: 1px solid #e6eaf0; border-radius: 16px; padding: 1.75rem 1.5rem; display: flex; flex-direction: column; position: relative; }
+        #join-pricing .jp-tier.hi { border: 2px solid #1d6df2; box-shadow: 0 12px 30px rgba(29,109,242,0.12); }
+        #join-pricing .jp-badge { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); background: #1d6df2; color: #fff; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; padding: 0.25rem 0.7rem; border-radius: 999px; }
+        #join-pricing .jp-tier h3 { font-size: 1.3rem; font-weight: 800; margin: 0 0 0.3rem; color: #1a202c; }
+        #join-pricing .jp-tier .tl { font-size: 0.85rem; color: #718096; line-height: 1.45; margin: 0 0 1.1rem; min-height: 3.4rem; }
+        #join-pricing .jp-amt { font-size: 2.4rem; font-weight: 800; letter-spacing: -1.5px; color: #1a202c; line-height: 1; }
+        #join-pricing .jp-per-lbl { font-size: 0.85rem; color: #4a5568; font-weight: 600; }
+        #join-pricing .jp-note { font-size: 0.74rem; color: #a0aec0; min-height: 1.1rem; margin: 0.35rem 0 1.25rem; }
+        #join-pricing .jp-cta { margin-top: auto; background: #1d6df2; color: #fff; border: none; border-radius: 999px; padding: 0.8rem 1rem; font: inherit; font-weight: 700; cursor: pointer; }
+        #join-pricing .jp-cta:hover { background: #155bc8; }
+        #join-pricing .jp-cta[disabled] { background: #cbd5e0; cursor: default; }
+        #join-pricing .jp-tier.free .jp-cta { background: #1a202c; }
+        #join-pricing .jp-per { border: none; background: transparent; padding: 0.45rem 1.1rem; border-radius: 999px; font: inherit; font-weight: 700; font-size: 0.85rem; color: #4a5568; cursor: pointer; }
+        #join-pricing .jp-per.on { background: #1a202c; color: #fff; }
+    </style>
+    <section id="join-pricing" style="padding: 6rem 2rem; background: #f7f9fa; border-top: 1px solid #edf2f7;">
+        <div style="max-width: 1080px; margin: 0 auto;">
+            <div style="text-align: center; margin-bottom: 0.5rem;">
+                <h2 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; margin: 0 0 0.6rem;">Simple, flat pricing</h2>
+                <p style="color: #4a5568; font-size: 1.05rem; max-width: 560px; margin: 0 auto; line-height: 1.6;"><strong>Start free with a public profile</strong>, then upgrade any time. No commissions, no referral fees, cancel whenever.</p>
+            </div>
+            <div style="display: flex; justify-content: center; margin: 1.75rem 0 2.5rem;">
+                <div style="display: inline-flex; background: #e6eaf0; border-radius: 999px; padding: 4px;">
+                    <button id="jp-btn-monthly" class="jp-per on" onclick="jpPeriod('monthly')">Monthly</button>
+                    <button id="jp-btn-annual" class="jp-per" onclick="jpPeriod('annual')">Annual</button>
+                </div>
+            </div>
+            <div id="jp-tier-grid" class="jp-grid"><p style="grid-column:1/-1;text-align:center;color:#a0aec0;">Loading plans…</p></div>
+            <p id="jp-gate" style="text-align: center; color: #718096; font-size: 0.9rem; margin-top: 1.75rem;"></p>
+        </div>
+    </section>
+    <script>
+        (function () {
+            var _pricing = null, _period = 'monthly', _gate = { kind: 'loading' };
+            var jpEsc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+            var jpDollars = function (n) { return '$' + Number(n || 0).toLocaleString('en-US'); };
+            var SLUG_TO_CODE = { free: 'free', standard: 'basic', prime: 'mn_lake_specialist', founder_public: 'top_agent' };
+
+            window.jpPeriod = function (p) {
+                _period = p;
+                document.getElementById('jp-btn-monthly').classList.toggle('on', p === 'monthly');
+                document.getElementById('jp-btn-annual').classList.toggle('on', p === 'annual');
+                jpRender();
+            };
+
+            function jpRender() {
+                if (!_pricing) return;
+                var grid = document.getElementById('jp-tier-grid');
+                grid.innerHTML = (_pricing.tiers || []).map(function (t) {
+                    var isFree = t.is_free || t.tier === 'free';
+                    var price = _period === 'annual' ? t.annual_price : t.monthly_price;
+                    var stripeReady = _period === 'annual' ? t.stripe_price_annual : t.stripe_price_monthly;
+                    var isCurrent = _gate.kind === 'ready' && _gate.plan && SLUG_TO_CODE[t.tier] === _gate.plan;
+                    var note = isFree ? 'No card required · upgrade any time'
+                        : (_period === 'annual' ? 'Billed annually · ' + jpDollars(Math.round(price / 12)) + ' / mo' : 'Billed monthly · cancel anytime');
+                    var label, disabled = false;
+                    if (isFree) { label = _gate.kind === 'logged_out' ? 'Get started free' : (isCurrent ? '✓ Your plan' : 'Free profile included'); disabled = _gate.kind !== 'logged_out'; }
+                    else if (isCurrent) { label = '✓ Current plan'; disabled = true; }
+                    else if (_gate.kind === 'logged_out') { label = 'Get started'; }
+                    else if (_gate.kind === 'wrong_role') { label = 'Agent account required'; disabled = true; }
+                    else if (_gate.kind === 'no_profile') { label = 'Create your profile first'; }
+                    else if (!stripeReady) { label = 'Coming soon'; disabled = true; }
+                    else { label = 'Upgrade to ' + t.name; }
+                    return '<div class="jp-tier ' + (t.highlight ? 'hi' : '') + (isFree ? ' free' : '') + '">'
+                        + (t.highlight ? '<span class="jp-badge">Recommended</span>' : '')
+                        + '<h3>' + jpEsc(t.name) + '</h3>'
+                        + '<p class="tl">' + jpEsc(t.tagline) + '</p>'
+                        + '<div><span class="jp-amt">' + (isFree ? 'Free' : jpDollars(price)) + '</span>'
+                        + (isFree ? '' : ' <span class="jp-per-lbl">/ ' + (_period === 'annual' ? 'yr' : 'mo') + '</span>') + '</div>'
+                        + '<div class="jp-note">' + jpEsc(note) + '</div>'
+                        + '<button class="jp-cta" ' + (disabled ? 'disabled' : '') + ' onclick="jpSubscribe(\'' + jpEsc(t.tier) + '\')">' + jpEsc(label) + '</button>'
+                        + '</div>';
+                }).join('');
+            }
+
+            window.jpSubscribe = function (tier) {
+                if (tier === 'free') { if (typeof window.openJoinForm === 'function') window.openJoinForm(); else window.location.href = '#join-form'; return; }
+                if (_gate.kind === 'logged_out') { window.location.href = '/agent-login?redirect=' + encodeURIComponent('/join'); return; }
+                if (_gate.kind === 'no_profile') { window.location.href = '/pages/agent/dashboard.html'; return; }
+                if (_gate.kind !== 'ready') return;
+                fetch('/api/stripe/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ tier: tier, period: _period }) })
+                    .then(function (r) { return r.json().then(function (d) { if (!r.ok || !d.url) throw new Error(d.error || ('HTTP ' + r.status)); window.location.href = d.url; }); })
+                    .catch(function (e) { alert(e.message); });
+            };
+
+            function jpGate() {
+                return fetch('/api/auth/session', { credentials: 'include' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+                    .then(function (session) {
+                        var g = document.getElementById('jp-gate');
+                        if (!session) { _gate = { kind: 'logged_out' }; g.innerHTML = 'Already have an agent account? <a href="/agent-login?redirect=' + encodeURIComponent('/join') + '" style="color:#1d6df2;font-weight:700;">Sign in to subscribe &rarr;</a>'; return; }
+                        if (session.role !== 'agent') { _gate = { kind: 'wrong_role' }; return; }
+                        return fetch('/api/stripe/billing', { credentials: 'include' }).then(function (r) {
+                            if (r.status === 404) { _gate = { kind: 'no_profile' }; return; }
+                            return r.json().catch(function () { return {}; }).then(function (b) { _gate = { kind: 'ready', plan: b.plan_code || null }; });
+                        }).catch(function () { _gate = { kind: 'ready' }; });
+                    });
+            }
+
+            function jpInit() {
+                Promise.all([
+                    fetch('/api/stripe/pricing').then(function (r) { return r.json(); }).then(function (p) { _pricing = p; }).catch(function () { document.getElementById('jp-tier-grid').innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#c53030;">Could not load plans — refresh to retry.</p>'; }),
+                    jpGate(),
+                ]).then(jpRender);
+            }
+            if (document.readyState !== 'loading') jpInit(); else document.addEventListener('DOMContentLoaded', jpInit);
+        })();
+    </script>
+
     <!-- Final CTA -->
     <section style="padding: 8rem 2rem; background-color: var(--bg-dark); color: #fff; text-align: center; border-top: 1px solid rgba(255,255,255,0.05);">
         <div style="max-width: 700px; margin: 0 auto;">
