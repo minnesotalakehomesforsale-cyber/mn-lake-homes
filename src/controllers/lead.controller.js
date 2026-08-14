@@ -261,7 +261,9 @@ const createLead = async (req, res) => {
                         target_lake:        qualTargetLake || undefined,
                         intent_type:        qualIntent || undefined,
                         price_band:         qualPriceBand || undefined,
-                        lead_source_detail: qualSourceDetail || undefined,
+                        // HubSpot internal name is *_v2 (original name archived); the
+                        // form/validation still use `lead_source_detail` internally.
+                        lead_source_detail_v2: qualSourceDetail || undefined,
                     });
                 } catch (e) {
                     // A throw is a real failure — treat like a null return below.

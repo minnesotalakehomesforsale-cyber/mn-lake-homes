@@ -65,7 +65,10 @@ const CONTACT_PROPERTIES = [
     { name: 'target_lake',        label: 'Target Lake',        type: 'enumeration', fieldType: 'select', groupName: CONTACT_PROPERTY_GROUP.name, options: ordered(LAKE_OPTIONS) },
     { name: 'intent_type',        label: 'Intent Type',        type: 'enumeration', fieldType: 'select', groupName: CONTACT_PROPERTY_GROUP.name, options: ordered(INTENT_OPTIONS) },
     { name: 'price_band',         label: 'Price Band',         type: 'enumeration', fieldType: 'select', groupName: CONTACT_PROPERTY_GROUP.name, options: ordered(PRICE_BAND_OPTIONS) },
-    { name: 'lead_source_detail', label: 'Lead Source Detail', type: 'enumeration', fieldType: 'select', groupName: CONTACT_PROPERTY_GROUP.name, options: ordered(LEAD_SOURCE_DETAIL_OPTIONS) },
+    // Internal name is *_v2 because the original `lead_source_detail` was
+    // created as a text prop, then deleted → HubSpot archives that name for 90
+    // days. This fresh name creates clean as a dropdown. Label is unchanged.
+    { name: 'lead_source_detail_v2', label: 'Lead Source Detail', type: 'enumeration', fieldType: 'select', groupName: CONTACT_PROPERTY_GROUP.name, options: ordered(LEAD_SOURCE_DETAIL_OPTIONS) },
 ];
 
 // ── Deal pipeline: Agent Acquisition (B4 / T025) ─────────────────────────────
@@ -147,5 +150,5 @@ module.exports = {
     DEAL_PIPELINE, DEAL_PROPERTIES,
     targetLakeValueForName, validEnumValue,
     // Names forms are allowed to set on a contact sync (the B1 four).
-    QUALIFICATION_PROPS: ['target_lake', 'intent_type', 'price_band', 'lead_source_detail'],
+    QUALIFICATION_PROPS: ['target_lake', 'intent_type', 'price_band', 'lead_source_detail_v2'],
 };

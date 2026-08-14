@@ -94,7 +94,7 @@ const BUILTIN_PROPS = [
 // The B1 lead-qualification properties (provisioned via ensureSchema). Safe to
 // send: syncContact retries built-in-only if HubSpot rejects an unknown prop,
 // so forms never break even if the schema hasn't been provisioned yet.
-const QUAL_PROPS = ['target_lake', 'intent_type', 'price_band', 'lead_source_detail'];
+const QUAL_PROPS = ['target_lake', 'intent_type', 'price_band', 'lead_source_detail_v2'];
 const ALLOWED_PROPS = new Set([...BUILTIN_PROPS, ...QUAL_PROPS]);
 
 function whitelistProps(props, allowed = ALLOWED_PROPS) {

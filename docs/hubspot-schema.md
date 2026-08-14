@@ -57,9 +57,13 @@ Buyer `buyer` · Seller `seller` · Renter `renter` · Not sure `not_sure`
 Under $300k `under_300k` · $300k–$500k `300k_500k` · $500k–$750k `500k_750k` ·
 $750k–$1M `750k_1m` · $1M–$1.5M `1m_1_5m` · $1.5M+ `1_5m_plus` · Unsure `unsure`
 
-### `lead_source_detail`
+### `lead_source_detail_v2`  *(label: "Lead Source Detail")*
 Organic `organic` · Lake page `lake_page` · Blog `blog` · Social `social` ·
 Agent referral `agent_referral` · Direct `direct` · Other `other`
+> Internal name is `lead_source_detail_v2`: the original `lead_source_detail`
+> was created as a text prop and deleted, so HubSpot archived that name for 90
+> days. The `_v2` name creates clean as a dropdown; the form field + validation
+> still use `lead_source_detail` internally and map to this at the sync boundary.
 
 ---
 
@@ -76,7 +80,7 @@ contact in `syncContact`.
 | `target_lake` | Derived server-side from the lake page (`lake_slug` → lake name → enum). A lake not in the 15 → `other`. An explicit valid `target_lake` in the payload wins. |
 | `intent_type` | Form type (`buy→buyer`, `sell→seller`, `rent→renter`, `cash_offer→seller`) or the "what do you need" dropdown. |
 | `price_band` | Buyer budget dropdown (options are exactly the `price_band` bands). |
-| `lead_source_detail` | `lake_page` when the lead came from a lake page, else `direct`. |
+| `lead_source_detail_v2` | `lake_page` when the lead came from a lake page, else `direct`. |
 
 **Retired duplicate:** `lake_name` is **not** a synced contact property and no
 form posts it — `target_lake` is the single source of truth. `lake_name` remains
