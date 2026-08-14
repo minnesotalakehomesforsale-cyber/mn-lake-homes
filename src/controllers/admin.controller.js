@@ -1512,15 +1512,24 @@ const getSubscriberBilling = async (req, res) => {
         // Pull the stored row (effective + paid tier + the subscription id).
         const row = kind === 'agent'
             ? (await pool.query(
-                `SELECT a.stripe_subscription_id, a.paid_membership_code, a.tier_comped,
+                `SELECT a.stripe_subscription_id, a.stripe_customer_id, a.paid_membership_code, a.tier_comped,
                         m.code AS effective_code, m.name AS effective_name
                    FROM agents a LEFT JOIN memberships m ON m.id = a.membership_id
                   WHERE a.id = $1 LIMIT 1`, [id])).rows[0]
             : (await pool.query(
-                `SELECT stripe_subscription_id, tier AS effective_tier, paid_tier, tier_comped, subscription_status
+                `SELECT stripe_subscription_id, stripe_customer_id, tier AS effective_tier, paid_tier, tier_comped, subscription_status
                    FROM businesses WHERE id = $1 LIMIT 1`, [id])).rows[0];
 
         if (!row) return res.status(404).json({ error: 'Not found.' });
+
+        // Deep-links straight into the Stripe dashboard (test vs live inferred
+        // from the secret-key prefix) so staff can jump to the real account.
+        const liveMode = key ? key.startsWith('sk_live_') : true;
+        const dashBase = `https://dashboard.stripe.com/${liveMode ? '' : 'test/'}`;
+        const links = {
+            customer:     row.stripe_customer_id     ? `${dashBase}customers/${row.stripe_customer_id}`         : null,
+            subscription: row.stripe_subscription_id ? `${dashBase}subscriptions/${row.stripe_subscription_id}` : null,
+        };
 
         const out = {
             configured: !!stripe,
@@ -1529,6 +1538,7 @@ const getSubscriberBilling = async (req, res) => {
             effective: kind === 'agent' ? { code: row.effective_code, name: row.effective_name } : { tier: row.effective_tier },
             paid:      kind === 'agent' ? { code: row.paid_membership_code } : { tier: row.paid_tier, status: row.subscription_status },
             subscription: null,
+            links,
         };
 
         // Live Stripe lookup for the dollar amount + renewal date.

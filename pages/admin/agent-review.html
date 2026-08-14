@@ -1369,6 +1369,15 @@
             }
             if (b.comped) lines.push('<span style="color:#b45309;font-weight:700;">★ Comped — effective tier is pinned</span>');
             host.innerHTML = lines.join('<br>');
+            // Deep-link straight into Stripe (customer preferred, else the sub).
+            const url = b.links?.customer || b.links?.subscription;
+            if (url) {
+                const label = b.links?.customer ? 'Open account in Stripe' : 'Open subscription in Stripe';
+                host.innerHTML += `<div style="margin-top:0.85rem;padding-top:0.75rem;border-top:1px solid #edf2f7;">
+                    <a href="${url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:0.4rem;color:#635bff;font-weight:700;text-decoration:none;font-size:0.85rem;">${label}
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
+                    </a></div>`;
+            }
         } catch (_) { host.textContent = 'Could not load billing.'; }
     }
 
