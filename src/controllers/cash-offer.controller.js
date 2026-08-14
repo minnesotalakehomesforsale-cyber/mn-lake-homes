@@ -221,6 +221,28 @@ exports.submit = async (req, res) => {
         const { rows } = await pool.query(insertSql, vals);
         const leadId = rows[0].id;
 
+        // DEV-09: first-touch attribution (DEV-01) — HTML-stripped + capped, so a
+        // cash-offer lead is as traceable as a buyer lead. Stored as a JSONB blob.
+        const attrClean = (v, max = 255) => {
+            if (v == null) return null;
+            const s = String(v).replace(/<[^>]*>/g, '').trim().slice(0, max);
+            return s || null;
+        };
+        const attribution = {};
+        for (const k of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'fbclid', 'referrer']) {
+            const v = attrClean(b[k]); if (v) attribution[k] = v;
+        }
+        const landingPage     = attrClean(b.landing_page, 500);
+        const landingPageLake = attrClean(b.landing_page_lake, 160);
+        const landingPageTown = attrClean(b.landing_page_town, 160);
+        if (landingPage)     attribution.landing_page = landingPage;
+        if (landingPageLake) attribution.landing_page_lake = landingPageLake;
+        if (landingPageTown) attribution.landing_page_town = landingPageTown;
+        if (Object.keys(attribution).length) {
+            pool.query(`UPDATE cash_offer_leads SET attribution = $1 WHERE id = $2`, [JSON.stringify(attribution), leadId])
+                .catch(e => console.error('[cash-offer] attribution save failed:', e.message));
+        }
+
         // Compose the lead object once, reuse for email + activity log.
         const leadForEmail = {
             id: leadId,
@@ -238,6 +260,10 @@ exports.submit = async (req, res) => {
         // can deep-link to the contact's HubSpot timeline.
         (async () => {
             const [first, ...rest] = String(full_name).split(' ');
+            // DEV-09: a cash-offer is a seller intent — carry the qualification +
+            // attribution props so it's as traceable in HubSpot as a buyer lead.
+            const schema = require('../data/hubspot-schema');
+            const targetLake = landingPageLake ? schema.validEnumValue('target_lake', landingPageLake.replace(/-/g, '_')) : null;
             const r = await hubspot.syncContact({
                 email,
                 firstname:      first || '',
@@ -247,6 +273,10 @@ exports.submit = async (req, res) => {
                 lifecyclestage: 'salesqualifiedlead',
                 user_type:      'cash_offer_lead',
                 signup_source:  sourceSite ? `cash_offer:${sourceSite}` : 'cash_offer',
+                intent_type:    'seller',
+                lead_source_detail_v2: (landingPageLake || landingPageTown) ? 'lake_page' : 'direct',
+                ...(targetLake ? { target_lake: targetLake } : {}),
+                ...attribution,
             });
             if (r?.id) {
                 pool.query(`UPDATE cash_offer_leads SET hs_contact_id = $1 WHERE id = $2`, [r.id, leadId])

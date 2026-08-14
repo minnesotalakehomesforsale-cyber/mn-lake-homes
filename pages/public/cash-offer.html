@@ -1007,6 +1007,9 @@
                     email: S.contact.email,
                     phone: S.contact.phone,
                     source_site: 'mn_lake',
+                    // DEV-01/DEV-09: first-touch attribution so the cash-offer
+                    // lead is as traceable as any buyer/seller lead.
+                    ...(window.mnAttribution ? window.mnAttribution() : {}),
                 };
                 const res = await fetch('/api/cash-offer/submit', {
                     method: 'POST',
@@ -1028,6 +1031,16 @@
                         lead_source: 'cash_offer',
                         offer_amount: S.offerAmount || null,
                         site: payload.source_site || null,
+                    });
+                    // DEV-04: spec lead_submitted event with intent=cash_offer.
+                    var _attr = (window.mnAttribution ? window.mnAttribution() : {});
+                    window.trackConversion('lead_submitted', {
+                        intent:        'cash_offer',
+                        lake:          _attr.landing_page_lake || '',
+                        town:          _attr.landing_page_town || '',
+                        price_band:    '',
+                        form_location: location.pathname,
+                        lead_id:       S.leadId || '',
                     });
                 }
                 return true;
