@@ -332,6 +332,10 @@ const updateStatus = async (req, res) => {
             await client.query(`UPDATE agents SET ${fields.join(', ')} WHERE id = $${c}`, vals);
             await client.query('COMMIT');
 
+            // DEV-10: if this publish approved a self-claimed profile, fire the
+            // "profile published" HubSpot event (best-effort, no-op otherwise).
+            if (isPublished) { try { require('./claim.controller').firePublishedEvent('agent', id); } catch (_) {} }
+
             logActivity({
                 event_type: status === 'published' ? 'agent.publish' : `agent.status.${status || 'update'}`,
                 event_scope: 'agent',

@@ -42,6 +42,20 @@ async function hubspotClaimEvent(email, name, stage, detail) {
     } catch (e) { console.warn('[claim] hubspot event failed:', e.message); }
 }
 
+// DEV-10: fire the "profile published" HubSpot event (3rd claim event / outreach
+// trigger) when a CLAIMED record is approved + goes public. Best-effort, and only
+// once per claim (flips it verified → approved). Call from the admin publish path.
+async function firePublishedEvent(type, id) {
+    try {
+        const cr = await pool.query(
+            `SELECT email FROM record_claims WHERE target_type = $1 AND target_id = $2 AND status = 'verified' ORDER BY verified_at DESC LIMIT 1`, [type, id]);
+        if (!cr.rows[0]) return;
+        await pool.query(`UPDATE record_claims SET status = 'approved' WHERE target_type = $1 AND target_id = $2 AND status = 'verified'`, [type, id]);
+        await hubspotClaimEvent(cr.rows[0].email, null, 'profile_published', `${type}:${id}`);
+    } catch (e) { console.warn('[claim] published event failed:', e.message); }
+}
+exports.firePublishedEvent = firePublishedEvent;
+
 // ─── POST /api/claim/start ───────────────────────────────────────────────────
 exports.start = async (req, res) => {
     try {
