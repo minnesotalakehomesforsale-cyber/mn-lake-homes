@@ -73,7 +73,7 @@
     --page-w: 1340px;
     /* Header bar spans a touch wider than page content so the logo/nav sit
        closer to the screen edges on wide screens. Tune here. */
-    --header-w: 1560px;
+    --header-w: 1760px;
     --bg-dark: #000000;
     --text-primary: #ffffff;
     --text-secondary: #a3a3a3;
