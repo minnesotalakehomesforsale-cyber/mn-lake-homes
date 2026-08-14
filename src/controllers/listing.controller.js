@@ -116,8 +116,11 @@ async function uniqueSlug(base) {
 // Reusable — imported by the SSR lake route for the live count.
 async function activeCountForLake(lakeId) {
     if (!LISTINGS_PUBLIC || !lakeId) return 0;
+    // Roll up sub-basins (C2): count listings on this lake AND any child basin.
     const { rows } = await pool.query(
-        `SELECT COUNT(*)::int AS c FROM listings WHERE lake_id = $1 AND status = 'active' AND ${AGENT_ACTIVE_GATE}`,
+        `SELECT COUNT(*)::int AS c FROM listings
+          WHERE lake_id IN (SELECT id FROM lakes WHERE id = $1 OR parent_lake_id = $1)
+            AND status = 'active' AND ${AGENT_ACTIVE_GATE}`,
         [lakeId]
     );
     return rows[0].c;
@@ -131,7 +134,9 @@ exports.listPublic = async (req, res) => {
         const limit  = Math.min(parseInt(req.query.limit, 10) || 24, 60);
         const where  = ["status = 'active'", AGENT_ACTIVE_GATE];
         const params = [];
-        if (lakeId) { params.push(lakeId); where.push(`lake_id = $${params.length}`); }
+        // Roll up sub-basins (C2): a lake page shows its own listings + those of
+        // any child basin (lakes.parent_lake_id = this lake).
+        if (lakeId) { params.push(lakeId); where.push(`lake_id IN (SELECT id FROM lakes WHERE id = $${params.length} OR parent_lake_id = $${params.length})`); }
         params.push(limit);
         const { rows } = await pool.query(
             `SELECT ${PUBLIC_COLS} FROM listings

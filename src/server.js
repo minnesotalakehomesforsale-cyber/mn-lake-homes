@@ -3151,6 +3151,12 @@ async function ensureTables() {
             ALTER TABLE lakes ADD COLUMN IF NOT EXISTS fish_species     JSONB;   -- ["Walleye","Northern Pike",...]
             ALTER TABLE lakes ADD COLUMN IF NOT EXISTS dnr_survey_url   TEXT;
             ALTER TABLE lakes ADD COLUMN IF NOT EXISTS dnr_data_at      TIMESTAMPTZ;
+            -- Sub-basin roll-up (C2): a lake that is a basin of a larger lake
+            -- points to its parent. A parent lake's page shows listings from
+            -- itself AND all its child basins (e.g. Big/Little Detroit → Detroit
+            -- Lake). Self-referential; NULL for standalone lakes.
+            ALTER TABLE lakes ADD COLUMN IF NOT EXISTS parent_lake_id UUID REFERENCES lakes(id) ON DELETE SET NULL;
+            CREATE INDEX IF NOT EXISTS idx_lakes_parent ON lakes(parent_lake_id) WHERE parent_lake_id IS NOT NULL;
             -- A lead can be tied to a specific lake (from the lake page, or the
             -- nearest lake to its geocoded address) so the lake's founder can claim it.
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS lake_id UUID;

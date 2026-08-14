@@ -96,6 +96,7 @@ const LAKE_COLS = `
     dow_number, max_depth_ft, mean_depth_ft, surface_acres, littoral_acres,
     water_clarity_ft, shoreline_miles, public_accesses, fish_species,
     dnr_survey_url, dnr_data_at,
+    parent_lake_id,
     status, created_at, updated_at
 `;
 
@@ -323,6 +324,9 @@ exports.patch = async (req, res) => {
             }
             push('status', b.status);
         }
+        // Sub-basin roll-up (C2): point a basin lake at its parent so its
+        // listings surface on the parent's page. Empty string clears it.
+        if ('parent_lake_id' in b) push('parent_lake_id', b.parent_lake_id || null);
 
         if (!fields.length) return res.json({ success: true, noop: true });
 
