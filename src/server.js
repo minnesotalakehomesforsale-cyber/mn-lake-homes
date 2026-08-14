@@ -4665,6 +4665,10 @@ async function seedTownContent() {
         // Kandiyohi (Green Lake) area + SW Minnesota.
         'willmar': 'green-lake',         'new-london': 'green-lake',
         'worthington': 'lake-okabena',
+        // Southern + central MN — each on a newly-created lake.
+        'albert-lea': 'fountain-lake',   'fairmont': 'budd-lake',
+        'buffalo': 'buffalo-lake',       'big-lake': 'big-lake',
+        'hutchinson': 'otter-lake-hutchinson', 'faribault': 'cannon-lake',
     };
     let townLinks = 0;
     for (const [townSlug, lakeSlug] of Object.entries(TOWN_LAKE_LINKS)) {

@@ -501,4 +501,76 @@ Life in Worthington centers on the lake and the community — boating and fishin
         seo_description: "Worthington, MN homes for sale on Lake Okabena — an affordable in-town lake in a regional southwest Minnesota city. Get new listings with a local agent.",
         hero_image_url: '/assets/images/mn-lake-home-from-water.jpg',
     },
+    {
+        slug: 'albert-lea',
+        intro_text: "Albert Lea is a southern Minnesota city built around Fountain Lake — an in-town chain of water with lakeside parks, at the crossroads of I-35 and I-90.",
+        description: `Albert Lea is the seat of Freeborn County in southern Minnesota, a regional city wrapped around Fountain Lake at the crossroads of Interstates 35 and 90, about 90 minutes south of the Twin Cities. Unlike the resort lakes up north, Fountain Lake runs right through town — an in-town chain of water lined with parks and neighborhoods.
+
+Real estate here pairs an affordable, full-service city with genuine lakefront on Fountain Lake and neighboring Albert Lea Lake. Buyers can own on the water at prices well below the metro, in a community with jobs, schools, and services. Options run from lakeside homes to in-town houses walkable to the water and the historic downtown.
+
+Life in Albert Lea centers on the lake and the outdoors — boating and fishing on Fountain Lake, the lakeside trails and Fountain Lake Park, and easy interstate access in every direction. For buyers who want affordable in-town lake living in a real southern-Minnesota city, Albert Lea and Fountain Lake are an easy, uncrowded pick.`,
+        seo_title: 'Albert Lea MN Homes for Sale | Fountain Lake Real Estate',
+        seo_description: "Albert Lea, MN homes for sale on Fountain Lake — an affordable in-town lake in a southern Minnesota city at I-35 and I-90. Get new listings with a local agent.",
+        hero_image_url: '/assets/images/mn-lake-town-street.jpg',
+    },
+    {
+        slug: 'fairmont',
+        intro_text: "Fairmont is the 'City of Lakes' of southern Minnesota — built around a chain of five connected lakes, at the junction of I-90 and US-15.",
+        description: `Fairmont is the seat of Martin County in southern Minnesota, a regional city known as the 'City of Lakes' for the chain of five connected lakes — Budd, Sisseton, George, Hall, and Amber — that run right through the middle of town. It sits at the junction of Interstate 90 and US-15, about two hours southwest of the Twin Cities.
+
+Real estate here is defined by that in-town chain: lakefront homes on the connected lakes alongside in-town and near-lake houses, all in an affordable, full-service city. Because the water is woven through the town rather than out at a resort, buyers get genuine lakefront with the convenience of city services and schools — a combination that's rare at Fairmont's prices.
+
+Life in Fairmont runs on the chain — boating between the connected lakes, lakeside parks and trails, and a downtown with real amenities. Its location at the interstate crossroads makes it an easy stop and a practical base. For buyers who want connected in-town lakes at an accessible price in southern Minnesota, Fairmont delivers its City-of-Lakes name.`,
+        seo_title: 'Fairmont MN Homes for Sale | Chain of Lakes Real Estate',
+        seo_description: "Fairmont, MN homes for sale on the Chain of Lakes — five connected in-town lakes in southern Minnesota's 'City of Lakes.' Get new listings with a local agent.",
+        hero_image_url: '/assets/images/mn-purple-sunset-marina.webp',
+    },
+    {
+        slug: 'buffalo',
+        intro_text: "Buffalo is a growing lake town on the northwest edge of the metro — wrapped around Buffalo Lake with a walkable downtown and an easy Twin Cities commute.",
+        description: `Buffalo is the seat of Wright County, a growing city on the northwest edge of the Twin Cities metro, wrapped around Buffalo Lake about 40 minutes from Minneapolis. It's a genuine lake town with a walkable downtown right on the water — close enough for a daily commute, but with a real lake at its center.
+
+Real estate here pairs metro-commutable convenience with genuine lakefront on Buffalo Lake, along with established and newer neighborhoods set back from the water. As the northwest metro has grown, Buffalo has become a sought-after spot for buyers who want lake living without giving up an easy drive to the Cities. Lakefront is competitive; the broader market draws year-round families.
+
+Life in Buffalo balances the lake and the town — boating and fishing on Buffalo Lake, the lakeside park and trails, and a downtown known for its shops and summer events. For buyers who want a real lake town within commuting distance of the metro, Buffalo is one of the northwest edge's best options.`,
+        seo_title: 'Buffalo MN Homes for Sale | Buffalo Lake Real Estate',
+        seo_description: "Buffalo, MN homes for sale on Buffalo Lake — a growing lake town with a walkable downtown on the northwest edge of the metro. Get new listings with a local agent.",
+        hero_image_url: '/assets/images/mn-lake-home-from-water.jpg',
+    },
+    {
+        slug: 'big-lake',
+        intro_text: "Big Lake is a fast-growing commuter lake town in Sherburne County — on the Northstar rail line, an easy trip up US-10 from the Twin Cities.",
+        description: `Big Lake is a fast-growing city in Sherburne County, on the northern edge of the Twin Cities commuter belt about 45 minutes from Minneapolis. Named for the lake at its center, it sits on the Northstar commuter rail line and US-10 — a genuine lake town that doubles as a metro bedroom community.
+
+Real estate here is driven by that commuter-plus-lake combination: lakefront and near-lake homes on Big Lake and neighboring Mitchell Lake, alongside newer subdivisions built as the town has grown. Buyers get lake access and a rail-served metro commute, often at more attainable prices than the west-metro lakes — which has fueled steady growth and year-round demand.
+
+Life in Big Lake mixes the lake with easy metro access — boating and fishing on the water, lakeside parks, and the Northstar line into the Cities. For buyers who want an affordable lake town with a rail commute to Minneapolis, Big Lake is one of the north metro's most practical picks.`,
+        seo_title: 'Big Lake MN Homes for Sale | Sherburne County Real Estate',
+        seo_description: "Big Lake, MN homes for sale — a growing commuter lake town on the Northstar line in Sherburne County, an easy drive from the metro. Get new listings.",
+        hero_image_url: '/assets/images/mn-clearwater-lakeshore.jpg',
+    },
+    {
+        slug: 'hutchinson',
+        intro_text: "Hutchinson is a walkable central-Minnesota town on the Crow River, with Otter and Campbell lakes in town and the Luce Line Trail running through it.",
+        description: `Hutchinson is a McLeod County city on the South Fork Crow River in central Minnesota, about an hour west of the Twin Cities. A genuine, walkable town with a well-known downtown, it has Otter Lake and Campbell Lake right in its footprint and the Luce Line State Trail running straight through it — river-and-lake country with real-town amenities.
+
+Real estate here pairs an affordable, full-service town with in-town lake and riverfront options on Otter and Campbell lakes, plus established and newer neighborhoods. It's a value market: buyers get water access and a real community with jobs and schools, at prices well below the metro, within an easy commute for those who want it.
+
+Life in Hutchinson runs on the water and the trail — paddling and fishing the Crow and the town lakes, biking the Luce Line, and a downtown known for its arts and events. For buyers who want affordable in-town water and a genuine central-Minnesota town, Hutchinson is a practical, walkable choice.`,
+        seo_title: 'Hutchinson MN Homes for Sale | Otter Lake &amp; Crow River',
+        seo_description: "Hutchinson, MN homes for sale on Otter Lake and the Crow River — a walkable central-Minnesota town an hour from the Twin Cities. Get new listings.",
+        hero_image_url: '/assets/images/mn-lake-sunset-firepit.jpg',
+    },
+    {
+        slug: 'faribault',
+        intro_text: "Faribault is a historic southern Minnesota city near Cannon and Roberds lakes — a real downtown just off I-35, a short drive from the Twin Cities.",
+        description: `Faribault is the seat of Rice County in southern Minnesota, a historic city on the Cannon and Straight rivers near Cannon Lake and Roberds Lake, about an hour south of the Twin Cities on Interstate 35. Known for its well-preserved historic downtown, it pairs genuine town character with easy access to nearby recreation lakes.
+
+Real estate here ranges from lakefront and near-lake homes on Cannon and Roberds lakes to historic and newer homes in a real, full-service city. It's an affordable market with a short I-35 commute, which appeals to buyers who want lake access and small-city amenities without metro prices. Lakefront on Cannon and Roberds is the local premium; the broader market stays attainable.
+
+Life in Faribault blends history, town, and lakes — boating and fishing on Cannon and Roberds, the Sakatah Singing Hills State Trail, and a downtown of historic architecture and local shops. For buyers who want affordable lake access near a genuine southern-Minnesota city on the I-35 corridor, Faribault is a solid, characterful pick.`,
+        seo_title: 'Faribault MN Homes for Sale | Cannon Lake Real Estate',
+        seo_description: "Faribault, MN homes for sale near Cannon and Roberds lakes — a historic southern Minnesota city just off I-35. Get new listings with a local agent.",
+        hero_image_url: '/assets/images/mn-lake-dock-golden.jpg',
+    },
 ];
