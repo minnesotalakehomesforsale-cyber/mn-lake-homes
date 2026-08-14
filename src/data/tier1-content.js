@@ -74,6 +74,143 @@ The chain takes its name from the Ojibwe "Kadikumagokag" — "the lake where the
 
 Crosslake provides real amenities for a lake town: restaurants, marinas and marine service, groceries, and summer events, with Pequot Lakes and Pine River nearby and Brainerd/Baxter (full medical, shopping, the regional airport) a short drive south. For buyers, the chain offers the rare combination of navigable multi-lake boating, deep clear water, and a genuine town — which is why it holds its value at the top of the region.`,
     },
+    // ── Wave 2 ───────────────────────────────────────────────────────────────
+    {
+        slug: 'mille-lacs-lake', kind: 'lake',
+        seo_title: 'Mille Lacs Lake Homes for Sale | MN Lake Homes',
+        seo_description: "Mille Lacs Lake homes for sale — Minnesota's second-largest lake and its walleye capital, 132,000 acres across three counties. Get matched with a local agent, free.",
+        intro_text: "Minnesota's second-biggest lake and its most famous walleye water — 132,000 acres of it. Get matched with an agent who knows this shoreline.",
+        description: `Mille Lacs Lake sits about 75 miles north of the Twin Cities, spanning Mille Lacs, Aitkin, and Crow Wing counties — close enough for a weekend, big enough to feel like a different world. Garrison anchors the west shore, Isle and Wahkon the south, and Onamia sits just off the southwest corner. This is one of Minnesota's most recognizable lakes: an inland sea of walleye water with a fishing culture that runs deep and a shoreline that's more accessible, price-wise, than the metro lakes to the south.
+
+At 132,516 acres, Mille Lacs is Minnesota's second-largest inland lake (behind Red Lake) — nearly 20 miles across. Despite its size it's relatively shallow and even: maximum depth is about 42 feet, with most of the main lake running 20–30 feet. That broad, uniform basin over rock and gravel reefs is exactly what makes it such a productive fishery. There are 11-plus named islands, the largest being Malone Island at about 35 acres. Because the lake is so large and open, wind and weather matter here — locals watch the forecast the way coastal boaters do.
+
+Mille Lacs is a working fishing-and-vacation lake more than a luxury-estate lake, and that's its appeal. You'll find longtime cabin families, year-round residents, resort and guide operators, and second-home owners who came up to fish and stayed. The shoreline mixes classic cabins, modern lake homes, and a strong resort-and-campground tradition. The lake also holds deep cultural significance — it's the homeland of the Mille Lacs Band of Ojibwe (Misi-zaaga'igan, "Grand Lake"), and that history is part of the region's identity.
+
+Fishing is the identity. Mille Lacs is Minnesota's signature walleye lake and, in recent years, a genuinely world-class smallmouth bass fishery, along with muskie, northern pike, perch, and crappie. The walleye population hit a low around 2016 and has recovered through 2023–2024, with regulations relaxing as the fishery rebounded. Winter is just as big: Mille Lacs is one of the great ice-fishing destinations in the country, with thousands of ice houses and full rental-village operations on the ice each season. Boating, the launch scene, and lakeside supper clubs round out the summer.
+
+Mille Lacs — Ojibwe Misi-zaaga'igan and the French "thousand lakes" that gave it its name — has been a center of life in the region for centuries and remains the homeland of the Mille Lacs Band of Ojibwe. In the modern era it became one of the state's defining fishing destinations. More recent chapters include the establishment of zebra mussels around 2005 and the resulting increase in water clarity, plus the walleye management story of the 2010s.
+
+Garrison, Isle, Onamia, and Wahkon supply the essentials — bait and tackle, groceries, dining, marine and dock service — with a strong resort and guide community around the whole lake. Onamia-area medical, plus casino and cultural attractions run by the Mille Lacs Band, add year-round activity. It's about 75 miles to the Twin Cities, making Mille Lacs one of the closest big lakes to the metro — a real factor in demand.`,
+    },
+    {
+        slug: 'lake-vermilion', kind: 'lake',
+        seo_title: 'Lake Vermilion Homes for Sale | MN Lake Homes',
+        seo_description: 'Lake Vermilion homes for sale near Tower & Cook, MN — 39,000 acres, 365 islands, world-class walleye and muskie water in the Arrowhead. Get matched with an agent.',
+        intro_text: "365 islands, clean rocky water, and some of Minnesota's best smallmouth and muskie fishing. Get matched with an agent who knows this shoreline.",
+        description: `Lake Vermilion stretches across the Arrowhead region of northeastern Minnesota, in St. Louis County, between the towns of Tower on the east and Cook on the west, with Soudan and the Bois Forte reservation on its shores. This is deep-north country — Canadian Shield rock, pine, and famously clean water — about four hours north of the Twin Cities and close to Ely and the Boundary Waters. It's long been considered one of the most scenic large lakes in the state.
+
+Lake Vermilion covers about 39,271 acres — the fifth-largest lake entirely within Minnesota — with a maximum depth around 76 feet. Its defining feature is complexity: more than 365 islands and a deeply convoluted, rocky shoreline of countless bays, narrows, and points. That maze of islands and structure is what makes it both a spectacular place to own and a genuinely great fishing lake. The lake sits on Canadian Shield bedrock, so shorelines tend toward rock and pine rather than sand.
+
+Vermilion draws a mix of longtime cabin families, retirees, and second-home owners who want a premium northern lake — and it sits at the higher end of the up-north market because of its water quality, islands, and reputation. You'll find classic cabins, modern lake homes, sought-after island properties, and a tier of high-end estates on the best points and bays. Fortune Bay Resort and Casino, operated by the Bois Forte Band of Ojibwe, anchors part of the shoreline and the local economy.
+
+Fishing is a headline draw and Vermilion delivers: it's a premier walleye lake (managed with protected slot limits), a nationally respected muskie water, and one of Minnesota's best smallmouth bass fisheries, with northern pike and panfish rounding it out. Beyond fishing, the island-studded layout is made for boating, exploring, and finding your own quiet bay. On shore, the Lake Vermilion–Soudan Underground Mine State Park offers hiking and tours of Minnesota's oldest and deepest iron mine, and Ely and the Boundary Waters are close for bigger north-woods adventures.
+
+The Vermilion area has deep Ojibwe roots and remains home to the Bois Forte Band. The late-1800s discovery of iron at Soudan brought the Soudan Underground Mine — Minnesota's first and deepest — and the boathouses of the Stuntz Bay Historic District date to that era. In 2010 the state finalized an $18 million purchase that created the Lake Vermilion–Soudan Underground Mine State Park, permanently protecting a stretch of shoreline.
+
+Tower and Cook provide the essentials — groceries, dining, marine and bait service — with a strong resort and guide presence around the lake. Ely, a short drive east, adds outfitters and the gateway to the Boundary Waters. Regional medical and air service are in the Iron Range area and Duluth is the nearest larger city. The trade for buyers: it's remote and northern, but you're buying into arguably the most scenic big-lake setting in the state.`,
+    },
+    {
+        slug: 'leech-lake', kind: 'lake',
+        seo_title: 'Leech Lake Homes for Sale | MN Lake Homes',
+        seo_description: "Leech Lake homes for sale near Walker, MN — the state's third-largest lake, legendary walleye and muskie water in the Chippewa National Forest. Get matched, free.",
+        intro_text: "Minnesota's third-largest lake — 100,000 acres of walleye and muskie water wrapped in the Chippewa National Forest. Get matched with an agent who knows it.",
+        description: `Leech Lake sits in north-central Minnesota, southeast of Bemidji, with the town of Walker anchoring its southwest shore. It's a true up-north lake: entirely within the Chippewa National Forest and largely within the Leech Lake Indian Reservation, homeland of the Leech Lake Band of Ojibwe. That setting is the whole character — big water, deep pine forest, bald eagles, and wild rice beds, roughly three and a half hours north of the Twin Cities.
+
+At about 102,948 acres, Leech Lake is Minnesota's third-largest lake, with a remarkable 195 miles of shoreline and a maximum depth of 156 feet in Walker Bay. It's really a collection of big bays — Walker Bay and Shingobee Bay among the deepest — fed by seven major rivers and creeks and drained by the dam-controlled Leech Lake River. There are 11 islands totaling more than 1,600 acres. Because so much of the shoreline is national forest and reservation land, a large share stays undeveloped and wild — which keeps private lakefront relatively scarce and the setting genuinely remote.
+
+Leech is cabin-and-fishing country more than a luxury-estate lake. You'll find multi-generation cabin families, year-round residents in and around Walker, resort operators and fishing guides, and second-home owners who came up to fish and never really left. Development clusters near Walker, Federal Dam, and the accessible bays; much of the rest is forest. The result is a lake that feels big, quiet, and unspoiled compared with the metro or Brainerd-area waters.
+
+Fishing is the identity, and Leech is legendary for it — a top walleye lake and one of the great muskie waters in the country (the famous 1955 "Leech Lake Muskie Rampage" is still lore). There's also strong perch, northern pike, and panfish action, and in winter it's serious ice-fishing country — Walker's International Eelpout Festival is a nationally-known event built around the lake's burbot. Beyond fishing: boating the big bays, exploring the Chippewa National Forest, eagle-watching, and the small-town summer rhythm of Walker.
+
+Leech Lake has been central to the Leech Lake Band of Ojibwe for generations; the reservation was established in 1855 and the "Greater" Leech Lake Reservation consolidated in 1936. The lake was also the site of the Battle of Sugar Point in 1898. In the modern era it became one of Minnesota's iconic fishing destinations, its economy built around resorts, guides, and the walleye and muskie runs — a heritage that still defines the shoreline today.
+
+Walker is the hub — groceries, dining, marine and bait service, medical, and the festival-and-tourism summer economy. Federal Dam, Hackensack, and Longville are nearby small towns, and Bemidji (with its regional airport and larger amenities) is a reasonable drive northwest. For buyers, the trade is clear: fewer services and more remoteness than a Brainerd-area lake, in exchange for far bigger, wilder, more affordable water.`,
+    },
+    {
+        slug: 'lake-of-the-woods', kind: 'lake',
+        seo_title: 'Lake of the Woods Homes for Sale | MN Lake Homes',
+        seo_description: 'Lake of the Woods homes for sale near Baudette, MN — the Walleye Capital of the World, thousands of islands and legendary fishing in the far north. Get matched, free.',
+        intro_text: "The Walleye Capital of the World — thousands of islands, legendary fishing, and Minnesota's remote far north. Get matched with an agent who knows it.",
+        description: `Lake of the Woods sits at Minnesota's far northern edge, straddling the border with Ontario and Manitoba — the only place a Minnesotan can drive to the northernmost point of the contiguous United States (the Northwest Angle). Baudette, the seat of Lake of the Woods County, is the Minnesota gateway town, with Warroad to the west. This is remote, big-water, fishing-first country — about five hours north of the Twin Cities, and unlike anywhere else in the state.
+
+Lake of the Woods is one of the largest lakes in North America, shared by Minnesota, Ontario, and Manitoba, with more than 14,000 islands and a shoreline so intricate it's measured in thousands of miles. The Minnesota open water — Big Traverse Bay, off Baudette — is broad and relatively shallow, while the lake reaches much greater depths in its Canadian waters. The Northwest Angle, a Minnesota exclave reachable only by boat or by driving through Canada, sits amid a maze of islands and is a destination in its own right. The lake ultimately drains north toward Hudson Bay.
+
+This is a fishing-and-resort market more than a suburban lake. Owners here are anglers, resort and lodge operators, hunters, and people who want genuine remoteness. Development centers on Baudette, the south-shore resort corridor, and the Northwest Angle. You'll find cabins, fishing homes, lodges, and resort properties — a specialized market where access, guiding, and the fishery drive value more than square footage.
+
+Fishing is the identity, year-round. Lake of the Woods calls itself the Walleye Capital of the World, and the walleye and sauger fishing genuinely earns it — plus muskie, northern pike, perch, crappie, smallmouth bass, and lake sturgeon. Winter is enormous here: heated fish houses and sleeper (overnight) ice houses draw anglers from across the country onto the frozen bay. Beyond fishing, there's hunting, boating the island country, and the unique experience of the Northwest Angle.
+
+Lake of the Woods has deep Ojibwe and Métis history and was central to the fur-trade era, with the border itself the product of old surveys that left the Northwest Angle as a U.S. exclave. Baudette and Warroad grew as border, timber, and fishing towns, and over the twentieth century the lake became one of North America's premier fishing destinations — a reputation that still drives its economy and its real estate today.
+
+Baudette provides the essentials — groceries, dining, medical (Lake of the Woods County), and the resort-and-guide network that supports the fishery — with Warroad to the west adding more services and a famed hockey culture. International Falls is a drive to the east. This is a market where you buy for the water, the fishing, and the remoteness; town amenities are modest by design.`,
+    },
+    {
+        slug: 'detroit-lake', kind: 'lake',
+        seo_title: 'Detroit Lake Homes for Sale | MN Lake Homes',
+        seo_description: 'Detroit Lake homes for sale in Becker County, MN. Three connected basins, walleye and muskie water, mile-long city beach. Get matched with a local agent, free.',
+        intro_text: 'Three connected basins, a mile of city beach, and walleye water that’s still producing — Detroit Lake is the working summer town of Lakes Country.',
+        description: `Detroit Lake sits in Becker County in northwest Minnesota, three hours from the Twin Cities and about 45 minutes east of Fargo-Moorhead on Highway 10. The city of Detroit Lakes — the county seat, around 9,500 people year-round — wraps around the north and west shore. Once you're here, you're in the middle of a region with more than 400 lakes inside a 25-mile radius, which is why most of the town's economy runs on tourism and lakeshore real estate. Pelican Lake, Lake Sallie, Lake Melissa, Big Cormorant, and Floyd Lake are all within a short drive.
+
+Detroit Lake is really three basins connected by narrows: Big Detroit (the main basin, just over 2,000 acres), Little Detroit (roughly 1,000 acres, where the city beach is), and Curfman Lake — locally known as Deadshot Bay — at about 120 acres. Total surface is around 3,067 acres with 13 miles of shoreline. Maximum depth is 89 feet in Big Detroit, with an average depth of about 15 feet, which means there's serious water for cisco and lake trout habitat in the deep holes and shallow weed flats elsewhere for walleye and bass.
+
+Detroit Lake is a true mix. Unlike some Minnesota lakes that are 90% seasonal cabin country, this one has a working town built right onto its shore — meaning year-round residents, retirees who moved up from the Cities, and three generations of cabin families share the same water. You'll find original 1950s and '60s cabins still in the same family alongside modern lake homes that have replaced teardowns, plus a small cluster of luxury estates on the most protected shoreline.
+
+Boating is the center of summer. Detroit Lake is a multi-use lake — wake sports, sailing, jet skis, pontoons, fishing boats — and the three-basin layout means you can usually find protected water no matter which way the wind is blowing. The most recent Minnesota DNR survey showed about 83% of walleye over 15 inches and 29% over 20 inches, which is strong by any Minnesota standard. The lake also has muskie, northern pike, smallmouth and largemouth bass, crappie, bluegill, and an established lake sturgeon population. Off the water, the city beach on Little Detroit runs about a mile of sand and is the busiest stretch of public lakeshore in the region; the 1915 Pavilion still hosts concerts and weekly events all summer.
+
+Detroit Lake got its name, by local legend, from a French priest who looked across the water in the 1800s and called it a beautiful "détroit" — the French word for strait. The Northern Pacific Railroad reached the area in 1871, the village of Detroit was established in 1881, and in 1926 the town added "Lakes" to its name because the postal service kept routing mail to Detroit, Michigan. The lake has been a destination for over 140 years.
+
+Detroit Lakes itself has the things that matter when you actually live on a lake: a real grocery store, a hardware store, marine and dock service, a hospital (Essentia Health St. Mary's), restaurants that stay open year-round, and a summer-festival downtown. Vergas, Frazee, and Lake Park are nearby small towns. For air travel, Hector International in Fargo is the closest commercial airport, and other Lakes Country water — Pelican, Sallie, Big Cormorant — is inside a 15-minute drive.`,
+    },
+    {
+        slug: 'rainy-lake', kind: 'lake',
+        seo_title: 'Rainy Lake Homes for Sale | MN Lake Homes',
+        seo_description: 'Rainy Lake homes for sale near International Falls, MN — rocky islands, clear border water, and the gateway to Voyageurs National Park. Get matched with an agent.',
+        intro_text: 'Rocky islands, clear border water, and the edge of Voyageurs National Park. Get matched with an agent who knows Rainy Lake and International Falls.',
+        description: `Rainy Lake sits on Minnesota's northern border with Ontario, with International Falls — the "Icebox of the Nation" — on the U.S. side opposite Fort Frances, Ontario. It's in Koochiching County, and Voyageurs National Park occupies its southeastern corner. This is deep-north border country, about five hours north of the Twin Cities, defined by Canadian Shield rock, pine, clear water, and a maze of islands.
+
+Rainy is a large international lake — roughly 360 square miles overall, shared with Ontario — with a highly irregular, rocky shoreline measured in hundreds of miles counting its islands. It's a deep, clear Canadian Shield lake sitting over ancient bedrock and fault lines. The Minnesota waters, including the stretch within Voyageurs National Park, mix open expanses with sheltered island channels — spectacular and genuinely wild.
+
+Rainy is a fishing, boating, and north-woods market more than a suburban one. Owners here are anglers, boaters, hunters, and people who want remoteness and access to Voyageurs. Development centers around International Falls and the accessible shoreline outside the park; a portion of the lake is national-park water, which keeps much of it undeveloped and protected. You'll find cabins, year-round homes, and island properties.
+
+Fishing is a headline draw — walleye, smallmouth bass, muskie, northern pike, and crappie, with an annual bass championship on the lake since 1996. Boating the island country and exploring Voyageurs National Park (46 boat-in campsites on Rainy alone) define the summer, and in winter the National Park Service maintains an ice road onto the lake. It's a paddler's, angler's, and boater's lake first.
+
+Rainy Lake was a central artery of the fur-trade voyageur routes — the national park takes its name from them — and International Falls grew as a border, timber, and paper-mill town. The lake's hydroelectric dams have long powered both countries. Today the blend of national-park protection, border character, and world-class fishing defines Rainy's identity and its shoreline.
+
+International Falls provides the essentials — groceries, dining, medical, and a regional airport with air service — plus the border crossing to Fort Frances. Ranier, right on the water, is the small gateway community to the lake and park. This is a market where you buy for the water, the fishing, and Voyageurs; town amenities are modest but real.`,
+    },
+    {
+        slug: 'otter-tail-lake', kind: 'lake',
+        seo_title: 'Otter Tail Lake Homes for Sale | MN Lake Homes',
+        seo_description: 'Otter Tail Lake homes for sale in Otter Tail County, MN — 13,700 acres of clear walleye water near Perham and Battle Lake. Get matched with a local agent, free.',
+        intro_text: 'The heart of Otter Tail country — 13,700 acres of clear walleye water and classic lakes-region living. Get matched with an agent who knows it.',
+        description: `Otter Tail Lake sits in west-central Minnesota's Otter Tail County — the namesake of a region with more lakes than any county in the state. The small city of Ottertail is right on the water, with Perham to the north, Battle Lake to the south, and Fergus Falls the nearest larger town to the southwest. It's about three hours northwest of the Twin Cities and roughly an hour from Fargo-Moorhead, which makes it a natural lake for both metro and Red River Valley owners.
+
+Otter Tail Lake covers about 13,725 acres — the tenth-largest lake entirely within Minnesota — with a maximum depth of 120 feet, though it's largely a shallower lake (about 57% is 15 feet or less). Water clarity runs around 10.5 feet, which is good, and a distinctive "Point" splits the lake into eastern and western halves. Mature deciduous trees line much of the shore and act as a natural windbreak. It's part of the Otter Tail River chain of lakes, whose waters ultimately flow north to Hudson Bay via the Red River.
+
+Otter Tail is classic lakes-country: a mix of longtime cabin families, year-round residents, retirees, and second-home owners from the Cities and the Fargo area. The shoreline ranges from original cabins to modern year-round lake homes, with a resort tradition typical of the region. It's a more accessible, family-oriented lake than the marquee metro or northern-destination waters — which is a large part of its appeal.
+
+Fishing and boating drive the summer. Walleye and northern pike are the most sought species, with bass and panfish rounding out the mix, and the annual Reel Country Classic tournament (held each May since 2005) is a fixture. The lake's size and open water make it a genuine sailing lake — the center of the lake gets enough wind for real sailing, a tradition that goes back decades. Off the water, the broader Otter Tail lakes region — Perham, Battle Lake, and dozens of nearby lakes — offers golf, dining, and small-town summer life.
+
+Otter Tail Lake has been a lakes-region destination for generations, with a resort and cabin culture that grew alongside the towns of Ottertail, Perham, and Battle Lake. Its sailing heyday ran from the late 1960s through the mid-1980s, and the Reel Country Classic has anchored the fishing calendar since 2005. The lake remains the centerpiece of one of Minnesota's most lake-dense counties.
+
+The city of Ottertail sits on the lake with basic services; Perham (a growing small city to the north) and Battle Lake add groceries, dining, medical, and marine service, and Fergus Falls provides larger amenities and hospital care to the southwest. Fargo-Moorhead, about an hour away, brings a major airport and metro shopping within reach. For buyers, Otter Tail offers big, clear water and a full lakes-region lifestyle at a more approachable price point than the metro lakes.`,
+    },
+    {
+        slug: 'lake-pepin', kind: 'lake',
+        seo_title: 'Lake Pepin Homes for Sale | MN Lake Homes',
+        seo_description: 'Lake Pepin homes for sale from Red Wing to Lake City, MN — bluff-country living where the Mississippi widens, the birthplace of waterskiing. Get matched with an agent.',
+        intro_text: 'Bluff-country river living where the Mississippi widens — the birthplace of waterskiing, from Red Wing to Lake City. Get matched with a local agent.',
+        description: `Lake Pepin is the widest natural stretch of the Mississippi River, forming the border between Minnesota and Wisconsin about an hour southeast of the Twin Cities. On the Minnesota side it runs through Goodhue and Wabasha counties, anchored by the historic river towns of Red Wing (upstream), Lake City, and Frontenac. This is bluff country — dramatic river valley, towering bluffs, and the Great River Road National Scenic Byway hugging the shore. It's a completely different lake experience from the cabin lakes up north: river-town living with deep history and big scenery.
+
+Lake Pepin covers about 45.7 square miles, stretching roughly 22 miles long and up to about two miles wide, with a maximum depth around 60 feet and an average depth near 21 feet. Because it's a river lake, the shoreline is defined by bluffs, river towns, and the byway rather than cabin-lined bays. Frontenac State Park protects a scenic stretch on the Minnesota side. It's big, open water — famous for wind, which is exactly why it became a sailing and waterskiing lake.
+
+Lake Pepin is river-town living: historic homes in Red Wing and Lake City, bluff-view properties, riverfront homes, and second homes for Twin Cities owners drawn by the scenery and the roughly one-hour drive. It's a market of walkable historic downtowns, marinas, and bluff country rather than remote cabins — which gives it a distinct, year-round, town-centered character.
+
+Lake Pepin is a boating and sailing lake first — its width and reliable wind made it the birthplace of waterskiing (Ralph Samuelson, 1922) and a sailing hub, with marinas in Lake City and along the shore. Fishing is Mississippi-pool fishing — walleye, sauger, bass, crappie, and panfish. Off the water, the Great River Road, the bluffs, wineries, riverboat history, and the antique-and-Main-Street culture of Red Wing and Lake City define the lifestyle, along with legendary fall color along the valley.
+
+Lake Pepin has been a Mississippi landmark for centuries — a Dakota homeland, a fur-trade and steamboat corridor, and the site of the 1890 Sea Wing disaster. Red Wing and Lake City grew as river-commerce and resort towns, and in 1922 Ralph Samuelson strapped on the first water skis here. That layered history — river commerce, resort era, and recreation firsts — still shapes the towns and the shoreline.
+
+Red Wing (pottery, shoes, a historic downtown, hospital) and Lake City (the "Birthplace of Waterskiing," a large marina, Main Street) provide full services, with Frontenac and its state park between them. The Twin Cities are about an hour northwest, and Rochester is a reasonable drive south. For buyers, Lake Pepin offers big scenic water, historic town living, and metro proximity — a rare combination in Minnesota lake real estate.`,
+    },
 ];
 
 const TOWNS = [
