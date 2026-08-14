@@ -34,6 +34,7 @@ function softAuth(req, res, next) {
 // Public reads (with admin-aware filtering via softAuth)
 router.get('/',           softAuth, c.list);
 router.get('/founder-availability', c.founderAvailability);   // public — Claim-your-lake page
+router.get('/nav-tier1', c.navTier1);                         // public — data-driven Tier-1 nav module
 router.get('/:slug/founder', c.lakeFounder);                  // public — a lake's founding agent (or null)
 
 // Admin image upload — must sit BEFORE /:slugOrId or the router would

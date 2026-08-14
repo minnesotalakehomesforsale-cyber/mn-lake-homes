@@ -136,6 +136,7 @@ class GlobalHeader extends HTMLElement {
         this.innerHTML = this._buildHeader(bp, rp, null);
         this._wireMegamenu();
         this._wireMobileMenu();
+        this._hydrateTier1Lakes();
 
         // Check real session
         fetch('/api/auth/session')
@@ -145,10 +146,28 @@ class GlobalHeader extends HTMLElement {
                 this.innerHTML = this._buildHeader(bp, rp, data);
                 this._wireMegamenu();
                 this._wireMobileMenu();
+                this._hydrateTier1Lakes();
             })
             .catch(() => {
                 // Not logged in — already rendered guest state above
             });
+    }
+
+    // Data-driven Tier-1 nav module: replace the static Featured Lakes column
+    // with published market_tier=1 lakes. Cached across re-renders; silently
+    // keeps the static fallback if the fetch is empty or fails.
+    _hydrateTier1Lakes() {
+        const col = this.querySelector('[data-col="tier1-lakes"]');
+        if (!col) return;
+        window.__tier1LakesPromise = window.__tier1LakesPromise ||
+            fetch('/api/lakes/nav-tier1').then(r => r.ok ? r.json() : []).catch(() => []);
+        window.__tier1LakesPromise.then(lakes => {
+            if (!Array.isArray(lakes) || !lakes.length) return;   // keep static fallback
+            const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+            col.querySelectorAll('a').forEach(a => a.remove());
+            col.insertAdjacentHTML('beforeend', lakes.map(l =>
+                `<a href="/lakes/${encodeURIComponent(l.slug)}">${esc(l.name)}</a>`).join(''));
+        });
     }
 
     _wireMobileMenu() {
@@ -423,7 +442,9 @@ class GlobalHeader extends HTMLElement {
                         { label: 'Walker',         href: '/towns/walker' },
                         { label: 'Detroit Lakes',  href: '/towns/detroit-lakes' },
                     ]},
-                    { heading: 'Featured Lakes', links: [
+                    { heading: 'Featured Lakes', key: 'tier1-lakes', links: [
+                        // Static fallback — replaced at runtime by the data-driven
+                        // Tier-1 list (market_tier=1) via /api/lakes/nav-tier1.
                         { label: 'Lake Minnetonka',   href: '/lakes/lake-minnetonka' },
                         { label: 'Gull Lake',         href: '/lakes/gull-lake' },
                         { label: 'Mille Lacs Lake',   href: '/lakes/mille-lacs-lake' },
@@ -478,7 +499,7 @@ class GlobalHeader extends HTMLElement {
             <div id="nav-${item.id}-megamenu" class="nav-megamenu" data-nav-id="${item.id}" style="display:none;">
                 <div class="nav-megamenu-inner">
                     ${item.columns.map(col => `
-                        <div class="nav-megamenu-col">
+                        <div class="nav-megamenu-col"${col.key ? ` data-col="${col.key}"` : ''}>
                             <h4 class="nav-megamenu-heading">${col.heading}</h4>
                             ${col.links.map(lnk => `
                                 <a href="${lnk.href}">${lnk.prefixIcon || ''}${lnk.label}</a>

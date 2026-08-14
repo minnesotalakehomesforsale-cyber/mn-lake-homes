@@ -3224,6 +3224,11 @@ async function ensureTables() {
             -- Lake). Self-referential; NULL for standalone lakes.
             ALTER TABLE lakes ADD COLUMN IF NOT EXISTS parent_lake_id UUID REFERENCES lakes(id) ON DELETE SET NULL;
             CREATE INDEX IF NOT EXISTS idx_lakes_parent ON lakes(parent_lake_id) WHERE parent_lake_id IS NOT NULL;
+            -- Market tier (data-driven): 1 = Tier-1 priority market, 2 = Tier-2,
+            -- etc. NULL = untiered. Drives the nav module, the build queue, and
+            -- per-market reporting off data instead of hardcoded lists.
+            ALTER TABLE lakes ADD COLUMN IF NOT EXISTS market_tier SMALLINT;
+            CREATE INDEX IF NOT EXISTS idx_lakes_market_tier ON lakes(market_tier) WHERE market_tier IS NOT NULL;
             -- A lead can be tied to a specific lake (from the lake page, or the
             -- nearest lake to its geocoded address) so the lake's founder can claim it.
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS lake_id UUID;
@@ -4024,6 +4029,7 @@ async function ensureTables() {
         await seedMarketingPlan();
         await seedTownContent();
         await seedLakeIndexability();
+        await seedMarketTiers();
         await reconcilePartnerBusinesses();
     } catch (err) {
         console.error(' Table migration warning:', err.message);
@@ -4655,6 +4661,30 @@ async function seedBlogRelatedLinks() {
 // (un-publish or swap the placeholder photo in Lakes & Businesses and it sticks).
 // The heroes for currently-heroless lakes are REPRESENTATIVE placeholders — swap
 // in real lake photos when available.
+// Seed the data-driven market tiers. Non-destructive: only fills lakes whose
+// market_tier is still NULL, so an admin's manual tiering always wins. Runs
+// every boot (cheap, idempotent) so newly-added lakes matching a tier name get
+// classified without a re-seed flag.
+async function seedMarketTiers() {
+    try {
+        // Tier-1 = 12 recruitment Tier-1 lakes + Bemidji/Pepin/Carlos (15).
+        const tier1 = [
+            'Lake Minnetonka', 'Gull Lake', 'Whitefish Chain', 'Mille Lacs Lake', 'Lake Vermilion',
+            'Leech Lake', 'Lake of the Woods', 'Rainy Lake', 'Detroit Lake', 'Lake Sallie',
+            'Lake Melissa', 'Otter Tail Lake', 'Lake Bemidji', 'Lake Pepin', 'Lake Carlos',
+        ].map(s => s.toLowerCase());
+        // Tier-2 = remaining recruitment Tier-2 lakes.
+        const tier2 = [
+            'Lake Le Homme Dieu', 'Lake Osakis', 'Lake Miltona', 'Pokegama Lake', 'Cass Lake',
+            'Lake Winnibigoshish', 'Lake Minnewaska', 'Green Lake', 'Pelican Lake', 'Burntside Lake',
+            'Ten Mile Lake', 'Big Sandy Lake', 'Lake Kabetogama',
+        ].map(s => s.toLowerCase());
+        const t1 = await pool.query(`UPDATE lakes SET market_tier = 1 WHERE market_tier IS NULL AND lower(name) = ANY($1::text[])`, [tier1]);
+        const t2 = await pool.query(`UPDATE lakes SET market_tier = 2 WHERE market_tier IS NULL AND lower(name) = ANY($1::text[])`, [tier2]);
+        if (t1.rowCount || t2.rowCount) console.log(`[seed] market tiers: +${t1.rowCount} Tier-1, +${t2.rowCount} Tier-2`);
+    } catch (e) { console.warn('[seed] seedMarketTiers skipped:', e.message); }
+}
+
 async function seedLakeIndexability() {
     try {
         await pool.query(`CREATE TABLE IF NOT EXISTS seed_flags (key TEXT PRIMARY KEY, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);

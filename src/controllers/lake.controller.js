@@ -96,9 +96,28 @@ const LAKE_COLS = `
     dow_number, max_depth_ft, mean_depth_ft, surface_acres, littoral_acres,
     water_clarity_ft, shoreline_miles, public_accesses, fish_species,
     dnr_survey_url, dnr_data_at,
-    parent_lake_id,
+    parent_lake_id, market_tier,
     status, created_at, updated_at
 `;
+
+// ─── nav: Tier-1 lakes (public, tiny) ───────────────────────────────────────
+// Data-driven header nav module. Returns published Tier-1 lakes (market_tier=1)
+// with a hero, name-ordered — {name, slug} only. The header falls back to its
+// static list if this is empty/unavailable.
+exports.navTier1 = async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT name, slug FROM lakes
+              WHERE market_tier = 1 AND status = 'published'
+                AND hero_image_url IS NOT NULL AND hero_image_url <> ''
+              ORDER BY name ASC LIMIT 12`);
+        res.set('Cache-Control', 'public, max-age=600');
+        res.json(rows);
+    } catch (err) {
+        console.error('[lakes.navTier1]', err.message);
+        res.json([]);
+    }
+};
 
 // ─── list ──────────────────────────────────────────────────────────────────
 exports.list = async (req, res) => {
@@ -113,6 +132,10 @@ exports.list = async (req, res) => {
         if (search) {
             params.push(`%${String(search).toLowerCase()}%`);
             where.push(`lower(name) LIKE $${params.length}`);
+        }
+        if (req.query.tier) {
+            const t = parseInt(req.query.tier, 10);
+            if (Number.isInteger(t)) { params.push(t); where.push(`market_tier = $${params.length}`); }
         }
 
         // Status filter: public callers can only see 'published'. Admins
@@ -327,6 +350,11 @@ exports.patch = async (req, res) => {
         // Sub-basin roll-up (C2): point a basin lake at its parent so its
         // listings surface on the parent's page. Empty string clears it.
         if ('parent_lake_id' in b) push('parent_lake_id', b.parent_lake_id || null);
+        // Market tier (data-driven Tier-1/2/…): admin can override the seed.
+        if ('market_tier' in b) {
+            const t = parseInt(b.market_tier, 10);
+            push('market_tier', Number.isInteger(t) && t >= 1 && t <= 9 ? t : null);
+        }
 
         if (!fields.length) return res.json({ success: true, noop: true });
 
