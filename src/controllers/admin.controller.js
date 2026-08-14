@@ -1899,6 +1899,23 @@ const getRoutingSla = async (req, res) => {
 };
 
 /**
+ * POST /api/admin/hubspot/ensure-schema — B1/B4/T025.
+ * Idempotently creates the 4 lead-qualification contact properties, the
+ * Agent Acquisition deal pipeline (8 stages), and its deal properties in
+ * HubSpot. Safe to re-run. Owner-only (it mutates the CRM schema).
+ */
+const ensureHubspotSchema = async (req, res) => {
+    try {
+        const hubspot = require('../services/hubspot');
+        const report = await hubspot.ensureSchema();
+        res.json({ ok: true, report });
+    } catch (err) {
+        console.error('[ensureHubspotSchema]', err.message);
+        res.status(500).json({ ok: false, error: err.message });
+    }
+};
+
+/**
  * GET /api/admin/:id/emails — every email the app has sent to this agent's
  * account address (welcome, lead notices, billing, etc.), newest first.
  */
@@ -3058,6 +3075,7 @@ module.exports = {
     getSeoAudit,
     getLeadReconciliation,
     getRoutingSla,
+    ensureHubspotSchema,
     createAgent,
     updateAgentProfile,
     updateStatus,

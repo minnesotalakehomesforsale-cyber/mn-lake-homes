@@ -129,6 +129,8 @@ router.get('/system/alerts-count', adminController.getSystemAlertsCount);
 router.get ('/seo-audit',                verifyToken, requireRole(['admin', 'super_admin']), adminController.getSeoAudit);
 router.get ('/lead-reconciliation',      verifyToken, requireRole(['admin', 'super_admin']), adminController.getLeadReconciliation);
 router.get ('/routing-sla',              verifyToken, requireRole(['admin', 'super_admin']), adminController.getRoutingSla);
+// B1/B4: one-click provisioning of HubSpot properties + Agent Acquisition pipeline.
+router.post('/hubspot/ensure-schema',    verifyToken, requireRole(['super_admin']), adminController.ensureHubspotSchema);
 router.get ('/billing/report',           verifyToken, requireRole(['admin', 'super_admin']), adminController.getBillingStatusReport);
 // One-click resume of a "cancels at period end" agent subscription.
 router.post('/billing/agent/:id/resume', verifyToken, requireRole(['admin', 'super_admin']), adminController.resumeAgentSubscription);

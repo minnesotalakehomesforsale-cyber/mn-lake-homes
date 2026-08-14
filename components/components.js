@@ -952,7 +952,7 @@ const _LF_CFG = {
         steps: [
             { q: 'Who are we speaking with?',               hint: 'Just your name to get started.',                                            field: { id: 'name',     type: 'text',    ph: 'Your full name',          ac: 'name' } },
             { q: d => `Where are you looking, ${d.first}?`,  hint: "The lake, town, or region you're focused on — or say you're still deciding.", field: { id: 'looking_area', type: 'text', ph: "e.g. Gull Lake, Brainerd, or 'still deciding'" } },
-            { q: d => `${d.first}, what's your budget range?`,              hint: 'Helps us match you with the right properties.',               field: { id: 'budget',   type: 'select',  ph: 'Select a range…',         opts: ['Under $500K','$500K – $750K','$750K – $1M','$1M – $2M','Over $2M'] } },
+            { q: d => `${d.first}, what's your budget range?`,              hint: 'Helps us match you with the right properties.',               field: { id: 'budget',   type: 'select',  ph: 'Select a range…',         opts: ['Under $300k','$300k – $500k','$500k – $750k','$750k – $1M','$1M – $1.5M','$1.5M+','Unsure'] } },
             { q: 'When are you hoping to buy?',                                                                                                   field: { id: 'timeline', type: 'select',  ph: 'Select a timeline…',      opts: ['ASAP — ready to move','Within 1–3 months','Within 3–6 months','Just exploring for now'] } },
             { q: d => `Almost done, ${d.first}. How can we reach you?`,      hint: "One contact method is all we need — a local specialist reaches out within one business day.",         field: { id: 'contact', type: 'contact' } }
         ]
@@ -1580,6 +1580,23 @@ async function _lfDoSubmit() {
     // Attribution: where did this lead originate (a tool, a page, a campaign)?
     if (_lfs._leadref) notes = (notes ? notes + '\n' : '') + `Lead source: ${_lfs._leadref}`;
 
+    // ── B1/B2: derive the clean lead-qualification enum values from the form ──
+    // Dropdown selections map to fixed enum values so HubSpot reporting stays
+    // clean. target_lake is derived server-side from lake_slug.
+    const _qn = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+    const INTENT_BY_TYPE = { buy: 'buyer', sell: 'seller', rent: 'renter', cash_offer: 'seller' };
+    let intent_type = INTENT_BY_TYPE[_lfs.type] || null;
+    if (!intent_type && d.intent) {
+        const t = _qn(d.intent);
+        intent_type = /buy/.test(t) ? 'buyer' : /sell/.test(t) ? 'seller' : /rent/.test(t) ? 'renter' : 'not_sure';
+    }
+    const PRICE_MAP = {
+        under300k: 'under_300k', '300k500k': '300k_500k', '500k750k': '500k_750k',
+        '750k1m': '750k_1m', '1m15m': '1m_1_5m', '15m': '1_5m_plus', unsure: 'unsure',
+    };
+    const price_band = (_lfs.type === 'buy' && d.budget) ? (PRICE_MAP[_qn(d.budget)] || null) : null;
+    const lead_source_detail = _lfs._lake ? 'lake_page' : 'direct';
+
     const btn = document.getElementById('lf-next');
     const errEl = document.getElementById('lf-err');
     btn.disabled = true; btn.style.background = '#a0aec0';
@@ -1619,6 +1636,11 @@ async function _lfDoSubmit() {
                 // Founder opt-in — only meaningful when the lake has a seated
                 // founder (checkbox shown). Otherwise omitted → normal routing.
                 want_founder:      (_lfs._founder && _lfs.data.want_founder !== undefined) ? !!_lfs.data.want_founder : undefined,
+                // B1/B2 lead-qualification props (mirrored to HubSpot; server
+                // validates + derives target_lake from lake_slug).
+                intent_type,
+                price_band,
+                lead_source_detail,
             })
         });
         if (!res.ok) { const r = await res.json().catch(()=>({})); throw new Error(r.error || 'Submission failed.'); }

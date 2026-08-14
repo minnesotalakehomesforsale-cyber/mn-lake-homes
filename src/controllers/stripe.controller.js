@@ -828,6 +828,25 @@ exports.handleWebhook = async (req, res) => {
                 } catch (e) {
                     console.warn('[Stripe Webhook] sendAgentProfileLive failed:', e.message);
                 }
+
+                // B4 (T025): a paying Prime+ subscription flips the agent's
+                // Agent Acquisition deal to Won–Paying in HubSpot. Prime+ =
+                // Prime (mn_lake_specialist) or Elite (top_agent); Standard
+                // (basic) does NOT auto-win. Best-effort — never break checkout.
+                try {
+                    const TIER_FOR_CODE = { mn_lake_specialist: 'prime', top_agent: 'elite' };
+                    const dealTier = TIER_FOR_CODE[membershipCode];
+                    if (dealTier) {
+                        const { rows: er } = await pool.query(`SELECT email FROM users WHERE id = $1`, [userId]);
+                        const agentEmail = er[0]?.email;
+                        if (agentEmail) {
+                            const r = await hubspot.markAgentAcquisitionWon(agentEmail, { tier: dealTier });
+                            console.log(`[Stripe Webhook] Agent Acquisition deal → Won (${dealTier}) for ${agentEmail}:`, r.ok ? r.action : r.reason);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[Stripe Webhook] markAgentAcquisitionWon failed:', e.message);
+                }
                 break;
             }
 

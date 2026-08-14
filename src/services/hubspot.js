@@ -86,16 +86,21 @@ async function hsFetch(path, { method = 'GET', body } = {}) {
 // requiring custom properties to be provisioned in the user's HubSpot
 // account first. If/when the user adds custom properties (user_type,
 // signup_source, etc.) they can be re-enabled here.
-const ALLOWED_PROPS = new Set([
+const BUILTIN_PROPS = [
     'email', 'firstname', 'lastname', 'phone', 'company',
     'city', 'state', 'zip', 'address', 'website',
     'jobtitle', 'lifecyclestage',
-]);
+];
+// The B1 lead-qualification properties (provisioned via ensureSchema). Safe to
+// send: syncContact retries built-in-only if HubSpot rejects an unknown prop,
+// so forms never break even if the schema hasn't been provisioned yet.
+const QUAL_PROPS = ['target_lake', 'intent_type', 'price_band', 'lead_source_detail'];
+const ALLOWED_PROPS = new Set([...BUILTIN_PROPS, ...QUAL_PROPS]);
 
-function whitelistProps(props) {
+function whitelistProps(props, allowed = ALLOWED_PROPS) {
     const out = {};
     for (const [k, v] of Object.entries(props || {})) {
-        if (ALLOWED_PROPS.has(k)) out[k] = v;
+        if (allowed.has(k)) out[k] = v;
     }
     return out;
 }
@@ -125,29 +130,45 @@ async function syncContact(payload) {
     const leadIdProp = process.env.HUBSPOT_LEAD_ID_PROPERTY;
     if (leadIdProp && payload?.lead_id) props[leadIdProp] = String(payload.lead_id);
 
-    try {
-        const created = await hsFetch('/crm/v3/objects/contacts', {
-            method: 'POST',
-            body: { properties: props },
-        });
-        console.log(`[hubspot] created contact ${created.id} · ${email}`);
-        return { id: created.id };
-    } catch (err) {
-        // 409 = contact already exists. Patch by email identifier instead.
-        if (err.status === 409) {
-            try {
+    // POST (create), falling back to PATCH-by-email on 409 (already exists).
+    async function upsert(propsBag) {
+        try {
+            const created = await hsFetch('/crm/v3/objects/contacts', { method: 'POST', body: { properties: propsBag } });
+            console.log(`[hubspot] created contact ${created.id} · ${email}`);
+            return { id: created.id };
+        } catch (err) {
+            if (err.status === 409) {
                 const updated = await hsFetch(
                     `/crm/v3/objects/contacts/${encodeURIComponent(email)}?idProperty=email`,
-                    { method: 'PATCH', body: { properties: props } }
-                );
+                    { method: 'PATCH', body: { properties: propsBag } });
                 console.log(`[hubspot] updated contact ${updated.id} · ${email}`);
                 return { id: updated.id };
-            } catch (patchErr) {
-                console.error(`[hubspot] FAILED patch · ${email}:`, patchErr.message);
-                return null;
+            }
+            throw err;
+        }
+    }
+
+    try {
+        return await upsert(props);
+    } catch (err) {
+        // 400 = HubSpot rejected a property (e.g. a custom prop not yet
+        // provisioned). Never lose the contact over it: retry with built-in
+        // fields only so the sync still succeeds.
+        if (err.status === 400) {
+            const hadCustom = Object.keys(props).some(k => !BUILTIN_PROPS.includes(k));
+            if (hadCustom) {
+                console.warn(`[hubspot] 400 with custom props · ${email} — retrying built-in only:`, err.message);
+                try {
+                    const builtin = whitelistProps(props, new Set([...BUILTIN_PROPS, 'email']));
+                    builtin.email = email;
+                    return await upsert(builtin);
+                } catch (retryErr) {
+                    console.error(`[hubspot] FAILED built-in retry · ${email}:`, retryErr.message);
+                    return null;
+                }
             }
         }
-        console.error(`[hubspot] FAILED create · ${email}:`, err.message);
+        console.error(`[hubspot] FAILED upsert · ${email}:`, err.message);
         return null;
     }
 }
@@ -382,6 +403,184 @@ if (!isConfigured()) {
     console.log(`[hubspot] sync enabled · portal=${PORTAL_ID} · region=${REGION}`);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SCHEMA PROVISIONING (B1 / B4 / T020 / T025)
+// Idempotently create the contact properties, deal pipeline, and deal
+// properties defined in src/data/hubspot-schema.js. Safe to re-run: existing
+// objects are patched (missing enum options added), never duplicated.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Ensure a property GROUP exists (holds related properties together in the UI).
+async function ensurePropertyGroup(objectType, group) {
+    try {
+        await hsFetch(`/crm/v3/properties/${objectType}/groups/${encodeURIComponent(group.name)}`);
+        return { name: group.name, action: 'exists' };
+    } catch (err) {
+        if (err.status !== 404) throw err;
+        await hsFetch(`/crm/v3/properties/${objectType}/groups`, {
+            method: 'POST',
+            body: { name: group.name, label: group.label, displayOrder: group.displayOrder || 0 },
+        });
+        return { name: group.name, action: 'created' };
+    }
+}
+
+// Ensure a single property exists with (at least) the given enum options.
+async function ensureProperty(objectType, def) {
+    let existing = null;
+    try {
+        existing = await hsFetch(`/crm/v3/properties/${objectType}/${encodeURIComponent(def.name)}`);
+    } catch (err) {
+        if (err.status !== 404) throw err;
+    }
+    const body = {
+        name: def.name, label: def.label, type: def.type, fieldType: def.fieldType,
+        groupName: def.groupName,
+        ...(def.options ? { options: def.options } : {}),
+    };
+    if (!existing) {
+        await hsFetch(`/crm/v3/properties/${objectType}`, { method: 'POST', body });
+        return { name: def.name, action: 'created' };
+    }
+    // Exists → for enumerations, union in any missing options (never remove).
+    if (def.options) {
+        const have = new Set((existing.options || []).map(o => o.value));
+        const missing = def.options.filter(o => !have.has(o.value));
+        if (missing.length) {
+            const merged = [...(existing.options || []), ...missing];
+            await hsFetch(`/crm/v3/properties/${objectType}/${encodeURIComponent(def.name)}`, {
+                method: 'PATCH', body: { options: merged },
+            });
+            return { name: def.name, action: 'options_added', added: missing.map(o => o.value) };
+        }
+    }
+    return { name: def.name, action: 'exists' };
+}
+
+// Ensure the Agent Acquisition deal pipeline exists with all 8 stages.
+async function ensureDealPipeline(pipelineDef) {
+    const all = await hsFetch('/crm/v3/pipelines/deals');
+    let pipe = (all.results || []).find(p => p.label === pipelineDef.label);
+    if (!pipe) {
+        pipe = await hsFetch('/crm/v3/pipelines/deals', {
+            method: 'POST',
+            body: {
+                label: pipelineDef.label,
+                displayOrder: (all.results || []).length,
+                stages: pipelineDef.stages.map(s => ({ label: s.label, displayOrder: s.displayOrder, metadata: s.metadata })),
+            },
+        });
+        return { pipelineId: pipe.id, action: 'created', stages: pipe.stages.map(s => ({ id: s.id, label: s.label })) };
+    }
+    // Exists → add any stages missing by label (keeps existing stage ids stable).
+    const haveLabels = new Set((pipe.stages || []).map(s => s.label));
+    const added = [];
+    for (const s of pipelineDef.stages) {
+        if (!haveLabels.has(s.label)) {
+            const created = await hsFetch(`/crm/v3/pipelines/deals/${pipe.id}/stages`, {
+                method: 'POST', body: { label: s.label, displayOrder: s.displayOrder, metadata: s.metadata },
+            });
+            added.push(created.label);
+        }
+    }
+    const fresh = await hsFetch(`/crm/v3/pipelines/deals/${pipe.id}`);
+    return { pipelineId: pipe.id, action: added.length ? 'stages_added' : 'exists', added,
+             stages: fresh.stages.map(s => ({ id: s.id, label: s.label })) };
+}
+
+// Provision the entire schema. Returns a structured report (safe to show admin).
+async function ensureSchema() {
+    if (!isConfigured()) throw new Error('HubSpot not configured (HUBSPOT_ACCESS_TOKEN / HUBSPOT_PORTAL_ID).');
+    const schema = require('../data/hubspot-schema');
+    const report = { contact_group: null, contact_properties: [], deal_pipeline: null, deal_properties: [] };
+
+    report.contact_group = await ensurePropertyGroup('contacts', schema.CONTACT_PROPERTY_GROUP);
+    for (const def of schema.CONTACT_PROPERTIES) report.contact_properties.push(await ensureProperty('contacts', def));
+    report.deal_pipeline = await ensureDealPipeline(schema.DEAL_PIPELINE);
+    for (const def of schema.DEAL_PROPERTIES) report.deal_properties.push(await ensureProperty('deals', def));
+    return report;
+}
+
+// ── Deal automation used by the Stripe webhook (B4 automation #2) ────────────
+// Cache pipeline/stage id resolution (labels are stable in our schema).
+let _acqPipelineCache = null;
+async function resolveAcquisitionPipeline() {
+    if (_acqPipelineCache) return _acqPipelineCache;
+    const all = await hsFetch('/crm/v3/pipelines/deals');
+    const pipe = (all.results || []).find(p => p.label === 'Agent Acquisition');
+    if (!pipe) return null;
+    const wonStage = (pipe.stages || []).find(s => s.label === 'Won–Paying');
+    _acqPipelineCache = { pipelineId: pipe.id, wonStageId: wonStage ? wonStage.id : null };
+    return _acqPipelineCache;
+}
+
+// Find a contact id by email (search API).
+async function findContactIdByEmail(email) {
+    const r = await hsFetch('/crm/v3/objects/contacts/search', {
+        method: 'POST',
+        body: { filterGroups: [{ filters: [{ propertyName: 'email', operator: 'EQ', value: String(email).toLowerCase() }] }], properties: ['email'], limit: 1 },
+    });
+    return r.results && r.results[0] ? r.results[0].id : null;
+}
+
+/**
+ * B4: a paying (Prime+) Stripe subscription flips the agent's Agent Acquisition
+ * deal to Won–Paying. Finds the contact by email, moves their pipeline deal to
+ * the Won stage (or creates one there, associated to the contact). Best-effort:
+ * returns a small result object and never throws into the caller (the webhook).
+ */
+async function markAgentAcquisitionWon(email, opts = {}) {
+    try {
+        if (!isActiveFn()) return { ok: false, reason: 'not_active' };
+        if (!email) return { ok: false, reason: 'no_email' };
+        const pipe = await resolveAcquisitionPipeline();
+        if (!pipe || !pipe.wonStageId) return { ok: false, reason: 'pipeline_missing' };
+
+        const contactId = await findContactIdByEmail(email);
+        const props = {};
+        if (opts.tier) props.agent_tier_target = opts.tier;
+        if (opts.targetLake) props.deal_target_lake = opts.targetLake;
+
+        // Look for an existing deal on this contact already in our pipeline.
+        let dealId = null;
+        if (contactId) {
+            try {
+                const assoc = await hsFetch(`/crm/v3/objects/contacts/${contactId}/associations/deals`);
+                for (const a of (assoc.results || [])) {
+                    const d = await hsFetch(`/crm/v3/objects/deals/${a.id || a.toObjectId}?properties=pipeline,dealstage`);
+                    if (d.properties && d.properties.pipeline === pipe.pipelineId) { dealId = d.id; break; }
+                }
+            } catch (e) { /* fall through to create */ }
+        }
+
+        if (dealId) {
+            await hsFetch(`/crm/v3/objects/deals/${dealId}`, {
+                method: 'PATCH', body: { properties: { pipeline: pipe.pipelineId, dealstage: pipe.wonStageId, ...props } },
+            });
+            return { ok: true, action: 'moved', dealId };
+        }
+
+        // No existing deal → create one already Won, associated to the contact.
+        const body = {
+            properties: {
+                dealname: `${email} — paying agent`,
+                pipeline: pipe.pipelineId, dealstage: pipe.wonStageId, ...props,
+            },
+        };
+        if (contactId) body.associations = [{
+            to: { id: contactId },
+            types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 3 }], // deal→contact
+        }];
+        const created = await hsFetch('/crm/v3/objects/deals', { method: 'POST', body });
+        return { ok: true, action: 'created', dealId: created.id };
+    } catch (e) {
+        console.error('[hubspot] markAgentAcquisitionWon failed:', e.message);
+        return { ok: false, reason: e.message };
+    }
+}
+
+const isActiveFn = () => ENABLED && isConfigured();
+
 module.exports = {
     syncContact,
     updateContact,
@@ -391,7 +590,13 @@ module.exports = {
     isConfigured,
     // T018: true only when sync is enabled AND credentials are present, so the
     // retry queue can tell "HubSpot is down" from "not configured / disabled".
-    isActive: () => ENABLED && isConfigured(),
+    isActive: isActiveFn,
     ping,
     backfillExistingRecords,
+    // B1/B4 schema provisioning + deal automation
+    ensureSchema,
+    ensurePropertyGroup,
+    ensureProperty,
+    ensureDealPipeline,
+    markAgentAcquisitionWon,
 };

@@ -16,6 +16,8 @@ const createLead = async (req, res) => {
         property_address, property_street, property_city,
         property_state, property_zip, property_place_id, lake_slug,
         is_waterfront, waterfront_feet, lead_session_id, want_founder,
+        // B1/B2 lead-qualification properties (mirrored to HubSpot).
+        target_lake, intent_type, price_band, lead_source_detail,
     } = req.body;
     // Founder opt-in for lake leads. Defaults TRUE (preserve the founder's
     // exclusive 100%); only an explicit false sends the lead to the lottery.
@@ -96,12 +98,28 @@ const createLead = async (req, res) => {
         // router can hand it to that lake's founding agent.
         const lakeSlug = str(lake_slug, 120);
         let leadLakeId = null;
+        let leadLakeName = null;
         if (lakeSlug) {
             try {
-                const lr = await pool.query(`SELECT id FROM lakes WHERE slug = $1 LIMIT 1`, [lakeSlug]);
+                const lr = await pool.query(`SELECT id, name FROM lakes WHERE slug = $1 LIMIT 1`, [lakeSlug]);
                 leadLakeId = lr.rows[0]?.id || null;
+                leadLakeName = lr.rows[0]?.name || null;
             } catch (_) { /* leave null */ }
         }
+
+        // ── B1/B2 lead-qualification props (validated enum values only) ──────
+        // target_lake: an explicit valid choice wins; otherwise derive from the
+        // lake this lead came from (a lake page). Unknown/none → left unset,
+        // except a lake page whose lake isn't in the Tier-1 list → 'other'.
+        const { validEnumValue, targetLakeValueForName } = require('../data/hubspot-schema');
+        let qualTargetLake = validEnumValue('target_lake', target_lake);
+        if (!qualTargetLake && leadLakeName) qualTargetLake = targetLakeValueForName(leadLakeName) || 'other';
+        const qualIntent      = validEnumValue('intent_type', intent_type);
+        const qualPriceBand   = validEnumValue('price_band', price_band);
+        // lead_source_detail: explicit valid value, else infer 'lake_page' when
+        // the lead came from a lake page, else leave for HubSpot's own source.
+        let qualSourceDetail  = validEnumValue('lead_source_detail', lead_source_detail);
+        if (!qualSourceDetail && lakeSlug) qualSourceDetail = 'lake_page';
 
         // Link the lead to a user account by email. Forms no longer require
         // an account — anyone can submit. If the caller is signed in we trust
@@ -238,6 +256,12 @@ const createLead = async (req, res) => {
                         user_type:      'lead',
                         signup_source:  source || enumType,
                         lead_id:        newLeadId,   // cross-reference: our UUID on the HubSpot contact
+                        // B1/B2 lead-qualification props (retires the old lake_name
+                        // duplicate — target_lake is the single source of truth).
+                        target_lake:        qualTargetLake || undefined,
+                        intent_type:        qualIntent || undefined,
+                        price_band:         qualPriceBand || undefined,
+                        lead_source_detail: qualSourceDetail || undefined,
                     });
                 } catch (e) {
                     // A throw is a real failure — treat like a null return below.
