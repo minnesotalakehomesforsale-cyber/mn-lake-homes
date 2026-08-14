@@ -105,7 +105,19 @@
 
 <script>
     const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    if (new URLSearchParams(location.search).get('embed') === '1') document.body.classList.add('lt-embed');
+    // Embed mode: hide chrome + report height so the parent iframe auto-grows
+    // to fit the (async-rendered) audit — otherwise it's clipped at the default.
+    (function () {
+        if (new URLSearchParams(location.search).get('embed') !== '1') return;
+        document.body.classList.add('lt-embed');
+        let lastH = 0;
+        function postHeight() {
+            const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+            if (h !== lastH) { lastH = h; window.parent.postMessage({ lt: 'height', frame: 'seo', h }, '*'); }
+        }
+        window.addEventListener('load', postHeight);
+        setInterval(postHeight, 600);
+    })();
 
     const ICON = {
         check: '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
