@@ -1,6 +1,7 @@
 const pool = require('../database/pool');
 const emailService = require('../services/email');
 const hubspot = require('../services/hubspot');
+const leadRecovery = require('../services/lead-recovery');
 const { logActivity } = require('../services/activity-log');
 const { geocodeAddress } = require('../services/geocoder');
 const { matchTagsAndUsers } = require('../services/tag-matcher');
@@ -222,20 +223,26 @@ const createLead = async (req, res) => {
         if (newLeadId && email) {
             (async () => {
                 const lastName = name.split(' ').slice(1).join(' ');
-                const r = await hubspot.syncContact({
-                    email,
-                    firstname:      firstName,
-                    lastname:       lastName,
-                    phone:          phone || undefined,
-                    address:        propAddress || propStreet || undefined,
-                    city:           propCity  || undefined,
-                    state:          propState || undefined,
-                    zip:            propZip   || undefined,
-                    lifecyclestage: 'lead',
-                    user_type:      'lead',
-                    signup_source:  source || enumType,
-                    lead_id:        newLeadId,   // cross-reference: our UUID on the HubSpot contact
-                });
+                let r = null;
+                try {
+                    r = await hubspot.syncContact({
+                        email,
+                        firstname:      firstName,
+                        lastname:       lastName,
+                        phone:          phone || undefined,
+                        address:        propAddress || propStreet || undefined,
+                        city:           propCity  || undefined,
+                        state:          propState || undefined,
+                        zip:            propZip   || undefined,
+                        lifecyclestage: 'lead',
+                        user_type:      'lead',
+                        signup_source:  source || enumType,
+                        lead_id:        newLeadId,   // cross-reference: our UUID on the HubSpot contact
+                    });
+                } catch (e) {
+                    // A throw is a real failure — treat like a null return below.
+                    console.error('[hubspot] sync threw:', e.message);
+                }
                 if (r?.id) {
                     // Advance pipeline only from 'received' so a lead that already
                     // routed isn't downgraded (hubspot + routing run concurrently).
@@ -245,6 +252,13 @@ const createLead = async (req, res) => {
                                 pipeline_status = CASE WHEN pipeline_status = 'received' THEN 'sent_to_hubspot' ELSE pipeline_status END
                           WHERE id = $2`, [r.id, newLeadId])
                         .catch(e => console.error('[hubspot] save id failed:', e.message));
+                } else if (hubspot.isActive && hubspot.isActive()) {
+                    // T018: HubSpot is enabled + configured but the sync didn't
+                    // return a contact → a genuine failure (not a skip). The lead
+                    // is already saved; queue a retry with backoff + alert now so
+                    // it never silently disappears.
+                    leadRecovery.enqueue(newLeadId, 'hubspot', 'syncContact returned no contact id')
+                        .catch(e => console.error('[lead-recovery] enqueue threw:', e.message));
                 }
             })();
         }

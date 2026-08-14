@@ -3462,6 +3462,23 @@ async function ensureTables() {
             -- -> routed, or failed. Powers the reconciliation view.
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS pipeline_status VARCHAR(20) NOT NULL DEFAULT 'received';
 
+            -- Lead recovery queue (T018): when a downstream step (HubSpot sync,
+            -- routing) fails, the lead is already saved; we queue a retry here
+            -- with exponential backoff and alert immediately. Swept on interval.
+            CREATE TABLE IF NOT EXISTS lead_retry_queue (
+                id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                lead_id         UUID NOT NULL,
+                kind            VARCHAR(30) NOT NULL,          -- 'hubspot' | 'route'
+                attempts        INTEGER NOT NULL DEFAULT 0,
+                next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                last_error      TEXT,
+                alerted         BOOLEAN NOT NULL DEFAULT FALSE,
+                resolved        BOOLEAN NOT NULL DEFAULT FALSE,
+                created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_lead_retry_due ON lead_retry_queue(next_attempt_at) WHERE resolved = FALSE;
+
             -- Listing freshness + lifecycle (Phase 3/8): remember the first price
             -- we saw (to detect drops), an optional open-house datetime, and when
             -- a home was marked sold (for the "recently sold" wall).
@@ -4804,6 +4821,18 @@ app.listen(PORT, async () => {
         const { runSlaSweep } = require('./services/lead-sla');
         setTimeout(() => runSlaSweep().catch(e => console.warn('[lead-sla]', e.message)), 60 * 1000);
         setInterval(() => runSlaSweep().catch(e => console.warn('[lead-sla]', e.message)), 15 * 60 * 1000);
+    }
+
+    // Lead recovery (T018) — retry any lead whose HubSpot sync / routing failed,
+    // with exponential backoff, and re-alert anything still stuck after 24h.
+    // The retry sweep runs every 2 min; the daily recheck once a day.
+    // Disable with LEAD_RECOVERY_ENABLED=false.
+    if (process.env.LEAD_RECOVERY_ENABLED !== 'false') {
+        const { runRetrySweep, runFailedRecheck } = require('./services/lead-recovery');
+        setTimeout(() => runRetrySweep().catch(e => console.warn('[lead-recovery]', e.message)), 90 * 1000);
+        setInterval(() => runRetrySweep().catch(e => console.warn('[lead-recovery]', e.message)), 2 * 60 * 1000);
+        setTimeout(() => runFailedRecheck().catch(e => console.warn('[lead-recovery]', e.message)), 10 * 60 * 1000);
+        setInterval(() => runFailedRecheck().catch(e => console.warn('[lead-recovery]', e.message)), 24 * 60 * 60 * 1000);
     }
 
     // Monthly agent ROI recap — self-guards to once per calendar month.

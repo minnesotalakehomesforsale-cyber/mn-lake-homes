@@ -389,6 +389,9 @@ module.exports = {
     markContactAsCustomer,
     getPortalContactUrl,
     isConfigured,
+    // T018: true only when sync is enabled AND credentials are present, so the
+    // retry queue can tell "HubSpot is down" from "not configured / disabled".
+    isActive: () => ENABLED && isConfigured(),
     ping,
     backfillExistingRecords,
 };
