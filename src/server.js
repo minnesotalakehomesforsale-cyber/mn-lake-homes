@@ -594,7 +594,6 @@ app.get('/sitemap.xml', async (req, res) => {
             { url: '/buy',             priority: 0.9, changefreq: 'weekly'  },
             { url: '/sell',            priority: 0.9, changefreq: 'weekly'  },
             { url: '/towns',           priority: 0.9, changefreq: 'weekly'  },
-            { url: '/towns?view=props', priority: 0.8, changefreq: 'daily'  },
             { url: '/agents',          priority: 0.8, changefreq: 'weekly'  },
             { url: '/cash-offer',      priority: 0.7, changefreq: 'monthly' },
             { url: '/blog',            priority: 0.7, changefreq: 'daily'   },
@@ -634,11 +633,10 @@ app.get('/sitemap.xml', async (req, res) => {
 ${entries.map(e => `  <url>
     <loc>${esc(e.loc)}</loc>${e.lastmod ? `
     <lastmod>${e.lastmod}</lastmod>` : ''}
-    <changefreq>${e.changefreq || 'monthly'}</changefreq>
-    <priority>${(e.priority ?? 0.5).toFixed(1)}</priority>
   </url>`).join('\n')}
 </urlset>`;
-        res.type('application/xml').send(xml);
+        // Explicit charset header (belt-and-suspenders vs any proxy re-typing).
+        res.set('Content-Type', 'application/xml; charset=utf-8').send(xml);
     } catch (err) {
         console.error('[sitemap]', err.message);
         // Degrade to an empty-but-valid sitemap rather than 500 — a
