@@ -208,6 +208,10 @@ app.get('/api/config/public', async (req, res) => {
     res.json({
         ga4_id:               process.env.GA4_MEASUREMENT_ID    || null,
         hubspot_portal_id:    process.env.HUBSPOT_PORTAL_ID     || null,
+        // DEV-04: retargeting pixels — wired but inert. Unset in Phase 1 so they
+        // never load; setting the env var in Phase 2 activates them, no deploy.
+        meta_pixel_id:        process.env.META_PIXEL_ID         || null,
+        google_ads_id:        process.env.GOOGLE_ADS_ID         || null,
         gsc_verification:     process.env.GSC_VERIFICATION      || null,
         environment:          process.env.NODE_ENV              || 'local',
         googlePlacesKey:      process.env.GOOGLE_PLACES_API_KEY || '',

@@ -513,7 +513,7 @@ const createLead = async (req, res) => {
             })();
         }
 
-        res.status(201).json({ success: true, message: 'Lead logged' });
+        res.status(201).json({ success: true, message: 'Lead logged', lead_id: newLeadId });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to insert lead' });

@@ -1530,7 +1530,22 @@ window.openForm = function(type, prefill) {
     let _sid;
     try { _sid = (crypto && crypto.randomUUID) ? crypto.randomUUID() : ('s-' + Date.now() + '-' + Math.round(performance.now())); }
     catch (_) { _sid = 's-' + Date.now(); }
-    _lfs = { type: t, step: 0, data, steps: filtered, _leadref: leadRef, _lake: lakeSlug, _submitted: false, _openedAt: Date.now(), _sid, _partialSent: null, _founder: undefined };
+    _lfs = { type: t, step: 0, data, steps: filtered, _leadref: leadRef, _lake: lakeSlug, _submitted: false, _openedAt: Date.now(), _sid, _partialSent: null, _founder: undefined, _formStarted: false };
+    // DEV-04: form_start — fire once, on the first field interaction of this open.
+    (function () {
+        var body = document.getElementById('lf-body');
+        if (!body) return;
+        var fire = function () {
+            if (_lfs._formStarted) return; _lfs._formStarted = true;
+            body.removeEventListener('input', fire); body.removeEventListener('focusin', fire);
+            if (typeof window.trackConversion === 'function') {
+                var IM = { buy: 'buy', sell: 'sell', rent: 'rent', agent: 'find_agent' };
+                window.trackConversion('form_start', { intent: IM[t] || t, form_location: location.pathname });
+            }
+        };
+        body.addEventListener('input', fire, { passive: true });
+        body.addEventListener('focusin', fire, { passive: true });
+    })();
     document.getElementById('lf-ok').style.display   = 'none';
     document.getElementById('lf-body').style.display = 'block';
     document.getElementById('lf-overlay').style.display = 'block';
@@ -1773,11 +1788,12 @@ async function _lfDoSubmit() {
                 ...(window.mnAttribution ? window.mnAttribution() : {}),
             })
         });
-        if (!res.ok) { const r = await res.json().catch(()=>({})); throw new Error(r.error || 'Submission failed.'); }
+        const respBody = await res.json().catch(() => ({}));
+        if (!res.ok) { throw new Error(respBody.error || 'Submission failed.'); }
         _lfs._submitted = true;
 
-        // Fire conversion (GA4 + HubSpot tracking). Helper is a no-op when
-        // no tracking IDs are configured yet, so this is safe pre-launch.
+        // Fire conversion on SERVER-CONFIRMED success (never on click). Helper is
+        // a no-op until GA4_MEASUREMENT_ID is set, so this is safe pre-launch.
         if (typeof window.trackConversion === 'function') {
             window.trackConversion('generate_lead', {
                 form_name: 'lead_modal',
@@ -1785,10 +1801,16 @@ async function _lfDoSubmit() {
                 lead_ref: _lfs._leadref || undefined,
                 has_address: !!d.address,
             });
-            // Analytics spec event: lead_submitted (lake_name, intent_type).
+            // DEV-04: lead_submitted with the six required parameters.
+            var _INTENT = { buy: 'buy', sell: 'sell', rent: 'rent', agent: 'find_agent' };
+            var _attr = (window.mnAttribution ? window.mnAttribution() : {});
             window.trackConversion('lead_submitted', {
-                lake_name: _lfs._lakeName || undefined,
-                intent_type: intent_type || undefined,
+                intent:        _INTENT[_lfs.type] || _lfs.type || '',
+                lake:          _lfs._lake || '',
+                town:          _attr.landing_page_town || '',
+                price_band:    price_band || '',
+                form_location: location.pathname,
+                lead_id:       respBody.lead_id || '',
             });
         }
 
@@ -2159,7 +2181,15 @@ document.addEventListener('keydown', e => {
             let loaded = false;
             window.__applyTrackingPixels = function () {
                 if (loaded) return; loaded = true;
-                // ── GA4 (gtag.js) ──
+                // DEV-04: never load third-party pixels on the app surfaces
+                // (admin / agent / business / user portals), and respect Do Not
+                // Track. The cookieless first-party mirror above still works.
+                const p = location.pathname;
+                const appSurface = /^\/(pages\/admin|admin|pages\/agent|agent|business|pages\/business|pages\/user)\b/.test(p);
+                const dnt = navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNotTrack === '1';
+                if (appSurface || dnt) return;
+
+                // ── GA4 (gtag.js) — only when GA4_MEASUREMENT_ID is set ──
                 if (cfg.ga4_id) {
                     const s = document.createElement('script');
                     s.async = true;
@@ -2175,6 +2205,21 @@ document.addEventListener('keydown', e => {
                     h.id = 'hs-script-loader';
                     h.src = `//js.hs-scripts.com/${encodeURIComponent(cfg.hubspot_portal_id)}.js`;
                     document.head.appendChild(h);
+                }
+                // ── Meta pixel — INERT in Phase 1 (META_PIXEL_ID unset). Phase 2
+                //    sets the env var to activate retargeting; no code change. ──
+                if (cfg.meta_pixel_id) {
+                    !function (f, b, e, v, n, t, s) { if (f.fbq) return; n = f.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); }; if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0'; n.queue = []; t = b.createElement(e); t.async = !0; t.src = v; s = b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t, s); }(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+                    window.fbq('init', cfg.meta_pixel_id); window.fbq('track', 'PageView');
+                }
+                // ── Google Ads — INERT in Phase 1 (GOOGLE_ADS_ID unset) ──
+                if (cfg.google_ads_id) {
+                    if (!document.querySelector('script[src*="googletagmanager.com/gtag/js"]')) {
+                        const g = document.createElement('script');
+                        g.async = true; g.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(cfg.google_ads_id)}`;
+                        document.head.appendChild(g); window.gtag('js', new Date());
+                    }
+                    window.gtag('config', cfg.google_ads_id);
                 }
             };
             if (consentOk()) window.__applyTrackingPixels();
