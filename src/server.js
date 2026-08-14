@@ -4852,6 +4852,17 @@ app.listen(PORT, async () => {
         setInterval(() => runWeeklySlaReport().catch(e => console.warn('[routing-sla]', e.message)), 12 * 60 * 60 * 1000);
     }
 
+    // Agent Acquisition deal maintenance (B4) — replaces the HubSpot Pro
+    // Workflows we can't use on the current plan: idle-14d deals → follow-up
+    // task, and Lost deals missing a lost_reason → task. Runs ~12 min after
+    // boot, then daily. No-op unless HubSpot is configured + the pipeline exists.
+    // Disable with ACQ_MAINTENANCE_ENABLED=false.
+    if (process.env.ACQ_MAINTENANCE_ENABLED !== 'false') {
+        const { runAcquisitionMaintenance } = require('./services/hubspot');
+        setTimeout(() => runAcquisitionMaintenance().catch(e => console.warn('[acq-maint]', e.message)), 12 * 60 * 1000);
+        setInterval(() => runAcquisitionMaintenance().catch(e => console.warn('[acq-maint]', e.message)), 24 * 60 * 60 * 1000);
+    }
+
     // Monthly agent ROI recap — self-guards to once per calendar month.
     // Checked a few minutes after boot, then twice a day.
     if (process.env.AGENT_ROI_EMAIL_ENABLED === 'true') {

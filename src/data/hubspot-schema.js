@@ -104,6 +104,9 @@ const DEAL_PROPERTIES = [
     { name: 'deal_target_lake',  label: 'Target Lake (deal)', type: 'enumeration', fieldType: 'select', groupName: 'dealinformation', options: ordered(LAKE_OPTIONS) },
     { name: 'agent_tier_target', label: 'Agent Tier Target',  type: 'enumeration', fieldType: 'select', groupName: 'dealinformation', options: ordered(AGENT_TIER_OPTIONS) },
     { name: 'lost_reason',       label: 'Lost Reason',        type: 'enumeration', fieldType: 'select', groupName: 'dealinformation', options: ordered(LOST_REASON_OPTIONS) },
+    // System marker — last time our backend auto-created a task for this deal
+    // (dedupe for the idle-follow-up + missing-lost-reason sweeps). ISO string.
+    { name: 'last_auto_task_at', label: 'Last Auto Task At',  type: 'string',      fieldType: 'text',   groupName: 'dealinformation' },
 ];
 
 // ── Helpers used by forms / the lead controller ──────────────────────────────

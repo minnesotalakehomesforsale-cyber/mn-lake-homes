@@ -128,16 +128,21 @@ Pipeline **Agent Acquisition**, 8 stages (in order):
 
 ### Automations
 
+HubSpot **Workflows, Sequences, and stage-level required properties** all need
+**Sales/Operations Hub _Professional_** — not on the current plan. So the
+automations run from **our backend via the free CRM API** instead (reading deals
++ creating tasks is free). No HubSpot upgrade required.
+
 | Automation | Where it lives | Status |
 |---|---|---|
-| **Stripe Prime+ subscription → deal Won–Paying** | **Our code** — `stripe.controller.js` `checkout.session.completed` calls `hubspot.markAgentAcquisitionWon(email, {tier})`. Moves the contact's pipeline deal to Won (or creates one there, associated to the contact). Prime+ = `mn_lake_specialist` (prime) or `top_agent` (elite); Standard does not auto-win. | ✅ shipped |
-| **`lost_reason` required to reach Lost/Nurture** | HubSpot UI — Pipeline settings → stage **Lost/Nurture** → *Required properties* → add `lost_reason`. (Stage-gating isn't reliably settable via API.) | ⬜ UI step |
-| **Contact replies → unenroll from sequence + Contacted→Engaged** | HubSpot UI — Sequences already auto-unenroll on reply (enable per-sequence). Add a workflow: *enrollment trigger = contact replied / email reply logged* → action *set associated Agent Acquisition deal stage = Engaged* (guard: current stage = Contacted). | ⬜ UI step |
-| **Deal idle 14 days in stages 2–6 → follow-up task** | HubSpot UI — Deal-based workflow: enroll when *deal stage is any of Contacted…Pitch/Demo* AND *time in current stage ≥ 14 days* → *create task* for the deal owner. | ⬜ UI step |
+| **Stripe Prime+ subscription → deal Won–Paying** | **Our code** — `stripe.controller.js` `checkout.session.completed` → `hubspot.markAgentAcquisitionWon(email, {tier})`. Prime+ = `mn_lake_specialist` (prime) or `top_agent` (elite); Standard does not auto-win. | ✅ shipped |
+| **Deal idle 14 days in stages 2–6 → follow-up task** | **Our code** — daily `hubspot.runAcquisitionMaintenance()` (server.js cron). Searches active-stage deals not modified in 14d and creates a HubSpot task, deduped via the `last_auto_task_at` deal prop. | ✅ shipped (backend) |
+| **Lost/Nurture deal missing `lost_reason` → task** | **Our code** — same daily sweep. We can't hard-gate the stage in the UI without Pro, so instead we create a "set a lost reason" task on any Lost deal missing one (soft enforcement, deduped weekly). | ✅ shipped (backend) |
+| **Contact replies → unenroll from sequence + Contacted→Engaged** | **Needs Pro OR an inbox integration.** Detecting an email *reply* requires HubSpot's connected inbox + workflow (Pro), and there's no Sequence to unenroll from without Pro. Not replicated — the closest free substitute would be moving the deal to Engaged when the contact takes another tracked action on our site (ask if wanted). | ⚠️ not replicated |
 
-The three UI steps need HubSpot Sales/Ops Hub with workflows. The Stripe→Won path
-is code-owned because we own the payment signal — it's more reliable than a
-HubSpot-side Stripe integration.
+Disable the backend sweep with `ACQ_MAINTENANCE_ENABLED=false`. Re-run
+`ensure-schema` after this change so the `last_auto_task_at` deal property is
+created.
 
 ---
 

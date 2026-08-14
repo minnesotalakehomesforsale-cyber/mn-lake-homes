@@ -579,6 +579,107 @@ async function markAgentAcquisitionWon(email, opts = {}) {
     }
 }
 
+// ── Backend-driven deal maintenance (B4 automations, free-tier friendly) ─────
+// HubSpot Workflows/Sequences need Sales/Ops Hub Professional. We replicate the
+// two achievable automations with the FREE CRM API instead: (1) a deal idle
+// 14 days in stages 2–6 → create a follow-up task; (2) a Lost/Nurture deal with
+// no lost_reason → create a "set a lost reason" task (soft enforcement, since we
+// can't gate the stage in the UI without Pro). Reply-detection is the one piece
+// that genuinely needs Pro (connected inbox + workflow) and isn't replicated.
+const ACQ_ACTIVE_STAGE_LABELS = ['Contacted', 'Engaged', 'Spotlight Live', 'Free Profile Claimed', 'Pitch/Demo'];
+
+async function getAcqPipeline() {
+    const all = await hsFetch('/crm/v3/pipelines/deals');
+    const pipe = (all.results || []).find(p => p.label === 'Agent Acquisition');
+    if (!pipe) return null;
+    const byLabel = {};
+    for (const s of (pipe.stages || [])) byLabel[s.label] = s.id;
+    return { id: pipe.id, byLabel };
+}
+
+async function createDealTask(dealId, { title, notes }) {
+    const task = await hsFetch('/crm/v3/objects/tasks', {
+        method: 'POST',
+        body: { properties: {
+            hs_task_subject: title, hs_task_body: notes || '',
+            hs_task_status: 'NOT_STARTED', hs_task_priority: 'MEDIUM',
+            hs_timestamp: Date.now(),
+        } },
+    });
+    // Associate task → deal using the v4 "default" endpoint (no association-type
+    // id needed — HubSpot picks the primary type).
+    try {
+        await hsFetch(`/crm/v4/objects/tasks/${task.id}/associations/default/deals/${dealId}`, { method: 'PUT' });
+    } catch (e) { console.warn('[hubspot] task→deal assoc failed:', e.message); }
+    return task;
+}
+
+async function _searchDeals(filters, properties) {
+    const r = await hsFetch('/crm/v3/objects/deals/search', {
+        method: 'POST', body: { filterGroups: filters, properties, limit: 100 },
+    });
+    return r.results || [];
+}
+
+async function runAcquisitionMaintenance({ idleDays = 14 } = {}) {
+    try {
+        if (!isActiveFn()) return { ok: false, reason: 'not_active' };
+        const pipe = await getAcqPipeline();
+        if (!pipe) return { ok: false, reason: 'pipeline_missing' };
+        const now = Date.now();
+        const cutoff = now - idleDays * 86400000;
+        let idleTasks = 0, lostTasks = 0;
+
+        // (1) Idle deals: in an active stage, not modified in `idleDays`.
+        const activeStageIds = ACQ_ACTIVE_STAGE_LABELS.map(l => pipe.byLabel[l]).filter(Boolean);
+        if (activeStageIds.length) {
+            const filters = activeStageIds.map(id => ({ filters: [
+                { propertyName: 'pipeline', operator: 'EQ', value: pipe.id },
+                { propertyName: 'dealstage', operator: 'EQ', value: id },
+                { propertyName: 'hs_lastmodifieddate', operator: 'LT', value: String(cutoff) },
+            ] }));
+            const deals = await _searchDeals(filters, ['dealname', 'last_auto_task_at']);
+            for (const d of deals) {
+                const last = d.properties.last_auto_task_at ? Date.parse(d.properties.last_auto_task_at) : 0;
+                if (last && last > cutoff) continue; // tasked within the window already
+                await createDealTask(d.id, {
+                    title: `Follow up — ${d.properties.dealname || 'agent deal'} idle ${idleDays}d`,
+                    notes: `No activity for ${idleDays}+ days. Nudge the prospect or move the deal stage.`,
+                });
+                await hsFetch(`/crm/v3/objects/deals/${d.id}`, { method: 'PATCH', body: { properties: { last_auto_task_at: new Date().toISOString() } } });
+                idleTasks++;
+            }
+        }
+
+        // (2) Lost/Nurture deals missing a lost_reason → task to fill it in.
+        const lostStageId = pipe.byLabel['Lost/Nurture'];
+        if (lostStageId) {
+            const deals = await _searchDeals([{ filters: [
+                { propertyName: 'pipeline', operator: 'EQ', value: pipe.id },
+                { propertyName: 'dealstage', operator: 'EQ', value: lostStageId },
+                { propertyName: 'lost_reason', operator: 'NOT_HAS_PROPERTY' },
+            ] }], ['dealname', 'last_auto_task_at']);
+            const weekAgo = now - 7 * 86400000;
+            for (const d of deals) {
+                const last = d.properties.last_auto_task_at ? Date.parse(d.properties.last_auto_task_at) : 0;
+                if (last && last > weekAgo) continue;
+                await createDealTask(d.id, {
+                    title: `Set a lost reason — ${d.properties.dealname || 'deal'}`,
+                    notes: 'This deal is in Lost/Nurture with no lost_reason. Please pick one so reporting stays clean.',
+                });
+                await hsFetch(`/crm/v3/objects/deals/${d.id}`, { method: 'PATCH', body: { properties: { last_auto_task_at: new Date().toISOString() } } });
+                lostTasks++;
+            }
+        }
+
+        if (idleTasks || lostTasks) console.log(`[acq-maint] created ${idleTasks} idle + ${lostTasks} lost-reason task(s)`);
+        return { ok: true, idleTasks, lostTasks };
+    } catch (e) {
+        console.error('[hubspot] runAcquisitionMaintenance failed:', e.message);
+        return { ok: false, reason: e.message };
+    }
+}
+
 const isActiveFn = () => ENABLED && isConfigured();
 
 module.exports = {
@@ -599,4 +700,5 @@ module.exports = {
     ensureProperty,
     ensureDealPipeline,
     markAgentAcquisitionWon,
+    runAcquisitionMaintenance,
 };

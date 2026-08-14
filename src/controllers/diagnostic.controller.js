@@ -58,10 +58,42 @@ async function checkStripe() {
         const stripe = require('stripe')(key);
         const r = await withTimeout(stripe.balance.retrieve(), 5000, '__timeout__');
         if (r === '__timeout__') return { ok: false, status: 'fail', configured: true, error: 'timeout' };
-        return { ok: true, status: 'ok', configured: true, livemode: !!r.livemode, latency_ms: Date.now() - t0 };
+        const prime = await checkPrimePrices(stripe);
+        return { ok: prime.ok, status: prime.ok ? 'ok' : 'fail', configured: true, livemode: !!r.livemode, latency_ms: Date.now() - t0, prime };
     } catch (e) {
         return { ok: false, status: 'fail', configured: true, error: errMsg(e) };
     }
+}
+
+// B5: verify the two Prime price IDs are set on Render and actually price the
+// $39/mo + $390/yr recurring Prime plan — so a checkout can't silently 400.
+async function checkPrimePrices(stripe) {
+    const want = [
+        { key: 'monthly', id: process.env.STRIPE_PRICE_PRIME_MONTHLY, expect: 3900, interval: 'month' },
+        { key: 'annual',  id: process.env.STRIPE_PRICE_PRIME_ANNUAL,  expect: 39000, interval: 'year' },
+    ];
+    const out = {};
+    let ok = true;
+    for (const w of want) {
+        if (!w.id) { out[w.key] = { status: 'missing_env', ok: false }; ok = false; continue; }
+        try {
+            const p = await withTimeout(stripe.prices.retrieve(w.id), 4000, '__timeout__');
+            if (p === '__timeout__') { out[w.key] = { status: 'timeout', ok: false }; ok = false; continue; }
+            const amount = p.unit_amount;
+            const recurring = p.recurring && p.recurring.interval;
+            const priceOk = p.active && recurring === w.interval;
+            out[w.key] = {
+                status: priceOk ? 'ok' : 'mismatch', ok: priceOk, active: !!p.active,
+                amount_usd: amount != null ? amount / 100 : null, interval: recurring || null,
+                matches_expected: amount === w.expect,
+            };
+            if (!priceOk) ok = false;
+        } catch (e) {
+            out[w.key] = { status: 'invalid_id', ok: false, error: errMsg(e) };
+            ok = false;
+        }
+    }
+    return { ok, ...out };
 }
 
 async function checkMlsFeed() {
