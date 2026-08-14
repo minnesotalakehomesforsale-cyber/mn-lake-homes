@@ -226,7 +226,7 @@ body > * { min-width: 0; }
     padding: 2px 0;
 }
 .brand-wordmark:hover { opacity: 0.92; }
-.brand-icon { flex-shrink: 0; color: #1d6df2; }
+.brand-icon { flex-shrink: 0; color: #1a202c; }
 .brand-text {
     display: inline-flex;
     flex-direction: column;
@@ -288,6 +288,27 @@ body > * { min-width: 0; }
 .nav-links a:hover {
     color: #1d6df2;
 }
+
+/* ── Transparent-over-hero header (opt-in via body.hero-nav) ──────────────────
+   Hero pages open with a see-through bar over the hero image, then fade into the
+   solid white bar once the page scrolls (body.nav-scrolled, toggled by the header
+   component). !important overrides the component's inline nav styles; scoped to
+   body.hero-nav so every other page keeps the normal solid header. */
+.navbar { transition: background-color .25s ease, box-shadow .25s ease, border-color .25s ease; }
+body.hero-nav .navbar { background-color: transparent !important; border-bottom-color: transparent !important; box-shadow: none !important; }
+body.hero-nav .navbar .brand-icon,
+body.hero-nav .navbar .nav-links a,
+body.hero-nav .navbar .nav-actions a,
+body.hero-nav .navbar .mobile-auth-inline,
+body.hero-nav .navbar .mobile-menu-toggle { color: #fff !important; }
+body.hero-nav .navbar .nav-actions a { border-color: rgba(255,255,255,0.55) !important; }
+body.hero-nav.nav-scrolled .navbar { background-color: #fff !important; border-bottom-color: #e6eaf0 !important; box-shadow: 0 1px 4px rgba(16,24,40,0.05) !important; }
+body.hero-nav.nav-scrolled .navbar .brand-icon,
+body.hero-nav.nav-scrolled .navbar .nav-links a,
+body.hero-nav.nav-scrolled .navbar .nav-actions a,
+body.hero-nav.nav-scrolled .navbar .mobile-auth-inline,
+body.hero-nav.nav-scrolled .navbar .mobile-menu-toggle { color: #1a202c !important; }
+body.hero-nav.nav-scrolled .navbar .nav-actions a { border-color: #d9e0ea !important; }
 
 /* Full-width header megamenu — matches footer style */
 .nav-megamenu {

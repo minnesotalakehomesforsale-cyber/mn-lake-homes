@@ -138,6 +138,15 @@ class GlobalHeader extends HTMLElement {
         this._wireMobileMenu();
         this._hydrateTier1Lakes();
 
+        // Transparent-over-hero header: pages with body.hero-nav start see-through
+        // and fade to the solid bar once scrolled. One listener for the whole site.
+        if (!window.__navScrollBound) {
+            window.__navScrollBound = true;
+            const applyNavScroll = () => document.body.classList.toggle('nav-scrolled', (window.scrollY || document.documentElement.scrollTop || 0) > 8);
+            window.addEventListener('scroll', applyNavScroll, { passive: true });
+            applyNavScroll();
+        }
+
         // Check real session
         fetch('/api/auth/session')
             .then(r => { if (r.ok) return r.json(); throw new Error('not_logged_in'); })
@@ -683,6 +692,9 @@ class GlobalFooter extends HTMLElement {
                     </a>
                     <a href="https://www.facebook.com/mnlakehomesforsale" target="_blank" rel="noopener" aria-label="MN Lake Homes on Facebook" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:#f0f3f7;color:#4a5568;text-decoration:none;">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                    </a>
+                    <a href="https://x.com/minnesotalakeho" target="_blank" rel="noopener" aria-label="MN Lake Homes on X" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:#f0f3f7;color:#4a5568;text-decoration:none;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                     </a>
                 </div>
             </div>
