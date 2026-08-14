@@ -113,6 +113,9 @@
                        border-radius: 999px; padding: 0.85rem 1.9rem; font: inherit; font-weight: 700; font-size: 1.02rem; cursor: pointer; }
       .hh-search-btn:hover { background: #155bc8; }
       .hh-fine { color: rgba(255,255,255,0.9); font-size: 0.9rem; margin: 1rem 0 0; text-shadow: 0 1px 8px rgba(0,0,0,0.4); }
+      .hh-sub { color: #fff; font-size: clamp(1.02rem, 2.2vw, 1.22rem); line-height: 1.6; max-width: 620px; margin: -0.5rem auto 1.75rem; text-shadow: 0 1px 10px rgba(0,0,0,0.45); }
+      .hh-secondary { color: rgba(255,255,255,0.92); font-size: 0.95rem; margin: 1rem 0 0; text-shadow: 0 1px 8px rgba(0,0,0,0.4); }
+      .hh-secondary a { color: #fff; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 
       /* Stat strip beneath the hero — full-width white band, numbers centered */
       .hh-statband { background: #fff; }
@@ -170,20 +173,16 @@
 
     <main class="hh-hero">
         <div class="hh-inner">
-            <h1 class="hh-title">Your Minnesota lake home starts here</h1>
-            <div class="hh-tabs" role="tablist">
-                <button type="button" class="hh-tab active" id="hh-tab-buy" onclick="hhTab('buy')">Buy</button>
-                <button type="button" class="hh-tab" id="hh-tab-sell" onclick="hhTab('sell')">Sell</button>
-                <button type="button" class="hh-tab" onclick="location.href='/rent'">Rent</button>
-                <button type="button" class="hh-tab" onclick="location.href='/agents'">Find an Agent</button>
-            </div>
-            <form class="hh-search" onsubmit="hhSubmit(event)">
-                <input id="hh-input" type="text" autocomplete="off" aria-label="Search lake homes">
-                <button type="submit" class="hh-search-btn"><span id="hh-btn-label">Search</span>
-                    <svg id="hh-btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <h1 class="hh-title">Find the right Minnesota lake home agent — matched to you</h1>
+            <p class="hh-sub">Tell us your lake and what you&rsquo;re after. We&rsquo;ll connect you with a local specialist who actually knows that shoreline &mdash; free, and no obligation.</p>
+            <form class="hh-search" onsubmit="hhMatch(event)">
+                <input id="hh-input" type="text" autocomplete="off" aria-label="Which lake or town are you focused on?">
+                <button type="submit" class="hh-search-btn"><span id="hh-btn-label">Find my agent</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M13 6l6 6-6 6"></path></svg>
                 </button>
             </form>
             <p class="hh-fine">Free, and we never sell your information.</p>
+            <p class="hh-secondary">Or start with <a onclick="hhStart('buy')">buying</a> &middot; <a onclick="hhStart('sell')">selling</a> &middot; <a href="/rent">renting</a></p>
         </div>
     </main>
 
@@ -198,51 +197,49 @@
 
     <script>
       (function () {
-        var MODE = 'buy';
-        var EXAMPLES = {
-          buy:  ['Cabin with a dock', 'Lakefront under $600k', 'Gull Lake, 4 bedrooms', 'Walkout on Lake Minnetonka', 'Year-round home on Vermilion'],
-          sell: ['12345 Lake Shore Dr, Nisswa', 'My cabin on Gull Lake', 'Your lakefront address', 'Waterfront lot on Pelican Lake']
-        };
+        // Matching-first hero (C7 / T009): the primary action opens the guided
+        // agent-match intake. The input is the lake/town the buyer cares about,
+        // which pre-fills the match. Buying/selling stay one click away.
         var input = document.getElementById('hh-input');
+        var EX = ['Gull Lake', 'Lake Minnetonka', 'Mille Lacs Lake', 'Detroit Lake', 'Lake Vermilion', 'Nisswa or Brainerd'];
         var typing = true, exIdx = 0, chIdx = 0, deleting = false, timer = null;
 
         function tick() {
           if (!typing) return;
-          var list = EXAMPLES[MODE], word = list[exIdx % list.length];
+          var word = EX[exIdx % EX.length];
           if (!deleting) {
             chIdx++;
-            input.setAttribute('placeholder', word.slice(0, chIdx));
+            input.setAttribute('placeholder', 'Try “' + word.slice(0, chIdx) + '”');
             if (chIdx >= word.length) { deleting = true; timer = setTimeout(tick, 1400); return; }
             timer = setTimeout(tick, 70);
           } else {
             chIdx--;
-            input.setAttribute('placeholder', word.slice(0, chIdx));
+            input.setAttribute('placeholder', 'Try “' + word.slice(0, chIdx) + '”');
             if (chIdx <= 0) { deleting = false; exIdx++; timer = setTimeout(tick, 350); return; }
             timer = setTimeout(tick, 35);
           }
         }
         function startType() { typing = true; chIdx = 0; deleting = false; clearTimeout(timer); tick(); }
-        function stopType() { typing = false; clearTimeout(timer); input.setAttribute('placeholder', MODE === 'sell' ? 'Enter your address' : 'Search by lake, town, or feature'); }
+        function stopType() { typing = false; clearTimeout(timer); input.setAttribute('placeholder', 'Which lake or town?'); }
 
         input.addEventListener('focus', stopType);
         input.addEventListener('input', stopType);
 
-        window.hhTab = function (mode) {
-          MODE = mode;
-          document.getElementById('hh-tab-buy').classList.toggle('active', mode === 'buy');
-          document.getElementById('hh-tab-sell').classList.toggle('active', mode === 'sell');
-          // Selling isn't searching — relabel the action button.
-          document.getElementById('hh-btn-label').textContent = mode === 'sell' ? 'Get offer' : 'Search';
-          document.getElementById('hh-btn-icon').style.display = mode === 'sell' ? 'none' : '';
-          input.value = '';
-          exIdx = 0; startType();
-        };
-        window.hhSubmit = function (e) {
-          e.preventDefault();
+        // Pre-fill the lake when arriving from a lake page (e.g. /?lake=detroit-lake).
+        var LAKE_PARAM = (new URLSearchParams(location.search)).get('lake') || null;
+
+        window.hhMatch = function (e) {
+          if (e) e.preventDefault();
           var val = input.value.trim();
-          var src = 'hero_' + MODE + (val ? ': ' + val : '');
-          if (window.openForm) window.openForm(MODE, { _source: src });
-          else location.href = '/' + MODE;
+          var prefill = { _source: 'hero_match' + (val ? ': ' + val : '') };
+          if (val) prefill.looking_area = val;
+          if (LAKE_PARAM) prefill._lake = LAKE_PARAM;
+          if (window.openForm) window.openForm('agent', prefill);
+          else location.href = '/agents';
+        };
+        window.hhStart = function (mode) {
+          if (window.openForm) window.openForm(mode, { _source: 'hero_' + mode });
+          else location.href = '/' + mode;
         };
         // Stat numbers count up fast when the strip scrolls into view.
         var statBox = document.querySelector('.hh-stats');
