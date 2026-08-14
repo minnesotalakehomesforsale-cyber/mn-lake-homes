@@ -1774,6 +1774,11 @@ const getSeoAudit = async (req, res) => {
                 (COALESCE(t.hero_image_url,'') <> '')          AS has_hero,
                 COALESCE(LENGTH(t.description),0)              AS desc_len,
                 (COALESCE(t.seo_description,'') <> '')          AS has_seo_desc,
+                -- "content" = someone curated this tag as a real page (hero, body,
+                -- intro, or meta set). A tag with none of these is a bare geo-tag
+                -- used only for lead routing — it is NOT a broken page.
+                (COALESCE(t.hero_image_url,'') <> '' OR COALESCE(t.description,'') <> ''
+                   OR COALESCE(t.seo_description,'') <> '' OR COALESCE(t.intro_text,'') <> '') AS has_content,
                 EXISTS (SELECT 1 FROM lake_tags lt JOIN lakes l ON l.id = lt.lake_id
                          WHERE lt.tag_id = t.id AND l.status = 'published') AS has_linked_lake
             FROM tags t ORDER BY t.name`)).rows;
@@ -1788,16 +1793,28 @@ const getSeoAudit = async (req, res) => {
         const lakeThin = lakes.filter(l => l.status === 'published' && l.has_hero && !l.has_seo_desc)
             .map(l => ({ name: l.name, slug: l.slug, issues: ['no meta description'] }));
 
-        const townInvisible = towns.filter(t => !t.active || !t.has_hero || !t.has_linked_lake)
-            .map(t => ({ name: t.name, slug: t.slug, reason: !t.active ? 'inactive' : !t.has_hero ? 'no hero image' : 'no published lake linked' }));
-        const townThin = towns.filter(t => t.active && t.has_hero && t.has_linked_lake && !t.has_seo_desc)
+        // Only towns that were CURATED (have content) are meant to be pages.
+        // Bare geo-tags are routing-only and intentionally not indexed — they are
+        // not "invisible pages," so they don't belong in the alarm bucket.
+        const townPages   = towns.filter(t => t.has_content);
+        const townLive    = townPages.filter(t => t.active && t.has_hero && t.has_linked_lake);
+        const townNeedsAttention = townPages
+            .filter(t => !(t.active && t.has_hero && t.has_linked_lake))
+            .map(t => ({ name: t.name, slug: t.slug, reason: !t.active ? 'curated but inactive' : !t.has_hero ? 'no hero image' : 'no published lake linked' }));
+        const townThin = townLive.filter(t => !t.has_seo_desc)
             .map(t => ({ name: t.name, slug: t.slug, issues: ['no meta description'] }));
+        const townGeoOnly = towns.length - townPages.length;   // routing tags, intentional
 
         res.json({
             lakes: { total: lakes.length, invisible: lakeInvisible, thin: lakeThin,
                      solid: lakes.length - lakeInvisible.length - lakeThin.length },
-            towns: { total: towns.length, invisible: townInvisible, thin: townThin,
-                     solid: towns.length - townInvisible.length - townThin.length },
+            towns: {
+                total: towns.length,
+                live: townLive.length,
+                needs_attention: townNeedsAttention,   // curated pages that aren't rendering — the real to-do
+                thin: townThin,                         // live but missing a meta description
+                geo_only: townGeoOnly,                  // bare routing tags — intentionally not pages
+            },
         });
     } catch (err) {
         console.error('[getSeoAudit]', err.message);

@@ -80,6 +80,31 @@
             </div>`;
     }
 
+    function groupTowns(data) {
+        const attn = data.needs_attention || [];
+        return `
+            <div class="cards">
+                <div class="card"><div class="n good">${data.live}</div><div class="l">Live lake-town pages</div></div>
+                <div class="card"><div class="n warn">${attn.length}</div><div class="l">Curated but not live</div></div>
+                <div class="card"><div class="n" style="color:#94a3b8">${data.geo_only}</div><div class="l">Geo-only routing tags · not pages</div></div>
+            </div>
+            <p class="muted" style="margin:0.25rem 0 1rem;font-size:0.85rem;">
+                The <strong>${data.geo_only}</strong> geo-only tags exist to <strong>route leads</strong> to agents — non-lake suburbs and out-of-state cities that should stay unindexed. Keeping them out of Google is by design, not a problem to fix.
+            </p>
+            ${attn.length
+                ? `<div class="section">
+                       <div class="section-hd"><h2>Towns — Curated but not live</h2><span class="pill warn">${attn.length}</span></div>
+                       <div class="section-bd">${bucketTable('towns', attn, "What's missing")}</div>
+                   </div>`
+                : `<div class="section"><div class="section-bd"><p class="muted" style="padding:1rem 0;">✓ Every curated lake-town is live and indexable.</p></div></div>`}
+            ${(data.thin || []).length
+                ? `<div class="section">
+                       <div class="section-hd"><h2>Towns — Thin content</h2><span class="pill warn">${data.thin.length}</span></div>
+                       <div class="section-bd">${bucketTable('towns', data.thin, "What's missing")}</div>
+                   </div>`
+                : ''}`;
+    }
+
     (async () => {
         const body = document.getElementById('seo-body');
         let data;
@@ -92,15 +117,15 @@
             body.innerHTML = `<p style="color:#c53030;">Could not run the audit: ${esc(e.message)}</p>`;
             return;
         }
-        const totalInvisible = data.lakes.invisible.length + data.towns.invisible.length;
+        const actionable = data.lakes.invisible.length + (data.towns.needs_attention || []).length;
         const note = document.getElementById('seo-note');
         note.style.display = 'block';
-        note.innerHTML = totalInvisible
-            ? `<strong>${totalInvisible} page${totalInvisible === 1 ? '' : 's'} are invisible to Google right now.</strong> Fix these first — the quickest win is giving each a hero image (in Lakes &amp; Businesses), which makes it render and enter your sitemap. Then fill in the thin pages' descriptions.`
-            : `<strong>No invisible pages — every lake &amp; town is indexable.</strong> Focus next on the thin-content pages below.`;
+        note.innerHTML = actionable
+            ? `<strong>${actionable} page${actionable === 1 ? '' : 's'} need attention.</strong> These are lakes or curated lake-towns that should be live but aren't — a missing hero image, unpublished, or no linked lake. The ${data.towns.geo_only} inactive geo-tags are intentional routing tags (non-lake &amp; out-of-state cities), not broken pages — leave them hidden.`
+            : `<strong>Everything that should be indexed is live.</strong> All lakes and curated lake-towns render and are in your sitemap. The ${data.towns.geo_only} inactive geo-tags are routing-only by design — correctly kept out of Google.`;
         body.innerHTML =
             `<h2 style="font-size:1.15rem;font-weight:800;margin:0.5rem 0 0.25rem;">Lakes</h2>` + group('Lakes', 'lakes', data.lakes) +
-            `<h2 style="font-size:1.15rem;font-weight:800;margin:2rem 0 0.25rem;">Towns</h2>` + group('Towns', 'towns', data.towns);
+            `<h2 style="font-size:1.15rem;font-weight:800;margin:2rem 0 0.25rem;">Towns</h2>` + groupTowns(data.towns);
     })();
 </script>
 </body>
