@@ -117,6 +117,13 @@ async function syncContact(payload) {
     const email = ((payload?.email) || '').toLowerCase();
     if (!email) { logSkip('no email'); return null; }
     props.email = email;
+    // Cross-reference our lead UUID onto the HubSpot contact (T017) — sent ONLY
+    // when the custom property has been provisioned and named here, so we never
+    // break a sync by POSTing a property HubSpot doesn't recognize. To enable:
+    // create a single-line-text contact property in HubSpot, then set
+    // HUBSPOT_LEAD_ID_PROPERTY to its internal name (e.g. "lead_id").
+    const leadIdProp = process.env.HUBSPOT_LEAD_ID_PROPERTY;
+    if (leadIdProp && payload?.lead_id) props[leadIdProp] = String(payload.lead_id);
 
     try {
         const created = await hsFetch('/crm/v3/objects/contacts', {

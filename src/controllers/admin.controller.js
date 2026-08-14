@@ -1826,6 +1826,57 @@ const getSeoAudit = async (req, res) => {
 };
 
 /**
+ * GET /api/admin/lead-reconciliation?from=&to=  (T017)
+ * Ties out the lead pipeline for a date range: how many were submitted, reached
+ * HubSpot, and got routed to an agent — so any gap (a leak) is visible. Dates are
+ * ISO (YYYY-MM-DD); defaults to the last 30 days.
+ */
+const getLeadReconciliation = async (req, res) => {
+    try {
+        const to   = req.query.to   ? new Date(req.query.to + 'T23:59:59') : new Date();
+        const from = req.query.from ? new Date(req.query.from + 'T00:00:00') : new Date(to.getTime() - 30 * 86400000);
+        if (isNaN(from.getTime()) || isNaN(to.getTime())) return res.status(400).json({ error: 'Invalid from/to date.' });
+
+        const { rows } = await pool.query(`
+            SELECT
+              COUNT(*) FILTER (WHERE NOT COALESCE(is_partial,false))                                 AS submitted,
+              COUNT(*) FILTER (WHERE NOT COALESCE(is_partial,false) AND COALESCE(email,'') <> '')     AS with_email,
+              COUNT(*) FILTER (WHERE hs_contact_id IS NOT NULL)                                       AS reached_hubspot,
+              COUNT(*) FILTER (WHERE assigned_user_id IS NOT NULL)                                    AS routed,
+              COUNT(*) FILTER (WHERE NOT COALESCE(is_partial,false) AND assigned_user_id IS NULL)     AS unrouted,
+              COUNT(*) FILTER (WHERE pipeline_status = 'failed')                                       AS failed,
+              COUNT(*) FILTER (WHERE COALESCE(is_partial,false))                                       AS partial_abandoned
+            FROM leads
+            WHERE created_at >= $1 AND created_at <= $2`,
+            [from.toISOString(), to.toISOString()]);
+
+        const r = rows[0] || {};
+        const n = k => parseInt(r[k], 10) || 0;
+        const submitted = n('submitted'), withEmail = n('with_email'), reachedHs = n('reached_hubspot'), routed = n('routed');
+
+        res.json({
+            from: from.toISOString().slice(0, 10),
+            to:   to.toISOString().slice(0, 10),
+            counts: {
+                submitted, with_email: withEmail, reached_hubspot: reachedHs,
+                routed, unrouted: n('unrouted'), failed: n('failed'),
+                partial_abandoned: n('partial_abandoned'),
+            },
+            gaps: {
+                // Leads with an email that never got a HubSpot contact id = a sync leak.
+                hubspot_leak: Math.max(0, withEmail - reachedHs),
+                // Submitted but no agent assigned = a routing gap (may be legitimately
+                // awaiting manual assignment; investigate if persistent).
+                routing_gap: n('unrouted'),
+            },
+        });
+    } catch (err) {
+        console.error('[getLeadReconciliation]', err.message);
+        res.status(500).json({ error: 'Failed to reconcile: ' + err.message });
+    }
+};
+
+/**
  * GET /api/admin/:id/emails — every email the app has sent to this agent's
  * account address (welcome, lead notices, billing, etc.), newest first.
  */
@@ -2983,6 +3034,7 @@ module.exports = {
     sendAgentBillingEmail,
     getAgentEmailHistory,
     getSeoAudit,
+    getLeadReconciliation,
     createAgent,
     updateAgentProfile,
     updateStatus,

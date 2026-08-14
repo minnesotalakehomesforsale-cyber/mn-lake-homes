@@ -234,9 +234,16 @@ const createLead = async (req, res) => {
                     lifecyclestage: 'lead',
                     user_type:      'lead',
                     signup_source:  source || enumType,
+                    lead_id:        newLeadId,   // cross-reference: our UUID on the HubSpot contact
                 });
                 if (r?.id) {
-                    pool.query(`UPDATE leads SET hs_contact_id = $1 WHERE id = $2`, [r.id, newLeadId])
+                    // Advance pipeline only from 'received' so a lead that already
+                    // routed isn't downgraded (hubspot + routing run concurrently).
+                    pool.query(
+                        `UPDATE leads
+                            SET hs_contact_id = $1,
+                                pipeline_status = CASE WHEN pipeline_status = 'received' THEN 'sent_to_hubspot' ELSE pipeline_status END
+                          WHERE id = $2`, [r.id, newLeadId])
                         .catch(e => console.error('[hubspot] save id failed:', e.message));
                 }
             })();
@@ -256,7 +263,7 @@ const createLead = async (req, res) => {
                     const ag = ar.rows[0];
                     await pool.query(
                         `UPDATE leads SET assigned_user_id = $1, lead_status = 'contacted',
-                                assigned_at = NOW(), updated_at = NOW()
+                                pipeline_status = 'routed', assigned_at = NOW(), updated_at = NOW()
                           WHERE id = $2`, [ag?.user_id || null, newLeadId]);
                     if (ag?.email) {
                         emailService.sendMatchedAgentNotification({
@@ -372,6 +379,7 @@ const createLead = async (req, res) => {
                             SET agent_id         = $1,
                                 assigned_user_id = $2,
                                 lead_status      = 'contacted',
+                                pipeline_status  = 'routed',
                                 assigned_at      = NOW(),
                                 updated_at       = NOW()
                           WHERE id = $3`,

@@ -3457,6 +3457,11 @@ async function ensureTables() {
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS outcome_note  TEXT;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS outcome_at    TIMESTAMPTZ;
 
+            -- Delivery pipeline status (T017): distinct from lead_status (the
+            -- agent's CRM state). Traces a lead's PATH: received -> sent_to_hubspot
+            -- -> routed, or failed. Powers the reconciliation view.
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS pipeline_status VARCHAR(20) NOT NULL DEFAULT 'received';
+
             -- Listing freshness + lifecycle (Phase 3/8): remember the first price
             -- we saw (to detect drops), an optional open-house datetime, and when
             -- a home was marked sold (for the "recently sold" wall).

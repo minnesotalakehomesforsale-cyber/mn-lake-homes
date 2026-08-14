@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Reconciliation | MN Lake Homes Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        html, body { margin: 0; background: #f7f9fa; color: #1a202c; font-family: 'SF Pro Text', -apple-system, sans-serif; }
+        h1 { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.75px; margin: 0 0 0.25rem; }
+        .muted { color: #718096; font-size: 0.9rem; }
+        .controls { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; margin: 1.5rem 0; }
+        .controls label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #a0aec0; }
+        .controls input { padding: 0.55rem 0.7rem; border: 1px solid #e2e8f0; border-radius: 9px; font: inherit; }
+        .btn { background: #1d6df2; color: #fff; border: 0; border-radius: 9px; padding: 0.6rem 1.2rem; font: inherit; font-weight: 700; cursor: pointer; }
+        .funnel { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .step { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.25rem 1.4rem; box-shadow: 0 2px 8px rgba(16,24,40,0.04); }
+        .step .n { font-size: 2.2rem; font-weight: 800; letter-spacing: -1px; color: #1a202c; font-variant-numeric: tabular-nums; }
+        .step .l { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #a0aec0; margin-top: 0.35rem; }
+        .step .sub { font-size: 0.8rem; color: #718096; margin-top: 0.3rem; }
+        .gaps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+        .gap { border-radius: 14px; padding: 1.1rem 1.35rem; border: 1px solid transparent; }
+        .gap .n { font-size: 1.9rem; font-weight: 800; }
+        .gap.ok   { background: #f0fff4; border-color: #c6f6d5; color: #276749; }
+        .gap.warn { background: #fffaf0; border-color: #feebc8; color: #b7791f; }
+        .note { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; padding: 1rem 1.25rem; margin-top: 1.5rem; font-size: 0.88rem; color: #4a5568; line-height: 1.6; }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+</head>
+<body>
+    <div class="admin-wrap">
+        <admin-sidebar active="leads"></admin-sidebar>
+        <main class="admin-main">
+            <h1>Lead Reconciliation</h1>
+            <p class="muted">Trace the lead pipeline for a date range and spot leaks — submitted forms vs. HubSpot contacts created vs. leads routed to an agent. Any gap is worth investigating.</p>
+
+            <div class="controls">
+                <label>From <input type="date" id="from"></label>
+                <label>To <input type="date" id="to"></label>
+                <button class="btn" onclick="run()">Reconcile</button>
+            </div>
+
+            <div id="out"><p class="muted">Loading the last 30 days…</p></div>
+        </main>
+    </div>
+    <script>
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        function iso(d) { return d.toISOString().slice(0,10); }
+        // default range: last 30 days
+        (function initDates() {
+            const to = new Date(); const from = new Date(to.getTime() - 30*86400000);
+            document.getElementById('to').value = iso(to);
+            document.getElementById('from').value = iso(from);
+        })();
+
+        async function run() {
+            const out = document.getElementById('out');
+            const from = document.getElementById('from').value, to = document.getElementById('to').value;
+            out.innerHTML = '<p class="muted">Reconciling…</p>';
+            let d;
+            try {
+                const res = await fetch(`/api/admin/lead-reconciliation?from=${from}&to=${to}`, { credentials: 'include' });
+                if (res.status === 401 || res.status === 403) { out.innerHTML = '<p class="muted">Please sign in as an admin.</p>'; return; }
+                d = await res.json();
+                if (!res.ok) throw new Error(d.error || 'Failed');
+            } catch (e) { out.innerHTML = `<p style="color:#c53030">Could not reconcile: ${esc(e.message)}</p>`; return; }
+
+            const c = d.counts, g = d.gaps;
+            out.innerHTML = `
+                <div class="funnel">
+                    <div class="step"><div class="n">${c.submitted}</div><div class="l">Submitted</div><div class="sub">complete leads</div></div>
+                    <div class="step"><div class="n">${c.reached_hubspot}</div><div class="l">Reached HubSpot</div><div class="sub">of ${c.with_email} with an email</div></div>
+                    <div class="step"><div class="n">${c.routed}</div><div class="l">Routed to agent</div><div class="sub">${c.unrouted} awaiting assignment</div></div>
+                </div>
+                <div class="gaps">
+                    <div class="gap ${g.hubspot_leak ? 'warn' : 'ok'}"><div class="n">${g.hubspot_leak}</div><div>HubSpot leak — had an email but no contact created ${g.hubspot_leak ? '· investigate' : '· clean'}</div></div>
+                    <div class="gap ${g.routing_gap ? 'warn' : 'ok'}"><div class="n">${g.routing_gap}</div><div>Unrouted — submitted but no agent yet ${g.routing_gap ? '· check the Leads queue' : '· clean'}</div></div>
+                    <div class="gap ${c.failed ? 'warn' : 'ok'}"><div class="n">${c.failed}</div><div>Failed pipeline status</div></div>
+                </div>
+                <div class="note">
+                    <strong>How to read it:</strong> every <em>Submitted</em> lead with an email should have <em>Reached HubSpot</em> — a gap there is a sync leak.
+                    <em>Unrouted</em> leads are submitted but have no agent assigned yet; a few is normal (manual queue), a growing number is a routing problem.
+                    Range: <strong>${esc(d.from)} → ${esc(d.to)}</strong>. Also captured but excluded from "submitted": <strong>${c.partial_abandoned}</strong> abandoned/partial forms.
+                </div>`;
+        }
+        run();
+    </script>
+</body>
+</html>

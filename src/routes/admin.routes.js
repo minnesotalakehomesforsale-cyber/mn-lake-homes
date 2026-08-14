@@ -127,6 +127,7 @@ router.get('/system/alerts-count', adminController.getSystemAlertsCount);
 // ─── BILLING (live Stripe view for a subscriber: agent | business) ──────────
 // Billing Alerts report: every agent whose subscription is canceled / at risk.
 router.get ('/seo-audit',                verifyToken, requireRole(['admin', 'super_admin']), adminController.getSeoAudit);
+router.get ('/lead-reconciliation',      verifyToken, requireRole(['admin', 'super_admin']), adminController.getLeadReconciliation);
 router.get ('/billing/report',           verifyToken, requireRole(['admin', 'super_admin']), adminController.getBillingStatusReport);
 // One-click resume of a "cancels at period end" agent subscription.
 router.post('/billing/agent/:id/resume', verifyToken, requireRole(['admin', 'super_admin']), adminController.resumeAgentSubscription);
