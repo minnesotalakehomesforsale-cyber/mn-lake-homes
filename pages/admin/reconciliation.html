@@ -53,6 +53,16 @@
             <h1>Lead Reconciliation</h1>
             <p class="muted">Trace the lead pipeline for a date range and spot leaks — submitted forms vs. HubSpot contacts created vs. leads routed to an agent. Any gap is worth investigating.</p>
 
+            <section class="sla" id="hsSetupCard">
+                <div class="sla-head">
+                    <h2>HubSpot setup</h2>
+                    <span class="rng">one-time · safe to re-run</span>
+                </div>
+                <p class="muted" style="margin:.5rem 0 1rem;">Creates the 4 lead-qualification contact properties (Target Lake, Intent, Price Band, Lead Source Detail) plus the <strong>Agent Acquisition</strong> deal pipeline and its deal properties in HubSpot. Click it once after setting the HubSpot token on Render. Re-running never duplicates anything.</p>
+                <button class="btn" id="hsSetupBtn" onclick="provisionHubspot()">Create / update HubSpot properties + pipeline</button>
+                <div id="hsSetupOut" style="margin-top:1rem;"></div>
+            </section>
+
             <div class="controls">
                 <label>From <input type="date" id="from"></label>
                 <label>To <input type="date" id="to"></label>
@@ -143,6 +153,35 @@
                 <div class="note" style="margin-top:1rem">
                     <strong>How to read it:</strong> latency is measured from form submission to the moment a lead first reaches an agent (auto-routed leads are near-instant). A <em>p95 under ${targetH}</em> means 95% of leads were routed that fast. Anything over 30 minutes is flagged above as a manual gap to chase down.
                 </div>`;
+        }
+
+        async function provisionHubspot() {
+            const btn = document.getElementById('hsSetupBtn');
+            const out = document.getElementById('hsSetupOut');
+            if (!confirm('Create/update the HubSpot properties + Agent Acquisition pipeline now?')) return;
+            btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Working…';
+            out.innerHTML = '<p class="muted">Talking to HubSpot…</p>';
+            try {
+                const res = await fetch('/api/admin/hubspot/ensure-schema', { method: 'POST', credentials: 'include' });
+                const d = await res.json();
+                if (res.status === 401 || res.status === 403) { out.innerHTML = '<div class="flag warn">Please sign in as the owner (super admin) to run this.</div>'; return; }
+                if (!res.ok || !d.ok) { out.innerHTML = `<div class="flag warn">⚠️ ${esc(d.error || 'Failed')}${/scope/i.test(d.error||'') ? ' — add the crm.schemas.*.write scopes to your HubSpot private app, then retry.' : ''}</div>`; return; }
+                const r = d.report;
+                const line = (label, x) => `<div>${label}: <strong>${esc(x.action || 'ok')}</strong>${x.added && x.added.length ? ' (' + x.added.map(esc).join(', ') + ')' : ''}</div>`;
+                out.innerHTML = `
+                    <div class="flag ok" style="margin-bottom:.75rem">✓ Done. Everything below now exists in HubSpot.</div>
+                    <div class="note">
+                        ${line('Property group', r.contact_group)}
+                        ${r.contact_properties.map(p => line('Contact · ' + p.name, p)).join('')}
+                        ${line('Deal pipeline (Agent Acquisition)', r.deal_pipeline)}
+                        ${r.deal_properties.map(p => line('Deal · ' + p.name, p)).join('')}
+                    </div>
+                    <p class="muted" style="margin-top:.75rem">Next: in HubSpot, set <code>lost_reason</code> as required on the Lost/Nurture stage and build the two reply/idle workflows (see docs/hubspot-schema.md).</p>`;
+            } catch (e) {
+                out.innerHTML = `<div class="flag warn">Network error: ${esc(e.message)}</div>`;
+            } finally {
+                btn.disabled = false; btn.textContent = orig;
+            }
         }
 
         run();
