@@ -424,10 +424,13 @@ class GlobalHeader extends HTMLElement {
                         { label: 'Detroit Lakes',  href: '/towns/detroit-lakes' },
                     ]},
                     { heading: 'Featured Lakes', links: [
-                        { label: 'Lake Minnetonka', href: '/lakes/lake-minnetonka' },
-                        { label: 'Gull Lake',       href: '/lakes/gull-lake' },
-                        { label: 'Mille Lacs Lake', href: '/lakes/mille-lacs-lake' },
-                        { label: 'Lake Vermilion',  href: '/lakes/lake-vermilion' },
+                        { label: 'Lake Minnetonka',   href: '/lakes/lake-minnetonka' },
+                        { label: 'Gull Lake',         href: '/lakes/gull-lake' },
+                        { label: 'Mille Lacs Lake',   href: '/lakes/mille-lacs-lake' },
+                        { label: 'Lake Vermilion',    href: '/lakes/lake-vermilion' },
+                        { label: 'Leech Lake',        href: '/lakes/leech-lake' },
+                        { label: 'Detroit Lake',      href: '/lakes/detroit-lake' },
+                        { label: 'Lake of the Woods', href: '/lakes/lake-of-the-woods' },
                     ]},
                 ]
             },
