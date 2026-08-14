@@ -28,6 +28,19 @@ const createLead = async (req, res) => {
         return res.status(400).json({ error: 'Name and either Email or Phone are required to dispatch lead.' });
     }
 
+    // Strict format validation (server-side is the source of truth — never trust
+    // the client). Reject garbage/spam-shaped contact info BEFORE we store it or
+    // sync to HubSpot. Validate only what's provided; the required check above
+    // already guarantees at least one contact method.
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (email && !EMAIL_RE.test(email)) {
+        return res.status(400).json({ error: 'Please enter a valid email address.', field: 'email' });
+    }
+    const phoneDigits = (phone || '').replace(/\D/g, '');
+    if ((phone || '').trim() && !(phoneDigits.length === 10 || (phoneDigits.length === 11 && phoneDigits[0] === '1'))) {
+        return res.status(400).json({ error: 'Please enter a valid 10-digit US phone number.', field: 'phone' });
+    }
+
     // If this submission finishes a form we already captured partially (same
     // client session), drop the partial row so the full lead inserts fresh and
     // routes normally — no duplicate in the agent inbox.

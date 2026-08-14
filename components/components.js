@@ -1487,6 +1487,8 @@ window._lfNext = function() {
         const phone = (document.getElementById('lf-phone')?.value || '').trim();
         if (!email && !phone)                          { err.textContent = 'Please enter at least one contact method.';  err.style.display = 'block'; return; }
         if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { err.textContent = 'Please enter a valid email address.'; err.style.display = 'block'; return; }
+        const _pd = phone.replace(/\D/g, '');
+        if (phone && !(_pd.length === 10 || (_pd.length === 11 && _pd[0] === '1'))) { err.textContent = 'Please enter a valid 10-digit US phone number.'; err.style.display = 'block'; return; }
         _lfs.data.email = email || null;
         _lfs.data.phone = phone || null;
     } else if (f.type === 'select') {
