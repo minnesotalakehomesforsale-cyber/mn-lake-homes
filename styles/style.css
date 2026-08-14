@@ -224,6 +224,11 @@ body > * { min-width: 0; }
 }
 .brand-wordmark:hover { opacity: 0.92; }
 .brand-icon { flex-shrink: 0; color: #1d6df2; }
+/* Header brand: full company name (black text) on desktop + medium screens;
+   the house icon takes over on small screens. */
+.brand-name { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; color: #1a202c; white-space: nowrap; }
+@media (min-width: 901px) { .brand-wordmark .brand-icon { display: none; } }
+@media (max-width: 900px) { .brand-name { display: none; } }
 .brand-text {
     display: inline-flex;
     flex-direction: column;
