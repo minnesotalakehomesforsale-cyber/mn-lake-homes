@@ -391,6 +391,10 @@ exports.patch = async (req, res) => {
         if (!rowCount) return res.status(404).json({ error: 'Business not found.' });
         const biz = rows[0];
 
+        // DEV-10: approving a self-claimed business (status -> active) fires the
+        // "profile published" HubSpot claim event (best-effort, no-op otherwise).
+        if (biz.status === 'active') { try { require('./claim.controller').firePublishedEvent('business', biz.id); } catch (_) {} }
+
         logActivity({
             event_type: 'business.update',
             event_scope: 'business',
