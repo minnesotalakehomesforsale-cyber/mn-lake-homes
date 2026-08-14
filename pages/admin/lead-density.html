@@ -9,6 +9,11 @@
     <link rel="stylesheet" href="../../styles/style.css">
     <style>
         html, body { margin: 0; background: #f6f8fb; color: #0f172a; font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif; }
+        /* Embed mode (?embed=1): iframed inside the Central Leads tab. */
+        body.lt-embed admin-sidebar,
+        body.lt-embed .admin-main > header { display: none !important; }
+        body.lt-embed .admin-wrap { display: block !important; }
+        body.lt-embed .admin-main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
         h1 { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.75px; margin: 0 0 0.25rem; }
         .muted { color: #64748b; font-size: 0.92rem; }
         .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin: 1.5rem 0 1rem; }
@@ -46,8 +51,10 @@
 <div class="admin-wrap">
     <admin-sidebar active="leads"></admin-sidebar>
     <main class="admin-main">
-        <h1>Lead Density by Lake</h1>
-        <p class="muted">Where the demand is — and where there's no one paying to catch it. <strong>Open opportunity lakes</strong> (leads, no paying agent) are your sales target. Click any column to sort.</p>
+        <header>
+            <h1>Lead Density by Lake</h1>
+            <p class="muted">Where the demand is — and where there's no one paying to catch it. <strong>Open opportunity lakes</strong> (leads, no paying agent) are your sales target. Click any column to sort.</p>
+        </header>
 
         <div class="cards" id="cards"></div>
         <div class="toolbar">
@@ -58,6 +65,18 @@
     </main>
 </div>
 <script>
+    // Embed mode: hide chrome + report height so the parent iframe auto-grows.
+    (function () {
+        if (new URLSearchParams(location.search).get('embed') !== '1') return;
+        document.body.classList.add('lt-embed');
+        let lastH = 0;
+        function postHeight() {
+            const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+            if (h !== lastH) { lastH = h; window.parent.postMessage({ lt: 'height', frame: 'lead-density', h }, '*'); }
+        }
+        window.addEventListener('load', postHeight);
+        setInterval(postHeight, 600);
+    })();
     const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const PB = { under_300k: 'Under $300k', '300k_500k': '$300k–$500k', '500k_750k': '$500k–$750k', '750k_1m': '$750k–$1M', '1m_1_5m': '$1M–$1.5M', '1_5m_plus': '$1.5M+', unsure: 'Unsure' };
     function dur(sec) { if (sec == null) return '—'; sec = Math.round(sec); if (sec < 60) return sec + 's'; if (sec < 3600) return Math.floor(sec / 60) + 'm'; if (sec < 86400) return Math.floor(sec / 3600) + 'h'; return Math.floor(sec / 86400) + 'd'; }
@@ -120,8 +139,8 @@
         document.getElementById('cards').innerHTML = `
             <div class="card opp"><div class="n">${s.open_opportunity_lakes}</div><div class="l">Open opportunity lakes · sales target</div></div>
             <div class="card"><div class="n">${s.total_90d}</div><div class="l">Total leads · 90 days</div></div>
-            <div class="card"><div class="n">${s.total_30d}</div><div class="l">Total leads · 30 days</div></div>
-            <div class="card"><div class="n">${s.lakes}</div><div class="l">Published lakes</div></div>`;
+            <div class="card"><div class="n">${s.attributed_90d}</div><div class="l">On a lake · 90 days</div></div>
+            <div class="card"><div class="n">${s.unattributed_90d}</div><div class="l">Not tied to a lake · 90 days</div></div>`;
         DATA = d.rows || [];
         render();
     })();

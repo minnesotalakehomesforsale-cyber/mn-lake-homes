@@ -1915,13 +1915,23 @@ const getLeadDensity = async (req, res) => {
                   LEFT JOIN lakes lk ON lk.id = ld.lake_id
                  WHERE ld.deleted_at IS NULL
             ),
+            -- Paying agent per lake. "Paying" = membership tier (via membership_id
+            -- -> memberships.code) is not free, OR the seat is comped. Association
+            -- mirrors the public lake page: direct agent_lakes OR a shared geo tag
+            -- (user_tags <-> lake_tags). Few agents, so the cross-check is cheap.
             paying AS (
-                SELECT al.lake_id, MIN(COALESCE(a.display_name, u.full_name)) AS agent_name
-                  FROM agent_lakes al
-                  JOIN agents a ON a.id = al.agent_id AND a.is_published = TRUE AND a.deleted_at IS NULL
-                  LEFT JOIN users u ON u.id = a.user_id
-                 WHERE (COALESCE(a.paid_membership_code, 'free') NOT IN ('free', '')) OR a.tier_comped = TRUE
-                 GROUP BY al.lake_id
+                SELECT l.id AS lake_id, MIN(COALESCE(a.display_name, u.full_name)) AS agent_name
+                  FROM lakes l
+                  JOIN agents a ON a.is_published = TRUE AND a.deleted_at IS NULL
+                  JOIN users u ON u.id = a.user_id
+                  LEFT JOIN memberships m ON m.id = a.membership_id
+                 WHERE ((COALESCE(m.code, 'free') <> 'free') OR a.tier_comped = TRUE)
+                   AND (
+                        EXISTS (SELECT 1 FROM agent_lakes al WHERE al.agent_id = a.id AND al.lake_id = l.id)
+                     OR EXISTS (SELECT 1 FROM user_tags ut JOIN lake_tags lt ON lt.tag_id = ut.tag_id
+                                 WHERE ut.user_id = a.user_id AND lt.lake_id = l.id)
+                   )
+                 GROUP BY l.id
             )
             SELECT l.id, l.name, l.slug, l.market_tier,
                    COUNT(ll.id) FILTER (WHERE ll.created_at >= NOW() - INTERVAL '30 days')::int AS leads_30d,
@@ -1950,8 +1960,13 @@ const getLeadDensity = async (req, res) => {
                    COUNT(*)::int AS tall
               FROM leads WHERE deleted_at IS NULL`);
         const openOpportunity = rows.filter(r => r.leads_90d >= 1 && !r.has_paying_agent).length;
+        const attributed90 = rows.reduce((s, r) => s + r.leads_90d, 0);
         const summary = {
             total_30d: totals.rows[0].t30, total_90d: totals.rows[0].t90, total_all: totals.rows[0].tall,
+            attributed_90d: attributed90,
+            // Leads in the last 90d not tied to any lake (no landing_page_lake and
+            // no resolved lake_id) — e.g. general contact / agent-inquiry leads.
+            unattributed_90d: Math.max(0, totals.rows[0].t90 - attributed90),
             open_opportunity_lakes: openOpportunity,
             lakes: rows.length,
         };

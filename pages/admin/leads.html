@@ -14,6 +14,10 @@
         .filter-tab:hover { color: #1a202c; }
         .filter-tab.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
         .filter-container { border-bottom: 1px solid #edf2f7; display: flex; gap: 0.5rem; margin-bottom: 2rem; overflow-x: auto; }
+        .view-tab { padding: 0.7rem 1.15rem; border: none; background: transparent; font-weight: 800; font-size: 0.95rem; color: #94a3b8; border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer; }
+        .view-tab.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
+        .view-tab:hover { color: #1a202c; }
+        .sys-frame { width: 100%; border: 0; min-height: 640px; display: block; }
 
         .ledger-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid #edf2f7; }
         .ledger-table th { background: #f7f9fa; padding: 1.25rem 1.5rem; text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #4a5568; border-bottom: 1px solid #edf2f7; font-weight: 700; }
@@ -39,6 +43,7 @@
     <script src="../../components/admin-sidebar.js" defer></script>
     <script src="../../components/admin-assistant.js" defer></script>
     <script src="../../components/admin-nav-badges.js" defer></script>
+    <script src="../../components/admin-embed-host.js" defer></script>
 </head>
 <body style="background-color: #f7f9fa; color: #1a202c; margin: 0; padding: 0;">
 
@@ -94,6 +99,13 @@
                 }
             </script>
 
+            <!-- Top-level view tabs: the operational inbox vs. the lead-density report. -->
+            <div class="view-tabs" style="display:flex;gap:0.25rem;border-bottom:2px solid #edf2f7;margin-bottom:1.5rem;">
+                <button id="vt-inbox" class="view-tab active" onclick="showView('inbox')">Central Inbox</button>
+                <button id="vt-density" class="view-tab" onclick="showView('density')">Lead Density by Lake</button>
+            </div>
+
+            <div id="view-inbox">
             <div class="filter-container">
                 <button class="filter-tab active" onclick="filterTable('all', this)">All Leads</button>
                 <button class="filter-tab" onclick="filterTable('unassigned', this)">Requires Assignment</button>
@@ -119,11 +131,26 @@
                     <!-- JS Populates this -->
                 </tbody>
             </table>
+            </div><!-- /view-inbox -->
+
+            <div id="view-density" style="display:none;">
+                <iframe id="frame-lead-density" class="sys-frame" data-src="lead-density.html?embed=1" title="Lead Density by Lake"></iframe>
+            </div>
         </main>
     </div>
 
     <script src="../../components/components.js" defer></script>
     <script>
+        // Top-level view switch: operational inbox vs. the lead-density report
+        // (iframed, auto-grown by admin-embed-host.js). Lazy-loads the iframe.
+        function showView(name) {
+            document.getElementById('view-inbox').style.display = name === 'inbox' ? '' : 'none';
+            document.getElementById('view-density').style.display = name === 'density' ? '' : 'none';
+            document.getElementById('vt-inbox').classList.toggle('active', name === 'inbox');
+            document.getElementById('vt-density').classList.toggle('active', name === 'density');
+            if (name === 'density') { const f = document.getElementById('frame-lead-density'); if (f && !f.src) f.src = f.dataset.src; }
+        }
+
         async function getLeadsData() {
             try {
                 const res = await fetch('/api/leads/admin/inbox');
