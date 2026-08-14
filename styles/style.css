@@ -71,6 +71,9 @@
        centers to this; the footer content matches. 1340px − two 1.5rem gutters
        = 1292px of content, the same measure as the page shells. */
     --page-w: 1340px;
+    /* Header bar spans a touch wider than page content so the logo/nav sit
+       closer to the screen edges on wide screens. Tune here. */
+    --header-w: 1560px;
     --bg-dark: #000000;
     --text-primary: #ffffff;
     --text-secondary: #a3a3a3;
@@ -186,10 +189,10 @@ body > * { min-width: 0; }
     display: flex;
     align-items: center;
     justify-content: space-between;
-    /* Full-width dark bar, but the content centers to --page-w with 1.5rem
-       gutters — so the logo/nav line up with page content on wide screens,
-       and it collapses to a flat 1.5rem gutter below --page-w. */
-    padding: 1.25rem max(1.5rem, calc((100% - var(--page-w)) / 2 + 1.5rem));
+    /* Full-width bar. The header content spans slightly wider than page
+       content (--header-w > --page-w) so the logo/nav sit closer to the left
+       and right edges on wide screens; collapses to a flat 1.5rem gutter below. */
+    padding: 1.25rem max(1.5rem, calc((100% - var(--header-w, 1560px)) / 2 + 1.5rem));
     background-color: #fff;
     position: fixed;
     width: 100%;
