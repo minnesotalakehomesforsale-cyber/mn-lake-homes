@@ -775,7 +775,7 @@ class GlobalFooter extends HTMLElement {
         </div>
 
         <!-- Two-up CTA band: agents joining + questions (matches site's blue-on-dark style). -->
-        <div class="footer-cta-band" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem;max-width:var(--page-w,1340px);margin:0 auto 2.5rem;padding:0 1.5rem;box-sizing:border-box;">
+        <div class="footer-cta-band" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.25rem;max-width:var(--page-w,1340px);margin:0 auto 2.75rem;padding:2.75rem 1.5rem 0;box-sizing:border-box;border-top:1px solid #2a2f38;">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;background:rgba(255,255,255,0.035);border:1px solid #2a2f38;border-left:3px solid #1d6df2;border-radius:12px;padding:1.15rem 1.4rem;">
                 <div>
                     <div style="font-weight:800;color:#eef2f8;font-size:1rem;">Are you an agent?</div>
@@ -794,14 +794,16 @@ class GlobalFooter extends HTMLElement {
 
         <div class="footer-bottom">
             <p class="footer-copyright">&copy; 2026 MinnesotaLakeHomesForSale.com. All rights reserved. <span style="margin:0 0.4rem;opacity:0.5;">·</span> <a href="/privacy" style="color:inherit;text-decoration:underline;">Privacy</a> <span style="margin:0 0.4rem;opacity:0.5;">·</span> <a href="/terms" style="color:inherit;text-decoration:underline;">Terms</a></p>
-            <p class="footer-disclaimer">MinnesotaLakeHomesForSale.com is a real estate network and lead generation platform, not a licensed brokerage. We do not represent buyers or sellers directly. All transactions are facilitated by independently licensed real estate professionals. This platform is currently in beta &mdash; we are testing an agent match experience designed to enhance the real estate journey and Minnesota lake life. Results and agent availability may vary.</p>
-            <div class="footer-fairhousing" style="display:flex;align-items:center;gap:0.6rem;justify-content:center;margin-top:1rem;flex-wrap:wrap;text-align:center;">
-                <svg width="26" height="26" viewBox="0 0 48 48" role="img" aria-label="Equal Housing Opportunity" style="flex-shrink:0;">
-                    <rect x="1" y="1" width="46" height="46" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
-                    <path d="M24 11 L38 22 L34 22 L34 36 L28 36 L28 27 L20 27 L20 36 L14 36 L14 22 L10 22 Z" fill="currentColor"/>
-                    <rect x="22" y="30" width="4" height="6" fill="none"/>
-                </svg>
-                <span style="font-size:0.72rem;line-height:1.4;opacity:0.85;">We are pledged to the letter and spirit of U.S. policy for the achievement of equal housing opportunity throughout the nation. We encourage and support an affirmative advertising and marketing program in which there are no barriers to obtaining housing because of race, color, religion, sex, handicap, familial status, national origin, or any other class protected by the Fair Housing Act.</span>
+            <div class="footer-legal-cols">
+                <p class="footer-disclaimer">MinnesotaLakeHomesForSale.com is a real estate network and lead generation platform, not a licensed brokerage. We do not represent buyers or sellers directly. All transactions are facilitated by independently licensed real estate professionals. This platform is currently in beta &mdash; we are testing an agent match experience designed to enhance the real estate journey and Minnesota lake life. Results and agent availability may vary.</p>
+                <div class="footer-fairhousing">
+                    <svg width="26" height="26" viewBox="0 0 48 48" role="img" aria-label="Equal Housing Opportunity" style="flex-shrink:0;">
+                        <rect x="1" y="1" width="46" height="46" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+                        <path d="M24 11 L38 22 L34 22 L34 36 L28 36 L28 27 L20 27 L20 36 L14 36 L14 22 L10 22 Z" fill="currentColor"/>
+                        <rect x="22" y="30" width="4" height="6" fill="none"/>
+                    </svg>
+                    <span>We are pledged to the letter and spirit of U.S. policy for the achievement of equal housing opportunity throughout the nation. We encourage and support an affirmative advertising and marketing program in which there are no barriers to obtaining housing because of race, color, religion, sex, handicap, familial status, national origin, or any other class protected by the Fair Housing Act.</span>
+                </div>
             </div>
         </div>
     </footer>`;

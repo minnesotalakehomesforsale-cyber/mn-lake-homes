@@ -2226,8 +2226,7 @@ body.hero-nav.nav-menu-open .navbar .nav-actions a { border-color: #d9e0ea !impo
     /* Match the page shell: --page-w with 1.5rem gutters (= 1292px content). */
     max-width: var(--page-w);
     margin: 0 auto;
-    padding: 0 1.5rem 4rem;
-    border-bottom: 1px solid #e6eaf0;
+    padding: 0 1.5rem 3.25rem;
     text-align: left;
     box-sizing: border-box;
 }
@@ -2324,16 +2323,50 @@ body.hero-nav.nav-menu-open .navbar .nav-actions a { border-color: #d9e0ea !impo
     font-size: 0.82rem;
 }
 
+/* Legal fine-print: brokerage disclaimer + fair-housing pledge sit side by
+   side (left / right) under a hairline rule, then stack on narrow screens. */
+.footer-legal-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: start;
+    width: 100%;
+    max-width: var(--page-w);
+    margin: 0.75rem auto 0;
+    padding-top: 1.75rem;
+    border-top: 1px solid #2a2f38;
+    text-align: left;
+}
+
 .footer-bottom .footer-disclaimer {
     color: #718096;
     font-size: 0.75rem;
-    max-width: 760px;
     line-height: 1.65;
+    margin: 0;
 }
 
 .footer-bottom .footer-fairhousing {
-    max-width: 760px;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
     color: #718096;
+}
+
+.footer-bottom .footer-fairhousing span {
+    font-size: 0.72rem;
+    line-height: 1.5;
+    opacity: 0.9;
+}
+
+@media (max-width: 760px) {
+    .footer-legal-cols {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        text-align: center;
+    }
+    .footer-bottom .footer-fairhousing {
+        justify-content: center;
+    }
 }
 
 @media (max-width: 900px) {
