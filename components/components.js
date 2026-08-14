@@ -7,6 +7,31 @@
  *   No localStorage is used for auth state.
  */
 
+// ── Shared place card (lakes & towns) — single source of truth ──────────────
+// Used by every lake/town "discover" row + the town "Lakes in …" section so the
+// card looks identical everywhere. Styled by .place-* in styles/style.css.
+// opts: { href, img, chip, name, sub, desc, cta }
+window.mnPlaceCard = function (opts) {
+    opts = opts || {};
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const img = opts.img || '';
+    const initial = (opts.name || '?').trim().charAt(0).toUpperCase();
+    const thumb = img
+        ? `<img src="${esc(img)}" alt="${esc(opts.name)}" loading="lazy">`
+        : `<span class="ph-letter">${esc(initial)}</span>`;
+    return `<a class="place-card" href="${esc(opts.href)}">
+        <div class="place-thumb${img ? '' : ' is-empty'}">
+            ${opts.chip ? `<span class="chip">${esc(opts.chip)}</span>` : ''}${thumb}
+        </div>
+        <div class="place-body">
+            <h3>${esc(opts.name)}</h3>
+            ${opts.sub ? `<div class="loc">${esc(opts.sub)}</div>` : ''}
+            ${opts.desc ? `<p>${esc(opts.desc)}</p>` : ''}
+            <span class="place-cta">${esc(opts.cta || 'Visit page')} <span aria-hidden="true">→</span></span>
+        </div>
+    </a>`;
+};
+
 // ── Shared agent card (single source of truth) ──────────────────────────────
 // Returns the markup used on the /agents directory so the home "Featured
 // agents" section and the lake/town pages all render an identical card.

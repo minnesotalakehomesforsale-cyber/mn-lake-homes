@@ -317,6 +317,27 @@ body.hero-nav.nav-menu-open .navbar .mobile-menu-toggle { color: #1a202c !import
 body.hero-nav.nav-scrolled .navbar .nav-actions a,
 body.hero-nav.nav-menu-open .navbar .nav-actions a { border-color: #d9e0ea !important; }
 
+/* ── Universal place card (lakes & towns) ────────────────────────────────────
+   ONE card style shared by every lake/town discover row and the town "Lakes
+   in …" section, so all pages match. Build the markup with window.mnPlaceCard.
+   Replaces the old per-page .discover-card / .tn-lake-card copies. */
+.place-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
+.place-card { display: flex; flex-direction: column; background: #fff; border: 1px solid #edf2f7; border-radius: 16px; overflow: hidden; text-decoration: none; color: inherit; transition: transform .2s, border-color .2s, box-shadow .2s; }
+.place-card:hover { transform: translateY(-4px); border-color: #cbd5e0; box-shadow: 0 16px 36px rgba(0,0,0,0.08); }
+.place-card:hover .place-cta { color: #155bc8; gap: 0.7rem; }
+.place-card:hover .place-thumb img { transform: scale(1.05); }
+.place-thumb { height: 190px; background: linear-gradient(135deg, #1d6df2 0%, #155bc8 100%); overflow: hidden; position: relative; }
+.place-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s; }
+.place-thumb.is-empty { background: linear-gradient(135deg, #e8f1ff 0%, #c7ddfa 55%, #a8c8f0 100%); display: flex; align-items: center; justify-content: center; }
+.place-thumb .ph-letter { font-size: 3.5rem; font-weight: 800; color: rgba(29,109,242,0.30); line-height: 1; }
+.place-thumb .chip { position: absolute; top: 14px; left: 14px; z-index: 2; background: rgba(255,255,255,0.95); backdrop-filter: blur(4px); color: #1a202c; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 0.3rem 0.65rem; border-radius: 6px; }
+.place-body { padding: 1.25rem 1.4rem 1.4rem; flex: 1; display: flex; flex-direction: column; }
+.place-body h3 { font-size: 1.25rem; font-weight: 700; color: #1a202c; margin: 0 0 0.3rem; letter-spacing: -0.3px; }
+.place-body .loc { font-size: 0.8rem; color: #a0aec0; margin: 0 0 0.8rem; }
+.place-body p { color: #4a5568; font-size: 0.9rem; line-height: 1.55; margin: 0 0 1.1rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.place-cta { margin-top: auto; display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.86rem; font-weight: 800; color: #1d6df2; transition: gap .15s, color .15s; }
+@media (max-width: 600px) { .place-grid { grid-template-columns: 1fr; gap: 1rem; } .place-thumb { height: 170px; } }
+
 /* Full-width header megamenu — matches footer style */
 .nav-megamenu {
     position: absolute;

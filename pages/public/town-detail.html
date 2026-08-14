@@ -90,28 +90,7 @@
 
         /* Lake cards — primary content on the town page, only shows up when
            lakes are linked to the town via lake_tags. */
-        .tn-lake-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
-        .tn-lake-card {
-            display: flex; flex-direction: column;
-            background: #fff; border: 1px solid #edf2f7; border-radius: 16px;
-            overflow: hidden; text-decoration: none; color: inherit;
-            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-        }
-        .tn-lake-card:hover { transform: translateY(-4px); border-color: #cbd5e0; box-shadow: 0 16px 36px rgba(0,0,0,0.08); }
-        .tn-lake-card:hover .tn-lake-cta { color: #155bc8; gap: 0.7rem; }
-        .tn-lake-card:hover .tn-lake-thumb img { transform: scale(1.05); }
-        .tn-lake-thumb { height: 200px; background: linear-gradient(135deg, #1d6df2 0%, #155bc8 100%); overflow: hidden; position: relative; }
-        .tn-lake-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s; }
-        /* No-image placeholder — same gradient + initial as the lake/town hero,
-           so a lake looks identical here and on its own page. */
-        .tn-lake-thumb.is-empty { background: linear-gradient(135deg, #e8f1ff 0%, #c7ddfa 55%, #a8c8f0 100%); display: flex; align-items: center; justify-content: center; }
-        .tn-lake-thumb .ph-letter { font-size: 3.5rem; font-weight: 800; color: rgba(29,109,242,0.30); line-height: 1; }
-        .tn-lake-thumb .chip { position: absolute; top: 14px; left: 14px; z-index: 2; background: rgba(255,255,255,0.95); backdrop-filter: blur(4px); color: #1a202c; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 0.3rem 0.65rem; border-radius: 6px; }
-        .tn-lake-body { padding: 1.3rem 1.5rem 1.5rem; flex: 1; display: flex; flex-direction: column; }
-        .tn-lake-body h3 { font-size: 1.3rem; font-weight: 700; color: #1a202c; margin: 0 0 0.35rem; letter-spacing: -0.3px; }
-        .tn-lake-body .loc { font-size: 0.82rem; color: #a0aec0; margin: 0 0 0.85rem; }
-        .tn-lake-body p { color: #4a5568; font-size: 0.92rem; line-height: 1.55; margin: 0 0 1.1rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
-        .tn-lake-cta { margin-top: auto; display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.88rem; font-weight: 800; color: #1d6df2; transition: gap 0.15s, color 0.15s; }
+        /* Lake/town cards now use the global .place-card (styles/style.css). */
 
         /* Blog card grid */
         .tn-blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
@@ -248,22 +227,7 @@
             font-size: 0.78rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
             color: #1d6df2; margin: 0 0 1.1rem; text-align: center;
         }
-        .discover-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
-        .discover-card {
-            background: #fff; border: 1px solid #edf2f7; border-radius: 12px;
-            overflow: hidden; text-decoration: none; color: inherit;
-            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
-            display: flex; flex-direction: column;
-        }
-        .discover-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,0.08); border-color: #cbd5e0; }
-        .discover-card .thumb {
-            width: 100%; aspect-ratio: 16 / 10;
-            background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
-            background-size: cover; background-position: center;
-        }
-        .discover-card .body { padding: 0.85rem 1rem 1rem; }
-        .discover-card .name { font-size: 0.95rem; font-weight: 800; color: #1a202c; letter-spacing: -0.2px; line-height: 1.2; }
-        .discover-card .meta { font-size: 0.74rem; color: #718096; margin-top: 0.25rem; }
+        /* Discover cards use the global .place-card (styles/style.css). */
         .discover-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
         .discover-action {
             display: flex; flex-direction: column; gap: 0.4rem;
@@ -284,13 +248,7 @@
             .discover-actions { grid-template-columns: 1fr; gap: 0.85rem; }
             .discover-action { padding: 1.3rem 1.25rem; }
         }
-        /* Phones: tidy 2-up compact cards instead of one huge full-width card each. */
         @media (max-width: 560px) {
-            .discover-grid { grid-template-columns: repeat(2, 1fr); gap: 0.7rem; }
-            .discover-card .thumb { aspect-ratio: 16 / 11; }
-            .discover-card .body { padding: 0.55rem 0.7rem 0.75rem; }
-            .discover-card .name { font-size: 0.84rem; line-height: 1.15; }
-            .discover-card .meta { font-size: 0.68rem; }
             .discover-row { margin-bottom: 2rem; }
             .discover-row h3 { font-size: 0.72rem; margin-bottom: 0.9rem; }
             .discover-action .title { font-size: 1.08rem; }
@@ -379,7 +337,7 @@
         <div class="inner">
             <h2>Lakes in {{TOWN_NAME}}</h2>
             <p class="lead">Every lake connected to {{TOWN_NAME}} — click into any one for agents, service providers, and what makes that lake worth owning on.</p>
-            <div id="tn-lakes" class="tn-lake-grid">
+            <div id="tn-lakes" class="place-grid">
                 <div class="tn-empty">Loading lakes…</div>
             </div>
         </div>
@@ -462,7 +420,7 @@
 
             <div class="discover-row" id="tn-discover-towns-row" style="display:none;">
                 <h3>Other towns in {{TOWN_REGION}}</h3>
-                <div class="tn-lake-grid" id="tn-discover-towns"></div>
+                <div class="place-grid" id="tn-discover-towns"></div>
             </div>
 
             <div class="discover-row">
@@ -605,26 +563,15 @@
                 // showing an empty-state card.
                 if (!lakes.length) { if (section) section.style.display = 'none'; return; }
                 if (section) section.style.display = '';
-                el.innerHTML = lakes.map(l => {
-                    const img     = l.featured_image_url || l.hero_image_url || '';
-                    const initial = (l.name || '?').trim().charAt(0).toUpperCase();
-                    const thumbInner = img
-                        ? `<img src="${escHtml(img)}" alt="${escHtml(l.name)}" loading="lazy">`
-                        : `<span class="ph-letter">${escHtml(initial)}</span>`;
-                    return `
-                        <a class="tn-lake-card" href="/lakes/${encodeURIComponent(l.slug)}">
-                            <div class="tn-lake-thumb${img ? '' : ' is-empty'}">
-                                ${l.region ? `<span class="chip">${escHtml(l.region)}</span>` : ''}
-                                ${thumbInner}
-                            </div>
-                            <div class="tn-lake-body">
-                                <h3>${escHtml(l.name)}</h3>
-                                ${l.county ? `<div class="loc">${escHtml(l.county)} County · ${escHtml(l.state || '')}</div>` : ''}
-                                <p>${escHtml(l.intro_text || l.seo_description || '')}</p>
-                                <span class="tn-lake-cta">Visit lake page <span aria-hidden="true">→</span></span>
-                            </div>
-                        </a>`;
-                }).join('');
+                el.innerHTML = lakes.map(l => window.mnPlaceCard({
+                    href: `/lakes/${encodeURIComponent(l.slug)}`,
+                    img:  l.featured_image_url || l.hero_image_url || '',
+                    chip: l.region || '',
+                    name: l.name,
+                    sub:  l.county ? `${l.county} County · ${l.state || ''}` : '',
+                    desc: l.intro_text || l.seo_description || '',
+                    cta:  'Visit lake page',
+                })).join('');
             } catch (_) {
                 if (section) section.style.display = 'none';
             }
@@ -819,28 +766,15 @@
                         (myRegion ? (t.region || '') === myRegion : true)
                     ).slice(0, 4);
                     if (others.length) {
-                        // Match the rich "Lakes in {{TOWN_NAME}}" cards (same
-                        // .tn-lake-card markup + styles) so both sections read alike.
-                        document.getElementById('tn-discover-towns').innerHTML = others.map(t => {
-                            const img     = t.hero_image_url || '';
-                            const initial = (t.name || '?').trim().charAt(0).toUpperCase();
-                            const thumbInner = img
-                                ? `<img src="${escHtml(img)}" alt="${escHtml(t.name)}" loading="lazy">`
-                                : `<span class="ph-letter">${escHtml(initial)}</span>`;
-                            return `
-                                <a class="tn-lake-card" href="/towns/${encodeURIComponent(t.slug)}">
-                                    <div class="tn-lake-thumb${img ? '' : ' is-empty'}">
-                                        ${t.region ? `<span class="chip">${escHtml(t.region)}</span>` : ''}
-                                        ${thumbInner}
-                                    </div>
-                                    <div class="tn-lake-body">
-                                        <h3>${escHtml(t.name)}</h3>
-                                        <div class="loc">Minnesota lake town</div>
-                                        <p>${escHtml(t.intro_text || t.seo_description || '')}</p>
-                                        <span class="tn-lake-cta">Visit town page <span aria-hidden="true">→</span></span>
-                                    </div>
-                                </a>`;
-                        }).join('');
+                        document.getElementById('tn-discover-towns').innerHTML = others.map(t => window.mnPlaceCard({
+                            href: `/towns/${encodeURIComponent(t.slug)}`,
+                            img:  t.hero_image_url || '',
+                            chip: t.region || '',
+                            name: t.name,
+                            sub:  'Minnesota lake town',
+                            desc: t.intro_text || t.seo_description || '',
+                            cta:  'Visit town page',
+                        })).join('');
                         document.getElementById('tn-discover-towns-row').style.display = '';
                     }
                 }
