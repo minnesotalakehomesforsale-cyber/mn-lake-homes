@@ -435,7 +435,9 @@ exports.listAgents = async (req, res) => {
                     m.display_badge_label AS membership_badge,
                     m.sort_priority,
                     COALESCE(al.is_featured, FALSE) AS lake_is_featured,
-                    COALESCE(al.is_founder,  FALSE) AS lake_is_founder
+                    COALESCE(al.is_founder,  FALSE) AS lake_is_founder,
+                    (SELECT COUNT(*)::int FROM reviews rv WHERE rv.subject_type = 'agent' AND rv.subject_id = a.id AND rv.status = 'approved') AS review_count,
+                    (SELECT COALESCE(ROUND(AVG(rating)::numeric, 1), 0) FROM reviews rv WHERE rv.subject_type = 'agent' AND rv.subject_id = a.id AND rv.status = 'approved') AS review_avg
              FROM agents a
              JOIN users u ON u.id = a.user_id
              LEFT JOIN memberships m ON m.id = a.membership_id

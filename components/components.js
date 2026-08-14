@@ -59,6 +59,13 @@ window.mnlhAgentCard = function (agent) {
     const yrs = Number(agent.years_experience);
     const years = yrs > 0 ? `<div class="ac-years">${yrs} year${yrs === 1 ? '' : 's'} experience</div>` : '';
     const broker = agent.brokerage_name ? `<div class="ac-broker">${esc(agent.brokerage_name)}</div>` : '';
+    // Star rating + review count — only when the agent has approved reviews
+    // (never fabricated). Shown on the card the same as on the profile page.
+    const rCount = Number(agent.review_count) || 0;
+    const rAvg = Number(agent.review_avg) || 0;
+    const rating = rCount > 0
+        ? `<div class="ac-rating" style="display:flex;align-items:center;gap:0.28rem;margin-top:0.25rem;font-size:0.8rem;font-weight:700;color:#b7791f;"><span style="display:inline-flex;color:#f6ad00;">${star}</span><span>${rAvg.toFixed(1)}</span><span style="color:#a0aec0;font-weight:600;">· ${rCount} review${rCount === 1 ? '' : 's'}</span></div>`
+        : '';
     return `<a href="/agents/${encodeURIComponent(agent.slug)}" class="agent-link-wrapper" style="text-decoration:none;color:inherit;display:block;">
         <div class="agent-card ac-v2">
             <div class="ac-head">
@@ -66,6 +73,7 @@ window.mnlhAgentCard = function (agent) {
                 <div class="ac-id">
                     <h3 class="ac-name">${esc(agent.display_name)}</h3>
                     ${broker}
+                    ${rating}
                     ${years}
                 </div>
             </div>

@@ -176,7 +176,9 @@ const getPublicAgents = async (req, res) => {
                        FROM user_tags ut
                        JOIN tags t ON t.id = ut.tag_id
                        WHERE ut.user_id = a.user_id AND t.active = TRUE
-                   ), '[]'::json) AS geo_tags
+                   ), '[]'::json) AS geo_tags,
+                   (SELECT COUNT(*)::int FROM reviews rv WHERE rv.subject_type = 'agent' AND rv.subject_id = a.id AND rv.status = 'approved') AS review_count,
+                   (SELECT COALESCE(ROUND(AVG(rating)::numeric, 1), 0) FROM reviews rv WHERE rv.subject_type = 'agent' AND rv.subject_id = a.id AND rv.status = 'approved') AS review_avg
             FROM agents a
             JOIN memberships m ON a.membership_id = m.id
             WHERE a.profile_status = 'published' AND a.is_published = true
