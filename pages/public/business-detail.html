@@ -573,5 +573,13 @@
             return 2 * R * Math.asin(Math.sqrt(s));
         }
     </script>
+    <!-- DEV-10: self-claim entry (backend gates to unclaimed listings). -->
+    <div id="claim-mount"></div>
+    <script src="../../components/claim-widget.js" defer></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', function () {
+            if (window.mountClaimWidget) window.mountClaimWidget({ type: 'business', id: '{{BUSINESS_ID}}', name: '{{BUSINESS_NAME}}', mountEl: document.getElementById('claim-mount') });
+        });
+    </script>
 </body>
 </html>
