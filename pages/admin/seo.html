@@ -89,7 +89,7 @@
                 <div class="card"><div class="n" style="color:#94a3b8">${data.geo_only}</div><div class="l">Geo-only routing tags · not pages</div></div>
             </div>
             <p class="muted" style="margin:0.25rem 0 1rem;font-size:0.85rem;">
-                The <strong>${data.geo_only}</strong> geo-only tags exist to <strong>route leads</strong> to agents — non-lake suburbs and out-of-state cities that should stay unindexed. Keeping them out of Google is by design, not a problem to fix.
+                <strong>${data.geo_only}</strong> geo-only tags route leads (non-lake suburbs) and <strong>${data.out_of_state || 0}</strong> are out-of-state cities (ND/WI). Both are intentionally kept out of Google — not a problem. The count above is <strong>Minnesota lake-towns only</strong>.
             </p>
             ${attn.length
                 ? `<div class="section">

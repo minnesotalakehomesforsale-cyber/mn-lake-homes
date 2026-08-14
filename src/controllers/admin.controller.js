@@ -1770,7 +1770,7 @@ const getSeoAudit = async (req, res) => {
             FROM lakes ORDER BY name`)).rows;
 
         const towns = (await pool.query(`
-            SELECT t.slug, t.name, t.active,
+            SELECT t.slug, t.name, t.active, COALESCE(t.state,'MN') AS state,
                 (COALESCE(t.hero_image_url,'') <> '')          AS has_hero,
                 COALESCE(LENGTH(t.description),0)              AS desc_len,
                 (COALESCE(t.seo_description,'') <> '')          AS has_seo_desc,
@@ -1793,17 +1793,19 @@ const getSeoAudit = async (req, res) => {
         const lakeThin = lakes.filter(l => l.status === 'published' && l.has_hero && !l.has_seo_desc)
             .map(l => ({ name: l.name, slug: l.slug, issues: ['no meta description'] }));
 
-        // Only towns that were CURATED (have content) are meant to be pages.
-        // Bare geo-tags are routing-only and intentionally not indexed — they are
-        // not "invisible pages," so they don't belong in the alarm bucket.
-        const townPages   = towns.filter(t => t.has_content);
+        // Only MN towns that were CURATED (have content) are meant to be lake-town
+        // pages. Bare geo-tags are routing-only (intentional), and out-of-state
+        // cities are not MN lake markets — neither belongs in the alarm bucket.
+        const isMN = t => t.state === 'MN';
+        const townPages   = towns.filter(t => t.has_content && isMN(t));
         const townLive    = townPages.filter(t => t.active && t.has_hero && t.has_linked_lake);
         const townNeedsAttention = townPages
             .filter(t => !(t.active && t.has_hero && t.has_linked_lake))
             .map(t => ({ name: t.name, slug: t.slug, reason: !t.active ? 'curated but inactive' : !t.has_hero ? 'no hero image' : 'no published lake linked' }));
         const townThin = townLive.filter(t => !t.has_seo_desc)
             .map(t => ({ name: t.name, slug: t.slug, issues: ['no meta description'] }));
-        const townGeoOnly = towns.length - townPages.length;   // routing tags, intentional
+        const townGeoOnly    = towns.filter(t => !t.has_content).length;                 // routing tags, intentional
+        const townOutOfState = towns.filter(t => t.has_content && !isMN(t)).length;       // ND/WI cities — not MN markets
 
         res.json({
             lakes: { total: lakes.length, invisible: lakeInvisible, thin: lakeThin,
@@ -1811,9 +1813,10 @@ const getSeoAudit = async (req, res) => {
             towns: {
                 total: towns.length,
                 live: townLive.length,
-                needs_attention: townNeedsAttention,   // curated pages that aren't rendering — the real to-do
+                needs_attention: townNeedsAttention,   // curated MN pages that aren't rendering — the real to-do
                 thin: townThin,                         // live but missing a meta description
                 geo_only: townGeoOnly,                  // bare routing tags — intentionally not pages
+                out_of_state: townOutOfState,           // ND/WI cities with content — not MN markets, leave hidden
             },
         });
     } catch (err) {
