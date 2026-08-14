@@ -392,6 +392,10 @@
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                     My Properties
                 </button>
+                <button class="nav-tab" id="tab-btn-referrals" onclick="switchView('referrals')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    Referrals
+                </button>
                 <button class="nav-tab" id="tab-btn-account" onclick="switchView('account')">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                     Account
@@ -1028,6 +1032,39 @@
                     <div id="prop-list"><div class="pc-msg">Loading…</div></div>
                 </div>
 
+                <!-- ── REFERRALS ───────────────────────────────────────────── -->
+                <div id="view-referrals" class="view-card" style="display:none; background:#fff; padding:2rem 2.5rem; border-radius:12px; border:1px solid #edf2f7; box-shadow:0 4px 6px rgba(0,0,0,0.02);">
+                    <h2 style="font-size:2.1rem; font-weight:800; margin-bottom:0.25rem;">Refer an agent</h2>
+                    <p style="color:#718096; margin-bottom:1.75rem; max-width:640px; line-height:1.55;">Know a great agent who'd benefit from matched lake-home leads? Share your profile or the network with them. When an agent you refer signs up for a paid plan, <strong>you get a free month</strong>.</p>
+
+                    <div style="display:grid; gap:1.25rem; max-width:720px;">
+                        <!-- Share your profile -->
+                        <div style="border:1px solid #edf2f7; border-radius:12px; padding:1.35rem 1.5rem;">
+                            <div style="font-weight:800; color:#1a202c; margin-bottom:0.35rem;">Share your profile</div>
+                            <p style="color:#718096; font-size:0.9rem; margin:0 0 0.85rem; line-height:1.5;">Your public profile page — send it to colleagues, clients, or partners.</p>
+                            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                <input id="ref-profile-url" type="text" readonly value="" style="flex:1; min-width:220px; padding:0.6rem 0.75rem; border:1px solid #e2e8f0; border-radius:9px; font:inherit; background:#f8fafc; color:#1a202c;">
+                                <button type="button" onclick="copyRef('ref-profile-url', this)" style="background:#1d6df2; color:#fff; border:0; border-radius:9px; padding:0.6rem 1.1rem; font:inherit; font-weight:700; cursor:pointer;">Copy</button>
+                            </div>
+                        </div>
+
+                        <!-- Invite an agent to the network -->
+                        <div style="border:1px solid #edf2f7; border-radius:12px; padding:1.35rem 1.5rem;">
+                            <div style="font-weight:800; color:#1a202c; margin-bottom:0.35rem;">Invite an agent to the network</div>
+                            <p style="color:#718096; font-size:0.9rem; margin:0 0 0.85rem; line-height:1.5;">Send them the join page, or copy a ready-made message.</p>
+                            <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.85rem;">
+                                <input id="ref-join-url" type="text" readonly value="" style="flex:1; min-width:220px; padding:0.6rem 0.75rem; border:1px solid #e2e8f0; border-radius:9px; font:inherit; background:#f8fafc; color:#1a202c;">
+                                <button type="button" onclick="copyRef('ref-join-url', this)" style="background:#1d6df2; color:#fff; border:0; border-radius:9px; padding:0.6rem 1.1rem; font:inherit; font-weight:700; cursor:pointer;">Copy</button>
+                            </div>
+                            <textarea id="ref-message" readonly rows="4" style="width:100%; box-sizing:border-box; padding:0.7rem 0.85rem; border:1px solid #e2e8f0; border-radius:9px; font:inherit; color:#4a5568; line-height:1.5; resize:vertical;"></textarea>
+                            <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem;">
+                                <button type="button" onclick="copyRef('ref-message', this)" style="background:#1a202c; color:#fff; border:0; border-radius:9px; padding:0.6rem 1.1rem; font:inherit; font-weight:700; cursor:pointer;">Copy message</button>
+                                <a id="ref-email" href="#" style="background:transparent; color:#1d6df2; border:1px solid #1d6df2; border-radius:9px; padding:0.6rem 1.1rem; font:inherit; font-weight:700; text-decoration:none;">Email an agent →</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ── AGENT RESOURCES (paid tiers only) ──────────────────── -->
                 <div id="view-resources" class="view-card" style="display:none; background:#fff; padding:2rem 2.5rem; border-radius:12px; border:1px solid #edf2f7; box-shadow:0 4px 6px rgba(0,0,0,0.02);">
                     <h2 style="font-size:2.1rem; font-weight:800; margin-bottom:0.25rem;">Agent Resources</h2>
@@ -1321,6 +1358,8 @@
             document.getElementById('view-properties').style.display = topView === 'properties' ? 'block' : 'none';
             const vRes = document.getElementById('view-resources');
             if (vRes) vRes.style.display = topView === 'resources' ? 'block' : 'none';
+            const vRef = document.getElementById('view-referrals');
+            if (vRef) vRef.style.display = topView === 'referrals' ? 'block' : 'none';
             document.getElementById('account-subtabs').style.display = isAccount ? 'flex' : 'none';
 
             if (isAccount) {
@@ -1337,11 +1376,34 @@
             document.getElementById('tab-btn-account').classList.toggle('active',   topView === 'account');
             document.getElementById('tab-btn-messages').classList.toggle('active',  topView === 'messages');
             document.getElementById('tab-btn-properties').classList.toggle('active', topView === 'properties');
+            const refBtn = document.getElementById('tab-btn-referrals');
+            if (refBtn) refBtn.classList.toggle('active', topView === 'referrals');
 
+            if (topView === 'referrals') fillReferrals();
             if (topView === 'leads') loadLeads();
             if (topView === 'messages') loadMessages();
             if (topView === 'properties') loadProperties();
             if (topView === 'resources' && !_isFreeAgent) loadAgentResources();
+        }
+
+        // ── Referrals ────────────────────────────────────────────────────────
+        function fillReferrals() {
+            const slug = window._agentSlug || '';
+            const profileUrl = slug ? (location.origin + '/agents/' + slug) : (location.origin + '/agents');
+            const joinUrl = location.origin + '/join';
+            const pEl = document.getElementById('ref-profile-url'); if (pEl) pEl.value = profileUrl;
+            const jEl = document.getElementById('ref-join-url');   if (jEl) jEl.value = joinUrl;
+            const msg = "Thought of you — I list on MinnesotaLakeHomesForSale.com, a lake-focused network that matches buyers and sellers with local lake-home agents. If you work lake markets it's worth a look, and you can start with a free profile here: " + joinUrl;
+            const mEl = document.getElementById('ref-message'); if (mEl) mEl.value = msg;
+            const eEl = document.getElementById('ref-email');
+            if (eEl) eEl.href = 'mailto:?subject=' + encodeURIComponent('A lake-home agent network worth a look') + '&body=' + encodeURIComponent(msg);
+        }
+        function copyRef(id, btn) {
+            const el = document.getElementById(id); if (!el) return;
+            el.focus(); el.select(); try { el.setSelectionRange(0, 99999); } catch (_) {}
+            try { navigator.clipboard.writeText(el.value); } catch (_) { try { document.execCommand('copy'); } catch (__) {} }
+            const orig = btn.textContent; btn.textContent = 'Copied ✓';
+            setTimeout(() => { btn.textContent = orig; }, 1500);
         }
 
         // ── My Properties (agent-owned listings) ─────────────────────────────
