@@ -30,3 +30,8 @@ new images3/
 New Images3/
 image-catalog.html
 images copy/
+
+# Consolidated local image archive — every image folder NOT served by the app
+# (raw dumps, source packs, small-image backups) lives here. Kept on disk for
+# reference, never committed or deployed. The live folder is assets/images/.
+image-library/
