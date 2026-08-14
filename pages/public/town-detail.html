@@ -462,7 +462,7 @@
 
             <div class="discover-row" id="tn-discover-towns-row" style="display:none;">
                 <h3>Other towns in {{TOWN_REGION}}</h3>
-                <div class="discover-grid" id="tn-discover-towns"></div>
+                <div class="tn-lake-grid" id="tn-discover-towns"></div>
             </div>
 
             <div class="discover-row">
@@ -819,15 +819,25 @@
                         (myRegion ? (t.region || '') === myRegion : true)
                     ).slice(0, 4);
                     if (others.length) {
+                        // Match the rich "Lakes in {{TOWN_NAME}}" cards (same
+                        // .tn-lake-card markup + styles) so both sections read alike.
                         document.getElementById('tn-discover-towns').innerHTML = others.map(t => {
-                            const img = t.hero_image_url || '';
-                            const style = img ? `style="background-image:url('${escHtml(img)}');"` : '';
+                            const img     = t.hero_image_url || '';
+                            const initial = (t.name || '?').trim().charAt(0).toUpperCase();
+                            const thumbInner = img
+                                ? `<img src="${escHtml(img)}" alt="${escHtml(t.name)}" loading="lazy">`
+                                : `<span class="ph-letter">${escHtml(initial)}</span>`;
                             return `
-                                <a class="discover-card" href="/towns/${encodeURIComponent(t.slug)}">
-                                    <div class="thumb" ${style}></div>
-                                    <div class="body">
-                                        <div class="name">${escHtml(t.name)}</div>
-                                        <div class="meta">${escHtml([t.region, t.state].filter(Boolean).join(' · '))}</div>
+                                <a class="tn-lake-card" href="/towns/${encodeURIComponent(t.slug)}">
+                                    <div class="tn-lake-thumb${img ? '' : ' is-empty'}">
+                                        ${t.region ? `<span class="chip">${escHtml(t.region)}</span>` : ''}
+                                        ${thumbInner}
+                                    </div>
+                                    <div class="tn-lake-body">
+                                        <h3>${escHtml(t.name)}</h3>
+                                        <div class="loc">Minnesota lake town</div>
+                                        <p>${escHtml(t.intro_text || t.seo_description || '')}</p>
+                                        <span class="tn-lake-cta">Visit town page <span aria-hidden="true">→</span></span>
                                     </div>
                                 </a>`;
                         }).join('');

@@ -119,7 +119,7 @@ exports.list = async (req, res) => {
 
         const sql = `
             SELECT t.id, t.slug, t.name, t.state, t.region, t.latitude, t.longitude,
-                   t.hero_image_url,
+                   t.hero_image_url, t.intro_text, t.seo_description,
                    t.active, t.created_at, t.updated_at,
                    (SELECT COUNT(*) FROM lake_tags lt WHERE lt.tag_id = t.id)::int AS lake_count
             FROM tags t
