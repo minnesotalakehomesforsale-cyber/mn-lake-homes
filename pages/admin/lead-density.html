@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Lead Density by Lake | MN Lake Homes Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        html, body { margin: 0; background: #f6f8fb; color: #0f172a; font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif; }
+        h1 { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.75px; margin: 0 0 0.25rem; }
+        .muted { color: #64748b; font-size: 0.92rem; }
+        .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin: 1.5rem 0 1rem; }
+        .btn { background: #1d6df2; color: #fff; border: 0; border-radius: 9px; padding: 0.6rem 1.15rem; font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .card { background: #fff; border: 1px solid #e9eef5; border-radius: 14px; padding: 1.15rem 1.35rem; box-shadow: 0 1px 2px rgba(16,24,40,0.03); position: relative; overflow: hidden; }
+        .card.opp { background: linear-gradient(135deg,#fffbeb,#fff7ed); border-color: #fed7aa; }
+        .card .n { font-size: 2.1rem; font-weight: 800; letter-spacing: -1.2px; line-height: 1; font-variant-numeric: tabular-nums; }
+        .card.opp .n { color: #d97706; }
+        .card .l { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: #94a3b8; margin-top: 0.45rem; }
+        .card.opp .l { color: #b45309; }
+        .tbl-wrap { background: #fff; border: 1px solid #e9eef5; border-radius: 14px; overflow-x: auto; box-shadow: 0 1px 2px rgba(16,24,40,0.03); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        th { text-align: left; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.6px; color: #94a3b8; font-weight: 800; padding: 0.75rem 0.9rem; white-space: nowrap; cursor: pointer; user-select: none; border-bottom: 1px solid #eef2f7; }
+        th:hover { color: #1d6df2; }
+        th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        td { padding: 0.65rem 0.9rem; border-top: 1px solid #f1f5f9; white-space: nowrap; }
+        tbody tr:hover { background: #f8fafc; }
+        td.name { font-weight: 700; }
+        td.name a { color: #0f172a; text-decoration: none; }
+        td.name a:hover { color: #1d6df2; }
+        .tier { font-size: 0.7rem; font-weight: 800; padding: 0.1rem 0.45rem; border-radius: 5px; background: #eef4ff; color: #1d6df2; }
+        .tier.t2 { background: #f1f5f9; color: #64748b; }
+        .pill { font-size: 0.72rem; font-weight: 700; padding: 0.12rem 0.5rem; border-radius: 999px; }
+        .pill.yes { background: #f0fdf4; color: #16a34a; }
+        .pill.no { background: #fef2f2; color: #dc2626; }
+        .zero td { color: #cbd5e1; }
+        .zero td.name a { color: #94a3b8; }
+    </style>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+</head>
+<body>
+<div class="admin-wrap">
+    <admin-sidebar active="leads"></admin-sidebar>
+    <main class="admin-main">
+        <h1>Lead Density by Lake</h1>
+        <p class="muted">Where the demand is — and where there's no one paying to catch it. <strong>Open opportunity lakes</strong> (leads, no paying agent) are your sales target. Click any column to sort.</p>
+
+        <div class="cards" id="cards"></div>
+        <div class="toolbar">
+            <div class="muted" id="rowcount"></div>
+            <a class="btn" id="csvBtn" href="/api/admin/lead-density?format=csv">Export CSV</a>
+        </div>
+        <div class="tbl-wrap"><table id="tbl"><thead></thead><tbody><tr><td class="muted" style="padding:1.5rem;">Loading…</td></tr></tbody></table></div>
+    </main>
+</div>
+<script>
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const PB = { under_300k: 'Under $300k', '300k_500k': '$300k–$500k', '500k_750k': '$500k–$750k', '750k_1m': '$750k–$1M', '1m_1_5m': '$1M–$1.5M', '1_5m_plus': '$1.5M+', unsure: 'Unsure' };
+    function dur(sec) { if (sec == null) return '—'; sec = Math.round(sec); if (sec < 60) return sec + 's'; if (sec < 3600) return Math.floor(sec / 60) + 'm'; if (sec < 86400) return Math.floor(sec / 3600) + 'h'; return Math.floor(sec / 86400) + 'd'; }
+
+    const COLS = [
+        { k: 'name', label: 'Lake', num: false },
+        { k: 'market_tier', label: 'Tier', num: true },
+        { k: 'leads_30d', label: '30d', num: true },
+        { k: 'leads_90d', label: '90d', num: true },
+        { k: 'leads_all', label: 'All-time', num: true },
+        { k: 'buyers', label: 'Buyers', num: true },
+        { k: 'sellers', label: 'Sellers', num: true },
+        { k: 'top_price_band', label: 'Top band', num: false },
+        { k: 'has_paying_agent', label: 'Paying agent?', num: false },
+        { k: 'median_ttc_sec', label: 'Median claim', num: true },
+        { k: 'unclaimed', label: 'Unclaimed', num: true },
+    ];
+    let DATA = [], sortKey = 'leads_90d', sortDir = -1;
+
+    function render() {
+        const thead = document.querySelector('#tbl thead');
+        thead.innerHTML = '<tr>' + COLS.map(c => `<th class="${c.num ? 'num' : ''}" onclick="sortBy('${c.k}')">${c.label}${sortKey === c.k ? (sortDir < 0 ? ' ▾' : ' ▴') : ''}</th>`).join('') + '</tr>';
+        const rows = DATA.slice().sort((a, b) => {
+            let av = a[sortKey], bv = b[sortKey];
+            if (typeof av === 'boolean') { av = av ? 1 : 0; bv = bv ? 1 : 0; }
+            if (av == null) av = -Infinity; if (bv == null) bv = -Infinity;
+            if (typeof av === 'string') return sortDir * av.localeCompare(bv);
+            return sortDir * (av - bv);
+        });
+        document.querySelector('#tbl tbody').innerHTML = rows.map(r => {
+            const zero = r.leads_all === 0;
+            const buyPct = (r.buyers + r.sellers) ? Math.round(100 * r.buyers / (r.buyers + r.sellers)) : null;
+            return `<tr class="${zero ? 'zero' : ''}">
+                <td class="name"><a href="/lakes/${encodeURIComponent(r.slug)}" target="_blank" rel="noopener">${esc(r.name)}</a></td>
+                <td class="num">${r.market_tier ? `<span class="tier ${r.market_tier === 2 ? 't2' : ''}">T${r.market_tier}</span>` : '—'}</td>
+                <td class="num">${r.leads_30d}</td>
+                <td class="num"><strong>${r.leads_90d}</strong></td>
+                <td class="num">${r.leads_all}</td>
+                <td class="num">${r.buyers}${buyPct != null ? ` <span class="muted">(${buyPct}%)</span>` : ''}</td>
+                <td class="num">${r.sellers}</td>
+                <td>${r.top_price_band ? esc(PB[r.top_price_band] || r.top_price_band) : '—'}</td>
+                <td>${r.has_paying_agent ? `<span class="pill yes">Yes</span> ${esc(r.agent_name || '')}` : '<span class="pill no">No</span>'}</td>
+                <td class="num">${dur(r.median_ttc_sec)}</td>
+                <td class="num">${r.unclaimed || 0}</td>
+            </tr>`;
+        }).join('');
+        document.getElementById('rowcount').textContent = `${DATA.length} published lakes`;
+    }
+    window.sortBy = function (k) { if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = (k === 'name' || k === 'top_price_band') ? 1 : -1; } render(); };
+
+    (async () => {
+        let d;
+        try {
+            const res = await fetch('/api/admin/lead-density', { credentials: 'include' });
+            if (res.status === 401 || res.status === 403) { document.querySelector('#tbl tbody').innerHTML = '<tr><td class="muted" style="padding:1.5rem;">Sign in as an admin.</td></tr>'; return; }
+            d = await res.json();
+            if (!res.ok) throw new Error(d.error || 'Failed');
+        } catch (e) { document.querySelector('#tbl tbody').innerHTML = `<tr><td style="padding:1.5rem;color:#dc2626;">${esc(e.message)}</td></tr>`; return; }
+        const s = d.summary;
+        document.getElementById('cards').innerHTML = `
+            <div class="card opp"><div class="n">${s.open_opportunity_lakes}</div><div class="l">Open opportunity lakes · sales target</div></div>
+            <div class="card"><div class="n">${s.total_90d}</div><div class="l">Total leads · 90 days</div></div>
+            <div class="card"><div class="n">${s.total_30d}</div><div class="l">Total leads · 30 days</div></div>
+            <div class="card"><div class="n">${s.lakes}</div><div class="l">Published lakes</div></div>`;
+        DATA = d.rows || [];
+        render();
+    })();
+</script>
+</body>
+</html>

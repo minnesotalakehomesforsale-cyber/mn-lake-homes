@@ -3558,6 +3558,8 @@ async function ensureTables() {
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS landing_page_town VARCHAR(160);
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS referrer          VARCHAR(500);
             CREATE INDEX IF NOT EXISTS idx_leads_landing_lake ON leads(landing_page_lake) WHERE landing_page_lake IS NOT NULL AND landing_page_lake <> '';
+            -- Submitted price band (DEV-06 lead-density "Top price band" column).
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS price_band VARCHAR(40);
 
             -- Routing SLA (T021): the moment a lead FIRST reached an agent.
             -- Distinct from assigned_at, which the SLA re-router overwrites on a

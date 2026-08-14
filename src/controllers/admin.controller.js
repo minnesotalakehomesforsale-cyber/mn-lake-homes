@@ -1899,6 +1899,79 @@ const getRoutingSla = async (req, res) => {
 };
 
 /**
+ * GET /api/admin/lead-density  (?format=csv) — DEV-06.
+ * One row per published lake: leads 30d/90d/all, buyer/seller split, top price
+ * band, whether a paying agent covers it, median time-to-claim, unclaimed leads.
+ * Pre-aggregated in a single query. A lead is attributed to a lake by its
+ * first-touch landing_page_lake, falling back to its resolved lake_id.
+ */
+const getLeadDensity = async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            WITH lead_lake AS (
+                SELECT ld.id, ld.lead_type, ld.created_at, ld.routed_at, ld.assigned_user_id, ld.price_band,
+                       COALESCE(NULLIF(ld.landing_page_lake, ''), lk.slug) AS lake_slug
+                  FROM leads ld
+                  LEFT JOIN lakes lk ON lk.id = ld.lake_id
+                 WHERE ld.deleted_at IS NULL
+            ),
+            paying AS (
+                SELECT al.lake_id, MIN(COALESCE(a.display_name, u.full_name)) AS agent_name
+                  FROM agent_lakes al
+                  JOIN agents a ON a.id = al.agent_id AND a.is_published = TRUE AND a.deleted_at IS NULL
+                  LEFT JOIN users u ON u.id = a.user_id
+                 WHERE (COALESCE(a.paid_membership_code, 'free') NOT IN ('free', '')) OR a.tier_comped = TRUE
+                 GROUP BY al.lake_id
+            )
+            SELECT l.id, l.name, l.slug, l.market_tier,
+                   COUNT(ll.id) FILTER (WHERE ll.created_at >= NOW() - INTERVAL '30 days')::int AS leads_30d,
+                   COUNT(ll.id) FILTER (WHERE ll.created_at >= NOW() - INTERVAL '90 days')::int AS leads_90d,
+                   COUNT(ll.id)::int AS leads_all,
+                   COUNT(ll.id) FILTER (WHERE ll.lead_type = 'buyer')::int  AS buyers,
+                   COUNT(ll.id) FILTER (WHERE ll.lead_type = 'seller')::int AS sellers,
+                   COUNT(ll.id) FILTER (WHERE ll.assigned_user_id IS NULL)::int AS unclaimed,
+                   ROUND(percentile_cont(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ll.routed_at - ll.created_at)))
+                         FILTER (WHERE ll.routed_at IS NOT NULL AND ll.routed_at >= ll.created_at))::int AS median_ttc_sec,
+                   mode() WITHIN GROUP (ORDER BY ll.price_band) FILTER (WHERE ll.price_band IS NOT NULL) AS top_price_band,
+                   (pay.lake_id IS NOT NULL) AS has_paying_agent,
+                   pay.agent_name
+              FROM lakes l
+              LEFT JOIN lead_lake ll ON ll.lake_slug = l.slug
+              LEFT JOIN paying pay ON pay.lake_id = l.id
+             WHERE l.status = 'published'
+             GROUP BY l.id, l.name, l.slug, l.market_tier, pay.lake_id, pay.agent_name
+             ORDER BY leads_90d DESC, leads_all DESC, l.name ASC
+        `);
+
+        // Top-line totals from ALL leads (reconciles with the reconciliation view).
+        const totals = await pool.query(`
+            SELECT COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::int AS t30,
+                   COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '90 days')::int AS t90,
+                   COUNT(*)::int AS tall
+              FROM leads WHERE deleted_at IS NULL`);
+        const openOpportunity = rows.filter(r => r.leads_90d >= 1 && !r.has_paying_agent).length;
+        const summary = {
+            total_30d: totals.rows[0].t30, total_90d: totals.rows[0].t90, total_all: totals.rows[0].tall,
+            open_opportunity_lakes: openOpportunity,
+            lakes: rows.length,
+        };
+
+        if ((req.query.format || '').toLowerCase() === 'csv') {
+            const cols = ['name', 'slug', 'market_tier', 'leads_30d', 'leads_90d', 'leads_all', 'buyers', 'sellers', 'unclaimed', 'median_ttc_sec', 'top_price_band', 'has_paying_agent', 'agent_name'];
+            const esc = v => { const s = v == null ? '' : String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+            const csv = [cols.join(',')].concat(rows.map(r => cols.map(c => esc(r[c])).join(','))).join('\n');
+            res.set('Content-Type', 'text/csv; charset=utf-8');
+            res.set('Content-Disposition', 'attachment; filename="lead-density.csv"');
+            return res.send(csv);
+        }
+        res.json({ summary, rows });
+    } catch (err) {
+        console.error('[getLeadDensity]', err.message);
+        res.status(500).json({ error: 'Failed to compute lead density: ' + err.message });
+    }
+};
+
+/**
  * POST /api/admin/hubspot/ensure-schema — B1/B4/T025.
  * Idempotently creates the 4 lead-qualification contact properties, the
  * Agent Acquisition deal pipeline (8 stages), and its deal properties in
@@ -3075,6 +3148,7 @@ module.exports = {
     getSeoAudit,
     getLeadReconciliation,
     getRoutingSla,
+    getLeadDensity,
     ensureHubspotSchema,
     createAgent,
     updateAgentProfile,

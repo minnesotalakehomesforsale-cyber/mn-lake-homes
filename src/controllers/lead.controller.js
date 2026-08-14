@@ -212,15 +212,16 @@ const createLead = async (req, res) => {
 
         // DEV-01: persist attribution (parameterized). Separate UPDATE keeps the
         // big INSERT stable. Best-effort — never block the lead on it.
-        if (newLeadId && Object.values(attribution).some(Boolean)) {
+        if (newLeadId && (Object.values(attribution).some(Boolean) || qualPriceBand)) {
             pool.query(
                 `UPDATE leads SET utm_source=$1, utm_medium=$2, utm_campaign=$3, utm_term=$4,
                         utm_content=$5, gclid=$6, fbclid=$7, landing_page=$8,
-                        landing_page_lake=$9, landing_page_town=$10, referrer=$11
-                   WHERE id=$12`,
+                        landing_page_lake=$9, landing_page_town=$10, referrer=$11, price_band=$12
+                   WHERE id=$13`,
                 [attribution.utm_source, attribution.utm_medium, attribution.utm_campaign, attribution.utm_term,
                  attribution.utm_content, attribution.gclid, attribution.fbclid, attribution.landing_page,
-                 attribution.landing_page_lake, attribution.landing_page_town, attribution.referrer, newLeadId])
+                 attribution.landing_page_lake, attribution.landing_page_town, attribution.referrer,
+                 qualPriceBand || null, newLeadId])
                 .catch(e => console.error('[lead.attribution] save failed:', e.message));
         }
 

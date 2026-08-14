@@ -218,6 +218,7 @@
         { key: 'dashboard',   href: 'dashboard.html',  label: 'Dashboard' },
         { key: 'agents',      href: 'agents.html',     label: 'Agents Directory', badgeId: 'nav-badge-agents' },
         { key: 'leads',       href: 'leads.html',      label: 'Central Leads', badgeId: 'nav-badge-leads' },
+        { key: 'lead-density', href: 'lead-density.html', label: 'Lead Density by Lake' },
         { key: 'inquiries',   href: 'inquiries.html',  label: 'Inquiries', badgeId: 'nav-badge-inquiries' },
         { key: 'messages',    href: 'messages.html',   label: 'Messages', badgeId: 'nav-badge-messages' },
         // Marketing rolls up Blog & Content along with three new tabs
