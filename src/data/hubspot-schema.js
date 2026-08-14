@@ -70,10 +70,12 @@ const CONTACT_PROPERTIES = [
     // days. This fresh name creates clean as a dropdown. Label is unchanged.
     { name: 'lead_source_detail_v2', label: 'Lead Source Detail', type: 'enumeration', fieldType: 'select', groupName: CONTACT_PROPERTY_GROUP.name, options: ordered(LEAD_SOURCE_DETAIL_OPTIONS) },
     // Attribution (DEV-01) — first-touch UTM + landing context. Plain text.
+    // NOTE: gclid/fbclid are intentionally NOT created here — HubSpot ships
+    // built-in `hs_google_click_id` / `hs_facebook_click_id` and the sync maps
+    // our raw gclid/fbclid onto those (creating duplicates errors on label clash).
     ...[
         ['utm_source', 'UTM Source'], ['utm_medium', 'UTM Medium'], ['utm_campaign', 'UTM Campaign'],
-        ['utm_term', 'UTM Term'], ['utm_content', 'UTM Content'], ['gclid', 'Google Click ID'],
-        ['fbclid', 'Facebook Click ID'], ['landing_page', 'Landing Page'],
+        ['utm_term', 'UTM Term'], ['utm_content', 'UTM Content'], ['landing_page', 'Landing Page'],
         ['landing_page_lake', 'Landing Page Lake'], ['landing_page_town', 'Landing Page Town'],
         ['referrer', 'Referrer'],
     ].map(([name, label]) => ({ name, label, type: 'string', fieldType: 'text', groupName: CONTACT_PROPERTY_GROUP.name })),

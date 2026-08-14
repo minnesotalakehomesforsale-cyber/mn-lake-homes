@@ -95,8 +95,9 @@ const BUILTIN_PROPS = [
 // send: syncContact retries built-in-only if HubSpot rejects an unknown prop,
 // so forms never break even if the schema hasn't been provisioned yet.
 const QUAL_PROPS = ['target_lake', 'intent_type', 'price_band', 'lead_source_detail_v2'];
-// DEV-01 attribution props (first-touch UTM + landing context).
-const ATTR_PROPS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'fbclid', 'landing_page', 'landing_page_lake', 'landing_page_town', 'referrer'];
+// DEV-01 attribution props (first-touch UTM + landing context). gclid/fbclid map
+// to HubSpot's built-in hs_google_click_id / hs_facebook_click_id (see remap in syncContact).
+const ATTR_PROPS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'landing_page', 'landing_page_lake', 'landing_page_town', 'referrer', 'hs_google_click_id', 'hs_facebook_click_id'];
 const ALLOWED_PROPS = new Set([...BUILTIN_PROPS, ...QUAL_PROPS, ...ATTR_PROPS]);
 
 function whitelistProps(props, allowed = ALLOWED_PROPS) {
@@ -120,7 +121,13 @@ async function syncContact(payload) {
     if (!ENABLED)        { logSkip('HUBSPOT_ENABLE_SYNC=false'); return null; }
     if (!isConfigured()) { logSkip('HUBSPOT_ACCESS_TOKEN/PORTAL_ID not set'); return null; }
 
-    const props = whitelistProps(cleanProps(payload));
+    const cleaned = cleanProps(payload);
+    // Map raw ad-click IDs onto HubSpot's built-in properties (its Google/Meta
+    // ad integrations read these) rather than custom gclid/fbclid props.
+    if (cleaned.gclid)  cleaned.hs_google_click_id   = cleaned.gclid;
+    if (cleaned.fbclid) cleaned.hs_facebook_click_id = cleaned.fbclid;
+    delete cleaned.gclid; delete cleaned.fbclid;
+    const props = whitelistProps(cleaned);
     const email = ((payload?.email) || '').toLowerCase();
     if (!email) { logSkip('no email'); return null; }
     props.email = email;
