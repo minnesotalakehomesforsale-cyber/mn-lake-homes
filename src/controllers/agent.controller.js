@@ -283,7 +283,6 @@ const publishProfile = async (req, res) => {
         // bar always means "publishable".
         const missing = [];
         if (!agent.display_name)   missing.push('Display Name');
-        if (!agent.brokerage_name) missing.push('Brokerage Name');
         if (!agent.phone_public)   missing.push('Phone');
         if (!agent.city)           missing.push('Primary City');
         if (!agent.bio || agent.bio.trim().length < 20) missing.push('Bio (minimum 20 characters)');
@@ -487,6 +486,14 @@ const saveDraft = async (req, res) => {
 
         const { rows } = await pool.query(`SELECT * FROM agents WHERE user_id = $1`, [req.user.userId]);
 
+        // Keep the brokerage catalog in sync: if the agent typed a brokerage
+        // that isn't in the catalog yet, add it (pending) + file an admin task.
+        try {
+            const { reconcileBrokerage } = require('./brokerage.controller');
+            const savedBrokerage = rows[0]?.brokerage_name;
+            if (savedBrokerage) reconcileBrokerage(savedBrokerage, { agentName: rows[0]?.display_name });
+        } catch (_) { /* non-blocking */ }
+
         logActivity({
             event_type: 'agent.profile.update',
             event_scope: 'agent',
@@ -566,7 +573,6 @@ const submitForReview = async (req, res) => {
 
         const missing = [];
         if (!agent.display_name) missing.push('Display Name');
-        if (!agent.brokerage_name) missing.push('Brokerage Name');
         if (!agent.phone_public) missing.push('Phone');
         if (!agent.city) missing.push('Primary City');
         if (!agent.bio || agent.bio.trim().length < 20) missing.push('Bio (minimum 20 characters)');
@@ -577,6 +583,14 @@ const submitForReview = async (req, res) => {
             return res.status(400).json({
                 error: `Profile is incomplete. Please fill in: ${missing.join(', ')}`
             });
+        }
+
+        // Brokerage is optional ("I don't know / independent"), but if it's
+        // blank we quietly flag it for staff follow-up rather than blocking.
+        if (!agent.brokerage_name) {
+            try {
+                require('./brokerage.controller').notifyBrokerageBlank(req.user.userId, agent.display_name);
+            } catch (_) { /* best-effort */ }
         }
 
         await pool.query(

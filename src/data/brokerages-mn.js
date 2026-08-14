@@ -1,0 +1,128 @@
+/**
+ * brokerages-mn.js — seed catalog of real estate brokerages active in
+ * Minnesota, used to power the agent-profile "Brokerage" combobox.
+ *
+ * This is a STARTER list (national franchises + well-known MN independents +
+ * lake-country brokerages). It is NOT exhaustive — agents can type-to-add any
+ * brokerage not listed here, which inserts a new catalog row (source:'agent')
+ * and pings an admin for review. The list is deduped case-insensitively by
+ * name at seed time; edit freely.
+ *
+ * Ordering here doesn't matter — the API sorts alphabetically and filters by
+ * the agent's typed query.
+ */
+const MN_BROKERAGES = [
+    // ── National / regional franchises with heavy MN presence ────────────────
+    'Edina Realty',
+    'Coldwell Banker Realty',
+    'RE/MAX Results',
+    'RE/MAX Advantage Plus',
+    'RE/MAX Professionals',
+    'RE/MAX Lakes Area Realty',
+    'Keller Williams Realty',
+    'Keller Williams Integrity Realty',
+    'Keller Williams Premier Realty',
+    'Keller Williams Classic Realty',
+    'Century 21 Atwood',
+    'Century 21 Moline Realty',
+    'Berkshire Hathaway HomeServices North Properties',
+    'eXp Realty',
+    'Compass',
+    'Realty Group',
+    'Realty ONE Group Choice',
+    'Weichert Realtors Advantage',
+    'Better Homes and Gardens Real Estate',
+
+    // ── Major Minnesota independents / brokerages ────────────────────────────
+    'Lakes Sotheby\'s International Realty',
+    'Engel & Völkers Minneapolis',
+    'Counselor Realty',
+    'Bridge Realty',
+    'Fazendin Realtors',
+    'Roger Fazendin Realtors',
+    'Lakes Area Realty',
+    'Results Real Estate',
+    'Sanford Realty',
+    'Kris Lindahl Real Estate',
+    'The Realty Group',
+    'Realty Executives',
+    'National Realty Guild',
+    'Homestead Road',
+    'Home Avenue',
+    'DRG (Downtown Resource Group)',
+    'Barker Hedges Group',
+    'Spring Realty',
+    'North Bay Realty',
+    'LakePlace.com / LakePlace Realty',
+    'Larson Real Estate',
+    'Premier Real Estate Services',
+    'ReMONT Realty',
+    'True Real Estate',
+    'The Agency',
+
+    // ── Lake / cabin country brokerages (Brainerd, Detroit Lakes, Alexandria,
+    //     Bemidji, Park Rapids, Otter Tail, Vermilion, Ely, Grand Rapids) ─────
+    'Larson Group Real Estate',
+    'Woods Bay Realty',
+    'Kurilla Real Estate',
+    'Wolff & Simon Real Estate',
+    'Gull Lake Realty',
+    'Whitefish Realty',
+    'Nisswa Real Estate',
+    'Crosslake Realty',
+    'Kimberly Anderson Realty',
+    'Realty Central',
+    'Timber Trails Realty',
+    'Coldwell Banker Crown Realtors',
+    'RE/MAX Lakes Country',
+    'Fischer Realty',
+    'Hometown Realty',
+    'Northern Lakes Realty',
+    'Adventure North Realty',
+    'Bemidji Realty',
+    'Century 21 Dickinson Realtors',
+    'Heartland Realty',
+    'Park Rapids Realty',
+    'Headwaters Realty',
+    'Otter Tail Realty',
+    'Lakeland Realty',
+    'Fair Hills Realty',
+    'Detroit Lakes Realty',
+    'Alexandria Lakes Area Realty',
+    'Prairie Lakes Realty',
+    'Vermilion Land Office',
+    'Timber Ghost Realty',
+    'Janisch Realty',
+    'True North Realty',
+    'Red Door Realty',
+    'North Country Real Estate',
+    'Range Real Estate',
+    'Messerli Realty',
+    'Woodland Realty',
+    'Leisureland Realty',
+    'Lake Country Realty',
+    'Wildwood Realty',
+    'Voyageur Realty',
+    'Boreal Realty',
+    'Superior Shores Realty',
+    'North Shore Realty',
+    'Lake Superior Real Estate',
+    'Messiah Realty',
+
+    // ── Metro / suburban brokerages ─────────────────────────────────────────
+    'Exit Realty Metro',
+    'RE/MAX Advisors',
+    'Property Executives Realty',
+    'Realty Group LLC',
+    'Coldwell Banker Burnet',
+    'Keller Williams Preferred Realty',
+    'CENTURY 21 Luger Realty',
+    'Woodland Hill Realty',
+    'Metro Plains Realty',
+    'RE/MAX Concepts',
+    'Realty Growth',
+    'Southern Minnesota Realty',
+    'Property Brokers of Minnesota',
+];
+
+module.exports = { MN_BROKERAGES };

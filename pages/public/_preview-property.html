@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PREVIEW — Property page</title>
+<link rel="stylesheet" href="/styles/style.css">
+<script src="/components/components.js" defer></script>
+<style>
+  :root { --blue:#1d6df2; --blue-dark:#155bc8; --ink:#1a202c; --body:#4a5568; --muted:#718096; --faint:#a0aec0; --line:#e6eaf0; --tint:#ebf4ff; --page-w:1340px; }
+  body { background:#fff; color:var(--ink); }
+  .pv-flag { background:#fef3c7; color:#92400e; text-align:center; padding:0.5rem; font-weight:700; font-size:0.8rem; }
+
+  /* Summary sub-bar */
+  .pp-subbar { position:sticky; top:0; z-index:40; background:#fff; border-bottom:1px solid var(--line); }
+  /* Back button STAYS pinned in the top-left corner. The address + Save/Share
+     ride in a page-w box centered to match the sections, so the address lines
+     up with the section left edge and Save/Share with the right edge. */
+  .pp-subbar-in { position:relative; padding:0; }
+  .pp-back { position:absolute; left:1.5rem; top:50%; transform:translateY(-50%); z-index:1; display:inline-flex; align-items:center; gap:0.4rem; color:var(--blue); font-weight:700; font-size:0.85rem; text-decoration:none; white-space:nowrap; }
+  .pp-back:hover { text-decoration:underline; }
+  .pp-subbar-mid { max-width:var(--page-w); margin:0 auto; padding:0.7rem 1.5rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+  .pp-sum { display:flex; align-items:baseline; gap:0.75rem; min-width:0; flex-wrap:wrap; }
+  .pp-sum .pp-sum-addr { font-size:1.4rem; font-weight:800; color:var(--ink); }
+  .pp-sum .price { font-size:1.4rem; font-weight:800; color:var(--blue); }
+  .pp-sum .specs { color:var(--muted); font-size:1.05rem; }
+  .pp-sum .specs b { color:var(--body); }
+  .pp-subbar-r { display:flex; gap:0.5rem; flex:none; }
+  .pp-iconbtn { display:inline-flex; align-items:center; gap:0.4rem; border:1px solid var(--line); background:#fff; border-radius:9px; padding:0.5rem 0.9rem; font:inherit; font-weight:600; font-size:0.88rem; color:var(--ink); cursor:pointer; }
+  .pp-iconbtn:hover { background:#f7f9fa; }
+
+  .pp-wrap { max-width:var(--page-w); margin:0 auto; padding:1.5rem 1.5rem 4rem; }
+
+  /* Photo collage */
+  .pp-photos { display:grid; grid-template-columns:1.7fr 1fr; gap:0.5rem; aspect-ratio:5/2; border-radius:16px; overflow:hidden; margin-bottom:2rem; }
+  .pp-ph-main, .pp-ph-cell { background-size:cover; background-position:center; background-color:#eceff3; cursor:pointer; position:relative; border:0; padding:0; transition:filter .12s; }
+  .pp-ph-main:hover, .pp-ph-cell:hover { filter:brightness(0.95); }
+  .pp-ph-grid { display:grid; grid-template-columns:1fr; grid-template-rows:1fr 1fr; gap:0.5rem; }
+  .pp-viewall { position:absolute; right:0.9rem; bottom:0.9rem; display:inline-flex; align-items:center; gap:0.45rem; background:#fff; color:var(--ink); border:1px solid var(--line); border-radius:10px; padding:0.55rem 1rem; font:inherit; font-weight:700; font-size:0.88rem; box-shadow:0 6px 18px rgba(0,0,0,0.18); }
+  .pp-viewall svg { width:15px; height:15px; }
+
+  /* Two-column body */
+  .pp-body { display:grid; grid-template-columns:1fr 380px; gap:3rem; align-items:start; }
+  .pp-side { position:sticky; top:5rem; }
+  .pp-h { font-size:1.5rem; font-weight:800; letter-spacing:-0.4px; margin:0 0 0.15rem; }
+  .pp-addr { color:var(--muted); font-size:1rem; margin:0 0 1rem; }
+  .pp-tagrow { display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.5rem; }
+  .pp-tag { background:#f0f3f7; color:#3a4658; font-size:0.72rem; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; border-radius:7px; padding:0.4rem 0.7rem; }
+  .pp-desc { color:var(--body); line-height:1.75; font-size:1.02rem; }
+  .pp-more { display:inline-block; color:var(--blue); font-weight:700; margin-top:0.4rem; cursor:pointer; text-decoration:none; }
+  .pp-meta { display:flex; gap:1.25rem; flex-wrap:wrap; align-items:center; color:var(--body); font-size:0.9rem; border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:0.9rem 0; margin:1.5rem 0; }
+  .pp-meta b { color:var(--ink); }
+  .pp-meta .sep { color:var(--faint); }
+
+  .pp-sec { margin-top:2.75rem; }
+  .pp-sec-h { font-size:1.4rem; font-weight:800; letter-spacing:-0.4px; margin:0 0 1.1rem; }
+
+  /* What's special */
+  .pp-hl { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(3,1fr); gap:0.7rem 1.5rem; }
+  .pp-hl li { display:flex; gap:0.55rem; align-items:flex-start; color:var(--body); }
+  .pp-hl svg { flex:0 0 auto; width:16px; height:16px; margin-top:3px; color:var(--blue); }
+
+  /* Facts */
+  .pp-facts { display:grid; grid-template-columns:repeat(3,1fr); gap:1.4rem 2rem; }
+  .pp-fact { border-top:1px solid var(--line); padding-top:0.7rem; }
+  .pp-fact dt { font-size:0.72rem; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted); }
+  .pp-fact dd { margin:0.25rem 0 0; font-weight:700; color:var(--ink); }
+
+  /* History table */
+  .pp-hist { width:100%; border-collapse:collapse; font-size:0.94rem; }
+  .pp-hist th { text-align:left; font-size:0.72rem; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted); padding:0 0 0.6rem; }
+  .pp-hist th:last-child, .pp-hist td:last-child { text-align:right; }
+  .pp-hist td { padding:0.8rem 0; border-top:1px solid var(--line); color:var(--body); }
+  .pp-hist td:nth-child(2) { color:var(--ink); font-weight:700; }
+  .pp-hist td:last-child { font-weight:800; color:var(--ink); }
+  .pp-tax { color:var(--muted); font-size:0.9rem; margin:0.9rem 0 0; }
+
+  /* Rows (schools / nearby) */
+  .pp-row { display:flex; align-items:center; gap:1rem; padding:0.9rem 0; border-top:1px solid var(--line); }
+  .pp-row:first-child { border-top:0; }
+  .pp-rate { flex:0 0 auto; width:42px; height:42px; border-radius:9px; display:grid; place-items:center; font-weight:800; background:var(--tint); color:var(--blue); font-size:1.05rem; }
+  .pp-rate small { font-size:0.6rem; font-weight:700; }
+  .pp-row-m { flex:1; min-width:0; }
+  .pp-row-t { font-weight:700; color:var(--ink); }
+  .pp-row-s { font-size:0.85rem; color:var(--muted); }
+  .pp-row-d { font-size:0.88rem; color:var(--muted); }
+
+  .pp-map { height:320px; border-radius:14px; background:#e9edf2 center/cover; margin-top:0.5rem; border:1px solid var(--line); }
+
+  /* Sidebar cards */
+  .pp-card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:1.5rem; box-shadow:0 2px 10px rgba(16,24,40,0.04); }
+  .pp-card + .pp-card { margin-top:1.25rem; }
+  .pp-oh-h { font-weight:800; font-size:1.05rem; margin:0 0 0.6rem; }
+  .pp-oh-date { font-weight:800; }
+  .pp-oh-time { color:var(--body); font-size:0.92rem; }
+  .pp-oh-cal { display:inline-block; margin-top:0.5rem; color:var(--blue); font-weight:700; text-decoration:none; }
+  .pp-listed { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); }
+  .pp-agent { text-align:center; margin:0.75rem 0 1rem; }
+  .pp-avatar { width:64px; height:64px; border-radius:50%; background:var(--tint); color:var(--blue); display:inline-flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:800; object-fit:cover; }
+  .pp-agent-n { font-weight:800; font-size:1.1rem; margin-top:0.5rem; }
+  .pp-agent-b { color:var(--muted); font-size:0.9rem; }
+  .pp-agent-h { color:var(--body); font-size:0.9rem; margin:0.5rem 0 0; }
+  .pp-cform { display:grid; gap:0.6rem; margin-top:0.25rem; }
+  .pp-cform input, .pp-cform textarea { width:100%; box-sizing:border-box; font:inherit; font-size:0.95rem; padding:0.7rem 0.85rem; border:1px solid #cbd5e0; border-radius:9px; outline:none; }
+  .pp-cform input:focus, .pp-cform textarea:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(29,109,242,0.12); }
+  .pp-cform textarea { min-height:78px; resize:vertical; }
+  .pp-contact-btn { background:var(--blue); color:#fff; border:0; border-radius:10px; padding:0.85rem; font:inherit; font-weight:800; cursor:pointer; line-height:1.3; }
+  .pp-contact-btn small { display:block; font-weight:500; font-size:0.78rem; opacity:0.85; }
+  .pp-contact-btn:hover { background:var(--blue-dark); }
+  .pp-fine { text-align:center; color:var(--muted); font-size:0.78rem; margin:0.25rem 0 0; }
+  .pp-viewprofile { display:block; text-align:center; margin-top:0.75rem; border:1px solid var(--blue); color:var(--blue); border-radius:10px; padding:0.75rem; font-weight:800; text-decoration:none; }
+
+  /* Tour band — lives inside .pp-wrap, so its width is guaranteed identical to the sections */
+  .pp-tour { margin:3rem 0 0; }
+  .pp-tour-in { background:var(--blue); color:#fff; border-radius:20px; padding:2.5rem 3rem; display:flex; align-items:center; justify-content:space-between; gap:2.5rem; flex-wrap:wrap; box-shadow:0 24px 50px rgba(29,109,242,0.28); }
+  .pp-tour-in h2 { font-size:2.2rem; font-weight:800; letter-spacing:-0.8px; margin:0 0 0.4rem; }
+  .pp-tour-in p { margin:0; opacity:0.92; font-size:1.15rem; max-width:520px; }
+  .pp-tour-btn { background:#fff; color:var(--blue); border:0; border-radius:99px; padding:1.1rem 2.5rem; font:inherit; font-weight:800; font-size:1.1rem; cursor:pointer; white-space:nowrap; }
+  .pp-tour-btn:hover { background:#f0f4ff; }
+
+  /* ─────────────── Responsive: laptop → tablet → phone ─────────────── */
+
+  /* Laptop — tighten the two-column split so the content column keeps room. */
+  @media (max-width:1100px){
+    .pp-body { grid-template-columns:1fr 330px; gap:2rem; }
+    .pp-hl, .pp-facts { gap:0.7rem 1.25rem; }
+  }
+
+  /* Tablet — single column; sidebar drops below; collage + detail grids restack. */
+  @media (max-width:900px){
+    .pp-body { grid-template-columns:1fr; gap:2rem; }
+    .pp-side { position:static; }
+    .pp-hl, .pp-facts { grid-template-columns:1fr 1fr; }
+    .pp-photos { grid-template-columns:1fr; aspect-ratio:auto; gap:0.4rem; margin-bottom:1.5rem; }
+    .pp-ph-main { aspect-ratio:16/10; }
+    .pp-ph-grid { grid-template-columns:1fr 1fr; grid-template-rows:1fr; aspect-ratio:3/1; }
+    .pp-tour-in { flex-direction:column; align-items:flex-start; gap:1.5rem; padding:2.25rem 2rem; }
+    .pp-tour-in h2 { font-size:1.9rem; }
+    .pp-tour-in p { font-size:1.05rem; }
+  }
+
+  /* Large phone — the back button no longer fits in the gutter, so it drops
+     onto its own line above the summary rather than overlapping the address. */
+  @media (max-width:760px){
+    .pp-back { position:static; transform:none; display:inline-flex; padding:0.5rem 1.25rem 0; }
+    .pp-subbar-mid { padding-top:0.35rem; }
+  }
+
+  /* Phone */
+  @media (max-width:640px){
+    .pp-wrap { padding:1rem 1rem 2.5rem; }
+    .pp-subbar-mid { padding:0.4rem 1rem 0.6rem; gap:0.75rem; }
+    .pp-back { padding:0.6rem 1rem 0; }
+    .pp-sum { gap:0.15rem 0.6rem; }
+    .pp-sum .pp-sum-addr, .pp-sum .price { font-size:1.1rem; }
+    .pp-sum .specs { font-size:0.9rem; flex-basis:100%; }
+    .pp-iconbtn { padding:0.45rem 0.65rem; font-size:0.8rem; }
+    .pp-photos { border-radius:12px; }
+    .pp-ph-main { aspect-ratio:4/3; }
+    .pp-ph-grid { aspect-ratio:2/1; }
+    .pp-viewall { right:0.6rem; bottom:0.6rem; padding:0.45rem 0.7rem; font-size:0.78rem; }
+    .pp-hl, .pp-facts { grid-template-columns:1fr; }
+    .pp-h { font-size:1.35rem; }
+    .pp-addr { font-size:0.95rem; }
+    .pp-desc { font-size:0.98rem; }
+    .pp-sec { margin-top:2.25rem; }
+    .pp-sec-h { font-size:1.25rem; }
+    .pp-meta { gap:0.4rem 1rem; font-size:0.85rem; }
+    .pp-map { height:230px; }
+    .pp-card { padding:1.25rem; }
+    .pp-tour { margin-top:2.25rem; }
+    .pp-tour-in { padding:1.75rem 1.5rem; border-radius:16px; gap:1.25rem; }
+    .pp-tour-in h2 { font-size:1.5rem; }
+    .pp-tour-in p { font-size:1rem; }
+    .pp-tour-btn { width:100%; text-align:center; padding:0.95rem; font-size:1.05rem; }
+  }
+
+  /* Small phone — trim the sticky bar so the address + buttons never collide. */
+  @media (max-width:380px){
+    .pp-sum .pp-sum-addr, .pp-sum .price { font-size:1rem; }
+    .pp-iconbtn { padding:0.4rem 0.55rem; font-size:0.75rem; }
+    .pp-viewall { font-size:0.72rem; padding:0.4rem 0.6rem; }
+  }
+
+  /* Lightbox */
+  .pp-lb { position:fixed; inset:0; z-index:200; background:rgba(10,14,20,0.94); display:none; flex-direction:column; }
+  .pp-lb.open { display:flex; }
+  .pp-lb-top { display:flex; align-items:center; justify-content:space-between; padding:1rem 1.5rem; color:#fff; }
+  .pp-lb-count { font-weight:700; font-size:0.95rem; }
+  .pp-lb-x { background:none; border:0; color:#fff; font-size:1.6rem; cursor:pointer; line-height:1; }
+  .pp-lb-stage { flex:1; display:flex; align-items:center; justify-content:center; gap:1rem; padding:0 1rem 1.5rem; min-height:0; }
+  .pp-lb-img { max-width:min(1100px,92vw); max-height:100%; object-fit:contain; border-radius:10px; }
+  .pp-lb-nav { background:rgba(255,255,255,0.14); border:0; color:#fff; width:52px; height:52px; border-radius:50%; font-size:1.5rem; cursor:pointer; flex:none; }
+  .pp-lb-nav:hover { background:rgba(255,255,255,0.28); }
+  @media (max-width:640px){ .pp-lb-nav { width:42px; height:42px; } }
+
+  /* Tour / generic modal */
+  .pp-modal { position:fixed; inset:0; z-index:210; background:rgba(10,14,20,0.55); display:none; align-items:center; justify-content:center; padding:1.5rem; }
+  .pp-modal.open { display:flex; }
+  .pp-modal-card { background:#fff; border-radius:18px; max-width:440px; width:100%; padding:2rem; box-shadow:0 30px 70px rgba(0,0,0,0.35); }
+  .pp-modal-card h3 { margin:0 0 0.35rem; font-size:1.5rem; font-weight:800; color:var(--ink); }
+  .pp-modal-card .sub { margin:0 0 1.25rem; color:var(--muted); font-size:0.95rem; }
+  .pp-modal-card input, .pp-modal-card textarea { width:100%; border:1px solid var(--line); border-radius:10px; padding:0.7rem 0.85rem; font:inherit; margin-bottom:0.6rem; }
+  .pp-modal-card textarea { min-height:70px; resize:vertical; }
+  .pp-modal-go { width:100%; background:var(--blue); color:#fff; border:0; border-radius:10px; padding:0.85rem; font:inherit; font-weight:800; cursor:pointer; }
+  .pp-modal-go:hover { background:var(--blue-dark); }
+  .pp-modal-x { float:right; background:none; border:0; font-size:1.4rem; cursor:pointer; color:var(--muted); line-height:1; margin:-0.5rem -0.5rem 0 0; }
+
+  /* Toast */
+  .pp-toast { position:fixed; left:50%; bottom:2rem; transform:translateX(-50%) translateY(1rem); background:var(--ink); color:#fff; padding:0.85rem 1.4rem; border-radius:99px; font-weight:600; font-size:0.9rem; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:220; }
+  .pp-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="pv-flag">LOCAL PREVIEW · designed to your reference · sample data · not live</div>
+<global-header></global-header>
+
+<div style="height:5rem;"></div><!-- clear fixed header -->
+
+<!-- Summary sub-bar -->
+<div class="pp-subbar">
+  <div class="pp-subbar-in">
+    <a class="pp-back" href="/towns?view=props">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Back to map
+    </a>
+    <div class="pp-subbar-mid">
+      <div class="pp-sum">
+        <span class="pp-sum-addr">11480 Interlachen Rd, Nisswa, MN</span>
+        <span class="price">$1,875,000</span>
+        <span class="specs"><b>4</b> bd · <b>3.5</b> ba · <b>4,620</b> sqft</span>
+      </div>
+      <div class="pp-subbar-r">
+        <button class="pp-iconbtn" onclick="ppSave(this)">♡ Save</button>
+        <button class="pp-iconbtn" onclick="ppShare()">↗ Share</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pp-wrap">
+  <!-- Photo collage -->
+  <div class="pp-photos" id="photos">
+    <button class="pp-ph-main" onclick="ppLightbox(0)" style="background-image:url('/assets/images/mn-colonial-lake-home.jpg')"></button>
+    <div class="pp-ph-grid">
+      <button class="pp-ph-cell" onclick="ppLightbox(1)" style="background-image:url('/assets/images/mn-chateau-aerial.jpg')"></button>
+      <button class="pp-ph-cell" onclick="ppLightbox(2)" style="background-image:url('/assets/images/mn-white-colonial-ivy.jpg')">
+        <span class="pp-viewall"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>View all 20 photos</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="pp-body">
+    <!-- LEFT -->
+    <div>
+      <h1 class="pp-h">11480 Interlachen Rd</h1>
+      <p class="pp-addr">11480 Interlachen Rd, Nisswa, MN 56468</p>
+      <div class="pp-tagrow">
+        <span class="pp-tag">Waterfront</span><span class="pp-tag">Fireplace</span>
+        <span class="pp-tag">Gull Lake</span><span class="pp-tag">Lake, West</span><span class="pp-tag">Built 2016</span>
+      </div>
+      <p class="pp-desc">Rare west-facing frontage on Gull Lake with 142 feet of hard-sand shoreline and a gradual walk-in bottom — the kind of lot families keep for generations. The main level opens to a wall of glass framing the water, a chef's kitchen with quartzite counters and a walk-in pantry, and a screened porch built for the ice-out-to-first-snow season.<span class="pp-desc-more" hidden> Four bedrooms up including a lake-facing primary with a spa bath; a walkout lower level with wet bar, family room, and a bunk room that sleeps six. Recent updates: new steel roof (2023), two high-efficiency furnaces, whole-home Generac, and a permitted shore station with a canopy lift.</span><br><a class="pp-more" href="javascript:void(0)" onclick="ppToggleDesc(this)">Show more</a></p>
+
+      <div class="pp-meta"><span><b>3</b> days on MN Lake Homes</span><span class="sep">|</span><span>MLS# <b>MN-6112048</b></span><span class="sep">|</span><span>Price cut: <b>$75,000</b></span></div>
+
+      <section class="pp-sec">
+        <h2 class="pp-sec-h">What's special</h2>
+        <ul class="pp-hl">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span>142 ft of hard-sand shoreline</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span>West-facing sunsets</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span>Studs-out 2016 build quality</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span>Screened porch</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span>Whole-home Generac</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span>Permitted shore station + lift</span></li>
+        </ul>
+      </section>
+
+      <section class="pp-sec">
+        <h2 class="pp-sec-h">Facts &amp; features</h2>
+        <div class="pp-facts">
+          <div class="pp-fact"><dt>Property type</dt><dd>Single Family</dd></div>
+          <div class="pp-fact"><dt>Year built</dt><dd>2016</dd></div>
+          <div class="pp-fact"><dt>Bedrooms</dt><dd>4</dd></div>
+          <div class="pp-fact"><dt>Bathrooms</dt><dd>3.5</dd></div>
+          <div class="pp-fact"><dt>Square feet</dt><dd>4,620</dd></div>
+          <div class="pp-fact"><dt>Lot size</dt><dd>1.10 acres</dd></div>
+          <div class="pp-fact"><dt>Stories</dt><dd>2</dd></div>
+          <div class="pp-fact"><dt>Garage</dt><dd>3 spaces</dd></div>
+          <div class="pp-fact"><dt>Heating</dt><dd>Forced air, dual furnace</dd></div>
+          <div class="pp-fact"><dt>Cooling</dt><dd>Central air</dd></div>
+          <div class="pp-fact"><dt>Flooring</dt><dd>Hardwood, tile, LVP</dd></div>
+          <div class="pp-fact"><dt>Utilities</dt><dd>Municipal water · Private septic (2019) · Fiber</dd></div>
+        </div>
+      </section>
+
+      <section class="pp-sec">
+        <h2 class="pp-sec-h">Price &amp; tax history</h2>
+        <table class="pp-hist"><thead><tr><th>Date</th><th>Event</th><th>Price</th></tr></thead><tbody>
+          <tr><td>Jun 21, 2026</td><td>Listed for sale</td><td>$1,875,000</td></tr>
+          <tr><td>May 2, 2026</td><td>Price change</td><td>$1,950,000</td></tr>
+          <tr><td>Aug 29, 2019</td><td>Sold</td><td>$1,120,000</td></tr>
+        </tbody></table>
+        <p class="pp-tax">Annual property tax: <b>$14,820</b></p>
+      </section>
+
+      <section class="pp-sec">
+        <h2 class="pp-sec-h">Schools</h2>
+        <div class="pp-row"><div class="pp-rate">9<small>/10</small></div><div class="pp-row-m"><div class="pp-row-t">Nisswa Elementary</div><div class="pp-row-s">Elementary</div></div><div class="pp-row-d">2.1 mi</div></div>
+        <div class="pp-row"><div class="pp-rate">8<small>/10</small></div><div class="pp-row-m"><div class="pp-row-t">Forestview Middle</div><div class="pp-row-s">Middle</div></div><div class="pp-row-d">6.4 mi</div></div>
+        <div class="pp-row"><div class="pp-rate">8<small>/10</small></div><div class="pp-row-m"><div class="pp-row-t">Brainerd High School</div><div class="pp-row-s">High</div></div><div class="pp-row-d">8.7 mi</div></div>
+      </section>
+
+      <section class="pp-sec">
+        <h2 class="pp-sec-h">What's nearby</h2>
+        <div class="pp-row"><div class="pp-rate">42</div><div class="pp-row-m"><div class="pp-row-t">Car-dependent</div><div class="pp-row-s">Walk Score out of 100</div></div></div>
+        <div class="pp-row"><div class="pp-row-m"><div class="pp-row-t">Gull Lake public access</div><div class="pp-row-s">Recreation</div></div><div class="pp-row-d">1.2 mi</div></div>
+        <div class="pp-row"><div class="pp-row-m"><div class="pp-row-t">Ernie's on Gull</div><div class="pp-row-s">Dining</div></div><div class="pp-row-d">2.0 mi</div></div>
+        <div class="pp-row"><div class="pp-row-m"><div class="pp-row-t">Nisswa town square</div><div class="pp-row-s">Shopping</div></div><div class="pp-row-d">3.4 mi</div></div>
+      </section>
+
+      <section class="pp-sec" id="map">
+        <h2 class="pp-sec-h">Location</h2>
+        <div class="pp-map" style="background-image:url('/assets/images/mn-maple-lake-aerial.jpg')"></div>
+      </section>
+    </div>
+
+    <!-- RIGHT sidebar (sticky) -->
+    <div class="pp-side">
+      <div class="pp-card">
+        <div class="pp-oh-h">Open house</div>
+        <div class="pp-oh-date">Sat, Jul 11</div>
+        <div class="pp-oh-time">12:00 PM</div>
+        <a class="pp-oh-cal" href="javascript:void(0)" onclick="ppTour('Open house — Sat, Jul 11')">Add to calendar</a>
+      </div>
+      <div class="pp-card">
+        <div class="pp-listed">Listed by</div>
+        <div class="pp-agent">
+          <div class="pp-avatar">A</div>
+          <div class="pp-agent-n">Ava Whitfield</div>
+          <div class="pp-agent-b">Northline Realty</div>
+          <p class="pp-agent-h">Gull Lake &amp; the Brainerd Lakes. I price it right the first time.</p>
+        </div>
+        <form class="pp-cform" onsubmit="ppContact(event)">
+          <input placeholder="Your name" required>
+          <input placeholder="Email" type="email" required>
+          <input placeholder="Phone">
+          <textarea>I'd like to see 11480 Interlachen Rd.</textarea>
+          <button class="pp-contact-btn" type="submit">Contact Ava<small>Replies land in her inbox directly</small></button>
+          <p class="pp-fine">Free, and we never sell your information.</p>
+        </form>
+        <a class="pp-viewprofile" href="/agents/ava-whitfield">View Ava's profile</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tour band (inside pp-wrap so it shares the exact same width box) -->
+  <div class="pp-tour">
+    <div class="pp-tour-in">
+      <div><h2>Want to see it in person?</h2><p>Thirty seconds, no account, no obligation — and it never costs you anything.</p></div>
+      <button class="pp-tour-btn" onclick="ppTour('11480 Interlachen Rd, Nisswa')">Request a tour</button>
+    </div>
+  </div>
+</div>
+<div style="height:4rem;"></div>
+
+<global-footer></global-footer>
+
+<!-- Lightbox -->
+<div class="pp-lb" id="ppLb" onclick="ppLbBackdrop(event)">
+  <div class="pp-lb-top">
+    <span class="pp-lb-count" id="ppLbCount">1 / 20</span>
+    <button class="pp-lb-x" onclick="ppLbClose()" aria-label="Close">&times;</button>
+  </div>
+  <div class="pp-lb-stage">
+    <button class="pp-lb-nav" onclick="ppLbStep(-1)" aria-label="Previous">&#8249;</button>
+    <img class="pp-lb-img" id="ppLbImg" alt="Property photo">
+    <button class="pp-lb-nav" onclick="ppLbStep(1)" aria-label="Next">&#8250;</button>
+  </div>
+</div>
+
+<!-- Tour modal -->
+<div class="pp-modal" id="ppModal" onclick="if(event.target===this)ppTourClose()">
+  <div class="pp-modal-card">
+    <button class="pp-modal-x" onclick="ppTourClose()" aria-label="Close">&times;</button>
+    <h3>Request a tour</h3>
+    <p class="sub" id="ppModalSub">Ava Whitfield will reach out to schedule.</p>
+    <form onsubmit="ppTourSubmit(event)">
+      <input placeholder="Your name" required>
+      <input placeholder="Email" type="email" required>
+      <input placeholder="Phone">
+      <textarea id="ppModalMsg"></textarea>
+      <button class="pp-modal-go" type="submit">Send request</button>
+    </form>
+  </div>
+</div>
+
+<div class="pp-toast" id="ppToast"></div>
+
+<script>
+  var ppImages = [
+    '/assets/images/mn-colonial-lake-home.jpg','/assets/images/mn-chateau-aerial.jpg','/assets/images/mn-white-colonial-ivy.jpg',
+    '/assets/images/mn-gallery-001.jpg','/assets/images/mn-gallery-002.jpg','/assets/images/mn-gallery-003.jpg',
+    '/assets/images/mn-gallery-004.jpg','/assets/images/mn-gallery-005.jpg','/assets/images/mn-gallery-006.jpg',
+    '/assets/images/mn-gallery-007.jpg','/assets/images/mn-gallery-008.jpg','/assets/images/mn-gallery-009.jpg',
+    '/assets/images/mn-gallery-010.jpg','/assets/images/mn-gallery-011.jpg','/assets/images/mn-gallery-012.jpg',
+    '/assets/images/mn-gallery-013.jpg','/assets/images/mn-gallery-014.jpg','/assets/images/mn-cape-cod-lakefront.jpg',
+    '/assets/images/mn-aerial-lake-homes.jpg','/assets/images/mn-beach-craftsman-cabin.jpg'
+  ];
+  var ppLbI = 0;
+  function ppLightbox(i){ ppLbI=i; ppLbRender(); document.getElementById('ppLb').classList.add('open'); document.body.style.overflow='hidden'; }
+  function ppLbRender(){
+    document.getElementById('ppLbImg').src = ppImages[ppLbI];
+    document.getElementById('ppLbCount').textContent = (ppLbI+1)+' / '+ppImages.length;
+  }
+  function ppLbStep(d){ ppLbI = (ppLbI + d + ppImages.length) % ppImages.length; ppLbRender(); }
+  function ppLbClose(){ document.getElementById('ppLb').classList.remove('open'); document.body.style.overflow=''; }
+  function ppLbBackdrop(e){ if(!e.target.closest('.pp-lb-img, .pp-lb-nav')) ppLbClose(); }
+
+  function ppToggleDesc(a){
+    var more = document.querySelector('.pp-desc-more');
+    var open = more.hasAttribute('hidden');
+    if(open){ more.removeAttribute('hidden'); a.textContent='Show less'; }
+    else { more.setAttribute('hidden',''); a.textContent='Show more'; }
+  }
+
+  function ppTour(what){
+    document.getElementById('ppModalSub').textContent = 'Ava Whitfield will reach out about ' + what + '.';
+    document.getElementById('ppModalMsg').value = "I'd like to tour 11480 Interlachen Rd, Nisswa.";
+    document.getElementById('ppModal').classList.add('open'); document.body.style.overflow='hidden';
+  }
+  function ppTourClose(){ document.getElementById('ppModal').classList.remove('open'); document.body.style.overflow=''; }
+  function ppTourSubmit(e){ e.preventDefault(); ppTourClose(); ppToast('Request sent to Ava — she\'ll be in touch.'); }
+  function ppContact(e){ e.preventDefault(); ppToast('Message sent to Ava\'s inbox.'); e.target.reset && e.target.reset(); }
+
+  function ppSave(btn){ btn.classList.toggle('on'); var s=btn.classList.contains('on'); btn.innerHTML = s?'♥ Saved':'♡ Save'; ppToast(s?'Saved to your favorites.':'Removed from favorites.'); }
+  function ppShare(){
+    var url = window.location.href;
+    if(navigator.share){ navigator.share({title:'11480 Interlachen Rd', url:url}).catch(function(){}); return; }
+    if(navigator.clipboard){ navigator.clipboard.writeText(url); ppToast('Link copied to clipboard.'); return; }
+    ppToast('Copy this link: '+url);
+  }
+
+  var ppToastT;
+  function ppToast(msg){
+    var t=document.getElementById('ppToast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(ppToastT); ppToastT=setTimeout(function(){ t.classList.remove('show'); }, 2600);
+  }
+
+  document.addEventListener('keydown', function(e){
+    if(document.getElementById('ppLb').classList.contains('open')){
+      if(e.key==='Escape') ppLbClose();
+      if(e.key==='ArrowRight') ppLbStep(1);
+      if(e.key==='ArrowLeft') ppLbStep(-1);
+    }
+    if(e.key==='Escape' && document.getElementById('ppModal').classList.contains('open')) ppTourClose();
+  });
+</script>
+</body>
+</html>

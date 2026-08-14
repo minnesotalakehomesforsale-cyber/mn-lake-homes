@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Property Detail — Standalone Template</title>
+  <style>
+    /* ---- Reset-ish ---- */
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+
+    :root { --blue:#1d6df2; --blue-dark:#155bc8; --ink:#1a202c; --body:#4a5568; --muted:#718096; --faint:#a0aec0; --line:#e6eaf0; --tint:#ebf4ff; --page-w:1340px; }
+    body { background:#fff; color:var(--ink); }
+
+    /* Summary sub-bar */
+    .pp-subbar { position:sticky; top:0; z-index:40; background:#fff; border-bottom:1px solid var(--line); }
+    .pp-subbar-in { position:relative; padding:0; }
+    .pp-back { position:absolute; left:1.5rem; top:50%; transform:translateY(-50%); z-index:1; display:inline-flex; align-items:center; gap:0.4rem; color:var(--blue); font-weight:700; font-size:0.85rem; text-decoration:none; white-space:nowrap; }
+    .pp-back:hover { text-decoration:underline; }
+    .pp-subbar-mid { max-width:var(--page-w); margin:0 auto; padding:0.7rem 1.5rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+    .pp-sum { display:flex; align-items:baseline; gap:0.75rem; min-width:0; flex-wrap:wrap; }
+    .pp-sum .pp-sum-addr { font-size:1.4rem; font-weight:800; color:var(--ink); }
+    .pp-sum .price { font-size:1.4rem; font-weight:800; color:var(--blue); }
+    .pp-sum .specs { color:var(--muted); font-size:1.05rem; }
+    .pp-sum .specs b { color:var(--body); }
+    .pp-subbar-r { display:flex; gap:0.5rem; flex:none; }
+    .pp-iconbtn { display:inline-flex; align-items:center; gap:0.4rem; border:1px solid var(--line); background:#fff; border-radius:9px; padding:0.5rem 0.9rem; font:inherit; font-weight:600; font-size:0.88rem; color:var(--ink); cursor:pointer; }
+    .pp-iconbtn:hover { background:#f7f9fa; }
+
+    .pp-wrap { max-width:var(--page-w); margin:0 auto; padding:1.5rem 1.5rem 4rem; }
+
+    /* Photo collage — 3-image hero */
+    .pp-photos { display:grid; grid-template-columns:1.7fr 1fr; gap:0.5rem; aspect-ratio:5/2; border-radius:16px; overflow:hidden; margin-bottom:2rem; }
+    .pp-ph-main, .pp-ph-cell { background-size:cover; background-position:center; background-color:#eceff3; cursor:pointer; position:relative; border:0; padding:0; transition:filter .12s; }
+    .pp-ph-main:hover, .pp-ph-cell:hover { filter:brightness(0.95); }
+    .pp-ph-grid { display:grid; grid-template-columns:1fr; grid-template-rows:1fr 1fr; gap:0.5rem; }
+    .pp-viewall { position:absolute; right:0.9rem; bottom:0.9rem; display:inline-flex; align-items:center; gap:0.45rem; background:#fff; color:var(--ink); border:1px solid var(--line); border-radius:10px; padding:0.55rem 1rem; font:inherit; font-weight:700; font-size:0.88rem; box-shadow:0 6px 18px rgba(0,0,0,0.18); }
+    .pp-viewall svg { width:15px; height:15px; }
+
+    /* Two-column body (split section) — right column is sticky/scrolls */
+    .pp-body { display:grid; grid-template-columns:1fr 380px; gap:3rem; align-items:start; }
+    .pp-side { position:sticky; top:5rem; }
+    .pp-h { font-size:1.5rem; font-weight:800; letter-spacing:-0.4px; margin:0 0 0.15rem; }
+    .pp-addr { color:var(--muted); font-size:1rem; margin:0 0 1rem; }
+    .pp-tagrow { display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.5rem; }
+    .pp-tag { background:#f0f3f7; color:#3a4658; font-size:0.72rem; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; border-radius:7px; padding:0.4rem 0.7rem; }
+    .pp-desc { color:var(--body); line-height:1.75; font-size:1.02rem; }
+    .pp-more { display:inline-block; color:var(--blue); font-weight:700; margin-top:0.4rem; cursor:pointer; text-decoration:none; }
+    .pp-meta { display:flex; gap:1.25rem; flex-wrap:wrap; align-items:center; color:var(--body); font-size:0.9rem; border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:0.9rem 0; margin:1.5rem 0; }
+    .pp-meta b { color:var(--ink); }
+    .pp-meta .sep { color:var(--faint); }
+
+    .pp-sec { margin-top:2.75rem; }
+    .pp-sec:first-child { margin-top:0; }
+    .pp-sec-h { font-size:1.4rem; font-weight:800; letter-spacing:-0.4px; margin:0 0 1.1rem; }
+
+    /* What's special */
+    .pp-hl { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(3,1fr); gap:0.7rem 1.5rem; }
+    .pp-hl li { display:flex; gap:0.55rem; align-items:flex-start; color:var(--body); }
+    .pp-hl svg { flex:0 0 auto; width:16px; height:16px; margin-top:3px; color:var(--blue); }
+
+    /* Facts */
+    .pp-facts { display:grid; grid-template-columns:repeat(3,1fr); gap:1.4rem 2rem; }
+    .pp-fact { border-top:1px solid var(--line); padding-top:0.7rem; }
+    .pp-fact dt { font-size:0.72rem; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted); }
+    .pp-fact dd { margin:0.25rem 0 0; font-weight:700; color:var(--ink); }
+
+    /* Price & tax history table */
+    .pp-hist { width:100%; border-collapse:collapse; font-size:0.94rem; }
+    .pp-hist th { text-align:left; font-size:0.72rem; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted); padding:0 0 0.6rem; }
+    .pp-hist th:last-child, .pp-hist td:last-child { text-align:right; }
+    .pp-hist td { padding:0.8rem 0; border-top:1px solid var(--line); color:var(--body); }
+    .pp-hist td:nth-child(2) { color:var(--ink); font-weight:700; }
+    .pp-hist td:last-child { font-weight:800; color:var(--ink); }
+    .pp-tax { color:var(--muted); font-size:0.9rem; margin:0.9rem 0 0; }
+
+    /* Rows (schools / nearby) */
+    .pp-row { display:flex; align-items:center; gap:1rem; padding:0.9rem 0; border-top:1px solid var(--line); }
+    .pp-row:first-child { border-top:0; }
+    .pp-rate { flex:0 0 auto; width:42px; height:42px; border-radius:9px; display:grid; place-items:center; font-weight:800; background:var(--tint); color:var(--blue); font-size:1.05rem; }
+    .pp-rate small { font-size:0.6rem; font-weight:700; }
+    .pp-row-m { flex:1; min-width:0; }
+    .pp-row-t { font-weight:700; color:var(--ink); }
+    .pp-row-s { font-size:0.85rem; color:var(--muted); }
+    .pp-row-d { font-size:0.88rem; color:var(--muted); }
+
+    .pp-map { height:320px; border-radius:14px; overflow:hidden; margin-top:0.5rem; border:1px solid var(--line); background:#e9edf2; }
+    .pp-map iframe { width:100%; height:100%; border:0; display:block; }
+
+    /* Sidebar cards (open house + agent contact) */
+    .pp-card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:1.5rem; box-shadow:0 2px 10px rgba(16,24,40,0.04); }
+    .pp-card + .pp-card { margin-top:1.25rem; }
+    .pp-oh-h { font-weight:800; font-size:1.05rem; margin:0 0 0.6rem; }
+    .pp-oh-date { font-weight:800; }
+    .pp-oh-time { color:var(--body); font-size:0.92rem; }
+    .pp-oh-cal { display:inline-block; margin-top:0.5rem; color:var(--blue); font-weight:700; text-decoration:none; cursor:pointer; }
+    .pp-listed { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); }
+    .pp-agent { text-align:center; margin:0.75rem 0 1rem; }
+    .pp-avatar { width:64px; height:64px; border-radius:50%; background:var(--tint); color:var(--blue); display:inline-flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:800; object-fit:cover; }
+    .pp-agent-n { font-weight:800; font-size:1.1rem; margin-top:0.5rem; }
+    .pp-agent-b { color:var(--muted); font-size:0.9rem; }
+    .pp-agent-h { color:var(--body); font-size:0.9rem; margin:0.5rem 0 0; }
+    .pp-cform { display:grid; gap:0.6rem; margin-top:0.25rem; }
+    .pp-cform input, .pp-cform textarea { width:100%; box-sizing:border-box; font:inherit; font-size:0.95rem; padding:0.7rem 0.85rem; border:1px solid #cbd5e0; border-radius:9px; outline:none; }
+    .pp-cform input:focus, .pp-cform textarea:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(29,109,242,0.12); }
+    .pp-cform textarea { min-height:78px; resize:vertical; }
+    .pp-contact-btn { background:var(--blue); color:#fff; border:0; border-radius:10px; padding:0.85rem; font:inherit; font-weight:800; cursor:pointer; line-height:1.3; }
+    .pp-contact-btn small { display:block; font-weight:500; font-size:0.78rem; opacity:0.85; }
+    .pp-contact-btn:hover { background:var(--blue-dark); }
+    .pp-fine { text-align:center; color:var(--muted); font-size:0.78rem; margin:0.25rem 0 0; }
+    .pp-ok { display:none; padding:0.9rem; background:#f0fff4; color:#2f855a; border:1px solid #c6f6d5; border-radius:9px; font-weight:600; text-align:center; margin-top:0.5rem; }
+    .pp-viewprofile { display:block; text-align:center; margin-top:0.75rem; border:1px solid var(--blue); color:var(--blue); border-radius:10px; padding:0.75rem; font-weight:800; text-decoration:none; }
+
+    /* Blue "Request a tour" band at the bottom */
+    .pp-tour { margin:3rem 0 0; }
+    .pp-tour-in { background:var(--blue); color:#fff; border-radius:20px; padding:2.5rem 3rem; display:flex; align-items:center; justify-content:space-between; gap:2.5rem; flex-wrap:wrap; box-shadow:0 24px 50px rgba(29,109,242,0.28); }
+    .pp-tour-in h2 { font-size:2.2rem; font-weight:800; letter-spacing:-0.8px; margin:0 0 0.4rem; }
+    .pp-tour-in p { margin:0; opacity:0.92; font-size:1.15rem; max-width:520px; }
+    .pp-tour-btn { background:#fff; color:var(--blue); border:0; border-radius:99px; padding:1.1rem 2.5rem; font:inherit; font-weight:800; font-size:1.1rem; cursor:pointer; white-space:nowrap; }
+    .pp-tour-btn:hover { background:#f0f4ff; }
+
+    /* Mortgage calculator */
+    .pp-mtg { margin-top:3rem; }
+    .mtg-card { border:1px solid var(--line); border-radius:16px; padding:1.75rem; display:grid; grid-template-columns:1.2fr 1fr; gap:1.75rem; align-items:center; }
+    .mtg-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.9rem; }
+    .mtg-grid label { display:flex; flex-direction:column; gap:0.3rem; font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); }
+    .mtg-grid input, .mtg-grid select { font:inherit; font-size:1rem; font-weight:600; color:var(--ink); padding:0.6rem 0.7rem; border:1px solid #d9e0ea; border-radius:9px; outline:none; }
+    .mtg-grid input:focus, .mtg-grid select:focus { border-color:var(--blue); }
+    .mtg-out { text-align:center; border-left:1px solid var(--line); padding-left:1.5rem; }
+    .mtg-total span { font-size:2.4rem; font-weight:800; color:var(--blue); letter-spacing:-1.5px; display:block; }
+    .mtg-total small { color:var(--faint); font-size:0.8rem; font-weight:600; }
+    .mtg-break { list-style:none; padding:0; margin:1rem 0 0; font-size:0.88rem; }
+    .mtg-break li { display:flex; justify-content:space-between; padding:0.35rem 0; color:var(--muted); border-top:1px solid #f0f3f7; }
+    .mtg-break li span { font-weight:700; color:var(--ink); }
+    .mtg-fine { font-size:0.8rem; color:var(--faint); margin:0.8rem 0 0; }
+    @media (max-width:640px){ .mtg-card { grid-template-columns:1fr; gap:1.25rem; } .mtg-out { border-left:0; border-top:1px solid var(--line); padding-left:0; padding-top:1.25rem; } }
+
+    /* Related listings */
+    .pp-rel { margin-top:3rem; }
+    .lst-rel-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1rem; }
+    .lst-rel-card { display:block; text-decoration:none; border:1px solid var(--line); border-radius:12px; overflow:hidden; transition:box-shadow .15s, transform .15s; color:inherit; background:#fff; }
+    .lst-rel-card:hover { box-shadow:0 8px 22px rgba(16,24,40,0.10); transform:translateY(-2px); }
+    .lst-rel-card .img { width:100%; aspect-ratio:4/3; object-fit:cover; background:#eef2f7; display:block; }
+    .lst-rel-card .b { padding:0.7rem 0.85rem 0.9rem; }
+    .lst-rel-card .p { font-weight:800; color:var(--ink); font-size:1.05rem; }
+    .lst-rel-card .t { color:var(--body); font-size:0.9rem; margin-top:0.15rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .lst-rel-card .m { color:var(--faint); font-size:0.8rem; margin-top:0.2rem; }
+    @media (max-width:600px){ .lst-rel-grid { grid-template-columns:1fr 1fr; gap:0.6rem; } }
+
+    /* Responsive */
+    @media (max-width:1100px){ .pp-body { grid-template-columns:1fr 330px; gap:2rem; } .pp-hl, .pp-facts { gap:0.7rem 1.25rem; } }
+    @media (max-width:900px){
+      .pp-body { grid-template-columns:1fr; gap:2rem; }
+      .pp-side { position:static; }
+      .pp-hl, .pp-facts { grid-template-columns:1fr 1fr; }
+      .pp-photos { grid-template-columns:1fr; aspect-ratio:auto; gap:0.4rem; margin-bottom:1.5rem; }
+      .pp-ph-main { aspect-ratio:16/10; }
+      .pp-ph-grid { grid-template-columns:1fr 1fr; grid-template-rows:1fr; aspect-ratio:3/1; }
+      .pp-tour-in { flex-direction:column; align-items:flex-start; gap:1.5rem; padding:2.25rem 2rem; }
+      .pp-tour-in h2 { font-size:1.9rem; } .pp-tour-in p { font-size:1.05rem; }
+    }
+    @media (max-width:760px){ .pp-back { position:static; transform:none; display:inline-flex; padding:0.5rem 1.25rem 0; } .pp-subbar-mid { padding-top:0.35rem; } }
+    @media (max-width:640px){
+      .pp-wrap { padding:1rem 1rem 2.5rem; }
+      .pp-subbar-mid { padding:0.4rem 1rem 0.6rem; gap:0.75rem; }
+      .pp-back { padding:0.6rem 1rem 0; }
+      .pp-sum { gap:0.15rem 0.6rem; }
+      .pp-sum .pp-sum-addr, .pp-sum .price { font-size:1.1rem; }
+      .pp-sum .specs { font-size:0.9rem; flex-basis:100%; }
+      .pp-iconbtn { padding:0.45rem 0.65rem; font-size:0.8rem; }
+      .pp-photos { border-radius:12px; } .pp-ph-main { aspect-ratio:4/3; } .pp-ph-grid { aspect-ratio:2/1; }
+      .pp-viewall { right:0.6rem; bottom:0.6rem; padding:0.45rem 0.7rem; font-size:0.78rem; }
+      .pp-hl, .pp-facts { grid-template-columns:1fr; }
+      .pp-h { font-size:1.35rem; } .pp-sec-h { font-size:1.25rem; } .pp-sec { margin-top:2.25rem; }
+      .pp-map { height:230px; } .pp-card { padding:1.25rem; }
+      .pp-tour { margin-top:2.25rem; } .pp-tour-in { padding:1.75rem 1.5rem; border-radius:16px; gap:1.25rem; }
+      .pp-tour-in h2 { font-size:1.5rem; } .pp-tour-in p { font-size:1rem; }
+      .pp-tour-btn { width:100%; text-align:center; padding:0.95rem; font-size:1.05rem; }
+    }
+    @media (max-width:380px){ .pp-sum .pp-sum-addr, .pp-sum .price { font-size:1rem; } .pp-iconbtn { padding:0.4rem 0.55rem; font-size:0.75rem; } }
+
+    /* Lightbox */
+    .pp-lb { position:fixed; inset:0; z-index:200; background:rgba(10,14,20,0.94); display:none; flex-direction:column; }
+    .pp-lb.open { display:flex; }
+    .pp-lb-top { display:flex; align-items:center; justify-content:space-between; padding:1rem 1.5rem; color:#fff; }
+    .pp-lb-count { font-weight:700; font-size:0.95rem; }
+    .pp-lb-x { background:none; border:0; color:#fff; font-size:1.6rem; cursor:pointer; line-height:1; }
+    .pp-lb-stage { flex:1; display:flex; align-items:center; justify-content:center; gap:1rem; padding:0 1rem 1.5rem; min-height:0; }
+    .pp-lb-img { max-width:min(1100px,92vw); max-height:100%; object-fit:contain; border-radius:10px; }
+    .pp-lb-nav { background:rgba(255,255,255,0.14); border:0; color:#fff; width:52px; height:52px; border-radius:50%; font-size:1.5rem; cursor:pointer; flex:none; }
+    .pp-lb-nav:hover { background:rgba(255,255,255,0.28); }
+    @media (max-width:640px){ .pp-lb-nav { width:42px; height:42px; } }
+
+    /* Tour / generic modal */
+    .pp-modal { position:fixed; inset:0; z-index:210; background:rgba(10,14,20,0.55); display:none; align-items:center; justify-content:center; padding:1.5rem; }
+    .pp-modal.open { display:flex; }
+    .pp-modal-card { background:#fff; border-radius:18px; max-width:440px; width:100%; padding:2rem; box-shadow:0 30px 70px rgba(0,0,0,0.35); }
+    .pp-modal-card h3 { margin:0 0 0.35rem; font-size:1.5rem; font-weight:800; color:var(--ink); }
+    .pp-modal-card .sub { margin:0 0 1.25rem; color:var(--muted); font-size:0.95rem; }
+    .pp-modal-card input, .pp-modal-card textarea { width:100%; box-sizing:border-box; border:1px solid var(--line); border-radius:10px; padding:0.7rem 0.85rem; font:inherit; margin-bottom:0.6rem; }
+    .pp-modal-card textarea { min-height:70px; resize:vertical; }
+    .pp-modal-go { width:100%; background:var(--blue); color:#fff; border:0; border-radius:10px; padding:0.85rem; font:inherit; font-weight:800; cursor:pointer; }
+    .pp-modal-go:hover { background:var(--blue-dark); }
+    .pp-modal-x { float:right; background:none; border:0; font-size:1.4rem; cursor:pointer; color:var(--muted); line-height:1; margin:-0.5rem -0.5rem 0 0; }
+
+    /* Toast */
+    .pp-toast { position:fixed; left:50%; bottom:2rem; transform:translateX(-50%) translateY(1rem); background:var(--ink); color:#fff; padding:0.85rem 1.4rem; border-radius:99px; font-weight:600; font-size:0.9rem; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:220; }
+    .pp-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+  <!-- Replace with your own site header -->
+
+  <!-- Summary sub-bar -->
+  <div class="pp-subbar">
+    <div class="pp-subbar-in">
+      <a class="pp-back" href="/properties">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Back to properties
+      </a>
+      <div class="pp-subbar-mid">
+        <div class="pp-sum">
+          <span class="pp-sum-addr" id="pp-sum-addr">&nbsp;</span>
+          <span class="price" id="pp-sum-price"></span>
+          <span class="specs" id="pp-sum-specs"></span>
+        </div>
+        <div class="pp-subbar-r">
+          <button class="pp-iconbtn" id="pp-save-btn" onclick="toggleSaveListing()"><span id="pp-save-heart">&#9825;</span> <span id="pp-save-label">Save</span></button>
+          <button class="pp-iconbtn" onclick="shareListing()">&#8599; Share</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pp-wrap">
+    <!-- Photo collage -->
+    <div class="pp-photos" id="pp-photos"></div>
+
+    <div class="pp-body">
+      <!-- LEFT column (scrolls normally) -->
+      <div id="pp-main"></div>
+      <!-- RIGHT sticky sidebar -->
+      <div class="pp-side" id="pp-side"></div>
+    </div>
+
+    <!-- Request a tour band -->
+    <div class="pp-tour">
+      <div class="pp-tour-in">
+        <div><h2>Want to see it in person?</h2><p>Thirty seconds, no account, no obligation &mdash; and it never costs you anything.</p></div>
+        <button class="pp-tour-btn" onclick="ppTour('a tour')">Request a tour</button>
+      </div>
+    </div>
+
+    <!-- Mortgage calculator -->
+    <section class="pp-mtg" id="pp-mtg" style="display:none;">
+      <h2 class="pp-sec-h">Estimate your monthly payment</h2>
+      <div class="mtg-card">
+        <div class="mtg-grid">
+          <label>Home price<input id="mtg-price" type="number" inputmode="numeric"></label>
+          <label>Down payment (%)<input id="mtg-down" type="number" inputmode="numeric" value="20"></label>
+          <label>Interest rate (%)<input id="mtg-rate" type="number" step="0.1" inputmode="decimal" value="6.9"></label>
+          <label>Loan term<select id="mtg-term"><option value="30">30 years</option><option value="20">20 years</option><option value="15">15 years</option></select></label>
+        </div>
+        <div class="mtg-out">
+          <div class="mtg-total"><span id="mtg-monthly">$0</span><small>estimated / month</small></div>
+          <ul class="mtg-break">
+            <li>Principal &amp; interest <span id="mtg-pi">$0</span></li>
+            <li>Property tax <span id="mtg-tax">$0</span></li>
+            <li>Home insurance <span id="mtg-ins">$0</span></li>
+          </ul>
+        </div>
+      </div>
+      <p class="mtg-fine">Rough estimate for planning only &mdash; not a loan offer.</p>
+    </section>
+
+    <!-- Related listings — inject your own cards into .lst-rel-grid -->
+    <section class="pp-rel"></section>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="pp-lb" id="ppLb" onclick="ppLbBackdrop(event)">
+    <div class="pp-lb-top">
+      <span class="pp-lb-count" id="ppLbCount">1 / 1</span>
+      <button class="pp-lb-x" onclick="ppLbClose()" aria-label="Close">&times;</button>
+    </div>
+    <div class="pp-lb-stage">
+      <button class="pp-lb-nav" onclick="ppLbStep(-1)" aria-label="Previous">&#8249;</button>
+      <img class="pp-lb-img" id="ppLbImg" alt="Property photo">
+      <button class="pp-lb-nav" onclick="ppLbStep(1)" aria-label="Next">&#8250;</button>
+    </div>
+  </div>
+
+  <!-- Tour modal -->
+  <div class="pp-modal" id="ppModal" onclick="if(event.target===this)ppTourClose()">
+    <div class="pp-modal-card">
+      <button class="pp-modal-x" onclick="ppTourClose()" aria-label="Close">&times;</button>
+      <h3>Request a tour</h3>
+      <p class="sub" id="ppModalSub">The listing agent will reach out to schedule.</p>
+      <form onsubmit="ppTourSubmit(event)">
+        <input id="ppm-name" placeholder="Your name" required>
+        <input id="ppm-email" placeholder="Email" type="email">
+        <input id="ppm-phone" placeholder="Phone">
+        <textarea id="ppm-msg"></textarea>
+        <button class="pp-modal-go" type="submit">Send request</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="pp-toast" id="ppToast"></div>
+
+  <!-- Replace with your own site footer -->
+
+  <script>
+    /* =========================================================================
+       DATA
+       -------------------------------------------------------------------------
+       This template ships with SAMPLE_DATA so it renders immediately.
+       To wire up a backend, delete SAMPLE_DATA and uncomment the fetch in
+       hydrate(). The render code expects the shape shown in SAMPLE_DATA below.
+       Everything is optional except id/title/price — sections whose data is
+       missing simply don't render.
+    ========================================================================= */
+    const SAMPLE_DATA = {
+      id: 'demo-1',
+      slug: 'sample-lake-home',
+      title: 'Interlachen Point Estate',
+      address: '11480 Interlachen Rd',
+      city: 'Minnetonka Beach', state: 'MN', zip: '55361',
+      price: 1875000,
+      original_price: 1975000,
+      beds: 4, baths: 3, sqft: 3820,
+      property_type: 'Single Family', year_built: 1998, stories: 2,
+      lot_acres: 0.62, garage_spaces: 3,
+      heating: 'Forced air', cooling: 'Central', basement: 'Finished walkout',
+      flooring: 'Hardwood', exterior: 'Cedar & stone', roof: 'Architectural shingle',
+      parking: 'Attached garage', appliances: 'Stainless, included',
+      waterfront: true, waterfront_feet: 120, water_body: 'Lake Minnetonka',
+      shoreline_type: 'Hard sand', lake_depth_ft: 14, dock_included: true,
+      utilities: 'City water & sewer', hoa_fee: null,
+      fireplace: true, listing_view: 'Lake view',
+      annual_tax: 18400,
+      mls_number: '6501234',
+      created_at: '2026-07-01T00:00:00Z',
+      latitude: 44.9412, longitude: -93.5901,
+      open_house_at: '2026-07-19T17:00:00Z',
+      description: 'A rare west-facing point lot on Lake Minnetonka with 120 feet of hard-sand shoreline and sunset views from nearly every room. The main level opens to a wall of glass overlooking the water, a chef’s kitchen with a walk-in pantry, and a screened porch built for summer evenings. Upstairs, the primary suite has its own lake-facing balcony, a spa bath, and two walk-in closets. The finished walkout lower level adds a family room, wet bar, and guest suite. Outside: a permanent dock, level lawn to the water, and mature oaks for shade.',
+      featured_image_url: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=1400&q=80',
+      gallery: [
+        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1400&q=80',
+        'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1400&q=80',
+        'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=1400&q=80',
+        'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=1400&q=80'
+      ],
+      highlights: ['120 ft of hard-sand shoreline', 'West-facing sunset views', 'Permanent dock included', 'Finished walkout lower level', 'Screened porch', 'Chef’s kitchen'],
+      price_history: [
+        { date: '2026-07-01', event: 'Listed for sale', price: 1975000 },
+        { date: '2026-07-08', event: 'Price change', price: 1875000 }
+      ],
+      schools: [
+        { name: 'Minnewashta Elementary', level: 'Public, K-5', rating: 9, distance_mi: 1.2 },
+        { name: 'Minnetonka Middle West', level: 'Public, 6-8', rating: 8, distance_mi: 2.4 },
+        { name: 'Minnetonka High School', level: 'Public, 9-12', rating: 9, distance_mi: 3.1 }
+      ],
+      nearby: [
+        { name: 'Lord Fletcher’s', type: 'Restaurant', distance_mi: 0.8 },
+        { name: 'Wayzata Bay', type: 'Marina', distance_mi: 2.0 },
+        { name: 'Whole Foods', type: 'Grocery', distance_mi: 4.5 }
+      ],
+      walk_score: 42,
+      agent: {
+        display_name: 'Lara Burnside', slug: 'lara-burnside',
+        brokerage_name: 'eXp Realty', years_experience: 12,
+        headline: 'Lake Minnetonka specialist — 20+ waterfront sales.',
+        profile_photo_url: ''
+      }
+    };
+
+    /* ---- helpers ---- */
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const arr = v => (Array.isArray(v) ? v : (typeof v === 'string' ? (()=>{try{const p=JSON.parse(v);return Array.isArray(p)?p:[];}catch(_){return [];}})() : []));
+    const money = n => { if (n == null || n === '') return ''; const x = Number(String(n).replace(/[$,\s]/g, '')); return isNaN(x) ? String(n) : '$' + x.toLocaleString('en-US'); };
+    const numf = n => (n == null || n === '' ? '' : Number(n).toLocaleString('en-US'));
+    const dist = v => { if (v == null || v === '') return ''; const s = String(v).trim(); return /[a-z]/i.test(s) ? s : s + ' mi'; };
+    // Cloudinary on-the-fly resize; passes non-Cloudinary URLs through untouched.
+    const cld = (u, w) => (typeof u === 'string' && u.includes('/upload/')) ? u.replace('/upload/', `/upload/w_${w},c_limit,q_auto,f_auto/`) : u;
+    const TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+    const GRID = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>';
+
+    let LISTING_ID = null, PRICE_NUM = 0, TAX_NUM = 0;
+    let PP_IMAGES = [];
+    let R = null;
+
+    (async function hydrate() {
+      // ---- BACKEND: replace this block with a fetch ----
+      // const slug = (location.pathname.match(/^\/listings\/([^\/?#]+)/) || [])[1];
+      // const res = await fetch(`/api/listings/slug/${encodeURIComponent(slug)}`);
+      // R = await res.json();
+      R = SAMPLE_DATA;
+      // --------------------------------------------------
+      LISTING_ID = R.id;
+      PRICE_NUM = Number(R.price) || 0;
+      TAX_NUM = Number(R.annual_tax) || 0;
+      renderAll(R);
+    })();
+
+    function renderAll(r) {
+      const cityLine = [r.address, r.city, r.state].filter(Boolean).join(', ');
+      const priceStr = r.price != null ? '$' + Number(r.price).toLocaleString('en-US') : 'Contact for price';
+
+      // Sub-bar
+      document.getElementById('pp-sum-addr').textContent = cityLine || r.title || '';
+      document.getElementById('pp-sum-price').textContent = priceStr;
+      const specBits = [];
+      if (r.beds != null) specBits.push(`<b>${esc(r.beds)}</b> bd`);
+      if (r.baths != null) specBits.push(`<b>${esc(r.baths)}</b> ba`);
+      if (r.sqft != null) specBits.push(`<b>${numf(r.sqft)}</b> sqft`);
+      document.getElementById('pp-sum-specs').innerHTML = specBits.join(' &middot; ');
+      document.title = (r.title || 'Lake home') + ' | Property';
+
+      // Photos (1 large + up to 2 stacked; "View all" pill on the last cell)
+      let gal = arr(r.gallery).map(g => typeof g === 'string' ? g : (g && g.url) || '').filter(Boolean);
+      PP_IMAGES = [r.featured_image_url, ...gal].filter(Boolean).filter((u, i, a) => a.indexOf(u) === i).slice(0, 20);
+      const ph = document.getElementById('pp-photos');
+      if (PP_IMAGES.length) {
+        const cellVA = (i, last) => `<button class="pp-ph-cell" onclick="ppLightbox(${i})" style="background-image:url('${esc(cld(PP_IMAGES[i], 700))}')">${last && PP_IMAGES.length > 3 ? `<span class="pp-viewall">${GRID}View all ${PP_IMAGES.length} photos</span>` : ''}</button>`;
+        ph.innerHTML = `<button class="pp-ph-main" onclick="ppLightbox(0)" style="background-image:url('${esc(cld(PP_IMAGES[0], 1400))}')"></button>
+          <div class="pp-ph-grid">${PP_IMAGES[1] ? cellVA(1, PP_IMAGES.length <= 2) : ''}${PP_IMAGES[2] ? cellVA(2, true) : (PP_IMAGES[1] ? '' : '')}</div>`;
+      } else { ph.style.display = 'none'; }
+
+      // LEFT column ---------------------------------------------------------
+      const tags = [];
+      if (r.waterfront === true) tags.push('Waterfront');
+      if (r.water_body) tags.push(esc(r.water_body));
+      if (r.fireplace === true) tags.push('Fireplace');
+      if (r.listing_view) tags.push(esc(r.listing_view));
+      if (r.year_built) tags.push('Built ' + esc(r.year_built));
+      const tagRow = tags.length ? `<div class="pp-tagrow">${tags.map(t => `<span class="pp-tag">${t}</span>`).join('')}</div>` : '';
+
+      const descFull = (r.description || '').trim();
+      let descHtml = '';
+      if (descFull) {
+        if (descFull.length > 340) {
+          const cut = descFull.slice(0, 340).replace(/\s+\S*$/, '');
+          descHtml = `<p class="pp-desc">${esc(cut)}<span class="pp-desc-more" hidden> ${esc(descFull.slice(cut.length).trim())}</span><br><a class="pp-more" href="javascript:void(0)" onclick="ppToggleDesc(this)">Show more</a></p>`;
+        } else { descHtml = `<p class="pp-desc">${esc(descFull)}</p>`; }
+      }
+
+      const DAY = 86400000;
+      const dom = r.created_at ? Math.max(0, Math.floor((Date.now() - new Date(r.created_at).getTime()) / DAY)) : null;
+      const priceCut = (r.original_price != null && r.price != null && Number(r.price) < Number(r.original_price)) ? Number(r.original_price) - Number(r.price) : null;
+      const metaBits = [];
+      if (dom != null) metaBits.push(`<span><b>${dom === 0 ? 'New' : dom}</b>${dom === 0 ? '' : (dom === 1 ? ' day' : ' days') + ' on market'}</span>`);
+      if (r.mls_number) metaBits.push(`<span>MLS# <b>${esc(r.mls_number)}</b></span>`);
+      if (priceCut) metaBits.push(`<span>Price cut: <b>$${priceCut.toLocaleString('en-US')}</b></span>`);
+      const metaHtml = metaBits.length ? `<div class="pp-meta">${metaBits.join('<span class="sep">|</span>')}</div>` : '';
+
+      const hi = arr(r.highlights);
+      const special = hi.length ? section("What's special", `<ul class="pp-hl">${hi.map(h => `<li>${TICK}<span>${esc(typeof h === 'string' ? h : (h.text || h.label || h.name || ''))}</span></li>`).join('')}</ul>`) : '';
+
+      const facts = [
+        ['Property type', r.property_type], ['Year built', r.year_built],
+        ['Bedrooms', r.beds], ['Bathrooms', r.baths],
+        ['Square feet', r.sqft != null ? numf(r.sqft) : null], ['Lot size', r.lot_acres != null ? r.lot_acres + ' acres' : null],
+        ['Stories', r.stories], ['Garage', r.garage_spaces != null ? r.garage_spaces + ' spaces' : null],
+        ['Heating', r.heating], ['Cooling', r.cooling], ['Basement', r.basement], ['Flooring', r.flooring],
+        ['Exterior', r.exterior], ['Roof', r.roof], ['Parking', r.parking], ['Appliances', r.appliances],
+        ['Waterfront', r.waterfront === true ? (r.waterfront_feet ? numf(r.waterfront_feet) + ' ft' : 'Yes') : null],
+        ['Shoreline type', r.shoreline_type], ['Lake depth', r.lake_depth_ft != null ? r.lake_depth_ft + ' ft' : null],
+        ['Dock', r.dock_included === true ? 'Included' : (r.dock_included === false ? 'Not included' : null)],
+        ['Utilities', r.utilities], ['HOA dues', r.hoa_fee != null ? money(r.hoa_fee) + '/mo' : null],
+      ].filter(f => f[1] != null && String(f[1]).trim() !== '');
+      const factsSec = facts.length ? section('Facts & features', `<div class="pp-facts">${facts.map(f => `<div class="pp-fact"><dt>${esc(f[0])}</dt><dd>${esc(f[1])}</dd></div>`).join('')}</div>`) : '';
+
+      const fmtDate = d => { const x = new Date(d); return isNaN(x) ? esc(d) : x.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); };
+      const hist = arr(r.price_history);
+      const taxLine = r.annual_tax != null ? `<p class="pp-tax">Annual property tax: <b>${esc(money(r.annual_tax))}</b></p>` : '';
+      const histSec = (hist.length || taxLine) ? section('Price & tax history',
+        (hist.length ? `<table class="pp-hist"><thead><tr><th>Date</th><th>Event</th><th>Price</th></tr></thead><tbody>${hist.map(e => `<tr><td>${fmtDate(e.date)}</td><td>${esc(e.event || '')}</td><td>${esc(money(e.price))}</td></tr>`).join('')}</tbody></table>` : '') + taxLine) : '';
+
+      const sd = s => (s.distance_mi != null ? s.distance_mi : s.distance);
+      const sch = arr(r.schools);
+      const schSec = sch.length ? section('Schools', sch.map(s => `<div class="pp-row">${(s.rating != null && s.rating !== '') ? `<div class="pp-rate">${esc(s.rating)}<small>/10</small></div>` : ''}<div class="pp-row-m"><div class="pp-row-t">${esc(s.name || '')}</div><div class="pp-row-s">${esc(s.level || '')}</div></div>${sd(s) != null && sd(s) !== '' ? `<div class="pp-row-d">${esc(dist(sd(s)))}</div>` : ''}</div>`).join('')) : '';
+
+      const nd = n => (n.distance_mi != null ? n.distance_mi : n.distance);
+      const nb = arr(r.nearby);
+      let nbRows = '';
+      if (r.walk_score != null) nbRows += `<div class="pp-row"><div class="pp-rate">${esc(r.walk_score)}</div><div class="pp-row-m"><div class="pp-row-t">${r.walk_score >= 70 ? 'Very walkable' : r.walk_score >= 50 ? 'Somewhat walkable' : 'Car-dependent'}</div><div class="pp-row-s">Walk Score out of 100</div></div></div>`;
+      nbRows += nb.map(n => `<div class="pp-row"><div class="pp-row-m"><div class="pp-row-t">${esc(n.name || '')}</div><div class="pp-row-s">${esc(n.type || n.category || '')}</div></div>${nd(n) != null && nd(n) !== '' ? `<div class="pp-row-d">${esc(dist(nd(n)))}</div>` : ''}</div>`).join('');
+      const nbSec = nbRows ? section("What's nearby", nbRows) : '';
+
+      let mapSec = '';
+      if (r.latitude != null && r.longitude != null) {
+        const la = Number(r.latitude), lo = Number(r.longitude), d = 0.012;
+        const bbox = `${lo - d}%2C${la - d}%2C${lo + d}%2C${la + d}`;
+        mapSec = section('Location', `<div class="pp-map"><iframe loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${la}%2C${lo}"></iframe></div>`);
+      }
+
+      document.getElementById('pp-main').innerHTML =
+        `<h1 class="pp-h">${esc(r.address || r.title || '')}</h1>
+         <p class="pp-addr">${esc(cityLine)}${r.zip ? ' ' + esc(r.zip) : ''}</p>
+         ${tagRow}${descHtml}${metaHtml}${special}${factsSec}${histSec}${schSec}${nbSec}${mapSec}`;
+
+      // RIGHT sticky sidebar -----------------------------------------------
+      let side = '';
+      if (r.open_house_at && new Date(r.open_house_at).getTime() > Date.now()) {
+        const oh = new Date(r.open_house_at);
+        side += `<div class="pp-card"><div class="pp-oh-h">Open house</div><div class="pp-oh-date">${oh.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div><div class="pp-oh-time">${oh.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div><a class="pp-oh-cal" onclick="ppTour('the open house')">Request details</a></div>`;
+      }
+      const a = r.agent;
+      if (a) {
+        const first = String(a.display_name || '').split(' ')[0] || 'the agent';
+        side += `<div class="pp-card">
+          <div class="pp-listed">Listed by</div>
+          <div class="pp-agent">
+            ${a.profile_photo_url ? `<img class="pp-avatar" src="${esc(a.profile_photo_url)}" alt="">` : `<div class="pp-avatar">${esc(String(a.display_name || 'A').trim().charAt(0).toUpperCase())}</div>`}
+            <div class="pp-agent-n">${esc(a.display_name || 'Listing agent')}</div>
+            <div class="pp-agent-b">${esc(a.brokerage_name || 'Independent Realtor')}${a.years_experience ? ' &middot; ' + esc(a.years_experience) + ' yrs' : ''}</div>
+            ${a.headline ? `<p class="pp-agent-h">${esc(a.headline)}</p>` : ''}
+          </div>
+          <form class="pp-cform" onsubmit="ppContact(event)">
+            <input id="pp-c-name" placeholder="Your name" required>
+            <input id="pp-c-email" placeholder="Email" type="email">
+            <input id="pp-c-phone" placeholder="Phone">
+            <textarea id="pp-c-msg">I'd like to see ${esc(r.title || 'this property')}.</textarea>
+            <button class="pp-contact-btn" type="submit">Contact ${esc(first)}<small>Replies land in their inbox directly</small></button>
+            <p class="pp-fine">Free, and we never sell your information.</p>
+          </form>
+          <div class="pp-ok" id="pp-c-ok">Sent &mdash; ${esc(first)} will be in touch.</div>
+          ${a.slug ? `<a class="pp-viewprofile" href="/agents/${esc(a.slug)}">View ${esc(first)}'s profile</a>` : ''}
+        </div>`;
+      } else {
+        side += `<div class="pp-card"><div class="pp-listed">Interested?</div><form class="pp-cform" onsubmit="ppContact(event)" style="margin-top:0.75rem;"><input id="pp-c-name" placeholder="Your name" required><input id="pp-c-email" placeholder="Email" type="email"><input id="pp-c-phone" placeholder="Phone"><textarea id="pp-c-msg">I'd like to see ${esc(r.title || 'this property')}.</textarea><button class="pp-contact-btn" type="submit">Request a showing</button><p class="pp-fine">Free, and we never sell your information.</p></form><div class="pp-ok" id="pp-c-ok">Sent &mdash; an agent will be in touch.</div></div>`;
+      }
+      document.getElementById('pp-side').innerHTML = side;
+
+      if (PRICE_NUM > 0) initMortgage();
+    }
+
+    function section(title, inner) { return inner ? `<section class="pp-sec"><h2 class="pp-sec-h">${esc(title)}</h2>${inner}</section>` : ''; }
+
+    // ── Lightbox ──
+    let ppLbI = 0;
+    function ppLightbox(i) { if (!PP_IMAGES.length) return; ppLbI = i; ppLbRender(); document.getElementById('ppLb').classList.add('open'); document.body.style.overflow = 'hidden'; }
+    function ppLbRender() { document.getElementById('ppLbImg').src = cld(PP_IMAGES[ppLbI], 1400); document.getElementById('ppLbCount').textContent = (ppLbI + 1) + ' / ' + PP_IMAGES.length; }
+    function ppLbStep(d) { ppLbI = (ppLbI + d + PP_IMAGES.length) % PP_IMAGES.length; ppLbRender(); }
+    function ppLbClose() { document.getElementById('ppLb').classList.remove('open'); document.body.style.overflow = ''; }
+    function ppLbBackdrop(e) { if (!e.target.closest('.pp-lb-img, .pp-lb-nav')) ppLbClose(); }
+
+    // ── Show more / less description ──
+    function ppToggleDesc(el) { const m = el.parentNode.querySelector('.pp-desc-more'); if (!m) return; const open = m.hasAttribute('hidden'); if (open) { m.removeAttribute('hidden'); el.textContent = 'Show less'; } else { m.setAttribute('hidden', ''); el.textContent = 'Show more'; } }
+
+    // ── Tour modal → lead ──
+    function ppTour(what) { document.getElementById('ppModalSub').textContent = 'The listing agent will reach out about ' + what + '.'; document.getElementById('ppm-msg').value = R ? `I'd like to tour ${R.title || 'this property'}.` : "I'd like to tour this property."; document.getElementById('ppModal').classList.add('open'); document.body.style.overflow = 'hidden'; }
+    function ppTourClose() { document.getElementById('ppModal').classList.remove('open'); document.body.style.overflow = ''; }
+    async function ppTourSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('ppm-name').value.trim();
+      const email = document.getElementById('ppm-email').value.trim();
+      const phone = document.getElementById('ppm-phone').value.trim();
+      const notes = document.getElementById('ppm-msg').value.trim() || 'Requested a tour.';
+      if (!name || (!email && !phone)) { ppToast('Add your name and an email or phone.'); return; }
+      // ---- BACKEND: POST the lead ----
+      // await fetch('/api/leads', { method:'POST', headers:{'Content-Type':'application/json'},
+      //   body: JSON.stringify({ name, email, phone, notes, source:'property_question', listing_id: LISTING_ID }) });
+      ppTourClose(); ppToast("Request sent — the agent will be in touch.");
+    }
+    async function ppContact(e) {
+      e.preventDefault();
+      const name = document.getElementById('pp-c-name').value.trim();
+      const email = document.getElementById('pp-c-email').value.trim();
+      const phone = document.getElementById('pp-c-phone').value.trim();
+      const notes = document.getElementById('pp-c-msg').value.trim() || 'Interested in this property.';
+      if (!name || (!email && !phone)) { ppToast('Add your name and an email or phone.'); return; }
+      // ---- BACKEND: POST the lead (same endpoint as above) ----
+      e.target.style.display = 'none';
+      const ok = document.getElementById('pp-c-ok'); if (ok) ok.style.display = 'block';
+    }
+
+    // ── Save / Share ──
+    let SAVED = false;
+    function setSaved(on) { SAVED = on; document.getElementById('pp-save-heart').innerHTML = on ? '&#9829;' : '&#9825;'; document.getElementById('pp-save-label').textContent = on ? 'Saved' : 'Save'; document.getElementById('pp-save-btn').style.color = on ? '#c53030' : ''; }
+    function toggleSaveListing() {
+      // ---- BACKEND: POST /api/listings/:id/save (401 -> redirect to login) ----
+      setSaved(!SAVED); ppToast(SAVED ? 'Saved to your favorites.' : 'Removed from favorites.');
+    }
+    async function shareListing() {
+      const url = location.href;
+      if (navigator.share) { try { await navigator.share({ title: document.title, url }); } catch (_) {} return; }
+      try { await navigator.clipboard.writeText(url); ppToast('Link copied to clipboard.'); } catch (_) { ppToast(url); }
+    }
+
+    // ── Toast ──
+    let toastT;
+    function ppToast(msg) { const t = document.getElementById('ppToast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600); }
+
+    // ── Mortgage calculator ──
+    function initMortgage() {
+      const $ = id => document.getElementById(id);
+      const usd = n => '$' + Math.round(n).toLocaleString('en-US');
+      $('mtg-price').value = PRICE_NUM;
+      function calc() {
+        const price = Number($('mtg-price').value) || 0;
+        const downPct = Math.min(100, Math.max(0, Number($('mtg-down').value) || 0));
+        const rate = Math.max(0, Number($('mtg-rate').value) || 0) / 100 / 12;
+        const n = (Number($('mtg-term').value) || 30) * 12;
+        const loan = price * (1 - downPct / 100);
+        const pi = rate > 0 ? loan * rate * Math.pow(1 + rate, n) / (Math.pow(1 + rate, n) - 1) : loan / n;
+        const tax = (TAX_NUM > 0 ? TAX_NUM : price * 0.011) / 12;
+        const ins = price * 0.0035 / 12;
+        $('mtg-pi').textContent = usd(pi || 0); $('mtg-tax').textContent = usd(tax || 0); $('mtg-ins').textContent = usd(ins || 0);
+        $('mtg-monthly').textContent = usd((pi || 0) + tax + ins);
+      }
+      ['mtg-price', 'mtg-down', 'mtg-rate', 'mtg-term'].forEach(id => $(id).addEventListener('input', calc));
+      $('pp-mtg').style.display = 'block';
+      calc();
+    }
+
+    // ── Keyboard: Esc/arrows for lightbox, Esc for tour modal ──
+    document.addEventListener('keydown', function (e) {
+      if (document.getElementById('ppLb').classList.contains('open')) { if (e.key === 'Escape') ppLbClose(); if (e.key === 'ArrowRight') ppLbStep(1); if (e.key === 'ArrowLeft') ppLbStep(-1); }
+      if (e.key === 'Escape' && document.getElementById('ppModal').classList.contains('open')) ppTourClose();
+    });
+  </script>
+</body>
+</html>

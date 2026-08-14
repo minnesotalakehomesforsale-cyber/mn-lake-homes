@@ -265,6 +265,13 @@ const register = async (req, res) => {
 
         await client.query('COMMIT');
 
+        // Keep the brokerage catalog in sync with what new agents type at signup.
+        if (brokerage_name) {
+            try {
+                require('./brokerage.controller').reconcileBrokerage(brokerage_name, { agentName: display_name });
+            } catch (_) { /* non-blocking */ }
+        }
+
         // Record the referral (post-commit, fire-and-forget so a hiccup here can
         // never fail the signup) if they came in on a valid, different agent's code.
         if (refCode) {

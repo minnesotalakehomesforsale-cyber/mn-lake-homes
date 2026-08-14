@@ -81,6 +81,7 @@ app.use('/api/assistant', require('./routes/assistant.routes'));
 app.use('/api/activity', require('./routes/activity.routes'));
 app.use('/api/cash-offer', require('./routes/cash-offer.routes'));
 app.use('/api/tags', require('./routes/tag.routes'));
+app.use('/api/brokerages', require('./routes/brokerage.routes'));
 app.use('/api/lakes', require('./routes/lake.routes'));
 app.use('/api/businesses',     require('./routes/business.routes'));
 app.use('/api/business-auth',  require('./routes/business-auth.routes'));
@@ -3614,6 +3615,20 @@ async function ensureTables() {
             CREATE INDEX IF NOT EXISTS idx_record_claims_target ON record_claims(target_type, target_id);
             CREATE INDEX IF NOT EXISTS idx_record_claims_email  ON record_claims(lower(email));
 
+            -- Brokerage catalog: powers the agent-profile "Brokerage" combobox.
+            -- Seeded from a starter MN list; agents can type-to-add a new one,
+            -- which inserts a row with source='agent' + status='pending' and
+            -- files an admin task for review. name is unique (case-insensitive).
+            CREATE TABLE IF NOT EXISTS brokerages (
+                id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                name       VARCHAR(255) NOT NULL,
+                source     VARCHAR(16)  NOT NULL DEFAULT 'seed',   -- 'seed' | 'agent' | 'admin'
+                status     VARCHAR(16)  NOT NULL DEFAULT 'active', -- 'active' | 'pending' | 'hidden'
+                agent_count INTEGER     NOT NULL DEFAULT 0,        -- denormalized popularity (best-effort)
+                created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_brokerages_name_ci ON brokerages(lower(name));
+
             -- Listing freshness + lifecycle (Phase 3/8): remember the first price
             -- we saw (to detect drops), an optional open-house datetime, and when
             -- a home was marked sold (for the "recently sold" wall).
@@ -4080,6 +4095,7 @@ async function ensureTables() {
         await seedLakeIndexability();
         await seedMarketTiers();
         await seedTier1Content();
+        await seedBrokerages();
         await reconcilePartnerBusinesses();
     } catch (err) {
         console.error(' Table migration warning:', err.message);
@@ -4715,6 +4731,37 @@ async function seedBlogRelatedLinks() {
 // market_tier is still NULL, so an admin's manual tiering always wins. Runs
 // every boot (cheap, idempotent) so newly-added lakes matching a tier name get
 // classified without a re-seed flag.
+// Seed the brokerage catalog from the starter MN list PLUS any distinct
+// brokerage names agents have already typed into their profiles. Idempotent:
+// every insert is ON CONFLICT DO NOTHING against the case-insensitive unique
+// index, so it self-heals on each boot and never clobbers admin edits.
+async function seedBrokerages() {
+    try {
+        const { MN_BROKERAGES } = require('./data/brokerages-mn');
+        // Fold in names agents already use so the list reflects reality.
+        const existing = await pool.query(
+            `SELECT DISTINCT brokerage_name FROM agents
+              WHERE brokerage_name IS NOT NULL AND btrim(brokerage_name) <> ''`
+        );
+        const seedNames = MN_BROKERAGES.map(n => ({ name: n, source: 'seed' }));
+        const agentNames = existing.rows
+            .map(r => String(r.brokerage_name).trim())
+            .filter(Boolean)
+            .map(n => ({ name: n, source: 'agent' }));
+        let added = 0;
+        for (const { name, source } of [...seedNames, ...agentNames]) {
+            const r = await pool.query(
+                `INSERT INTO brokerages (name, source, status)
+                 VALUES ($1, $2, 'active')
+                 ON CONFLICT (lower(name)) DO NOTHING`,
+                [name, source]
+            );
+            added += r.rowCount;
+        }
+        if (added) console.log(`[seed] brokerages: +${added} new`);
+    } catch (e) { console.warn('[seed] seedBrokerages skipped:', e.message); }
+}
+
 async function seedMarketTiers() {
     try {
         // Tier-1 = 12 recruitment Tier-1 lakes + Bemidji/Pepin/Carlos (15).

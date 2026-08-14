@@ -84,6 +84,104 @@ window.mnlhAgentCard = function (agent) {
     </a>`;
 };
 
+// ── Brokerage combobox ──────────────────────────────────────────────────────
+// Turns a plain text input into a type-to-filter brokerage picker backed by
+// /api/brokerages. The input keeps holding the plain brokerage NAME (so every
+// existing save path that reads input.value keeps working). Agents can pick a
+// listed brokerage or type a new one ("+ Add …") — a new name is caught
+// server-side on save (added to the catalog + admin-notified). Blank is allowed
+// ("I don't know / between brokerages"). Idempotent: safe to call once per input.
+window.mnlhBrokerageCombobox = function (input, opts) {
+    if (!input || input._mnBroke) return; input._mnBroke = true;
+    opts = opts || {};
+    const onPick = typeof opts.onPick === 'function' ? opts.onPick : null;
+
+    // One-time styles (scoped by class).
+    if (!document.getElementById('mn-broke-css')) {
+        const s = document.createElement('style');
+        s.id = 'mn-broke-css';
+        s.textContent = `
+        .mn-broke-wrap { position: relative; }
+        .mn-broke-dd { position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:60;
+            background:#fff; border:1px solid #d9e0ea; border-radius:10px; box-shadow:0 12px 30px rgba(16,32,60,.14);
+            max-height:280px; overflow:auto; display:none; }
+        .mn-broke-dd.show { display:block; }
+        .mn-broke-opt { display:block; width:100%; text-align:left; background:none; border:0; cursor:pointer;
+            padding:.6rem .85rem; font:inherit; font-size:.9rem; color:#2d3748; border-bottom:1px solid #f1f4f8; }
+        .mn-broke-opt:last-child { border-bottom:0; }
+        .mn-broke-opt:hover, .mn-broke-opt.active { background:#eef4ff; color:#1a4fb0; }
+        .mn-broke-add { color:#1d6df2; font-weight:700; }
+        .mn-broke-add b { color:#0f2b46; }
+        .mn-broke-empty { padding:.6rem .85rem; color:#8a94a4; font-size:.85rem; }`;
+        document.head.appendChild(s);
+    }
+
+    // Wrap the input so the dropdown can position against it.
+    const wrap = document.createElement('div');
+    wrap.className = 'mn-broke-wrap';
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-expanded', 'false');
+    const dd = document.createElement('div');
+    dd.className = 'mn-broke-dd';
+    dd.setAttribute('role', 'listbox');
+    wrap.appendChild(dd);
+
+    let items = [], activeIdx = -1, timer = null;
+
+    function close() { dd.classList.remove('show'); input.setAttribute('aria-expanded', 'false'); activeIdx = -1; }
+    function pick(name) { input.value = name; close(); if (onPick) onPick(name); input.dispatchEvent(new Event('input', { bubbles: true })); }
+
+    function render(q) {
+        const rows = items.slice(0, 40);
+        const exact = items.some(b => (b.name || '').toLowerCase() === q.toLowerCase());
+        let html = rows.map((b, i) =>
+            `<button type="button" class="mn-broke-opt" role="option" data-i="${i}" data-name="${(b.name || '').replace(/"/g, '&quot;')}">${(b.name || '').replace(/</g, '&lt;')}</button>`
+        ).join('');
+        if (q && !exact) {
+            html += `<button type="button" class="mn-broke-opt mn-broke-add" role="option" data-add="1" data-name="${q.replace(/"/g, '&quot;')}">+ Use &ldquo;<b>${q.replace(/</g, '&lt;')}</b>&rdquo; (new brokerage)</button>`;
+        }
+        if (!html) html = `<div class="mn-broke-empty">Start typing your brokerage…</div>`;
+        dd.innerHTML = html;
+        dd.classList.add('show');
+        input.setAttribute('aria-expanded', 'true');
+        dd.querySelectorAll('.mn-broke-opt').forEach(btn => {
+            btn.addEventListener('mousedown', (e) => { e.preventDefault(); pick(btn.getAttribute('data-name')); });
+        });
+    }
+
+    async function fetchList(q) {
+        try {
+            const res = await fetch(`/api/brokerages${q ? `?q=${encodeURIComponent(q)}` : ''}`, { credentials: 'include' });
+            items = res.ok ? await res.json() : [];
+        } catch (_) { items = []; }
+        render(q);
+    }
+
+    function schedule() {
+        const q = input.value.trim();
+        clearTimeout(timer);
+        timer = setTimeout(() => fetchList(q), 140);
+    }
+
+    input.addEventListener('input', schedule);
+    input.addEventListener('focus', () => { if (!dd.classList.contains('show')) fetchList(input.value.trim()); });
+    input.addEventListener('blur', () => setTimeout(close, 160));
+    input.addEventListener('keydown', (e) => {
+        const opts = dd.querySelectorAll('.mn-broke-opt');
+        if (!dd.classList.contains('show') || !opts.length) return;
+        if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(activeIdx + 1, opts.length - 1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx - 1, 0); }
+        else if (e.key === 'Enter') { if (activeIdx >= 0) { e.preventDefault(); pick(opts[activeIdx].getAttribute('data-name')); } return; }
+        else if (e.key === 'Escape') { close(); return; }
+        else return;
+        opts.forEach((o, i) => o.classList.toggle('active', i === activeIdx));
+        if (opts[activeIdx]) opts[activeIdx].scrollIntoView({ block: 'nearest' });
+    });
+};
+
 // ── Generated blog "cover" (no photo needed) ────────────────────────────────
 // A lake-themed water tile: an on-brand gradient (chosen per category so the
 // grid has variety) with a subtle wave/topo motif. Used on the blog index and

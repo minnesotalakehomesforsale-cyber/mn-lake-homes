@@ -645,9 +645,9 @@
                                 <input type="text" id="f-name" class="input-sys" placeholder="E.g., David Chen" required oninput="calcProgress()">
                             </div>
                             <div class="form-group-sys">
-                                <label>Brokerage Name *</label>
-                                <p class="field-hint">The firm you're licensed under. Shown beside your name on listings.</p>
-                                <input type="text" id="f-brokerage" class="input-sys" placeholder="E.g., Lakeshore Realty Group" required oninput="calcProgress()">
+                                <label>Brokerage</label>
+                                <p class="field-hint">Start typing to find your firm, or add it if it's not listed. Leave blank if you're independent or between brokerages.</p>
+                                <input type="text" id="f-brokerage" class="input-sys" placeholder="Start typing your brokerage…" oninput="calcProgress()">
                             </div>
                         </div>
                         <div class="grid-2">
@@ -1707,6 +1707,12 @@
                 console.error('[Dashboard Load]', err.message);
                 window.location.href = REDIRECT_LOGIN;
             }
+
+            // Upgrade the Brokerage field into a type-to-filter combobox.
+            try {
+                const bInput = document.getElementById('f-brokerage');
+                if (bInput && window.mnlhBrokerageCombobox) window.mnlhBrokerageCombobox(bInput, { onPick: calcProgress });
+            } catch (_) {}
 
             loadDashProps();   // "My Properties" preview on the overview
 
@@ -3013,7 +3019,6 @@
             const val = id => (document.getElementById(id)?.value || '').trim();
             const checks = [
                 { label: 'Display Name',   ok: val('f-name')      !== '' },
-                { label: 'Brokerage Name', ok: val('f-brokerage') !== '' },
                 { label: 'Phone',          ok: val('f-phone')     !== '' },
                 { label: 'Primary City',   ok: val('f-city')      !== '' },
                 { label: `Bio (min ${BIO_MIN} characters)`, ok: val('f-bio').length >= BIO_MIN },
