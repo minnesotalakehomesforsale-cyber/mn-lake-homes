@@ -3238,7 +3238,17 @@
                 ]);
                 const catalog = catalogRes.ok ? await catalogRes.json() : [];
                 const mine    = mineRes.ok    ? await mineRes.json()    : [];
-                window._allAreas        = (Array.isArray(catalog) ? catalog : []).filter(t => t.active !== false);
+                // Merge the agent's OWN tags into the catalog so every selected
+                // chip resolves to a real name. The public /api/tags catalog
+                // hides towns without a hero photo, so an agent assigned to a
+                // heroless town would otherwise render as "(unknown area)".
+                const catList = (Array.isArray(catalog) ? catalog : []).filter(t => t.active !== false);
+                const seen    = new Set(catList.map(t => String(t.id)));
+                const merged  = catList.slice();
+                (Array.isArray(mine) ? mine : []).forEach(t => {
+                    if (!seen.has(String(t.id))) { merged.push(t); seen.add(String(t.id)); }
+                });
+                window._allAreas        = merged;
                 window._selectedAreaIds = new Set((mine || []).map(t => String(t.id)));
             } catch (_) {
                 window._allAreas        = [];
