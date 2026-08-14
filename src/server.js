@@ -975,14 +975,24 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 add('Water clarity (Secchi)', lake.water_clarity_ft, 'FT');
                 add('Shoreline length', lake.shoreline_miles, 'MI');
                 add('Public accesses', lake.public_accesses);
-                if (props.length) {
-                    lakeFactsLd = `<script type="application/ld+json">${JSON.stringify({
-                        '@context': 'https://schema.org', '@type': 'Place',
-                        name: `${lake.name}, ${lake.state}`,
-                        url: `${siteBase}/lakes/${lake.slug}`,
-                        additionalProperty: props,
-                    })}</script>`;
+                // Complete Place (C4/T063): geo coordinates + containedInPlace
+                // county → state, plus the DNR facts as additionalProperty.
+                const place = {
+                    '@context': 'https://schema.org', '@type': 'Place',
+                    name: `${lake.name}, ${lake.state}`,
+                    url: `${siteBase}/lakes/${lake.slug}`,
+                };
+                if (lake.latitude != null && lake.longitude != null) {
+                    place.geo = { '@type': 'GeoCoordinates', latitude: Number(lake.latitude), longitude: Number(lake.longitude) };
                 }
+                if (lake.county) {
+                    place.containedInPlace = {
+                        '@type': 'AdministrativeArea', name: `${lake.county} County`,
+                        containedInPlace: { '@type': 'State', name: lake.state === 'MN' ? 'Minnesota' : lake.state },
+                    };
+                }
+                if (props.length) place.additionalProperty = props;
+                lakeFactsLd = `<script type="application/ld+json">${JSON.stringify(place)}</script>`;
             }
 
             const replacements = {
