@@ -59,7 +59,9 @@ async function checkStripe() {
         const r = await withTimeout(stripe.balance.retrieve(), 5000, '__timeout__');
         if (r === '__timeout__') return { ok: false, status: 'fail', configured: true, error: 'timeout' };
         const prime = await checkPrimePrices(stripe);
-        return { ok: prime.ok, status: prime.ok ? 'ok' : 'fail', configured: true, livemode: !!r.livemode, latency_ms: Date.now() - t0, prime };
+        // A set-but-broken Prime price is a real failure; simply-unset prices are
+        // informational (e.g. staging), so they don't drag Stripe red.
+        return { ok: !prime.hardFail, status: prime.hardFail ? 'fail' : 'ok', configured: true, livemode: !!r.livemode, latency_ms: Date.now() - t0, prime };
     } catch (e) {
         return { ok: false, status: 'fail', configured: true, error: errMsg(e) };
     }
