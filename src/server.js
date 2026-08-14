@@ -839,7 +839,7 @@ app.get('/lakes/:slug', async (req, res, next) => {
             const featured = lake.featured_image_url || lake.hero_image_url || '/assets/images/mn-canoe-shore.webp';
             const lakeInitial   = escapeHtml((lake.name || '?').trim().charAt(0).toUpperCase());
             const lakeHeroBlock = heroReal
-                ? `<img src="${escapeHtml(heroReal)}" alt="${escapeHtml(lake.name)} waterfront real estate in ${escapeHtml(lake.state)}" width="1200" height="800" fetchpriority="high">`
+                ? `<img src="${escapeHtml(heroReal)}" alt="${escapeHtml(lake.name)} waterfront real estate in ${escapeHtml(lake.state)}" width="1200" height="800" fetchpriority="high" decoding="async">`
                 : `<div class="lm-hero-ph"><span>${lakeInitial}</span></div>`;
             // Hero photo credit — required for CC BY / CC BY-SA, shown for all
             // licenses for consistency. Collapses to empty string when the
