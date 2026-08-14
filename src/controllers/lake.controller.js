@@ -110,7 +110,7 @@ exports.navTier1 = async (req, res) => {
             `SELECT name, slug FROM lakes
               WHERE market_tier = 1 AND status = 'published'
                 AND hero_image_url IS NOT NULL AND hero_image_url <> ''
-              ORDER BY name ASC LIMIT 12`);
+              ORDER BY name ASC LIMIT 6`);
         res.set('Cache-Control', 'public, max-age=600');
         res.json(rows);
     } catch (err) {

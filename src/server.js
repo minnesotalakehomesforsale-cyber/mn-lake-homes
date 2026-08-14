@@ -1422,7 +1422,7 @@ app.get('/businesses/:slug', async (req, res, next) => {
     try {
         const { rows } = await pool.query(
             `SELECT id, slug, name, type, description, phone, email, website_url,
-                    instagram_url, facebook_url,
+                    instagram_url, facebook_url, user_id,
                     address, city, state, zip, latitude, longitude,
                     featured_image_url, status, price_range
              FROM businesses WHERE slug = $1 LIMIT 1`,
@@ -1553,6 +1553,7 @@ app.get('/businesses/:slug', async (req, res, next) => {
                 '{{BUSINESS_SEO_DESCRIPTION}}': escapeHtml(desc),
                 '{{BUSINESS_NAME}}':            escapeHtml(biz.name),
                 '{{BUSINESS_ID}}':             escapeHtml(biz.id),
+                '{{BUSINESS_CLAIMABLE}}':      String(biz.user_id == null),
                 '{{BUSINESS_SLUG}}':            escapeHtml(biz.slug),
                 '{{BUSINESS_TYPE}}':            escapeHtml(biz.type || ''),
                 '{{BUSINESS_TYPE_LABEL}}':      escapeHtml(prettyType),

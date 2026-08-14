@@ -208,6 +208,7 @@ const getAgentBySlug = async (req, res) => {
                    a.years_experience, a.phone_public, a.email_public, a.website_url,
                    a.facebook_url, a.instagram_url, a.linkedin_url, a.profile_photo_url, a.faq, a.profile_extra,
                    m.display_badge_label as membership_badge, m.name as membership_name,
+                   (a.user_id IS NULL) AS claimable,
                    ${RESP_SQL}
             FROM agents a
             JOIN memberships m ON a.membership_id = m.id

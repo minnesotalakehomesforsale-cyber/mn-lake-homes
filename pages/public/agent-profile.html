@@ -412,8 +412,9 @@
             if (reviewsEl && typeof reviewsEl.load === 'function') {
                 reviewsEl.load('agent', agent.id, agent.display_name);
             }
-            // DEV-10: self-claim entry (backend gates to unclaimed profiles).
-            if (window.mountClaimWidget) window.mountClaimWidget({ type: 'agent', id: agent.id, name: agent.display_name });
+            // DEV-10: self-claim entry — ONLY on unclaimed directory profiles (no
+            // owner). A profile an agent already created is never shown this.
+            if (agent.claimable && window.mountClaimWidget) window.mountClaimWidget({ type: 'agent', id: agent.id, name: agent.display_name });
             const openReviewBtn = document.getElementById('open-review-btn');
             if (openReviewBtn && reviewsEl) openReviewBtn.addEventListener('click', () => reviewsEl.openModal());
             // Agents share a ?review=1 link (from their dashboard) to collect

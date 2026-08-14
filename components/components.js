@@ -498,7 +498,6 @@ class GlobalHeader extends HTMLElement {
                         { label: 'Lake Vermilion',    href: '/lakes/lake-vermilion' },
                         { label: 'Leech Lake',        href: '/lakes/leech-lake' },
                         { label: 'Detroit Lake',      href: '/lakes/detroit-lake' },
-                        { label: 'Lake of the Woods', href: '/lakes/lake-of-the-woods' },
                     ]},
                 ]
             },

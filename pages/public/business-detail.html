@@ -578,7 +578,11 @@
     <script src="../../components/claim-widget.js" defer></script>
     <script>
         window.addEventListener('DOMContentLoaded', function () {
-            if (window.mountClaimWidget) window.mountClaimWidget({ type: 'business', id: '{{BUSINESS_ID}}', name: '{{BUSINESS_NAME}}', mountEl: document.getElementById('claim-mount') });
+            // Only on unclaimed directory listings (no owner) — an owner-made
+            // listing never shows a claim button.
+            if ('{{BUSINESS_CLAIMABLE}}' === 'true' && window.mountClaimWidget) {
+                window.mountClaimWidget({ type: 'business', id: '{{BUSINESS_ID}}', name: '{{BUSINESS_NAME}}', mountEl: document.getElementById('claim-mount') });
+            }
         });
     </script>
 </body>
