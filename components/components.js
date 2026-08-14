@@ -774,6 +774,25 @@ class GlobalFooter extends HTMLElement {
             </div>
 
         </div>
+
+        <!-- Two-up CTA band: agents joining + questions (matches site's blue-on-dark style). -->
+        <div class="footer-cta-band" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem;max-width:var(--page-w,1340px);margin:0 auto 2.5rem;padding:0 1.5rem;box-sizing:border-box;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;background:rgba(255,255,255,0.035);border:1px solid #2a2f38;border-left:3px solid #1d6df2;border-radius:12px;padding:1.15rem 1.4rem;">
+                <div>
+                    <div style="font-weight:800;color:#eef2f8;font-size:1rem;">Are you an agent?</div>
+                    <div style="color:#8b95a5;font-size:0.86rem;margin-top:0.15rem;">Get your profile on the lake pages buyers actually search.</div>
+                </div>
+                <a href="${bp}join.html" style="background:#1d6df2;color:#fff;font-weight:700;font-size:0.9rem;padding:0.6rem 1.2rem;border-radius:9px;text-decoration:none;white-space:nowrap;">Join the network →</a>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;background:rgba(255,255,255,0.035);border:1px solid #2a2f38;border-left:3px solid #6ea8ff;border-radius:12px;padding:1.15rem 1.4rem;">
+                <div>
+                    <div style="font-weight:800;color:#eef2f8;font-size:1rem;">Still have questions?</div>
+                    <div style="color:#8b95a5;font-size:0.86rem;margin-top:0.15rem;">How matching works, pricing, and what to expect.</div>
+                </div>
+                <a href="${bp}faq.html" style="background:transparent;color:#cfe0ff;font-weight:700;font-size:0.9rem;padding:0.6rem 1.2rem;border:1px solid #3a4250;border-radius:9px;text-decoration:none;white-space:nowrap;">Visit the Help Center →</a>
+            </div>
+        </div>
+
         <div class="footer-bottom">
             <p class="footer-copyright">&copy; 2026 MinnesotaLakeHomesForSale.com. All rights reserved. <span style="margin:0 0.4rem;opacity:0.5;">·</span> <a href="/privacy" style="color:inherit;text-decoration:underline;">Privacy</a> <span style="margin:0 0.4rem;opacity:0.5;">·</span> <a href="/terms" style="color:inherit;text-decoration:underline;">Terms</a></p>
             <p class="footer-disclaimer">MinnesotaLakeHomesForSale.com is a real estate network and lead generation platform, not a licensed brokerage. We do not represent buyers or sellers directly. All transactions are facilitated by independently licensed real estate professionals. This platform is currently in beta &mdash; we are testing an agent match experience designed to enhance the real estate journey and Minnesota lake life. Results and agent availability may vary.</p>
