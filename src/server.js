@@ -4662,6 +4662,9 @@ async function seedTownContent() {
         // Newly-added lakes unlock these towns.
         'lindstrom': 'chisago-lake',     'chisago-city': 'chisago-lake',
         'center-city': 'chisago-lake',   'park-rapids': 'fish-hook-lake',
+        // Kandiyohi (Green Lake) area + SW Minnesota.
+        'willmar': 'green-lake',         'new-london': 'green-lake',
+        'worthington': 'lake-okabena',
     };
     let townLinks = 0;
     for (const [townSlug, lakeSlug] of Object.entries(TOWN_LAKE_LINKS)) {

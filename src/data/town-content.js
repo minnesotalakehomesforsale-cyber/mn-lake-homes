@@ -465,4 +465,40 @@ Life in Park Rapids is lakes and the northwoods — boating and fishing across t
         seo_description: "Park Rapids, MN homes for sale on Fish Hook Lake — a walkable north-central Minnesota town at the gateway to hundreds of lakes. Get new listings.",
         hero_image_url: '/assets/images/mn-lake-town-sunset-aerial.jpg',
     },
+    {
+        slug: 'willmar',
+        intro_text: "Willmar is the hub of the Kandiyohi County lakes country in west-central Minnesota — a regional city surrounded by recreation lakes, with Green Lake and Spicer minutes away.",
+        description: `Willmar is the largest city in west-central Minnesota's Kandiyohi County, a regional hub about two hours west of the Twin Cities set in the heart of a dense lakes district. Foot Lake and Willmar Lake sit right in town, and the marquee recreation water of Green Lake and Spicer is just a few minutes north — together they form the Willmar Lakes Area.
+
+Real estate here pairs a real, year-round city — jobs, schools, healthcare, and services — with genuine lake access, which is unusual and valuable. Buyers can own on the water or near it and still have a full-service town at the doorstep. Options range from in-town homes to lakefront on the surrounding Kandiyohi County lakes, at prices well below the metro.
+
+Life in Willmar is city-and-lakes: boating and fishing across the area's water, the Glacial Lakes State Trail, and the amenities of a regional center. Nearby Spicer and New London round out the lake scene on Green Lake. For buyers who want lake country with the convenience of a real city, the Willmar Lakes Area is one of the best combinations in west-central Minnesota.`,
+        seo_title: 'Willmar MN Homes for Sale | Kandiyohi Lakes Real Estate',
+        seo_description: "Willmar, MN homes for sale in the Kandiyohi lakes area — a regional city minutes from Green Lake and Spicer in west-central Minnesota. Get new listings.",
+        hero_image_url: '/assets/images/mn-lake-town-street.jpg',
+    },
+    {
+        slug: 'new-london',
+        intro_text: "New London is a small arts-and-mill town on the Middle Fork Crow River near Green Lake — the quieter, characterful side of Kandiyohi County's lake country.",
+        description: `New London is a small town in Kandiyohi County, set on the Middle Fork Crow River just north of Green Lake in west-central Minnesota, about two hours from the Twin Cities. A historic mill town with a lively arts streak, it's the quieter, more characterful neighbor to Spicer and Willmar in the heart of the area's lake country.
+
+Real estate ranges from lakefront and near-lake homes on Green Lake and the surrounding Kandiyohi County lakes to in-town homes in a walkable, historic village. Green Lake's deep, clear water anchors the premium end of the market, while New London itself offers more attainable in-town options and a strong sense of community. Sibley State Park and Mount Tom are just up the road.
+
+Life in New London is lakes, river, and arts — boating and swimming on Green Lake, paddling the Crow, a downtown known for its galleries and Little Crow Ski Team water-ski shows, and the trails of Sibley State Park. For buyers who want Green Lake access with small-town character, New London is the area's hidden-gem side.`,
+        seo_title: 'New London MN Homes for Sale | Green Lake Area Real Estate',
+        seo_description: "New London, MN homes for sale near Green Lake — a historic arts-and-mill town in Kandiyohi County's lake country. Get new listings with a local agent.",
+        hero_image_url: '/assets/images/mn-purple-sunset-marina.webp',
+    },
+    {
+        slug: 'worthington',
+        intro_text: "Worthington is a regional city on Lake Okabena in southwest Minnesota — an in-town lake and a diverse, four-season community.",
+        description: `Worthington is the regional center of southwest Minnesota, a Nobles County city wrapped around Lake Okabena about three hours from the Twin Cities near the Iowa border. Unlike the resort lakes farther north, Worthington's water is an in-town lake — Okabena sits right in the middle of a real, working, diverse city.
+
+Real estate here pairs an affordable, full-service town with genuine lakefront on Lake Okabena, along with near-lake and in-town homes. It's one of the more accessible lake markets in the state: buyers can own on the water at prices far below the metro and the northern resort lakes, in a community with jobs, schools, and services. Lakefront on Okabena is the local premium, but the overall market stays attainable.
+
+Life in Worthington centers on the lake and the community — boating and fishing on Okabena, the lakeside trail and parks, and the famous King Turkey Day festival each fall. For buyers who want affordable in-town lake living in a real regional city, Worthington and Lake Okabena are southwest Minnesota's answer.`,
+        seo_title: 'Worthington MN Homes for Sale | Lake Okabena Real Estate',
+        seo_description: "Worthington, MN homes for sale on Lake Okabena — an affordable in-town lake in a regional southwest Minnesota city. Get new listings with a local agent.",
+        hero_image_url: '/assets/images/mn-lake-home-from-water.jpg',
+    },
 ];
