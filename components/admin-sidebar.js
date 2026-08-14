@@ -224,7 +224,6 @@
         // (Dashboard, Newsletter, Social Media). Blog stays accessible at
         // its old URL too — the alias keeps the highlight working.
         { key: 'marketing',   href: 'marketing.html',  label: 'Marketing & Content', aliases: ['blog', 'resources'] },
-        { key: 'seo',         href: 'seo.html',        label: 'SEO Health' },
         { key: 'cash-offers', href: 'cash-offers.html',label: 'Cash Offers', cashBadge: true },
         { key: 'financials',  href: 'financials.html', label: 'Financials', aliases: ['cockpit'] },
         { key: 'users',       href: 'users.html',      label: 'Users Management' },

@@ -7,30 +7,82 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="../../styles/style.css">
     <style>
-        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', -apple-system, sans-serif; color: #1a202c; }
-        .seo-head { margin-bottom: 1.75rem; }
+        html, body { margin: 0; padding: 0; background: #f6f8fb; font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif; color: #0f172a; }
+
+        /* Embed mode (?embed=1): iframed inside Metrics & Database. */
+        body.lt-embed admin-sidebar,
+        body.lt-embed .admin-main > header { display: none !important; }
+        body.lt-embed .admin-wrap { display: block !important; }
+        body.lt-embed .admin-main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+
         .seo-head h1 { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.75px; margin: 0 0 0.25rem; }
-        .seo-head p { color: #718096; font-size: 0.95rem; margin: 0; max-width: 60ch; }
-        .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0; }
-        @media (max-width: 720px) { .cards { grid-template-columns: 1fr; } }
-        .card { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.25rem 1.4rem; }
-        .card .n { font-size: 2.1rem; font-weight: 800; letter-spacing: -1px; line-height: 1; font-variant-numeric: tabular-nums; }
-        .card .l { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-top: 0.4rem; }
-        .n.bad { color: #c53030; } .n.warn { color: #b45309; } .n.good { color: #2f855a; }
-        .section { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; margin-bottom: 1.5rem; overflow: hidden; }
-        .section-hd { padding: 1.1rem 1.5rem; border-bottom: 1px solid #edf2f7; display: flex; align-items: center; gap: 0.6rem; }
-        .section-hd h2 { font-size: 1rem; font-weight: 800; margin: 0; }
-        .section-hd .pill { font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.6rem; border-radius: 99px; }
-        .pill.bad { background: #fff5f5; color: #c53030; } .pill.warn { background: #fffaf0; color: #b45309; }
-        .section-bd { padding: 0.5rem 1.5rem 1.25rem; }
+        .seo-head p { color: #64748b; font-size: 0.95rem; margin: 0; max-width: 66ch; line-height: 1.55; }
+
+        .wrap { max-width: 1080px; }
+
+        /* ── Hero verdict banner ─────────────────────────────────────────── */
+        .verdict { display: flex; align-items: center; gap: 1.25rem; border-radius: 18px; padding: 1.5rem 1.75rem; margin: 0 0 1.5rem; border: 1px solid transparent; }
+        .verdict.ok   { background: linear-gradient(135deg,#ecfdf5,#f0fdf4); border-color: #bbf7d0; }
+        .verdict.warn { background: linear-gradient(135deg,#fffbeb,#fff7ed); border-color: #fed7aa; }
+        .verdict-ico { flex: none; width: 54px; height: 54px; border-radius: 14px; display: grid; place-items: center; }
+        .verdict.ok .verdict-ico   { background: #16a34a; }
+        .verdict.warn .verdict-ico { background: #d97706; }
+        .verdict-ico svg { width: 28px; height: 28px; stroke: #fff; fill: none; stroke-width: 2.4; }
+        .verdict h2 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; margin: 0 0 0.15rem; }
+        .verdict.ok h2   { color: #14532d; }
+        .verdict.warn h2 { color: #7c2d12; }
+        .verdict p { margin: 0; font-size: 0.92rem; line-height: 1.5; color: #475569; }
+        .verdict .score { margin-left: auto; text-align: center; padding-left: 1.25rem; border-left: 1px solid rgba(15,23,42,0.08); }
+        .verdict .score .v { font-size: 2.1rem; font-weight: 800; letter-spacing: -1.5px; line-height: 1; font-variant-numeric: tabular-nums; }
+        .verdict.ok .score .v   { color: #16a34a; }
+        .verdict.warn .score .v { color: #d97706; }
+        .verdict .score .k { font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: #94a3b8; margin-top: 0.3rem; }
+        @media (max-width: 640px) { .verdict { flex-wrap: wrap; } .verdict .score { margin: 0; padding: 0.75rem 0 0; border-left: 0; border-top: 1px solid rgba(15,23,42,0.08); width: 100%; display: flex; gap: 0.6rem; align-items: baseline; justify-content: flex-start; } .verdict .score .k { margin: 0; } }
+
+        /* ── Group heading ───────────────────────────────────────────────── */
+        .group-h { display: flex; align-items: center; gap: 0.6rem; margin: 2rem 0 0.9rem; }
+        .group-h:first-of-type { margin-top: 0.5rem; }
+        .group-h .gi { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: #eef4ff; }
+        .group-h .gi svg { width: 17px; height: 17px; stroke: #1d6df2; fill: none; stroke-width: 2.2; }
+        .group-h h2 { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.4px; margin: 0; }
+
+        /* ── Stat cards ──────────────────────────────────────────────────── */
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.25rem; }
+        @media (max-width: 720px) { .stats { grid-template-columns: 1fr; } }
+        .stat { position: relative; background: #fff; border: 1px solid #e9eef5; border-radius: 14px; padding: 1.15rem 1.3rem; box-shadow: 0 1px 2px rgba(16,24,40,0.03); overflow: hidden; }
+        .stat::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+        .stat.bad::before  { background: #dc2626; } .stat.warn::before { background: #d97706; }
+        .stat.good::before { background: #16a34a; } .stat.mut::before  { background: #cbd5e1; }
+        .stat .n { font-size: 2.1rem; font-weight: 800; letter-spacing: -1.2px; line-height: 1; font-variant-numeric: tabular-nums; }
+        .stat.bad .n { color: #dc2626; } .stat.warn .n { color: #d97706; } .stat.good .n { color: #16a34a; } .stat.mut .n { color: #64748b; }
+        .stat .l { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: #94a3b8; margin-top: 0.45rem; }
+        .stat .sub { font-size: 0.78rem; color: #94a3b8; margin-top: 0.2rem; }
+
+        /* ── Panels (issue tables) ───────────────────────────────────────── */
+        .panel { background: #fff; border: 1px solid #e9eef5; border-radius: 14px; margin-bottom: 1.1rem; overflow: hidden; box-shadow: 0 1px 2px rgba(16,24,40,0.03); }
+        .panel-hd { display: flex; align-items: center; gap: 0.6rem; padding: 0.95rem 1.4rem; border-bottom: 1px solid #eef2f7; }
+        .panel-hd .dot { width: 9px; height: 9px; border-radius: 99px; flex: none; }
+        .dot.bad { background: #dc2626; } .dot.warn { background: #d97706; } .dot.good { background: #16a34a; }
+        .panel-hd h3 { font-size: 0.95rem; font-weight: 800; margin: 0; letter-spacing: -0.2px; }
+        .panel-hd .count { margin-left: auto; font-size: 0.72rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 99px; }
+        .count.bad { background: #fef2f2; color: #dc2626; } .count.warn { background: #fffbeb; color: #d97706; } .count.good { background: #f0fdf4; color: #16a34a; }
+        .panel-bd { padding: 0.35rem 0.5rem 0.5rem; }
+
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        th { text-align: left; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; color: #a0aec0; font-weight: 800; padding: 0.6rem 0.5rem 0.5rem; }
-        td { padding: 0.6rem 0.5rem; border-top: 1px solid #f2f5f8; }
-        td a { color: #1d6df2; font-weight: 600; text-decoration: none; }
-        .tag { display: inline-block; background: #f7f9fa; border: 1px solid #edf2f7; border-radius: 6px; padding: 0.05rem 0.45rem; font-size: 0.72rem; color: #4a5568; margin: 0 0.2rem 0.15rem 0; }
-        .empty { color: #2f855a; font-size: 0.9rem; padding: 0.75rem 0; }
-        .note { background: #ebf8ff; border: 1px solid #bee3f8; color: #2c5282; border-radius: 12px; padding: 1rem 1.25rem; font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.5rem; }
-        .muted { color: #a0aec0; }
+        th { text-align: left; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.6px; color: #94a3b8; font-weight: 800; padding: 0.7rem 0.9rem 0.55rem; }
+        td { padding: 0.7rem 0.9rem; border-top: 1px solid #f1f5f9; vertical-align: middle; }
+        tbody tr:hover { background: #f8fafc; }
+        td .pg-name { font-weight: 700; color: #0f172a; }
+        .badge { display: inline-block; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.1rem 0.5rem; font-size: 0.72rem; color: #475569; margin: 0.1rem 0.3rem 0.1rem 0; font-weight: 600; }
+        .viewlink { display: inline-flex; align-items: center; gap: 0.25rem; color: #1d6df2; font-weight: 700; font-size: 0.82rem; text-decoration: none; white-space: nowrap; }
+        .viewlink:hover { text-decoration: underline; }
+        td.right { text-align: right; }
+
+        .ok-state { display: flex; align-items: center; gap: 0.6rem; padding: 1rem 1.4rem; color: #15803d; font-weight: 600; font-size: 0.9rem; }
+        .ok-state svg { width: 18px; height: 18px; stroke: #16a34a; fill: none; stroke-width: 2.4; flex: none; }
+
+        .footnote { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.85rem 1.15rem; font-size: 0.83rem; line-height: 1.6; color: #64748b; margin: 0.5rem 0 0; }
+        .muted { color: #94a3b8; }
     </style>
     <script src="../../components/admin-guard.js"></script>
     <script src="../../components/admin-sidebar.js" defer></script>
@@ -38,71 +90,56 @@
 </head>
 <body>
 <div class="admin-wrap">
-    <admin-sidebar active="seo"></admin-sidebar>
+    <admin-sidebar active="system"></admin-sidebar>
     <main class="admin-main">
-        <div class="seo-head">
+        <header class="seo-head" style="margin-bottom:1.75rem;">
             <h1>SEO Health</h1>
-            <p>Which lake &amp; town pages are hurting your search visibility — live from your database. <strong>Invisible</strong> pages 404 to Google (no hero image, unpublished, or no linked lake) so they can't rank at all; <strong>thin</strong> pages render but have weak content.</p>
-        </div>
+            <p>Which lake &amp; town pages are hurting your search visibility — live from your database.</p>
+        </header>
 
-        <div class="note" id="seo-note" style="display:none;"></div>
-        <div id="seo-body"><p class="muted">Running audit…</p></div>
+        <div class="wrap">
+            <div id="seo-body"><p class="muted" style="padding:1.5rem 0;">Running audit…</p></div>
+        </div>
     </main>
 </div>
 
 <script>
     const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    if (new URLSearchParams(location.search).get('embed') === '1') document.body.classList.add('lt-embed');
 
-    function bucketTable(kind, items, cols) {
-        if (!items.length) return '<div class="empty">✓ None — all good here.</div>';
-        return `<table><thead><tr><th>Name</th><th>${cols}</th><th>Page</th></tr></thead><tbody>${items.map(x => `
+    const ICON = {
+        check: '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+        alert: '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>',
+        lake:  '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c2 0 2 1.5 4 1.5S8 6 10 6s2 1.5 4 1.5S16 6 18 6s2 1.5 4 1.5"/><path d="M2 12c2 0 2 1.5 4 1.5S8 12 10 12s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5"/><path d="M2 18c2 0 2 1.5 4 1.5S8 18 10 18s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5"/></svg>',
+        town:  '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l6-4v18"/><path d="M11 9h6a2 2 0 0 1 2 2v10"/><path d="M8 9v.01M8 12v.01M8 15v.01"/></svg>',
+    };
+
+    function issueCells(x) {
+        if (x.reason) return `<span class="badge">${esc(x.reason)}</span>`;
+        const arr = x.issues || [];
+        return arr.length ? arr.map(i => `<span class="badge">${esc(i)}</span>`).join('') : '<span class="muted">—</span>';
+    }
+
+    function table(kind, items) {
+        return `<table><thead><tr><th>Page</th><th>Issue</th><th class="right">Open</th></tr></thead><tbody>${items.map(x => `
             <tr>
-                <td><strong>${esc(x.name)}</strong></td>
-                <td>${x.reason ? `<span class="tag">${esc(x.reason)}</span>` : (x.issues || []).map(i => `<span class="tag">${esc(i)}</span>`).join('')}</td>
-                <td><a href="/${kind}/${encodeURIComponent(x.slug)}" target="_blank" rel="noopener">/${kind}/${esc(x.slug)} ↗</a></td>
+                <td><span class="pg-name">${esc(x.name)}</span></td>
+                <td>${issueCells(x)}</td>
+                <td class="right"><a class="viewlink" href="/${kind}/${encodeURIComponent(x.slug)}" target="_blank" rel="noopener">/${kind}/${esc(x.slug)} <span aria-hidden="true">↗</span></a></td>
             </tr>`).join('')}</tbody></table>`;
     }
 
-    function group(title, kind, data) {
-        return `
-            <div class="cards">
-                <div class="card"><div class="n bad">${data.invisible.length}</div><div class="l">Invisible (404 to Google)</div></div>
-                <div class="card"><div class="n warn">${data.thin.length}</div><div class="l">Thin content</div></div>
-                <div class="card"><div class="n good">${data.solid}</div><div class="l">Solid · of ${data.total} total</div></div>
-            </div>
-            <div class="section">
-                <div class="section-hd"><h2>${title} — Invisible</h2><span class="pill bad">${data.invisible.length}</span></div>
-                <div class="section-bd">${bucketTable(kind, data.invisible, 'Why hidden')}</div>
-            </div>
-            <div class="section">
-                <div class="section-hd"><h2>${title} — Thin content</h2><span class="pill warn">${data.thin.length}</span></div>
-                <div class="section-bd">${bucketTable(kind, data.thin, "What's missing")}</div>
-            </div>`;
+    function panel(tone, title, items, kind) {
+        const n = items.length;
+        return `<div class="panel">
+            <div class="panel-hd"><span class="dot ${tone}"></span><h3>${esc(title)}</h3><span class="count ${n ? tone : 'good'}">${n}</span></div>
+            ${n ? `<div class="panel-bd">${table(kind, items)}</div>`
+                : `<div class="ok-state">${ICON.check} None — all good here.</div>`}
+        </div>`;
     }
 
-    function groupTowns(data) {
-        const attn = data.needs_attention || [];
-        return `
-            <div class="cards">
-                <div class="card"><div class="n good">${data.live}</div><div class="l">Live lake-town pages</div></div>
-                <div class="card"><div class="n warn">${attn.length}</div><div class="l">Curated but not live</div></div>
-                <div class="card"><div class="n" style="color:#94a3b8">${data.geo_only}</div><div class="l">Geo-only routing tags · not pages</div></div>
-            </div>
-            <p class="muted" style="margin:0.25rem 0 1rem;font-size:0.85rem;">
-                <strong>${data.geo_only}</strong> geo-only tags route leads (non-lake suburbs) and <strong>${data.out_of_state || 0}</strong> are out-of-state cities (ND/WI). Both are intentionally kept out of Google — not a problem. The count above is <strong>Minnesota lake-towns only</strong>.
-            </p>
-            ${attn.length
-                ? `<div class="section">
-                       <div class="section-hd"><h2>Towns — Curated but not live</h2><span class="pill warn">${attn.length}</span></div>
-                       <div class="section-bd">${bucketTable('towns', attn, "What's missing")}</div>
-                   </div>`
-                : `<div class="section"><div class="section-bd"><p class="muted" style="padding:1rem 0;">✓ Every curated lake-town is live and indexable.</p></div></div>`}
-            ${(data.thin || []).length
-                ? `<div class="section">
-                       <div class="section-hd"><h2>Towns — Thin content</h2><span class="pill warn">${data.thin.length}</span></div>
-                       <div class="section-bd">${bucketTable('towns', data.thin, "What's missing")}</div>
-                   </div>`
-                : ''}`;
+    function stat(tone, n, label, sub) {
+        return `<div class="stat ${tone}"><div class="n">${n}</div><div class="l">${esc(label)}</div>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</div>`;
     }
 
     (async () => {
@@ -114,18 +151,51 @@
             data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Audit failed');
         } catch (e) {
-            body.innerHTML = `<p style="color:#c53030;">Could not run the audit: ${esc(e.message)}</p>`;
+            body.innerHTML = `<p style="color:#dc2626;padding:1rem 0;">Could not run the audit: ${esc(e.message)}</p>`;
             return;
         }
-        const actionable = data.lakes.invisible.length + (data.towns.needs_attention || []).length;
-        const note = document.getElementById('seo-note');
-        note.style.display = 'block';
-        note.innerHTML = actionable
-            ? `<strong>${actionable} page${actionable === 1 ? '' : 's'} need attention.</strong> These are lakes or curated lake-towns that should be live but aren't — a missing hero image, unpublished, or no linked lake. The ${data.towns.geo_only} inactive geo-tags are intentional routing tags (non-lake &amp; out-of-state cities), not broken pages — leave them hidden.`
-            : `<strong>Everything that should be indexed is live.</strong> All lakes and curated lake-towns render and are in your sitemap. The ${data.towns.geo_only} inactive geo-tags are routing-only by design — correctly kept out of Google.`;
-        body.innerHTML =
-            `<h2 style="font-size:1.15rem;font-weight:800;margin:0.5rem 0 0.25rem;">Lakes</h2>` + group('Lakes', 'lakes', data.lakes) +
-            `<h2 style="font-size:1.15rem;font-weight:800;margin:2rem 0 0.25rem;">Towns</h2>` + groupTowns(data.towns);
+
+        const L = data.lakes, T = data.towns;
+        const attn = T.needs_attention || [];
+        const actionable = L.invisible.length + attn.length;
+        const ok = actionable === 0;
+
+        // Verdict banner.
+        const verdict = `<div class="verdict ${ok ? 'ok' : 'warn'}">
+            <div class="verdict-ico">${ok ? ICON.check : ICON.alert}</div>
+            <div>
+                <h2>${ok ? 'Everything that should be indexed is live' : `${actionable} page${actionable === 1 ? '' : 's'} need attention`}</h2>
+                <p>${ok
+                    ? `All lakes and curated lake-towns render and sit in your sitemap. ${T.geo_only} inactive geo-tags are routing-only by design — correctly kept out of Google.`
+                    : `Lakes or curated lake-towns that should be live but aren't — usually a missing hero image, unpublished, or no linked lake. The ${T.geo_only} inactive geo-tags are intentional routing tags, not broken pages.`}</p>
+            </div>
+            <div class="score"><div class="v">${actionable}</div><div class="k">Need fixing</div></div>
+        </div>`;
+
+        // Lakes group.
+        const lakes = `
+            <div class="group-h"><span class="gi">${ICON.lake}</span><h2>Lakes</h2></div>
+            <div class="stats">
+                ${stat('bad',  L.invisible.length, 'Invisible', '404 to Google')}
+                ${stat('warn', L.thin.length,      'Thin content', 'renders but weak')}
+                ${stat('good', L.solid,            'Solid', `of ${L.total} total`)}
+            </div>
+            ${panel('bad',  'Invisible — can\'t rank at all', L.invisible, 'lakes')}
+            ${panel('warn', 'Thin content — weak on the page', L.thin, 'lakes')}`;
+
+        // Towns group.
+        const towns = `
+            <div class="group-h"><span class="gi">${ICON.town}</span><h2>Towns</h2></div>
+            <div class="stats">
+                ${stat('good', T.live,          'Live lake-towns', 'indexable')}
+                ${stat('warn', attn.length,     'Curated, not live', 'should be up')}
+                ${stat('mut',  T.geo_only,      'Geo-only tags', 'routing, not pages')}
+            </div>
+            ${panel('warn', 'Curated but not live', attn, 'towns')}
+            ${(T.thin || []).length ? panel('warn', 'Thin content', T.thin, 'towns') : ''}
+            <p class="footnote"><strong>${T.geo_only}</strong> geo-only tags route leads (non-lake suburbs) and <strong>${T.out_of_state || 0}</strong> are out-of-state cities (ND/WI). Both are intentionally kept out of Google — the live count above is <strong>Minnesota lake-towns only</strong>.</p>`;
+
+        body.innerHTML = verdict + lakes + towns;
     })();
 </script>
 </body>
