@@ -211,6 +211,75 @@ Lake Pepin has been a Mississippi landmark for centuries — a Dakota homeland, 
 
 Red Wing (pottery, shoes, a historic downtown, hospital) and Lake City (the "Birthplace of Waterskiing," a large marina, Main Street) provide full services, with Frontenac and its state park between them. The Twin Cities are about an hour northwest, and Rochester is a reasonable drive south. For buyers, Lake Pepin offers big scenic water, historic town living, and metro proximity — a rare combination in Minnesota lake real estate.`,
     },
+    // ── Wave 3: Detroit Lakes / Alexandria / Bemidji Tier-1 lakes ─────────────
+    {
+        slug: 'lake-bemidji', kind: 'lake',
+        seo_title: 'Lake Bemidji Homes for Sale | MN Lake Homes',
+        seo_description: 'Lake Bemidji homes for sale in Bemidji, MN — a 6,600-acre lake the Mississippi River runs through, wrapped by a college town and a state park. Get matched with a local agent, free.',
+        intro_text: 'A 6,600-acre lake the young Mississippi runs through, with a real college town on its shore. Get matched with an agent who knows Bemidji.',
+        description: `Lake Bemidji sits in Beltrami County in north-central Minnesota, with the city of Bemidji wrapped around its south and west shores — roughly four hours north of the Twin Cities and squarely in "up north" country. What sets it apart from the region's cabin lakes is that Bemidji is a genuine year-round town: Bemidji State University sits right on the south shore, and the lake is the anchor of a small regional city rather than a seasonal resort strip. This is one of the few Minnesota lakes where you can own waterfront and walk to a university, a hospital, and a downtown.
+
+Lake Bemidji covers about 6,595 acres, with a maximum depth near 76 feet and an average depth around 28 feet, giving it deep, cool, clear main-lake water. Its defining feature is the Mississippi River: less than 50 miles downstream from the river's source at Lake Itasca, the young Mississippi flows into Lake Bemidji and back out — the lake is the northernmost point on the entire river. That connection, plus Lake Bemidji State Park on the northeast shore, gives the lake protected natural shoreline alongside its city frontage.
+
+Bemidji is a mix of full-time residents, university families, and lake-home and second-home owners. The shoreline runs from in-town homes and older cottages to modern year-round lake houses and a tier of higher-end properties, and because the town is here, demand holds up across all four seasons rather than emptying out after Labor Day. Buyers are often drawn by the rare combination of real waterfront and real amenities.
+
+On the water it's a classic multi-species Minnesota lake — walleye, northern pike, muskie, bass, and panfish — with room for boating, sailing, and paddling, and the Mississippi headwaters and dozens of other lakes minutes away (Bemidji bills itself as the hub of "400 lakes within 25 miles"). Lake Bemidji State Park adds hiking, a bog boardwalk, swimming, and groomed winter trails, and the lake is a busy ice-fishing and snowmobiling base in winter. The city's paved Paul Bunyan State Trail runs right along the shore.
+
+Bemidji — from the Ojibwe leader Shaynowishkung, and the Ojibwe name for a lake with a river flowing through it — is the "First City on the Mississippi," and its lakeshore Paul Bunyan and Babe the Blue Ox statues are among the most photographed roadside landmarks in the state. The town grew as a logging and rail center and became the commercial and cultural anchor of the northwoods, a role it still plays today.
+
+Bemidji provides services most northwoods lakes can't: Sanford Bemidji Medical Center, Bemidji State University and Northwest Technical College, a regional airport with daily flights to the Twin Cities, full shopping, and a walkable downtown on the water. For buyers, Lake Bemidji offers deep, clean water, a headwaters-of-the-Mississippi setting, and a four-season city at the door — a combination that keeps its market steadier than the purely seasonal lakes around it.`,
+    },
+    {
+        slug: 'lake-carlos', kind: 'lake',
+        seo_title: 'Lake Carlos Homes for Sale | MN Lake Homes',
+        seo_description: 'Lake Carlos homes for sale north of Alexandria, MN — the deep, clear anchor of the Alexandria Chain of Lakes, 2,600 acres with a state park. Get matched with a local agent, free.',
+        intro_text: 'Deep, clear water at the head of the Alexandria Chain — 2,600 acres and a state park on the north shore. Get matched with an agent who knows the chain.',
+        description: `Lake Carlos sits in Douglas County about five miles north of Alexandria, in the heart of west-central Minnesota's lake country — roughly two and a half to three hours from the Twin Cities. Alexandria is one of the state's classic lake towns, and Carlos is its marquee water: the largest and one of the deepest lakes in the Alexandria Chain of Lakes, a connected string of lakes (Carlos, Darling, Le Homme Dieu, Geneva, and Victoria among them) that lets boaters run well beyond any single shoreline.
+
+Lake Carlos covers about 2,605 acres with roughly 13 miles of shoreline, and it's genuinely deep — a maximum depth around 163 feet, one of the deepest lakes in the region. That depth gives it cold, clear water and a complex basin; it's a Minnesota DNR "Sentinel Lake," monitored long-term for water quality, which speaks to how clear and healthy the water is. Lake Carlos State Park protects the entire northern shoreline, so a substantial stretch stays natural woods-and-water rather than developed frontage.
+
+Carlos draws a mix of full-time residents, Alexandria-area families, and second-home owners from the Twin Cities and beyond. The shoreline ranges from legacy cabins and cottages to modern year-round lake homes and a strong tier of higher-end estates, with the clear, deep water and chain access putting Carlos at the premium end of the Alexandria market. Because Alexandria is a real town, it's a four-season lake, not just a summer address.
+
+Boating the chain is the centerpiece — you can navigate lake to lake without trailering, dock-hop, and find both open water and quiet bays. The fishery is strong and varied: walleye, northern pike, muskie, bass, and panfish, with the deep, cold basin also supporting cool-water species. Lake Carlos State Park adds hiking and horseback trails, swimming, camping, and winter skiing and snowmobiling, and Alexandria's golf, dining, and shopping round out the lifestyle.
+
+The Alexandria lakes have been a resort and cabin destination for well over a century, and the town leans into that heritage — it's home to the famous Kensington Runestone and the "Big Ole" Viking statue, and a long tradition as a summer getaway for the Twin Cities. That resort history, plus a genuinely deep clear lake, is what has kept Carlos desirable for generations.
+
+Alexandria provides full services minutes away — Alomere Health hospital, shopping, restaurants, golf, and marine and dock service — and Interstate 94 makes it an easy drive from the metro. For buyers, Lake Carlos offers rare depth and clarity, navigable chain-of-lakes boating, and a protected state-park shoreline, all anchored by one of Minnesota's best-loved lake towns.`,
+    },
+    {
+        slug: 'lake-melissa', kind: 'lake',
+        seo_title: 'Lake Melissa Homes for Sale | MN Lake Homes',
+        seo_description: 'Lake Melissa homes for sale south of Detroit Lakes, MN — 1,850 acres of classic Becker County resort-and-cabin water on the Pelican chain. Get matched with a local agent, free.',
+        intro_text: 'Classic Detroit Lakes cabin country — 1,850 acres on the Pelican chain, paired with neighboring Lake Sallie. Get matched with a local agent.',
+        description: `Lake Melissa lies in Becker County just south of Detroit Lakes, in the lake-dense resort country of west-central Minnesota — about three and a half hours from the Twin Cities and a longtime summer destination for the Fargo–Moorhead area just to the west. This is quintessential Detroit Lakes cabin country: rolling, wooded shoreline, a deep resort tradition, and a cluster of connected lakes rather than one isolated basin. Melissa is paired with neighboring Lake Sallie, to which it's joined through the Pelican River system.
+
+Lake Melissa covers about 1,850 acres with a maximum depth around 37 feet, giving it a mix of open water and the shallower, weedy bays that make for good fishing and easy recreation. As part of the Pelican River chain it connects to Lake Sallie and the broader watershed, so boaters aren't limited to a single lake. The shoreline is a classic Minnesota mix of cabins, year-round lake homes, and a handful of remaining resorts.
+
+Melissa draws cabin families, retirees, and second-home owners — many with decades of history on the lake — along with a steady stream of buyers from the Red River Valley who treat the Detroit Lakes area as their weekend water. The market runs from original cabins on prized frontage (often teardown-and-rebuild candidates) to modern lake homes, with prices reflecting Detroit Lakes' status as one of the more established lake destinations in the region.
+
+Summer here is boating, watersports, and fishing, with the town of Detroit Lakes and its mile-long beach minutes away. The fishery includes walleye, northern pike, bass, and panfish, and the connected chain adds variety. Off the water, the Detroit Lakes area offers golf, dining, the famous city beach, and a full summer-event calendar (the region is known for its festivals), while winter brings ice fishing and snowmobiling. The Lakes Melissa & Sallie Improvement Association, active since 1936, reflects how long and how seriously owners here have looked after the water.
+
+Detroit Lakes has been a resort town since the railroad era, and Melissa and Sallie have been part of that cabin-and-resort economy for generations — a heritage that still shapes the shoreline and the seasonal rhythm of the lake.
+
+The city of Detroit Lakes provides full services just to the north — Essentia Health St. Mary's, shopping, restaurants, golf, and marine and dock service — and Fargo–Moorhead is a straightforward drive west with the nearest major airport. For buyers, Lake Melissa offers approachable, connected-chain lake living in an established resort market, with a real town and a legendary beach right next door.`,
+    },
+    {
+        slug: 'lake-sallie', kind: 'lake',
+        seo_title: 'Lake Sallie Homes for Sale | MN Lake Homes',
+        seo_description: 'Lake Sallie homes for sale near Detroit Lakes, MN — 1,280 acres of Becker County walleye water connected to Lake Melissa on the Pelican chain. Get matched with a local agent, free.',
+        intro_text: 'Detroit Lakes walleye water — 1,280 acres connected to Lake Melissa on the Pelican chain. Get matched with an agent who knows this shoreline.',
+        description: `Lake Sallie sits in Becker County just southwest of Detroit Lakes, one of the tightly clustered lakes that make this corner of west-central Minnesota such a well-known summer destination — about three and a half hours from the Twin Cities and an easy trip from Fargo–Moorhead to the west. Sallie is the immediate neighbor of Lake Melissa, connected through the Pelican River, and the two are managed and enjoyed together as one of the area's classic pairs of resort-and-cabin lakes.
+
+Lake Sallie covers about 1,280 acres with a maximum depth near 50 feet and an average depth around 17 feet — deep enough for good main-lake structure while keeping the productive shallows that make it a strong fishing lake. The Pelican River flows through, linking Sallie to Lake Melissa just downstream and tying both into the broader chain, so owners get connected water rather than a single isolated basin.
+
+The shoreline is classic Detroit Lakes: a mix of cabins, year-round lake homes, and longtime family properties, with buyers ranging from retirees and second-home owners to Red River Valley families who have summered here for generations. As part of an established, sought-after lake area, Sallie's market runs from original cottages on good frontage to modern rebuilt lake homes.
+
+Sallie is well known as a fishing lake — walleye and northern pike headline, alongside bass and panfish — and the connection to Melissa and the chain adds room to roam by boat. Summer means boating, watersports, and fishing, with the city of Detroit Lakes and its famous mile-long beach only minutes away. Off the water, the area's golf, dining, festivals, and the beach define the lifestyle, and winter brings ice fishing and snowmobiling. The Lakes Melissa & Sallie Improvement Association, active since 1936, shows how long owners here have worked to protect the water quality.
+
+The Detroit Lakes area grew as a railroad-era resort destination, and Sallie has been part of that cabin-and-resort tradition for well over a century — history that still shapes its shoreline and its seasonal character.
+
+Detroit Lakes, just to the north, supplies full services — Essentia Health St. Mary's, shopping, restaurants, golf, and marine and dock service — with Fargo–Moorhead a short drive west for the nearest major airport. For buyers, Lake Sallie offers approachable, connected-chain lake living and genuinely good fishing in one of Minnesota's most established resort-lake markets, with a real town and a legendary beach next door.`,
+    },
 ];
 
 const TOWNS = [

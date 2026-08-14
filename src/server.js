@@ -4810,6 +4810,25 @@ async function seedTier1Content() {
         for (const e of (LAKES || [])) await apply('lakes', e);
         for (const e of (TOWNS || [])) await apply('tags', e);
         if (applied) console.log(`[seed] tier1 content applied to ${applied} page(s)`);
+
+        // Hero safety net: a Tier-1 lake page must never render heroless (that
+        // would 404 per our indexability rule). Runs every boot but only sets a
+        // hero when one is MISSING, so it can never overwrite a real photo.
+        const TIER1_HERO_FALLBACK = {
+            'lake-bemidji': 'mn-lakefront-sunset-dock.jpg',
+            'lake-carlos':  'mn-clearwater-lakeshore.jpg',
+            'lake-melissa': 'mn-lake-dock-golden.jpg',
+            'lake-sallie':  'mn-lake-sunset-firepit.jpg',
+        };
+        let heroFix = 0;
+        for (const [slug, img] of Object.entries(TIER1_HERO_FALLBACK)) {
+            const r = await pool.query(
+                `UPDATE lakes SET hero_image_url = $2, updated_at = NOW()
+                  WHERE slug = $1 AND COALESCE(hero_image_url, '') = ''`,
+                [slug, '/assets/images/' + img]);
+            heroFix += r.rowCount;
+        }
+        if (heroFix) console.log(`[seed] tier1 hero safety net: set ${heroFix} missing hero(s)`);
     } catch (e) { console.warn('[seed] seedTier1Content skipped:', e.message); }
 }
 
