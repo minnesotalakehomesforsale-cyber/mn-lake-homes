@@ -1433,6 +1433,68 @@ function _lfUnlockScroll() {
     document.body.style.overflow = '';
 }
 
+// ─── DEV-01: first-touch attribution capture (site-wide, one shared script) ──
+// On the first pageview of a session we snapshot UTM params + landing context to
+// sessionStorage (first-touch wins — never overwritten on later pageviews). The
+// values are injected as hidden inputs into every native <form>, and exposed via
+// window.mnAttribution() for JS/fetch forms to merge into their payload. Every
+// value is HTML-stripped + length-capped here; the server re-sanitizes too.
+(function initAttribution() {
+    var KEY = 'mn_attr_v1';
+    function clean(v, max) { if (v == null) return ''; return String(v).replace(/<[^>]*>/g, '').trim().slice(0, max || 255); }
+    try {
+        if (!sessionStorage.getItem(KEY)) {                 // first-touch only
+            var q = new URLSearchParams(location.search);
+            var path = location.pathname || '/';
+            var lakeM = path.match(/^\/lakes\/([^\/?#]+)/);
+            var townM = path.match(/^\/lake-towns\/([^\/?#]+)/) || path.match(/^\/towns\/([^\/?#]+)/);
+            sessionStorage.setItem(KEY, JSON.stringify({
+                utm_source: clean(q.get('utm_source')), utm_medium: clean(q.get('utm_medium')),
+                utm_campaign: clean(q.get('utm_campaign')), utm_term: clean(q.get('utm_term')),
+                utm_content: clean(q.get('utm_content')), gclid: clean(q.get('gclid')), fbclid: clean(q.get('fbclid')),
+                landing_page: clean(path, 500),
+                landing_page_lake: lakeM ? clean(lakeM[1], 160) : '',
+                landing_page_town: townM ? clean(townM[1], 160) : '',
+                referrer: clean(document.referrer, 500),
+            }));
+        }
+    } catch (_) { /* private mode / storage blocked → attribution just stays empty */ }
+
+    window.mnAttribution = function () { try { return JSON.parse(sessionStorage.getItem(KEY) || '{}'); } catch (_) { return {}; } };
+
+    function injectForms(scope) {
+        var attr = window.mnAttribution();
+        var forms = (scope && scope.querySelectorAll ? scope : document).querySelectorAll('form');
+        Array.prototype.forEach.call(forms, function (f) {
+            if (f.__mnAttr) return; f.__mnAttr = true;
+            Object.keys(attr).forEach(function (k) {
+                if (f.querySelector('input[name="' + k + '"]')) return;
+                var i = document.createElement('input');
+                i.type = 'hidden'; i.name = k; i.value = attr[k] || '';
+                f.appendChild(i);
+            });
+        });
+    }
+    function ready(fn) { if (document.readyState !== 'loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+    ready(function () {
+        injectForms(document);
+        // A form added later (modal, hydrated section) inherits the fields too.
+        try {
+            new MutationObserver(function (muts) {
+                for (var i = 0; i < muts.length; i++) {
+                    var nodes = muts[i].addedNodes;
+                    for (var j = 0; j < nodes.length; j++) {
+                        var n = nodes[j];
+                        if (!n || n.nodeType !== 1) continue;
+                        if (n.tagName === 'FORM') injectForms(n.parentNode || document);
+                        else if (n.querySelector && n.querySelector('form')) injectForms(n);
+                    }
+                }
+            }).observe(document.body, { childList: true, subtree: true });
+        } catch (_) {}
+    });
+})();
+
 // Fire a GA4/HubSpot funnel event (safe no-op when no tracking is configured).
 function _lfTrack(event, params) {
     try { if (typeof window.trackConversion === 'function') window.trackConversion(event, params || {}); } catch (_) {}
@@ -1707,6 +1769,8 @@ async function _lfDoSubmit() {
                 intent_type,
                 price_band,
                 lead_source_detail,
+                // DEV-01: first-touch attribution merged from the shared capture.
+                ...(window.mnAttribution ? window.mnAttribution() : {}),
             })
         });
         if (!res.ok) { const r = await res.json().catch(()=>({})); throw new Error(r.error || 'Submission failed.'); }
@@ -2487,6 +2551,7 @@ document.addEventListener('keydown', e => {
                         name, email: email || null, phone: phone || null,
                         source: leadSource, notes, lake_slug: lake.slug,
                         company_website: hp, _elapsed_ms: elapsed,
+                        ...(window.mnAttribution ? window.mnAttribution() : {}),   // DEV-01
                     }),
                 });
                 if (res.ok) ok++;

@@ -18,7 +18,30 @@ const createLead = async (req, res) => {
         is_waterfront, waterfront_feet, lead_session_id, want_founder,
         // B1/B2 lead-qualification properties (mirrored to HubSpot).
         target_lake, intent_type, price_band, lead_source_detail,
+        // DEV-01 attribution (first-touch UTM + landing context).
+        utm_source, utm_medium, utm_campaign, utm_term, utm_content,
+        gclid, fbclid, landing_page, landing_page_lake, landing_page_town, referrer,
     } = req.body;
+    // Sanitize attribution: strip HTML, cap length. Never trusted; always
+    // stored/synced via parameterized queries.
+    const attrClean = (v, max = 255) => {
+        if (v === null || v === undefined) return null;
+        const s = String(v).replace(/<[^>]*>/g, '').trim().slice(0, max);
+        return s || null;
+    };
+    const attribution = {
+        utm_source:        attrClean(utm_source),
+        utm_medium:        attrClean(utm_medium),
+        utm_campaign:      attrClean(utm_campaign),
+        utm_term:          attrClean(utm_term),
+        utm_content:       attrClean(utm_content),
+        gclid:             attrClean(gclid),
+        fbclid:            attrClean(fbclid),
+        landing_page:      attrClean(landing_page, 500),
+        landing_page_lake: attrClean(landing_page_lake, 160),
+        landing_page_town: attrClean(landing_page_town, 160),
+        referrer:          attrClean(referrer, 500),
+    };
     // Founder opt-in for lake leads. Defaults TRUE (preserve the founder's
     // exclusive 100%); only an explicit false sends the lead to the lottery.
     const wantFounder = want_founder !== false && want_founder !== 'false';
@@ -187,6 +210,20 @@ const createLead = async (req, res) => {
                 .catch(e => console.error('[lead.lake_id] save failed:', e.message));
         }
 
+        // DEV-01: persist attribution (parameterized). Separate UPDATE keeps the
+        // big INSERT stable. Best-effort — never block the lead on it.
+        if (newLeadId && Object.values(attribution).some(Boolean)) {
+            pool.query(
+                `UPDATE leads SET utm_source=$1, utm_medium=$2, utm_campaign=$3, utm_term=$4,
+                        utm_content=$5, gclid=$6, fbclid=$7, landing_page=$8,
+                        landing_page_lake=$9, landing_page_town=$10, referrer=$11
+                   WHERE id=$12`,
+                [attribution.utm_source, attribution.utm_medium, attribution.utm_campaign, attribution.utm_term,
+                 attribution.utm_content, attribution.gclid, attribution.fbclid, attribution.landing_page,
+                 attribution.landing_page_lake, attribution.landing_page_town, attribution.referrer, newLeadId])
+                .catch(e => console.error('[lead.attribution] save failed:', e.message));
+        }
+
         logActivity({
             event_type: 'lead.create',
             event_scope: 'lead',
@@ -264,6 +301,8 @@ const createLead = async (req, res) => {
                         // HubSpot internal name is *_v2 (original name archived); the
                         // form/validation still use `lead_source_detail` internally.
                         lead_source_detail_v2: qualSourceDetail || undefined,
+                        // DEV-01 attribution — whitelisted in hubspot.js; nulls dropped by cleanProps.
+                        ...attribution,
                     });
                 } catch (e) {
                     // A throw is a real failure — treat like a null return below.

@@ -95,7 +95,9 @@ const BUILTIN_PROPS = [
 // send: syncContact retries built-in-only if HubSpot rejects an unknown prop,
 // so forms never break even if the schema hasn't been provisioned yet.
 const QUAL_PROPS = ['target_lake', 'intent_type', 'price_band', 'lead_source_detail_v2'];
-const ALLOWED_PROPS = new Set([...BUILTIN_PROPS, ...QUAL_PROPS]);
+// DEV-01 attribution props (first-touch UTM + landing context).
+const ATTR_PROPS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'fbclid', 'landing_page', 'landing_page_lake', 'landing_page_town', 'referrer'];
+const ALLOWED_PROPS = new Set([...BUILTIN_PROPS, ...QUAL_PROPS, ...ATTR_PROPS]);
 
 function whitelistProps(props, allowed = ALLOWED_PROPS) {
     const out = {};

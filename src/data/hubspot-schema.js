@@ -69,7 +69,18 @@ const CONTACT_PROPERTIES = [
     // created as a text prop, then deleted → HubSpot archives that name for 90
     // days. This fresh name creates clean as a dropdown. Label is unchanged.
     { name: 'lead_source_detail_v2', label: 'Lead Source Detail', type: 'enumeration', fieldType: 'select', groupName: CONTACT_PROPERTY_GROUP.name, options: ordered(LEAD_SOURCE_DETAIL_OPTIONS) },
+    // Attribution (DEV-01) — first-touch UTM + landing context. Plain text.
+    ...[
+        ['utm_source', 'UTM Source'], ['utm_medium', 'UTM Medium'], ['utm_campaign', 'UTM Campaign'],
+        ['utm_term', 'UTM Term'], ['utm_content', 'UTM Content'], ['gclid', 'Google Click ID'],
+        ['fbclid', 'Facebook Click ID'], ['landing_page', 'Landing Page'],
+        ['landing_page_lake', 'Landing Page Lake'], ['landing_page_town', 'Landing Page Town'],
+        ['referrer', 'Referrer'],
+    ].map(([name, label]) => ({ name, label, type: 'string', fieldType: 'text', groupName: CONTACT_PROPERTY_GROUP.name })),
 ];
+
+// Attribution field names — forms capture these and the sync sends them.
+const ATTRIBUTION_PROPS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'fbclid', 'landing_page', 'landing_page_lake', 'landing_page_town', 'referrer'];
 
 // ── Deal pipeline: Agent Acquisition (B4 / T025) ─────────────────────────────
 // 8 stages. Won–Paying + Lost/Nurture are closed stages.
@@ -151,4 +162,5 @@ module.exports = {
     targetLakeValueForName, validEnumValue,
     // Names forms are allowed to set on a contact sync (the B1 four).
     QUALIFICATION_PROPS: ['target_lake', 'intent_type', 'price_band', 'lead_source_detail_v2'],
+    ATTRIBUTION_PROPS,
 };

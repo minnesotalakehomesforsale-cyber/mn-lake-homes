@@ -3541,6 +3541,22 @@ async function ensureTables() {
             -- -> routed, or failed. Powers the reconciliation view.
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS pipeline_status VARCHAR(20) NOT NULL DEFAULT 'received';
 
+            -- Attribution (DEV-01): first-touch UTM + landing context captured
+            -- client-side and posted with the lead. landing_page_lake powers the
+            -- lead-density-by-lake dashboard (DEV-06). All free-text, parameterized.
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_source        VARCHAR(255);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_medium        VARCHAR(255);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_campaign      VARCHAR(255);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_term          VARCHAR(255);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_content       VARCHAR(255);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS gclid             VARCHAR(255);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS fbclid            VARCHAR(255);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS landing_page      VARCHAR(500);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS landing_page_lake VARCHAR(160);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS landing_page_town VARCHAR(160);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS referrer          VARCHAR(500);
+            CREATE INDEX IF NOT EXISTS idx_leads_landing_lake ON leads(landing_page_lake) WHERE landing_page_lake IS NOT NULL AND landing_page_lake <> '';
+
             -- Routing SLA (T021): the moment a lead FIRST reached an agent.
             -- Distinct from assigned_at, which the SLA re-router overwrites on a
             -- re-assignment — routed_at is stamped once (COALESCE) and never moves,
