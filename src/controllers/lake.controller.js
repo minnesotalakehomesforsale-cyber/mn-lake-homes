@@ -659,7 +659,15 @@ exports.listBusinesses = async (req, res) => {
                     b.website_url, b.address, b.city, b.state, b.zip,
                     b.latitude, b.longitude, b.hours, b.price_range,
                     b.featured_image_url, b.status, b.tier,
-                    COALESCE(bl.is_featured, FALSE) AS is_featured
+                    COALESCE(bl.is_featured, FALSE) AS is_featured,
+                    -- Render tier (C3/D1): the block style a partner earns.
+                    -- Paid/comped Premium → logo cards, paid/comped Basic → text
+                    -- list, everything else (directory listings, lapsed subs) → free.
+                    CASE
+                        WHEN b.tier = 'premium' AND (b.subscription_status = 'active' OR b.tier_comped) THEN 'premium'
+                        WHEN b.tier = 'basic'   AND (b.subscription_status = 'active' OR b.tier_comped) THEN 'basic'
+                        ELSE 'free'
+                    END AS render_tier
              FROM businesses b
              LEFT JOIN business_lakes bl ON bl.business_id = b.id AND bl.lake_id = $1
              WHERE ${where.join(' AND ')}

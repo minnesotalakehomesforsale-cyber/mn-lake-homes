@@ -843,7 +843,17 @@
                 if (sectionEl) sectionEl.style.display = '';
                 if (headingEl) headingEl.textContent = `Featured ${anchorName} Businesses`;
                 if (leadEl)    leadEl.textContent    = 'Resorts, marinas, dock builders, and lake-area pros our community relies on.';
-                gridEl.innerHTML = all.slice(0, 6).map(renderBizCard).join('');
+                // Tier-matched render (C3/D1): Premium → logo cards, Basic →
+                // text list, Free/directory → a compact link row. Driven purely
+                // by render_tier, so upgrading a partner in Stripe flips their
+                // block automatically — no code change per partner.
+                const premium = all.filter(b => b.render_tier === 'premium');
+                const basic   = all.filter(b => b.render_tier === 'basic');
+                const free    = all.filter(b => b.render_tier !== 'premium' && b.render_tier !== 'basic');
+                let html = premium.slice(0, 6).map(renderBizCard).join('');
+                html += basic.slice(0, 8).map(renderBizRow).join('');
+                if (free.length) html += renderBizDir(free.slice(0, 24));
+                gridEl.innerHTML = html;
                 if (ctaEl) ctaEl.innerHTML = '<a href="/towns?view=biz" class="nb-cta">View all businesses →</a>';
             } catch (_) {
                 if (sectionEl) sectionEl.style.display = 'none';
@@ -873,6 +883,28 @@
                         <span class="nb-cta-inline">View profile <span aria-hidden="true">→</span></span>
                     </div>
                 </a>`;
+        }
+
+        // Basic ($29) partners — a clean text-list row (no logo card).
+        function renderBizRow(b) {
+            const label = BIZ_TYPE_LABEL[b.type] || 'Local Business';
+            const loc   = [b.city, b.state].filter(Boolean).join(', ');
+            return `
+                <a class="nb-bizrow" href="/businesses/${encodeURIComponent(b.slug)}"
+                   style="grid-column:1/-1;display:flex;align-items:baseline;gap:.6rem;flex-wrap:wrap;padding:.85rem .2rem;border-bottom:1px solid #edf2f7;text-decoration:none;color:#1a202c;">
+                    <strong style="font-weight:700;">${escHtml(b.name)}</strong>
+                    <span style="color:#718096;font-size:.9rem;">${escHtml(label)}${loc ? ' · ' + escHtml(loc) : ''}</span>
+                    <span style="margin-left:auto;color:#1d6df2;font-size:.85rem;font-weight:600;">View →</span>
+                </a>`;
+        }
+
+        // Free / directory partners — a single compact line of links.
+        function renderBizDir(list) {
+            return `
+                <div style="grid-column:1/-1;color:#718096;font-size:.9rem;padding-top:1.1rem;line-height:1.8;">
+                    <span style="font-weight:700;color:#4a5568;">Also in the area: </span>
+                    ${list.map(b => `<a href="/businesses/${encodeURIComponent(b.slug)}" style="color:#1d6df2;text-decoration:none;">${escHtml(b.name)}</a>`).join(', ')}
+                </div>`;
         }
 
         function haversineKm(lat1, lng1, lat2, lng2) {
