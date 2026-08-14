@@ -126,6 +126,22 @@ async function activeCountForLake(lakeId) {
     return rows[0].c;
 }
 
+// Reusable — lean active listings for a lake (+ its basins), for the lake page's
+// RealEstateListing JSON-LD (C4). Empty when listings are hidden.
+async function activeListingsForLake(lakeId, limit = 12) {
+    if (!LISTINGS_PUBLIC || !lakeId) return [];
+    const { rows } = await pool.query(
+        `SELECT slug, title, price, address, city, state, zip, latitude, longitude, featured_image_url
+           FROM listings
+          WHERE lake_id IN (SELECT id FROM lakes WHERE id = $1 OR parent_lake_id = $1)
+            AND status = 'active' AND ${AGENT_ACTIVE_GATE}
+          ORDER BY created_at DESC
+          LIMIT $2`,
+        [lakeId, Math.min(limit, 30)]
+    );
+    return rows;
+}
+
 // GET /api/listings  (public) — active listings, optional ?lake_id= filter.
 exports.listPublic = async (req, res) => {
     if (!LISTINGS_PUBLIC) return res.json([]);   // hidden from the public site
@@ -968,3 +984,4 @@ exports.syncFeed = async (req, res) => {
 };
 
 exports.activeCountForLake = activeCountForLake;
+exports.activeListingsForLake = activeListingsForLake;

@@ -825,6 +825,24 @@ app.get('/lakes/:slug', async (req, res, next) => {
                FROM market_snapshots WHERE scope = $1 AND median_price IS NOT NULL
               ORDER BY month ASC LIMIT 12`, [lake.slug]).then(r => r.rows).catch(() => []);
 
+        // C4: per-item structured data — the lake's active listings (+ basins)
+        // and its featured/directory partners, for RealEstateListing[] +
+        // LocalBusiness[] JSON-LD emitted server-side (crawlable).
+        const { activeListingsForLake } = require('./controllers/listing.controller');
+        const schemaListings = await activeListingsForLake(lake.id, 12).catch(() => []);
+        const schemaBusinesses = await pool.query(
+            `SELECT b.name, b.slug, b.type, b.address, b.city, b.state, b.zip,
+                    b.phone, b.website_url, b.latitude, b.longitude
+               FROM businesses b
+               LEFT JOIN business_lakes bl ON bl.business_id = b.id AND bl.lake_id = $1
+              WHERE b.status = 'active'
+                AND (b.user_id IS NULL OR b.subscription_status = 'active' OR b.tier_comped)
+                AND (bl.lake_id IS NOT NULL OR EXISTS (
+                     SELECT 1 FROM lake_tags lt JOIN business_tags bt ON bt.tag_id = lt.tag_id
+                      WHERE lt.lake_id = $1 AND bt.business_id = b.id))
+              ORDER BY (b.tier = 'premium') DESC NULLS LAST, b.name
+              LIMIT 12`, [lake.id]).then(r => r.rows).catch(() => []);
+
         const templatePath = path.join(PROJECT_ROOT, 'pages/public/lake-detail.html');
         fs.readFile(templatePath, 'utf8', (err, html) => {
             if (err) return next(err);
@@ -995,6 +1013,45 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 lakeFactsLd = `<script type="application/ld+json">${JSON.stringify(place)}</script>`;
             }
 
+            // C4: RealEstateListing per active listing + LocalBusiness per partner.
+            const absUrl = u => u ? (String(u).startsWith('http') ? u : siteBase + u) : undefined;
+            let lakeListingLd = '';
+            if (schemaListings.length) {
+                const nodes = schemaListings.map(l => {
+                    const addr = {};
+                    if (l.address) addr.streetAddress = l.address;
+                    if (l.city)    addr.addressLocality = l.city;
+                    if (l.state)   addr.addressRegion = l.state;
+                    if (l.zip)     addr.postalCode = l.zip;
+                    const node = { '@context': 'https://schema.org', '@type': 'RealEstateListing',
+                        name: l.title, url: `${siteBase}/listings/${encodeURIComponent(l.slug)}` };
+                    if (l.featured_image_url) node.image = absUrl(l.featured_image_url);
+                    if (Object.keys(addr).length) node.address = { '@type': 'PostalAddress', ...addr };
+                    if (l.latitude != null && l.longitude != null) node.geo = { '@type': 'GeoCoordinates', latitude: Number(l.latitude), longitude: Number(l.longitude) };
+                    if (l.price != null) node.offers = { '@type': 'Offer', price: Number(l.price), priceCurrency: 'USD', availability: 'https://schema.org/InStock' };
+                    return node;
+                });
+                lakeListingLd = `<script type="application/ld+json">${JSON.stringify(nodes)}</script>`;
+            }
+            let lakeBusinessLd = '';
+            if (schemaBusinesses.length) {
+                const nodes = schemaBusinesses.map(b => {
+                    const addr = {};
+                    if (b.address) addr.streetAddress = b.address;
+                    if (b.city)    addr.addressLocality = b.city;
+                    if (b.state)   addr.addressRegion = b.state;
+                    if (b.zip)     addr.postalCode = b.zip;
+                    const node = { '@context': 'https://schema.org', '@type': 'LocalBusiness',
+                        name: b.name, url: `${siteBase}/businesses/${encodeURIComponent(b.slug)}` };
+                    if (Object.keys(addr).length) node.address = { '@type': 'PostalAddress', ...addr };
+                    if (b.phone)       node.telephone = b.phone;
+                    if (b.website_url) node.sameAs = b.website_url;
+                    if (b.latitude != null && b.longitude != null) node.geo = { '@type': 'GeoCoordinates', latitude: Number(b.latitude), longitude: Number(b.longitude) };
+                    return node;
+                });
+                lakeBusinessLd = `<script type="application/ld+json">${JSON.stringify(nodes)}</script>`;
+            }
+
             const replacements = {
                 '{{LAKE_MARKET_HTML}}':     lakeDnrHtml + lakeMarketHtml,
                 '{{LAKE_SEO_TITLE}}':       escapeHtml(title),
@@ -1013,7 +1070,7 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 '{{LAKE_REGION}}':          escapeHtml(lake.region || ''),
                 '{{LAKE_COUNTY}}':          escapeHtml(lake.county || ''),
                 '{{LAKE_STATE}}':           escapeHtml(lake.state || ''),
-                '{{LAKE_STRUCTURED_DATA}}': lakeStructuredData + '\n    ' + lakeFaqLd + (lakeFactsLd ? '\n    ' + lakeFactsLd : ''),
+                '{{LAKE_STRUCTURED_DATA}}': [lakeStructuredData, lakeFaqLd, lakeFactsLd, lakeListingLd, lakeBusinessLd].filter(Boolean).join('\n    '),
                 '{{LAKE_LIFESTYLE_BODY}}':  lifestyleBody,
                 '{{LAKE_SEASONS_BODY}}':    seasonsBody,
                 '{{LAKE_FAQ_HTML}}':        lakeFaqHtml,
