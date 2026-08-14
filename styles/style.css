@@ -2149,13 +2149,13 @@ body > * { min-width: 0; }
 
 /* Footer Section */
 .site-footer {
-    background-color: #22262e;
+    background-color: #181b21;
     color: #c7cfdb;
-    border-top: 1px solid #2f3540;
+    border-top: 1px solid #262b33;
     padding: 5rem 3rem 0;
 }
 /* Dark footer: recolor children for a charcoal ground (readable, not pure black). */
-.site-footer .footer-container { border-bottom-color: #333a45; }
+.site-footer .footer-container { border-bottom-color: #2a2f38; }
 .site-footer .footer-brand .logo span { color: #eef2f8; }
 .site-footer .footer-desc { color: #97a1b0; }
 .site-footer .link-column h4 { color: #eef2f8; }
@@ -2165,7 +2165,7 @@ body > * { min-width: 0; }
 .site-footer .footer-bottom .footer-copyright { color: #aab3c2; }
 .site-footer .footer-bottom .footer-disclaimer { color: #8b95a5; }
 .site-footer .footer-bottom .footer-fairhousing { color: #8b95a5; }
-.site-footer .footer-social a { background: #2e343f !important; color: #c7cfdb !important; }
+.site-footer .footer-social a { background: #262b33 !important; color: #c7cfdb !important; }
 
 .footer-container {
     display: flex;
