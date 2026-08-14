@@ -277,7 +277,8 @@ const createLead = async (req, res) => {
                     const ag = ar.rows[0];
                     await pool.query(
                         `UPDATE leads SET assigned_user_id = $1, lead_status = 'contacted',
-                                pipeline_status = 'routed', assigned_at = NOW(), updated_at = NOW()
+                                pipeline_status = 'routed', assigned_at = NOW(),
+                                routed_at = COALESCE(routed_at, NOW()), updated_at = NOW()
                           WHERE id = $2`, [ag?.user_id || null, newLeadId]);
                     if (ag?.email) {
                         emailService.sendMatchedAgentNotification({
@@ -395,6 +396,7 @@ const createLead = async (req, res) => {
                                 lead_status      = 'contacted',
                                 pipeline_status  = 'routed',
                                 assigned_at      = NOW(),
+                                routed_at        = COALESCE(routed_at, NOW()),
                                 updated_at       = NOW()
                           WHERE id = $3`,
                         [pick.agentId, pick.userId, newLeadId]

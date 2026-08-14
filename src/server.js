@@ -3462,6 +3462,13 @@ async function ensureTables() {
             -- -> routed, or failed. Powers the reconciliation view.
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS pipeline_status VARCHAR(20) NOT NULL DEFAULT 'received';
 
+            -- Routing SLA (T021): the moment a lead FIRST reached an agent.
+            -- Distinct from assigned_at, which the SLA re-router overwrites on a
+            -- re-assignment — routed_at is stamped once (COALESCE) and never moves,
+            -- so latency = routed_at - created_at is the true time-to-first-agent.
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS routed_at TIMESTAMPTZ;
+            CREATE INDEX IF NOT EXISTS idx_leads_routed_at ON leads(routed_at) WHERE routed_at IS NOT NULL;
+
             -- Lead recovery queue (T018): when a downstream step (HubSpot sync,
             -- routing) fails, the lead is already saved; we queue a retry here
             -- with exponential backoff and alert immediately. Swept on interval.
@@ -4833,6 +4840,15 @@ app.listen(PORT, async () => {
         setInterval(() => runRetrySweep().catch(e => console.warn('[lead-recovery]', e.message)), 2 * 60 * 1000);
         setTimeout(() => runFailedRecheck().catch(e => console.warn('[lead-recovery]', e.message)), 10 * 60 * 1000);
         setInterval(() => runFailedRecheck().catch(e => console.warn('[lead-recovery]', e.message)), 24 * 60 * 60 * 1000);
+    }
+
+    // Routing SLA weekly report (T021) — median + p95 time-to-first-agent, with a
+    // manual-gap flag for anything > 30 min. Self-guards to once per ISO week via
+    // an app_config marker; checked twice a day. Disable with ROUTING_SLA_REPORT_ENABLED=false.
+    if (process.env.ROUTING_SLA_REPORT_ENABLED !== 'false') {
+        const { runWeeklySlaReport } = require('./services/routing-sla');
+        setTimeout(() => runWeeklySlaReport().catch(e => console.warn('[routing-sla]', e.message)), 8 * 60 * 1000);
+        setInterval(() => runWeeklySlaReport().catch(e => console.warn('[routing-sla]', e.message)), 12 * 60 * 60 * 1000);
     }
 
     // Monthly agent ROI recap — self-guards to once per calendar month.

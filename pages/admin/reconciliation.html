@@ -25,6 +25,22 @@
         .gap.ok   { background: #f0fff4; border-color: #c6f6d5; color: #276749; }
         .gap.warn { background: #fffaf0; border-color: #feebc8; color: #b7791f; }
         .note { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; padding: 1rem 1.25rem; margin-top: 1.5rem; font-size: 0.88rem; color: #4a5568; line-height: 1.6; }
+        .sla { background: #fff; border: 1px solid #edf2f7; border-radius: 16px; padding: 1.4rem 1.6rem; box-shadow: 0 2px 8px rgba(16,24,40,0.04); margin: 1.75rem 0 0.5rem; }
+        .sla-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+        .sla-head h2 { font-size: 1.1rem; font-weight: 800; margin: 0; letter-spacing: -0.3px; }
+        .sla-head .rng { font-size: 0.78rem; color: #a0aec0; font-weight: 700; }
+        .pill { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 0.25rem 0.6rem; border-radius: 999px; }
+        .pill.ok { background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+        .pill.bad { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+        .pill.na { background: #f7fafc; color: #718096; border: 1px solid #e2e8f0; }
+        .sla-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin-top: 1.1rem; }
+        .metric .n { font-size: 1.9rem; font-weight: 800; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+        .metric .n.good { color: #276749; } .metric .n.warn { color: #c53030; }
+        .metric .l { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #a0aec0; margin-top: 0.25rem; }
+        .sla-flags { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
+        .flag { font-size: 0.85rem; padding: 0.5rem 0.75rem; border-radius: 9px; }
+        .flag.warn { background: #fffaf0; color: #b7791f; border: 1px solid #feebc8; }
+        .flag.ok { background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
     </style>
     <script src="../../components/admin-guard.js"></script>
     <script src="../../components/admin-sidebar.js" defer></script>
@@ -42,6 +58,14 @@
                 <label>To <input type="date" id="to"></label>
                 <button class="btn" onclick="run()">Reconcile</button>
             </div>
+
+            <section class="sla" id="slaCard">
+                <div class="sla-head">
+                    <h2>Routing speed (SLA)</h2>
+                    <span class="rng" id="slaRange">last 7 days</span>
+                </div>
+                <div id="slaBody"><p class="muted">Measuring time-to-first-agent…</p></div>
+            </section>
 
             <div id="out"><p class="muted">Loading the last 30 days…</p></div>
         </main>
@@ -86,7 +110,43 @@
                     Range: <strong>${esc(d.from)} → ${esc(d.to)}</strong>. Also captured but excluded from "submitted": <strong>${c.partial_abandoned}</strong> abandoned/partial forms.
                 </div>`;
         }
+        async function loadSla() {
+            const body = document.getElementById('slaBody');
+            let s;
+            try {
+                const res = await fetch('/api/admin/routing-sla?days=7', { credentials: 'include' });
+                if (res.status === 401 || res.status === 403) { body.innerHTML = '<p class="muted">Please sign in as an admin.</p>'; return; }
+                s = await res.json();
+                if (!res.ok) throw new Error(s.error || 'Failed');
+            } catch (e) { body.innerHTML = `<p style="color:#c53030">Could not load routing SLA: ${esc(e.message)}</p>`; return; }
+
+            const targetH = s.p95_seconds < 60 ? `${s.target_p95_seconds}s` : `${Math.round(s.target_p95_seconds/60)}m`;
+            const pill = s.routed_count === 0
+                ? '<span class="pill na">no data</span>'
+                : s.within_target ? '<span class="pill ok">✓ within target</span>' : '<span class="pill bad">⚠ over target</span>';
+            document.getElementById('slaRange').innerHTML = `last 7 days &nbsp;·&nbsp; ${pill}`;
+
+            const p95cls = s.routed_count === 0 ? '' : (s.within_target ? 'good' : 'warn');
+            let flags = '';
+            if (s.slow_count) flags += `<div class="flag warn">⚠️ ${s.slow_count} lead(s) took over 30 min to reach an agent — likely a manual-assignment gap.</div>`;
+            if (s.unrouted_count) flags += `<div class="flag warn">⚠️ ${s.unrouted_count} lead(s) created over 30 min ago still have no agent. <a href="leads.html">Open the Leads queue →</a></div>`;
+            if (!s.slow_count && !s.unrouted_count && s.routed_count) flags += `<div class="flag ok">✓ Every lead reached an agent within 30 minutes.</div>`;
+
+            body.innerHTML = `
+                <div class="sla-metrics">
+                    <div class="metric"><div class="n">${esc(s.median_human)}</div><div class="l">Median</div></div>
+                    <div class="metric"><div class="n ${p95cls}">${esc(s.p95_human)}</div><div class="l">p95 · target &lt; ${targetH}</div></div>
+                    <div class="metric"><div class="n">${esc(s.max_human)}</div><div class="l">Slowest</div></div>
+                    <div class="metric"><div class="n">${s.routed_count}</div><div class="l">Routed</div></div>
+                </div>
+                ${flags ? `<div class="sla-flags">${flags}</div>` : ''}
+                <div class="note" style="margin-top:1rem">
+                    <strong>How to read it:</strong> latency is measured from form submission to the moment a lead first reaches an agent (auto-routed leads are near-instant). A <em>p95 under ${targetH}</em> means 95% of leads were routed that fast. Anything over 30 minutes is flagged above as a manual gap to chase down.
+                </div>`;
+        }
+
         run();
+        loadSla();
     </script>
 </body>
 </html>

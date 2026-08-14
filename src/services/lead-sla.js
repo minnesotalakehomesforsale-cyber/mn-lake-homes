@@ -69,6 +69,7 @@ async function reassignOne(lead) {
             SET agent_id           = $1,
                 assigned_user_id   = $2,
                 assigned_at        = NOW(),
+                routed_at          = COALESCE(routed_at, NOW()),
                 agent_ack_at       = NULL,
                 lead_status        = 'contacted',
                 sla_reassign_count = sla_reassign_count + 1,

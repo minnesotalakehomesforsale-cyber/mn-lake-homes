@@ -1086,7 +1086,13 @@ const assignLead = async (req, res) => {
         const { agentId, userId } = req.body;
         const result = await pool.query(
             `UPDATE leads
-             SET agent_id = $1, assigned_user_id = $2, lead_status = $3::lead_status_type, updated_at = NOW()
+             SET agent_id = $1, assigned_user_id = $2, lead_status = $3::lead_status_type,
+                 -- Stamp the SLA clock + first-routed time on assign (not on clear).
+                 -- routed_at is the manual-claim latency signal for T021.
+                 assigned_at = CASE WHEN $1 IS NOT NULL OR $2 IS NOT NULL THEN NOW() ELSE assigned_at END,
+                 routed_at   = CASE WHEN $1 IS NOT NULL OR $2 IS NOT NULL THEN COALESCE(routed_at, NOW()) ELSE routed_at END,
+                 pipeline_status = CASE WHEN $1 IS NOT NULL OR $2 IS NOT NULL THEN 'routed' ELSE pipeline_status END,
+                 updated_at = NOW()
              WHERE id = $4
              RETURNING id, agent_id, assigned_user_id, lead_status`,
             [agentId || null, userId || null, agentId || userId ? 'assigned' : 'unassigned', req.params.id]
@@ -1873,6 +1879,22 @@ const getLeadReconciliation = async (req, res) => {
     } catch (err) {
         console.error('[getLeadReconciliation]', err.message);
         res.status(500).json({ error: 'Failed to reconcile: ' + err.message });
+    }
+};
+
+/**
+ * GET /api/admin/routing-sla?days=7 — routing latency (T021).
+ * median + p95 time-to-first-agent, plus the >30-min manual gap and anything
+ * still unrouted. Powers the SLA tile on the reconciliation page.
+ */
+const getRoutingSla = async (req, res) => {
+    try {
+        const { computeRoutingSla } = require('../services/routing-sla');
+        const data = await computeRoutingSla({ days: Number(req.query.days) || 7 });
+        res.json(data);
+    } catch (err) {
+        console.error('[getRoutingSla]', err.message);
+        res.status(500).json({ error: 'Failed to compute routing SLA: ' + err.message });
     }
 };
 
@@ -3035,6 +3057,7 @@ module.exports = {
     getAgentEmailHistory,
     getSeoAudit,
     getLeadReconciliation,
+    getRoutingSla,
     createAgent,
     updateAgentProfile,
     updateStatus,
