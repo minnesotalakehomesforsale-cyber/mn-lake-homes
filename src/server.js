@@ -4078,6 +4078,7 @@ async function ensureTables() {
         await seedTownContent();
         await seedLakeIndexability();
         await seedMarketTiers();
+        await seedTier1Content();
         await reconcilePartnerBusinesses();
     } catch (err) {
         console.error(' Table migration warning:', err.message);
@@ -4731,6 +4732,37 @@ async function seedMarketTiers() {
         const t2 = await pool.query(`UPDATE lakes SET market_tier = 2 WHERE market_tier IS NULL AND lower(name) = ANY($1::text[])`, [tier2]);
         if (t1.rowCount || t2.rowCount) console.log(`[seed] market tiers: +${t1.rowCount} Tier-1, +${t2.rowCount} Tier-2`);
     } catch (e) { console.warn('[seed] seedMarketTiers skipped:', e.message); }
+}
+
+// DEV-05: apply the curated Tier-1 lake + Phase-1 town page content. OVERWRITES
+// the listed content fields (this is the source-of-truth upgrade to the 1,500+
+// word standard), but each entry is content-hashed into seed_flags so a redeploy
+// never re-clobbers and a later admin edit isn't reverted unless the data file
+// changes. Only touches fields present in an entry; omitted fields are untouched.
+async function seedTier1Content() {
+    try {
+        const { LAKES, TOWNS } = require('./data/tier1-content');
+        const crypto = require('crypto');
+        await pool.query(`CREATE TABLE IF NOT EXISTS seed_flags (key TEXT PRIMARY KEY, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
+        const FIELDS = ['seo_title', 'seo_description', 'intro_text', 'description', 'lifestyle_text', 'seasons_text'];
+        let applied = 0;
+        const apply = async (table, entry) => {
+            try {
+                const fields = FIELDS.filter(f => typeof entry[f] === 'string' && entry[f].trim());
+                if (!entry.slug || !fields.length) return;
+                const hash = crypto.createHash('sha1').update(JSON.stringify(entry)).digest('hex').slice(0, 12);
+                const flag = `tier1_content:${table}:${entry.slug}:${hash}`;
+                if ((await pool.query(`SELECT 1 FROM seed_flags WHERE key = $1`, [flag])).rowCount) return;
+                const sets = fields.map((f, i) => `${f} = $${i + 1}`).concat('updated_at = NOW()');
+                const vals = fields.map(f => entry[f]).concat(entry.slug);
+                const r = await pool.query(`UPDATE ${table} SET ${sets.join(', ')} WHERE slug = $${vals.length}`, vals);
+                if (r.rowCount) { await pool.query(`INSERT INTO seed_flags (key) VALUES ($1) ON CONFLICT DO NOTHING`, [flag]); applied++; }
+            } catch (e) { console.warn(`[seed] tier1 content ${entry.slug} skipped:`, e.message); }
+        };
+        for (const e of (LAKES || [])) await apply('lakes', e);
+        for (const e of (TOWNS || [])) await apply('tags', e);
+        if (applied) console.log(`[seed] tier1 content applied to ${applied} page(s)`);
+    } catch (e) { console.warn('[seed] seedTier1Content skipped:', e.message); }
 }
 
 async function seedLakeIndexability() {
