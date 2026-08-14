@@ -63,6 +63,7 @@ app.use(cookieParser());
 // ==========================================
 // API ROUTES (Backend Node/Postgres Engine)
 // ==========================================
+app.use('/api/_diagnostic', require('./routes/diagnostic.routes'));   // T027: system health
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/agents', require('./routes/agent.routes'));
 // More-specific /api/admin/cash-offers must mount BEFORE the general /api/admin

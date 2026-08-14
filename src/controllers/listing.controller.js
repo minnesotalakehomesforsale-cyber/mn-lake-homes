@@ -925,6 +925,15 @@ async function runFeedSync() {
         try { savedSearch.notifyListing(id, 'new'); } catch (_) { /* best-effort */ }
     }
 
+    // Record the successful-sync timestamp so /api/_diagnostic can report feed
+    // freshness. Best-effort — never fail the sync over a marker write.
+    try {
+        await pool.query(
+            `INSERT INTO app_config (key, value, description)
+             VALUES ('mls_feed_last_sync', to_jsonb(NOW()::text), 'Last successful MLS/IDX feed sync (T027 diagnostic)')
+             ON CONFLICT (key) DO UPDATE SET value = to_jsonb(NOW()::text)`);
+    } catch (e) { console.warn('[listings.feed] last-sync marker skipped:', e.message); }
+
     return { configured: true, total, retired, pages: page, ...agg };
 }
 exports.runFeedSync = runFeedSync;
