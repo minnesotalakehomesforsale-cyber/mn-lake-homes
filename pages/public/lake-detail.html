@@ -654,18 +654,28 @@
         const LAKE_LAT  = parseFloat('{{LAKE_LATITUDE}}');
         const LAKE_LNG  = parseFloat('{{LAKE_LONGITUDE}}');
 
-        // Per-lake quick-facts. Long-term this should live on the lakes
-        // table as JSONB; for now a small client-side map keyed by slug
-        // keeps each lake's facts editable without a schema change.
-        const LAKE_FACTS_BY_SLUG = {
-            'detroit-lake': [
-                { label: 'Surface area',       value: '3,000', unit: 'acres' },
-                { label: 'Max depth',          value: '88',    unit: 'ft'    },
-                { label: 'From Twin Cities',   value: '3.5',   unit: 'hrs'   },
-                { label: 'Signature fishery',  value: 'Walleye + muskie' },
-            ],
-        };
-        window.LAKE_FACTS = LAKE_FACTS_BY_SLUG[LAKE_SLUG] || null;
+        // Per-lake quick-facts are built from the lake's own DB row (DNR
+        // enrichment columns) — no per-lake hardcoding, so any published lake
+        // with facts renders the strip automatically (C1 / T062).
+        function buildLakeFacts(lake) {
+            const facts = [];
+            const num = v => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : null; };
+            const acres = num(lake.surface_acres);
+            if (acres) facts.push({ label: 'Surface area', value: Math.round(acres).toLocaleString('en-US'), unit: 'acres' });
+            const depth = num(lake.max_depth_ft);
+            if (depth) facts.push({ label: 'Max depth', value: String(Math.round(depth)), unit: 'ft' });
+            const clarity = num(lake.water_clarity_ft);
+            if (clarity) facts.push({ label: 'Water clarity', value: String(Math.round(clarity)), unit: 'ft' });
+            const shore = num(lake.shoreline_miles);
+            if (shore) facts.push({ label: 'Shoreline', value: String(Math.round(shore * 10) / 10), unit: 'mi' });
+            let fish = lake.fish_species;
+            if (typeof fish === 'string') { try { fish = JSON.parse(fish); } catch (_) { fish = null; } }
+            if (Array.isArray(fish) && fish.length) {
+                const names = fish.map(f => typeof f === 'string' ? f : (f && (f.name || f.species))).filter(Boolean).slice(0, 3);
+                if (names.length) facts.push({ label: 'Signature fishery', value: names.join(', ') });
+            }
+            return facts;
+        }
 
         // ── About section: populate from description (preferred) or intro_text ──
         async function loadLake() {
@@ -718,7 +728,7 @@
                 // Quick-facts strip lives at the bottom of the third about
                 // block (or hides when no per-lake facts are configured).
                 const factsEl = document.getElementById('ld-facts');
-                const facts = (window.LAKE_FACTS && window.LAKE_FACTS.length) ? window.LAKE_FACTS : [];
+                const facts = buildLakeFacts(lake);
                 if (factsEl && facts.length >= 3) {
                     factsEl.innerHTML = facts.map(f => `
                         <div class="ld-fact">
