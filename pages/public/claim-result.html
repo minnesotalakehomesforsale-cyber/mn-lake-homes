@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Listing claim | MN Lake Homes</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        body { background:#f6f8fb; font-family:'SF Pro Text',-apple-system,sans-serif; color:#0f172a; margin:0; }
+        .wrap { max-width:520px; margin:12vh auto; background:#fff; border:1px solid #e9eef5; border-radius:18px; padding:2.5rem 2rem; text-align:center; box-shadow:0 8px 30px rgba(16,24,40,0.06); }
+        .ico { width:56px; height:56px; border-radius:16px; display:grid; place-items:center; margin:0 auto 1.25rem; }
+        .ico.ok { background:#16a34a; } .ico.no { background:#dc2626; }
+        .ico svg { width:30px; height:30px; stroke:#fff; fill:none; stroke-width:2.6; }
+        h1 { font-size:1.5rem; font-weight:800; letter-spacing:-0.5px; margin:0 0 0.5rem; }
+        p { color:#475569; line-height:1.6; margin:0 0 1.5rem; }
+        .btn { display:inline-block; background:#1d6df2; color:#fff; text-decoration:none; font-weight:700; padding:0.8rem 1.5rem; border-radius:10px; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="ico ok" id="ico"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <h1 id="title">Listing claim</h1>
+        <p id="msg"></p>
+        <a class="btn" id="cta" href="/">Go to your dashboard</a>
+    </div>
+    <script>
+        var q = new URLSearchParams(location.search);
+        var ok = q.get('ok') === '1';
+        var msg = q.get('m') || (ok ? 'Your listing is claimed.' : 'We could not complete the claim.');
+        document.getElementById('msg').textContent = msg;
+        document.getElementById('title').textContent = ok ? 'You’re verified' : 'Claim not completed';
+        if (!ok) {
+            var ico = document.getElementById('ico'); ico.className = 'ico no';
+            ico.innerHTML = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+            document.getElementById('cta').textContent = 'Back to home';
+            document.getElementById('cta').href = '/';
+        } else {
+            // Signed in via the verification; send them to the right editor.
+            document.getElementById('cta').textContent = 'Finish your listing →';
+            document.getElementById('cta').href = '/pages/agent/dashboard.html';
+        }
+    </script>
+</body>
+</html>

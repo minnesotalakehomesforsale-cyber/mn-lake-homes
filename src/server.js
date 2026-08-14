@@ -64,6 +64,7 @@ app.use(cookieParser());
 // API ROUTES (Backend Node/Postgres Engine)
 // ==========================================
 app.use('/api/_diagnostic', require('./routes/diagnostic.routes'));   // T027: system health
+app.use('/api/claim', require('./routes/claim.routes'));             // DEV-10: self-claim listings
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/agents', require('./routes/agent.routes'));
 // More-specific /api/admin/cash-offers must mount BEFORE the general /api/admin
@@ -1590,6 +1591,11 @@ app.get('/businesses/:slug', async (req, res, next) => {
 // Public submission form page (vendor self-serve).
 app.get('/submit-business', (req, res) => {
     res.sendFile(path.join(PROJECT_ROOT, 'pages/public/submit-business.html'));
+});
+
+// DEV-10: self-claim verification result page.
+app.get('/claim-result', (req, res) => {
+    res.sendFile(path.join(PROJECT_ROOT, 'pages/public/claim-result.html'));
 });
 
 // Business-owner self-service flow (signup → Stripe → dashboard).
@@ -3587,6 +3593,25 @@ async function ensureTables() {
                 updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
             CREATE INDEX IF NOT EXISTS idx_lead_retry_due ON lead_retry_queue(next_attempt_at) WHERE resolved = FALSE;
+
+            -- Self-claim of an unclaimed agent/business listing (DEV-10). A claim
+            -- is email-verified, then admin-approved before it goes public. The
+            -- token grants edit rights ONLY to the one record it was issued for.
+            CREATE TABLE IF NOT EXISTS record_claims (
+                id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                target_type  VARCHAR(16) NOT NULL,          -- 'agent' | 'business'
+                target_id    UUID NOT NULL,
+                email        VARCHAR(255) NOT NULL,
+                token        TEXT NOT NULL UNIQUE,
+                status       VARCHAR(16) NOT NULL DEFAULT 'pending', -- pending|verified|approved|rejected|expired
+                user_id      UUID,                          -- set on verify (the account granted edit rights)
+                created_ip   VARCHAR(64),
+                created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                verified_at  TIMESTAMPTZ,
+                expires_at   TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '48 hours'
+            );
+            CREATE INDEX IF NOT EXISTS idx_record_claims_target ON record_claims(target_type, target_id);
+            CREATE INDEX IF NOT EXISTS idx_record_claims_email  ON record_claims(lower(email));
 
             -- Listing freshness + lifecycle (Phase 3/8): remember the first price
             -- we saw (to detect drops), an optional open-house datetime, and when
