@@ -1675,6 +1675,82 @@ const getBillingStatusReport = async (req, res) => {
 };
 
 /**
+ * GET /api/admin/subscriptions — A4 subscription-state dashboard.
+ * Every subscription (agent + business) with state, tier, lake, amount, next
+ * billing date, and a monthly-normalized MRR contribution. MRR = sum of
+ * monthly-equivalent amounts for billable states (active/trialing/past_due) —
+ * this is what reconciles against Stripe for the same period.
+ */
+const getSubscriptionRoster = async (req, res) => {
+    let stripe = null;
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (key) { try { stripe = require('stripe')(key); } catch (_) { stripe = null; } }
+    if (!stripe) return res.json({ configured: false, rows: [], totals: { mrr: 0, byState: {} } });
+
+    const MRR_STATES = new Set(['active', 'trialing', 'past_due']);
+    const monthly = (amount, interval) => amount == null ? 0 : (interval === 'year' ? amount / 12 : interval === 'week' ? amount * 4.345 : amount);
+
+    try {
+        const agents = await pool.query(
+            `SELECT a.id, a.stripe_subscription_id AS sub, a.paid_membership_code AS tier, a.tier_comped,
+                    u.full_name AS name, u.email,
+                    (SELECT l.name FROM agent_lakes al JOIN lakes l ON l.id = al.lake_id
+                      WHERE al.agent_id = a.id ORDER BY al.is_founder DESC NULLS LAST LIMIT 1) AS lake
+               FROM agents a JOIN users u ON u.id = a.user_id
+              WHERE a.stripe_subscription_id IS NOT NULL`);
+        const bizs = await pool.query(
+            `SELECT b.id, b.stripe_subscription_id AS sub, b.tier, b.tier_comped, b.name, u.email,
+                    (SELECT l.name FROM business_lakes bl JOIN lakes l ON l.id = bl.lake_id
+                      WHERE bl.business_id = b.id LIMIT 1) AS lake
+               FROM businesses b LEFT JOIN users u ON u.id = b.user_id
+              WHERE b.stripe_subscription_id IS NOT NULL`);
+        const all = [
+            ...agents.rows.map(r => ({ ...r, kind: 'agent' })),
+            ...bizs.rows.map(r => ({ ...r, kind: 'business' })),
+        ];
+
+        const rows = [];
+        const CHUNK = 5;
+        for (let i = 0; i < all.length; i += CHUNK) {
+            const slice = all.slice(i, i + CHUNK);
+            const results = await Promise.all(slice.map(r =>
+                stripe.subscriptions.retrieve(r.sub, { expand: ['items.data.price'] })
+                    .then(s => ({ r, s })).catch(e => ({ r, err: e.message }))));
+            for (const { r, s, err } of results) {
+                if (err) { rows.push({ kind: r.kind, name: r.name, email: r.email, tier: r.tier, lake: r.lake, state: 'lookup_error', amount: null, mrr: 0 }); continue; }
+                const price = s.items?.data?.[0]?.price;
+                const amount = price?.unit_amount != null ? price.unit_amount / 100 : null;
+                const interval = price?.recurring?.interval || null;
+                const state = s.cancel_at_period_end && s.status !== 'canceled' ? 'canceling' : s.status;
+                const mrr = MRR_STATES.has(s.status) ? monthly(amount, interval) : 0;
+                rows.push({
+                    kind: r.kind, name: r.name || '—', email: r.email || null,
+                    tier: r.tier || null, comped: !!r.tier_comped, lake: r.lake || null,
+                    state, amount, interval,
+                    current_period_end: s.current_period_end ? new Date(s.current_period_end * 1000).toISOString() : null,
+                    mrr: Math.round(mrr * 100) / 100,
+                });
+            }
+        }
+
+        // Free agents (published, no active sub, not comped-paying) — count them
+        // so the dashboard shows the whole funnel, not just payers.
+        const freeAgents = await pool.query(
+            `SELECT COUNT(*)::int AS n FROM agents
+              WHERE stripe_subscription_id IS NULL AND is_published = true`);
+
+        const byState = rows.reduce((m, r) => { m[r.state] = (m[r.state] || 0) + 1; return m; }, {});
+        byState.free = freeAgents.rows[0].n;
+        const mrrTotal = Math.round(rows.reduce((s, r) => s + (r.mrr || 0), 0) * 100) / 100;
+        rows.sort((a, b) => (b.mrr - a.mrr) || String(a.state).localeCompare(String(b.state)));
+        res.json({ configured: true, rows, totals: { mrr: mrrTotal, byState, count: rows.length } });
+    } catch (err) {
+        console.error('[getSubscriptionRoster]', err.message);
+        res.status(500).json({ error: 'Failed to build subscription roster.' });
+    }
+};
+
+/**
  * POST /api/admin/billing/agent/:id/resume
  * Reverses a "cancel at period end" on an agent's Stripe subscription and, if
  * the cancel had auto-unpublished them, restores them to published. Only works
@@ -3204,6 +3280,7 @@ module.exports = {
     getAgentDetail,
     getSubscriberBilling,
     getBillingStatusReport,
+    getSubscriptionRoster,
     resumeAgentSubscription,
     sendAgentBillingEmail,
     getAgentEmailHistory,
