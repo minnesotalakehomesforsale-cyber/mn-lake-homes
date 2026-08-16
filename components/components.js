@@ -1587,6 +1587,42 @@ function _lfUnlockScroll() {
 
     window.mnAttribution = function () { try { return JSON.parse(sessionStorage.getItem(KEY) || '{}'); } catch (_) { return {}; } };
 
+    // ── A/B test hook (T067) ────────────────────────────────────────────────
+    // Unblocks marketing to run experiments without a dev for each one. Give it
+    // an experiment key + weighted variants; it deterministically STICKS a
+    // visitor to one variant (localStorage), stamps the choice into the
+    // attribution bag as `exp_<key>` so it flows to the server on every lead
+    // (measurable in HubSpot / the leads table), and returns the chosen
+    // variant's config. Example:
+    //   var v = window.mnlhExp('hero_cta', [
+    //             { key: 'a', weight: 1, label: 'Get matched free' },
+    //             { key: 'b', weight: 1, label: 'Find my lake agent' }]);
+    //   button.textContent = v.label;
+    window.mnlhExp = function (key, variants) {
+        if (!key || !Array.isArray(variants) || !variants.length) return null;
+        var LS = 'mnlh_exp_' + key, chosen = null;
+        try { chosen = localStorage.getItem(LS); } catch (_) {}
+        if (!chosen || !variants.some(function (v) { return v.key === chosen; })) {
+            var total = variants.reduce(function (s, v) { return s + (v.weight || 1); }, 0);
+            var r = Math.random() * total, acc = 0;
+            for (var i = 0; i < variants.length; i++) { acc += (variants[i].weight || 1); if (r <= acc) { chosen = variants[i].key; break; } }
+            chosen = chosen || variants[0].key;
+            try { localStorage.setItem(LS, chosen); } catch (_) {}
+        }
+        // Stamp into the attribution bag so the variant rides along on lead
+        // submissions (fetch forms merge mnAttribution(); we also inject a hidden
+        // field into any current/future <form> so classic POST forms carry it).
+        var field = 'exp_' + key;
+        try { var bag = JSON.parse(sessionStorage.getItem(KEY) || '{}'); bag[field] = chosen; sessionStorage.setItem(KEY, JSON.stringify(bag)); } catch (_) {}
+        try {
+            Array.prototype.forEach.call(document.querySelectorAll('form'), function (f) {
+                if (f.querySelector('input[name="' + field + '"]')) return;
+                var inp = document.createElement('input'); inp.type = 'hidden'; inp.name = field; inp.value = chosen; f.appendChild(inp);
+            });
+        } catch (_) {}
+        return variants.filter(function (v) { return v.key === chosen; })[0] || variants[0];
+    };
+
     function injectForms(scope) {
         var attr = window.mnAttribution();
         var forms = (scope && scope.querySelectorAll ? scope : document).querySelectorAll('form');
