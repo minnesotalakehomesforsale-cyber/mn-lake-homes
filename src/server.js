@@ -5006,10 +5006,22 @@ async function seedTier2Content() {
         await pool.query(`CREATE TABLE IF NOT EXISTS seed_flags (key TEXT PRIMARY KEY, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
         const TEXT_FIELDS = ['seo_title', 'seo_description', 'intro_text', 'description', 'lifestyle_text', 'seasons_text', 'notable_features', 'real_estate_context'];
         const DNR_COLS = new Set(['max_depth_ft', 'mean_depth_ft', 'surface_acres', 'littoral_acres', 'water_clarity_ft', 'shoreline_miles', 'public_accesses']);
-        let applied = 0;
+        let applied = 0, created = 0;
         for (const entry of (LAKES || [])) {
             try {
                 if (!entry.slug) continue;
+                // Ensure the lakes row EXISTS — never skip silently. Missing rows
+                // are created from the slug/name/geo in the content file, with the
+                // hero left NULL (so the page 404s by rule until a hero is set,
+                // which is correct — better a 404 than a broken hero).
+                const [countyPart, regionPart] = String(entry.geo || '').split(';').map(s => s.trim());
+                const ins = await pool.query(
+                    `INSERT INTO lakes (slug, name, state, county, region, status)
+                     VALUES ($1, $2, 'MN', $3, $4, 'published')
+                     ON CONFLICT (slug) DO NOTHING RETURNING id`,
+                    [entry.slug, entry.name || entry.slug, countyPart || null, regionPart || null]);
+                if (ins.rowCount) { created++; console.warn(`[seed] tier2: CREATED lakes row '${entry.slug}' — hero is NULL, page 404s until a hero is set`); }
+
                 const hash = crypto.createHash('sha1').update(JSON.stringify(entry)).digest('hex').slice(0, 12);
                 const flag = `tier2_content:lakes:${entry.slug}:${hash}`;
                 if ((await pool.query(`SELECT 1 FROM seed_flags WHERE key = $1`, [flag])).rowCount) continue;
@@ -5026,10 +5038,29 @@ async function seedTier2Content() {
                 vals.push(entry.slug);
                 const r = await pool.query(`UPDATE lakes SET ${sets.join(', ')} WHERE slug = $${vals.length}`, vals);
                 if (r.rowCount) { await pool.query(`INSERT INTO seed_flags (key) VALUES ($1) ON CONFLICT DO NOTHING`, [flag]); applied++; }
-                else console.warn(`[seed] tier2: no lakes row for slug '${entry.slug}' (create it first)`);
-            } catch (e) { console.warn(`[seed] tier2 content ${entry.slug} skipped:`, e.message); }
+            } catch (e) { console.error(`[seed] tier2 content ${entry.slug} FAILED:`, e.message); }
         }
-        if (applied) console.log(`[seed] tier2 content applied to ${applied} lake(s)`);
+
+        // Report heroless Tier-2 lakes LOUDLY — as a fresh, current admin task
+        // (a to-do only the owner can close by sourcing images), not just a log.
+        try {
+            const slugs = (LAKES || []).map(l => l.slug);
+            const heroless = await pool.query(
+                `SELECT slug FROM lakes WHERE slug = ANY($1) AND COALESCE(hero_image_url, '') = '' ORDER BY slug`, [slugs]);
+            // Clear any stale open task, then re-file with the CURRENT list.
+            await pool.query(`UPDATE admin_tasks SET is_completed = TRUE WHERE category = 'tier2_hero' AND is_completed = FALSE`).catch(() => {});
+            if (heroless.rowCount) {
+                const list = heroless.rows.map(r => r.slug).join(', ');
+                console.warn(`[seed] ⚠️  TIER-2 LAKES NEED HERO IMAGES (${heroless.rowCount}): ${list}`);
+                await pool.query(
+                    `INSERT INTO admin_tasks (note, details, priority, category)
+                     VALUES ($1, $2, 'high', 'tier2_hero')`,
+                    [`Tier-2 lakes need hero images (${heroless.rowCount})`,
+                     `These Tier-2 lake pages 404 until a hero photo is set (correct — better a 404 than a broken hero). Source + upload a hero for each: ${list}`]).catch(() => {});
+            }
+        } catch (e) { console.warn('[seed] tier2 heroless report skipped:', e.message); }
+
+        if (applied || created) console.log(`[seed] tier2 content: ${applied} applied, ${created} row(s) created`);
     } catch (e) { console.warn('[seed] seedTier2Content skipped:', e.message); }
 }
 
