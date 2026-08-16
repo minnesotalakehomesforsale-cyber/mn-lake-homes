@@ -646,6 +646,28 @@ exports.handleWebhook = async (req, res) => {
         return res.status(400).json({ error: `Webhook signature verification failed.` });
     }
 
+    // ── Idempotency (T072) ──────────────────────────────────────────────────
+    // Stripe can deliver the same event more than once (retries, at-least-once
+    // delivery). Our handlers do idempotent DB writes, but side effects (emails,
+    // win-back enqueue, admin alerts) are NOT naturally dedup-safe. Claim each
+    // event.id exactly once: the first delivery inserts and proceeds; any
+    // duplicate hits the PK conflict, inserts nothing, and is acked without
+    // re-running the handler. Best-effort — if the ledger table is unavailable
+    // we fall through and process (matches prior behavior) rather than drop it.
+    try {
+        const claim = await pool.query(
+            `INSERT INTO stripe_events (event_id, type) VALUES ($1, $2)
+             ON CONFLICT (event_id) DO NOTHING`,
+            [event.id, event.type]
+        );
+        if (claim.rowCount === 0) {
+            console.log(`[Stripe Webhook] duplicate event ${event.id} (${event.type}) — already processed, skipping`);
+            return res.json({ received: true, duplicate: true });
+        }
+    } catch (e) {
+        console.warn('[Stripe Webhook] idempotency ledger unavailable, processing anyway:', e.message);
+    }
+
     try {
         switch (event.type) {
             // ── Checkout completed — activate subscription ──

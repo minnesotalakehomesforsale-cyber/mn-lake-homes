@@ -3052,6 +3052,17 @@ async function ensureTables() {
             CREATE INDEX IF NOT EXISTS idx_payments_user      ON payments(user_id, created_at DESC);
             CREATE INDEX IF NOT EXISTS idx_payments_invoice   ON payments(stripe_invoice_id);
             CREATE INDEX IF NOT EXISTS idx_payments_status    ON payments(status);
+
+            -- Stripe webhook idempotency ledger (T072): one row per processed
+            -- event.id. The webhook handler INSERTs on receipt; a duplicate
+            -- delivery hits the PK conflict and is skipped so emails / win-back
+            -- enqueues / admin alerts can't re-fire on redelivery.
+            CREATE TABLE IF NOT EXISTS stripe_events (
+                event_id     TEXT PRIMARY KEY,
+                type         TEXT,
+                processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_stripe_events_processed ON stripe_events(processed_at DESC);
         `);
 
         // Geographic tag system (see docs/geo-tags.md — lead routing by
