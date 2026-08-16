@@ -386,6 +386,11 @@
                     Lead Inbox
                     <span class="badge-count" id="lead-count" style="display:none;">0</span>
                 </button>
+                <button class="nav-tab" id="tab-btn-contacts" onclick="switchView('contacts')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    My Contacts
+                    <span class="badge-count" id="contacts-due-badge" style="display:none;">0</span>
+                </button>
                 <button class="nav-tab" id="tab-btn-messages" onclick="switchView('messages')">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                     Messages
@@ -533,6 +538,11 @@
                             <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></span>
                             <span class="t">Lead Inbox</span>
                             <span class="d" id="dash-leads-desc">Your active leads from the platform</span>
+                        </button>
+                        <button class="dash-card" onclick="switchView('contacts')" style="--ac:#7c3aed;">
+                            <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
+                            <span class="t">My Contacts</span>
+                            <span class="d">Your own buyers &amp; sellers + our leads, in one pipeline with next-step reminders.</span>
                         </button>
                         <a class="dash-card" href="/pages/agent/fact-sheet.html" target="_blank" rel="noopener" style="--ac:#0e7490;">
                             <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg></span>
@@ -905,6 +915,44 @@
                     <div id="leads-list">
                         <div style="text-align:center; padding: 3rem; color: #a0aec0;">Loading leads...</div>
                     </div>
+                </div>
+
+                <!-- ── CONTACTS VIEW (portal #12 — the light CRM) ── -->
+                <div id="view-contacts" class="view-card" style="display:none;">
+                    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:0.5rem;">
+                        <div>
+                            <h2 style="font-size:2.1rem; font-weight:800; margin:0 0 0.35rem;">My Contacts</h2>
+                            <p style="color:#718096; margin:0; max-width:560px;">Your own buyers &amp; sellers, plus every lead we route to you — one pipeline. Move them from New to Closed and never lose a next step.</p>
+                        </div>
+                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                            <button class="ct-btn ghost" onclick="openImportModal()">⬆ Import CSV</button>
+                            <button class="ct-btn" onclick="openContactModal()">+ Add contact</button>
+                        </div>
+                    </div>
+
+                    <div id="ct-nextstep" style="display:none; align-items:center; gap:0.85rem; flex-wrap:wrap; background:#fffaf0; border:1px solid #feebc8; border-radius:12px; padding:0.85rem 1.15rem; margin:1rem 0 1.25rem;">
+                        <span style="font-size:1.3rem;">⏰</span>
+                        <span id="ct-nextstep-text" style="font-weight:700; color:#7b341e;"></span>
+                        <button class="ct-chip" onclick="ctFilterDue()" style="margin-left:auto;">Show due</button>
+                    </div>
+
+                    <!-- Pipeline summary chips -->
+                    <div class="ct-stagebar" id="ct-stagebar"></div>
+
+                    <div class="lead-searchbar" style="display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center; margin:1rem 0;">
+                        <input id="ct-search" type="search" placeholder="Search contacts by name, email, phone, or area…" oninput="renderContacts()" style="flex:1; min-width:200px; box-sizing:border-box; font:inherit; font-size:0.9rem; padding:0.6rem 0.9rem; border:1px solid #e2e8f0; border-radius:9px; outline:none;">
+                        <select id="ct-stage-filter" onchange="renderContacts()" style="font:inherit; font-size:0.88rem; padding:0.6rem 0.8rem; border:1px solid #e2e8f0; border-radius:9px; background:#fff; cursor:pointer;">
+                            <option value="">All stages</option>
+                            <option value="new">New</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="showing">Showing</option>
+                            <option value="offer">Offer</option>
+                            <option value="closed">Closed</option>
+                            <option value="lost">Lost</option>
+                        </select>
+                    </div>
+
+                    <div id="ct-list"><div style="text-align:center; padding:3rem; color:#a0aec0;">Loading contacts…</div></div>
                 </div>
 
                 <!-- ── ACCOUNT VIEW (admin-controlled fields, read-only) ── -->
@@ -1382,6 +1430,8 @@
             document.getElementById('view-messages').style.display  = topView === 'messages'  ? 'flex' : 'none';
             document.body.classList.toggle('agent-chat-open', topView === 'messages');
             document.getElementById('view-properties').style.display = topView === 'properties' ? 'block' : 'none';
+            const vCon = document.getElementById('view-contacts');
+            if (vCon) vCon.style.display = topView === 'contacts' ? 'block' : 'none';
             const vRes = document.getElementById('view-resources');
             if (vRes) vRes.style.display = topView === 'resources' ? 'block' : 'none';
             const vRef = document.getElementById('view-referrals');
@@ -1404,7 +1454,10 @@
             document.getElementById('tab-btn-properties').classList.toggle('active', topView === 'properties');
             const refBtn = document.getElementById('tab-btn-referrals');
             if (refBtn) refBtn.classList.toggle('active', topView === 'referrals');
+            const conBtn = document.getElementById('tab-btn-contacts');
+            if (conBtn) conBtn.classList.toggle('active', topView === 'contacts');
 
+            if (topView === 'contacts') loadContacts();
             if (topView === 'referrals') fillReferrals();
             if (topView === 'leads') loadLeads();
             if (topView === 'messages') loadMessages();
@@ -3833,5 +3886,327 @@
     </aside>
 
     <global-footer></global-footer>
+
+    <!-- ── Contacts (light CRM) styles ─────────────────────────────────── -->
+    <style>
+        .ct-btn { font:inherit; font-weight:800; font-size:0.88rem; padding:0.6rem 1.15rem; border-radius:9px; border:0; cursor:pointer; background:#1d6df2; color:#fff; white-space:nowrap; }
+        .ct-btn.ghost { background:#fff; color:#1a202c; border:1px solid #e2e8f0; }
+        .ct-chip { font:inherit; font-weight:700; font-size:0.78rem; padding:0.35rem 0.8rem; border-radius:99px; border:1px solid #e2e8f0; background:#fff; color:#4a5568; cursor:pointer; }
+        .ct-stagebar { display:flex; flex-wrap:wrap; gap:0.5rem; }
+        .ct-stage-pill { display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.85rem; border-radius:99px; font-size:0.8rem; font-weight:700; background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; cursor:pointer; }
+        .ct-stage-pill .n { font-variant-numeric:tabular-nums; background:#fff; border-radius:99px; padding:0 0.4rem; font-size:0.75rem; }
+        .ct-stage-pill.active { background:#0f2b46; color:#fff; border-color:#0f2b46; }
+        .ct-card { display:flex; align-items:center; gap:1rem; background:#fff; border:1px solid #edf2f7; border-radius:12px; padding:0.9rem 1.1rem; margin-bottom:0.6rem; }
+        .ct-card:hover { border-color:#cbd8ea; }
+        .ct-main { flex:1; min-width:0; cursor:pointer; }
+        .ct-name { font-weight:800; color:#1a202c; font-size:0.98rem; }
+        .ct-sub { color:#718096; font-size:0.83rem; margin-top:0.15rem; display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; }
+        .ct-badge { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; padding:0.15rem 0.5rem; border-radius:5px; }
+        .ct-badge.buyer { background:#e6f0ff; color:#1a4fb0; } .ct-badge.seller { background:#e9f9ef; color:#276749; }
+        .ct-badge.renter { background:#fef3c7; color:#92400e; } .ct-badge.other { background:#edf2f7; color:#4a5568; }
+        .ct-badge.src { background:#eef2ff; color:#4338ca; }
+        .ct-due { font-weight:700; font-size:0.78rem; }
+        .ct-due.today { color:#2f855a; } .ct-due.over { color:#c05621; }
+        .ct-actions { display:flex; gap:0.35rem; align-items:center; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; }
+        .ct-q { display:inline-flex; align-items:center; gap:0.25rem; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.35rem 0.6rem; border-radius:7px; background:#f7f9fa; color:#4a5568; border:1px solid #edf2f7; }
+        .ct-q.call { background:#e9f9ef; color:#276749; border-color:#c6f0d4; }
+        .ct-stage-sel { font:inherit; font-size:0.8rem; font-weight:700; padding:0.35rem 0.5rem; border:1px solid #e2e8f0; border-radius:7px; background:#fff; cursor:pointer; color:#0f2b46; }
+        .ct-modal-back { display:none; position:fixed; inset:0; background:rgba(15,25,40,0.55); z-index:9500; align-items:center; justify-content:center; padding:1.25rem; }
+        .ct-modal-back.show { display:flex; }
+        .ct-modal { background:#fff; border-radius:16px; width:560px; max-width:100%; max-height:90vh; overflow:auto; box-shadow:0 24px 60px rgba(15,25,40,0.3); }
+        .ct-modal-h { display:flex; align-items:center; justify-content:space-between; padding:1.25rem 1.5rem; border-bottom:1px solid #edf2f7; position:sticky; top:0; background:#fff; }
+        .ct-modal-h h3 { margin:0; font-size:1.25rem; font-weight:800; }
+        .ct-modal-x { background:none; border:0; font-size:1.5rem; line-height:1; color:#a0aec0; cursor:pointer; }
+        .ct-modal-b { padding:1.35rem 1.5rem; }
+        .ct-field { margin-bottom:1rem; }
+        .ct-field label { display:block; font-size:0.78rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#718096; margin-bottom:0.35rem; }
+        .ct-field input, .ct-field select, .ct-field textarea { width:100%; box-sizing:border-box; font:inherit; font-size:0.92rem; padding:0.6rem 0.75rem; border:1px solid #e2e8f0; border-radius:9px; outline:none; }
+        .ct-field input:focus, .ct-field select:focus, .ct-field textarea:focus { border-color:#1d6df2; box-shadow:0 0 0 3px rgba(29,109,242,0.12); }
+        .ct-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0.85rem; }
+        .ct-notes { border-top:1px solid #edf2f7; margin-top:0.5rem; padding-top:1rem; }
+        .ct-note { background:#f7f9fa; border:1px solid #edf2f7; border-radius:9px; padding:0.6rem 0.8rem; margin-bottom:0.5rem; font-size:0.88rem; color:#2d3748; }
+        .ct-note .t { color:#a0aec0; font-size:0.72rem; margin-top:0.3rem; }
+        .ct-msg { font-size:0.85rem; margin-top:0.75rem; }
+        @media (max-width:560px){ .ct-grid2{grid-template-columns:1fr;} .ct-card{flex-wrap:wrap;} }
+    </style>
+
+    <!-- Add/Edit + detail modal -->
+    <div class="ct-modal-back" id="ct-modal-back">
+        <div class="ct-modal">
+            <div class="ct-modal-h"><h3 id="ct-modal-title">Add contact</h3><button class="ct-modal-x" onclick="closeContactModal()">×</button></div>
+            <div class="ct-modal-b">
+                <input type="hidden" id="ct-id">
+                <div class="ct-grid2">
+                    <div class="ct-field"><label>Name *</label><input id="ct-f-name" placeholder="Jane Buyer"></div>
+                    <div class="ct-field"><label>Type</label><select id="ct-f-type"><option value="buyer">Buyer</option><option value="seller">Seller</option><option value="renter">Renter</option><option value="other">Other</option></select></div>
+                </div>
+                <div class="ct-grid2">
+                    <div class="ct-field"><label>Email</label><input id="ct-f-email" type="email" placeholder="jane@email.com"></div>
+                    <div class="ct-field"><label>Phone</label><input id="ct-f-phone" placeholder="(612) 555-0000"></div>
+                </div>
+                <div class="ct-grid2">
+                    <div class="ct-field"><label>Stage</label><select id="ct-f-stage"><option value="new">New</option><option value="contacted">Contacted</option><option value="showing">Showing</option><option value="offer">Offer</option><option value="closed">Closed</option><option value="lost">Lost</option></select></div>
+                    <div class="ct-field"><label>Area / market</label><input id="ct-f-area" placeholder="Gull Lake"></div>
+                </div>
+                <div class="ct-grid2">
+                    <div class="ct-field"><label>Next step — date</label><input id="ct-f-nextdate" type="date"></div>
+                    <div class="ct-field"><label>Next step — what</label><input id="ct-f-nextnote" placeholder="Call to schedule a showing"></div>
+                </div>
+                <div id="ct-notes-wrap" style="display:none;" class="ct-notes">
+                    <label style="display:block; font-size:0.78rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#718096; margin-bottom:0.5rem;">Notes &amp; activity</label>
+                    <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem;">
+                        <input id="ct-note-input" placeholder="Add a note…" style="flex:1; box-sizing:border-box; font:inherit; font-size:0.9rem; padding:0.55rem 0.7rem; border:1px solid #e2e8f0; border-radius:9px;">
+                        <button class="ct-btn" onclick="addContactNote()" style="padding:0.55rem 1rem;">Add</button>
+                    </div>
+                    <div id="ct-notes-list"></div>
+                </div>
+                <div id="ct-modal-msg" class="ct-msg"></div>
+            </div>
+            <div class="ct-modal-h" style="border-top:1px solid #edf2f7; border-bottom:0; position:static; justify-content:space-between;">
+                <button id="ct-delete-btn" class="ct-chip" style="display:none; color:#c53030; border-color:#f7c6c6;" onclick="deleteContact()">Delete</button>
+                <div style="display:flex; gap:0.5rem; margin-left:auto;">
+                    <button class="ct-btn ghost" onclick="closeContactModal()">Cancel</button>
+                    <button class="ct-btn" id="ct-save-btn" onclick="saveContact()">Save contact</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CSV import modal -->
+    <div class="ct-modal-back" id="ct-import-back">
+        <div class="ct-modal" style="width:520px;">
+            <div class="ct-modal-h"><h3>Import contacts (CSV)</h3><button class="ct-modal-x" onclick="closeImportModal()">×</button></div>
+            <div class="ct-modal-b">
+                <p style="color:#718096; font-size:0.9rem; margin:0 0 1rem; line-height:1.55;">Export from your CRM, Google Contacts, or a spreadsheet and drop it here. We map <b>Name</b> (or First/Last), <b>Email</b>, <b>Phone</b>, <b>Type</b>, and <b>Area</b> columns automatically. Everyone comes in at the <b>New</b> stage.</p>
+                <div class="ct-field"><label>Upload a .csv file</label><input id="ct-import-file" type="file" accept=".csv,text/csv" onchange="ctFilePicked(event)"></div>
+                <div class="ct-field"><label>…or paste CSV</label><textarea id="ct-import-text" rows="7" placeholder="name,email,phone,type,area&#10;Jane Buyer,jane@email.com,6125550000,buyer,Gull Lake"></textarea></div>
+                <div id="ct-import-msg" class="ct-msg"></div>
+            </div>
+            <div class="ct-modal-h" style="border-top:1px solid #edf2f7; border-bottom:0; position:static; justify-content:flex-end; gap:0.5rem;">
+                <button class="ct-btn ghost" onclick="closeImportModal()">Cancel</button>
+                <button class="ct-btn" id="ct-import-btn" onclick="runImport()">Import</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── Contacts (light CRM) ─────────────────────────────────────────
+        let _contacts = [], _contactCounts = {}, _ctFilterDueOnly = false;
+        const CT_STAGES = [['new','New'],['contacted','Contacted'],['showing','Showing'],['offer','Offer'],['closed','Closed'],['lost','Lost']];
+        const ctEsc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+        async function loadContacts() {
+            const host = document.getElementById('ct-list');
+            try {
+                const r = await fetch('/api/agents/me/contacts', { credentials: 'include' });
+                if (!r.ok) throw new Error('load failed');
+                const d = await r.json();
+                _contacts = d.contacts || [];
+                _contactCounts = d.counts || {};
+                updateContactsBadge(d.next_steps);
+                renderStageBar();
+                renderContacts();
+            } catch (e) {
+                if (host) host.innerHTML = '<div style="text-align:center;padding:3rem;color:#c53030;">Couldn\'t load contacts. Refresh to try again.</div>';
+            }
+        }
+
+        function updateContactsBadge(ns) {
+            const due = (ns?.due_today || 0) + (ns?.overdue || 0);
+            const badge = document.getElementById('contacts-due-badge');
+            if (badge) { if (due > 0) { badge.textContent = due; badge.style.display = 'inline-block'; } else badge.style.display = 'none'; }
+            const bar = document.getElementById('ct-nextstep');
+            if (bar) {
+                if (due > 0) {
+                    bar.style.display = 'flex';
+                    const bits = [];
+                    if (ns.overdue) bits.push(`${ns.overdue} overdue`);
+                    if (ns.due_today) bits.push(`${ns.due_today} due today`);
+                    document.getElementById('ct-nextstep-text').textContent = `You have ${bits.join(' · ')} follow-up${due === 1 ? '' : 's'}.`;
+                } else bar.style.display = 'none';
+            }
+        }
+
+        function renderStageBar() {
+            const el = document.getElementById('ct-stagebar');
+            if (!el) return;
+            const active = document.getElementById('ct-stage-filter')?.value || '';
+            el.innerHTML = CT_STAGES.map(([k, label]) =>
+                `<span class="ct-stage-pill ${active === k ? 'active' : ''}" onclick="ctPickStage('${k}')">${label} <span class="n">${_contactCounts[k] || 0}</span></span>`
+            ).join('');
+        }
+        function ctPickStage(k) {
+            const sel = document.getElementById('ct-stage-filter');
+            sel.value = (sel.value === k) ? '' : k;
+            _ctFilterDueOnly = false;
+            renderStageBar(); renderContacts();
+        }
+        function ctFilterDue() { _ctFilterDueOnly = true; document.getElementById('ct-stage-filter').value = ''; renderStageBar(); renderContacts(); }
+
+        function renderContacts() {
+            const host = document.getElementById('ct-list');
+            if (!host) return;
+            const q = (document.getElementById('ct-search')?.value || '').toLowerCase().trim();
+            const stage = document.getElementById('ct-stage-filter')?.value || '';
+            const todayStr = new Date().toISOString().slice(0, 10);
+            let list = _contacts.slice();
+            if (stage) list = list.filter(c => c.stage === stage);
+            if (_ctFilterDueOnly) list = list.filter(c => c.next_step_at && c.next_step_at.slice(0, 10) <= todayStr);
+            if (q) list = list.filter(c => [c.name, c.email, c.phone, c.area].some(v => (v || '').toLowerCase().includes(q)));
+
+            if (!_contacts.length) {
+                host.innerHTML = `<div style="background:#fff;border:1px solid #edf2f7;border-radius:14px;padding:3rem 2rem;text-align:center;">
+                    <div style="font-size:2rem;margin-bottom:0.6rem;">👥</div>
+                    <p style="font-weight:800;color:#1a202c;font-size:1.1rem;margin:0 0 0.35rem;">Build your pipeline</p>
+                    <p style="color:#718096;margin:0 0 1.4rem;max-width:440px;margin-left:auto;margin-right:auto;">Add your own buyers and sellers, or import them from a CSV. Every lead we route to you shows up here automatically.</p>
+                    <div style="display:flex;gap:0.6rem;justify-content:center;flex-wrap:wrap;">
+                        <button class="ct-btn" onclick="openContactModal()">+ Add your first contact</button>
+                        <button class="ct-btn ghost" onclick="openImportModal()">⬆ Import CSV</button>
+                    </div>
+                </div>`;
+                return;
+            }
+            if (!list.length) { host.innerHTML = '<div style="text-align:center;padding:2.5rem;color:#a0aec0;">No contacts match that filter.</div>'; return; }
+
+            host.innerHTML = list.map(c => {
+                const typ = ['buyer','seller','renter','other'].includes(c.contact_type) ? c.contact_type : 'other';
+                const q = [];
+                if (c.phone) { q.push(`<a class="ct-q call" href="tel:${ctEsc(c.phone)}" onclick="event.stopPropagation()">📞 Call</a>`); q.push(`<a class="ct-q" href="sms:${ctEsc(c.phone)}" onclick="event.stopPropagation()">💬 Text</a>`); }
+                if (c.email) q.push(`<a class="ct-q" href="mailto:${ctEsc(c.email)}" onclick="event.stopPropagation()">✉️</a>`);
+                let due = '';
+                if (c.next_step_at) {
+                    const ds = c.next_step_at.slice(0, 10);
+                    const over = ds < new Date().toISOString().slice(0, 10);
+                    const today = ds === new Date().toISOString().slice(0, 10);
+                    if (over || today) due = `<span class="ct-due ${over ? 'over' : 'today'}">⏰ ${over ? 'Overdue' : 'Today'}${c.next_step_note ? ': ' + ctEsc(c.next_step_note) : ''}</span>`;
+                    else due = `<span class="ct-due" style="color:#a0aec0;">⏰ ${ds}</span>`;
+                }
+                const sub = [c.email, c.phone, c.area].filter(Boolean).map(ctEsc).join(' · ');
+                const stageSel = `<select class="ct-stage-sel" onclick="event.stopPropagation()" onchange="ctSetStage('${c.id}', this.value)">${CT_STAGES.map(([k, l]) => `<option value="${k}" ${c.stage === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+                return `<div class="ct-card">
+                    <div class="ct-main" onclick="openContactModal(${JSON.stringify(c).replace(/"/g, '&quot;').replace(/'/g, '&#39;')})">
+                        <div class="ct-name">${ctEsc(c.name)} <span class="ct-badge ${typ}">${typ}</span> ${c.source === 'platform_lead' ? '<span class="ct-badge src">platform lead</span>' : ''}</div>
+                        <div class="ct-sub">${sub || 'No contact info yet'} ${due} ${c.note_count ? `· 📝 ${c.note_count}` : ''}</div>
+                    </div>
+                    <div class="ct-actions">${q.join('')} ${stageSel}</div>
+                </div>`;
+            }).join('');
+        }
+
+        async function ctSetStage(id, stage) {
+            try {
+                await fetch(`/api/agents/me/contacts/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ stage }) });
+                const c = _contacts.find(x => x.id === id); if (c) c.stage = stage;
+                // Recompute stage counts locally.
+                _contactCounts = _contacts.reduce((m, x) => (m[x.stage] = (m[x.stage] || 0) + 1, m), {});
+                renderStageBar();
+            } catch (_) {}
+        }
+
+        // ── Add/Edit/Detail modal ────────────────────────────────────────
+        function openContactModal(c) {
+            const isEdit = !!(c && c.id);
+            document.getElementById('ct-modal-title').textContent = isEdit ? 'Contact' : 'Add contact';
+            document.getElementById('ct-id').value = isEdit ? c.id : '';
+            document.getElementById('ct-f-name').value  = c?.name || '';
+            document.getElementById('ct-f-type').value  = c?.contact_type || 'buyer';
+            document.getElementById('ct-f-email').value = c?.email || '';
+            document.getElementById('ct-f-phone').value = c?.phone || '';
+            document.getElementById('ct-f-stage').value = c?.stage || 'new';
+            document.getElementById('ct-f-area').value  = c?.area || '';
+            document.getElementById('ct-f-nextdate').value = c?.next_step_at ? c.next_step_at.slice(0, 10) : '';
+            document.getElementById('ct-f-nextnote').value = c?.next_step_note || '';
+            document.getElementById('ct-modal-msg').textContent = '';
+            document.getElementById('ct-delete-btn').style.display = isEdit ? 'inline-block' : 'none';
+            document.getElementById('ct-notes-wrap').style.display = isEdit ? 'block' : 'none';
+            document.getElementById('ct-note-input').value = '';
+            if (isEdit) loadContactNotes(c.id); else document.getElementById('ct-notes-list').innerHTML = '';
+            document.getElementById('ct-modal-back').classList.add('show');
+        }
+        function closeContactModal() { document.getElementById('ct-modal-back').classList.remove('show'); }
+
+        async function saveContact() {
+            const id = document.getElementById('ct-id').value;
+            const payload = {
+                name: document.getElementById('ct-f-name').value.trim(),
+                contact_type: document.getElementById('ct-f-type').value,
+                email: document.getElementById('ct-f-email').value.trim(),
+                phone: document.getElementById('ct-f-phone').value.trim(),
+                stage: document.getElementById('ct-f-stage').value,
+                area: document.getElementById('ct-f-area').value.trim(),
+                next_step_at: document.getElementById('ct-f-nextdate').value || null,
+                next_step_note: document.getElementById('ct-f-nextnote').value.trim(),
+            };
+            const msg = document.getElementById('ct-modal-msg');
+            if (!payload.name) { msg.style.color = '#c53030'; msg.textContent = 'A name is required.'; return; }
+            const btn = document.getElementById('ct-save-btn'); btn.disabled = true; btn.textContent = 'Saving…';
+            try {
+                const url = id ? `/api/agents/me/contacts/${id}` : '/api/agents/me/contacts';
+                const r = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+                if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || 'Save failed'); }
+                closeContactModal(); loadContacts();
+            } catch (e) { msg.style.color = '#c53030'; msg.textContent = e.message; }
+            finally { btn.disabled = false; btn.textContent = 'Save contact'; }
+        }
+
+        async function deleteContact() {
+            const id = document.getElementById('ct-id').value;
+            if (!id || !confirm('Remove this contact from your list?')) return;
+            try {
+                await fetch(`/api/agents/me/contacts/${id}`, { method: 'DELETE', credentials: 'include' });
+                closeContactModal(); loadContacts();
+            } catch (_) {}
+        }
+
+        async function loadContactNotes(id) {
+            const host = document.getElementById('ct-notes-list');
+            host.innerHTML = '<div style="color:#a0aec0;font-size:0.85rem;">Loading notes…</div>';
+            try {
+                const r = await fetch(`/api/agents/me/contacts/${id}/notes`, { credentials: 'include' });
+                const notes = r.ok ? await r.json() : [];
+                host.innerHTML = notes.length
+                    ? notes.map(n => `<div class="ct-note">${ctEsc(n.body)}<div class="t">${new Date(n.created_at).toLocaleString()}</div></div>`).join('')
+                    : '<div style="color:#a0aec0;font-size:0.85rem;">No notes yet — jot the first one above.</div>';
+            } catch (_) { host.innerHTML = ''; }
+        }
+        async function addContactNote() {
+            const id = document.getElementById('ct-id').value;
+            const input = document.getElementById('ct-note-input');
+            const body = input.value.trim();
+            if (!id || !body) return;
+            input.value = '';
+            try {
+                await fetch(`/api/agents/me/contacts/${id}/notes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ body }) });
+                loadContactNotes(id);
+                const c = _contacts.find(x => x.id === id); if (c) { c.note_count = (c.note_count || 0) + 1; renderContacts(); }
+            } catch (_) {}
+        }
+
+        // ── CSV import ───────────────────────────────────────────────────
+        function openImportModal() { document.getElementById('ct-import-text').value=''; document.getElementById('ct-import-msg').textContent=''; document.getElementById('ct-import-back').classList.add('show'); }
+        function closeImportModal() { document.getElementById('ct-import-back').classList.remove('show'); }
+        function ctFilePicked(e) {
+            const f = e.target.files?.[0]; if (!f) return;
+            const reader = new FileReader();
+            reader.onload = () => { document.getElementById('ct-import-text').value = reader.result; };
+            reader.readAsText(f);
+        }
+        async function runImport() {
+            const csv = document.getElementById('ct-import-text').value;
+            const msg = document.getElementById('ct-import-msg');
+            if (!csv.trim()) { msg.style.color = '#c53030'; msg.textContent = 'Paste some CSV or choose a file first.'; return; }
+            const btn = document.getElementById('ct-import-btn'); btn.disabled = true; btn.textContent = 'Importing…';
+            try {
+                const r = await fetch('/api/agents/me/contacts/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ csv }) });
+                const d = await r.json();
+                if (!r.ok) throw new Error(d.error || 'Import failed');
+                msg.style.color = '#276749';
+                msg.textContent = `Imported ${d.imported} contact${d.imported === 1 ? '' : 's'}${d.skipped ? `, skipped ${d.skipped}` : ''}.`;
+                loadContacts();
+                setTimeout(closeImportModal, 1200);
+            } catch (e) { msg.style.color = '#c53030'; msg.textContent = e.message; }
+            finally { btn.disabled = false; btn.textContent = 'Import'; }
+        }
+    </script>
 </body>
 </html>
