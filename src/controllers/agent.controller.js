@@ -793,6 +793,63 @@ const getMyRoi = async (req, res) => {
     } catch (e) { console.error('[getMyRoi]', e.message); res.status(500).json({ error: 'Failed to load ROI.' }); }
 };
 
+// GET /api/agents/me/reach — "reach" stats that rise even with zero leads
+// (portal #5 / a lite #1): profile views + total views on the lake pages this
+// agent serves, over the last 30 days with a 30-day-prior trend. Sourced from
+// our own page_views table (no GA4/Search Console dependency), so it works now.
+const getMyReach = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const ar = await pool.query(
+            `SELECT id AS agent_id, slug FROM agents WHERE user_id = $1 LIMIT 1`, [userId]);
+        if (!ar.rowCount) return res.status(403).json({ error: 'No agent profile yet.' });
+        const { agent_id, slug } = ar.rows[0];
+
+        // The lakes this agent serves (direct assignments). Their public pages
+        // are /lakes/<slug>. If none are assigned, lake reach is 0 (with a
+        // reason the UI can show) rather than a misleading number.
+        const lakesRes = await pool.query(
+            `SELECT l.slug FROM agent_lakes al JOIN lakes l ON l.id = al.lake_id
+              WHERE al.agent_id = $1 AND l.slug IS NOT NULL`, [agent_id]);
+        const lakePaths = lakesRes.rows.map(r => '/lakes/' + r.slug);
+
+        // Window counts: last 30 days vs the 30 days before that (for a trend).
+        const profilePath = '/agents/' + slug;
+        const pv = await pool.query(
+            `SELECT
+                COUNT(*) FILTER (WHERE created_at >= now() - interval '30 days')::int AS cur,
+                COUNT(*) FILTER (WHERE created_at >= now() - interval '60 days'
+                                   AND created_at <  now() - interval '30 days')::int AS prev
+               FROM page_views WHERE path = $1`, [profilePath]);
+
+        let lakeCur = 0, lakePrev = 0;
+        if (lakePaths.length) {
+            const lv = await pool.query(
+                `SELECT
+                    COUNT(*) FILTER (WHERE created_at >= now() - interval '30 days')::int AS cur,
+                    COUNT(*) FILTER (WHERE created_at >= now() - interval '60 days'
+                                       AND created_at <  now() - interval '30 days')::int AS prev
+                   FROM page_views WHERE path = ANY($1)`, [lakePaths]);
+            lakeCur = lv.rows[0].cur; lakePrev = lv.rows[0].prev;
+        }
+
+        const leadsRes = await pool.query(
+            `SELECT COUNT(*)::int AS active FROM leads
+              WHERE agent_id = $1 AND deleted_at IS NULL AND status NOT IN ('closed','archived')`,
+            [agent_id]);
+
+        const trend = (cur, prev) => prev > 0 ? Math.round(((cur - prev) / prev) * 100) : (cur > 0 ? 100 : 0);
+        res.json({
+            profile_views_30d: pv.rows[0].cur,
+            profile_views_trend: trend(pv.rows[0].cur, pv.rows[0].prev),
+            lake_page_views_30d: lakeCur,
+            lake_page_views_trend: trend(lakeCur, lakePrev),
+            lakes_served: lakePaths.length,
+            active_leads: leadsRes.rows[0].active,
+        });
+    } catch (e) { console.error('[getMyReach]', e.message); res.status(500).json({ error: 'Failed to load reach.' }); }
+};
+
 // GET /api/agents/admin/at-risk — churn-risk list for the admin cockpit.
 const getAtRiskAgents = async (req, res) => {
     if (!['admin', 'super_admin'].includes(req.user?.role)) return res.status(403).json({ error: 'Admin only.' });
@@ -1161,6 +1218,7 @@ module.exports = {
     updateMyProfile,
     getMyLeads,
     getMyRoi,
+    getMyReach,
     getUpgradeStatus,
     getMyReferrals,
     getMyLeaderboard,
