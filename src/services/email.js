@@ -579,6 +579,19 @@ function sendLeadConfirmation(lead) {
         };
     })();
 
+    // B3: never promise agent contact when the lead isn't actually assigned
+    // (held / unqualified). Soften the firm "within 24 hours / one business day"
+    // language to a match-in-progress promise the platform can always keep.
+    if (lead.matched === false) {
+        copy.preheader = magnet
+            ? `Your guide is attached — we're matching you with a local lake specialist.`
+            : `We've got your request and are matching you with a local lake specialist.`;
+        copy.body = copy.body
+            .replace(/expect a call or email within one business day[^<]*/i, "we'll follow up as soon as we've matched you with the right local specialist.")
+            .replace(/they'll reach out within one business day[^<]*/i, "they'll be in touch as soon as we've matched you with a local listing specialist.")
+            .replace(/A local Minnesota lake home specialist will reach out within 24 hours to discuss your goals and next steps\./i, "We're matching you with a local Minnesota lake home specialist and will follow up as soon as we have the right person for your lake.");
+    }
+
     // When a magnet is present, the primary CTA becomes the download
     // button and the original CTA gets demoted into a secondary text link
     // at the bottom of the email body.

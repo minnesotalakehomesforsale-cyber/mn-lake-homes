@@ -292,6 +292,27 @@ const createLead = async (req, res) => {
             magnet = await getLeadMagnetForType(enumType).catch(() => null);
         }
 
+        // B3: only promise "an agent will reach out" when we can actually back
+        // it — a direct assignment, or a paying agent already covering this lake.
+        // Held (qualified-but-unserved) and unqualified leads get a neutral
+        // confirmation so we never make a promise conditional on an assignment
+        // that hasn't happened.
+        let willMatch = !!finalAgentId;
+        if (!willMatch && leadGrade !== 'Unqualified' && leadLakeId) {
+            try {
+                const pa = await pool.query(
+                    `SELECT 1 FROM agents a JOIN users u ON u.id = a.user_id
+                       LEFT JOIN memberships m ON m.id = a.membership_id
+                      WHERE a.is_published = TRUE AND a.deleted_at IS NULL
+                        AND ((COALESCE(m.code,'free') <> 'free') OR a.tier_comped)
+                        AND (EXISTS (SELECT 1 FROM agent_lakes al WHERE al.agent_id = a.id AND al.lake_id = $1)
+                          OR EXISTS (SELECT 1 FROM user_tags ut JOIN lake_tags lt ON lt.tag_id = ut.tag_id
+                                      WHERE ut.user_id = a.user_id AND lt.lake_id = $1))
+                      LIMIT 1`, [leadLakeId]);
+                willMatch = pa.rowCount > 0;
+            } catch (_) { /* conservative: leave willMatch false */ }
+        }
+
         // Fire-and-forget lead confirmation email (only if they provided one)
         if (email) {
             emailService.sendLeadConfirmation({
@@ -300,6 +321,7 @@ const createLead = async (req, res) => {
                 full_name:  name,
                 lead_type:  enumType,
                 magnet,
+                matched: willMatch,
             });
         }
 
@@ -442,6 +464,20 @@ const createLead = async (req, res) => {
         if (newLeadId && (addressForRouting || leadLakeId)) {
             (async () => {
                 try {
+                    // B1/B3: Unqualified leads are never routed to an agent (they'd
+                    // burn the A/B promise and skew counts). They're stored + synced
+                    // for the record; nothing else happens here.
+                    if (leadGrade === 'Unqualified') {
+                        logActivity({
+                            event_type: 'lead.route_skipped_unqualified',
+                            event_scope: 'lead',
+                            actor: { type: 'system', label: 'lead-router' },
+                            target: { type: 'lead', id: newLeadId, label: `${name} (${enumType})` },
+                            details: { reason: unqualReason },
+                        });
+                        return;
+                    }
+
                     const geo = addressForRouting ? await geocodeAddress(addressForRouting) : null;
 
                     // Record which town tags matched (+ distance) for audit — only
@@ -480,17 +516,43 @@ const createLead = async (req, res) => {
 
                     const pick = await routeLead({ lat: geo?.lat, lng: geo?.lng, lakeId: leadLakeId, wantFounder });
                     if (!pick) {
-                        // No eligible agent in any nearby tag — lead stays
-                        // unassigned. Log it AND email admin so it doesn't
-                        // sit in the queue silently (matched-area tags
-                        // existed but no active agent claimed them).
+                        // B3: a QUALIFIED (A/B) lead with no active paying agent on
+                        // its lake goes to the HOLD queue — not dropped. This is a
+                        // sales trigger: someone is searching a lake we can't serve
+                        // yet. Flag it, stamp held_at, and alert immediately with
+                        // lake + intent + price band. It auto-releases the moment a
+                        // paying agent activates on that lake (see releaseHeldLeads).
+                        if (leadGrade === 'A' || leadGrade === 'B') {
+                            await pool.query(
+                                `UPDATE leads SET held_no_agent = TRUE, held_at = COALESCE(held_at, NOW()),
+                                        lead_status = 'held_no_agent', updated_at = NOW()
+                                  WHERE id = $1`, [newLeadId]).catch(() => {});
+                            logActivity({
+                                event_type: 'lead.held_no_agent',
+                                event_scope: 'lead',
+                                severity: 'warning',
+                                actor: { type: 'system', label: 'lead-router' },
+                                target: { type: 'lead', id: newLeadId, label: `${name} (${enumType})` },
+                                details: { grade: leadGrade, lake: leadLakeName || qualTargetLake, intent: qualIntent, price_band: qualPriceBand, reason: 'no_paying_agent' },
+                            });
+                            emailService.sendAdminLeadNotification({
+                                name, first_name: firstName, email, phone, type: enumType,
+                                source: `⭐ OPPORTUNITY LAKE · grade ${leadGrade} · HELD (no paying agent)`,
+                                notes: `SALES TRIGGER — a grade-${leadGrade} lead is searching ${leadLakeName || qualTargetLake || 'a lake'} and we have NO paying agent there.\n`
+                                     + `Lake: ${leadLakeName || qualTargetLake || '—'} · Intent: ${qualIntent || '—'} · Price band: ${qualPriceBand || '—'}\n`
+                                     + `Call an agent on this lake today — the lead auto-routes to them the moment they activate.\n\n${notes || ''}`.trim(),
+                            });
+                            return;
+                        }
+                        // Grade C (or ungraded) with no agent — stays unassigned as
+                        // before; log + notify so it doesn't sit silently.
                         logActivity({
                             event_type: 'lead.route_unassigned',
                             event_scope: 'lead',
                             severity: 'warning',
                             actor: { type: 'system', label: 'lead-router' },
                             target: { type: 'lead', id: newLeadId, label: `${name} (${enumType})` },
-                            details: { lat: geo?.lat, lng: geo?.lng, lake_id: leadLakeId, reason: 'no_eligible_agent' },
+                            details: { lat: geo?.lat, lng: geo?.lng, lake_id: leadLakeId, reason: 'no_eligible_agent', grade: leadGrade },
                         });
                         emailService.sendAdminLeadNotification({
                             name,
@@ -718,4 +780,66 @@ const createPartialLead = async (req, res) => {
     }
 };
 
-module.exports = { createLead, createPartialLead, getAdminLeads, getMyLeads };
+/**
+ * releaseHeldLeads(agentId) — B3 auto-release. When an agent becomes an active
+ * PAYING (or comped) published agent, any held_no_agent leads on the lakes they
+ * now cover route to them, newest-first, with routed_at stamped so the hold
+ * delay is measurable. Best-effort; safe to call on every activation event.
+ */
+async function releaseHeldLeads(agentId) {
+    if (!agentId) return { released: 0 };
+    try {
+        const ar = await pool.query(
+            `SELECT a.id, a.user_id, a.is_published, u.email,
+                    COALESCE(a.display_name, u.full_name) AS name,
+                    ((COALESCE(m.code,'free') <> 'free') OR a.tier_comped) AS paying
+               FROM agents a JOIN users u ON u.id = a.user_id
+               LEFT JOIN memberships m ON m.id = a.membership_id
+              WHERE a.id = $1 LIMIT 1`, [agentId]);
+        const ag = ar.rows[0];
+        if (!ag || !ag.paying || !ag.is_published) return { released: 0 };
+
+        // Lakes this agent covers (direct agent_lakes OR a shared geo tag).
+        const lakes = await pool.query(
+            `SELECT DISTINCT l.id, l.slug FROM lakes l
+              WHERE EXISTS (SELECT 1 FROM agent_lakes al WHERE al.agent_id = $1 AND al.lake_id = l.id)
+                 OR EXISTS (SELECT 1 FROM user_tags ut JOIN lake_tags lt ON lt.tag_id = ut.tag_id
+                             WHERE ut.user_id = $2 AND lt.lake_id = l.id)`,
+            [agentId, ag.user_id]);
+        if (!lakes.rows.length) return { released: 0 };
+        const lakeIds = lakes.rows.map(r => r.id);
+        const lakeSlugs = lakes.rows.map(r => r.slug).filter(Boolean);
+
+        // Held leads on those lakes, newest-first.
+        const held = await pool.query(
+            `SELECT id, full_name, email, phone, lead_type
+               FROM leads
+              WHERE held_no_agent = TRUE AND deleted_at IS NULL
+                AND (lake_id = ANY($1::uuid[]) OR landing_page_lake = ANY($2::text[]))
+              ORDER BY created_at DESC LIMIT 200`,
+            [lakeIds, lakeSlugs.length ? lakeSlugs : ['']]);
+        let released = 0;
+        for (const lead of held.rows) {
+            await pool.query(
+                `UPDATE leads SET agent_id = $1, assigned_user_id = $2, held_no_agent = FALSE,
+                        lead_status = 'contacted', pipeline_status = 'routed',
+                        assigned_at = NOW(), routed_at = COALESCE(routed_at, NOW()), updated_at = NOW()
+                  WHERE id = $3 AND held_no_agent = TRUE`, [agentId, ag.user_id, lead.id]);
+            released++;
+            try {
+                emailService.sendMatchedAgentNotification({
+                    to: ag.email, agentFirstName: (ag.name || '').split(' ')[0] || 'there',
+                    lead: { id: lead.id, name: lead.full_name, email: lead.email, phone: lead.phone, type: lead.lead_type },
+                });
+            } catch (_) {}
+            try { require('../services/agent-notify').notifyAgent(agentId, { type: 'lead', title: `A held lead just routed to you: ${lead.full_name || 'someone'}`, body: 'They were waiting for a paying agent on your lake — respond fast.', link: '?view=leads' }); } catch (_) {}
+        }
+        if (released) {
+            console.log(`[held-release] agent ${agentId} → ${released} lead(s)`);
+            logActivity({ event_type: 'lead.held_released', event_scope: 'lead', actor: { type: 'system', label: 'held-release' }, target: { type: 'agent', id: agentId }, details: { released } });
+        }
+        return { released };
+    } catch (e) { console.warn('[releaseHeldLeads]', e.message); return { released: 0, error: e.message }; }
+}
+
+module.exports = { createLead, createPartialLead, getAdminLeads, getMyLeads, releaseHeldLeads };

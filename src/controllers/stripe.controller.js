@@ -859,6 +859,12 @@ exports.handleWebhook = async (req, res) => {
                     details: { membership_code: membershipCode, subscription_id: session.subscription },
                 });
 
+                // B3: a newly-paying agent auto-claims any held leads on their lakes.
+                try {
+                    const aid = await pool.query(`SELECT id FROM agents WHERE user_id = $1 LIMIT 1`, [userId]);
+                    if (aid.rows[0]) require('./lead.controller').releaseHeldLeads(aid.rows[0].id);
+                } catch (e) { console.warn('[Stripe Webhook] releaseHeldLeads failed:', e.message); }
+
                 // "Your profile is live" email — fires once on first payment.
                 // Renewals come through invoice.payment_succeeded and don't
                 // hit this branch, so this email won't double-send.

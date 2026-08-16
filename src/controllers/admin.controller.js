@@ -346,6 +346,8 @@ const updateStatus = async (req, res) => {
                         link: '',
                     });
                 } catch (_) {}
+                // B3: publishing a paying/comped agent auto-claims held leads on their lakes.
+                try { require('./lead.controller').releaseHeldLeads(id); } catch (_) {}
             }
 
             logActivity({
