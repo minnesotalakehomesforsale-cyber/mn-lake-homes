@@ -94,7 +94,7 @@ const BUILTIN_PROPS = [
 // The B1 lead-qualification properties (provisioned via ensureSchema). Safe to
 // send: syncContact retries built-in-only if HubSpot rejects an unknown prop,
 // so forms never break even if the schema hasn't been provisioned yet.
-const QUAL_PROPS = ['target_lake', 'intent_type', 'price_band', 'lead_source_detail_v2', 'lead_grade'];
+const QUAL_PROPS = ['target_lake', 'intent_type', 'price_band', 'lead_source_detail_v2', 'lead_grade', 'unqualified_reason'];
 // DEV-01 attribution props (first-touch UTM + landing context). gclid/fbclid map
 // to HubSpot's built-in hs_google_click_id / hs_facebook_click_id (see remap in syncContact).
 const ATTR_PROPS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'landing_page', 'landing_page_lake', 'landing_page_town', 'referrer', 'hs_google_click_id', 'hs_facebook_click_id'];

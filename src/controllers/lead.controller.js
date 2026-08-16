@@ -158,6 +158,51 @@ const createLead = async (req, res) => {
             if (u.rows.length) submittedUserId = u.rows[0].id;
         }
 
+        // ── Lead grading (Spec 1 / B1) — mechanical, stamped once at submission ──
+        // Runs after validation, before persistence; never recomputed. Note that
+        // spam/junk/invalid submissions are already blocked upstream (spam-guard
+        // + the format checks return before this point), so at grading time name
+        // and contact are valid; the exclusions that fire here are duplicate,
+        // missing-lake and missing-intent. Post-hoc reasons (unreachable,
+        // opted_out, industry_contact, out_of_area) are set later by other
+        // processes / admin, not this submission grader.
+        const { gradeLead, timeframeBucket, isJunkName } = require('../services/lead-grading');
+        let isDuplicate = false;
+        try {
+            const dupOr = [], dupParams = [];
+            if (email) { dupParams.push(email); dupOr.push(`lower(l.email) = $${dupParams.length}`); }
+            if (phoneDigits && phoneDigits.length >= 10) {
+                dupParams.push('%' + phoneDigits.slice(-10));
+                dupOr.push(`regexp_replace(COALESCE(l.phone,''), '\\D', '', 'g') LIKE $${dupParams.length}`);
+            }
+            if (dupOr.length) {
+                // Unchanged intent AND lake → a genuine duplicate. A different
+                // lake or intent is a new inquiry, not a dupe.
+                dupParams.push(qualIntent);      // $n-1
+                dupParams.push(qualTargetLake);  // $n
+                const dq = await pool.query(
+                    `SELECT 1 FROM leads l
+                      WHERE (${dupOr.join(' OR ')})
+                        AND l.created_at > now() - interval '30 days'
+                        AND l.deleted_at IS NULL AND COALESCE(l.is_partial, FALSE) = FALSE
+                        AND l.intent_type IS NOT DISTINCT FROM $${dupParams.length - 1}
+                        AND l.target_lake IS NOT DISTINCT FROM $${dupParams.length}
+                      LIMIT 1`, dupParams);
+                isDuplicate = dq.rowCount > 0;
+            }
+        } catch (e) { console.warn('[grading] dup check failed:', e.message); }
+
+        const { grade: leadGrade, reason: unqualReason } = gradeLead({
+            testFlagged: req.body?.test === true || req.body?.is_test === true,
+            isDuplicate,
+            hasName:    !isJunkName(name),
+            hasContact: !!(email || (phoneDigits && (phoneDigits.length === 10 || phoneDigits.length === 11))),
+            hasLake:    !!qualTargetLake,
+            hasIntent:  ['buyer', 'seller', 'renter', 'not_sure'].includes(qualIntent),
+            timeframe:  timeframeBucket(req.body?.timeline || req.body?.timeframe),
+            priceBandSet: !!qualPriceBand,
+        });
+
         const query = `
             INSERT INTO leads (
                 full_name, first_name, email, phone, message,
@@ -165,9 +210,11 @@ const createLead = async (req, res) => {
                 property_address, property_street, property_city,
                 property_state, property_zip, property_place_id,
                 user_id, listing_id, is_waterfront, waterfront_feet,
-                lead_score, lead_tier, lead_session_id, is_partial
+                lead_score, lead_tier, lead_session_id, is_partial,
+                lead_grade, unqualified_reason, graded_at, target_lake, intent_type
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, FALSE)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, FALSE,
+                    $22, $23, NOW(), $24, $25)
             RETURNING id
         `;
         // We extrapolate first name logically
@@ -201,6 +248,7 @@ const createLead = async (req, res) => {
             propAddress, propStreet, propCity, propState, propZip, propPlaceId,
             submittedUserId, listingId, isWaterfront, wfFeetNum,
             leadScore.score, leadScore.tier, sessionId,
+            leadGrade, unqualReason, qualTargetLake || null, qualIntent || null,
         ]);
         const newLeadId = leadRows[0]?.id;
 
@@ -299,6 +347,9 @@ const createLead = async (req, res) => {
                         target_lake:        qualTargetLake || undefined,
                         intent_type:        qualIntent || undefined,
                         price_band:         qualPriceBand || undefined,
+                        // B1 grade (stamped at submission; HubSpot value is lowercase for the enum).
+                        lead_grade:         leadGrade === 'Unqualified' ? 'unqualified' : (leadGrade || undefined),
+                        unqualified_reason: unqualReason || undefined,
                         // HubSpot internal name is *_v2 (original name archived); the
                         // form/validation still use `lead_source_detail` internally.
                         lead_source_detail_v2: qualSourceDetail || undefined,

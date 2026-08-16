@@ -75,6 +75,21 @@ const LEAD_GRADE_OPTIONS = [
     { label: 'Unqualified', value: 'unqualified' },
 ];
 
+// unqualified_reason (B1) — countable, so the values are fixed, never free text.
+const UNQUALIFIED_REASON_OPTIONS = [
+    { label: 'Missing contact',     value: 'missing_contact' },
+    { label: 'Missing name',        value: 'missing_name' },
+    { label: 'Missing lake',        value: 'missing_lake' },
+    { label: 'Missing intent',      value: 'missing_intent' },
+    { label: 'Spam or bot',         value: 'spam_or_bot' },
+    { label: 'Test submission',     value: 'test_submission' },
+    { label: 'Duplicate (30d)',     value: 'duplicate_30d' },
+    { label: 'Industry contact',    value: 'industry_contact' },
+    { label: 'Out of area',         value: 'out_of_area' },
+    { label: 'Unreachable contact', value: 'unreachable_contact' },
+    { label: 'Opted out',           value: 'opted_out' },
+];
+
 // Attach ascending displayOrder so the dropdown order is deterministic.
 const ordered = opts => opts.map((o, i) => ({ ...o, displayOrder: i }));
 
@@ -97,6 +112,7 @@ const CONTACT_PROPERTIES = [
     // option set comes from the Measurement doc; add it there to avoid churning
     // enum values in HubSpot.
     { name: 'lead_grade', label: 'Lead Grade', type: 'enumeration', fieldType: 'select', groupName: CONTACT_PROPERTY_GROUP.name, options: ordered(LEAD_GRADE_OPTIONS) },
+    { name: 'unqualified_reason', label: 'Unqualified Reason', type: 'enumeration', fieldType: 'select', groupName: CONTACT_PROPERTY_GROUP.name, options: ordered(UNQUALIFIED_REASON_OPTIONS) },
     // Attribution (DEV-01) — first-touch UTM + landing context. Plain text.
     // NOTE: gclid/fbclid are intentionally NOT created here — HubSpot ships
     // built-in `hs_google_click_id` / `hs_facebook_click_id` and the sync maps

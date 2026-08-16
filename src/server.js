@@ -2555,6 +2555,21 @@ async function ensureTables() {
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS form_payload_json JSONB;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS source_page_url VARCHAR(1000);
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS source_page_title VARCHAR(255);
+            -- Lead grading + hold queue + disposition (Spec 1 / B1 + B3).
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS target_lake        VARCHAR(60);   -- qual value (mirrors HubSpot); powers grading + dup check
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS intent_type        VARCHAR(20);
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS lead_grade         VARCHAR(12);   -- A | B | C | Unqualified
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS unqualified_reason VARCHAR(32);   -- enum; null unless Unqualified
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS graded_at          TIMESTAMPTZ;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS held_no_agent      BOOLEAN NOT NULL DEFAULT FALSE;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS held_at            TIMESTAMPTZ;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS routed_at          TIMESTAMPTZ;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS dispute_flag       BOOLEAN NOT NULL DEFAULT FALSE;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS dispute_reason     TEXT;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS disposition        VARCHAR(24);   -- contacted_working|contacted_not_ready|unreachable|not_qualified|closed_won|closed_lost
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS disposition_reason TEXT;          -- required when disposition = not_qualified
+            CREATE INDEX IF NOT EXISTS idx_leads_grade ON leads(lead_grade) WHERE deleted_at IS NULL;
+            CREATE INDEX IF NOT EXISTS idx_leads_held  ON leads(held_no_agent) WHERE held_no_agent = TRUE;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS follow_up_at TIMESTAMPTZ;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE SET NULL;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS property_address TEXT;

@@ -2032,11 +2032,12 @@ const getLeadDensity = async (req, res) => {
     try {
         const { rows } = await pool.query(`
             WITH lead_lake AS (
-                SELECT ld.id, ld.lead_type, ld.created_at, ld.routed_at, ld.assigned_user_id, ld.price_band,
+                SELECT ld.id, ld.lead_type, ld.created_at, ld.routed_at, ld.assigned_user_id, ld.price_band, ld.lead_grade,
                        COALESCE(NULLIF(ld.landing_page_lake, ''), lk.slug) AS lake_slug
                   FROM leads ld
                   LEFT JOIN lakes lk ON lk.id = ld.lake_id
-                 WHERE ld.deleted_at IS NULL
+                 -- B1: Unqualified leads are excluded from every count here.
+                 WHERE ld.deleted_at IS NULL AND COALESCE(ld.lead_grade, '') <> 'Unqualified'
             ),
             -- Paying agent per lake. "Paying" = membership tier (via membership_id
             -- -> memberships.code) is not free, OR the seat is comped. Association
@@ -2060,6 +2061,9 @@ const getLeadDensity = async (req, res) => {
                    COUNT(ll.id) FILTER (WHERE ll.created_at >= NOW() - INTERVAL '30 days')::int AS leads_30d,
                    COUNT(ll.id) FILTER (WHERE ll.created_at >= NOW() - INTERVAL '90 days')::int AS leads_90d,
                    COUNT(ll.id)::int AS leads_all,
+                   -- A/B = the number promised to agents; C is shown separately, never folded in.
+                   COUNT(ll.id) FILTER (WHERE ll.lead_grade IN ('A','B') AND ll.created_at >= NOW() - INTERVAL '90 days')::int AS qualified_90d,
+                   COUNT(ll.id) FILTER (WHERE ll.lead_grade = 'C' AND ll.created_at >= NOW() - INTERVAL '90 days')::int AS grade_c_90d,
                    COUNT(ll.id) FILTER (WHERE ll.lead_type = 'buyer')::int  AS buyers,
                    COUNT(ll.id) FILTER (WHERE ll.lead_type = 'seller')::int AS sellers,
                    COUNT(ll.id) FILTER (WHERE ll.assigned_user_id IS NULL)::int AS unclaimed,
@@ -2076,20 +2080,30 @@ const getLeadDensity = async (req, res) => {
              ORDER BY leads_90d DESC, leads_all DESC, l.name ASC
         `);
 
-        // Top-line totals from ALL leads (reconciles with the reconciliation view).
+        // Top-line totals — Unqualified excluded everywhere; grades broken out.
+        // Unqualified/grade_c reported for transparency but never folded into the
+        // qualified number an agent is quoted.
         const totals = await pool.query(`
-            SELECT COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::int AS t30,
-                   COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '90 days')::int AS t90,
-                   COUNT(*)::int AS tall
+            SELECT COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days' AND COALESCE(lead_grade,'') <> 'Unqualified')::int AS t30,
+                   COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '90 days' AND COALESCE(lead_grade,'') <> 'Unqualified')::int AS t90,
+                   COUNT(*) FILTER (WHERE COALESCE(lead_grade,'') <> 'Unqualified')::int AS tall,
+                   COUNT(*) FILTER (WHERE lead_grade IN ('A','B') AND created_at >= NOW() - INTERVAL '90 days')::int AS qualified_90d,
+                   COUNT(*) FILTER (WHERE lead_grade = 'C' AND created_at >= NOW() - INTERVAL '90 days')::int AS grade_c_90d,
+                   COUNT(*) FILTER (WHERE lead_grade = 'Unqualified' AND created_at >= NOW() - INTERVAL '90 days')::int AS unqualified_90d
               FROM leads WHERE deleted_at IS NULL`);
-        const openOpportunity = rows.filter(r => r.leads_90d >= 1 && !r.has_paying_agent).length;
+        // B3: an open-opportunity lake has >=1 QUALIFIED (A/B) lead in 90d and no paying agent.
+        const openOpportunity = rows.filter(r => r.qualified_90d >= 1 && !r.has_paying_agent).length;
         const attributed90 = rows.reduce((s, r) => s + r.leads_90d, 0);
+        const t = totals.rows[0];
         const summary = {
-            total_30d: totals.rows[0].t30, total_90d: totals.rows[0].t90, total_all: totals.rows[0].tall,
+            total_30d: t.t30, total_90d: t.t90, total_all: t.tall,
+            qualified_90d: t.qualified_90d,   // A + B — the promised number
+            grade_c_90d: t.grade_c_90d,       // shown separately, never quoted
+            unqualified_90d: t.unqualified_90d, // excluded from every count above
             attributed_90d: attributed90,
             // Leads in the last 90d not tied to any lake (no landing_page_lake and
             // no resolved lake_id) — e.g. general contact / agent-inquiry leads.
-            unattributed_90d: Math.max(0, totals.rows[0].t90 - attributed90),
+            unattributed_90d: Math.max(0, t.t90 - attributed90),
             open_opportunity_lakes: openOpportunity,
             lakes: rows.length,
         };
