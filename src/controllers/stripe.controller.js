@@ -576,12 +576,13 @@ exports.getMyBilling = async (req, res) => {
 // Marketing can change the numbers on the pricing page without a deploy.
 // Stripe remains the source of truth for actual billing — these are just
 // what appears on the page.
-exports.getAgentPricing = (req, res) => {
+// Pricing data (shared by the JSON endpoint + the server-rendered /join page).
+function buildAgentPricing() {
     const num = (v, def) => {
         const n = Number(v);
         return Number.isFinite(n) && n > 0 ? n : def;
     };
-    const out = {
+    return {
         currency: 'usd',
         tiers: [
             {
@@ -656,7 +657,34 @@ exports.getAgentPricing = (req, res) => {
             },
         ],
     };
-    res.json(out);
+}
+exports.buildAgentPricing = buildAgentPricing;
+
+exports.getAgentPricing = (req, res) => {
+    res.json(buildAgentPricing());
+};
+
+// Server-rendered agent-tier grid for /join (SEO — crawlers can't read the
+// client-side fetch). The client script re-renders this for interactivity
+// (period toggle + gating), but the prices are present in the initial HTML.
+exports.renderJoinTiersHtml = function renderJoinTiersHtml() {
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const dollars = n => '$' + Number(n || 0).toLocaleString('en-US');
+    const { tiers } = buildAgentPricing();
+    return (tiers || []).map(t => {
+        const isFree = t.is_free || t.tier === 'free';
+        const amt = isFree ? 'Free' : dollars(t.monthly_price);
+        const note = isFree ? 'No card required · upgrade any time' : 'Billed monthly · cancel anytime';
+        const feats = (t.features || []).map(f => `<li>${esc(f)}</li>`).join('');
+        return `<div class="jp-tier ${t.highlight ? 'hi' : ''}${isFree ? ' free' : ''}">`
+            + (t.highlight ? '<span class="jp-badge">Recommended</span>' : '')
+            + `<h3>${esc(t.name)}</h3>`
+            + `<p class="tl">${esc(t.tagline)}</p>`
+            + `<div><span class="jp-amt">${amt}</span>${isFree ? '' : '<span class="jp-per-lbl"> / mo</span>'}</div>`
+            + `<p class="jp-note">${esc(note)}</p>`
+            + (feats ? `<ul class="jp-features">${feats}</ul>` : '')
+            + `</div>`;
+    }).join('');
 };
 
 // ─── POST /api/stripe/webhook ────────────────────────────────────────────────

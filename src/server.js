@@ -1611,6 +1611,22 @@ app.get('/business/dashboard', (req, res) => {
     res.sendFile(path.join(PROJECT_ROOT, 'pages/business/dashboard.html'));
 });
 
+// /join — server-render the agent tier prices so crawlers (and no-JS requests)
+// see real prices instead of "Loading plans…". The client script still runs and
+// re-renders the grid for interactivity (period toggle + account gating).
+app.get('/join', (req, res, next) => {
+    try {
+        const tpl = fs.readFileSync(path.join(PROJECT_ROOT, 'pages/public/join.html'), 'utf8');
+        const grid = require('./controllers/stripe.controller').renderJoinTiersHtml();
+        const html = tpl.replace(
+            '<p style="grid-column:1/-1;text-align:center;color:#a0aec0;">Loading plans…</p>',
+            grid
+        );
+        res.set('Content-Type', 'text/html; charset=utf-8');
+        res.send(html);
+    } catch (e) { console.warn('[/join SSR]', e.message); next(); }
+});
+
 // Build a crawlable link directory injected into hub pages, so every
 // lake/town/agent link sits in the raw HTML (not just the client-fetched
 // cards) — strengthens internal linking and crawl discovery.
