@@ -1162,18 +1162,34 @@ exports.handleWebhook = async (req, res) => {
                 // fires after the retry window expires.
                 console.log(`[Stripe Webhook] Agent invoice.payment_failed for subscription ${invoice.subscription}`);
                 const agentRow = await pool.query(
-                    `SELECT user_id FROM agents WHERE stripe_subscription_id = $1 LIMIT 1`,
+                    `SELECT a.user_id, a.display_name, u.email
+                       FROM agents a JOIN users u ON u.id = a.user_id
+                      WHERE a.stripe_subscription_id = $1 LIMIT 1`,
                     [invoice.subscription]
                 );
                 if (agentRow.rowCount) {
+                    const ag = agentRow.rows[0];
                     logActivity({
                         event_type: 'agent.payment.failed',
                         event_scope: 'billing',
                         severity: 'warning',
                         actor: { type: 'stripe', label: 'Stripe' },
-                        target: { type: 'user', id: agentRow.rows[0].user_id, label: 'agent' },
+                        target: { type: 'user', id: ag.user_id, label: ag.display_name || 'agent' },
                         details: { subscription_id: invoice.subscription, amount_due: invoice.amount_due, attempt: invoice.attempt_count },
                     });
+                    // Dunning (T073): email the agent on each failed attempt with
+                    // escalating urgency. `next_payment_attempt` is null once
+                    // Stripe stops retrying → that's the final notice.
+                    try {
+                        const email = require('../services/email');
+                        email.sendAgentPaymentFailed({
+                            to: ag.email,
+                            name: ag.display_name,
+                            attempt: invoice.attempt_count || 1,
+                            final: !invoice.next_payment_attempt,
+                            nextAttempt: invoice.next_payment_attempt ? new Date(invoice.next_payment_attempt * 1000) : null,
+                        });
+                    } catch (e) { console.warn('[Stripe Webhook] agent dunning email failed:', e.message); }
                 }
                 break;
             }

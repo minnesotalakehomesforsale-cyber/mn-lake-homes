@@ -1293,6 +1293,60 @@ function sendCashOfferToPartner({ to, partnerName, customMessage, offer, fromNam
     });
 }
 
+/**
+ * Agent dunning email (T073) — sent on each Stripe `invoice.payment_failed`.
+ * Copy escalates with the retry: attempt 1 is a gentle heads-up, later attempts
+ * warn more firmly, and the FINAL notice (Stripe has given up retrying) tells
+ * them the profile is about to drop out of the lead rotation. Transactional.
+ *
+ * @param {object} p
+ * @param {string} p.to            account email
+ * @param {string} [p.name]        agent display name
+ * @param {number} [p.attempt]     Stripe invoice.attempt_count (1-based)
+ * @param {boolean} [p.final]      true when there's no next retry (giving up)
+ * @param {Date|null} [p.nextAttempt] next retry date, if any
+ */
+function sendAgentPaymentFailed({ to, name, attempt = 1, final = false, nextAttempt = null }) {
+    if (!to) return { skipped: true };
+    const first = (name || '').split(' ')[0] || 'there';
+    const retryLine = nextAttempt
+        ? `We'll automatically try your card again on <strong>${new Date(nextAttempt).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</strong>.`
+        : '';
+    let subject, title, lead, closing;
+    if (final) {
+        subject = `Final notice — your MN Lake Homes profile is about to pause`;
+        title = `${first}, we couldn't renew your membership.`;
+        lead = `Stripe tried several times to renew your MN Lake Homes membership and the charge kept getting declined. This was the last automatic attempt. <strong>Unless you update your card, your profile will drop out of the lead rotation and lose featured placement.</strong>`;
+        closing = `Everything on your profile is saved — updating your payment method restores your placement instantly.`;
+    } else if (attempt <= 1) {
+        subject = `Payment issue — please update your card`;
+        title = `${first}, your last payment didn't go through.`;
+        lead = `Stripe tried to renew your MN Lake Homes membership and the charge was declined. <strong>You're still live and receiving leads</strong> — this is just a heads-up so nothing gets interrupted. ${retryLine}`;
+        closing = `It takes under a minute to fix from your dashboard.`;
+    } else {
+        subject = `⚠ Second attempt failed — update your card to keep your leads`;
+        title = `${first}, we still can't renew your membership.`;
+        lead = `Your renewal payment has now failed more than once. Your profile is still active for now, but if the next retries don't clear, you'll lose your spot in the lead rotation. ${retryLine}`;
+        closing = `Update your payment method now to stay ahead of it.`;
+    }
+    return sendEmail({
+        to,
+        subject,
+        html: layout({
+            title,
+            preheader: `Update your billing info so your MN Lake Homes profile stays live.`,
+            body: `
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">${lead}</p>
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  <strong>Fix it in under a minute</strong> — open your dashboard, go to Account &rarr; billing, and update your payment method in Stripe.
+                </p>
+                <p style="margin:0;font-size:15px;line-height:1.65;color:#2d3748;">${closing} Replying to this email reaches us directly if you're stuck.</p>`,
+            ctaText: 'Update payment method',
+            ctaUrl: `${SITE_URL}/pages/agent/dashboard.html`,
+        })
+    });
+}
+
 module.exports = {
     sendEmail,
     verifyUnsub,
@@ -1315,6 +1369,7 @@ module.exports = {
     sendBusinessPaymentReceived,
     sendBusinessApproved,
     sendBusinessPaymentFailed,
+    sendAgentPaymentFailed,
     sendBusinessSubscriptionCancelled,
     sendAdminSubscriptionCancelled,
     sendAgentInvite,
