@@ -98,7 +98,9 @@ const QUAL_PROPS = ['target_lake', 'intent_type', 'price_band', 'lead_source_det
 // DEV-01 attribution props (first-touch UTM + landing context). gclid/fbclid map
 // to HubSpot's built-in hs_google_click_id / hs_facebook_click_id (see remap in syncContact).
 const ATTR_PROPS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'landing_page', 'landing_page_lake', 'landing_page_town', 'referrer', 'hs_google_click_id', 'hs_facebook_click_id'];
-const ALLOWED_PROPS = new Set([...BUILTIN_PROPS, ...QUAL_PROPS, ...ATTR_PROPS]);
+// Billing state mirrored from Stripe (T074).
+const BILLING_PROPS = ['subscription_status'];
+const ALLOWED_PROPS = new Set([...BUILTIN_PROPS, ...QUAL_PROPS, ...ATTR_PROPS, ...BILLING_PROPS]);
 
 function whitelistProps(props, allowed = ALLOWED_PROPS) {
     const out = {};
@@ -242,6 +244,29 @@ async function markContactAsCustomer(hsContactId) {
         console.error(`[hubspot] FAILED customer flip ${hsContactId}:`, err.message);
         return null;
     }
+}
+
+/**
+ * Mirror Stripe subscription state onto the HubSpot contact (T074) so the CRM
+ * and billing never disagree about who's a paying / at-risk / lapsed customer.
+ * Upserts by email and sets the `subscription_status` property. Unlike
+ * lifecyclestage (which we never downgrade), this property moves both ways:
+ * active → past_due → canceled → active. Fire-and-forget; no-ops when HubSpot
+ * isn't configured or the property hasn't been provisioned yet.
+ *
+ * @param {string} email  contact email
+ * @param {'active'|'past_due'|'canceled'|'none'} status
+ */
+async function syncSubscriptionStatus(email, status) {
+    if (!ENABLED)        { logSkip('HUBSPOT_ENABLE_SYNC=false'); return null; }
+    if (!isConfigured()) { logSkip('HUBSPOT_ACCESS_TOKEN/PORTAL_ID not set'); return null; }
+    const addr = String(email || '').toLowerCase().trim();
+    if (!addr)   { logSkip('no email for subscription_status'); return null; }
+    const allowed = new Set(['active', 'past_due', 'canceled', 'none']);
+    const val = allowed.has(status) ? status : 'none';
+    // Reuse syncContact's upsert-by-email + graceful 400 fallback (which drops
+    // the custom prop and retries built-in-only if the property is missing).
+    return syncContact({ email: addr, subscription_status: val });
 }
 
 /**
@@ -713,6 +738,7 @@ module.exports = {
     updateContact,
     createContactNote,
     markContactAsCustomer,
+    syncSubscriptionStatus,
     getPortalContactUrl,
     isConfigured,
     // T018: true only when sync is enabled AND credentials are present, so the

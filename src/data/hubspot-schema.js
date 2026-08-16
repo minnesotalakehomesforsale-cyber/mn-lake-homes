@@ -55,6 +55,15 @@ const LEAD_SOURCE_DETAIL_OPTIONS = [
     { label: 'Other',          value: 'other' },
 ];
 
+// Billing state mirrored from Stripe (T074) so the CRM and billing agree on
+// who's a paying/at-risk/lapsed customer without opening Stripe.
+const SUBSCRIPTION_STATUS_OPTIONS = [
+    { label: 'Active',    value: 'active' },
+    { label: 'Past due',  value: 'past_due' },
+    { label: 'Canceled',  value: 'canceled' },
+    { label: 'None',      value: 'none' },
+];
+
 // Attach ascending displayOrder so the dropdown order is deterministic.
 const ordered = opts => opts.map((o, i) => ({ ...o, displayOrder: i }));
 
@@ -69,6 +78,8 @@ const CONTACT_PROPERTIES = [
     // created as a text prop, then deleted → HubSpot archives that name for 90
     // days. This fresh name creates clean as a dropdown. Label is unchanged.
     { name: 'lead_source_detail_v2', label: 'Lead Source Detail', type: 'enumeration', fieldType: 'select', groupName: CONTACT_PROPERTY_GROUP.name, options: ordered(LEAD_SOURCE_DETAIL_OPTIONS) },
+    // Billing state mirrored from Stripe (T074).
+    { name: 'subscription_status', label: 'Subscription Status', type: 'enumeration', fieldType: 'select', groupName: CONTACT_PROPERTY_GROUP.name, options: ordered(SUBSCRIPTION_STATUS_OPTIONS) },
     // Attribution (DEV-01) — first-touch UTM + landing context. Plain text.
     // NOTE: gclid/fbclid are intentionally NOT created here — HubSpot ships
     // built-in `hs_google_click_id` / `hs_facebook_click_id` and the sync maps

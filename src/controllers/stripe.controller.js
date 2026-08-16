@@ -206,6 +206,30 @@ async function persistPaymentAndMirrorToHubspot(invoice, status) {
     return paymentRow;
 }
 
+// Mirror Stripe subscription state → HubSpot contact property (T074). Resolves
+// the account email from either table by subscription_id, then upserts the
+// contact's `subscription_status`. Best-effort and fully swallow-safe: a CRM
+// hiccup must never break the webhook. Handles the agent product and business
+// listings alike.
+async function mirrorSubStatus(subscriptionId, status) {
+    if (!subscriptionId) return;
+    try {
+        const { rows } = await pool.query(
+            `SELECT u.email FROM agents a JOIN users u ON u.id = a.user_id
+               WHERE a.stripe_subscription_id = $1
+             UNION
+             SELECT u.email FROM businesses b JOIN users u ON u.id = b.user_id
+               WHERE b.stripe_subscription_id = $1
+             LIMIT 1`,
+            [subscriptionId]
+        );
+        const email = rows[0]?.email;
+        if (email) await hubspot.syncSubscriptionStatus(email, status);
+    } catch (e) {
+        console.warn('[Stripe Webhook] subscription_status mirror failed:', e.message);
+    }
+}
+
 // Fetch owner email + display name for business lifecycle emails. Bundled
 // here because every webhook branch that emails the owner needs the same
 // lookup. Returns null silently on miss — email sends degrade gracefully.
@@ -876,6 +900,7 @@ exports.handleWebhook = async (req, res) => {
             case 'customer.subscription.deleted': {
                 const subscription = event.data.object;
                 const subscriptionId = subscription.id;
+                await mirrorSubStatus(subscriptionId, 'canceled'); // T074
 
                 // Businesses first — they share the subscription_id space
                 // with agents, so we dispatch by table.
@@ -1016,6 +1041,13 @@ exports.handleWebhook = async (req, res) => {
             case 'customer.subscription.updated': {
                 const sub = event.data.object;
                 const priceId = sub.items?.data?.[0]?.price?.id;
+                // T074: mirror the current Stripe status to HubSpot. past_due →
+                // past_due, canceled → canceled, everything else billable
+                // (active/trialing) → active.
+                await mirrorSubStatus(sub.id,
+                    sub.status === 'past_due' ? 'past_due'
+                    : sub.status === 'canceled' ? 'canceled'
+                    : 'active');
 
                 // Try businesses first
                 const bizPrior = await pool.query(
@@ -1121,6 +1153,7 @@ exports.handleWebhook = async (req, res) => {
                 // first so the row exists even if the table-update branches
                 // below fail.
                 await persistPaymentAndMirrorToHubspot(invoice, 'failed');
+                await mirrorSubStatus(invoice.subscription, 'past_due'); // T074
                 // Businesses
                 const bizPrior = await pool.query(
                     `SELECT subscription_status FROM businesses WHERE stripe_subscription_id = $1 LIMIT 1`,
@@ -1201,6 +1234,7 @@ exports.handleWebhook = async (req, res) => {
                 // first so the row exists regardless of the publish updates
                 // that follow.
                 await persistPaymentAndMirrorToHubspot(invoice, 'paid');
+                await mirrorSubStatus(invoice.subscription, 'active'); // T074
                 // Both tables are best-effort — only one of them owns
                 // this subscription_id, the other UPDATE is a no-op.
                 const bizRes = await pool.query(
