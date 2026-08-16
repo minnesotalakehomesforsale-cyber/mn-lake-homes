@@ -224,7 +224,14 @@ async function mirrorSubStatus(subscriptionId, status) {
             [subscriptionId]
         );
         const email = rows[0]?.email;
-        if (email) await hubspot.syncSubscriptionStatus(email, status);
+        if (email) {
+            if (status === 'canceled') {
+                // A2: churn → lifecyclestage back to Lead + churned_at.
+                await hubspot.markContactChurned(email);
+            } else {
+                await hubspot.syncSubscriptionStatus(email, status);
+            }
+        }
     } catch (e) {
         console.warn('[Stripe Webhook] subscription_status mirror failed:', e.message);
     }

@@ -98,8 +98,8 @@ const QUAL_PROPS = ['target_lake', 'intent_type', 'price_band', 'lead_source_det
 // DEV-01 attribution props (first-touch UTM + landing context). gclid/fbclid map
 // to HubSpot's built-in hs_google_click_id / hs_facebook_click_id (see remap in syncContact).
 const ATTR_PROPS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'landing_page', 'landing_page_lake', 'landing_page_town', 'referrer', 'hs_google_click_id', 'hs_facebook_click_id'];
-// Billing state mirrored from Stripe (T074).
-const BILLING_PROPS = ['subscription_status'];
+// Billing state mirrored from Stripe (T074 / A2).
+const BILLING_PROPS = ['subscription_status', 'churned_at'];
 const ALLOWED_PROPS = new Set([...BUILTIN_PROPS, ...QUAL_PROPS, ...ATTR_PROPS, ...BILLING_PROPS]);
 
 function whitelistProps(props, allowed = ALLOWED_PROPS) {
@@ -267,6 +267,31 @@ async function syncSubscriptionStatus(email, status) {
     // Reuse syncContact's upsert-by-email + graceful 400 fallback (which drops
     // the custom prop and retries built-in-only if the property is missing).
     return syncContact({ email: addr, subscription_status: val });
+}
+
+/**
+ * markContactChurned(email) — A2. When a paying contact cancels, move their
+ * lifecyclestage back to "lead" (so they leave the Customer segment and re-enter
+ * nurture/win-back) and stamp `churned_at`. Stripe is the source of truth;
+ * HubSpot only mirrors. Fire-and-forget.
+ *
+ * Note: HubSpot can block moving lifecyclestage *backwards* unless the portal's
+ * "Set lifecycle stage backwards" setting is on. We clear it first, then set it,
+ * which reliably reseats the stage via the API.
+ */
+async function markContactChurned(email) {
+    if (!ENABLED)        { logSkip('HUBSPOT_ENABLE_SYNC=false'); return null; }
+    if (!isConfigured()) { logSkip('HUBSPOT_ACCESS_TOKEN/PORTAL_ID not set'); return null; }
+    const addr = String(email || '').toLowerCase().trim();
+    if (!addr) return null;
+    try {
+        // Clear then set lifecyclestage so the backwards move sticks.
+        await syncContact({ email: addr, lifecyclestage: '' });
+        return await syncContact({ email: addr, lifecyclestage: 'lead', churned_at: Date.now(), subscription_status: 'canceled' });
+    } catch (e) {
+        console.warn('[hubspot.churned]', e.message);
+        return null;
+    }
 }
 
 /**
@@ -739,6 +764,7 @@ module.exports = {
     createContactNote,
     markContactAsCustomer,
     syncSubscriptionStatus,
+    markContactChurned,
     getPortalContactUrl,
     isConfigured,
     // T018: true only when sync is enabled AND credentials are present, so the

@@ -78,8 +78,10 @@ const CONTACT_PROPERTIES = [
     // created as a text prop, then deleted → HubSpot archives that name for 90
     // days. This fresh name creates clean as a dropdown. Label is unchanged.
     { name: 'lead_source_detail_v2', label: 'Lead Source Detail', type: 'enumeration', fieldType: 'select', groupName: CONTACT_PROPERTY_GROUP.name, options: ordered(LEAD_SOURCE_DETAIL_OPTIONS) },
-    // Billing state mirrored from Stripe (T074).
+    // Billing state mirrored from Stripe (T074 / A2).
     { name: 'subscription_status', label: 'Subscription Status', type: 'enumeration', fieldType: 'select', groupName: CONTACT_PROPERTY_GROUP.name, options: ordered(SUBSCRIPTION_STATUS_OPTIONS) },
+    // Set when a paying contact cancels (A2) so churn is queryable for win-back.
+    { name: 'churned_at', label: 'Churned At', type: 'datetime', fieldType: 'date', groupName: CONTACT_PROPERTY_GROUP.name },
     // Attribution (DEV-01) — first-touch UTM + landing context. Plain text.
     // NOTE: gclid/fbclid are intentionally NOT created here — HubSpot ships
     // built-in `hs_google_click_id` / `hs_facebook_click_id` and the sync maps
