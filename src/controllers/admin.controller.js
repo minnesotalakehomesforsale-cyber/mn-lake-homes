@@ -1606,7 +1606,28 @@ const getBillingStatusReport = async (req, res) => {
     let stripe = null;
     const key = process.env.STRIPE_SECRET_KEY;
     if (key) { try { stripe = require('stripe')(key); } catch (_) { stripe = null; } }
-    if (!stripe) return res.json({ configured: false, count: 0, agents: [] });
+
+    // Businesses store subscription_status locally, so we can report their
+    // state (and a summary) with zero Stripe calls — even when Stripe isn't
+    // configured. This answers "who's past due?" instantly (T109).
+    let businesses = [], summary = { businesses: {}, agents: {} };
+    try {
+        const bz = await pool.query(
+            `SELECT b.id AS business_id, b.name, b.slug, b.tier, b.paid_tier, b.subscription_status,
+                    b.tier_comped, u.email
+               FROM businesses b LEFT JOIN users u ON u.id = b.user_id
+              WHERE b.stripe_subscription_id IS NOT NULL`);
+        businesses = bz.rows.filter(r => ['past_due', 'unpaid', 'canceled', 'incomplete', 'incomplete_expired'].includes(r.subscription_status));
+        summary.businesses = bz.rows.reduce((m, r) => { const k = r.subscription_status || 'unknown'; m[k] = (m[k] || 0) + 1; return m; }, {});
+        const ag = await pool.query(
+            `SELECT COUNT(*) FILTER (WHERE stripe_subscription_id IS NOT NULL)::int AS with_sub,
+                    COUNT(*) FILTER (WHERE tier_comped)::int AS comped,
+                    COUNT(*) FILTER (WHERE paid_membership_code IS NOT NULL AND paid_membership_code <> 'basic')::int AS paid
+               FROM agents`);
+        summary.agents = ag.rows[0] || {};
+    } catch (e) { console.warn('[billing report: businesses]', e.message); }
+
+    if (!stripe) return res.json({ configured: false, count: businesses.length, agents: [], businesses, summary });
 
     try {
         const { rows } = await pool.query(
@@ -1646,7 +1667,7 @@ const getBillingStatusReport = async (req, res) => {
         out.sort((a, b) =>
             (Number(b.resumable) - Number(a.resumable)) ||
             String(b.canceled_at || '').localeCompare(String(a.canceled_at || '')));
-        res.json({ configured: true, count: out.length, agents: out });
+        res.json({ configured: true, count: out.length + businesses.length, agents: out, businesses, summary });
     } catch (err) {
         console.error('[getBillingStatusReport]', err.message);
         res.status(500).json({ error: 'Failed to build billing report.' });
