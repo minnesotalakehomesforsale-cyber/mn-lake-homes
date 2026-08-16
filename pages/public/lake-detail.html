@@ -831,7 +831,9 @@
                 if (!r.ok) throw new Error();
                 const all = await r.json();
 
-                if (all.length === 0) { if (sectionEl) sectionEl.style.display = 'none'; return; }
+                // D3: don't switch the partner block on until at least 3 are
+                // listed — one lonely logo reads worse than no block at all.
+                if (all.length < 3) { if (sectionEl) sectionEl.style.display = 'none'; return; }
 
                 if (sectionEl) sectionEl.style.display = '';
                 if (headingEl) headingEl.textContent = `Featured ${anchorName} Businesses`;
