@@ -1345,7 +1345,26 @@
                     const typeLabel = BIZ_TYPE_LABEL[b.type] || 'Local Business';
                     const loc = [b.city, b.state].filter(Boolean).join(', ');
                     const bizColor = BIZ_COLORS[b.type] || BIZ_COLORS.other;
-                    const isFeatured = (b.render_tier || b.tier) === 'premium';
+                    const rt = b.render_tier || b.tier || 'free';
+                    // Spec 2 — the rendering matches the Stripe tag: Premium = logo
+                    // card (featured), Basic = standard card, Free = a minimal
+                    // directory card (no photo emphasis).
+                    if (rt !== 'premium' && rt !== 'basic') {
+                        return `
+                        <a class="db-card biz db-biz-free" style="--biz-c:${bizColor};" href="/businesses/${encodeURIComponent(b.slug)}" data-key="${escHtml(keyFor(item))}">
+                            <div class="db-card-thumb is-empty">
+                                <span class="chip">${escHtml(typeLabel)}</span>
+                                <span class="type"><span class="dot"></span>${escHtml(typeLabel)}</span>
+                                <span class="ph-letter">${escHtml((b.name || '?').trim().charAt(0).toUpperCase())}</span>
+                            </div>
+                            <div class="db-card-body">
+                                <h3>${escHtml(b.name)}${adminStatusBadge(item)}</h3>
+                                <div class="loc">${escHtml(loc)}</div>
+                                <span class="db-card-cta">View listing <span aria-hidden="true">→</span></span>
+                            </div>
+                        </a>`;
+                    }
+                    const isFeatured = rt === 'premium';
                     return `
                         <a class="db-card biz ${isFeatured ? 'is-featured' : ''}" style="--biz-c:${bizColor};" href="/businesses/${encodeURIComponent(b.slug)}" data-key="${escHtml(keyFor(item))}">
                             <div class="db-card-thumb">
