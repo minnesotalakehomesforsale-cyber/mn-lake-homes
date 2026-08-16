@@ -768,7 +768,11 @@ app.get('/lakes/:slug', async (req, res, next) => {
     try {
         const { rows } = await pool.query(
             `SELECT id, slug, name, state, region, county, latitude, longitude,
-                    intro_text, description, hero_image_url, featured_image_url,
+                    intro_text, description, lifestyle_text, seasons_text,
+                    notable_features, real_estate_context, faq,
+                    dow_number, max_depth_ft, mean_depth_ft, surface_acres, littoral_acres,
+                    water_clarity_ft, shoreline_miles, public_accesses, fish_species, dnr_survey_url,
+                    hero_image_url, featured_image_url,
                     seo_title, seo_description, status, gallery,
                     hero_image_credit_name, hero_image_credit_url, hero_image_license
              FROM lakes WHERE slug = $1 LIMIT 1`,
@@ -3236,13 +3240,11 @@ async function ensureTables() {
                 -- when these are blank, so the page is never empty.
                 ADD COLUMN IF NOT EXISTS lifestyle_text  TEXT,
                 ADD COLUMN IF NOT EXISTS seasons_text    TEXT,
-                -- Tier-2 page sections (DEV-05 T2): "Notable features" bulleted
-                -- list, "Real Estate Context" (property types + price drivers +
-                -- the deliberate-drawback paragraph), and a curated per-lake FAQ
-                -- (overrides the generated FAQ when set). All nullable/optional.
-                ADD COLUMN IF NOT EXISTS notable_features    TEXT,
-                ADD COLUMN IF NOT EXISTS real_estate_context TEXT,
-                ADD COLUMN IF NOT EXISTS faq                 JSONB,
+                -- NOTE: the Tier-2 page-section columns (notable_features,
+                -- real_estate_context, faq) belong to LAKES, not tags — they were
+                -- once pasted here by mistake, which shipped them to the wrong
+                -- table and broke every lake page. They now live in the
+                -- ALTER TABLE lakes block below. Do not add them here.
                 -- Wikimedia-sourced hero photos legally require visible
                 -- attribution for CC BY / CC BY-SA. We render a small
                 -- caption under the hero on town-detail when these are set;
@@ -3312,6 +3314,15 @@ async function ensureTables() {
             ALTER TABLE lakes
                 ADD COLUMN IF NOT EXISTS lifestyle_text TEXT,
                 ADD COLUMN IF NOT EXISTS seasons_text   TEXT,
+                -- Tier-2 page sections (DEV-05 T2): "Notable features" bulleted
+                -- list, "Real Estate Context" (property types + price drivers +
+                -- the deliberate-drawback paragraph), and a curated per-lake FAQ
+                -- (overrides the generated FAQ when set). All nullable/optional.
+                -- These are read by the lake-detail SSR SELECT; assertCriticalSchema()
+                -- refuses to boot if they are ever missing from lakes.
+                ADD COLUMN IF NOT EXISTS notable_features    TEXT,
+                ADD COLUMN IF NOT EXISTS real_estate_context TEXT,
+                ADD COLUMN IF NOT EXISTS faq                 JSONB,
                 -- Public page gallery — JSON array of Cloudinary image URLs.
                 -- The lake-detail SSR renders these as a photo grid below the
                 -- hero. Empty array (the default) hides the section entirely
@@ -4261,6 +4272,41 @@ async function ensureTables() {
     }
 }
 
+// Boot-order guard. ensureTables() deliberately swallows per-statement warnings
+// (most ALTERs are idempotent no-ops on a live DB), which means a genuinely
+// broken migration — e.g. a column added to the wrong table — can leave the app
+// booting and then 500'ing every request that SELECTs the missing column. This
+// asserts, AFTER migrations run and BEFORE we accept traffic, that the columns
+// the hot public SSR routes depend on actually exist. If any are missing we log
+// loudly and exit(1) so Render marks the deploy failed and keeps the last
+// healthy version live — refusing to serve beats serving 500s.
+async function assertCriticalSchema() {
+    const REQUIRED = {
+        // Every column the lake-detail SSR SELECT (GET /lakes/:slug) reads. If any
+        // is missing the route 500s for all 69 lakes, so the whole set is a boot
+        // invariant. Keep in sync with that SELECT.
+        lakes: [
+            'intro_text', 'description', 'lifestyle_text', 'seasons_text',
+            'notable_features', 'real_estate_context', 'faq',
+            'dow_number', 'max_depth_ft', 'mean_depth_ft', 'surface_acres', 'littoral_acres',
+            'water_clarity_ft', 'shoreline_miles', 'public_accesses', 'fish_species', 'dnr_survey_url',
+            'gallery', 'hero_image_credit_name', 'hero_image_credit_url', 'hero_image_license',
+        ],
+    };
+    for (const [table, cols] of Object.entries(REQUIRED)) {
+        const { rows } = await pool.query(
+            `SELECT column_name FROM information_schema.columns
+              WHERE table_name = $1 AND column_name = ANY($2::text[])`,
+            [table, cols]);
+        const have = new Set(rows.map(r => r.column_name));
+        const missing = cols.filter(c => !have.has(c));
+        if (missing.length) {
+            console.error(`FATAL: table "${table}" is missing required column(s): ${missing.join(', ')}. Refusing to serve.`);
+            process.exit(1);
+        }
+    }
+}
+
 // Reconcile the Granite City Aerial Media spotlight with the OWNER's real
 // business profile. We initially seeded our own business row for the local
 // spotlight before realizing the owner had already created their own (with an
@@ -5000,6 +5046,36 @@ async function seedTier2Content() {
         const { LAKES } = require('./data/tier2-content');
         const crypto = require('crypto');
         await pool.query(`CREATE TABLE IF NOT EXISTS seed_flags (key TEXT PRIMARY KEY, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
+
+        // Reconcile 4 Tier-2 slugs that were wrong in the source tracker. The
+        // previous deploy's "create missing rows" seeder INSERTed duplicate lakes
+        // rows at these wrong slugs (the content UPDATE then failed on the
+        // misplaced column, so they were left as empty orphans). Remove those
+        // duplicates — guarded so it ONLY ever deletes a heroless row with no
+        // agent assigned AND only when the real prod row already exists — so the
+        // corrected content below targets the real row instead of the orphan.
+        const SLUG_FIXES = {
+            'lake-kabetogama':   'kabetogama-lake',
+            'green-lake-spicer': 'green-lake',
+            'prior-lake-lake':   'prior-lake',
+            'forest-lake-lake':  'forest-lake',
+        };
+        for (const [wrong, right] of Object.entries(SLUG_FIXES)) {
+            try {
+                const del = await pool.query(
+                    `DELETE FROM lakes o
+                      WHERE o.slug = $1
+                        AND COALESCE(o.hero_image_url, '') = ''
+                        AND NOT EXISTS (SELECT 1 FROM agent_lakes al WHERE al.lake_id = o.id)
+                        AND EXISTS      (SELECT 1 FROM lakes c WHERE c.slug = $2)`,
+                    [wrong, right]);
+                if (del.rowCount) console.warn(`[seed] tier2 reconcile: removed orphan duplicate lakes row '${wrong}' (real row '${right}' exists)`);
+                // Drop any stale content flags keyed to the wrong slug (defensive —
+                // the failed UPDATEs never wrote flags, but keeps re-seeds clean).
+                await pool.query(`DELETE FROM seed_flags WHERE key LIKE $1`, [`tier2_content:lakes:${wrong}:%`]).catch(() => {});
+            } catch (e) { console.warn(`[seed] tier2 reconcile ${wrong}→${right} skipped:`, e.message); }
+        }
+
         const TEXT_FIELDS = ['seo_title', 'seo_description', 'intro_text', 'description', 'lifestyle_text', 'seasons_text', 'notable_features', 'real_estate_context'];
         const DNR_COLS = new Set(['max_depth_ft', 'mean_depth_ft', 'surface_acres', 'littoral_acres', 'water_clarity_ft', 'shoreline_miles', 'public_accesses']);
         let applied = 0, created = 0;
@@ -5291,14 +5367,25 @@ async function seedTownContent() {
 // INITIALIZE
 // ==========================================
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, async () => {
+(async () => {
+    // Run migrations and assert critical schema BEFORE opening the port, so we
+    // never serve requests against a half-migrated DB and never cut traffic over
+    // to an instance with missing columns. Any failure here fails the boot, so
+    // Render keeps the last healthy deploy live instead of serving 500s.
+    try {
+        await ensureTables();
+        await assertCriticalSchema();
+    } catch (e) {
+        console.error('FATAL: schema initialization failed, refusing to serve:', e.message);
+        process.exit(1);
+    }
+    app.listen(PORT, async () => {
     console.log(`=======================================`);
     console.log(` MN LAKE HOMES PLATFORM ENGINE `);
     console.log(` Environment  : ${process.env.NODE_ENV || 'local'}`);
     console.log(` Listening on : http://localhost:${PORT}`);
     console.log(` Connected to : PostgreSQL Database`);
     console.log(`=======================================`);
-    await ensureTables();
     await backfillBusinessCoords();
 
     // Lead SLA sweep — re-route leads the assigned agent hasn't worked in time.
@@ -5456,4 +5543,5 @@ app.listen(PORT, async () => {
             console.error('[site-images.scan] failed:', err.message);
         }
     })();
-});
+    });
+})();

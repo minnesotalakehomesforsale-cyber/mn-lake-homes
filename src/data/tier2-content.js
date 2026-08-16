@@ -212,7 +212,7 @@ One superlative to be careful with. Christmas Lake is genuinely among the cleare
         stats: { max_depth_ft: 87, shoreline_miles: 4, water_clarity_ft: 20 },
     },
     {
-        slug: 'forest-lake-lake', kind: 'lake',
+        slug: 'forest-lake', kind: 'lake',
         name: 'Forest Lake', geo: 'Washington County; City of Forest Lake',
         seo_title: 'Forest Lake Homes for Sale | MN Lake Homes',
         seo_description: 'Forest Lake homes for sale in Washington County, Minnesota. Three connected basins, 2,270 acres, 34 minutes from St. Paul on the I-35 corridor. Get matched free.',
@@ -249,7 +249,7 @@ Two things to be straight about. Clarity is the lake's weakest metric at roughly
         stats: { surface_acres: 2270, max_depth_ft: 37, mean_depth_ft: 11 },
     },
     {
-        slug: 'green-lake-spicer', kind: 'lake',
+        slug: 'green-lake', kind: 'lake',
         name: 'Green Lake', geo: 'Kandiyohi County; Spicer / New London',
         seo_title: 'Green Lake Homes for Sale | MN Lake Homes',
         seo_description: 'Green Lake homes for sale in Spicer, Minnesota. 5,500 acres, 110 ft deep, 14 ft clarity in Kandiyohi County. Get matched with a local agent — free, no commission.',
@@ -286,7 +286,7 @@ Two things to raise. The lake carries official impairments for mercury and chlor
         stats: { max_depth_ft: 110, mean_depth_ft: 21, shoreline_miles: 12, water_clarity_ft: 14.1 },
     },
     {
-        slug: 'lake-kabetogama', kind: 'lake',
+        slug: 'kabetogama-lake', kind: 'lake',
         name: 'Lake Kabetogama', geo: 'St. Louis County; Voyageurs National Park region',
         seo_title: 'Lake Kabetogama Homes for Sale | MN Lake Homes',
         seo_description: 'Lake Kabetogama homes for sale in Voyageurs National Park country, northern Minnesota. 24,000+ acres, protected shoreline, walleye water. Get matched free.',
@@ -581,7 +581,7 @@ Two things to disclose early. Both zebra mussels and starry stonewort are presen
         stats: { surface_acres: 6612, max_depth_ft: 112, shoreline_miles: 57, littoral_acres: 1978 },
     },
     {
-        slug: 'prior-lake-lake', kind: 'lake',
+        slug: 'prior-lake', kind: 'lake',
         name: 'Prior Lake', geo: 'Scott County; City of Prior Lake',
         seo_title: 'Prior Lake Homes for Sale | MN Lake Homes',
         seo_description: 'Prior Lake homes for sale in Scott County, Minnesota. Upper and Lower basins, 1,340+ acres, 35 minutes from Minneapolis. Get matched with a local agent — free.',
