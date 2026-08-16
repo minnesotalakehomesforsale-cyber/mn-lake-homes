@@ -690,6 +690,13 @@ exports.replaceMyTags = async (req, res) => {
         const biz = await fetchOwnerBusiness(req.user.userId);
         if (!biz) return res.status(404).json({ error: 'No business found for your account.' });
 
+        // Spec 2: Free/Basic list on ONE lake; Premium lists on every lake.
+        const { effectiveTier, limitsFor } = require('../data/business-tiers');
+        const lakeCap = limitsFor(effectiveTier(biz)).lakes; // 1 for free/basic, Infinity for premium
+        if (Number.isFinite(lakeCap) && tagIds.length > lakeCap) {
+            return res.status(400).json({ error: `Your plan lists on ${lakeCap} lake${lakeCap === 1 ? '' : 's'}. Upgrade to Premium to appear on every lake you serve.`, upgrade: true });
+        }
+
         await client.query('BEGIN');
         await client.query(`DELETE FROM business_tags WHERE business_id = $1`, [biz.id]);
         if (tagIds.length) {
