@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Featured Agent Graphic — MN Lake Homes</title>
+    <style>
+        :root { --ink:#0f2b46; --brand:#1d6df2; --hair:#e2e8f0; --muted:#64748b; --ground:#eef2f7; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; }
+        body { font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--ground); color: var(--ink); }
+        .wrap { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+        .topbar { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+        .topbar h1 { font-size: 1.5rem; font-weight: 800; margin: 0; flex: 1; }
+        .btn { font: inherit; font-weight: 800; font-size: 0.9rem; padding: 0.6rem 1.25rem; border-radius: 9px; border: 0; cursor: pointer; background: var(--brand); color: #fff; text-decoration: none; display: inline-block; }
+        .btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--hair); }
+        .btn:disabled { opacity: 0.5; cursor: default; }
+        .panel { display: grid; grid-template-columns: 1fr 260px; gap: 1.5rem; align-items: start; }
+        .preview { background: #fff; border: 1px solid var(--hair); border-radius: 14px; padding: 1.25rem; display: flex; justify-content: center; }
+        .preview canvas { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 8px 30px rgba(16,32,60,.14); }
+        .controls { background: #fff; border: 1px solid var(--hair); border-radius: 14px; padding: 1.25rem; }
+        .controls h3 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 0 0 0.75rem; }
+        .fmt { display: block; width: 100%; text-align: left; background: #f8fafc; border: 1px solid var(--hair); border-radius: 10px; padding: 0.7rem 0.9rem; margin-bottom: 0.6rem; cursor: pointer; font: inherit; }
+        .fmt.active { border-color: var(--brand); background: #eef4ff; box-shadow: 0 0 0 3px rgba(29,109,242,0.1); }
+        .fmt .t { font-weight: 800; font-size: 0.92rem; }
+        .fmt .d { font-size: 0.78rem; color: var(--muted); }
+        .field { margin-bottom: 0.85rem; }
+        .field label { display: block; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 0.3rem; }
+        .field input { width: 100%; box-sizing: border-box; font: inherit; font-size: 0.9rem; padding: 0.55rem 0.7rem; border: 1px solid var(--hair); border-radius: 8px; }
+        .hint { color: var(--muted); font-size: 0.82rem; margin-top: 0.75rem; line-height: 1.5; }
+        @media (max-width: 720px) { .panel { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="topbar">
+            <h1>Your Featured Agent graphic</h1>
+            <a class="btn ghost" href="/pages/agent/dashboard.html">← Back to portal</a>
+        </div>
+        <div class="panel">
+            <div class="preview"><canvas id="cv" width="1080" height="1080"></canvas></div>
+            <div class="controls">
+                <h3>Format</h3>
+                <button class="fmt active" data-fmt="square"   onclick="pick('square', this)"><div class="t">Instagram feed</div><div class="d">1080 × 1080</div></button>
+                <button class="fmt" data-fmt="story"    onclick="pick('story', this)"><div class="t">Story / Reel</div><div class="d">1080 × 1920</div></button>
+                <button class="fmt" data-fmt="landscape" onclick="pick('landscape', this)"><div class="t">Facebook</div><div class="d">1200 × 630</div></button>
+
+                <h3 style="margin-top:1.25rem;">Tagline</h3>
+                <div class="field"><input id="tagline" value="Your local lake home expert" oninput="draw()" maxlength="42"></div>
+
+                <button class="btn" id="dl" style="width:100%;margin-top:0.5rem;" onclick="download()">⬇ Download PNG</button>
+                <p class="hint" id="hint">Post it to Instagram, Facebook, or your story. It links buyers back to your MN Lake Homes profile.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const FORMATS = { square: [1080, 1080], story: [1080, 1920], landscape: [1200, 630] };
+        let fmt = 'square', AGENT = null, photoImg = null;
+
+        async function loadAgent() {
+            try {
+                const r = await fetch('/api/agents/me', { credentials: 'include' });
+                if (r.status === 401 || r.status === 403) { location.href = '/login?redirect=/pages/agent/spotlight.html'; return; }
+                if (r.ok) AGENT = await r.json();
+            } catch (_) {}
+            if (AGENT?.profile_photo_url) {
+                await new Promise(res => {
+                    const im = new Image(); im.crossOrigin = 'anonymous';
+                    im.onload = () => { photoImg = im; res(); };
+                    im.onerror = () => res();
+                    im.src = AGENT.profile_photo_url;
+                });
+            }
+            draw();
+        }
+
+        function pick(f, el) { fmt = f; document.querySelectorAll('.fmt').forEach(b => b.classList.remove('active')); el.classList.add('active'); draw(); }
+
+        // Rounded helper
+        function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+        function draw() {
+            const [w, h] = FORMATS[fmt];
+            const cv = document.getElementById('cv'); cv.width = w; cv.height = h;
+            const ctx = cv.getContext('2d');
+            const a = AGENT || {};
+            const landscape = fmt === 'landscape';
+
+            // Background — brand gradient + subtle wave band
+            const g = ctx.createLinearGradient(0, 0, w, h);
+            g.addColorStop(0, '#0f2b46'); g.addColorStop(1, '#1d6df2');
+            ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+            ctx.save();
+            ctx.globalAlpha = 0.10; ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(0, h * 0.72);
+            for (let x = 0; x <= w; x += 20) ctx.lineTo(x, h * 0.72 + Math.sin(x / w * Math.PI * 4) * (h * 0.02));
+            ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath(); ctx.fill();
+            ctx.restore();
+
+            const cx = landscape ? w * 0.26 : w / 2;
+            const textCx = landscape ? w * 0.55 : w / 2;
+            const align = landscape ? 'left' : 'center';
+
+            // "FEATURED AGENT" eyebrow ribbon
+            ctx.textAlign = align; ctx.fillStyle = '#ffd66b';
+            ctx.font = `800 ${Math.round(w * 0.024)}px ui-sans-serif, Arial`;
+            ctx.fillText('★ FEATURED LAKE AGENT', landscape ? w * 0.42 : w / 2, h * (landscape ? 0.18 : 0.12));
+
+            // Photo (circle)
+            const pr = Math.round((landscape ? h : w) * (landscape ? 0.30 : 0.19));
+            const py = landscape ? h * 0.5 : h * 0.34;
+            ctx.save();
+            ctx.beginPath(); ctx.arc(cx, py, pr, 0, Math.PI * 2); ctx.closePath();
+            ctx.lineWidth = Math.max(6, w * 0.008); ctx.strokeStyle = '#ffffff'; ctx.stroke();
+            ctx.clip();
+            if (photoImg) {
+                // cover-fit the image into the circle
+                const s = Math.max((pr * 2) / photoImg.width, (pr * 2) / photoImg.height);
+                const iw = photoImg.width * s, ih = photoImg.height * s;
+                ctx.drawImage(photoImg, cx - iw / 2, py - ih / 2, iw, ih);
+            } else {
+                ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(cx - pr, py - pr, pr * 2, pr * 2);
+                ctx.fillStyle = '#cfe0ff'; ctx.textAlign = 'center'; ctx.font = `800 ${pr}px ui-sans-serif, Arial`;
+                ctx.fillText((a.display_name || 'A').trim()[0].toUpperCase(), cx, py + pr * 0.35);
+            }
+            ctx.restore();
+
+            // Name
+            ctx.textAlign = align; ctx.fillStyle = '#ffffff';
+            const nameY = landscape ? h * 0.34 : py + pr + h * 0.09;
+            ctx.font = `800 ${Math.round(w * (landscape ? 0.052 : 0.066))}px ui-sans-serif, Arial`;
+            ctx.fillText(a.display_name || 'Your Name', textCx, nameY);
+
+            // Brokerage
+            if (a.brokerage_name) {
+                ctx.fillStyle = '#cfe0ff';
+                ctx.font = `600 ${Math.round(w * (landscape ? 0.028 : 0.034))}px ui-sans-serif, Arial`;
+                ctx.fillText(a.brokerage_name, textCx, nameY + h * (landscape ? 0.07 : 0.055));
+            }
+
+            // Tagline
+            const tag = (document.getElementById('tagline')?.value || '').trim();
+            if (tag) {
+                ctx.fillStyle = 'rgba(255,255,255,0.92)';
+                ctx.font = `500 ${Math.round(w * (landscape ? 0.026 : 0.032))}px ui-sans-serif, Arial`;
+                ctx.fillText(tag, textCx, nameY + h * (landscape ? 0.135 : 0.11));
+            }
+
+            // Footer brand bar
+            ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff';
+            ctx.font = `800 ${Math.round(w * 0.03)}px ui-sans-serif, Arial`;
+            ctx.fillText('MinnesotaLakeHomesForSale.com', w / 2, h * 0.93);
+        }
+
+        function download() {
+            const cv = document.getElementById('cv');
+            const hint = document.getElementById('hint');
+            try {
+                const url = cv.toDataURL('image/png');
+                const name = (AGENT?.display_name || 'agent').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                const link = document.createElement('a');
+                link.download = `featured-${name}-${fmt}.png`;
+                link.href = url; document.body.appendChild(link); link.click(); link.remove();
+            } catch (e) {
+                hint.style.color = '#c53030';
+                hint.textContent = "Your profile photo blocked the download (cross-origin). Right-click the image above and choose “Save image as”, or contact us to re-upload your photo.";
+            }
+        }
+
+        loadAgent();
+    </script>
+</body>
+</html>
