@@ -1287,6 +1287,50 @@ exports.handleWebhook = async (req, res) => {
                 break;
             }
 
+            // ── Subscription created (A1) ──
+            // Activation is fully handled by checkout.session.completed; this
+            // is a belt-and-suspenders backfill of the stored IDs + an 'active'
+            // mirror, and makes the event explicitly handled (not a silent ack).
+            case 'customer.subscription.created': {
+                const sub = event.data.object;
+                await mirrorSubStatus(sub.id, sub.status === 'trialing' || sub.status === 'active' ? 'active' : sub.status);
+                console.log(`[Stripe Webhook] subscription.created ${sub.id} (${sub.status})`);
+                break;
+            }
+
+            // ── Trial ending soon (A1) ──
+            // Fires ~3 days before a trial converts. Nudge the agent to confirm
+            // their card so they don't lapse the moment the trial ends.
+            case 'customer.subscription.trial_will_end': {
+                const sub = event.data.object;
+                try {
+                    const r = await pool.query(
+                        `SELECT a.id AS agent_id, a.display_name, u.email
+                           FROM agents a JOIN users u ON u.id = a.user_id
+                          WHERE a.stripe_subscription_id = $1 LIMIT 1`, [sub.id]);
+                    if (r.rows[0]) {
+                        const ag = r.rows[0];
+                        const when = sub.trial_end ? new Date(sub.trial_end * 1000) : null;
+                        emailService.sendEmail({
+                            to: ag.email,
+                            subject: 'Your MN Lake Homes trial is ending soon',
+                            html: emailService.layout({
+                                title: `Heads up${ag.display_name ? ', ' + ag.display_name.split(' ')[0] : ''} — your trial ends soon`,
+                                preheader: 'Confirm your card so your leads and placement continue.',
+                                body: `<p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">Your free trial${when ? ` ends on <strong>${when.toLocaleDateString('en-US',{month:'long',day:'numeric'})}</strong>` : ' is ending soon'}. To keep receiving matched leads and your featured placement without interruption, just make sure a valid card is on file.</p>`,
+                                ctaText: 'Review my billing',
+                                ctaUrl: `${process.env.SITE_URL || 'https://minnesotalakehomesforsale.com'}/pages/agent/dashboard.html`,
+                            })
+                        });
+                        require('../services/agent-notify').notifyAgent(ag.agent_id, {
+                            type: 'billing', title: 'Your trial is ending soon',
+                            body: 'Confirm your card so your leads and placement continue.', link: '?view=account',
+                        });
+                    }
+                } catch (e) { console.warn('[Stripe Webhook] trial_will_end handling failed:', e.message); }
+                break;
+            }
+
             default:
                 // Unhandled event type — acknowledge silently
                 break;
