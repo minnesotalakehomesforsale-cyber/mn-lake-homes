@@ -24,6 +24,7 @@ router.get('/me', verifyToken, requireRole('agent'), agentController.getMyProfil
 router.get('/me/leads', verifyToken, requireRole('agent'), agentController.getMyLeads);
 router.get('/me/roi',   verifyToken, requireRole('agent'), agentController.getMyRoi);
 router.get('/me/reach', verifyToken, requireRole('agent'), agentController.getMyReach);
+router.get('/me/search-terms', verifyToken, requireRole('agent'), agentController.getMySearchTerms);
 
 // Agent's own contacts — the "light CRM" (portal #12/#13/#16).
 const contactsController = require('../controllers/contacts.controller');

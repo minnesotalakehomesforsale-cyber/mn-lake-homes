@@ -579,6 +579,19 @@
                         </div>
                     </div>
 
+                    <!-- Lake Intel: real Google searches finding the agent's lake pages
+                         (#1). Loads lazily; hidden until Search Console is configured. -->
+                    <div id="lake-intel" style="display:none; margin-top:1.5rem; background:#fff; border:1px solid #edf2f7; border-radius:14px; padding:1.35rem 1.5rem;">
+                        <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.85rem;">
+                            <span style="font-size:1.25rem;">🔎</span>
+                            <div>
+                                <div style="font-weight:800; color:#1a202c; font-size:1.02rem;">What buyers are searching to find your lakes</div>
+                                <div style="font-size:0.82rem; color:#718096;">Real Google searches that landed on your lake pages · last 30 days</div>
+                            </div>
+                        </div>
+                        <div id="lake-intel-list"></div>
+                    </div>
+
                     <!-- ROI panel — proof of value; populated by loadRoi() -->
                     <div id="dash-roi" class="dash-roi" style="display:none;">
                         <div class="roi-hero">
@@ -1916,6 +1929,7 @@
             loadAgentArticles();
             loadRoi();
             loadReach();
+            loadLakeIntel();
         });
 
         // ── Retention: daily login streak (localStorage, no backend) ──────────────
@@ -2265,6 +2279,33 @@
                     : `Views on the ${d.lakes_served} lake page${d.lakes_served === 1 ? '' : 's'} you serve.`;
                 if (num('dash-sub-leads')) num('dash-sub-leads').textContent =
                     (d.active_leads > 0) ? 'Matched buyers & sellers to work' : "We'll text you the moment one arrives.";
+            } catch (_) {}
+        }
+
+        // Lake Intel — real search terms (#1). Hidden unless Search Console is
+        // configured AND there's data (the honest version of "we drive demand").
+        async function loadLakeIntel() {
+            try {
+                const r = await fetch('/api/agents/me/search-terms', { credentials: 'include' });
+                if (!r.ok) return;
+                const d = await r.json();
+                if (!d.configured || !d.terms || !d.terms.length) return;
+                const host = document.getElementById('lake-intel-list');
+                const max = Math.max(...d.terms.map(t => t.impressions || 1), 1);
+                host.innerHTML = d.terms.slice(0, 12).map(t => {
+                    const pct = Math.round(((t.impressions || 0) / max) * 100);
+                    return `<div style="display:flex; align-items:center; gap:0.75rem; padding:0.4rem 0;">
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-size:0.9rem; color:#1a202c; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${(t.query||'').replace(/[&<>]/g,'')}</div>
+                            <div style="height:5px; background:#edf2f7; border-radius:3px; margin-top:0.3rem; overflow:hidden;"><div style="height:100%; width:${pct}%; background:#1d6df2; border-radius:3px;"></div></div>
+                        </div>
+                        <div style="text-align:right; flex-shrink:0; font-variant-numeric:tabular-nums;">
+                            <div style="font-weight:800; color:#1a202c; font-size:0.9rem;">${(t.impressions||0).toLocaleString()}</div>
+                            <div style="font-size:0.7rem; color:#a0aec0;">impressions</div>
+                        </div>
+                    </div>`;
+                }).join('');
+                document.getElementById('lake-intel').style.display = 'block';
             } catch (_) {}
         }
 

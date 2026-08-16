@@ -850,6 +850,29 @@ const getMyReach = async (req, res) => {
     } catch (e) { console.error('[getMyReach]', e.message); res.status(500).json({ error: 'Failed to load reach.' }); }
 };
 
+// GET /api/agents/me/search-terms — Lake Intel search-query half (#1). Returns
+// the real Google searches that brought buyers to this agent's lake pages +
+// profile. No-op ({ configured:false }) until Search Console creds are set.
+const getMySearchTerms = async (req, res) => {
+    try {
+        const sc = require('../services/search-console');
+        if (!sc.isConfigured()) return res.json({ configured: false, terms: [] });
+        const ar = await pool.query(`SELECT id, slug FROM agents WHERE user_id = $1 LIMIT 1`, [req.user.userId]);
+        if (!ar.rowCount) return res.status(403).json({ error: 'No agent profile yet.' });
+        const { id, slug } = ar.rows[0];
+        const lakes = await pool.query(
+            `SELECT l.slug FROM agent_lakes al JOIN lakes l ON l.id = al.lake_id
+              WHERE al.agent_id = $1 AND l.slug IS NOT NULL`, [id]);
+        const paths = lakes.rows.map(r => '/lakes/' + r.slug);
+        if (slug) paths.push('/agents/' + slug);
+        const terms = await sc.topQueriesForPaths(paths, { days: 30, limit: 15 });
+        res.json({ configured: true, terms });
+    } catch (e) {
+        console.error('[getMySearchTerms]', e.message);
+        res.json({ configured: false, terms: [] });
+    }
+};
+
 // GET /api/agents/admin/at-risk — churn-risk list for the admin cockpit.
 const getAtRiskAgents = async (req, res) => {
     if (!['admin', 'super_admin'].includes(req.user?.role)) return res.status(403).json({ error: 'Admin only.' });
@@ -1219,6 +1242,7 @@ module.exports = {
     getMyLeads,
     getMyRoi,
     getMyReach,
+    getMySearchTerms,
     getUpgradeStatus,
     getMyReferrals,
     getMyLeaderboard,
