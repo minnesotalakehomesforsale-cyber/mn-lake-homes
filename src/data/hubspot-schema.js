@@ -64,6 +64,17 @@ const SUBSCRIPTION_STATUS_OPTIONS = [
     { label: 'None',      value: 'none' },
 ];
 
+// Lead grade (B1) — stamped at submission, never retroactively. Unqualified
+// leads are excluded from every lead-density count. The exact grading rules +
+// the unqualified_reason option set live in the Measurement doc; this provisions
+// the grade property so it exists when the grading logic lands.
+const LEAD_GRADE_OPTIONS = [
+    { label: 'A', value: 'A' },
+    { label: 'B', value: 'B' },
+    { label: 'C', value: 'C' },
+    { label: 'Unqualified', value: 'unqualified' },
+];
+
 // Attach ascending displayOrder so the dropdown order is deterministic.
 const ordered = opts => opts.map((o, i) => ({ ...o, displayOrder: i }));
 
@@ -82,6 +93,10 @@ const CONTACT_PROPERTIES = [
     { name: 'subscription_status', label: 'Subscription Status', type: 'enumeration', fieldType: 'select', groupName: CONTACT_PROPERTY_GROUP.name, options: ordered(SUBSCRIPTION_STATUS_OPTIONS) },
     // Set when a paying contact cancels (A2) so churn is queryable for win-back.
     { name: 'churned_at', label: 'Churned At', type: 'datetime', fieldType: 'date', groupName: CONTACT_PROPERTY_GROUP.name },
+    // Lead grade (B1). unqualified_reason is intentionally NOT created yet — its
+    // option set comes from the Measurement doc; add it there to avoid churning
+    // enum values in HubSpot.
+    { name: 'lead_grade', label: 'Lead Grade', type: 'enumeration', fieldType: 'select', groupName: CONTACT_PROPERTY_GROUP.name, options: ordered(LEAD_GRADE_OPTIONS) },
     // Attribution (DEV-01) — first-touch UTM + landing context. Plain text.
     // NOTE: gclid/fbclid are intentionally NOT created here — HubSpot ships
     // built-in `hs_google_click_id` / `hs_facebook_click_id` and the sync maps
