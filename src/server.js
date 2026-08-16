@@ -2673,6 +2673,43 @@ async function ensureTables() {
             CREATE UNIQUE INDEX IF NOT EXISTS idx_agent_referrals_referred ON agent_referrals(referred_agent_id) WHERE referred_agent_id IS NOT NULL;
         `).catch(e => console.warn('[agent_referrals table]', e.message));
 
+        // Agent's own contacts (portal #12 — the "light CRM" / bring-your-own
+        // contacts layer). Deliberately shallow: contact + pipeline stage +
+        // next-step reminder + notes. NOT a full CRM (no dialer/sequencing).
+        // Platform leads routed to the agent are mirrored in here (source =
+        // 'platform_lead', deduped by lead_id) so it's one list, not two.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS agent_contacts (
+                id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                agent_id       UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+                name           TEXT NOT NULL,
+                email          TEXT,
+                phone          TEXT,
+                contact_type   VARCHAR(16) NOT NULL DEFAULT 'buyer',   -- buyer|seller|renter|other
+                stage          VARCHAR(16) NOT NULL DEFAULT 'new',     -- new|contacted|showing|offer|closed|lost
+                source         VARCHAR(24) NOT NULL DEFAULT 'manual',  -- manual|import|platform_lead
+                lead_id        UUID,                                   -- set when mirrored from a platform lead
+                area           TEXT,                                   -- free-text market/area
+                next_step_at   DATE,
+                next_step_note TEXT,
+                created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                archived_at    TIMESTAMPTZ
+            );
+            CREATE INDEX IF NOT EXISTS idx_agent_contacts_agent ON agent_contacts(agent_id, stage) WHERE archived_at IS NULL;
+            CREATE INDEX IF NOT EXISTS idx_agent_contacts_nextstep ON agent_contacts(next_step_at) WHERE next_step_at IS NOT NULL AND archived_at IS NULL;
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_agent_contacts_lead ON agent_contacts(agent_id, lead_id) WHERE lead_id IS NOT NULL;
+
+            CREATE TABLE IF NOT EXISTS agent_contact_notes (
+                id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                contact_id  UUID NOT NULL REFERENCES agent_contacts(id) ON DELETE CASCADE,
+                agent_id    UUID NOT NULL,
+                body        TEXT NOT NULL,
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_agent_contact_notes_contact ON agent_contact_notes(contact_id, created_at DESC);
+        `).catch(e => console.warn('[agent_contacts tables]', e.message));
+
         // HubSpot mirror id — populated by src/services/hubspot.js after a
         // successful upsert. NULL means "not yet synced" (or sync was off
         // when the record was created); we re-attempt on next contact edit.
@@ -5151,6 +5188,14 @@ app.listen(PORT, async () => {
         const { runWeeklyDigest } = require('./services/buyer-digest');
         setTimeout(() => runWeeklyDigest().catch(e => console.warn('[buyer-digest]', e.message)), 6 * 60 * 1000);
         setInterval(() => runWeeklyDigest().catch(e => console.warn('[buyer-digest]', e.message)), 12 * 60 * 60 * 1000);
+    }
+
+    // Agent contact next-step digest (portal #15) — self-guards to once per
+    // calendar day. Checked ~8 min after boot, then twice a day.
+    if (process.env.CONTACT_DIGEST_ENABLED === 'true') {
+        const { runContactReminderDigest } = require('./controllers/contacts.controller');
+        setTimeout(() => runContactReminderDigest().catch(e => console.warn('[contact-digest]', e.message)), 8 * 60 * 1000);
+        setInterval(() => runContactReminderDigest().catch(e => console.warn('[contact-digest]', e.message)), 12 * 60 * 60 * 1000);
     }
 
     // Buyer nurture drip — 3-touch re-engagement for unconverted buyer leads.

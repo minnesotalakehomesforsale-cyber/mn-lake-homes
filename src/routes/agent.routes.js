@@ -24,6 +24,16 @@ router.get('/me', verifyToken, requireRole('agent'), agentController.getMyProfil
 router.get('/me/leads', verifyToken, requireRole('agent'), agentController.getMyLeads);
 router.get('/me/roi',   verifyToken, requireRole('agent'), agentController.getMyRoi);
 router.get('/me/reach', verifyToken, requireRole('agent'), agentController.getMyReach);
+
+// Agent's own contacts — the "light CRM" (portal #12/#13/#16).
+const contactsController = require('../controllers/contacts.controller');
+router.get   ('/me/contacts',            verifyToken, requireRole('agent'), contactsController.list);
+router.post  ('/me/contacts',            verifyToken, requireRole('agent'), contactsController.create);
+router.post  ('/me/contacts/import',     verifyToken, requireRole('agent'), contactsController.importCsv);
+router.patch ('/me/contacts/:id',        verifyToken, requireRole('agent'), contactsController.update);
+router.delete('/me/contacts/:id',        verifyToken, requireRole('agent'), contactsController.remove);
+router.get   ('/me/contacts/:id/notes',  verifyToken, requireRole('agent'), contactsController.listNotes);
+router.post  ('/me/contacts/:id/notes',  verifyToken, requireRole('agent'), contactsController.addNote);
 router.get('/me/upgrade-status', verifyToken, requireRole('agent'), agentController.getUpgradeStatus);
 router.get('/me/referrals', verifyToken, requireRole('agent'), agentController.getMyReferrals);
 router.get('/me/leaderboard', verifyToken, requireRole('agent'), agentController.getMyLeaderboard);
