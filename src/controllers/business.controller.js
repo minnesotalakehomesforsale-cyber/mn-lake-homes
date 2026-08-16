@@ -147,15 +147,29 @@ exports.list = async (req, res) => {
             where.push(`(user_id IS NULL OR subscription_status = 'active' OR tier_comped)`);
         }
 
+        // Effective render tier (T110) — mirrors the lake-page block logic so
+        // directory gating is consistent everywhere: a business only renders as
+        // 'premium'/'basic' when it's actually paying (or comped); otherwise
+        // 'free'. The directory should gate on THIS, not the raw `tier` column
+        // (which is just what they're set to, regardless of payment).
+        const RENDER_TIER = `
+            CASE
+                WHEN b.tier = 'premium' AND (b.subscription_status = 'active' OR b.tier_comped) THEN 'premium'
+                WHEN b.tier = 'basic'   AND (b.subscription_status = 'active' OR b.tier_comped) THEN 'basic'
+                ELSE 'free'
+            END`;
         const sql = `
             SELECT b.${BUSINESS_COLS.split(',').map(c => c.trim()).join(', b.')},
-                   COALESCE(bl.count, 0)::int AS lake_count
+                   COALESCE(bl.count, 0)::int AS lake_count,
+                   ${RENDER_TIER} AS render_tier
             FROM businesses b
             LEFT JOIN (
                 SELECT business_id, COUNT(*) AS count FROM business_lakes GROUP BY business_id
             ) bl ON bl.business_id = b.id
             ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
-            ORDER BY b.type ASC, b.name ASC
+            ORDER BY
+                CASE ${RENDER_TIER} WHEN 'premium' THEN 0 WHEN 'basic' THEN 1 ELSE 2 END,
+                b.type ASC, b.name ASC
             LIMIT 1000
         `;
         const { rows } = await pool.query(sql, params);

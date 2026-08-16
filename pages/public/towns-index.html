@@ -896,7 +896,10 @@
                         const allowed = BIZ_SEG_TYPES[_type] || [_type];
                         if (!allowed.includes(b.type)) return false;
                     }
-                    if (tier && b.tier !== tier) return false;
+                    // Gate on the EFFECTIVE render tier (only paying/comped
+                    // businesses render as premium/basic), falling back to the
+                    // raw tier if an older API build didn't send render_tier.
+                    if (tier && (b.render_tier || b.tier) !== tier) return false;
                     if (regionOrCity && b.city !== regionOrCity) return false;
                     if (search) {
                         const hay = `${b.name} ${b.city || ''} ${b.type || ''}`.toLowerCase();
@@ -907,8 +910,8 @@
                 // Featured Partners always sort to the top so their pin
                 // and card get noticed first.
                 filtered.sort((a, b) => {
-                    const ap = a.tier === 'premium' ? 0 : 1;
-                    const bp = b.tier === 'premium' ? 0 : 1;
+                    const ap = (a.render_tier || a.tier) === 'premium' ? 0 : 1;
+                    const bp = (b.render_tier || b.tier) === 'premium' ? 0 : 1;
                     return ap - bp;
                 });
                 return filtered.map(b => ({ kind: 'biz', data: b }));
@@ -1342,7 +1345,7 @@
                     const typeLabel = BIZ_TYPE_LABEL[b.type] || 'Local Business';
                     const loc = [b.city, b.state].filter(Boolean).join(', ');
                     const bizColor = BIZ_COLORS[b.type] || BIZ_COLORS.other;
-                    const isFeatured = b.tier === 'premium';
+                    const isFeatured = (b.render_tier || b.tier) === 'premium';
                     return `
                         <a class="db-card biz ${isFeatured ? 'is-featured' : ''}" style="--biz-c:${bizColor};" href="/businesses/${encodeURIComponent(b.slug)}" data-key="${escHtml(keyFor(item))}">
                             <div class="db-card-thumb">
