@@ -2975,8 +2975,11 @@
 
             document.getElementById('lp-name').textContent = l.name || 'Lead';
             const typeLabel = LEAD_TYPE_LABEL_A[l.type] || (l.type || 'General').replace(/_/g,' ');
+            const gradeBadge = l.lead_grade && ['A','B','C'].includes(l.lead_grade)
+                ? `<span class="lp-grade g-${l.lead_grade}" title="Lead grade">${l.lead_grade}</span>` : '';
+            const heldBadge = l.held_no_agent ? `<span class="lp-grade" style="background:#feebc8;color:#7b341e;" title="Was held until a paying agent was on this lake">⏳ held</span>` : '';
             document.getElementById('lp-badges').innerHTML =
-                `${tierBadge(l)}<span class="lead-badge lb-${l.type}">${escA(typeLabel)}</span>
+                `${gradeBadge}${heldBadge}${tierBadge(l)}<span class="lead-badge lb-${l.type}">${escA(typeLabel)}</span>
                  ${l.listing_title ? `<a href="/listings/${escA(l.listing_slug)}" target="_blank" style="font-size:0.72rem;color:#1d6df2;font-weight:800;align-self:center;text-decoration:none;">🏠 Showing: ${escA(l.listing_title)} ↗</a>` : ''}
                  ${(!l.listing_title && l.source_page_title) ? `<span style="font-size:0.72rem;color:#a0aec0;font-weight:700;align-self:center;">via ${escA(l.source_page_title)}</span>` : ''}`;
 
@@ -3007,6 +3010,7 @@
 
             // Status buttons
             renderStatusButtons(l.status);
+            renderDisposition(l);
             document.getElementById('lp-save-note').textContent = '';
             document.getElementById('lp-save-note').className = 'lp-save-note';
             renderOutcome(l);
@@ -3151,6 +3155,64 @@
                 const on = (current === s.key) ? ` on${s.key === 'closed' ? ' closed' : ''}` : '';
                 return `<button type="button" class="lp-status-btn${on}" onclick="changeLeadStatus('${s.key}')">${s.label}</button>`;
             }).join('');
+        }
+
+        // One-tap disposition + 7-day dispute (Spec 1).
+        const DISPOSITIONS = [
+            ['contacted_working', '📞 Working'], ['contacted_not_ready', '🕒 Not ready'],
+            ['unreachable', '🔇 Unreachable'], ['not_qualified', '🚫 Not qualified'],
+            ['closed_won', '🏆 Won'], ['closed_lost', '❌ Lost'],
+        ];
+        function renderDisposition(l) {
+            const host = document.getElementById('lp-disposition');
+            if (!host) return;
+            const cur = l.disposition || '';
+            const btns = DISPOSITIONS.map(([k, label]) =>
+                `<button type="button" class="lp-disp-btn${cur === k ? ' on' : ''}" onclick="setDisposition('${k}')">${label}</button>`).join('');
+            // Dispute — only within 7 days of the lead landing.
+            const landed = new Date(l.routed_at || l.created_at);
+            const canDispute = (Date.now() - landed) < 7 * 86400000;
+            const disputeRow = l.dispute_flag
+                ? `<div class="lp-save-note" style="color:#b7791f;">⚑ You disputed this lead's grade — under review.</div>`
+                : (canDispute
+                    ? `<button type="button" class="lp-dispute" onclick="disputeLead()">⚑ Dispute this lead's grade</button>`
+                    : `<div class="lp-save-note" style="color:#a0aec0;">Dispute window closed (7 days).</div>`);
+            host.innerHTML = `<div class="lp-disp-grid">${btns}</div><div id="lp-disp-note" class="lp-save-note"></div>${disputeRow}`;
+        }
+        async function setDisposition(key) {
+            let reason = null;
+            if (key === 'not_qualified') {
+                reason = prompt('Why is this lead not qualified? (required)');
+                if (!reason || !reason.trim()) return;
+            }
+            const note = document.getElementById('lp-disp-note');
+            try {
+                const r = await fetch(`/api/agents/me/leads/${_activeLeadId}/disposition`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ disposition: key, reason }),
+                });
+                const d = await r.json().catch(() => ({}));
+                if (!r.ok) { if (note) { note.style.color = '#c53030'; note.textContent = d.error || 'Could not save.'; } return; }
+                const l = allLeads.find(x => String(x.id) === String(_activeLeadId));
+                if (l) { l.disposition = key; l.disposition_reason = reason; }
+                renderDisposition(l || {});
+                if (note) { note.style.color = '#2f855a'; note.textContent = '✓ Logged'; }
+            } catch (_) { if (note) { note.style.color = '#c53030'; note.textContent = 'Could not save.'; } }
+        }
+        async function disputeLead() {
+            const reason = prompt('What makes you think this lead was misgraded? (required)');
+            if (!reason || !reason.trim()) return;
+            try {
+                const r = await fetch(`/api/agents/me/leads/${_activeLeadId}/dispute`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ reason }),
+                });
+                const d = await r.json().catch(() => ({}));
+                if (!r.ok) { alert(d.error || 'Could not file dispute.'); return; }
+                const l = allLeads.find(x => String(x.id) === String(_activeLeadId));
+                if (l) l.dispute_flag = true;
+                renderDisposition(l || {});
+            } catch (_) {}
         }
 
         function closeLeadPanel() {
@@ -3956,6 +4018,9 @@
             <p class="lp-section-label">Contact</p>
             <div class="lp-contact" id="lp-contact"></div>
 
+            <p class="lp-section-label" style="margin-top:1.25rem;">Outcome — one tap</p>
+            <div id="lp-disposition"></div>
+
             <p class="lp-section-label" style="margin-top:1.25rem;">Log a touch</p>
             <p style="font-size:0.78rem;color:#a0aec0;margin:-0.3rem 0 0.6rem;line-height:1.5;">One tap logs it as a note and moves a new lead to Contacted.</p>
             <div class="lp-log-row">
@@ -4081,6 +4146,16 @@
         .notif-item .b { font-size:0.8rem; color:#718096; margin-top:0.15rem; line-height:1.4; }
         .notif-item .ago { font-size:0.72rem; color:#a0aec0; margin-top:0.2rem; }
         .notif-empty { padding:2rem 1rem; text-align:center; color:#a0aec0; font-size:0.85rem; }
+
+        /* Lead grade + disposition (Spec 1) */
+        .lp-grade { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; padding:0 6px; border-radius:5px; font-size:0.72rem; font-weight:900; align-self:center; }
+        .lp-grade.g-A { background:#e9f9ef; color:#1a7a45; } .lp-grade.g-B { background:#ebf4ff; color:#1a4fb0; } .lp-grade.g-C { background:#f1f5f9; color:#64748b; }
+        .lp-disp-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.4rem; }
+        .lp-disp-btn { font:inherit; font-size:0.82rem; font-weight:700; padding:0.5rem 0.6rem; border:1px solid #e2e8f0; border-radius:8px; background:#fff; color:#4a5568; cursor:pointer; text-align:left; }
+        .lp-disp-btn:hover { border-color:#cbd8ea; }
+        .lp-disp-btn.on { background:#0f2b46; color:#fff; border-color:#0f2b46; }
+        .lp-dispute { margin-top:0.6rem; background:none; border:0; color:#c05621; font:inherit; font-weight:700; font-size:0.82rem; cursor:pointer; padding:0.2rem 0; }
+        .theme-dark .lp-disp-btn { background:#1b222c; border-color:#2b333f; color:#cdd6e2; }
     </style>
 
     <!-- Add/Edit + detail modal -->
