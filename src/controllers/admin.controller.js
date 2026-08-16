@@ -336,6 +336,18 @@ const updateStatus = async (req, res) => {
             // "profile published" HubSpot event (best-effort, no-op otherwise).
             if (isPublished) { try { require('./claim.controller').firePublishedEvent('agent', id); } catch (_) {} }
 
+            // In-app notification centre (#11) — tell the agent their profile is live.
+            if (isPublished) {
+                try {
+                    require('../services/agent-notify').notifyAgent(id, {
+                        type: 'profile',
+                        title: '🎉 Your profile is live!',
+                        body: "Buyers can now find you on your lake pages. Share your Featured Agent graphic to spread the word.",
+                        link: '',
+                    });
+                } catch (_) {}
+            }
+
             logActivity({
                 event_type: status === 'published' ? 'agent.publish' : `agent.status.${status || 'update'}`,
                 event_scope: 'agent',

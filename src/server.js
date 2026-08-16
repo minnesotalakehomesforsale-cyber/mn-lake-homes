@@ -2710,6 +2710,25 @@ async function ensureTables() {
             CREATE INDEX IF NOT EXISTS idx_agent_contact_notes_contact ON agent_contact_notes(contact_id, created_at DESC);
         `).catch(e => console.warn('[agent_contacts tables]', e.message));
 
+        // In-app agent notification centre (portal #11) — gives the portal a
+        // pulse even in a quiet month: new lead, profile approved, spotlight
+        // live, monthly report ready, etc. Emitted via notifyAgent() in
+        // src/services/agent-notify.js.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS agent_notifications (
+                id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                agent_id   UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+                type       VARCHAR(32) NOT NULL,   -- lead|profile|billing|report|view|system
+                title      TEXT NOT NULL,
+                body       TEXT,
+                link       TEXT,                   -- in-app target (e.g. ?view=leads)
+                read_at    TIMESTAMPTZ,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_agent_notifications_agent ON agent_notifications(agent_id, created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_agent_notifications_unread ON agent_notifications(agent_id) WHERE read_at IS NULL;
+        `).catch(e => console.warn('[agent_notifications table]', e.message));
+
         // HubSpot mirror id — populated by src/services/hubspot.js after a
         // successful upsert. NULL means "not yet synced" (or sync was off
         // when the record was created); we re-attempt on next contact edit.

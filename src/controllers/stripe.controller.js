@@ -1223,6 +1223,17 @@ exports.handleWebhook = async (req, res) => {
                             nextAttempt: invoice.next_payment_attempt ? new Date(invoice.next_payment_attempt * 1000) : null,
                         });
                     } catch (e) { console.warn('[Stripe Webhook] agent dunning email failed:', e.message); }
+                    // In-app notification centre (#11).
+                    try {
+                        const notify = require('../services/agent-notify');
+                        const agRow = await pool.query(`SELECT id FROM agents WHERE stripe_subscription_id = $1 LIMIT 1`, [invoice.subscription]);
+                        if (agRow.rows[0]) notify.notifyAgent(agRow.rows[0].id, {
+                            type: 'billing',
+                            title: invoice.next_payment_attempt ? 'Payment issue — update your card' : 'Final notice — membership at risk',
+                            body: 'Your renewal payment was declined. Update your payment method to keep your placement.',
+                            link: '?view=account',
+                        });
+                    } catch (_) {}
                 }
                 break;
             }

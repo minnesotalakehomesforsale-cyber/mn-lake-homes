@@ -494,6 +494,16 @@ const createLead = async (req, res) => {
                                 address: geo?.formattedAddress || addressForRouting || pick.lakeName || null },
                     });
 
+                    // In-app notification centre (#11).
+                    try {
+                        require('../services/agent-notify').notifyAgent(pick.agentId, {
+                            type: 'lead',
+                            title: `New ${leadScore.tier === 'hot' ? '🔥 hot ' : ''}lead: ${name || 'someone'}`,
+                            body: [enumType, pick.lakeName || pick.tagName].filter(Boolean).join(' · ') || 'Respond fast to win it.',
+                            link: '?view=leads',
+                        });
+                    } catch (_) {}
+
                     logActivity({
                         event_type: 'lead.route_assigned',
                         event_scope: 'lead',

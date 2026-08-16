@@ -34,6 +34,12 @@ router.patch ('/me/contacts/:id',        verifyToken, requireRole('agent'), cont
 router.delete('/me/contacts/:id',        verifyToken, requireRole('agent'), contactsController.remove);
 router.get   ('/me/contacts/:id/notes',  verifyToken, requireRole('agent'), contactsController.listNotes);
 router.post  ('/me/contacts/:id/notes',  verifyToken, requireRole('agent'), contactsController.addNote);
+
+// In-app notification centre (portal #11).
+const notificationsController = require('../controllers/notifications.controller');
+router.get ('/me/notifications',              verifyToken, requireRole('agent'), notificationsController.list);
+router.get ('/me/notifications/unread-count', verifyToken, requireRole('agent'), notificationsController.unreadCount);
+router.post('/me/notifications/mark-read',    verifyToken, requireRole('agent'), notificationsController.markRead);
 router.get('/me/upgrade-status', verifyToken, requireRole('agent'), agentController.getUpgradeStatus);
 router.get('/me/referrals', verifyToken, requireRole('agent'), agentController.getMyReferrals);
 router.get('/me/leaderboard', verifyToken, requireRole('agent'), agentController.getMyLeaderboard);
