@@ -3799,6 +3799,10 @@ async function ensureTables() {
             );
             CREATE INDEX IF NOT EXISTS idx_page_views_created   ON page_views(created_at DESC);
             CREATE INDEX IF NOT EXISTS idx_page_views_path      ON page_views(path);
+            -- Composite for the agent "reach" stats (#10 speed): counts by
+            -- exact path within a recent time window resolve from this index
+            -- instead of scanning, keeping the dashboard load sub-second.
+            CREATE INDEX IF NOT EXISTS idx_page_views_path_created ON page_views(path, created_at DESC);
             CREATE INDEX IF NOT EXISTS idx_page_views_visitor   ON page_views(visitor_hash);
             CREATE INDEX IF NOT EXISTS idx_business_tags_tag      ON business_tags(tag_id);
             CREATE INDEX IF NOT EXISTS idx_business_tags_business ON business_tags(business_id);
