@@ -994,21 +994,17 @@ exports.handleWebhook = async (req, res) => {
                     break;
                 }
 
-                // Comped agents are intentionally kept live without payment,
-                // so a cancellation must NOT hide them — leave their status
-                // and publish flag exactly as the admin set them. Everyone
-                // else drops to 'pending_review' (hidden, but it surfaces in
-                // the admin "Pending Review" tab for a one-click re-publish,
-                // rather than the orphaned 'unpublished' state).
-                await pool.query(
-                    `UPDATE agents
-                        SET profile_status = CASE WHEN tier_comped THEN profile_status ELSE 'pending_review' END,
-                            is_published   = CASE WHEN tier_comped THEN is_published   ELSE false END
-                      WHERE stripe_subscription_id = $1`,
-                    [subscriptionId]
-                );
+                // A3: cancellation DOWNGRADES to the free plan but KEEPS the
+                // public profile live (their listing is what keeps them warm for
+                // win-back) — never hide or delete. downgradeAgentToFree skips
+                // comped agents and leaves is_published/profile_status untouched,
+                // so the profile stays exactly as it was, now on the free tier.
+                try {
+                    await require('../services/dunning').downgradeAgentToFree(subscriptionId);
+                    await require('../services/dunning').resolveDunning(subscriptionId);
+                } catch (e) { console.warn('[Stripe Webhook] downgrade-to-free failed:', e.message); }
 
-                console.log(`[Stripe Webhook] Agent ${agentRows[0].user_id} subscription cancelled (comped agents left live)`);
+                console.log(`[Stripe Webhook] Agent ${agentRows[0].user_id} subscription cancelled → downgraded to Free, profile kept live`);
                 // Alert the owner inbox that an agent churned.
                 {
                     const a = agentRows[0];
@@ -1055,6 +1051,10 @@ exports.handleWebhook = async (req, res) => {
                     sub.status === 'past_due' ? 'past_due'
                     : sub.status === 'canceled' ? 'canceled'
                     : 'active');
+                // Recovered to a billable state → cancel any in-flight dunning (A3).
+                if (sub.status === 'active' || sub.status === 'trialing') {
+                    try { await require('../services/dunning').resolveDunning(sub.id); } catch (_) {}
+                }
 
                 // Try businesses first
                 const bizPrior = await pool.query(
@@ -1197,12 +1197,14 @@ exports.handleWebhook = async (req, res) => {
                     });
                     break;
                 }
-                // Agent — keep profile visible during grace period.
-                // Stripe retries auto-recover; subscription.deleted only
-                // fires after the retry window expires.
+                // Agent — start (or continue) the fixed day-0/3/7 dunning
+                // sequence (A3). enqueueDunning is idempotent per subscription,
+                // so Stripe's repeated retry webhooks don't re-trigger it; the
+                // day-0 email fires immediately, day 3 and 7 via the sweep, and
+                // day 7 downgrades to Free while keeping the public profile.
                 console.log(`[Stripe Webhook] Agent invoice.payment_failed for subscription ${invoice.subscription}`);
                 const agentRow = await pool.query(
-                    `SELECT a.user_id, a.display_name, u.email
+                    `SELECT a.id AS agent_id, a.user_id, a.display_name, u.email
                        FROM agents a JOIN users u ON u.id = a.user_id
                       WHERE a.stripe_subscription_id = $1 LIMIT 1`,
                     [invoice.subscription]
@@ -1217,26 +1219,16 @@ exports.handleWebhook = async (req, res) => {
                         target: { type: 'user', id: ag.user_id, label: ag.display_name || 'agent' },
                         details: { subscription_id: invoice.subscription, amount_due: invoice.amount_due, attempt: invoice.attempt_count },
                     });
-                    // Dunning (T073): email the agent on each failed attempt with
-                    // escalating urgency. `next_payment_attempt` is null once
-                    // Stripe stops retrying → that's the final notice.
                     try {
-                        const email = require('../services/email');
-                        email.sendAgentPaymentFailed({
-                            to: ag.email,
-                            name: ag.display_name,
-                            attempt: invoice.attempt_count || 1,
-                            final: !invoice.next_payment_attempt,
-                            nextAttempt: invoice.next_payment_attempt ? new Date(invoice.next_payment_attempt * 1000) : null,
+                        await require('../services/dunning').enqueueDunning({
+                            agentId: ag.agent_id, userId: ag.user_id, email: ag.email, subscriptionId: invoice.subscription,
                         });
-                    } catch (e) { console.warn('[Stripe Webhook] agent dunning email failed:', e.message); }
-                    // In-app notification centre (#11).
+                    } catch (e) { console.warn('[Stripe Webhook] enqueueDunning failed:', e.message); }
+                    // In-app notification centre (#11) — once, on first failure.
                     try {
-                        const notify = require('../services/agent-notify');
-                        const agRow = await pool.query(`SELECT id FROM agents WHERE stripe_subscription_id = $1 LIMIT 1`, [invoice.subscription]);
-                        if (agRow.rows[0]) notify.notifyAgent(agRow.rows[0].id, {
+                        require('../services/agent-notify').notifyAgent(ag.agent_id, {
                             type: 'billing',
-                            title: invoice.next_payment_attempt ? 'Payment issue — update your card' : 'Final notice — membership at risk',
+                            title: 'Payment issue — update your card',
                             body: 'Your renewal payment was declined. Update your payment method to keep your placement.',
                             link: '?view=account',
                         });
@@ -1253,6 +1245,8 @@ exports.handleWebhook = async (req, res) => {
                 // that follow.
                 await persistPaymentAndMirrorToHubspot(invoice, 'paid');
                 await mirrorSubStatus(invoice.subscription, 'active'); // T074
+                // Payment recovered → stop any in-flight dunning sequence (A3).
+                try { await require('../services/dunning').resolveDunning(invoice.subscription); } catch (_) {}
                 // Both tables are best-effort — only one of them owns
                 // this subscription_id, the other UPDATE is a no-op.
                 const bizRes = await pool.query(

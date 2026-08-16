@@ -3119,6 +3119,26 @@ async function ensureTables() {
                 processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
             CREATE INDEX IF NOT EXISTS idx_stripe_events_processed ON stripe_events(processed_at DESC);
+
+            -- Dunning sequence (A3): on an agent's first failed renewal we enqueue
+            -- three steps — day 0, 3, 7 — and a daily sweep sends the due ones.
+            -- The day-7 step downgrades the agent to the FREE plan (keeping their
+            -- public profile live for win-back), never a delete. A recovered
+            -- payment cancels the remaining pending steps.
+            CREATE TABLE IF NOT EXISTS dunning_queue (
+                id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                agent_id        UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+                user_id         UUID,
+                email           TEXT,
+                subscription_id TEXT NOT NULL,
+                step_day        INTEGER NOT NULL,           -- 0 | 3 | 7
+                send_at         TIMESTAMPTZ NOT NULL,
+                sent_at         TIMESTAMPTZ,
+                status          VARCHAR(12) NOT NULL DEFAULT 'pending',  -- pending|sent|canceled
+                created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_dunning_due ON dunning_queue(send_at) WHERE status = 'pending';
+            CREATE INDEX IF NOT EXISTS idx_dunning_sub ON dunning_queue(subscription_id);
         `);
 
         // Geographic tag system (see docs/geo-tags.md — lead routing by
@@ -5219,6 +5239,14 @@ app.listen(PORT, async () => {
         const { runContactReminderDigest } = require('./controllers/contacts.controller');
         setTimeout(() => runContactReminderDigest().catch(e => console.warn('[contact-digest]', e.message)), 8 * 60 * 1000);
         setInterval(() => runContactReminderDigest().catch(e => console.warn('[contact-digest]', e.message)), 12 * 60 * 60 * 1000);
+    }
+
+    // Dunning sweep (A3) — sends due day-3/day-7 steps and downgrades on day 7.
+    // Core billing safety, always on. Checked ~2 min after boot, then hourly.
+    {
+        const { runDunningSweep } = require('./services/dunning');
+        setTimeout(() => runDunningSweep().catch(e => console.warn('[dunning]', e.message)), 2 * 60 * 1000);
+        setInterval(() => runDunningSweep().catch(e => console.warn('[dunning]', e.message)), 60 * 60 * 1000);
     }
 
     // Buyer nurture drip — 3-touch re-engagement for unconverted buyer leads.
