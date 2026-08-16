@@ -768,11 +768,7 @@ app.get('/lakes/:slug', async (req, res, next) => {
     try {
         const { rows } = await pool.query(
             `SELECT id, slug, name, state, region, county, latitude, longitude,
-                    intro_text, description, lifestyle_text, seasons_text,
-                    notable_features, real_estate_context, faq,
-                    dow_number, max_depth_ft, mean_depth_ft, surface_acres, littoral_acres,
-                    water_clarity_ft, shoreline_miles, public_accesses, fish_species, dnr_survey_url,
-                    hero_image_url, featured_image_url,
+                    intro_text, description, hero_image_url, featured_image_url,
                     seo_title, seo_description, status, gallery,
                     hero_image_credit_name, hero_image_credit_url, hero_image_license
              FROM lakes WHERE slug = $1 LIMIT 1`,
