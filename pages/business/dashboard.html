@@ -455,6 +455,22 @@
                 <button class="btn"      id="btn-portal"    onclick="openPortal()" style="display:none;">Manage membership in Stripe →</button>
             </div>
             <p class="hint" style="margin-top:1.25rem;">Your listing only shows on the public directory while your subscription is active and an admin has approved it.</p>
+
+            <!-- Visible-but-locked feature matrix (Spec 2). Everything shows;
+                 what your plan doesn't include is locked with the upgrade path. -->
+            <h3 style="margin:2rem 0 0.35rem;font-size:1.1rem;font-weight:800;">What your plan includes</h3>
+            <p class="hint" style="margin:0 0 1rem;">🔒 items unlock when you upgrade — that's exactly what your listing gains.</p>
+            <div id="feature-matrix"><div class="hint">Loading…</div></div>
+            <style>
+                .fm-row { display:flex; align-items:flex-start; gap:0.7rem; padding:0.6rem 0; border-bottom:1px solid #f1f4f8; }
+                .fm-ic { flex-shrink:0; width:22px; text-align:center; font-size:0.95rem; line-height:1.5; }
+                .fm-row.on  .fm-label { color:#1a202c; font-weight:600; }
+                .fm-row.off .fm-label { color:#a0aec0; }
+                .fm-tag { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; padding:0.1rem 0.45rem; border-radius:5px; margin-left:0.5rem; white-space:nowrap; }
+                .fm-tag.basic   { background:#ebf4ff; color:#1a4fb0; }
+                .fm-tag.premium { background:#fef3c7; color:#92400e; }
+                .fm-up { margin-left:auto; font-size:0.78rem; font-weight:800; color:#1d6df2; text-decoration:none; white-space:nowrap; }
+            </style>
         </section>
 
         <!-- Account tab ───────────────────────────────────────────── -->
@@ -731,9 +747,40 @@
             }
         }
 
+        // Visible-but-locked feature matrix (Spec 2). Shows every feature; the
+        // ones above the owner's effective tier are locked with the upgrade path.
+        const TIER_RANK = { free: 0, basic: 1, premium: 2 };
+        function ownerEffectiveTier() {
+            const paying = _biz && (_biz.subscription_status === 'active' || _biz.tier_comped === true);
+            if (_biz && _biz.tier === 'premium' && paying) return 'premium';
+            if (_biz && _biz.tier === 'basic'   && paying) return 'basic';
+            return 'free';
+        }
+        let _featuresCache = null;
+        async function renderFeatureMatrix() {
+            const host = document.getElementById('feature-matrix');
+            if (!host) return;
+            try {
+                if (!_featuresCache) {
+                    const r = await fetch('/api/business-auth/tiers', { credentials: 'include' });
+                    _featuresCache = r.ok ? (await r.json()).features : [];
+                }
+                const eff = ownerEffectiveTier();
+                const rank = TIER_RANK[eff] ?? 0;
+                host.innerHTML = _featuresCache.map(f => {
+                    const on = rank >= (TIER_RANK[f.unlock] ?? 0);
+                    const esc = s => String(s || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+                    const tag = f.unlock === 'free' ? '' : `<span class="fm-tag ${f.unlock}">${f.unlock === 'premium' ? 'Premium' : 'Basic'}</span>`;
+                    const up = on ? '' : `<a class="fm-up" href="/business-pricing">Unlock →</a>`;
+                    return `<div class="fm-row ${on ? 'on' : 'off'}"><span class="fm-ic">${on ? '✓' : '🔒'}</span><span class="fm-label">${esc(f.label)}${tag}</span>${up}</div>`;
+                }).join('');
+            } catch (_) { host.innerHTML = '<div class="hint">Couldn\'t load plan features.</div>'; }
+        }
+
         // Subscription ────────────────────────────────────────────────
         function renderSubscription() {
             if (!_biz) return;
+            renderFeatureMatrix();
             const s = _biz.subscription_status;
             const labelMap = {
                 active:   'Subscription active',
