@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Lake Fact Sheet — MN Lake Homes</title>
+    <style>
+        :root {
+            --ink: #0f2b46; --brand: #1d6df2; --water: #eaf2fb;
+            --paper: #ffffff; --muted: #64748b; --hair: #e2e8f0; --ground: #eef2f7;
+        }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; }
+        body {
+            font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--ground); color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact;
+        }
+
+        /* ── Screen-only toolbar ─────────────────────────────────────────── */
+        .toolbar {
+            position: sticky; top: 0; z-index: 10; display: flex; gap: 0.75rem; flex-wrap: wrap;
+            align-items: center; justify-content: center; padding: 0.85rem 1rem;
+            background: #fff; border-bottom: 1px solid var(--hair);
+        }
+        .toolbar .picker { position: relative; flex: 1; max-width: 360px; }
+        .toolbar input {
+            width: 100%; font: inherit; font-size: 0.92rem; padding: 0.6rem 0.85rem;
+            border: 1px solid var(--hair); border-radius: 9px; outline: none;
+        }
+        .toolbar input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(29,109,242,0.12); }
+        .pick-dd {
+            position: absolute; left: 0; right: 0; top: calc(100% + 4px); background: #fff;
+            border: 1px solid var(--hair); border-radius: 10px; box-shadow: 0 12px 30px rgba(16,32,60,.14);
+            max-height: 300px; overflow: auto; display: none;
+        }
+        .pick-dd.show { display: block; }
+        .pick-opt { display: block; width: 100%; text-align: left; background: none; border: 0; cursor: pointer;
+            padding: 0.6rem 0.85rem; font: inherit; font-size: 0.9rem; color: var(--ink); border-bottom: 1px solid #f1f4f8; }
+        .pick-opt:hover { background: var(--water); }
+        .btn {
+            font: inherit; font-weight: 800; font-size: 0.92rem; padding: 0.62rem 1.3rem; border-radius: 9px;
+            border: 0; cursor: pointer; background: var(--brand); color: #fff; white-space: nowrap;
+        }
+        .btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--hair); }
+        .hint { color: var(--muted); font-size: 0.82rem; }
+
+        /* ── The sheet ───────────────────────────────────────────────────── */
+        .sheet-wrap { padding: 1.75rem 1rem 3rem; display: flex; justify-content: center; }
+        .sheet {
+            width: 8.2in; max-width: 100%; background: var(--paper); border-radius: 14px; overflow: hidden;
+            box-shadow: 0 10px 40px rgba(16,32,60,.10); border: 1px solid var(--hair);
+        }
+        .sheet-hero {
+            position: relative; padding: 2rem 2.2rem 1.6rem; color: #fff;
+            background: linear-gradient(135deg, #0f2b46 0%, #1d6df2 130%);
+        }
+        .sheet-hero .eyebrow { text-transform: uppercase; letter-spacing: 2px; font-size: 0.72rem; font-weight: 800; opacity: 0.85; }
+        .sheet-hero h1 { margin: 0.35rem 0 0.2rem; font-size: 2.5rem; font-weight: 800; letter-spacing: -0.5px; line-height: 1.05; }
+        .sheet-hero .loc { font-size: 0.95rem; opacity: 0.9; font-weight: 500; }
+        .sheet-body { padding: 1.6rem 2.2rem 0.5rem; }
+
+        .facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin: 0 0 1.4rem; }
+        .fact { background: var(--water); border-radius: 11px; padding: 0.85rem 0.9rem; }
+        .fact .v { font-size: 1.4rem; font-weight: 800; color: var(--ink); line-height: 1.1; font-variant-numeric: tabular-nums; }
+        .fact .l { font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--brand); margin-top: 0.3rem; }
+
+        .section-h { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.3px; color: var(--muted); margin: 1.2rem 0 0.6rem; }
+        .about { font-size: 0.94rem; line-height: 1.62; color: #2d3748; margin: 0 0 1rem; }
+        .fish { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 1.2rem; }
+        .fish span { background: #f1f5f9; border: 1px solid var(--hair); border-radius: 99px; padding: 0.3rem 0.7rem; font-size: 0.8rem; font-weight: 600; color: #334155; }
+        .src { font-size: 0.72rem; color: #94a3b8; margin: 0 0 1.2rem; }
+
+        /* Agent footer band */
+        .agent-band {
+            display: flex; align-items: center; gap: 1rem; margin: 0.5rem 0 0; padding: 1.3rem 2.2rem;
+            background: #f8fafc; border-top: 1px solid var(--hair);
+        }
+        .agent-photo { width: 66px; height: 66px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); background: var(--water); }
+        .agent-info { flex: 1; min-width: 0; }
+        .agent-name { font-size: 1.15rem; font-weight: 800; color: var(--ink); }
+        .agent-broker { font-size: 0.85rem; color: var(--muted); }
+        .agent-contact { font-size: 0.85rem; color: #334155; margin-top: 0.2rem; }
+        .agent-brand { text-align: right; flex-shrink: 0; }
+        .agent-brand .site { font-weight: 800; color: var(--brand); font-size: 0.9rem; }
+        .agent-brand .tag { font-size: 0.72rem; color: var(--muted); }
+
+        .empty, .loading { text-align: center; color: var(--muted); padding: 4rem 1rem; }
+
+        @media (max-width: 640px) { .facts { grid-template-columns: repeat(2, 1fr); } .sheet-hero h1 { font-size: 2rem; } }
+
+        /* ── Print: just the sheet, edge to edge, one page ───────────────── */
+        @media print {
+            @page { margin: 0.4in; }
+            body { background: #fff; }
+            .toolbar { display: none !important; }
+            .sheet-wrap { padding: 0; }
+            .sheet { box-shadow: none; border: 0; border-radius: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <div class="picker">
+            <input id="lake-search" type="search" placeholder="Search for a lake to build a fact sheet…" autocomplete="off">
+            <div class="pick-dd" id="lake-dd"></div>
+        </div>
+        <button class="btn" id="print-btn" onclick="window.print()" disabled>🖨 Print / Save as PDF</button>
+        <a class="btn ghost" href="/pages/agent/dashboard.html">← Back to portal</a>
+    </div>
+
+    <div class="sheet-wrap">
+        <div id="sheet-host">
+            <div class="empty">
+                <div style="font-size:2rem;margin-bottom:0.5rem;">🗺️</div>
+                <p style="font-weight:700;color:var(--ink);margin:0 0 0.25rem;">Build a branded lake fact sheet</p>
+                <p style="margin:0;">Search a lake above. We'll pull the DNR facts and put your name on it — a one-page leave-behind for buyers.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let AGENT = null;
+        let ddTimer = null;
+
+        // Load the signed-in agent's branding once (name/photo/contact).
+        async function loadAgent() {
+            try {
+                const r = await fetch('/api/agents/me', { credentials: 'include' });
+                if (r.status === 401 || r.status === 403) { location.href = '/login?redirect=/pages/agent/fact-sheet.html'; return; }
+                if (r.ok) AGENT = await r.json();
+            } catch (_) {}
+        }
+
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const fmtNum = n => (n == null || n === '') ? null : Number(n).toLocaleString('en-US');
+
+        // ── Lake search dropdown ─────────────────────────────────────────
+        const searchEl = document.getElementById('lake-search');
+        const dd = document.getElementById('lake-dd');
+        searchEl.addEventListener('input', () => { clearTimeout(ddTimer); ddTimer = setTimeout(runSearch, 160); });
+        searchEl.addEventListener('focus', () => { if (searchEl.value.trim()) runSearch(); });
+        document.addEventListener('click', e => { if (!e.target.closest('.picker')) dd.classList.remove('show'); });
+
+        async function runSearch() {
+            const q = searchEl.value.trim();
+            if (!q) { dd.classList.remove('show'); return; }
+            try {
+                const r = await fetch(`/api/lakes?search=${encodeURIComponent(q)}&status=published`, { credentials: 'include' });
+                const rows = r.ok ? await r.json() : [];
+                const list = (Array.isArray(rows) ? rows : []).slice(0, 25);
+                dd.innerHTML = list.length
+                    ? list.map(l => `<button type="button" class="pick-opt" data-slug="${esc(l.slug)}">${esc(l.name)}${l.region ? ` · ${esc(l.region)}` : ''}</button>`).join('')
+                    : `<div class="pick-opt" style="cursor:default;color:#94a3b8;">No lakes match "${esc(q)}".</div>`;
+                dd.classList.add('show');
+                dd.querySelectorAll('.pick-opt[data-slug]').forEach(b =>
+                    b.addEventListener('click', () => { dd.classList.remove('show'); searchEl.value = ''; loadSheet(b.getAttribute('data-slug')); }));
+            } catch (_) {}
+        }
+
+        // ── Render the sheet ─────────────────────────────────────────────
+        async function loadSheet(slug) {
+            const host = document.getElementById('sheet-host');
+            host.innerHTML = '<div class="loading">Building your fact sheet…</div>';
+            try {
+                const r = await fetch(`/api/lakes/${encodeURIComponent(slug)}`, { credentials: 'include' });
+                if (!r.ok) throw new Error('lake load failed');
+                const lake = await r.json();
+                host.innerHTML = renderSheet(lake, AGENT);
+                document.getElementById('print-btn').disabled = false;
+                history.replaceState(null, '', `?lake=${encodeURIComponent(slug)}`);
+            } catch (e) {
+                host.innerHTML = '<div class="empty">Sorry — couldn\'t load that lake. Try another.</div>';
+            }
+        }
+
+        function renderSheet(lake, agent) {
+            const loc = [lake.region, lake.county ? lake.county + ' County' : null, lake.state || 'MN'].filter(Boolean).join(' · ');
+            const facts = [
+                { v: fmtNum(lake.surface_acres),   suffix: ' ac', l: 'Surface area' },
+                { v: fmtNum(lake.max_depth_ft),    suffix: ' ft', l: 'Max depth' },
+                { v: fmtNum(lake.mean_depth_ft),   suffix: ' ft', l: 'Avg depth' },
+                { v: fmtNum(lake.water_clarity_ft),suffix: ' ft', l: 'Water clarity' },
+                { v: fmtNum(lake.shoreline_miles), suffix: ' mi', l: 'Shoreline' },
+                { v: fmtNum(lake.public_accesses), suffix: '',    l: 'Public accesses' },
+            ].filter(f => f.v != null);
+            const factsHtml = facts.map(f =>
+                `<div class="fact"><div class="v">${esc(f.v)}${f.suffix}</div><div class="l">${esc(f.l)}</div></div>`).join('');
+
+            let fish = [];
+            try { fish = Array.isArray(lake.fish_species) ? lake.fish_species : JSON.parse(lake.fish_species || '[]'); } catch (_) {}
+            const fishHtml = fish.length
+                ? `<div class="section-h">Fish species (MN DNR survey)</div><div class="fish">${fish.map(f => `<span>${esc(f)}</span>`).join('')}</div>` : '';
+
+            // Short "about" — first paragraph of the lake overview, trimmed.
+            const desc = (lake.intro_text || lake.description || '').split('\n').filter(Boolean)[0] || '';
+            const about = desc ? `<div class="section-h">About the lake</div><p class="about">${esc(desc.length > 420 ? desc.slice(0, 417) + '…' : desc)}</p>` : '';
+
+            const srcBits = [];
+            if (lake.dow_number) srcBits.push(`DNR ID ${esc(lake.dow_number)}`);
+            srcBits.push('Source: Minnesota DNR LakeFinder');
+            const src = facts.length ? `<p class="src">${srcBits.join(' · ')}</p>` : '';
+
+            // Agent band
+            const a = agent || {};
+            const photo = a.profile_photo_url
+                ? `<img class="agent-photo" src="${esc(a.profile_photo_url)}" alt="">`
+                : `<div class="agent-photo"></div>`;
+            const contactBits = [a.phone_public, a.email_public].filter(Boolean).map(esc).join('  ·  ');
+            const agentBand = `
+                <div class="agent-band">
+                    ${photo}
+                    <div class="agent-info">
+                        <div class="agent-name">${esc(a.display_name || 'Your name')}</div>
+                        ${a.brokerage_name ? `<div class="agent-broker">${esc(a.brokerage_name)}</div>` : ''}
+                        ${contactBits ? `<div class="agent-contact">${contactBits}</div>` : ''}
+                    </div>
+                    <div class="agent-brand">
+                        <div class="site">MinnesotaLakeHomesForSale.com</div>
+                        <div class="tag">Your local lake real estate guide</div>
+                    </div>
+                </div>`;
+
+            return `
+                <div class="sheet">
+                    <div class="sheet-hero">
+                        <div class="eyebrow">Lake Fact Sheet</div>
+                        <h1>${esc(lake.name)}</h1>
+                        <div class="loc">${esc(loc)}</div>
+                    </div>
+                    <div class="sheet-body">
+                        ${factsHtml ? `<div class="facts">${factsHtml}</div>` : '<p class="about">DNR facts for this lake are still being compiled.</p>'}
+                        ${src}
+                        ${about}
+                        ${fishHtml}
+                    </div>
+                    ${agentBand}
+                </div>`;
+        }
+
+        // Boot: load branding, then honor ?lake=<slug> if present.
+        (async function init() {
+            await loadAgent();
+            const slug = new URLSearchParams(location.search).get('lake');
+            if (slug) loadSheet(slug);
+        })();
+    </script>
+</body>
+</html>
