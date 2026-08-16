@@ -682,10 +682,87 @@ const updateMyLeadStatus = async (req, res) => {
             details: { new_status: status, by: 'agent' },
             req,
         });
+        syncLeadActionToHubspot(id, `Agent moved lead to: ${status.replace(/_/g, ' ')}`); // C6
         res.json({ success: true, id: rows[0].id, status: rows[0].status });
     } catch (err) {
         console.error('[updateMyLeadStatus]', err.message);
         res.status(500).json({ error: 'Failed to update lead status.' });
+    }
+};
+
+// Sync a portal action to HubSpot as a timeline note on the lead's contact
+// (C6). Best-effort; no-op if the lead has no synced contact. Every claim /
+// note / disposition / dispute becomes a CRM signal for outreach.
+async function syncLeadActionToHubspot(leadId, text) {
+    try {
+        const r = await pool.query(`SELECT hs_contact_id FROM leads WHERE id = $1 LIMIT 1`, [leadId]);
+        const hsId = r.rows[0]?.hs_contact_id;
+        if (hsId) await require('../services/hubspot').createContactNote(hsId, text);
+    } catch (e) { console.warn('[syncLeadAction]', e.message); }
+}
+
+const DISPOSITIONS = ['contacted_working', 'contacted_not_ready', 'unreachable', 'not_qualified', 'closed_won', 'closed_lost'];
+
+/**
+ * PATCH /api/agents/me/leads/:id/disposition  { disposition, reason? }
+ * One-tap outcome logging (Spec 1). not_qualified requires a reason.
+ */
+const setMyLeadDisposition = async (req, res) => {
+    const userId = req.user.userId;
+    const { id } = req.params;
+    const disposition = (req.body?.disposition || '').trim();
+    const reason = (req.body?.reason || '').toString().trim().slice(0, 500) || null;
+    if (!DISPOSITIONS.includes(disposition)) {
+        return res.status(400).json({ error: `Invalid disposition. Allowed: ${DISPOSITIONS.join(', ')}.` });
+    }
+    if (disposition === 'not_qualified' && !reason) {
+        return res.status(400).json({ error: 'A reason is required when marking a lead not qualified.' });
+    }
+    try {
+        const { rows, rowCount } = await pool.query(`
+            UPDATE leads l
+               SET disposition = $1, disposition_reason = $2, updated_at = NOW(),
+                   agent_ack_at = COALESCE(l.agent_ack_at, NOW())
+              FROM agents a
+             WHERE l.id = $3 AND l.agent_id = a.id AND a.user_id = $4 AND l.deleted_at IS NULL
+            RETURNING l.id, l.full_name AS name
+        `, [disposition, reason, id, userId]);
+        if (!rowCount) return res.status(404).json({ error: 'Lead not found or not assigned to you.' });
+        logActivity({ event_type: 'lead.disposition', event_scope: 'lead', actor: { type: 'agent', id: userId }, target: { type: 'lead', id: rows[0].id, label: rows[0].name }, details: { disposition, reason }, req });
+        syncLeadActionToHubspot(id, `Agent disposition: ${disposition.replace(/_/g, ' ')}${reason ? ` — ${reason}` : ''}`);
+        res.json({ success: true, id: rows[0].id, disposition });
+    } catch (err) {
+        console.error('[setMyLeadDisposition]', err.message);
+        res.status(500).json({ error: 'Failed to log disposition.' });
+    }
+};
+
+/**
+ * POST /api/agents/me/leads/:id/dispute  { reason }
+ * Flag a lead as misgraded — allowed within 7 days of the lead landing; after
+ * that it stands. Every dispute is logged with its reason (Spec 1).
+ */
+const disputeMyLead = async (req, res) => {
+    const userId = req.user.userId;
+    const { id } = req.params;
+    const reason = (req.body?.reason || '').toString().trim().slice(0, 1000);
+    if (!reason) return res.status(400).json({ error: 'Please say why you think this lead was misgraded.' });
+    try {
+        const { rows, rowCount } = await pool.query(`
+            UPDATE leads l
+               SET dispute_flag = TRUE, dispute_reason = $1, updated_at = NOW()
+              FROM agents a
+             WHERE l.id = $2 AND l.agent_id = a.id AND a.user_id = $3 AND l.deleted_at IS NULL
+               AND COALESCE(l.routed_at, l.created_at) > NOW() - INTERVAL '7 days'
+            RETURNING l.id, l.full_name AS name, l.lead_grade
+        `, [reason, id, userId]);
+        if (!rowCount) return res.status(400).json({ error: 'This lead can no longer be disputed — the 7-day window has passed (or it isn\'t assigned to you).' });
+        logActivity({ event_type: 'lead.dispute', event_scope: 'lead', severity: 'warning', actor: { type: 'agent', id: userId }, target: { type: 'lead', id: rows[0].id, label: rows[0].name }, details: { grade: rows[0].lead_grade, reason }, req });
+        syncLeadActionToHubspot(id, `Agent disputed grade ${rows[0].lead_grade}: ${reason}`);
+        res.json({ success: true, id: rows[0].id });
+    } catch (err) {
+        console.error('[disputeMyLead]', err.message);
+        res.status(500).json({ error: 'Failed to file dispute.' });
     }
 };
 
@@ -1017,6 +1094,7 @@ const addMyLeadNote = async (req, res) => {
             details: { by: 'agent' },
             req,
         });
+        syncLeadActionToHubspot(id, `Agent note: ${content.slice(0, 400)}`); // C6
         res.status(201).json({ success: true, note: rows[0] });
     } catch (err) {
         console.error('[addMyLeadNote]', err.message);
@@ -1248,6 +1326,8 @@ module.exports = {
     getMyLeaderboard,
     getAtRiskAgents,
     setMyLeadOutcome,
+    setMyLeadDisposition,
+    disputeMyLead,
     updateMyLeadStatus,
     setMyLeadFollowUp,
     setMyPause,

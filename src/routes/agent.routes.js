@@ -49,6 +49,8 @@ router.patch('/me/leads/:id/status', verifyToken, requireRole('agent'), agentCon
 router.patch('/me/leads/:id/followup', verifyToken, requireRole('agent'), agentController.setMyLeadFollowUp);
 router.patch('/me/pause', verifyToken, requireRole('agent'), agentController.setMyPause);
 router.patch('/me/leads/:id/outcome', verifyToken, requireRole('agent'), agentController.setMyLeadOutcome);
+router.patch('/me/leads/:id/disposition', verifyToken, requireRole('agent'), agentController.setMyLeadDisposition);
+router.post ('/me/leads/:id/dispute',     verifyToken, requireRole('agent'), agentController.disputeMyLead);
 router.get  ('/me/leads/:id/notes',  verifyToken, requireRole('agent'), agentController.getMyLeadNotes);
 router.post ('/me/leads/:id/notes',  verifyToken, requireRole('agent'), agentController.addMyLeadNote);
 

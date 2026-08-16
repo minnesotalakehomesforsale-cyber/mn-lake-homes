@@ -691,7 +691,8 @@ const getMyLeads = async (req, res) => {
 
         const { rows } = await pool.query(
             `SELECT id, full_name, email, phone, lead_type, lead_source, lead_status,
-                    property_address, message, submitted_at, created_at
+                    property_address, message, submitted_at, created_at,
+                    lead_grade, disposition, disposition_reason, dispute_flag, held_no_agent, routed_at
                FROM leads
               WHERE deleted_at IS NULL
                 AND (user_id = $1 OR ($2::text IS NOT NULL AND LOWER(email) = $2))
