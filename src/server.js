@@ -768,7 +768,11 @@ app.get('/lakes/:slug', async (req, res, next) => {
     try {
         const { rows } = await pool.query(
             `SELECT id, slug, name, state, region, county, latitude, longitude,
-                    intro_text, description, hero_image_url, featured_image_url,
+                    intro_text, description, lifestyle_text, seasons_text,
+                    notable_features, real_estate_context, faq,
+                    dow_number, max_depth_ft, mean_depth_ft, surface_acres, littoral_acres,
+                    water_clarity_ft, shoreline_miles, public_accesses, fish_species, dnr_survey_url,
+                    hero_image_url, featured_image_url,
                     seo_title, seo_description, status, gallery,
                     hero_image_credit_name, hero_image_credit_url, hero_image_license
              FROM lakes WHERE slug = $1 LIMIT 1`,
@@ -892,19 +896,46 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 ? lake.seasons_text.trim().split(/\n{2,}/).map(p => `<p>${escapeHtml(p)}</p>`).join('')
                 : lct.seasonsHtmlForLake(lake);
 
-            // FAQ — visible crawlable Q&A + FAQPage JSON-LD, built from the
-            // same location-aware data so the markup matches the on-page text.
+            // FAQ — a curated per-lake FAQ (lakes.faq, Tier-2) wins; otherwise
+            // the location-aware generated set. Both feed the visible accordion
+            // and the FAQPage JSON-LD, so markup and schema always match.
             const lakeFaqTownNames = townRows.map(t => t.name);
-            const lakeFaqHtml = lct.faqHtmlForLake(lake, lakeFaqTownNames);
+            let lakeFaqData = null;
+            try { lakeFaqData = Array.isArray(lake.faq) ? lake.faq : (typeof lake.faq === 'string' && lake.faq ? JSON.parse(lake.faq) : null); } catch (_) { lakeFaqData = null; }
+            lakeFaqData = (Array.isArray(lakeFaqData) && lakeFaqData.length && lakeFaqData.every(x => x && x.q && x.a))
+                ? lakeFaqData
+                : lct.faqForLake(lake, lakeFaqTownNames);
+            const lakeFaqHtml = lakeFaqData.map(({ q, a }) => `
+                <details class="faq-item">
+                    <summary>${escapeHtml(q)}</summary>
+                    <div class="faq-answer"><p>${escapeHtml(a)}</p></div>
+                </details>`).join('');
             const lakeFaqLd = `<script type="application/ld+json">${JSON.stringify({
                 '@context': 'https://schema.org',
                 '@type': 'FAQPage',
-                mainEntity: lct.faqForLake(lake, lakeFaqTownNames).map(({ q, a }) => ({
+                mainEntity: lakeFaqData.map(({ q, a }) => ({
                     '@type': 'Question',
                     name: q,
                     acceptedAnswer: { '@type': 'Answer', text: a },
                 })),
             })}</script>`;
+
+            // Tier-2 optional blocks: "Notable features" (one bullet per line) +
+            // "Real Estate Context" (prose incl. the deliberate-drawback ¶). Both
+            // render only when set — Tier-1 lakes without them are unchanged.
+            const notableFeaturesHtml = (lake.notable_features && lake.notable_features.trim())
+                ? `<section class="ld-about ld-about-continued"><div class="ld-about-inner">`
+                  + `<span class="ld-about-eyebrow">At a glance</span><h2>What makes ${escapeHtml(lake.name)} distinct</h2>`
+                  + `<ul style="margin:1rem 0 0;padding-left:1.2rem;line-height:1.75;">`
+                  + lake.notable_features.trim().split(/\n+/).filter(Boolean).map(li => `<li style="margin-bottom:0.5rem;">${escapeHtml(li.replace(/^[-•*]\s*/, ''))}</li>`).join('')
+                  + `</ul></div></section>`
+                : '';
+            const realEstateHtml = (lake.real_estate_context && lake.real_estate_context.trim())
+                ? `<section class="ld-about ld-about-continued"><div class="ld-about-inner">`
+                  + `<span class="ld-about-eyebrow">Buying here</span><h2>The ${escapeHtml(lake.name)} real estate picture</h2>`
+                  + lake.real_estate_context.trim().split(/\n{2,}/).map(p => `<p>${escapeHtml(p)}</p>`).join('')
+                  + `</div></section>`
+                : '';
 
             // Public gallery — only rendered when the admin has uploaded at
             // least one image beyond the hero. Empty array (the default)
@@ -1077,6 +1108,8 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 '{{LAKE_STRUCTURED_DATA}}': [lakeStructuredData, lakeFaqLd, lakeFactsLd, lakeListingLd, lakeBusinessLd].filter(Boolean).join('\n    '),
                 '{{LAKE_LIFESTYLE_BODY}}':  lifestyleBody,
                 '{{LAKE_SEASONS_BODY}}':    seasonsBody,
+                '{{LAKE_NOTABLE_FEATURES}}': notableFeaturesHtml,
+                '{{LAKE_REAL_ESTATE}}':     realEstateHtml,
                 '{{LAKE_FAQ_HTML}}':        lakeFaqHtml,
                 '{{LAKE_LISTING_COUNT}}':   String(lakeListingCount),
                 '{{LAKE_LISTINGS_HEADING}}': escapeHtml(lakeListingCount > 0
@@ -3207,6 +3240,13 @@ async function ensureTables() {
                 -- when these are blank, so the page is never empty.
                 ADD COLUMN IF NOT EXISTS lifestyle_text  TEXT,
                 ADD COLUMN IF NOT EXISTS seasons_text    TEXT,
+                -- Tier-2 page sections (DEV-05 T2): "Notable features" bulleted
+                -- list, "Real Estate Context" (property types + price drivers +
+                -- the deliberate-drawback paragraph), and a curated per-lake FAQ
+                -- (overrides the generated FAQ when set). All nullable/optional.
+                ADD COLUMN IF NOT EXISTS notable_features    TEXT,
+                ADD COLUMN IF NOT EXISTS real_estate_context TEXT,
+                ADD COLUMN IF NOT EXISTS faq                 JSONB,
                 -- Wikimedia-sourced hero photos legally require visible
                 -- attribution for CC BY / CC BY-SA. We render a small
                 -- caption under the hero on town-detail when these are set;
@@ -4217,6 +4257,7 @@ async function ensureTables() {
         await seedLakeIndexability();
         await seedMarketTiers();
         await seedTier1Content();
+        await seedTier2Content();
         await seedBrokerages();
         await reconcilePartnerBusinesses();
     } catch (err) {
@@ -4952,6 +4993,44 @@ async function seedTier1Content() {
         }
         if (heroFix) console.log(`[seed] tier1 hero safety net: set ${heroFix} missing hero(s)`);
     } catch (e) { console.warn('[seed] seedTier1Content skipped:', e.message); }
+}
+
+// DEV-05 Tier-2: apply the 18 Tier-2 lake pages. Same content-hashed, idempotent
+// mechanism as Tier-1, plus the T2-only fields (notable_features,
+// real_estate_context, faq) and clean DNR numerics from `stats`. Flagged /
+// UNVERIFIED / ranged figures are absent from `stats` and left NULL by design.
+async function seedTier2Content() {
+    try {
+        const { LAKES } = require('./data/tier2-content');
+        const crypto = require('crypto');
+        await pool.query(`CREATE TABLE IF NOT EXISTS seed_flags (key TEXT PRIMARY KEY, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
+        const TEXT_FIELDS = ['seo_title', 'seo_description', 'intro_text', 'description', 'lifestyle_text', 'seasons_text', 'notable_features', 'real_estate_context'];
+        const DNR_COLS = new Set(['max_depth_ft', 'mean_depth_ft', 'surface_acres', 'littoral_acres', 'water_clarity_ft', 'shoreline_miles', 'public_accesses']);
+        let applied = 0;
+        for (const entry of (LAKES || [])) {
+            try {
+                if (!entry.slug) continue;
+                const hash = crypto.createHash('sha1').update(JSON.stringify(entry)).digest('hex').slice(0, 12);
+                const flag = `tier2_content:lakes:${entry.slug}:${hash}`;
+                if ((await pool.query(`SELECT 1 FROM seed_flags WHERE key = $1`, [flag])).rowCount) continue;
+                const sets = [], vals = [];
+                const push = (assign, val) => { vals.push(val); sets.push(assign.replace('$$', `$${vals.length}`)); };
+                for (const f of TEXT_FIELDS) if (typeof entry[f] === 'string' && entry[f].trim()) push(`${f} = $$`, entry[f]);
+                if (entry.faq) push(`faq = $$::jsonb`, JSON.stringify(entry.faq));
+                // Clean DNR numerics only; ranged/UNVERIFIED figures are omitted upstream.
+                for (const [col, val] of Object.entries(entry.stats || {})) {
+                    if (DNR_COLS.has(col) && val != null) push(`${col} = $$`, val);
+                }
+                if (!sets.length) continue;
+                sets.push('updated_at = NOW()');
+                vals.push(entry.slug);
+                const r = await pool.query(`UPDATE lakes SET ${sets.join(', ')} WHERE slug = $${vals.length}`, vals);
+                if (r.rowCount) { await pool.query(`INSERT INTO seed_flags (key) VALUES ($1) ON CONFLICT DO NOTHING`, [flag]); applied++; }
+                else console.warn(`[seed] tier2: no lakes row for slug '${entry.slug}' (create it first)`);
+            } catch (e) { console.warn(`[seed] tier2 content ${entry.slug} skipped:`, e.message); }
+        }
+        if (applied) console.log(`[seed] tier2 content applied to ${applied} lake(s)`);
+    } catch (e) { console.warn('[seed] seedTier2Content skipped:', e.message); }
 }
 
 async function seedLakeIndexability() {
