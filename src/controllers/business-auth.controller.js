@@ -374,6 +374,13 @@ exports.selectFree = async (req, res) => {
 // ─── GET /pricing — public display config ─────────────────────────────────
 // Env-driven price labels for the business pricing page. Stripe is the
 // source of truth for actual billing — these are just what we show.
+// GET /api/business-auth/tiers — the Free/Basic/Premium feature matrix (Spec 2).
+// Static; drives the "visible-but-locked" gated-field UI in the owner portal.
+exports.getTiers = (req, res) => {
+    const { FEATURES, TIERS, TIER_LIMITS } = require('../data/business-tiers');
+    res.json({ features: FEATURES, tiers: TIERS, limits: TIER_LIMITS });
+};
+
 exports.getPricing = (req, res) => {
     const num = (v, def) => {
         const n = Number(v);
@@ -546,6 +553,11 @@ exports.updateMe = async (req, res) => {
             'name','description','phone','email','website_url','instagram_url','facebook_url',
             'address','city','state','zip','hours','price_range','featured_image_url',
         ];
+        // Spec 2: enforce the tier's description cap server-side (Free = 140 chars,
+        // Basic/Premium = 400) so the "visible-but-locked" UI is backed by real
+        // enforcement, not just cosmetics.
+        const { effectiveTier, limitsFor } = require('../data/business-tiers');
+        const descCap = limitsFor(effectiveTier(biz)).description;
         const fields = [];
         const vals = [];
         let i = 1;
@@ -555,6 +567,7 @@ exports.updateMe = async (req, res) => {
                 if (typeof v === 'string') v = v.trim();
                 if (col === 'state') v = String(v || 'MN').slice(0, 2).toUpperCase();
                 if (col === 'name' && !v) return res.status(400).json({ error: 'Name cannot be empty.' });
+                if (col === 'description' && typeof v === 'string' && v.length > descCap) v = v.slice(0, descCap);
                 fields.push(`${col} = $${i++}`);
                 vals.push(v || null);
             }

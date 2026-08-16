@@ -23,6 +23,7 @@ router.post('/change-password',  verifyToken, c.changePassword);
 
 // New: pricing display config (public) + live billing snapshot (auth).
 router.get ('/pricing',          c.getPricing);
+router.get ('/tiers',            c.getTiers);
 router.get ('/billing',          verifyToken, c.getMyBilling);
 
 module.exports = router;
