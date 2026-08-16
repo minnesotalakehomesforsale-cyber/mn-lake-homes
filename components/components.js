@@ -2439,6 +2439,11 @@ document.addEventListener('keydown', e => {
     if (window.__cvBoostInit) return;
     window.__cvBoostInit = true;
 
+    // Disabled per owner request — no auto-appearing nudges (the mobile sticky
+    // "Get matched" bar and the desktop exit-intent are both off). Lead capture
+    // stays available through the on-page CTAs/buttons, which are user-initiated.
+    return;
+
     // Guard: skip the logged-in app surfaces (admin/agent/business/user).
     const p = location.pathname;
     if (/^\/pages\/(admin|agent|business|user)\//.test(p) || document.querySelector('.admin-wrap')) return;

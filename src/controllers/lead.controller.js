@@ -92,6 +92,23 @@ const createLead = async (req, res) => {
     if (!Number.isFinite(wfFeetNum) || wfFeetNum < 0 || wfFeetNum > 100000) wfFeetNum = null;
 
     try {
+        // Guard against accidental double-submits (double-click / network retry):
+        // an identical non-partial lead (same email or phone) in the last 2
+        // minutes is the same submission — return it, don't re-insert or re-email.
+        try {
+            const recent = await pool.query(
+                `SELECT id FROM leads
+                  WHERE deleted_at IS NULL AND COALESCE(is_partial, FALSE) = FALSE
+                    AND created_at > now() - interval '2 minutes'
+                    AND ( ($1 <> '' AND lower(email) = $1)
+                       OR ($2 <> '' AND regexp_replace(COALESCE(phone,''), '\\D', '', 'g') = $2) )
+                  ORDER BY created_at DESC LIMIT 1`,
+                [email || '', phoneDigits || '']);
+            if (recent.rowCount) {
+                return res.status(201).json({ success: true, message: 'Lead already received', lead_id: recent.rows[0].id, duplicate: true });
+            }
+        } catch (e) { console.warn('[createLead] double-submit check failed:', e.message); }
+
         // Coerce agent string if dummy provided
         let finalAgentId = (agent_id && agent_id !== 'uuid-string-dummy') ? agent_id : null;
 
@@ -325,16 +342,10 @@ const createLead = async (req, res) => {
             });
         }
 
-        // Fire-and-forget admin notification with full lead details
-        emailService.sendAdminLeadNotification({
-            name,
-            first_name: firstName,
-            email,
-            phone,
-            type: enumType,
-            source,
-            notes
-        });
+        // Admin lead email is sent ONCE, from the routing outcome below (routed /
+        // held / unrouted), so there's exactly one email per lead with the right
+        // context — no more "new lead" + "unrouted" duplicate. Unqualified leads
+        // send nothing (the router returns early), so junk stops emailing you.
 
         // Fire-and-forget HubSpot mirror — leads with no email are skipped
         // inside hubspot.syncContact (email is the canonical key).
@@ -511,6 +522,11 @@ const createLead = async (req, res) => {
                             target: { type: 'lead', id: newLeadId, label: `${name} (${enumType})` },
                             details: { reason: 'direct_agent_id_provided', agent_id: finalAgentId },
                         });
+                        // Single admin copy (this lead went straight to a specific agent).
+                        emailService.sendAdminLeadNotification({
+                            name, first_name: firstName, email, phone, type: enumType,
+                            source: `${source || enumType} · direct to agent`, notes,
+                        });
                         return;
                     }
 
@@ -597,6 +613,13 @@ const createLead = async (req, res) => {
                         },
                         distanceMiles: pick.distanceMiles,
                         matchedAreas: [pick.lakeName || pick.tagName].filter(Boolean),
+                    });
+
+                    // Single admin copy for a routed lead (the one email per lead).
+                    emailService.sendAdminLeadNotification({
+                        name, first_name: firstName, email, phone, type: enumType,
+                        source: `${source || enumType} · routed to ${pick.fullName || 'agent'}`,
+                        notes,
                     });
 
                     // Instant SMS to the assigned agent (speed-to-lead). No-op
