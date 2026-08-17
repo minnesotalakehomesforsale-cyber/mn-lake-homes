@@ -1103,15 +1103,20 @@ const assignLead = async (req, res) => {
     try {
         const { agentId, userId } = req.body;
         const result = await pool.query(
+            // $1/$2/$4 are explicitly cast to uuid: the ids are also used inside
+            // the CASE WHEN $1 IS NOT NULL expressions, and Postgres can't infer
+            // a parameter's type from an assignment target when the same param is
+            // reused in a bare IS NULL test — it errors "could not determine data
+            // type of parameter $1". Casting anchors the type.
             `UPDATE leads
-             SET agent_id = $1, assigned_user_id = $2, lead_status = $3::lead_status_type,
+             SET agent_id = $1::uuid, assigned_user_id = $2::uuid, lead_status = $3::lead_status_type,
                  -- Stamp the SLA clock + first-routed time on assign (not on clear).
                  -- routed_at is the manual-claim latency signal for T021.
-                 assigned_at = CASE WHEN $1 IS NOT NULL OR $2 IS NOT NULL THEN NOW() ELSE assigned_at END,
-                 routed_at   = CASE WHEN $1 IS NOT NULL OR $2 IS NOT NULL THEN COALESCE(routed_at, NOW()) ELSE routed_at END,
-                 pipeline_status = CASE WHEN $1 IS NOT NULL OR $2 IS NOT NULL THEN 'routed' ELSE pipeline_status END,
+                 assigned_at = CASE WHEN $1::uuid IS NOT NULL OR $2::uuid IS NOT NULL THEN NOW() ELSE assigned_at END,
+                 routed_at   = CASE WHEN $1::uuid IS NOT NULL OR $2::uuid IS NOT NULL THEN COALESCE(routed_at, NOW()) ELSE routed_at END,
+                 pipeline_status = CASE WHEN $1::uuid IS NOT NULL OR $2::uuid IS NOT NULL THEN 'routed' ELSE pipeline_status END,
                  updated_at = NOW()
-             WHERE id = $4
+             WHERE id = $4::uuid
              RETURNING id, agent_id, assigned_user_id, lead_status`,
             [agentId || null, userId || null, agentId || userId ? 'assigned' : 'unassigned', req.params.id]
         );
