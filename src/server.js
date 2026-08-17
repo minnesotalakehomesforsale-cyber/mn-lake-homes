@@ -576,11 +576,19 @@ app.get('/sitemap.xml', async (req, res) => {
             // sitemap is a 404 we're handing Google. Require the hero here.
             pool.query(`SELECT slug, updated_at FROM lakes
                         WHERE status = 'published' AND COALESCE(hero_image_url,'') <> ''`),
+            // A town is listed when it's active, has a hero, AND is either
+            // in-state (MN) or linked to a published lake. Out-of-state border
+            // towns (ND/WI) with no lake link render but stay out of the sitemap
+            // — the /towns/:slug route emits noindex for exactly that set, so a
+            // 200 town page is always either listed+indexable or noindex, never
+            // an orphaned indexable. Keep this predicate in sync with the
+            // `townRobots` eligibility check in the /towns/:slug route.
             pool.query(`SELECT DISTINCT t.slug, t.updated_at FROM tags t
                         WHERE t.active = TRUE AND COALESCE(t.hero_image_url,'') <> ''
-                          AND EXISTS (SELECT 1 FROM lake_tags lt
-                                      JOIN lakes l ON l.id = lt.lake_id
-                                      WHERE lt.tag_id = t.id AND l.status = 'published')`),
+                          AND ( UPPER(COALESCE(t.state,'')) = 'MN'
+                                OR EXISTS (SELECT 1 FROM lake_tags lt
+                                           JOIN lakes l ON l.id = lt.lake_id
+                                           WHERE lt.tag_id = t.id AND l.status = 'published') )`),
             pool.query(`SELECT slug, updated_at FROM businesses
                         WHERE status = 'active'
                           AND (user_id IS NULL OR subscription_status = 'active' OR tier_comped)`),
@@ -1824,6 +1832,21 @@ app.get('/towns/:slug', async (req, res, next) => {
             [tag.id]
         ).then(r => r.rows).catch(() => []);
 
+        // Robots must track sitemap inclusion exactly, so a 200 town page is
+        // never an orphaned indexable (index,follow but unlisted). Eligible =
+        // in-state (MN) OR linked to a published lake — same predicate as the
+        // sitemap towns query. Out-of-state border towns with no lake link
+        // render but are noindex + unlisted.
+        const isMN = String(tag.state || '').toUpperCase() === 'MN';
+        const hasPublishedLake = isMN ? true : await pool.query(
+            `SELECT EXISTS (SELECT 1 FROM lake_tags lt JOIN lakes l ON l.id = lt.lake_id
+                            WHERE lt.tag_id = $1 AND l.status = 'published') AS ok`,
+            [tag.id]
+        ).then(r => r.rows[0]?.ok === true).catch(() => false);
+        const townRobots = (isMN || hasPublishedLake)
+            ? 'index, follow, max-snippet:-1, max-image-preview:large'
+            : 'noindex';
+
         const templatePath = path.join(PROJECT_ROOT, 'pages/public/town-detail.html');
         fs.readFile(templatePath, 'utf8', (err, html) => {
             if (err) return next(err);
@@ -1915,6 +1938,7 @@ app.get('/towns/:slug', async (req, res, next) => {
             });
 
             const replacements = {
+                '{{TOWN_ROBOTS}}':           townRobots,
                 '{{TOWN_SEO_TITLE}}':        escapeHtml(title),
                 '{{TOWN_SEO_DESCRIPTION}}':  escapeHtml(desc),
                 '{{TOWN_NAME}}':             escapeHtml(tag.name),
