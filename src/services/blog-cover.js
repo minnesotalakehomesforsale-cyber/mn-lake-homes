@@ -1,16 +1,16 @@
 // ─── Blog cover resolution ──────────────────────────────────────────────────
-// A blog post shows a cover ONLY if it has its own post-specific image — either
-// an admin/generated upload (hosted on Cloudinary / an external URL) or nothing.
-// It never falls back to a recycled /assets/images site stock photo: posts
-// without their own image simply render blank (text-first).
+// A blog post shows whatever cover is set on it — a Cloudinary/external upload OR
+// a curated /assets/images photo (our posts are seeded with specific, relevant
+// site images, e.g. mn-gallery-020.jpg for the paddling post). A post with NO
+// cover at all renders the generated colored cover (window.mnlhBlogCover),
+// matching the blog cards, so it's never a bare headline.
+//
+// (Previously this stripped every /assets/images path as "recycled stock", which
+// blanked the curated covers the seeder assigns — the covers never showed.)
 
-// Is this cover a real, post-specific image? Anything not empty and not from the
-// shared /assets/images stock pool counts (uploads land on Cloudinary/external).
+// Does the post have a cover image set? Any non-empty URL counts.
 function isRealImage(url) {
-    if (!url || !String(url).trim()) return false;
-    const u = String(url).trim();
-    if (u.startsWith('/assets/images/')) return false;   // shared site stock — not blog-specific
-    return true;
+    return !!(url && String(url).trim());
 }
 
 // The effective cover URL for a post: its own real image, or null (render blank).
