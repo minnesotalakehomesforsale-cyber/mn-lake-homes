@@ -585,10 +585,7 @@ app.get('/sitemap.xml', async (req, res) => {
             // `townRobots` eligibility check in the /towns/:slug route.
             pool.query(`SELECT DISTINCT t.slug, t.updated_at FROM tags t
                         WHERE t.active = TRUE AND COALESCE(t.hero_image_url,'') <> ''
-                          AND ( UPPER(COALESCE(t.state,'')) = 'MN'
-                                OR EXISTS (SELECT 1 FROM lake_tags lt
-                                           JOIN lakes l ON l.id = lt.lake_id
-                                           WHERE lt.tag_id = t.id AND l.status = 'published') )`),
+                          AND ${eligibleSql('t')}`),
             pool.query(`SELECT slug, updated_at FROM businesses
                         WHERE status = 'active'
                           AND (user_id IS NULL OR subscription_status = 'active' OR tier_comped)`),
@@ -1708,7 +1705,12 @@ app.get('/towns', async (req, res, next) => {
     try {
         const [lakesR, townsR] = await Promise.all([
             pool.query(`SELECT slug, name FROM lakes WHERE status = 'published' ORDER BY name`).catch(() => ({ rows: [] })),
-            pool.query(`SELECT slug, name FROM tags WHERE active = TRUE AND COALESCE(hero_image_url,'') <> '' ORDER BY name`).catch(() => ({ rows: [] })),
+            // Grid mirrors the sitemap: only public (MN or lake-linked) towns.
+            // Out-of-state border towns stay reachable by direct URL but off the
+            // directory — see src/services/town-visibility.js.
+            pool.query(`SELECT t.slug, t.name FROM tags t
+                        WHERE t.active = TRUE AND COALESCE(t.hero_image_url,'') <> ''
+                          AND ${eligibleSql('t')} ORDER BY t.name`).catch(() => ({ rows: [] })),
         ]);
         fs.readFile(path.join(PROJECT_ROOT, 'pages/public/towns-index.html'), 'utf8', (err, html) => {
             if (err) return next(err);
@@ -1843,9 +1845,7 @@ app.get('/towns/:slug', async (req, res, next) => {
                             WHERE lt.tag_id = $1 AND l.status = 'published') AS ok`,
             [tag.id]
         ).then(r => r.rows[0]?.ok === true).catch(() => false);
-        const townRobots = (isMN || hasPublishedLake)
-            ? 'index, follow, max-snippet:-1, max-image-preview:large'
-            : 'noindex';
+        const townRobotsValue = townRobots(isTownEligible({ state: tag.state, hasPublishedLake }));
 
         const templatePath = path.join(PROJECT_ROOT, 'pages/public/town-detail.html');
         fs.readFile(templatePath, 'utf8', (err, html) => {
@@ -1938,7 +1938,7 @@ app.get('/towns/:slug', async (req, res, next) => {
             });
 
             const replacements = {
-                '{{TOWN_ROBOTS}}':           townRobots,
+                '{{TOWN_ROBOTS}}':           townRobotsValue,
                 '{{TOWN_SEO_TITLE}}':        escapeHtml(title),
                 '{{TOWN_SEO_DESCRIPTION}}':  escapeHtml(desc),
                 '{{TOWN_NAME}}':             escapeHtml(tag.name),
@@ -2485,6 +2485,7 @@ app.get('/:page', (req, res, next) => {
 // ==========================================
 const pool = require('./database/pool');
 const { assertCriticalSchema } = require('./services/schema-guard');
+const { eligibleSql, isTownEligible, townRobots } = require('./services/town-visibility');
 // Run a DDL/migration statement that may legitimately fail on a fresh
 // database — e.g. an ALTER/INDEX/TRIGGER on a table that is CREATEd later
 // in this same function. Logs and continues instead of aborting the whole
