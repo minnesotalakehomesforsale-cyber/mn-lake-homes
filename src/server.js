@@ -2721,6 +2721,14 @@ async function ensureTables() {
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS graded_at          TIMESTAMPTZ;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS held_no_agent      BOOLEAN NOT NULL DEFAULT FALSE;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS held_at            TIMESTAMPTZ;
+            -- T148: qualified lead with NO routable lake key (target_lake 'other'/
+            -- statewide, or a lake not in our DB, and no address). Distinct from
+            -- held_no_agent: held = we know the lake, can't serve it; this = we
+            -- don't know the lake yet. Answering "which lake" clears it + routes.
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS unrouted_no_lake   BOOLEAN NOT NULL DEFAULT FALSE;
+            -- T149: free text the buyer typed when they picked "other" for the lake.
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS target_lake_freetext TEXT;
+            CREATE INDEX IF NOT EXISTS idx_leads_unrouted ON leads(unrouted_no_lake) WHERE unrouted_no_lake = TRUE;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS routed_at          TIMESTAMPTZ;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS dispute_flag       BOOLEAN NOT NULL DEFAULT FALSE;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS dispute_reason     TEXT;
@@ -3163,6 +3171,13 @@ async function ensureTables() {
         // failed with invalid_text_representation until this value existed.
         await pool.query(`DO $$ BEGIN
             ALTER TYPE account_status_type ADD VALUE IF NOT EXISTS 'inactive';
+        EXCEPTION WHEN undefined_object THEN NULL;
+        END $$;`);
+        // T148: parked state for a qualified lead we can't route yet because no
+        // lake was specified (distinct from held_no_agent). Boolean flag is the
+        // source of truth; this enum value just lets lead_status display it.
+        await pool.query(`DO $$ BEGIN
+            ALTER TYPE lead_status_type ADD VALUE IF NOT EXISTS 'unrouted_no_lake';
         EXCEPTION WHEN undefined_object THEN NULL;
         END $$;`);
         await safeExec(`

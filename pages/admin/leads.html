@@ -111,6 +111,7 @@
                 <button class="filter-tab" onclick="filterTable('unassigned', this)">Requires Assignment</button>
                 <button class="filter-tab" onclick="filterTable('assigned', this)">Triage Processing</button>
                 <button class="filter-tab" onclick="filterTable('held', this)">Held — No Agent</button>
+                <button class="filter-tab" onclick="filterTable('nolake', this)">Unrouted — No Lake</button>
                 <div style="border-left: 1px solid #e2e8f0; margin: 0.5rem; height: 20px;"></div>
                 <button class="filter-tab" onclick="filterType('buyer', this)">Map Buyers</button>
                 <button class="filter-tab" onclick="filterType('seller', this)">Map Sellers</button>
@@ -179,6 +180,8 @@
         function getHeldBadge(l) {
             if (l.assigned_manually && !l.accepted_at)
                 return `<span class="s-badge" style="background:#e9d8fd;color:#553c9a;" title="Hand-placed with a free-tier agent — awaiting acceptance">⏳ offer pending</span>`;
+            if (l.unrouted_no_lake)
+                return `<span class="s-badge" style="background:#fed7d7;color:#822727;" title="Qualified but no routable lake was given — ask which lake, then it routes">⚠️ no lake${l.lead_grade ? ' · ' + l.lead_grade : ''}</span>`;
             if (l.held_no_agent)
                 return `<span class="s-badge" style="background:#feebc8;color:#7b341e;" title="Qualified lead with no paying agent on its lake">⏳ held${l.lead_grade ? ' · ' + l.lead_grade : ''}</span>`;
             return '';
@@ -240,6 +243,8 @@
             // T141 held queue = truly held (no paying agent) OR a pending manual
             // offer awaiting acceptance. Both are worked from here.
             else if(status === 'held') renderTable(a => a.held_no_agent || (a.assigned_manually && !a.accepted_at));
+            // T148 counted separately from held: we don't know the lake yet.
+            else if(status === 'nolake') renderTable(a => a.unrouted_no_lake);
             else renderTable(a => a.status === status);
         }
 

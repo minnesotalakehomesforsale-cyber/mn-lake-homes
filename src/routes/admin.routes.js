@@ -173,6 +173,7 @@ router.patch('/leads/:id/status', adminController.updateLeadStatus);
 router.patch('/leads/:id/assign', adminController.assignLead);
 router.post('/leads/:id/notes', adminController.addLeadNote);
 router.post('/leads/:id/manual-release', verifyToken, requireRole(['admin', 'super_admin']), adminController.manualReleaseLead);  // T141 hand-place held A/B lead with a free-tier agent
+router.post('/leads/:id/set-lake', verifyToken, requireRole(['admin', 'super_admin']), adminController.setLeadLake);  // T148 promote an unrouted-no-lake lead into routing
 router.delete('/leads/:id', adminController.deleteLead);                    // DELETE lead (hard delete)
 
 // ─── AGENT LEADS (must come before /:id to avoid shadowing) ─────────────────

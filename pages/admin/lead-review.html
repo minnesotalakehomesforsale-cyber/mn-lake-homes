@@ -123,6 +123,12 @@
                         <div id="handplace-body"><!-- JS injects picker / pending / accepted state --></div>
                     </div>
 
+                    <!-- T148: qualified lead with no routable lake. Name the lake to route it. -->
+                    <div id="setlake-panel" class="review-panel" style="display:none; padding: 2rem; border:1px solid #fed7d7;">
+                        <h3 class="data-title" style="color:#822727;">No lake specified — which lake?</h3>
+                        <div id="setlake-body"><!-- JS --></div>
+                    </div>
+
                     <!-- internal notes -->
                     <div class="review-panel" style="padding: 2rem;">
                         <h3 class="data-title">Internal Lead Notebook</h3>
@@ -284,6 +290,37 @@
             }
 
             renderHandPlace(lead);
+            renderSetLake(lead);
+        }
+
+        // T148 — promote an unrouted-no-lake lead by naming its lake.
+        function renderSetLake(lead) {
+            const panel = document.getElementById('setlake-panel');
+            const body = document.getElementById('setlake-body');
+            if (!lead.unrouted_no_lake) { panel.style.display = 'none'; return; }
+            panel.style.display = '';
+            const typed = lead.target_lake_freetext ? ` They typed: <strong>“${esc(lead.target_lake_freetext)}”</strong>.` : '';
+            body.innerHTML = `
+                <p style="font-size:0.85rem;color:#718096;margin:0 0 1rem;">This grade-${esc(lead.lead_grade || '?')} lead qualified but gave no routable lake (picked “${esc(lead.target_lake || 'other')}”), so it never routed or held.${typed} Name the lake and it routes to a covering agent — or drops into the held queue if none.</p>
+                <input id="setlake-input" class="control-select" placeholder="Lake name (e.g. White Bear Lake)" style="width:100%;padding:0.6rem;">
+                <button class="btn-full" style="background:#c53030;color:#fff;margin-top:0.75rem;" onclick="submitSetLake()">Set lake &amp; route</button>
+                <div id="setlake-msg" style="margin-top:0.75rem;font-size:0.85rem;"></div>`;
+        }
+        async function submitSetLake() {
+            const lakeName = (document.getElementById('setlake-input')?.value || '').trim();
+            const msg = document.getElementById('setlake-msg');
+            if (!lakeName) { msg.innerHTML = '<span style="color:#c53030;">Enter a lake name.</span>'; return; }
+            msg.innerHTML = 'Routing…';
+            try {
+                const res = await fetch(`/api/admin/leads/${leadId}/set-lake`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ lakeName }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) { msg.innerHTML = `<span style="color:#c53030;">${esc(data.error || 'Failed.')}</span>`; return; }
+                msg.innerHTML = `<span style="color:#2f855a;">${data.routed ? 'Routed to ' + esc(data.agent) : 'Set to ' + esc(data.lake) + ' — held (no agent yet)'}. Reloading…</span>`;
+                setTimeout(() => location.reload(), 1000);
+            } catch (e) { msg.innerHTML = '<span style="color:#c53030;">Network error.</span>'; }
         }
 
         // ── T141 hand-placement control ─────────────────────────────────────

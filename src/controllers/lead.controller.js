@@ -18,6 +18,7 @@ const createLead = async (req, res) => {
         is_waterfront, waterfront_feet, lead_session_id, want_founder,
         // B1/B2 lead-qualification properties (mirrored to HubSpot).
         target_lake, intent_type, price_band, lead_source_detail,
+        target_lake_freetext,   // T149: free text when the buyer picks "other"
         // DEV-01 attribution (first-touch UTM + landing context).
         utm_source, utm_medium, utm_campaign, utm_term, utm_content,
         gclid, fbclid, landing_page, landing_page_lake, landing_page_town, referrer,
@@ -228,10 +229,10 @@ const createLead = async (req, res) => {
                 property_state, property_zip, property_place_id,
                 user_id, listing_id, is_waterfront, waterfront_feet,
                 lead_score, lead_tier, lead_session_id, is_partial,
-                lead_grade, unqualified_reason, graded_at, target_lake, intent_type
+                lead_grade, unqualified_reason, graded_at, target_lake, intent_type, target_lake_freetext
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, FALSE,
-                    $22, $23, NOW(), $24, $25)
+                    $22, $23, NOW(), $24, $25, $26)
             RETURNING id
         `;
         // We extrapolate first name logically
@@ -266,6 +267,7 @@ const createLead = async (req, res) => {
             submittedUserId, listingId, isWaterfront, wfFeetNum,
             leadScore.score, leadScore.tier, sessionId,
             leadGrade, unqualReason, qualTargetLake || null, qualIntent || null,
+            (target_lake_freetext || '').trim() ? String(target_lake_freetext).trim().slice(0, 200) : null,
         ]);
         const newLeadId = leadRows[0]?.id;
 
@@ -659,6 +661,35 @@ const createLead = async (req, res) => {
                 }
             })();
         }
+        // T148: qualified (A/B) lead with NO routing key — no lake matched and no
+        // address to geocode (the router block above is gated on lake OR address,
+        // so these fell through and just sat: never routed, never held, invisible).
+        // Park them in unrouted_no_lake and alert immediately (same urgency as a
+        // held lead). Distinct from held_no_agent: there we KNOW the lake and
+        // can't serve it; here we don't know the lake yet. Answering "which lake"
+        // in the admin clears this and routes normally (setLeadLake).
+        else if (newLeadId && (leadGrade === 'A' || leadGrade === 'B') && !leadLakeId) {
+            (async () => {
+                try {
+                    await pool.query(
+                        `UPDATE leads SET unrouted_no_lake = TRUE, held_at = COALESCE(held_at, NOW()),
+                                lead_status = 'unrouted_no_lake', updated_at = NOW()
+                          WHERE id = $1`, [newLeadId]);
+                    logActivity({
+                        event_type: 'lead.unrouted_no_lake', event_scope: 'lead', severity: 'warning',
+                        actor: { type: 'system', label: 'lead-router' },
+                        target: { type: 'lead', id: newLeadId, label: `${name} (${enumType})` },
+                        details: { grade: leadGrade, target_lake: qualTargetLake || null, freetext: (target_lake_freetext || '').slice(0, 120) || null, intent: qualIntent, reason: 'no_lake_key' },
+                    });
+                    emailService.sendAdminLeadNotification({
+                        name, first_name: firstName, email, phone, type: enumType,
+                        source: `⚠️ UNROUTED · grade ${leadGrade} · NO LAKE SPECIFIED`,
+                        notes: `A grade-${leadGrade} lead qualified but gave no routable lake (picked "${qualTargetLake || 'other'}"${target_lake_freetext ? `, typed: "${target_lake_freetext}"` : ''}), so it can't route or hold yet.\n`
+                             + `Ask which lake they mean and set it on the lead — it then routes normally. A rising count here usually means the form's lake picker is missing lakes, not that buyers are vague.\n\n${notes || ''}`.trim(),
+                    });
+                } catch (e) { console.warn('[lead unrouted_no_lake]', e.message); }
+            })();
+        }
 
         res.status(201).json({ success: true, message: 'Lead logged', lead_id: newLeadId });
     } catch (err) {
@@ -677,7 +708,9 @@ const getAdminLeads = async (req, res) => {
                    l.agent_id, l.is_partial, l.lead_score, l.lead_tier,
                    -- T141 held queue + hand-placement state (drives the Held filter
                    -- and the pending-offer badge on the admin leads list).
-                   l.lead_grade, l.held_no_agent, l.assigned_manually, l.accepted_at, l.manual_assigned_at
+                   l.lead_grade, l.held_no_agent, l.assigned_manually, l.accepted_at, l.manual_assigned_at,
+                   -- T148/T149 unrouted-no-lake state.
+                   l.unrouted_no_lake, l.target_lake, l.target_lake_freetext
             FROM leads l
             LEFT JOIN agents a ON l.agent_id = a.id
             LEFT JOIN users u ON l.assigned_user_id = u.id

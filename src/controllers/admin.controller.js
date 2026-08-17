@@ -1031,14 +1031,19 @@ const getBusinessCoverage = async (req, res) => {
 const getUnassignedLeadCount = async (req, res) => {
     try {
         const { rows } = await pool.query(
-            `SELECT COUNT(*)::int AS count
+            `SELECT COUNT(*)::int AS count,
+                    -- T148: unrouted (no lake yet) counted SEPARATELY from held
+                    -- (known lake, no agent). A rising 'unrouted' points at the
+                    -- form's lake picker, not vague buyers.
+                    COUNT(*) FILTER (WHERE unrouted_no_lake = TRUE)::int AS unrouted,
+                    COUNT(*) FILTER (WHERE held_no_agent = TRUE)::int    AS held
                FROM leads
               WHERE agent_id IS NULL
                 AND assigned_user_id IS NULL
                 AND deleted_at IS NULL
                 AND lead_status NOT IN ('closed', 'archived')`
         );
-        res.json({ count: rows[0]?.count || 0 });
+        res.json({ count: rows[0]?.count || 0, unrouted: rows[0]?.unrouted || 0, held: rows[0]?.held || 0 });
     } catch (err) {
         console.error('[getUnassignedLeadCount]', err.message);
         res.status(500).json({ error: 'Server error.' });
@@ -1405,6 +1410,58 @@ const manualReleaseLead = async (req, res) => {
         res.status(500).json({ error: 'Failed to hand-place the lead.' });
     } finally {
         client.release();
+    }
+};
+
+// T148: POST /api/admin/leads/:id/set-lake  { lakeId | lakeSlug | lakeName }
+// Promote an unrouted-no-lake lead into normal routing by naming its lake.
+// Resolves the lake, clears unrouted_no_lake, then routes to a covering agent —
+// or drops it into the held queue if no paying agent covers it yet.
+const setLeadLake = async (req, res) => {
+    const leadId = req.params.id;
+    const { lakeId, lakeSlug, lakeName } = req.body || {};
+    try {
+        let lake = null;
+        if (lakeId)        lake = (await pool.query(`SELECT id, slug, name FROM lakes WHERE id = $1::uuid LIMIT 1`, [lakeId])).rows[0];
+        else if (lakeSlug) lake = (await pool.query(`SELECT id, slug, name FROM lakes WHERE slug = $1 LIMIT 1`, [lakeSlug])).rows[0];
+        else if (lakeName) lake = (await pool.query(`SELECT id, slug, name FROM lakes WHERE lower(name) = lower($1) LIMIT 1`, [lakeName])).rows[0];
+        if (!lake) return res.status(400).json({ error: 'Pick a lake that exists in our database to route this lead.' });
+
+        // Set the lake + clear the unrouted flag (routing keys off lake_id).
+        await pool.query(
+            `UPDATE leads SET lake_id = $1, unrouted_no_lake = FALSE, updated_at = NOW() WHERE id = $2::uuid`,
+            [lake.id, leadId]);
+        logActivity({
+            event_type: 'lead.lake_set', event_scope: 'lead', severity: 'notice',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'lead', id: leadId }, details: { lake_id: lake.id, lake: lake.name }, req,
+        });
+
+        // Route now that we know the lake.
+        const { routeLead } = require('../services/lead-router');
+        const pick = await routeLead({ lakeId: lake.id }).catch(() => null);
+        if (pick) {
+            await pool.query(
+                `UPDATE leads SET agent_id = $1, assigned_user_id = $2, lead_status = 'contacted',
+                        pipeline_status = 'routed', assigned_at = NOW(), routed_at = COALESCE(routed_at, NOW()), updated_at = NOW()
+                  WHERE id = $3::uuid`, [pick.agentId, pick.userId, leadId]);
+            try {
+                require('../services/email').sendMatchedAgentNotification({
+                    to: pick.email, agentFirstName: (pick.fullName || '').split(' ')[0] || 'there',
+                    lead: { id: leadId, name: null, type: null }, matchedAreas: [lake.name].filter(Boolean),
+                });
+            } catch (_) {}
+            try { require('../services/agent-notify').notifyAgent(pick.agentId, { type: 'lead', title: `A lead just routed to you on ${lake.name}`, body: 'Respond fast to win it.', link: '?view=leads' }); } catch (_) {}
+            return res.json({ success: true, routed: true, held: false, agent: pick.fullName, lake: lake.name });
+        }
+        // No covering agent → held (we now know the lake, just can't serve it).
+        await pool.query(
+            `UPDATE leads SET held_no_agent = TRUE, held_at = COALESCE(held_at, NOW()), lead_status = 'held_no_agent', updated_at = NOW()
+              WHERE id = $1::uuid`, [leadId]);
+        return res.json({ success: true, routed: false, held: true, lake: lake.name });
+    } catch (e) {
+        console.error('[setLeadLake]', e.message);
+        res.status(500).json({ error: 'Failed to set the lake.' });
     }
 };
 
@@ -3490,6 +3547,7 @@ module.exports = {
     deleteLead,
     getManualReleaseCandidates,
     manualReleaseLead,
+    setLeadLake,
     deleteAgent,
     getAgentLeads,
     getAgentNotes,
