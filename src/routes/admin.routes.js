@@ -154,12 +154,12 @@ router.delete('/messages/:id',           verifyToken, requireRole(['admin', 'sup
 
 // ─── LEADS (must come before /:id to avoid shadowing) ────────────────────────
 router.get('/leads/unassigned-count', adminController.getUnassignedLeadCount);
-router.get('/leads/:id/manual-release/candidates', adminController.getManualReleaseCandidates); // T141 free-tier agents for hand-place
+router.get('/leads/:id/manual-release/candidates', verifyToken, requireRole(['admin', 'super_admin']), adminController.getManualReleaseCandidates); // T141 free-tier agents for hand-place
 router.get('/leads/:id', adminController.getLeadDetail);
 router.patch('/leads/:id/status', adminController.updateLeadStatus);
 router.patch('/leads/:id/assign', adminController.assignLead);
 router.post('/leads/:id/notes', adminController.addLeadNote);
-router.post('/leads/:id/manual-release', adminController.manualReleaseLead);  // T141 hand-place held A/B lead with a free-tier agent
+router.post('/leads/:id/manual-release', verifyToken, requireRole(['admin', 'super_admin']), adminController.manualReleaseLead);  // T141 hand-place held A/B lead with a free-tier agent
 router.delete('/leads/:id', adminController.deleteLead);                    // DELETE lead (hard delete)
 
 // ─── AGENT LEADS (must come before /:id to avoid shadowing) ─────────────────
