@@ -237,6 +237,7 @@
         { key: 'lakes-towns', href: 'lakes-towns.html', label: 'Lakes & Businesses', aliases: ['lakes', 'businesses'] },
         { key: 'listings',    href: 'listings.html',   label: 'Listings' },
         { key: 'partners',    href: 'partners.html',   label: 'Buyer Partners' },
+        { key: 'partner-perks', href: 'partner-perks.html', label: 'Partner Perks' },
         { key: 'reviews',     href: 'reviews.html',    label: 'Reviews' },
         // Analytics + system, ONE flat-header page (system.html): Traffic,
         // Conversions, Agent coverage, Database, Lead routing, and Images —

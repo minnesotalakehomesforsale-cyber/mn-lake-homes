@@ -25,6 +25,7 @@ const PROJECT = path.join(__dirname, '..');
 const app = express();
 app.use('/api/admin/cash-offers',         require(path.join(PROJECT, 'src/routes/admin-cash-offer.routes')));
 app.use('/api/admin/cash-offer-partners', require(path.join(PROJECT, 'src/routes/admin-cash-offer-partner.routes')));
+app.use('/api/admin/partner-perks',       require(path.join(PROJECT, 'src/routes/partner.routes')));
 app.use('/api/admin',                     require(path.join(PROJECT, 'src/routes/admin.routes')));
 
 // Walk a router's layer stack into concrete {method, path} routes.
@@ -44,6 +45,7 @@ const routes = [
     ...collect(require(path.join(PROJECT, 'src/routes/admin.routes')), '/api/admin'),
     ...collect(require(path.join(PROJECT, 'src/routes/admin-cash-offer.routes')), '/api/admin/cash-offers'),
     ...collect(require(path.join(PROJECT, 'src/routes/admin-cash-offer-partner.routes')), '/api/admin/cash-offer-partners'),
+    ...collect(require(path.join(PROJECT, 'src/routes/partner.routes')), '/api/admin/partner-perks'),
 ];
 
 // Concrete request path: fill :params with a dummy value.

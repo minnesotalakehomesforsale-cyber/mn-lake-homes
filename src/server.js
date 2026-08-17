@@ -72,6 +72,7 @@ app.use('/api/agents', require('./routes/agent.routes'));
 // router, which has a catch-all /:id route that would otherwise shadow us.
 app.use('/api/admin/cash-offers', require('./routes/admin-cash-offer.routes'));
 app.use('/api/admin/cash-offer-partners', require('./routes/admin-cash-offer-partner.routes'));
+app.use('/api/admin/partner-perks', require('./routes/partner.routes'));   // Partner Perks vendor network
 app.use('/api/admin', require('./routes/admin.routes'));
 app.use('/api/leads', require('./routes/lead.routes'));
 app.use('/api/blog', require('./routes/blog.routes'));

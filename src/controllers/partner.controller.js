@@ -1,155 +1,206 @@
-// partner.controller.js — buyer-side service partners (lenders, inspectors,
-// insurance, title, marine) + referral routing. A buyer requests a service on
-// a listing; we route to the best active partner in that category (priority,
-// then round-robin by last_referred_at) and email everyone. The platform earns
-// a referral fee per hand-off.
+// Partner Perks — admin CRUD for the vendor network (companies + tiered offers +
+// contacts + notes + contract files) and the agent-facing, tier-gated offer
+// feed. Distinct from the Buyer Partners (cash_offer_partners). See
+// src/services/... tables partner_companies / partner_offers / partner_contacts /
+// partner_notes / partner_files.
 const pool = require('../database/pool');
-const emailService = require('../services/email');
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
 const { logActivity } = require('../services/activity-log');
 
-const CATEGORIES = {
-    lender:     { label: 'Mortgage pre-approval', verb: 'get pre-approved' },
-    inspection: { label: 'Home inspection',       verb: 'schedule an inspection' },
-    insurance:  { label: 'Home insurance quote',  verb: 'get an insurance quote' },
-    title:      { label: 'Title & closing',       verb: 'connect with a title company' },
-    marine:     { label: 'Dock & marine',         verb: 'connect with a dock/marine pro' },
-};
-const isAdmin = (req) => ['admin', 'super_admin'].includes(req.user?.role);
-const str = (v, n) => (String(v ?? '').trim().slice(0, n) || null);
+const TIERS = ['free', 'premium', 'founder'];   // offer.min_tier ladder (→ memberships.code)
+const slugify = s => String(s || '').toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 200) || 'partner';
 
-// GET /api/partners?category= — active partners (public, for display).
-exports.listPublic = async (req, res) => {
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key:    process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+const fileUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
+
+// ── Companies ────────────────────────────────────────────────────────────────
+const listCompanies = async (req, res) => {
     try {
-        const cat = str(req.query.category, 24);
-        const params = [];
-        let where = 'active = TRUE';
-        if (cat) { params.push(cat); where += ` AND category = $1`; }
         const { rows } = await pool.query(
-            `SELECT id, category, name, website_url, blurb
-               FROM service_partners WHERE ${where}
-              ORDER BY priority DESC, name ASC`, params);
+            `SELECT c.*,
+                    (SELECT COUNT(*) FROM partner_offers o WHERE o.partner_id = c.id AND o.is_active)::int AS offer_count
+               FROM partner_companies c
+              ORDER BY c.sort_order ASC, c.company_name ASC`);
         res.json(rows);
-    } catch (e) { console.error('[partners.listPublic]', e.message); res.status(500).json({ error: 'Failed to load partners.' }); }
+    } catch (e) { console.error('[partners.list]', e.message); res.status(500).json({ error: 'Failed to load partners.' }); }
 };
 
-// POST /api/partners/refer — a buyer requests a service. Routes to a partner
-// (if any) and notifies partner + buyer + admin. Works even with zero partners
-// configured (admin still gets the request to handle manually).
-exports.refer = async (req, res) => {
+const getCompany = async (req, res) => {
     try {
-        const category = str(req.body?.category, 24);
-        if (!category || !CATEGORIES[category]) return res.status(400).json({ error: 'Unknown service.' });
-        const name = str(req.body?.name, 200);
-        const email = str(req.body?.email, 255);
-        const phone = str(req.body?.phone, 50);
-        const message = str(req.body?.message, 2000);
-        const listingId = str(req.body?.listing_id, 64);
-        if (!name || (!email && !phone)) return res.status(400).json({ error: 'Name and an email or phone are required.' });
+        const c = (await pool.query(`SELECT * FROM partner_companies WHERE id = $1::uuid`, [req.params.id])).rows[0];
+        if (!c) return res.status(404).json({ error: 'Partner not found.' });
+        const [offers, contacts, notes, files] = await Promise.all([
+            pool.query(`SELECT o.*, m.name AS min_tier_name FROM partner_offers o LEFT JOIN memberships m ON m.code = o.min_tier WHERE o.partner_id = $1::uuid ORDER BY o.sort_order, o.created_at`, [c.id]),
+            pool.query(`SELECT * FROM partner_contacts WHERE partner_id = $1::uuid ORDER BY created_at`, [c.id]),
+            pool.query(`SELECT n.*, u.full_name AS author FROM partner_notes n LEFT JOIN users u ON u.id = n.user_id WHERE n.partner_id = $1::uuid ORDER BY n.created_at DESC`, [c.id]),
+            pool.query(`SELECT * FROM partner_files WHERE partner_id = $1::uuid ORDER BY created_at DESC`, [c.id]),
+        ]);
+        res.json({ ...c, offers: offers.rows, contacts: contacts.rows, notes: notes.rows, files: files.rows });
+    } catch (e) { console.error('[partners.get]', e.message); res.status(500).json({ error: 'Failed to load partner.' }); }
+};
 
-        // Pick a partner: highest priority, least-recently referred (round-robin).
-        const pr = await pool.query(
-            `SELECT id, name, contact_email FROM service_partners
-              WHERE active = TRUE AND category = $1
-              ORDER BY priority DESC, last_referred_at ASC NULLS FIRST, created_at ASC
-              LIMIT 1`, [category]);
-        const partner = pr.rows[0] || null;
+const createCompany = async (req, res) => {
+    const { company_name, category, website_url, logo_url, summary, status } = req.body || {};
+    if (!company_name || !company_name.trim()) return res.status(400).json({ error: 'Company name is required.' });
+    try {
+        let slug = slugify(company_name);
+        if ((await pool.query(`SELECT 1 FROM partner_companies WHERE slug = $1`, [slug])).rowCount) {
+            slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
+        }
+        const r = await pool.query(
+            `INSERT INTO partner_companies (company_name, slug, category, website_url, logo_url, summary, status)
+             VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, 'active')) RETURNING *`,
+            [company_name.trim(), slug, category || null, website_url || null, logo_url || null, summary || null, status || null]);
+        logActivity({ event_type: 'partner.create', event_scope: 'partner', actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' }, target: { type: 'partner', id: r.rows[0].id, label: company_name }, req });
+        res.json(r.rows[0]);
+    } catch (e) { console.error('[partners.create]', e.message); res.status(500).json({ error: 'Failed to create partner.' }); }
+};
 
-        const ins = await pool.query(
-            `INSERT INTO partner_referrals (category, partner_id, name, email, phone, message, listing_id)
-             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-            [category, partner?.id || null, name, email, phone, message,
-             (listingId && /^[0-9a-f-]{36}$/i.test(listingId)) ? listingId : null]);
-        if (partner) {
-            pool.query(`UPDATE service_partners SET last_referred_at = NOW() WHERE id = $1`, [partner.id]).catch(() => {});
-        }
+const updateCompany = async (req, res) => {
+    const allowed = ['company_name', 'category', 'website_url', 'logo_url', 'summary', 'status', 'sort_order'];
+    const sets = [], vals = [];
+    for (const k of allowed) if (k in (req.body || {})) { vals.push(req.body[k]); sets.push(`${k} = $${vals.length}`); }
+    if (!sets.length) return res.status(400).json({ error: 'Nothing to update.' });
+    sets.push('updated_at = NOW()'); vals.push(req.params.id);
+    try {
+        const r = await pool.query(`UPDATE partner_companies SET ${sets.join(', ')} WHERE id = $${vals.length}::uuid RETURNING *`, vals);
+        if (!r.rowCount) return res.status(404).json({ error: 'Partner not found.' });
+        res.json(r.rows[0]);
+    } catch (e) { console.error('[partners.update]', e.message); res.status(500).json({ error: 'Failed to update partner.' }); }
+};
 
-        const catLabel = CATEGORIES[category].label;
-        // Notify the partner (if we have one with an email).
-        if (partner?.contact_email) {
-            emailService.sendEmail({
-                to: partner.contact_email,
-                subject: `New ${catLabel} referral from MN Lake Homes`,
-                html: `<p>You have a new <b>${catLabel}</b> referral:</p>
-                       <p><b>${escapeHtml(name)}</b><br>${email ? 'Email: ' + escapeHtml(email) + '<br>' : ''}${phone ? 'Phone: ' + escapeHtml(phone) : ''}</p>
-                       ${message ? `<p>${escapeHtml(message)}</p>` : ''}<p>Please reach out promptly.</p>`,
-            });
-        }
-        // Confirm to the buyer.
-        if (email) {
-            emailService.sendEmail({
-                to: email,
-                subject: `Your ${catLabel} request — MN Lake Homes`,
-                html: `<p>Thanks ${escapeHtml((name || '').split(' ')[0] || 'there')} — we've received your request to ${CATEGORIES[category].verb}.</p>
-                       <p>${partner ? `We've connected you with <b>${escapeHtml(partner.name)}</b>, who will reach out shortly.` : 'A trusted local partner will reach out shortly.'}</p>`,
-            });
-        }
-        // Always tell admin.
-        emailService.sendEmail({
-            to: process.env.ADMIN_EMAIL || process.env.LEAD_NOTIFY_EMAIL || 'hburnside99@gmail.com',
-            subject: `Referral: ${catLabel} — ${name}`,
-            html: `<p>New buyer-service referral (<b>${catLabel}</b>)${partner ? ` routed to <b>${escapeHtml(partner.name)}</b>` : ' — <b>no partner configured</b>, handle manually'}.</p>
-                   <p><b>${escapeHtml(name)}</b><br>${email ? escapeHtml(email) + '<br>' : ''}${phone ? escapeHtml(phone) : ''}</p>
-                   ${message ? `<p>${escapeHtml(message)}</p>` : ''}`,
+const deleteCompany = async (req, res) => {
+    try { await pool.query(`DELETE FROM partner_companies WHERE id = $1::uuid`, [req.params.id]); res.json({ success: true }); }
+    catch (e) { console.error('[partners.delete]', e.message); res.status(500).json({ error: 'Failed to delete partner.' }); }
+};
+
+// ── Offers ───────────────────────────────────────────────────────────────────
+const createOffer = async (req, res) => {
+    const { title, value_text, min_tier, redeem_type, redeem_link, redeem_instructions } = req.body || {};
+    if (!title || !title.trim()) return res.status(400).json({ error: 'Offer title is required.' });
+    const tier = TIERS.includes(min_tier) ? min_tier : 'free';
+    try {
+        const r = await pool.query(
+            `INSERT INTO partner_offers (partner_id, title, value_text, min_tier, redeem_type, redeem_link, redeem_instructions)
+             VALUES ($1::uuid, $2, $3, $4, COALESCE($5, 'request'), $6, $7) RETURNING *`,
+            [req.params.id, title.trim(), value_text || null, tier, redeem_type || null, redeem_link || null, redeem_instructions || null]);
+        res.json(r.rows[0]);
+    } catch (e) { console.error('[offers.create]', e.message); res.status(500).json({ error: 'Failed to create offer.' }); }
+};
+
+const updateOffer = async (req, res) => {
+    const allowed = ['title', 'value_text', 'min_tier', 'redeem_type', 'redeem_link', 'redeem_instructions', 'is_active', 'sort_order'];
+    const sets = [], vals = [];
+    for (const k of allowed) if (k in (req.body || {})) {
+        let v = req.body[k];
+        if (k === 'min_tier' && !TIERS.includes(v)) v = 'free';
+        vals.push(v); sets.push(`${k} = $${vals.length}`);
+    }
+    if (!sets.length) return res.status(400).json({ error: 'Nothing to update.' });
+    sets.push('updated_at = NOW()'); vals.push(req.params.offerId);
+    try {
+        const r = await pool.query(`UPDATE partner_offers SET ${sets.join(', ')} WHERE id = $${vals.length}::uuid RETURNING *`, vals);
+        if (!r.rowCount) return res.status(404).json({ error: 'Offer not found.' });
+        res.json(r.rows[0]);
+    } catch (e) { console.error('[offers.update]', e.message); res.status(500).json({ error: 'Failed to update offer.' }); }
+};
+
+const deleteOffer = async (req, res) => {
+    try { await pool.query(`DELETE FROM partner_offers WHERE id = $1::uuid`, [req.params.offerId]); res.json({ success: true }); }
+    catch (e) { res.status(500).json({ error: 'Failed to delete offer.' }); }
+};
+
+// ── Contacts ─────────────────────────────────────────────────────────────────
+const addContact = async (req, res) => {
+    const { name, role, email, phone, notes } = req.body || {};
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Contact name is required.' });
+    try {
+        const r = await pool.query(`INSERT INTO partner_contacts (partner_id, name, role, email, phone, notes) VALUES ($1::uuid, $2, $3, $4, $5, $6) RETURNING *`,
+            [req.params.id, name.trim(), role || null, email || null, phone || null, notes || null]);
+        res.json(r.rows[0]);
+    } catch (e) { res.status(500).json({ error: 'Failed to add contact.' }); }
+};
+const deleteContact = async (req, res) => {
+    try { await pool.query(`DELETE FROM partner_contacts WHERE id = $1::uuid`, [req.params.contactId]); res.json({ success: true }); }
+    catch (e) { res.status(500).json({ error: 'Failed to delete contact.' }); }
+};
+
+// ── Notes ────────────────────────────────────────────────────────────────────
+const addNote = async (req, res) => {
+    const { note_body } = req.body || {};
+    if (!note_body || !note_body.trim()) return res.status(400).json({ error: 'Note is empty.' });
+    try {
+        const r = await pool.query(`INSERT INTO partner_notes (partner_id, user_id, note_body) VALUES ($1::uuid, $2, $3) RETURNING *`,
+            [req.params.id, req.user?.userId || null, note_body.trim()]);
+        res.json(r.rows[0]);
+    } catch (e) { res.status(500).json({ error: 'Failed to add note.' }); }
+};
+const deleteNote = async (req, res) => {
+    try { await pool.query(`DELETE FROM partner_notes WHERE id = $1::uuid`, [req.params.noteId]); res.json({ success: true }); }
+    catch (e) { res.status(500).json({ error: 'Failed to delete note.' }); }
+};
+
+// ── Files (contracts) — Cloudinary raw/auto upload ───────────────────────────
+const uploadFile = async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No file provided.' });
+    try {
+        const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        const up = await cloudinary.uploader.upload(dataUri, { resource_type: 'auto', folder: 'partner-contracts' });
+        const r = await pool.query(
+            `INSERT INTO partner_files (partner_id, file_url, file_name, file_type, uploaded_by) VALUES ($1::uuid, $2, $3, $4, $5) RETURNING *`,
+            [req.params.id, up.secure_url, req.file.originalname, req.file.mimetype, req.user?.userId || null]);
+        res.json(r.rows[0]);
+    } catch (e) { console.error('[partner.upload]', e.message); res.status(500).json({ error: 'Upload failed.' }); }
+};
+const deleteFile = async (req, res) => {
+    try { await pool.query(`DELETE FROM partner_files WHERE id = $1::uuid`, [req.params.fileId]); res.json({ success: true }); }
+    catch (e) { res.status(500).json({ error: 'Failed to delete file.' }); }
+};
+
+// ── Agent-facing: tier-gated offer feed ──────────────────────────────────────
+// Every active offer is returned; each is flagged unlocked/locked for the
+// signed-in agent's tier. Locked offers reveal WHAT the perk is but withhold the
+// redeem link/instructions — the UI shows an Upgrade button instead.
+const agentPerks = async (req, res) => {
+    try {
+        const me = (await pool.query(
+            `SELECT COALESCE(m.sort_priority, 400) AS my_priority, COALESCE(m.code, 'free') AS my_code
+               FROM agents a LEFT JOIN memberships m ON m.id = a.membership_id
+              WHERE a.user_id = $1 LIMIT 1`, [req.user.userId])).rows[0] || { my_priority: 400, my_code: 'free' };
+        const { rows } = await pool.query(
+            `SELECT o.id, o.title, o.value_text, o.min_tier, o.redeem_type, o.redeem_link, o.redeem_instructions,
+                    tierm.sort_priority AS min_priority, tierm.name AS min_tier_name,
+                    c.company_name, c.category, c.website_url, c.logo_url, c.summary
+               FROM partner_offers o
+               JOIN partner_companies c ON c.id = o.partner_id AND c.status = 'active'
+               LEFT JOIN memberships tierm ON tierm.code = o.min_tier
+              WHERE o.is_active = TRUE
+              ORDER BY c.sort_order, c.company_name, o.sort_order`);
+        // Lower sort_priority = higher tier; an agent unlocks an offer when their
+        // tier is at least the offer's minimum.
+        const offers = rows.map(o => {
+            const unlocked = Number(me.my_priority) <= Number(o.min_priority ?? 400);
+            return {
+                ...o,
+                unlocked,
+                redeem_link:         unlocked ? o.redeem_link : null,
+                redeem_instructions: unlocked ? o.redeem_instructions : null,
+            };
         });
-        logActivity({
-            event_type: 'partner.referral', event_scope: 'partner',
-            actor: { type: 'public', label: email || phone || name },
-            target: { type: 'partner_referral', id: ins.rows[0].id, label: catLabel },
-            details: { category, partner_id: partner?.id || null }, req,
-        });
-        res.status(201).json({ success: true });
-    } catch (e) { console.error('[partners.refer]', e.message); res.status(500).json({ error: 'Could not submit your request.' }); }
+        res.json({ my_tier: me.my_code, offers });
+    } catch (e) { console.error('[agentPerks]', e.message); res.status(500).json({ error: 'Failed to load perks.' }); }
 };
 
-// ── Admin ───────────────────────────────────────────────────────────────────
-exports.listAdmin = async (req, res) => {
-    if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
-    try {
-        const { rows } = await pool.query(`SELECT * FROM service_partners ORDER BY category, priority DESC, name`);
-        res.json(rows);
-    } catch (e) { console.error('[partners.listAdmin]', e.message); res.status(500).json({ error: 'Failed to load.' }); }
+module.exports = {
+    listCompanies, getCompany, createCompany, updateCompany, deleteCompany,
+    createOffer, updateOffer, deleteOffer,
+    addContact, deleteContact, addNote, deleteNote,
+    fileUpload, uploadFile, deleteFile,
+    agentPerks,
 };
-exports.saveAdmin = async (req, res) => {
-    if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
-    const b = req.body || {};
-    const category = str(b.category, 24);
-    if (!category || !CATEGORIES[category]) return res.status(400).json({ error: 'Pick a valid category.' });
-    const vals = [category, str(b.name, 160), str(b.contact_email, 255), str(b.contact_phone, 50),
-                  str(b.website_url, 500), str(b.blurb, 1000),
-                  b.active === false ? false : true, Number(b.priority) || 0];
-    if (!vals[1]) return res.status(400).json({ error: 'Name is required.' });
-    try {
-        if (b.id) {
-            await pool.query(
-                `UPDATE service_partners SET category=$1, name=$2, contact_email=$3, contact_phone=$4,
-                        website_url=$5, blurb=$6, active=$7, priority=$8 WHERE id=$9`,
-                [...vals, b.id]);
-            return res.json({ success: true, id: b.id });
-        }
-        const { rows } = await pool.query(
-            `INSERT INTO service_partners (category, name, contact_email, contact_phone, website_url, blurb, active, priority)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`, vals);
-        res.status(201).json({ success: true, id: rows[0].id });
-    } catch (e) { console.error('[partners.saveAdmin]', e.message); res.status(500).json({ error: 'Could not save.' }); }
-};
-exports.removeAdmin = async (req, res) => {
-    if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
-    try {
-        await pool.query(`DELETE FROM service_partners WHERE id = $1`, [req.params.id]);
-        res.json({ success: true });
-    } catch (e) { console.error('[partners.removeAdmin]', e.message); res.status(500).json({ error: 'Could not delete.' }); }
-};
-exports.referralsAdmin = async (req, res) => {
-    if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only.' });
-    try {
-        const { rows } = await pool.query(
-            `SELECT r.*, p.name AS partner_name FROM partner_referrals r
-               LEFT JOIN service_partners p ON p.id = r.partner_id
-              ORDER BY r.created_at DESC LIMIT 200`);
-        res.json(rows);
-    } catch (e) { console.error('[partners.referralsAdmin]', e.message); res.status(500).json({ error: 'Failed to load.' }); }
-};
-
-function escapeHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}

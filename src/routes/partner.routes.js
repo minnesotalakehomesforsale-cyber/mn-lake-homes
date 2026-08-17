@@ -1,16 +1,34 @@
+// Partner Perks — admin CRUD. Mounted at /api/admin/partner-perks.
+// All routes admin-gated (per-route, matching the cash-offer routers).
 const express = require('express');
 const router = express.Router();
-const c = require('../controllers/partner.controller');
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken, requireRole } = require('../middleware/auth');
+const ctrl = require('../controllers/partner.controller');
 
-// Public
-router.get('/', c.listPublic);            // ?category= → active partners
-router.post('/refer', c.refer);           // buyer requests a service
+const adminOnly = [verifyToken, requireRole(['admin', 'super_admin'])];
 
-// Admin
-router.get   ('/admin',           verifyToken, c.listAdmin);
-router.post  ('/admin',           verifyToken, c.saveAdmin);       // create/update
-router.delete('/admin/:id',       verifyToken, c.removeAdmin);
-router.get   ('/admin/referrals', verifyToken, c.referralsAdmin);
+// Companies
+router.get   ('/',    ...adminOnly, ctrl.listCompanies);
+router.post  ('/',    ...adminOnly, ctrl.createCompany);
+router.get   ('/:id', ...adminOnly, ctrl.getCompany);
+router.patch ('/:id', ...adminOnly, ctrl.updateCompany);
+router.delete('/:id', ...adminOnly, ctrl.deleteCompany);
+
+// Offers
+router.post  ('/:id/offers',           ...adminOnly, ctrl.createOffer);
+router.patch ('/:id/offers/:offerId',  ...adminOnly, ctrl.updateOffer);
+router.delete('/:id/offers/:offerId',  ...adminOnly, ctrl.deleteOffer);
+
+// Contacts
+router.post  ('/:id/contacts',             ...adminOnly, ctrl.addContact);
+router.delete('/:id/contacts/:contactId',  ...adminOnly, ctrl.deleteContact);
+
+// Notes
+router.post  ('/:id/notes',          ...adminOnly, ctrl.addNote);
+router.delete('/:id/notes/:noteId',  ...adminOnly, ctrl.deleteNote);
+
+// Files (contracts) — multipart upload
+router.post  ('/:id/files',           ...adminOnly, ctrl.fileUpload.single('file'), ctrl.uploadFile);
+router.delete('/:id/files/:fileId',   ...adminOnly, ctrl.deleteFile);
 
 module.exports = router;

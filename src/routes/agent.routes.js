@@ -22,6 +22,8 @@ router.post('/upload-photo', agentController.uploadPhoto);
 // ─── PROTECTED — Agent only ───────────────────────────────────────────────────
 router.get('/me', verifyToken, requireRole('agent'), agentController.getMyProfile);
 router.get('/me/leads', verifyToken, requireRole('agent'), agentController.getMyLeads);
+// Partner Perks — tier-gated offer feed for the signed-in agent.
+router.get('/me/perks', verifyToken, requireRole('agent'), require('../controllers/partner.controller').agentPerks);
 router.get('/me/roi',   verifyToken, requireRole('agent'), agentController.getMyRoi);
 router.get('/me/reach', verifyToken, requireRole('agent'), agentController.getMyReach);
 router.get('/me/search-terms', verifyToken, requireRole('agent'), agentController.getMySearchTerms);
