@@ -4,6 +4,19 @@ const adminController = require('../controllers/admin.controller');
 const marketingController = require('../controllers/marketing.controller');
 const { verifyToken, requireRole } = require('../middleware/auth');
 
+// ─── AUTH: EVERY /api/admin/* route is admin-only ───────────────────────────
+// Category-level guard. Auth used to be added one route at a time, and several
+// core CRUD routes (agent ledger, users incl. password-reset + delete, leads
+// incl. hard-delete, agent detail) were simply missed — they shipped to prod
+// reachable with no session, exposing consumer PII and destructive deletes.
+// A router-level gate closes the whole category at once AND covers every FUTURE
+// route by default, so a new admin route can never ship unauthenticated. Routes
+// that need owner-only access still add requireRole(['super_admin']) on top;
+// the per-route verifyToken/requireRole below are now redundant but harmless.
+// test/admin-auth.test.js enumerates every route here and asserts each rejects
+// an anonymous request (T146).
+router.use(verifyToken, requireRole(['admin', 'super_admin']));
+
 // ─── MARKETING (admin "Marketing" tab — posts calendar + mailing list) ──────
 // All routes sit before the catch-all /:id agent route at the bottom.
 router.get   ('/marketing/overview',                marketingController.overview);
