@@ -10,7 +10,8 @@
     "db:seed:staging": "NODE_ENV=staging node scripts/seed-staging.js",
     "test:guard": "node test/schema-guard.test.js",
     "test:towns": "node test/town-visibility.test.js",
-    "test": "node test/schema-guard.test.js && node test/town-visibility.test.js"
+    "test": "node test/schema-guard.test.js && node test/town-visibility.test.js && node test/manual-release.test.js",
+    "test:manual": "node test/manual-release.test.js"
   },
   "dependencies": {
     "@sentry/node": "^8.47.0",

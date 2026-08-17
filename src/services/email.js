@@ -1203,6 +1203,69 @@ function sendAgentLeadAssigned({ to, agentFirstName, lead, assignedBy }) {
     });
 }
 
+// T141 — a held lead has been hand-placed with this (free-tier) agent. The
+// signed accept link is the ONLY acceptance surface (nothing about this appears
+// in the portal). Direct contact details are WITHHELD here on purpose — the
+// agent gets them the moment they accept, which is what makes acceptance mean
+// something. Framed as an ordinary lead offer, never as a "free placement".
+function sendManualLeadOffer({ to, agentFirstName, lead = {}, acceptUrl, expiresHours = 24 }) {
+    if (!to || !acceptUrl) return { skipped: true };
+    const typeLabel = (lead.type || 'lead').replace(/_/g, ' ');
+    const rows = [
+        { label: 'Lake',       value: _esc(lead.lakeName) || 'A lake you cover' },
+        { label: 'Looking to', value: _esc(lead.intent) || _esc(typeLabel) || '—' },
+        { label: 'Price band', value: _esc(lead.priceBand) || '—' },
+    ].filter(r => r.value && r.value !== '—').map(r => `
+        <tr>
+            <td style="padding:8px 12px;font-size:13px;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.5px;vertical-align:top;white-space:nowrap;">${r.label}</td>
+            <td style="padding:8px 12px;font-size:15px;color:#1a202c;">${r.value}</td>
+        </tr>`).join('');
+    return sendEmail({
+        to,
+        subject: `A lead on ${lead.lakeName || 'your lake'} is waiting for you`,
+        html: layout({
+            title: 'A lead is waiting for you',
+            preheader: `${lead.lakeName || 'A lake you cover'} · accept within ${expiresHours} hours`,
+            body: `
+                <p style="margin:0 0 12px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Hi ${_esc(agentFirstName) || 'there'} — someone searching ${_esc(lead.lakeName) || 'a lake you cover'} is looking for an agent, and we'd like to hand them to you.
+                </p>
+                <table style="width:100%;border-collapse:collapse;margin:0 0 8px;">
+                    ${rows}
+                </table>
+                <p style="margin:16px 0 0;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Accept within <strong>${expiresHours} hours</strong> to claim it — you'll get their full contact details in your dashboard the moment you do. If it isn't accepted in time it goes back in the queue.
+                </p>`,
+            ctaText: 'Accept this lead',
+            ctaUrl: acceptUrl,
+        })
+    });
+}
+
+// T141 — fires ONLY when the agent accepts (never at placement). This is the
+// "your agent will contact you" promise; we only make it once someone has
+// actually committed to reaching out.
+function sendLeadAgentMatched({ to, first_name, agentName, lakeName }) {
+    if (!to) return { skipped: true };
+    const who = _esc(agentName) || 'A local lake agent';
+    const place = _esc(lakeName) ? ` about ${_esc(lakeName)}` : '';
+    return sendEmail({
+        to,
+        subject: `Good news — an agent will be in touch${lakeName ? ` about ${lakeName}` : ''}`,
+        html: layout({
+            title: 'Your agent is on it',
+            preheader: `${who} will be reaching out${place}.`,
+            body: `
+                <p style="margin:0 0 12px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Hi ${_esc(first_name) || 'there'} — good news. <strong>${who}</strong>, a local lake specialist, will be reaching out to you${place} shortly.
+                </p>
+                <p style="margin:0;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Keep an eye on your phone and email. In the meantime, feel free to reply here with anything you'd like them to know.
+                </p>`,
+        })
+    });
+}
+
 // ─── New in-app message arrived from MN Lake Homes ─────────────────────────
 // Fires whenever the admin sends a 1:1 message OR the agent is in the
 // audience of a broadcast. The email is the wake-up; the actual thread
@@ -1375,6 +1438,8 @@ module.exports = {
     sendInquiryConfirmation,
     sendMatchedAgentNotification,
     sendAgentLeadAssigned,
+    sendManualLeadOffer,
+    sendLeadAgentMatched,
     sendAgentMessageNotification,
     sendCashOfferToPartner,
     sendBusinessWelcome,

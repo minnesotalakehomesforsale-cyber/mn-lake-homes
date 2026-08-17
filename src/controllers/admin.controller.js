@@ -1244,6 +1244,165 @@ const deleteLead = async (req, res) => {
     }
 };
 
+// ─── T141: manual release of a held lead to a free-tier agent (§4.3b) ────────
+// A hand-placed SALES TOOL, admin-only, no rule engine. See
+// src/services/manual-release.js for the guardrails.
+
+// GET /api/admin/leads/:id/manual-release/candidates
+// Free-tier (non-paying, non-comped), published agents the admin may hand this
+// held lead to — soft-sorted so agents already on the lead's lake surface first
+// (a usability hint, NOT eligibility logic; the admin may pick any of them).
+// Each carries manual_assignment_count + at_cap so the picker can disable agents
+// at the lifetime cap.
+const getManualReleaseCandidates = async (req, res) => {
+    try {
+        const { MANUAL_ASSIGNMENT_CAP } = require('../services/manual-release');
+        const leadR = await pool.query(
+            `SELECT id, lead_grade, held_no_agent, lake_id, target_lake, landing_page_lake
+               FROM leads WHERE id = $1 AND deleted_at IS NULL`, [req.params.id]);
+        const lead = leadR.rows[0];
+        if (!lead) return res.status(404).json({ error: 'Lead not found.' });
+
+        // Free-tier published agents + whether they cover the lead's lake (direct
+        // agent_lakes OR a shared geo tag). on_lead_lake drives the soft sort only.
+        const { rows } = await pool.query(
+            `SELECT a.id, COALESCE(a.display_name, u.full_name) AS name, u.email,
+                    a.manual_assignment_count,
+                    (a.manual_assignment_count >= $2) AS at_cap,
+                    EXISTS (
+                        SELECT 1 FROM agent_lakes al WHERE al.agent_id = a.id AND al.lake_id = $1
+                        UNION ALL
+                        SELECT 1 FROM user_tags ut JOIN lake_tags lt ON lt.tag_id = ut.tag_id
+                         WHERE ut.user_id = a.user_id AND lt.lake_id = $1
+                    ) AS on_lead_lake
+               FROM agents a
+               JOIN users u ON u.id = a.user_id
+               LEFT JOIN memberships m ON m.id = a.membership_id
+              WHERE a.is_published = TRUE AND a.deleted_at IS NULL
+                AND COALESCE(m.code,'free') = 'free' AND a.tier_comped = FALSE
+              ORDER BY on_lead_lake DESC, a.manual_assignment_count ASC, name ASC`,
+            [lead.lake_id, MANUAL_ASSIGNMENT_CAP]);
+
+        res.json({
+            lead: { id: lead.id, grade: lead.lead_grade, held: !!lead.held_no_agent },
+            cap: MANUAL_ASSIGNMENT_CAP,
+            candidates: rows,
+        });
+    } catch (err) {
+        console.error('[getManualReleaseCandidates]', err.message);
+        res.status(500).json({ error: 'Failed to load candidate agents.' });
+    }
+};
+
+// POST /api/admin/leads/:id/manual-release  { agentId, reason }
+// Hand-places a held grade-A/B lead with a free-tier agent as a PENDING offer:
+// the agent gets a signed accept link (24h SLA) and the lead is told nothing yet.
+// Transactional + guarded so the lifetime cap can't be exceeded under races.
+const manualReleaseLead = async (req, res) => {
+    const leadId = req.params.id;
+    const agentId = (req.body?.agentId || '').trim();
+    const reason = (req.body?.reason || '').trim();
+    const { canManuallyRelease, MANUAL_ASSIGNMENT_CAP, ACCEPT_SLA_HOURS, acceptToken } = require('../services/manual-release');
+    const email = require('../services/email');
+
+    if (!agentId) return res.status(400).json({ error: 'Pick a free-tier agent to hand this lead to.' });
+    if (!reason)  return res.status(400).json({ error: 'A short reason is required — say why this agent, this lead.' });
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // Lock the lead + agent rows for the duration so two admins can't both
+        // place (or blow the cap) concurrently.
+        const leadR = await client.query(
+            `SELECT id, full_name, first_name, email, lead_type, lead_grade, held_no_agent,
+                    target_lake, lake_id
+               FROM leads WHERE id = $1 AND deleted_at IS NULL FOR UPDATE`, [leadId]);
+        const lead = leadR.rows[0];
+        if (!lead) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'Lead not found.' }); }
+
+        const agR = await client.query(
+            `SELECT a.id, a.user_id, a.is_published, a.tier_comped, a.manual_assignment_count,
+                    COALESCE(a.display_name, u.full_name) AS name, u.email AS agent_email,
+                    COALESCE(m.code,'free') AS mcode
+               FROM agents a JOIN users u ON u.id = a.user_id
+               LEFT JOIN memberships m ON m.id = a.membership_id
+              WHERE a.id = $1 FOR UPDATE OF a`, [agentId]);
+        const ag = agR.rows[0];
+        if (!ag) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'Agent not found.' }); }
+
+        const agentIsFreeTier = ag.is_published && !ag.tier_comped && ag.mcode === 'free';
+        const gate = canManuallyRelease({
+            leadGrade: lead.lead_grade,
+            held: !!lead.held_no_agent,
+            agentIsFreeTier,
+            agentCount: ag.manual_assignment_count,
+        });
+        if (!gate.ok) {
+            await client.query('ROLLBACK');
+            const msg = {
+                grade_not_eligible: 'Only grade A or B held leads can be hand-placed. Grade C is never eligible.',
+                not_held:           'This lead isn\'t in the held queue — it already has (or had) an agent.',
+                agent_not_free_tier:'That agent isn\'t free-tier — this tool is only for non-paying agents.',
+                agent_at_cap:       `That agent has already reached the lifetime cap of ${MANUAL_ASSIGNMENT_CAP}.`,
+            }[gate.reason] || 'This lead can\'t be hand-placed.';
+            return res.status(409).json({ error: msg, reason: gate.reason });
+        }
+
+        // Reserve the slot (increment now; the 24h sweep frees it if unaccepted).
+        await client.query(
+            `UPDATE agents SET manual_assignment_count = manual_assignment_count + 1, updated_at = NOW()
+              WHERE id = $1`, [agentId]);
+
+        // Place the offer (pending acceptance). held_no_agent flag → FALSE so the
+        // auto-release / self-claim can't grab it out from under the offer, but
+        // lead_status stays as-is; the pending state is (assigned_manually AND
+        // accepted_at IS NULL). No lead-facing message here — that waits for accept.
+        await client.query(
+            `UPDATE leads
+                SET assigned_manually = TRUE, assigned_by = $2, manual_assignment_reason = $3,
+                    manual_assigned_at = NOW(), accepted_at = NULL,
+                    agent_id = $4, assigned_user_id = $5, held_no_agent = FALSE,
+                    updated_at = NOW()
+              WHERE id = $1`,
+            [leadId, req.user?.userId || null, reason, agentId, ag.user_id]);
+
+        await client.query('COMMIT');
+
+        // Offer email with the signed accept link (the only acceptance surface).
+        const base = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
+        const acceptUrl = `${base}/leads/accept?l=${encodeURIComponent(leadId)}&a=${encodeURIComponent(agentId)}&t=${acceptToken(leadId, agentId)}`;
+        try {
+            email.sendManualLeadOffer({
+                to: ag.agent_email,
+                agentFirstName: (ag.name || '').split(' ')[0] || 'there',
+                lead: { lakeName: lead.target_lake, type: lead.lead_type, intent: null, priceBand: null },
+                acceptUrl, expiresHours: ACCEPT_SLA_HOURS,
+            });
+        } catch (e) { console.warn('[manualReleaseLead] offer email failed:', e.message); }
+        // NOTE: no in-app/portal notification here on purpose. Pre-acceptance the
+        // offer must stay OFF every agent surface — the signed email link is the
+        // only channel. The portal notification comes AFTER acceptance, when the
+        // lead is a normal assigned lead (see the accept route).
+
+        logActivity({
+            event_type: 'lead.manual_release', event_scope: 'lead', severity: 'notice',
+            actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
+            target: { type: 'lead', id: leadId, label: lead.full_name || lead.email },
+            details: { agent_id: agentId, agent: ag.name, grade: lead.lead_grade, reason, sla_hours: ACCEPT_SLA_HOURS },
+            req,
+        });
+
+        res.json({ success: true, status: 'pending', agent: { id: agentId, name: ag.name }, expires_hours: ACCEPT_SLA_HOURS });
+    } catch (err) {
+        try { await client.query('ROLLBACK'); } catch (_) {}
+        console.error('[manualReleaseLead]', err.message);
+        res.status(500).json({ error: 'Failed to hand-place the lead.' });
+    } finally {
+        client.release();
+    }
+};
+
 // DELETE /api/admin/:id — hard delete an agent. :id is the agents.id.
 // Removes the agent profile AND the underlying user account so they're
 // gone everywhere — directory, lake pages, login. agents.user_id is
@@ -3324,6 +3483,8 @@ module.exports = {
     assignLead,
     addLeadNote,
     deleteLead,
+    getManualReleaseCandidates,
+    manualReleaseLead,
     deleteAgent,
     getAgentLeads,
     getAgentNotes,

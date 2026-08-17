@@ -631,6 +631,10 @@ const getMyLeads = async (req, res) => {
             LEFT JOIN listings li ON li.id = l.listing_id
             WHERE u.id = $1
               AND l.deleted_at IS NULL
+              -- T141: a hand-placed lead is HIDDEN until the agent accepts it via
+              -- the signed email link. Pending (unaccepted) offers never appear in
+              -- the portal — that's what keeps the tool off the product surface.
+              AND NOT (l.assigned_manually = TRUE AND l.accepted_at IS NULL)
             ORDER BY l.created_at DESC
         `, [userId]);
         res.json(rows.map(r => ({ ...r, sla_hours: slaHours })));

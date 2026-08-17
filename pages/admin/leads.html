@@ -110,6 +110,7 @@
                 <button class="filter-tab active" onclick="filterTable('all', this)">All Leads</button>
                 <button class="filter-tab" onclick="filterTable('unassigned', this)">Requires Assignment</button>
                 <button class="filter-tab" onclick="filterTable('assigned', this)">Triage Processing</button>
+                <button class="filter-tab" onclick="filterTable('held', this)">Held — No Agent</button>
                 <div style="border-left: 1px solid #e2e8f0; margin: 0.5rem; height: 20px;"></div>
                 <button class="filter-tab" onclick="filterType('buyer', this)">Map Buyers</button>
                 <button class="filter-tab" onclick="filterType('seller', this)">Map Sellers</button>
@@ -172,6 +173,17 @@
             }
         }
 
+        // T141 — held queue + hand-placement state. A pending manual offer shows
+        // "offer pending"; a plain held lead shows "held" with its grade so the
+        // admin can spot A/B hand-place candidates at a glance.
+        function getHeldBadge(l) {
+            if (l.assigned_manually && !l.accepted_at)
+                return `<span class="s-badge" style="background:#e9d8fd;color:#553c9a;" title="Hand-placed with a free-tier agent — awaiting acceptance">⏳ offer pending</span>`;
+            if (l.held_no_agent)
+                return `<span class="s-badge" style="background:#feebc8;color:#7b341e;" title="Qualified lead with no paying agent on its lake">⏳ held${l.lead_grade ? ' · ' + l.lead_grade : ''}</span>`;
+            return '';
+        }
+
         function getTypeBadge(source) {
             switch(source) {
                 case 'buyer': return `<span class="s-badge type-buyer">Buyer</span>`;
@@ -209,7 +221,7 @@
                     <td>${getTypeBadge(l.type)}</td>
                     <td style="font-family: inherit; font-size: 0.8rem; font-weight: 600; color: #4a5568;">[${l.source}]</td>
                     <td>${assignedNameStr}</td>
-                    <td>${getStatusBadge(l.status)}</td>
+                    <td>${getStatusBadge(l.status)} ${getHeldBadge(l)}</td>
                     <td style="color:#a0aec0; font-weight:600; font-size:0.8rem;">${new Date(l.created_at).toLocaleDateString()}</td>
                 `;
                 body.appendChild(tr);
@@ -225,6 +237,9 @@
             // routes straight to that agent), so status alone isn't enough —
             // exclude anything that already shows an assignee.
             else if(status === 'unassigned') renderTable(a => !a.agent_id && !a.assigned_user_id && !a.assigned_user_name && ['new', 'unassigned'].includes(a.status));
+            // T141 held queue = truly held (no paying agent) OR a pending manual
+            // offer awaiting acceptance. Both are worked from here.
+            else if(status === 'held') renderTable(a => a.held_no_agent || (a.assigned_manually && !a.accepted_at));
             else renderTable(a => a.status === status);
         }
 

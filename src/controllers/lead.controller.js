@@ -674,7 +674,10 @@ const getAdminLeads = async (req, res) => {
             SELECT l.id, l.full_name as name, l.email, l.phone, l.lead_type as type,
                    l.lead_source as source, l.lead_status as status, l.created_at,
                    a.display_name as assigned_agent_name, u.full_name as assigned_user_name,
-                   l.agent_id, l.is_partial, l.lead_score, l.lead_tier
+                   l.agent_id, l.is_partial, l.lead_score, l.lead_tier,
+                   -- T141 held queue + hand-placement state (drives the Held filter
+                   -- and the pending-offer badge on the admin leads list).
+                   l.lead_grade, l.held_no_agent, l.assigned_manually, l.accepted_at, l.manual_assigned_at
             FROM leads l
             LEFT JOIN agents a ON l.agent_id = a.id
             LEFT JOIN users u ON l.assigned_user_id = u.id

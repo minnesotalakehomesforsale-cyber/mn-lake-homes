@@ -116,6 +116,13 @@
                         </div>
                     </div>
 
+                    <!-- T141: hand-place a held grade-A/B lead with a free-tier agent (§4.3b).
+                         Admin-only; nothing about this shows on any agent/consumer surface. -->
+                    <div id="handplace-panel" class="review-panel" style="display:none; padding: 2rem; border:1px solid #e9d8fd;">
+                        <h3 class="data-title" style="color:#553c9a;">Hand-place with a free-tier agent</h3>
+                        <div id="handplace-body"><!-- JS injects picker / pending / accepted state --></div>
+                    </div>
+
                     <!-- internal notes -->
                     <div class="review-panel" style="padding: 2rem;">
                         <h3 class="data-title">Internal Lead Notebook</h3>
@@ -275,6 +282,77 @@
             } else {
                 lead.notes.forEach(n => pushNoteToTimeline(n.content, n.author_name, n.created_at, n.author_role));
             }
+
+            renderHandPlace(lead);
+        }
+
+        // ── T141 hand-placement control ─────────────────────────────────────
+        // Only appears for a held grade-A/B lead (the picker), a pending offer
+        // (read-only status), or an accepted manual placement. Never otherwise.
+        const esc = s => String(s ?? '').replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+
+        async function renderHandPlace(lead) {
+            const panel = document.getElementById('handplace-panel');
+            const body = document.getElementById('handplace-body');
+            const grade = lead.lead_grade;
+            const pending = lead.assigned_manually && !lead.accepted_at;
+            const accepted = !!lead.accepted_at;
+            const heldEligible = lead.held_no_agent && (grade === 'A' || grade === 'B');
+
+            if (!heldEligible && !pending && !accepted) { panel.style.display = 'none'; return; }
+            panel.style.display = '';
+
+            if (accepted) {
+                body.innerHTML = `<p style="color:#2f855a;font-weight:600;margin:0;">✓ Accepted by ${esc(lead.assigned_agent_name || 'the agent')}${lead.accepted_at ? ' on ' + new Date(lead.accepted_at).toLocaleString() : ''}.</p>
+                    ${lead.manual_assignment_reason ? `<p style="font-size:0.85rem;color:#4a5568;margin:0.75rem 0 0;"><strong>Placed because:</strong> ${esc(lead.manual_assignment_reason)}</p>` : ''}`;
+                return;
+            }
+            if (pending) {
+                const placed = lead.manual_assigned_at ? new Date(lead.manual_assigned_at) : null;
+                const expires = placed ? new Date(placed.getTime() + 24 * 3600 * 1000) : null;
+                body.innerHTML = `<p style="color:#553c9a;font-weight:600;margin:0;">⏳ Offer pending with ${esc(lead.assigned_agent_name || 'a free-tier agent')}.</p>
+                    <p style="font-size:0.85rem;color:#718096;margin:0.5rem 0 0;">Awaiting acceptance${expires ? ` — expires ${expires.toLocaleString()}` : ''}. If not accepted in time it auto-reclaims to the held queue and the agent's slot is freed.</p>
+                    ${lead.manual_assignment_reason ? `<p style="font-size:0.85rem;color:#4a5568;margin:0.75rem 0 0;"><strong>Reason:</strong> ${esc(lead.manual_assignment_reason)}</p>` : ''}`;
+                return;
+            }
+
+            // Held grade-A/B → the hand-place picker.
+            body.innerHTML = `<p style="font-size:0.85rem;color:#718096;margin:0 0 1rem;">This grade-${esc(grade)} lead is held with no paying agent. Hand it to a free-tier agent as a one-time offer — they accept via a private link (24h). The lead is told nothing until an agent accepts.</p>
+                <div id="handplace-agents">Loading free-tier agents…</div>`;
+            try {
+                const res = await fetch(`/api/admin/leads/${leadId}/manual-release/candidates`, { credentials: 'include' });
+                const data = await res.json();
+                const cands = data.candidates || [];
+                if (!cands.length) { document.getElementById('handplace-agents').innerHTML = '<p style="color:#c53030;margin:0;">No free-tier published agents available to place with.</p>'; return; }
+                const opts = cands.map(c =>
+                    `<option value="${esc(c.id)}" ${c.at_cap ? 'disabled' : ''}>${esc(c.name)}${c.on_lead_lake ? ' · on this lake' : ''} — used ${c.manual_assignment_count}/${data.cap}${c.at_cap ? ' (at cap)' : ''}</option>`).join('');
+                document.getElementById('handplace-agents').innerHTML = `
+                    <label style="display:block;font-size:0.75rem;font-weight:700;color:#a0aec0;text-transform:uppercase;margin-bottom:0.5rem;">Free-tier agent</label>
+                    <select id="handplace-agent" class="control-select"><option value="" disabled selected>Choose an agent…</option>${opts}</select>
+                    <label style="display:block;font-size:0.75rem;font-weight:700;color:#a0aec0;text-transform:uppercase;margin:1rem 0 0.5rem;">Reason (required)</label>
+                    <textarea id="handplace-reason" class="note-box" rows="3" placeholder="Why this agent, this lead? (required)"></textarea>
+                    <button class="btn-full" style="background:#6b46c1;color:#fff;margin-top:0.75rem;" onclick="submitHandPlace()">Send offer to agent</button>
+                    <div id="handplace-msg" style="margin-top:0.75rem;font-size:0.85rem;"></div>`;
+            } catch (e) { document.getElementById('handplace-agents').innerHTML = '<p style="color:#c53030;margin:0;">Failed to load agents.</p>'; }
+        }
+
+        async function submitHandPlace() {
+            const agentId = document.getElementById('handplace-agent')?.value;
+            const reason = (document.getElementById('handplace-reason')?.value || '').trim();
+            const msg = document.getElementById('handplace-msg');
+            if (!agentId) { msg.innerHTML = '<span style="color:#c53030;">Pick an agent first.</span>'; return; }
+            if (!reason)  { msg.innerHTML = '<span style="color:#c53030;">A reason is required.</span>'; return; }
+            msg.innerHTML = 'Sending…';
+            try {
+                const res = await fetch(`/api/admin/leads/${leadId}/manual-release`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ agentId, reason }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) { msg.innerHTML = `<span style="color:#c53030;">${esc(data.error || 'Failed to place the lead.')}</span>`; return; }
+                msg.innerHTML = '<span style="color:#2f855a;">Offer sent — reloading…</span>';
+                setTimeout(() => location.reload(), 900);
+            } catch (e) { msg.innerHTML = '<span style="color:#c53030;">Network error — try again.</span>'; }
         }
 
         function renderAgentDropdown(agents, currentAgentId) {

@@ -58,6 +58,7 @@ app.use(cors({
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 
 app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: false, limit: '1mb' }));  // HTML form posts (e.g. the T141 lead-accept confirmation button)
 app.use(cookieParser());
 
 // ==========================================
@@ -1755,6 +1756,88 @@ async function doUnsubscribe(req, res, render) {
 app.get('/unsubscribe', (req, res) => doUnsubscribe(req, res, true));
 app.post('/unsubscribe', (req, res) => doUnsubscribe(req, res, false));
 
+// ── T141: agent accepts a hand-placed held lead (Measurement §4.3b) ──────────
+// The signed link in the agent's offer email is the ONLY acceptance surface —
+// this never appears in the portal. GET renders a one-click confirmation page
+// (so email-scanner prefetches can't auto-accept); POST performs the accept:
+// stamp accepted_at, route the lead to the agent, and fire the lead-facing
+// "your agent will contact you" — the promise we deliberately withhold until an
+// agent has actually committed. Idempotent; guards expired/reclaimed offers.
+function renderAcceptPage(res, { title, message, ok = true, button = null }) {
+    const esc = s => String(s ?? '').replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+    const btn = button
+        ? `<form method="POST" action="/leads/accept" style="margin-top:1.5rem;">
+               <input type="hidden" name="l" value="${esc(button.l)}"><input type="hidden" name="a" value="${esc(button.a)}"><input type="hidden" name="t" value="${esc(button.t)}">
+               <button type="submit" style="background:#1d6df2;color:#fff;border:none;font-weight:700;font-size:1rem;padding:0.9rem 1.6rem;border-radius:10px;cursor:pointer;">Accept this lead</button>
+           </form>`
+        : `<a href="/" style="color:#1d6df2;font-weight:700;text-decoration:none;">← MinnesotaLakeHomesForSale.com</a>`;
+    res.status(ok ? 200 : 400).type('html').send(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc(title)} | MN Lake Homes</title>
+        <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:12vh auto;padding:2rem;text-align:center;color:#1a202c;">
+            <div style="font-size:2.5rem;">${ok ? '✓' : '⚠️'}</div>
+            <h1 style="font-size:1.4rem;">${esc(title)}</h1>
+            <p style="color:#4a5568;line-height:1.6;">${esc(message)}</p>
+            ${btn}
+        </div>`);
+}
+
+// Validate the signed link + load the offer. Returns { fatal } to render, or
+// { lead } when the offer is a live pending one this agent can accept.
+async function loadAcceptableOffer(leadId, agentId, token) {
+    const { verifyAcceptToken, isOfferExpired } = require('./services/manual-release');
+    if (!leadId || !agentId || !verifyAcceptToken(leadId, agentId, token)) {
+        return { fatal: { title: 'Link not valid', message: 'This acceptance link is invalid. Please use the button in your latest offer email.', ok: false } };
+    }
+    const r = await pool.query(
+        `SELECT l.id, l.full_name, l.first_name, l.email, l.target_lake,
+                l.assigned_manually, l.accepted_at, l.manual_assigned_at, l.held_no_agent, l.agent_id,
+                COALESCE(a.display_name, u.full_name) AS agent_name
+           FROM leads l
+           LEFT JOIN agents a ON a.id = $2
+           LEFT JOIN users  u ON u.id = a.user_id
+          WHERE l.id = $1 AND l.deleted_at IS NULL`, [leadId, agentId]);
+    const lead = r.rows[0];
+    if (!lead || lead.agent_id !== agentId) return { fatal: { title: 'Offer not found', message: 'We couldn\'t find this lead offer.', ok: false } };
+    if (lead.accepted_at) return { fatal: { title: 'Already accepted', message: 'You\'ve already accepted this lead — the details are in your dashboard.', ok: true } };
+    const pending = lead.assigned_manually && !lead.accepted_at && !lead.held_no_agent;
+    if (!pending || isOfferExpired(lead.manual_assigned_at)) {
+        return { fatal: { title: 'Offer expired', message: 'This lead offer has expired and gone back into the queue — no action needed.', ok: false } };
+    }
+    return { lead };
+}
+
+app.get('/leads/accept', async (req, res) => {
+    try {
+        const { l, a, t } = req.query;
+        const { fatal, lead } = await loadAcceptableOffer(String(l || ''), String(a || ''), String(t || ''));
+        if (fatal) return renderAcceptPage(res, fatal);
+        return renderAcceptPage(res, {
+            title: 'Accept this lead?',
+            message: `A lead${lead.target_lake ? ` on ${lead.target_lake}` : ''} is waiting for you. Accept to claim it and see their full contact details in your dashboard.`,
+            button: { l: String(l), a: String(a), t: String(t) },
+        });
+    } catch (e) { console.error('[leads.accept GET]', e.message); return renderAcceptPage(res, { title: 'Something went wrong', message: 'Please try again shortly.', ok: false }); }
+});
+
+app.post('/leads/accept', async (req, res) => {
+    const leadId = String(req.body?.l || ''), agentId = String(req.body?.a || ''), token = String(req.body?.t || '');
+    try {
+        const { fatal, lead } = await loadAcceptableOffer(leadId, agentId, token);
+        if (fatal) return renderAcceptPage(res, fatal);
+        // Accept: route the lead + fire the lead-facing promise. Guarded so a
+        // double-POST can't double-fire (accepted_at IS NULL in the WHERE).
+        const upd = await pool.query(
+            `UPDATE leads SET accepted_at = NOW(), lead_status = 'contacted', pipeline_status = 'routed',
+                    assigned_at = COALESCE(assigned_at, NOW()), routed_at = COALESCE(routed_at, NOW()), updated_at = NOW()
+              WHERE id = $1 AND agent_id = $2 AND accepted_at IS NULL AND assigned_manually = TRUE`,
+            [leadId, agentId]);
+        if (!upd.rowCount) return renderAcceptPage(res, { title: 'Already handled', message: 'This lead was just accepted or has expired — check your dashboard.', ok: true });
+        try { require('./services/email').sendLeadAgentMatched({ to: lead.email, first_name: lead.first_name, agentName: lead.agent_name, lakeName: lead.target_lake }); } catch (_) {}
+        try { require('./services/agent-notify').notifyAgent(agentId, { type: 'lead', title: `You accepted a lead: ${lead.full_name || 'someone'}`, body: 'Their contact details are now in your dashboard — reach out today.', link: '?view=leads' }); } catch (_) {}
+        try { require('./services/activity-log').logActivity({ event_type: 'lead.manual_accept', event_scope: 'lead', actor: { type: 'agent', id: agentId, label: lead.agent_name }, target: { type: 'lead', id: leadId, label: lead.full_name || lead.email }, details: {} }); } catch (_) {}
+        return renderAcceptPage(res, { title: 'Lead accepted', message: `You've accepted this lead${lead.target_lake ? ` on ${lead.target_lake}` : ''}. Their details are in your dashboard — reach out today.` });
+    } catch (e) { console.error('[leads.accept POST]', e.message); return renderAcceptPage(res, { title: 'Something went wrong', message: 'We couldn\'t process that right now. Please try again shortly.', ok: false }); }
+});
+
 // Public MN Lake Market Index.
 app.get('/market-index', (req, res, next) => {
     // Hidden until we have enough live listings to make it meaningful.
@@ -2645,6 +2728,21 @@ async function ensureTables() {
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS disposition_reason TEXT;          -- required when disposition = not_qualified
             CREATE INDEX IF NOT EXISTS idx_leads_grade ON leads(lead_grade) WHERE deleted_at IS NULL;
             CREATE INDEX IF NOT EXISTS idx_leads_held  ON leads(held_no_agent) WHERE held_no_agent = TRUE;
+            -- T141: manual release of a held lead to a free-tier agent (§4.3b).
+            -- assigned_manually = TRUE while a hand-placement is active (pending
+            -- OR accepted); it flips back to FALSE if the offer lapses and the
+            -- lead reclaims to held. assigned_by is the admin who placed it,
+            -- manual_assignment_reason is required (forces the call to be
+            -- articulated), manual_assigned_at is the offer clock for the 24h
+            -- acceptance SLA, accepted_at is set only when the agent accepts.
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS assigned_manually        BOOLEAN NOT NULL DEFAULT FALSE;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS assigned_by              UUID REFERENCES users(id) ON DELETE SET NULL;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS manual_assignment_reason TEXT;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS manual_assigned_at       TIMESTAMPTZ;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS accepted_at              TIMESTAMPTZ;
+            -- Pending offers awaiting acceptance (drives the 24h reclaim sweep).
+            CREATE INDEX IF NOT EXISTS idx_leads_manual_pending ON leads(manual_assigned_at)
+                WHERE assigned_manually = TRUE AND accepted_at IS NULL;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS follow_up_at TIMESTAMPTZ;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE SET NULL;
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS property_address TEXT;
@@ -2723,6 +2821,11 @@ async function ensureTables() {
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS paid_membership_code VARCHAR(50);
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS tier_comped BOOLEAN NOT NULL DEFAULT FALSE;
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS leads_paused BOOLEAN NOT NULL DEFAULT FALSE;
+            -- T141: lifetime count of hand-placed held leads this (free-tier) agent
+            -- has RECEIVED. Incremented when an offer is placed, decremented if the
+            -- offer lapses unaccepted, permanent once accepted. Hard cap of 2 — the
+            -- admin control disables for an agent at the cap.
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS manual_assignment_count INTEGER NOT NULL DEFAULT 0;
             -- Throttle for churn-risk nudges so a disengaged agent isn't emailed
             -- more than every couple of weeks.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS last_churn_nudge_at TIMESTAMPTZ;
@@ -5389,6 +5492,15 @@ const PORT = process.env.PORT || 3000;
         const { runSlaSweep } = require('./services/lead-sla');
         setTimeout(() => runSlaSweep().catch(e => console.warn('[lead-sla]', e.message)), 60 * 1000);
         setInterval(() => runSlaSweep().catch(e => console.warn('[lead-sla]', e.message)), 15 * 60 * 1000);
+    }
+
+    // T141 manual-release acceptance SLA — reclaim hand-placed held leads the
+    // free-tier agent didn't accept within 24h. Every 15 min. Disable with
+    // MANUAL_RELEASE_SWEEP_ENABLED=false.
+    if (process.env.MANUAL_RELEASE_SWEEP_ENABLED !== 'false') {
+        const { runManualReleaseSweep } = require('./services/manual-release-sweep');
+        setTimeout(() => runManualReleaseSweep().catch(e => console.warn('[manual-release-sweep]', e.message)), 2 * 60 * 1000);
+        setInterval(() => runManualReleaseSweep().catch(e => console.warn('[manual-release-sweep]', e.message)), 15 * 60 * 1000);
     }
 
     // Lead recovery (T018) — retry any lead whose HubSpot sync / routing failed,
