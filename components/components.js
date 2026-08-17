@@ -1945,6 +1945,10 @@ async function _lfDoSubmit() {
                 intent_type,
                 price_band,
                 lead_source_detail,
+                // T149: the buyer's typed "which lake/area" (looking_area) — sent
+                // as structured data so the server can resolve it to a lake for
+                // routing, and capture it for the admin when it can't.
+                target_lake_freetext: d.looking_area || null,
                 // DEV-01: first-touch attribution merged from the shared capture.
                 ...(window.mnAttribution ? window.mnAttribution() : {}),
             })

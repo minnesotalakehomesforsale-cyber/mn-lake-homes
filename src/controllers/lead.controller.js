@@ -148,6 +148,25 @@ const createLead = async (req, res) => {
             } catch (_) { /* leave null */ }
         }
 
+        // T149: no lake-page context — try to resolve the buyer's typed "which
+        // lake" free text (the form's looking_area) to a real lake so it can
+        // route. Conservative on purpose (a wrong auto-route is worse than none):
+        // exact name match on the full string or the part before a comma, and a
+        // prefix match ONLY when it's unique. Anything vague ("still deciding")
+        // finds nothing and flows to unrouted_no_lake with the text captured.
+        const freetext = str(target_lake_freetext, 200);
+        if (!leadLakeId && freetext) {
+            try {
+                const first = freetext.split(',')[0].trim();
+                let lr = await pool.query(`SELECT id, name FROM lakes WHERE lower(name) IN (lower($1), lower($2)) LIMIT 1`, [freetext, first]);
+                if (!lr.rows[0] && first.length >= 5) {
+                    const pm = await pool.query(`SELECT id, name FROM lakes WHERE lower(name) LIKE lower($1) || '%' LIMIT 2`, [first]);
+                    if (pm.rows.length === 1) lr = pm;
+                }
+                if (lr.rows[0]) { leadLakeId = lr.rows[0].id; leadLakeName = lr.rows[0].name; }
+            } catch (_) { /* leave null → unrouted_no_lake */ }
+        }
+
         // ── B1/B2 lead-qualification props (validated enum values only) ──────
         // target_lake: an explicit valid choice wins; otherwise derive from the
         // lake this lead came from (a lake page). Unknown/none → left unset,
