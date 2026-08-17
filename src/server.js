@@ -2985,6 +2985,85 @@ async function ensureTables() {
                     sort_priority       = EXCLUDED.sort_priority;
         `);
 
+        // ── Partner Perks network (vendor discounts, tier-gated) ────────────
+        // Admin-managed network of vendor partners (website builders,
+        // photographers, title companies, …) that extend discounts/offers to
+        // our agents as a membership benefit. Distinct from cash_offer_partners
+        // (the Buyer Partners / cash-offer buyers). Offers are gated by
+        // min_tier → memberships.code: an agent sees every offer, but can only
+        // REDEEM one whose min_tier they meet (by memberships.sort_priority);
+        // below that the action becomes an Upgrade prompt.
+        await safeExec(`
+            CREATE TABLE IF NOT EXISTS partner_companies (
+                id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                company_name  VARCHAR(200) NOT NULL,
+                slug          VARCHAR(220) UNIQUE,
+                category      VARCHAR(80),           -- 'Website Builder' | 'Photographer' | 'Title Company' | …
+                website_url   TEXT,
+                logo_url      TEXT,
+                summary       TEXT,                  -- what they do / why they're in the network
+                status        VARCHAR(20) NOT NULL DEFAULT 'active',   -- active | inactive
+                sort_order    INTEGER NOT NULL DEFAULT 0,
+                created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+
+            -- Tiered offer a partner extends to the network. redeem_type='request'
+            -- means the agent requests through the admin (the default broker flow);
+            -- 'link' means a special landing page the agent goes to directly.
+            CREATE TABLE IF NOT EXISTS partner_offers (
+                id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                partner_id    UUID NOT NULL REFERENCES partner_companies(id) ON DELETE CASCADE,
+                title         VARCHAR(200) NOT NULL,   -- "20% off a custom agent website"
+                value_text    TEXT,                    -- the value prop / fine print
+                min_tier      VARCHAR(20) NOT NULL DEFAULT 'free' REFERENCES memberships(code),  -- free | premium | founder
+                redeem_type   VARCHAR(20) NOT NULL DEFAULT 'request',   -- request | link
+                redeem_link   TEXT,
+                redeem_instructions TEXT,
+                is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+                sort_order    INTEGER NOT NULL DEFAULT 0,
+                created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+
+            -- Contacts at the partner company (mirrors agent_contacts).
+            CREATE TABLE IF NOT EXISTS partner_contacts (
+                id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                partner_id  UUID NOT NULL REFERENCES partner_companies(id) ON DELETE CASCADE,
+                name        VARCHAR(160) NOT NULL,
+                role        VARCHAR(120),
+                email       VARCHAR(200),
+                phone       VARCHAR(40),
+                notes       TEXT,
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+
+            -- Internal admin notes on a partner (mirrors lead_notes).
+            CREATE TABLE IF NOT EXISTS partner_notes (
+                id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                partner_id  UUID NOT NULL REFERENCES partner_companies(id) ON DELETE CASCADE,
+                user_id     UUID REFERENCES users(id) ON DELETE SET NULL,
+                note_body   TEXT NOT NULL,
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+
+            -- Uploaded contracts / documents for a partner.
+            CREATE TABLE IF NOT EXISTS partner_files (
+                id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                partner_id  UUID NOT NULL REFERENCES partner_companies(id) ON DELETE CASCADE,
+                file_url    TEXT NOT NULL,
+                file_name   VARCHAR(255),
+                file_type   VARCHAR(80),
+                uploaded_by UUID REFERENCES users(id) ON DELETE SET NULL,
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_partner_offers_partner   ON partner_offers(partner_id);
+            CREATE INDEX IF NOT EXISTS idx_partner_contacts_partner ON partner_contacts(partner_id);
+            CREATE INDEX IF NOT EXISTS idx_partner_notes_partner    ON partner_notes(partner_id);
+            CREATE INDEX IF NOT EXISTS idx_partner_files_partner    ON partner_files(partner_id);
+        `);
+
         // Per-tag round-robin counter for town routing. Increments on each
         // successful assignment in that tag's geography.
         await safeExec(`
