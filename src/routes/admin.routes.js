@@ -167,6 +167,7 @@ router.delete('/messages/:id',           verifyToken, requireRole(['admin', 'sup
 
 // ─── LEADS (must come before /:id to avoid shadowing) ────────────────────────
 router.get('/leads/unassigned-count', adminController.getUnassignedLeadCount);
+router.get('/security/lead-access-audit', verifyToken, requireRole(['admin', 'super_admin']), adminController.getLeadAccessAudit); // T144 lead-mutation audit
 router.get('/leads/:id/manual-release/candidates', verifyToken, requireRole(['admin', 'super_admin']), adminController.getManualReleaseCandidates); // T141 free-tier agents for hand-place
 router.get('/leads/:id', adminController.getLeadDetail);
 router.patch('/leads/:id/status', adminController.updateLeadStatus);

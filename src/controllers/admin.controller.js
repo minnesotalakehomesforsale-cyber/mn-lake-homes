@@ -1050,6 +1050,41 @@ const getUnassignedLeadCount = async (req, res) => {
     }
 };
 
+// T144: security audit of lead-MUTATION events from the activity_log — "was any
+// lead deleted or modified, and from what IP/actor?". Covers writes (deletes,
+// assigns, status changes, manual-release, lake-set); raw READS of
+// /api/admin/leads/* are only in Render's HTTP logs, not here. IMPORTANT: before
+// the T143 auth fix these routes never ran verifyToken, so actor_id is null even
+// for legit owner UI actions — use ip_address as the discriminator (any unknown
+// IP on a lead.delete is the signal). Pass ?before=<ISO> to bound to the
+// pre-fix window (the guard shipped 2026-08-16T18:44:27-07:00).
+const getLeadAccessAudit = async (req, res) => {
+    try {
+        const before = req.query.before || null;
+        const { rows } = await pool.query(
+            `SELECT created_at, event_type, actor_type, actor_id, actor_label,
+                    ip_address, user_agent, target_id, target_label
+               FROM activity_log
+              WHERE (event_type IN ('lead.delete','lead.assign','lead.manual_release','lead.manual_accept','lead.lake_set')
+                     OR event_type LIKE 'lead.status.%')
+                AND ($1::timestamptz IS NULL OR created_at < $1::timestamptz)
+              ORDER BY created_at DESC
+              LIMIT 1000`, [before]);
+        const by_ip = {};
+        let deletes = 0, events_without_actor = 0;
+        for (const r of rows) {
+            by_ip[r.ip_address || 'unknown'] = (by_ip[r.ip_address || 'unknown'] || 0) + 1;
+            if (r.event_type === 'lead.delete') deletes++;
+            if (!r.actor_id) events_without_actor++;
+        }
+        res.json({
+            note: 'Writes only. actor_id is null for all pre-T143-fix rows (routes had no verifyToken) — discriminate by ip_address. Reads live in Render HTTP logs.',
+            summary: { total: rows.length, deletes, events_without_actor, distinct_ips: Object.keys(by_ip).length, by_ip },
+            events: rows,
+        });
+    } catch (e) { console.error('[getLeadAccessAudit]', e.message); res.status(500).json({ error: 'Audit query failed.' }); }
+};
+
 const getLeadDetail = async (req, res) => {
     try {
         const { rows } = await pool.query(`
@@ -3548,6 +3583,7 @@ module.exports = {
     getManualReleaseCandidates,
     manualReleaseLead,
     setLeadLake,
+    getLeadAccessAudit,
     deleteAgent,
     getAgentLeads,
     getAgentNotes,
