@@ -8,7 +8,14 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { logActivity } = require('../services/activity-log');
 
-const TIERS = ['free', 'premium', 'founder'];   // offer.min_tier ladder (→ memberships.code)
+// Offer tiers are DATA-DRIVEN from the memberships table (the source of truth for
+// an agent's plan), never hardcoded — so the admin dropdown always reflects the
+// real tiers and gating matches what agents actually have. Ordered lowest tier
+// first (highest sort_priority). getTiers exposes them to the admin UI.
+async function membershipTiers() {
+    const { rows } = await pool.query(`SELECT code, name, sort_priority FROM memberships ORDER BY sort_priority DESC`);
+    return rows;   // [{ code, name, sort_priority }] — lowest tier first
+}
 const slugify = s => String(s || '').toLowerCase().trim()
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 200) || 'partner';
 
@@ -18,6 +25,15 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 const fileUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
+
+// GET /api/admin/partner-perks/tiers — the real membership tiers (lowest first),
+// so the offer form's "Available to" dropdown reflects actual plans, not a
+// hardcoded guess. Each offer gates cumulatively: an agent unlocks it when their
+// tier is at least the offer's min_tier (by sort_priority).
+const getTiers = async (req, res) => {
+    try { res.json(await membershipTiers()); }
+    catch (e) { console.error('[partners.tiers]', e.message); res.status(500).json({ error: 'Failed to load tiers.' }); }
+};
 
 // ── Companies ────────────────────────────────────────────────────────────────
 const listCompanies = async (req, res) => {
@@ -84,7 +100,9 @@ const deleteCompany = async (req, res) => {
 const createOffer = async (req, res) => {
     const { title, value_text, min_tier, redeem_type, redeem_link, redeem_instructions } = req.body || {};
     if (!title || !title.trim()) return res.status(400).json({ error: 'Offer title is required.' });
-    const tier = TIERS.includes(min_tier) ? min_tier : 'free';
+    const tiers = await membershipTiers();
+    const codes = new Set(tiers.map(t => t.code));
+    const tier = codes.has(min_tier) ? min_tier : (tiers[0]?.code || 'free');   // default = lowest tier (all agents)
     try {
         const r = await pool.query(
             `INSERT INTO partner_offers (partner_id, title, value_text, min_tier, redeem_type, redeem_link, redeem_instructions)
@@ -96,10 +114,12 @@ const createOffer = async (req, res) => {
 
 const updateOffer = async (req, res) => {
     const allowed = ['title', 'value_text', 'min_tier', 'redeem_type', 'redeem_link', 'redeem_instructions', 'is_active', 'sort_order'];
+    let validCodes = null;
+    if ('min_tier' in (req.body || {})) validCodes = new Set((await membershipTiers()).map(t => t.code));
     const sets = [], vals = [];
     for (const k of allowed) if (k in (req.body || {})) {
         let v = req.body[k];
-        if (k === 'min_tier' && !TIERS.includes(v)) v = 'free';
+        if (k === 'min_tier' && validCodes && !validCodes.has(v)) v = 'free';
         vals.push(v); sets.push(`${k} = $${vals.length}`);
     }
     if (!sets.length) return res.status(400).json({ error: 'Nothing to update.' });
@@ -198,6 +218,7 @@ const agentPerks = async (req, res) => {
 };
 
 module.exports = {
+    getTiers,
     listCompanies, getCompany, createCompany, updateCompany, deleteCompany,
     createOffer, updateOffer, deleteOffer,
     addContact, deleteContact, addNote, deleteNote,

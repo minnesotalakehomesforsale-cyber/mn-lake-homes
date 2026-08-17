@@ -7,6 +7,9 @@ const ctrl = require('../controllers/partner.controller');
 
 const adminOnly = [verifyToken, requireRole(['admin', 'super_admin'])];
 
+// Tiers (must precede /:id so 'tiers' isn't read as a company id)
+router.get   ('/tiers', ...adminOnly, ctrl.getTiers);
+
 // Companies
 router.get   ('/',    ...adminOnly, ctrl.listCompanies);
 router.post  ('/',    ...adminOnly, ctrl.createCompany);
