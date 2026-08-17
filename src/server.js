@@ -2460,6 +2460,7 @@ app.get('/:page', (req, res, next) => {
 // AUTO-MIGRATE: ensure any new tables exist
 // ==========================================
 const pool = require('./database/pool');
+const { assertCriticalSchema } = require('./services/schema-guard');
 // Run a DDL/migration statement that may legitimately fail on a fresh
 // database — e.g. an ALTER/INDEX/TRIGGER on a table that is CREATEd later
 // in this same function. Logs and continues instead of aborting the whole
@@ -4272,40 +4273,9 @@ async function ensureTables() {
     }
 }
 
-// Boot-order guard. ensureTables() deliberately swallows per-statement warnings
-// (most ALTERs are idempotent no-ops on a live DB), which means a genuinely
-// broken migration — e.g. a column added to the wrong table — can leave the app
-// booting and then 500'ing every request that SELECTs the missing column. This
-// asserts, AFTER migrations run and BEFORE we accept traffic, that the columns
-// the hot public SSR routes depend on actually exist. If any are missing we log
-// loudly and exit(1) so Render marks the deploy failed and keeps the last
-// healthy version live — refusing to serve beats serving 500s.
-async function assertCriticalSchema() {
-    const REQUIRED = {
-        // Every column the lake-detail SSR SELECT (GET /lakes/:slug) reads. If any
-        // is missing the route 500s for all 69 lakes, so the whole set is a boot
-        // invariant. Keep in sync with that SELECT.
-        lakes: [
-            'intro_text', 'description', 'lifestyle_text', 'seasons_text',
-            'notable_features', 'real_estate_context', 'faq',
-            'dow_number', 'max_depth_ft', 'mean_depth_ft', 'surface_acres', 'littoral_acres',
-            'water_clarity_ft', 'shoreline_miles', 'public_accesses', 'fish_species', 'dnr_survey_url',
-            'gallery', 'hero_image_credit_name', 'hero_image_credit_url', 'hero_image_license',
-        ],
-    };
-    for (const [table, cols] of Object.entries(REQUIRED)) {
-        const { rows } = await pool.query(
-            `SELECT column_name FROM information_schema.columns
-              WHERE table_name = $1 AND column_name = ANY($2::text[])`,
-            [table, cols]);
-        const have = new Set(rows.map(r => r.column_name));
-        const missing = cols.filter(c => !have.has(c));
-        if (missing.length) {
-            console.error(`FATAL: table "${table}" is missing required column(s): ${missing.join(', ')}. Refusing to serve.`);
-            process.exit(1);
-        }
-    }
-}
+// Boot-order guard lives in ./services/schema-guard (assertCriticalSchema),
+// required at module scope near the pool. Extracted so the load-bearing check
+// is unit-testable in isolation — see test/schema-guard.test.js.
 
 // Reconcile the Granite City Aerial Media spotlight with the OWNER's real
 // business profile. We initially seeded our own business row for the local
@@ -5374,7 +5344,7 @@ const PORT = process.env.PORT || 3000;
     // Render keeps the last healthy deploy live instead of serving 500s.
     try {
         await ensureTables();
-        await assertCriticalSchema();
+        await assertCriticalSchema(pool);
     } catch (e) {
         console.error('FATAL: schema initialization failed, refusing to serve:', e.message);
         process.exit(1);
