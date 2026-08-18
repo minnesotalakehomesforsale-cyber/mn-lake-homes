@@ -18,16 +18,17 @@ const daysAgo = n => new Date(Date.now() - n * 86400000).toISOString();
 
 const CASES = [
     // [label, row, expected]
-    ['paid tier (Prime) → paying',               { code: 'mn_lake_specialist' }, 'paying'],
-    ['paid tier beats everything',               { code: 'top_agent', is_published: true, stripe_subscription_id: 'sub_x' }, 'paying'],
-    ['had a sub, now free → churned',            { code: 'free', stripe_subscription_id: 'sub_1' }, 'churned'],
-    ['churned beats published',                  { code: 'free', stripe_subscription_id: 'sub_1', is_published: true }, 'churned'],
-    ['free + published → free_live',             { code: 'free', is_published: true }, 'free_live'],
-    ['draft >21d, never paid → dormant_draft',   { code: 'free', profile_status: 'draft', created_at: daysAgo(30) }, 'dormant_draft'],
-    ['draft <21d → draft',                       { code: 'free', profile_status: 'draft', created_at: daysAgo(3) }, 'draft'],
-    ['draft, no created_at → draft',             { code: 'free', profile_status: 'draft' }, 'draft'],
-    ['empty row → draft',                        {}, 'draft'],
-    ['null code treated as free → draft',        { code: null }, 'draft'],
+    ['billed (paid_membership_code) → paying',       { paid_membership_code: 'mn_lake_specialist' }, 'paying'],
+    ['comped (tier_comped) → paying',                { tier_comped: true }, 'paying'],  // comp is intentional
+    ['paid beats everything',                        { paid_membership_code: 'top_agent', is_published: true, has_paid: true }, 'paying'],
+    ['paid before, now free → churned',              { has_paid: true }, 'churned'],
+    ['churned beats published',                      { has_paid: true, is_published: true }, 'churned'],
+    ['abandoned checkout (no payment) is NOT churned', { is_published: true /* sub id but no paid row */ }, 'free_live'],
+    ['never paid, unpublished draft → draft',        { profile_status: 'draft', created_at: daysAgo(3) }, 'draft'],
+    ['free + published → free_live',                 { is_published: true }, 'free_live'],
+    ['draft >21d, never paid → dormant_draft',       { profile_status: 'draft', created_at: daysAgo(30) }, 'dormant_draft'],
+    ['draft, no created_at → draft',                 { profile_status: 'draft' }, 'draft'],
+    ['empty row → draft',                            {}, 'draft'],
 ];
 
 console.log('AL-03 deriveState priority:\n');

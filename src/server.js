@@ -250,6 +250,22 @@ app.get('/api/_diagnostic', async (req, res) => {
         out.checks.leads_columns = r.rows.map(x => x.column_name);
     } catch (e) { out.checks.leads_columns = `error: ${e.message}`; }
 
+    // AL-03 — lifecycle_state distribution across live (non-deleted) agents. This
+    // is the go/no-go readout for the backfill and every slice-2 transition change:
+    // re-check it after each and confirm the counts move the way you expect.
+    try {
+        const lc = await pool.query(`
+            SELECT lifecycle_state AS state, COUNT(*)::int AS n
+              FROM agents WHERE deleted_at IS NULL
+             GROUP BY lifecycle_state ORDER BY lifecycle_state`);
+        const dist = {};
+        for (const row of lc.rows) dist[row.state || 'NULL'] = row.n;
+        const nullState = await pool.query(`SELECT COUNT(*)::int AS n FROM agents WHERE deleted_at IS NULL AND lifecycle_state IS NULL`);
+        out.checks.lifecycle_states = dist;
+        out.checks.lifecycle_states_null = nullState.rows[0].n;   // must be 0 — every agent has exactly one state
+        if (nullState.rows[0].n > 0) out.status = 'degraded';
+    } catch (e) { out.checks.lifecycle_states = `error: ${e.message}`; }
+
     // Cloudinary health check — verifies env vars are loaded AND credentials work
     out.checks.cloudinary_env = {
         cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? 'set' : 'MISSING',
