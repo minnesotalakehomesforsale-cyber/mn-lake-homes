@@ -630,11 +630,13 @@ app.get('/sitemap.xml', async (req, res) => {
 
     try {
         const [lakes, towns, businesses, agents, posts, listings] = await Promise.all([
-            // Only list pages that actually RENDER. /lakes/:slug and /towns/:slug
-            // 404 without a hero image, so a published-but-heroless row in the
-            // sitemap is a 404 we're handing Google. Require the hero here.
+            // List pages that render AND are indexable. Heroless lakes now render
+            // (gradient placeholder) but are only index,follow when they have real
+            // written content — so the sitemap gates on CONTENT, matching the
+            // {{LAKE_ROBOTS}} the /lakes/:slug route emits. Keeps index == sitemap.
             pool.query(`SELECT slug, updated_at FROM lakes
-                        WHERE status = 'published' AND COALESCE(hero_image_url,'') <> ''`),
+                        WHERE status = 'published'
+                          AND (COALESCE(intro_text,'') <> '' OR COALESCE(description,'') <> '')`),
             // A town is listed when it's active, has a hero, AND is either
             // in-state (MN) or linked to a published lake. Out-of-state border
             // towns (ND/WI) with no lake link render but stay out of the sitemap
@@ -643,7 +645,8 @@ app.get('/sitemap.xml', async (req, res) => {
             // an orphaned indexable. Keep this predicate in sync with the
             // `townRobots` eligibility check in the /towns/:slug route.
             pool.query(`SELECT DISTINCT t.slug, t.updated_at FROM tags t
-                        WHERE t.active = TRUE AND COALESCE(t.hero_image_url,'') <> ''
+                        WHERE t.active = TRUE
+                          AND (COALESCE(t.intro_text,'') <> '' OR COALESCE(t.description,'') <> '')
                           AND ${eligibleSql('t')}`),
             pool.query(`SELECT slug, updated_at FROM businesses
                         WHERE status = 'active'
@@ -843,14 +846,19 @@ app.get('/lakes/:slug', async (req, res, next) => {
             [req.params.slug]
         );
         const lake = rows[0];
-        // Public detail pages require a real hero photo. A lake without
-        // one auto-hides — same response as if the slug didn't exist at
-        // all — so visitors never land on a half-baked placeholder card.
+        // Image dedupe: published lakes always render now. A heroless one shows the
+        // gradient placeholder (matching the cards) instead of a repeated stock
+        // photo — but it's noindex unless it has real written content, so robots
+        // stays aligned with the sitemap (which also gates on content, not hero).
         const hasHero = lake && (lake.hero_image_url || '').trim();
-        if (!lake || lake.status !== 'published' || !hasHero) {
+        if (!lake || lake.status !== 'published') {
             renderFriendly404(res, { kind: 'lake', slug: req.params.slug });
             return;
         }
+        const lakeHasContent = !!((lake.intro_text || '').trim() || (lake.description || '').trim());
+        const lakeRobots = lakeHasContent
+            ? 'index, follow, max-snippet:-1, max-image-preview:large'
+            : 'noindex, follow';
 
         // Towns connected to this lake (reverse lake_tags lookup) — used to add
         // a crawlable "nearby towns" block so lake pages link back to towns
@@ -1158,6 +1166,7 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 '{{LAKE_NAME}}':            escapeHtml(lake.name),
                 '{{LAKE_SLUG}}':            escapeHtml(lake.slug),
                 '{{LAKE_CANONICAL_PATH}}':  escapeHtml(canonical),
+                '{{LAKE_ROBOTS}}':          lakeRobots,
                 '{{LAKE_ID}}':              escapeHtml(lake.id),
                 '{{LAKE_HERO_IMAGE}}':      escapeHtml(hero),
                 '{{LAKE_HERO_BLOCK}}':      lakeHeroBlock,
@@ -1960,11 +1969,15 @@ app.get('/towns/:slug', async (req, res, next) => {
             [req.params.slug]
         );
         const tag = rows[0];
+        // Image dedupe: active towns always render now — heroless ones show the
+        // gradient placeholder instead of a repeated stock photo. Indexability +
+        // sitemap gate on CONTENT (not hero), so index stays == sitemap.
         const hasHero = tag && (tag.hero_image_url || '').trim();
-        if (!tag || !hasHero) {
+        if (!tag) {
             renderFriendly404(res, { kind: 'town', slug: req.params.slug });
             return;
         }
+        const townHasContent = !!((tag.intro_text || '').trim() || (tag.description || '').trim());
         // Lakes connected to this town (lake_tags join) — town↔lake links so the
         // town pages feed the lake cluster and vice versa.
         const townLakes = await pool.query(
@@ -1986,7 +1999,10 @@ app.get('/towns/:slug', async (req, res, next) => {
                             WHERE lt.tag_id = $1 AND l.status = 'published') AS ok`,
             [tag.id]
         ).then(r => r.rows[0]?.ok === true).catch(() => false);
-        const townRobotsValue = townRobots(isTownEligible({ state: tag.state, hasPublishedLake }));
+        // index,follow only when the town is eligible (MN or a linked published
+        // lake) AND has real written content — so a heroless, uncurated town isn't
+        // an orphaned indexable. Matches the content-gated town sitemap query.
+        const townRobotsValue = townRobots(isTownEligible({ state: tag.state, hasPublishedLake }) && townHasContent);
 
         const templatePath = path.join(PROJECT_ROOT, 'pages/public/town-detail.html');
         fs.readFile(templatePath, 'utf8', (err, html) => {
@@ -4576,6 +4592,7 @@ async function ensureTables() {
         await seedMarketingPlan();
         await seedTownContent();
         await seedLakeIndexability();
+        await dedupeSharedHeroes();   // image dedupe — null heroes shared by 2+ lakes/towns
         await seedMarketTiers();
         await seedTier1Content();
         // AL-03: one-time lifecycle_state backfill (guarded by seed_flags). Dark —
@@ -5420,6 +5437,32 @@ async function seedTier2Content() {
 
         if (applied || created) console.log(`[seed] tier2 content: ${applied} applied, ${created} row(s) created`);
     } catch (e) { console.warn('[seed] seedTier2Content skipped:', e.message); }
+}
+
+// Image dedupe — the lake/town heroes should NEVER repeat. A one-time pass that
+// nulls any hero_image_url shared by 2+ lakes (the seedLakeIndexability stock
+// photos, mapped across 22 lakes) or 2+ towns (shared stock town photos). The
+// nulled rows fall back to the gradient placeholder — matching the cards and the
+// blog covers — so no reused stock photo appears anywhere. Unique real photos are
+// left untouched. Guarded by seed_flags so it runs exactly once.
+async function dedupeSharedHeroes() {
+    try {
+        await pool.query(`CREATE TABLE IF NOT EXISTS seed_flags (key TEXT PRIMARY KEY, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
+        const done = await pool.query(`SELECT 1 FROM seed_flags WHERE key = 'dedupe_shared_heroes_v1'`);
+        if (done.rowCount) return;
+        const l = await pool.query(
+            `UPDATE lakes SET hero_image_url = NULL
+              WHERE hero_image_url IN (
+                  SELECT hero_image_url FROM lakes WHERE COALESCE(hero_image_url,'') <> ''
+                   GROUP BY hero_image_url HAVING COUNT(*) > 1)`);
+        const t = await pool.query(
+            `UPDATE tags SET hero_image_url = NULL
+              WHERE hero_image_url IN (
+                  SELECT hero_image_url FROM tags WHERE COALESCE(hero_image_url,'') <> ''
+                   GROUP BY hero_image_url HAVING COUNT(*) > 1)`);
+        await pool.query(`INSERT INTO seed_flags (key) VALUES ('dedupe_shared_heroes_v1') ON CONFLICT DO NOTHING`);
+        console.log(`[dedupe] nulled ${l.rowCount} shared lake hero(s) + ${t.rowCount} shared town hero(s) — reused stock photos → placeholder`);
+    } catch (e) { console.warn('[dedupe] shared-hero dedupe skipped:', e.message); }
 }
 
 async function seedLakeIndexability() {
