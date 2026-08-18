@@ -2,7 +2,7 @@
 // shell. Deliberately network-FIRST for pages, CSS and JS so a deploy is never
 // hidden behind a stale cache; images/fonts are stale-while-revalidate; API is
 // never cached. Bump CACHE to invalidate old entries.
-const CACHE = 'mnlh-v2';
+const CACHE = 'mnlh-v3';
 const CORE = ['/', '/styles/style.css', '/components/components.js', '/favicon.svg', '/assets/icons/icon-192.png'];
 
 self.addEventListener('install', e => {
