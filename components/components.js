@@ -225,8 +225,17 @@ window.mnlhBlogCover = function (tag) {
         if (!has('meta[name="apple-mobile-web-app-status-bar-style"]')) add('<meta name="apple-mobile-web-app-status-bar-style" content="default">');
         if (!has('meta[name="apple-mobile-web-app-title"]'))     add('<meta name="apple-mobile-web-app-title" content="MN Lake Homes">');
     } catch (_) {}
+    // Service worker REMOVED. It caused recurring stale-content bugs (blog covers
+    // showing blank, stale pages) by serving cached HTML/JS that outlived a deploy.
+    // The site is fully server-rendered behind Cloudflare, so it needs no offline
+    // cache. Actively unregister any previously-installed SW and purge its caches on
+    // every load, so no stale copy of a page/script survives. (components.js is
+    // fetched network-first, so this cleanup reliably reaches every browser.)
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); });
+        try {
+            navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(() => {});
+            if (window.caches && caches.keys) caches.keys().then(ks => ks.forEach(k => caches.delete(k))).catch(() => {});
+        } catch (_) {}
     }
 })();
 

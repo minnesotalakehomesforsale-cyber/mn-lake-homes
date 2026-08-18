@@ -1,41 +1,28 @@
-// MN Lake Homes service worker — makes the site installable + a basic offline
-// shell. Deliberately network-FIRST for pages, CSS and JS so a deploy is never
-// hidden behind a stale cache; images/fonts are stale-while-revalidate; API is
-// never cached. Bump CACHE to invalidate old entries.
-const CACHE = 'mnlh-v3';
-const CORE = ['/', '/styles/style.css', '/components/components.js', '/favicon.svg', '/assets/icons/icon-192.png'];
+// MN Lake Homes service worker — KILL SWITCH.
+//
+// The SW caused recurring stale-content bugs: blog cover images rendering blank,
+// pages surviving a deploy, etc. The site is fully server-rendered behind
+// Cloudflare and does not need offline caching, so the SW is being removed
+// entirely. This version unregisters itself and deletes every cache the moment it
+// activates, then reloads any open tab so it reloads fresh from the network.
+//
+// Existing installs update to this file on their next visit (the browser checks
+// sw.js on navigation), run the cleanup once, and are left with NO service worker.
+// New visitors never register one (the registration call was removed from
+// components.js). There is deliberately NO fetch handler, so the browser always
+// goes straight to the network.
+self.addEventListener('install', () => self.skipWaiting());
 
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE).catch(() => {})).then(() => self.skipWaiting()));
-});
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
-});
-self.addEventListener('fetch', e => {
-  const req = e.request;
-  if (req.method !== 'GET') return;
-  const url = new URL(req.url);
-  if (url.origin !== location.origin) return;        // ignore cross-origin
-  if (url.pathname.startsWith('/api/')) return;      // never cache API
-  const isMedia = /\.(png|jpg|jpeg|webp|gif|svg|ico|woff2?|ttf|otf)$/i.test(url.pathname);
-  if (!isMedia) {
-    // Pages + CSS + JS: network-first so deploys show (within the short 5-min
-    // max-age), with the cache only as an offline fallback. No forced reload —
-    // that re-downloaded CSS/JS on every navigation and slowed the site.
-    e.respondWith(
-      fetch(req).then(res => {
-        if (res && res.status === 200) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
-        return res;
-      }).catch(() => caches.match(req).then(r => r || (req.mode === 'navigate' ? caches.match('/') : undefined)))
-    );
-    return;
-  }
-  // Images/fonts: stale-while-revalidate.
-  e.respondWith(caches.match(req).then(cached => {
-    const net = fetch(req).then(res => {
-      if (res && res.status === 200) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
-      return res;
-    }).catch(() => cached);
-    return cached || net;
-  }));
+self.addEventListener('activate', (event) => {
+    event.waitUntil((async () => {
+        try {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+        } catch (_) {}
+        try { await self.registration.unregister(); } catch (_) {}
+        try {
+            const clients = await self.clients.matchAll({ type: 'window' });
+            clients.forEach(c => { try { c.navigate(c.url); } catch (_) {} });
+        } catch (_) {}
+    })());
 });
