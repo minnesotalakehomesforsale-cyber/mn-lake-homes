@@ -739,6 +739,46 @@ class GlobalHeader extends HTMLElement {
         </header>`;
     }
 }
+// ── Scroll reveal (shared, flash-proof) ──────────────────────────────────────
+// Base CSS keeps .reveal / .reveal-stagger elements VISIBLE. Here we "arm" (hide)
+// only the elements below the fold, then reveal them as they scroll in — so
+// above-the-fold content shows instantly and nothing is ever invisible before JS
+// (the blank-flash the old unconditional opacity:0 caused on dark sections).
+// Runs once per page, on every page that loads components.js.
+(function initScrollReveal() {
+    if (window.__revealInit) return;
+    window.__revealInit = true;
+    const run = () => {
+        const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const els = Array.prototype.slice.call(document.querySelectorAll('.reveal, .reveal-stagger'));
+        if (!els.length || reduce || !('IntersectionObserver' in window)) return;   // leave everything visible
+        // Index stagger children so each gets its cascade delay (--i).
+        document.querySelectorAll('.reveal-stagger').forEach(c =>
+            Array.prototype.forEach.call(c.children, (child, i) => child.style.setProperty('--i', i)));
+        const armLine = window.innerHeight * 0.88;   // "below the fold"
+        const armed = [];
+        els.forEach(el => {
+            if (el.getBoundingClientRect().top <= armLine) return;   // in view → stays visible, no flash
+            el.style.transition = 'none';            // arm WITHOUT animating a fade-out
+            el.classList.add('reveal-armed');
+            void el.offsetWidth;                     // commit the hidden state
+            el.style.transition = '';                // restore the CSS transition for the reveal
+            armed.push(el);
+        });
+        if (!armed.length) return;
+        const reveal = el => { el.classList.remove('reveal-armed'); el.classList.add('is-visible'); };
+        const io = new IntersectionObserver((entries, obs) => {
+            entries.forEach(e => { if (e.isIntersecting) { reveal(e.target); obs.unobserve(e.target); } });
+        }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+        armed.forEach(el => io.observe(el));
+        // Safety net — nothing can stay invisible. Reveal anything still armed after
+        // 4s (covers an observer that never fires for any reason).
+        setTimeout(() => armed.forEach(el => el.classList.contains('reveal-armed') && reveal(el)), 4000);
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+    else run();
+})();
+
 customElements.define('global-header', GlobalHeader);
 
 // Remember where a visitor clicks INTO a listing from, so the listing page's

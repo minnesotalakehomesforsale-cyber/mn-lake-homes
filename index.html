@@ -683,30 +683,8 @@
             window.addEventListener('resize', snap, { passive: true });
         })();
 
-        /* Scroll-reveal: add .is-visible to anything with .reveal or .reveal-stagger
-           once it enters the viewport. One-shot — we stop observing after reveal. */
-        (function setupScrollReveal() {
-            const els = document.querySelectorAll('.reveal, .reveal-stagger');
-            if (!els.length) return;
-            document.querySelectorAll('.reveal-stagger').forEach(container => {
-                Array.from(container.children).forEach((child, i) => {
-                    child.style.setProperty('--i', i);
-                });
-            });
-            if (!('IntersectionObserver' in window)) {
-                els.forEach(el => el.classList.add('is-visible'));
-                return;
-            }
-            const io = new IntersectionObserver((entries, obs) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                        obs.unobserve(entry.target);
-                    }
-                });
-            }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
-            els.forEach(el => io.observe(el));
-        })();
+        /* Scroll-reveal is now handled globally + flash-proof by components.js
+           (initScrollReveal) — no per-page observer needed. */
     </script>
 </body>
 </html>

@@ -92,13 +92,19 @@ html { scroll-behavior: smooth; }
 /* Scroll-reveal system — elements animate up and in when they enter the viewport.
    Add class="reveal" to anything you want to animate on scroll.
    JS toggles .is-visible when the element enters view. */
+/* Base = fully VISIBLE. The shared observer (components.js) "arms" only elements
+   BELOW the fold — adding .reveal-armed to hide them just before they scroll into
+   view. So content is never invisible before/without JS (no blank flash, esp. on
+   dark sections), and above-the-fold content shows instantly. */
 .reveal {
-    opacity: 0;
-    transform: translateY(24px);
     transition:
         opacity 0.7s var(--ease-out),
         transform 0.7s var(--ease-out);
     will-change: opacity, transform;
+}
+.reveal.reveal-armed {
+    opacity: 0;
+    transform: translateY(24px);
 }
 .reveal.is-visible {
     opacity: 1;
@@ -106,13 +112,15 @@ html { scroll-behavior: smooth; }
 }
 /* Stagger children automatically. Set --i on each child for its index. */
 .reveal-stagger > * {
-    opacity: 0;
-    transform: translateY(18px);
     transition:
         opacity 0.55s var(--ease-out),
         transform 0.55s var(--ease-out);
     transition-delay: calc(var(--i, 0) * 45ms);
     will-change: opacity, transform;
+}
+.reveal-stagger.reveal-armed > * {
+    opacity: 0;
+    transform: translateY(18px);
 }
 .reveal-stagger.is-visible > * {
     opacity: 1;
@@ -131,8 +139,8 @@ html { scroll-behavior: smooth; }
 /* Respect users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
-    .reveal, .reveal.is-visible,
-    .reveal-stagger > *, .reveal-stagger.is-visible > * {
+    .reveal, .reveal.reveal-armed, .reveal.is-visible,
+    .reveal-stagger > *, .reveal-stagger.reveal-armed > *, .reveal-stagger.is-visible > * {
         opacity: 1 !important;
         transform: none !important;
         transition: none !important;
