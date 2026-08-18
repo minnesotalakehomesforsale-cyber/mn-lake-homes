@@ -160,6 +160,9 @@
                 <button class="ph-action-btn" id="btn-reset-pw" title="Reset password &amp; email the agent a new one" onclick="resetAgentPassword()">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
                 </button>
+                <button class="ph-action-btn" id="btn-request-photos" title="Email this agent asking for photos of the lakes &amp; towns they serve" onclick="requestLakePhotos()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                </button>
             </div>
         </div>
 
@@ -1962,6 +1965,38 @@
         } finally {
             btn.disabled = false;
         }
+    }
+
+    // ── Request lake/town photos — opens a pre-filled email to the agent that
+    // lists the exact areas they serve and asks for a few photos of each. Sent
+    // from the admin's own inbox (mailto) so it can be personalized before it
+    // goes. Areas come from the agent's attached geo-tags (loaded on page open).
+    function requestLakePhotos() {
+        if (!agentData || !agentData.email) {
+            alert('No email on file for this agent — add one on the Details tab first.');
+            return;
+        }
+        const areas = _allTags.filter(t => _attachedTagIds.has(t.id)).map(t => t.name);
+        const first = String(agentData.first_name || (agentData.display_name || '').split(' ')[0] || 'there').trim();
+        const bullets = areas.length
+            ? areas.map(a => '  • ' + a).join('\n')
+            : '  • (the lakes and towns in your service area)';
+        const subject = 'Photos of your lakes & towns for MinnesotaLakeHomesForSale.com';
+        const body =
+`Hi ${first},
+
+Your profile and the lake/town pages you cover look far better with real, local photos, and buyers spend more time on pages that actually show the water.
+
+Could you send over a handful of photos (your own, or ones you have the rights to use) for the areas you serve? A few shots of each of these would be perfect:
+
+${bullets}
+
+Lakeshore, sunsets, docks, downtown, the public landing, anything that captures the place. Phone photos are completely fine, just attach them in a reply to this email.
+
+Thank you!`;
+        window.location.href = 'mailto:' + agentData.email
+            + '?subject=' + encodeURIComponent(subject)
+            + '&body='   + encodeURIComponent(body);
     }
 
     // ── Reset password — emails the agent a new temporary password ──────────
