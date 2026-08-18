@@ -2295,15 +2295,11 @@ app.get('/blog/:slug', async (req, res, next) => {
                 .replace('<p id="post-subtitle" class="post-subtitle"></p>', `<p id="post-subtitle" class="post-subtitle">${escapeHtml(subTxt)}</p>`)
                 .replace('<div class="post-author-name" id="post-author">MN Lake Homes</div>', `<div class="post-author-name" id="post-author">${escapeHtml(authorTxt)}</div>`)
                 .replace('<div class="post-author-date" id="post-date"></div>', `<div class="post-author-date" id="post-date">${escapeHtml(dateTxt)}</div>`)
-                // Cover only when the post has its own image; otherwise hide the
-                // whole banner (no recycled photo, no gradient block — just blank).
-                .replace('<div class="post-banner-wrap post-container" id="post-banner-wrap">',
-                    post.cover_image_url
-                        ? '<div class="post-banner-wrap post-container" id="post-banner-wrap">'
-                        : '<div class="post-banner-wrap post-container" id="post-banner-wrap" style="display:none">')
-                .replace('<img id="hero-img" src="" alt="">', post.cover_image_url
-                    ? `<img id="hero-img" src="${escapeHtml(post.cover_image_url)}" alt="${escapeHtml(post.title)}">`
-                    : '<img id="hero-img" src="" alt="">')
+                // Cover: every post uses the generated gradient tile (rendered
+                // client-side by mnlhBlogCover, same as the blog cards) — never a
+                // recycled stock photo. Leave the banner visible and the <img> empty;
+                // the gradient paints over the .post-banner blue background, so no
+                // stock photo ever loads or flashes.
                 .replace('<article class="post-body" id="post-body"></article>', `<article class="post-body" id="post-body">${post.body || ''}</article>`)
                 .replace('<section class="post-related post-container" id="related-blogs"></section>', relatedHtml);
             res.type('html').send(out);

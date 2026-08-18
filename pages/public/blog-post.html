@@ -311,26 +311,23 @@
                     ? new Date(pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                     : '';
 
-                // Top image: a real cover when the post has one, otherwise the
-                // generated colored cover (same one used on the blog cards) — so
-                // every blog page opens with an image, never a bare headline.
-                const heroImg = document.getElementById('hero-img');
+                // Hero cover: use the SAME generated gradient tile as the blog cards
+                // (mnlhBlogCover) — NOT the reused stock photos, which look stretched
+                // and blurry and repeat across the site. On-brand, consistent, and it
+                // always renders. Falls back to the real cover only if the generator
+                // isn't loaded for some reason.
                 const bannerWrap = document.getElementById('post-banner-wrap');
                 const banner = bannerWrap ? bannerWrap.querySelector('.post-banner') : null;
-                if (post.cover_image_url) {
-                    heroImg.src = post.cover_image_url;
-                    heroImg.alt = post.title;
-                    if (bannerWrap) bannerWrap.style.display = '';
-                } else if (banner && typeof window.mnlhBlogCover === 'function') {
+                if (banner && typeof window.mnlhBlogCover === 'function') {
                     banner.style.position = 'relative';
                     banner.innerHTML = window.mnlhBlogCover(post.tag);
                     const bc = banner.querySelector('.blog-cover');
                     if (bc) bc.style.cssText += ';position:absolute;inset:0;width:100%;height:100%;border-radius:0;margin:0;box-shadow:none;';
                     if (bannerWrap) bannerWrap.style.display = '';
-                } else if (bannerWrap) {
-                    // Never hide a banner the server already filled with a cover
-                    // image — only collapse it when there's genuinely no image.
-                    if (!heroImg || !heroImg.getAttribute('src')) bannerWrap.style.display = 'none';
+                } else {
+                    const heroImg = document.getElementById('hero-img');
+                    if (heroImg && post.cover_image_url) { heroImg.src = post.cover_image_url; heroImg.alt = post.title; }
+                    if (bannerWrap) bannerWrap.style.display = '';
                 }
 
                 // Tailor the primary CTA to the post's category.
