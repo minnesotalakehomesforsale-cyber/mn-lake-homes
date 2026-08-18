@@ -2399,6 +2399,14 @@ document.addEventListener('keydown', e => {
 (function cookieConsent() {
     if (window.__cookieConsentInit) return;
     window.__cookieConsentInit = true;
+
+    // Hidden for now per owner request — the banner does not render. Consent
+    // stays UN-answered, so the cookie-setting pixels (GA4/HubSpot) remain OFF
+    // by default (privacy-safe); the cookieless first-party event mirror still
+    // works. Flip this to true to bring the banner back.
+    const CONSENT_BANNER_ENABLED = false;
+    if (!CONSENT_BANNER_ENABLED) return;
+
     let choice = null;
     try { choice = localStorage.getItem('mlh_cookie_consent'); } catch (_) {}
     if (choice === 'accepted' || choice === 'declined') return;   // already answered
