@@ -290,6 +290,23 @@ app.get('/api/_diagnostic', async (req, res) => {
         if (mh.sandbox && mh.transport === 'resend') { out.checks.email.WARNING = 'Sending from Resend SANDBOX — real emails REJECTED. Set EMAIL_FROM.'; out.status = 'degraded'; }
     } catch (e) { out.checks.email = `error: ${e.message}`; }
 
+    // Sweep enable-flags — the actual running state, so the tracker stops being the
+    // source of truth for what's on. The first six are OPT-IN (=== 'true', default
+    // OFF): if unset in Render they DO NOT RUN. PROFILE_NUDGE is opt-OUT (default ON).
+    const flagState = (name, optIn) => {
+        const v = process.env[name];
+        return { value: v == null ? null : v, enabled: optIn ? (v === 'true') : (v !== 'false'), default: optIn ? 'OFF' : 'ON' };
+    };
+    out.checks.sweeps = {
+        AGENT_ROI_EMAIL_ENABLED: flagState('AGENT_ROI_EMAIL_ENABLED', true),   // AL-04 ROI email (+referral line)
+        CHURN_SWEEP_ENABLED:     flagState('CHURN_SWEEP_ENABLED', true),       // AL-05
+        WIN_BACK_ENABLED:        flagState('WIN_BACK_ENABLED', true),          // Route E win-back sequence
+        BUYER_DIGEST_ENABLED:    flagState('BUYER_DIGEST_ENABLED', true),
+        CONTACT_DIGEST_ENABLED:  flagState('CONTACT_DIGEST_ENABLED', true),
+        NURTURE_ENABLED:         flagState('NURTURE_ENABLED', true),
+        PROFILE_NUDGE_ENABLED:   flagState('PROFILE_NUDGE_ENABLED', false),    // AL-07 (opt-out, default ON)
+    };
+
     // Cloudinary health check — verifies env vars are loaded AND credentials work
     out.checks.cloudinary_env = {
         cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? 'set' : 'MISSING',
