@@ -99,6 +99,31 @@ if (_resend && !_gmailTransport) {
 if (!_gmailTransport && !_resend) {
     console.warn('[email] transport = NONE (set GMAIL_USER+GMAIL_APP_PASSWORD or RESEND_API_KEY)');
 }
+// Loud guard: onboarding@resend.dev is Resend's SANDBOX sender — it can only
+// deliver to your own Resend account email, so in production every message to a
+// real recipient is REJECTED (not just spam-filed). If we're on Resend and
+// EMAIL_FROM was never set, say so at boot so it can't silently swallow the whole
+// lifecycle. Fix: verify the domain in Resend (SPF+DKIM+DMARC), then set EMAIL_FROM
+// to an address on minnesotalakehomesforsale.com.
+if (_resend && /onboarding@resend\.dev/i.test(FROM)) {
+    console.warn('[email] ⚠️  EMAIL_FROM is UNSET — sending from the Resend sandbox '
+        + '(onboarding@resend.dev). Production emails to real recipients will be REJECTED. '
+        + 'Verify the domain in Resend and set EMAIL_FROM to e.g. "MN Lake Homes '
+        + '<hello@minnesotalakehomesforsale.com>".');
+}
+
+// Surfaced on /api/_diagnostic so the live sender can be confirmed from a browser
+// (the From address is public — it rides in every email header). sandbox=true
+// while on Resend means real recipients are being rejected.
+function mailerHealth() {
+    return {
+        transport: _gmailTransport ? 'gmail' : (_resend ? 'resend' : 'none'),
+        from: FROM,
+        email_from_set: !!process.env.EMAIL_FROM,
+        reply_to: REPLY_TO,
+        sandbox: /onboarding@resend\.dev/i.test(FROM),
+    };
+}
 
 function logSkip(reason) {
     console.log(`[email] skipped — ${reason}`);
@@ -1526,6 +1551,7 @@ module.exports = {
     sendAgentProfileNudge,
     sendAgentExitSurvey,
     sendLeadLandedWinBack,
+    mailerHealth,
     sendAgentMessageNotification,
     sendCashOfferToPartner,
     sendBusinessWelcome,

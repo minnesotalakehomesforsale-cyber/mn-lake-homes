@@ -282,6 +282,14 @@ app.get('/api/_diagnostic', async (req, res) => {
         out.checks.lifecycle_paying_comped = paid.rows[0].comped;
     } catch (e) { out.checks.lifecycle_states = `error: ${e.message}`; }
 
+    // Email sender health — confirm the live From address without opening Render.
+    // sandbox=true on Resend means real recipients are being REJECTED.
+    try {
+        const mh = require('./services/email').mailerHealth();
+        out.checks.email = mh;
+        if (mh.sandbox && mh.transport === 'resend') { out.checks.email.WARNING = 'Sending from Resend SANDBOX — real emails REJECTED. Set EMAIL_FROM.'; out.status = 'degraded'; }
+    } catch (e) { out.checks.email = `error: ${e.message}`; }
+
     // Cloudinary health check — verifies env vars are loaded AND credentials work
     out.checks.cloudinary_env = {
         cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? 'set' : 'MISSING',
