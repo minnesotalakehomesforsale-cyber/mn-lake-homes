@@ -264,6 +264,16 @@ app.get('/api/_diagnostic', async (req, res) => {
         out.checks.lifecycle_states = dist;
         out.checks.lifecycle_states_null = nullState.rows[0].n;   // must be 0 — every agent has exactly one state
         if (nullState.rows[0].n > 0) out.status = 'degraded';
+        // Comped agents count as 'paying' by design (they get the paid experience)
+        // but are NOT billed — so `paying_billed` is what should equal the number of
+        // active Stripe subscriptions on the verification checklist; `paying_comped`
+        // is the rest. Slice-2 billing/renewal sweeps must exclude tier_comped.
+        const paid = await pool.query(`
+            SELECT COUNT(*) FILTER (WHERE COALESCE(tier_comped,false))::int      AS comped,
+                   COUNT(*) FILTER (WHERE NOT COALESCE(tier_comped,false))::int  AS billed
+              FROM agents WHERE deleted_at IS NULL AND lifecycle_state = 'paying'`);
+        out.checks.lifecycle_paying_billed = paid.rows[0].billed;   // ← compare to active Stripe subs
+        out.checks.lifecycle_paying_comped = paid.rows[0].comped;
     } catch (e) { out.checks.lifecycle_states = `error: ${e.message}`; }
 
     // Cloudinary health check — verifies env vars are loaded AND credentials work
