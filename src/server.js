@@ -265,12 +265,18 @@ app.get('/api/_diagnostic', async (req, res) => {
         out.checks.lifecycle_states_null = nullState.rows[0].n;   // must be 0 — every agent has exactly one state
         if (nullState.rows[0].n > 0) out.status = 'degraded';
         // Comped agents count as 'paying' by design (they get the paid experience)
-        // but are NOT billed — so `paying_billed` is what should equal the number of
-        // active Stripe subscriptions on the verification checklist; `paying_comped`
-        // is the rest. Slice-2 billing/renewal sweeps must exclude tier_comped.
+        // but are NOT billed — so `paying_billed` (paid_membership_code IS NOT NULL)
+        // is what should equal the number of active Stripe subscriptions on the
+        // verification checklist; `paying_comped` is the rest. NB: slice-2 billing
+        // sweeps gate on paid_membership_code IS NOT NULL, NOT `NOT tier_comped`
+        // (a comped-up-from-paid agent is billed AND comped — must still be dunned).
+        // billed = actually charged (paid_membership_code IS NOT NULL) — compare to
+        // active Stripe subs. comped = the rest of 'paying' (in the state via
+        // tier_comped but with no charge). Keyed off paid_membership_code, NOT
+        // tier_comped, so a comped-up-from-paid agent counts as billed (they are).
         const paid = await pool.query(`
-            SELECT COUNT(*) FILTER (WHERE COALESCE(tier_comped,false))::int      AS comped,
-                   COUNT(*) FILTER (WHERE NOT COALESCE(tier_comped,false))::int  AS billed
+            SELECT COUNT(*) FILTER (WHERE paid_membership_code IS NOT NULL)::int AS billed,
+                   COUNT(*) FILTER (WHERE paid_membership_code IS NULL)::int     AS comped
               FROM agents WHERE deleted_at IS NULL AND lifecycle_state = 'paying'`);
         out.checks.lifecycle_paying_billed = paid.rows[0].billed;   // ← compare to active Stripe subs
         out.checks.lifecycle_paying_comped = paid.rows[0].comped;

@@ -70,8 +70,14 @@ async function setLifecycleState(agentId, next, reason, source) {
 //     tier_comped lets disagree — a comped agent has a paid display tier but no
 //     charge, so keying off the display tier would tag them 'paying' AND anchor a
 //     never-arriving renewal email).
-//   tier_comped — treated as paying (that's the point of comping), but callers of
-//     billing/renewal-anchored logic must exclude tier_comped separately.
+//   tier_comped — treated as paying (that's the point of comping) for experience,
+//     but it is NOT the billing gate. Billing/renewal-anchored logic (dunning, the
+//     day-21 pre-renewal proof, the referral-counter "what you pay" framing) must
+//     gate on `paid_membership_code IS NOT NULL` — "does this person get charged?"
+//     — NOT on `NOT tier_comped`. An agent comped UP from a paid tier has
+//     tier_comped=true AND a live subscription that can fail; excluding them by
+//     tier_comped would silently skip dunning and let their card lapse. Use
+//     tier_comped ONLY to vary messaging (don't show "what you pay" to a comp).
 //   has_paid — a real payment row exists (status='paid'). Gates 'churned' so an
 //     abandoned checkout or a sub cancelled before its first invoice is NOT sent
 //     the win-back "here's what's changed since you left".
