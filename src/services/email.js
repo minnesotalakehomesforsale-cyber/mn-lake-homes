@@ -1415,6 +1415,34 @@ function sendAgentProfileNudge({ to, first_name, missing = [], nudgeNumber = 1 }
     });
 }
 
+// AL-14 — lead-landed win-back. When a real buyer lands on a lake where a
+// churned agent used to pay to be listed, nudge them: the demand is real, their
+// profile is still up, and reactivating puts them back in the rotation.
+// Behaviour-triggered beats calendar win-back. Rate-limited upstream (30d).
+function sendLeadLandedWinBack({ to, name, lakeName }) {
+    if (!to) return { skipped: true };
+    const first = name || 'there';
+    const lake = lakeName || 'your lake';
+    return sendEmail({
+        to,
+        category: 'marketing',
+        subject: `A buyer just came through on ${lake}`,
+        html: layout({
+            title: `A buyer came through on ${lake}`,
+            preheader: 'Your profile is still up — want it switched back on?',
+            body: `
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  ${_esc(first)} — a new buyer just came through on <strong>${_esc(lake)}</strong> this week. Your profile is still live on the free tier, but paid members are the ones in the lead rotation for that water.
+                </p>
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Want yours switched back on?
+                </p>`,
+            ctaText: 'Reactivate my plan',
+            ctaUrl: `${SITE_URL}/join`,
+        }),
+    });
+}
+
 // AL-13 — exit survey. One free-text question on cancellation, written to look
 // typed and personal (no template chrome, no CTA button), and set to reply
 // straight back to the owner's inbox. The first fifty answers are the roadmap.
@@ -1497,6 +1525,7 @@ module.exports = {
     sendLeadAgentMatched,
     sendAgentProfileNudge,
     sendAgentExitSurvey,
+    sendLeadLandedWinBack,
     sendAgentMessageNotification,
     sendCashOfferToPartner,
     sendBusinessWelcome,

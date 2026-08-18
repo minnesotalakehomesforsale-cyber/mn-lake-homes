@@ -2853,6 +2853,9 @@ async function ensureTables() {
             -- cancellation feedback; exit_survey_response holds the agent's reply.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS churn_reason         TEXT;
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS exit_survey_response TEXT;
+            -- AL-14: last time a churned agent got the "a buyer came through on
+            -- your lake" nudge (rate-limited to once per 30 days).
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS last_lead_winback_at TIMESTAMPTZ;
             -- Agent-authored FAQ answers, keyed by the fixed question keys in
             -- services/agent-faq.js. Only answered questions render publicly.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS faq JSONB NOT NULL DEFAULT '{}'::jsonb;

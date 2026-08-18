@@ -87,4 +87,42 @@ async function runWinBackSweep() {
     } catch (e) { console.warn('[win-back] sweep failed:', e.message); return { sent: 0, error: e.message }; }
 }
 
-module.exports = { enqueueWinBack, runWinBackSweep };
+// AL-14 — lead-landed win-back. Called (fire-and-forget) when a lead lands on a
+// lake. Nudges every churned agent still linked to that lake — churned = once had
+// a Stripe subscription but is now back on free (downgradeAgentToFree keeps
+// stripe_subscription_id, nulls paid_membership_code). Rate-limited to once per
+// agent per 30 days via agents.last_lead_winback_at. Behaviour-triggered beats
+// the calendar sequence.
+async function notifyChurnedOnLeadLanded({ lakeId, lakeName } = {}) {
+    if (!lakeId) return { sent: 0 };
+    let sent = 0;
+    try {
+        const { rows } = await pool.query(
+            `SELECT a.id AS agent_id, a.display_name, u.email
+               FROM agent_lakes al
+               JOIN agents a ON a.id = al.agent_id
+               JOIN users  u ON u.id = a.user_id AND u.account_status = 'active'
+              WHERE al.lake_id = $1
+                AND a.stripe_subscription_id IS NOT NULL      -- once paid us
+                AND a.paid_membership_code IS NULL            -- now downgraded to free = churned
+                AND COALESCE(a.tier_comped, false) = false
+                AND COALESCE(u.email, '') <> ''
+                AND (a.last_lead_winback_at IS NULL OR a.last_lead_winback_at < NOW() - INTERVAL '30 days')`,
+            [lakeId]);
+        for (const a of rows) {
+            try {
+                emailService.sendLeadLandedWinBack({
+                    to: a.email,
+                    name: (a.display_name || '').split(' ')[0],
+                    lakeName: lakeName || 'your lake',
+                });
+                await pool.query(`UPDATE agents SET last_lead_winback_at = NOW() WHERE id = $1`, [a.agent_id]);
+                sent++;
+            } catch (e) { console.warn('[lead-winback] one failed:', e.message); }
+        }
+        if (sent) console.log(`[lead-winback] nudged ${sent} churned agent(s) on ${lakeName || lakeId}`);
+    } catch (e) { console.warn('[lead-winback]', e.message); }
+    return { sent };
+}
+
+module.exports = { enqueueWinBack, runWinBackSweep, notifyChurnedOnLeadLanded };

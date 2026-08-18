@@ -552,6 +552,14 @@ const createLead = async (req, res) => {
                     }
 
                     const pick = await routeLead({ lat: geo?.lat, lng: geo?.lng, lakeId: leadLakeId, wantFounder });
+                    // AL-14 — a real buyer just landed on this lake; nudge any churned
+                    // agent who used to pay to be listed here. Fire-and-forget, never
+                    // blocks lead creation; rate-limited to once/30d per agent.
+                    if (leadLakeId) {
+                        require('../services/win-back')
+                            .notifyChurnedOnLeadLanded({ lakeId: leadLakeId, lakeName: leadLakeName })
+                            .catch(e => console.warn('[lead-winback]', e.message));
+                    }
                     if (!pick) {
                         // B3: a QUALIFIED (A/B) lead with no active paying agent on
                         // its lake goes to the HOLD queue — not dropped. This is a
