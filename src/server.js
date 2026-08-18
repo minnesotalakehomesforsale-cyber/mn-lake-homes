@@ -2847,6 +2847,8 @@ async function ensureTables() {
             -- AL-04: running "what a 35% referral would have cost you" tally.
             -- Recomputed from the agent's closed contacts (contacts.controller).
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS referral_fees_saved_usd NUMERIC NOT NULL DEFAULT 0;
+            -- AL-07 (Route A, +72h): one-time done-for-you SMS to draft agents.
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS dfy_sms_sent_at TIMESTAMPTZ;
             -- Agent-authored FAQ answers, keyed by the fixed question keys in
             -- services/agent-faq.js. Only answered questions render publicly.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS faq JSONB NOT NULL DEFAULT '{}'::jsonb;
@@ -5652,9 +5654,12 @@ const PORT = process.env.PORT || 3000;
     // sweep self-throttles (min age, resend spacing, max 3). Off with
     // PROFILE_NUDGE_ENABLED=false.
     if (process.env.PROFILE_NUDGE_ENABLED !== 'false') {
-        const { runProfileCompletionNudge } = require('./services/agent-onboarding-nudge');
+        const { runProfileCompletionNudge, runDraftDoneForYouSms } = require('./services/agent-onboarding-nudge');
         setTimeout(() => runProfileCompletionNudge().catch(e => console.warn('[profile-nudge]', e.message)), 5 * 60 * 1000);
         setInterval(() => runProfileCompletionNudge().catch(e => console.warn('[profile-nudge]', e.message)), 12 * 60 * 60 * 1000);
+        // AL-07 (+72h) done-for-you SMS to draft agents — no-op until Twilio is set.
+        setTimeout(() => runDraftDoneForYouSms().catch(e => console.warn('[dfy-sms]', e.message)), 6 * 60 * 1000);
+        setInterval(() => runDraftDoneForYouSms().catch(e => console.warn('[dfy-sms]', e.message)), 12 * 60 * 60 * 1000);
     }
 
     // Churn-risk sweep — nudge disengaged agents + weekly admin digest.
