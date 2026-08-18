@@ -2839,6 +2839,11 @@ async function ensureTables() {
             -- Throttle for churn-risk nudges so a disengaged agent isn't emailed
             -- more than every couple of weeks.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS last_churn_nudge_at TIMESTAMPTZ;
+            -- Onboarding nudge: email agents whose profile is still draft/unpublished
+            -- to finish it and go live. Throttled by these two columns (max N nudges,
+            -- spaced out) so it never spams.
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS last_profile_nudge_at TIMESTAMPTZ;
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS profile_nudge_count  INTEGER NOT NULL DEFAULT 0;
             -- Agent-authored FAQ answers, keyed by the fixed question keys in
             -- services/agent-faq.js. Only answered questions render publicly.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS faq JSONB NOT NULL DEFAULT '{}'::jsonb;
@@ -5637,6 +5642,16 @@ const PORT = process.env.PORT || 3000;
         const { runMonthlyRoiEmails } = require('./services/agent-roi-email');
         setTimeout(() => runMonthlyRoiEmails().catch(e => console.warn('[agent-roi-email]', e.message)), 3 * 60 * 1000);
         setInterval(() => runMonthlyRoiEmails().catch(e => console.warn('[agent-roi-email]', e.message)), 12 * 60 * 60 * 1000);
+    }
+
+    // Onboarding nudge — email agents whose profile is still draft/unpublished
+    // to finish it and go live. First run 5 min after boot, then every 12h; the
+    // sweep self-throttles (min age, resend spacing, max 3). Off with
+    // PROFILE_NUDGE_ENABLED=false.
+    if (process.env.PROFILE_NUDGE_ENABLED !== 'false') {
+        const { runProfileCompletionNudge } = require('./services/agent-onboarding-nudge');
+        setTimeout(() => runProfileCompletionNudge().catch(e => console.warn('[profile-nudge]', e.message)), 5 * 60 * 1000);
+        setInterval(() => runProfileCompletionNudge().catch(e => console.warn('[profile-nudge]', e.message)), 12 * 60 * 60 * 1000);
     }
 
     // Churn-risk sweep — nudge disengaged agents + weekly admin digest.

@@ -1382,6 +1382,39 @@ function sendCashOfferToPartner({ to, partnerName, customMessage, offer, fromNam
  * @param {boolean} [p.final]      true when there's no next retry (giving up)
  * @param {Date|null} [p.nextAttempt] next retry date, if any
  */
+// Nudge an agent whose profile is still unpublished ("draft") to finish it and
+// go live. Fired by the onboarding-nudge sweep — spaced out, capped, so it never
+// spams. The whole ask: add the few missing pieces, then publish.
+function sendAgentProfileNudge({ to, first_name, missing = [], nudgeNumber = 1 }) {
+    if (!to) return { skipped: true };
+    const name = first_name || 'there';
+    const dash = `${SITE_URL}/pages/agent/dashboard.html`;
+    const missingHtml = missing.length
+        ? `<p style="margin:0 0 6px;font-size:15px;font-weight:700;color:#1a202c;">To go live, add:</p>
+           <ul style="margin:0 0 18px;padding-left:1.15rem;font-size:15px;line-height:1.7;color:#2d3748;">${missing.map(m => `<li>${_esc(m)}</li>`).join('')}</ul>`
+        : '';
+    return sendEmail({
+        to,
+        subject: nudgeNumber >= 2
+            ? `${name}, your lake profile is still hidden — a few minutes to go live`
+            : `${name}, finish your profile to start getting matched`,
+        html: layout({
+            title: `You're almost live, ${name}`,
+            preheader: 'A few quick pieces and your profile goes on the lake pages.',
+            body: `
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Your MinnesotaLakeHomesForSale.com profile is created but <strong>not published yet</strong> — so buyers searching your lakes can't find you, and you're not in the lead rotation. Finishing it takes just a few minutes.
+                </p>
+                ${missingHtml}
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Add the missing pieces, hit Publish, and your profile is live on the lake pages you serve — usually within minutes.
+                </p>`,
+            ctaText: 'Finish my profile',
+            ctaUrl: dash,
+        })
+    });
+}
+
 function sendAgentPaymentFailed({ to, name, attempt = 1, final = false, nextAttempt = null }) {
     if (!to) return { skipped: true };
     const first = (name || '').split(' ')[0] || 'there';
@@ -1440,6 +1473,7 @@ module.exports = {
     sendAgentLeadAssigned,
     sendManualLeadOffer,
     sendLeadAgentMatched,
+    sendAgentProfileNudge,
     sendAgentMessageNotification,
     sendCashOfferToPartner,
     sendBusinessWelcome,
