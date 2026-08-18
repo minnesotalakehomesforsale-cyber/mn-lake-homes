@@ -828,7 +828,8 @@ const getMyRoi = async (req, res) => {
     try {
         const userId = req.user.userId;
         const ar = await pool.query(
-            `SELECT a.id AS agent_id, m.code AS plan_code, m.display_badge_label AS plan_label
+            `SELECT a.id AS agent_id, m.code AS plan_code, m.display_badge_label AS plan_label,
+                    COALESCE(a.referral_fees_saved_usd, 0)::int AS referral_saved
                FROM agents a LEFT JOIN memberships m ON m.id = a.membership_id
               WHERE a.user_id = $1 LIMIT 1`, [userId]);
         if (!ar.rowCount) return res.status(403).json({ error: 'No agent profile yet.' });
@@ -870,6 +871,7 @@ const getMyRoi = async (req, res) => {
             won_total: s.won_total || 0,
             won_volume: Number(s.won_volume || 0),
             won_gci: Math.round(Number(s.won_volume || 0) * (ROI_COMMISSION / 100)),
+            referral_saved: ar.rows[0].referral_saved || 0,   // AL-04
         });
     } catch (e) { console.error('[getMyRoi]', e.message); res.status(500).json({ error: 'Failed to load ROI.' }); }
 };

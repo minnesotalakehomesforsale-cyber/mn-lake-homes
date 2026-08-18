@@ -27,6 +27,32 @@ async function agentIdFor(userId) {
     return r.rows[0]?.id || null;
 }
 
+// AL-04 — referral-fee savings. Every deal an agent closes through the portal is
+// one we did NOT take a referral cut on, so we surface a running "what a 35%
+// referral would have cost you" figure. We RECOMPUTE it from the closed-contact
+// count (never increment) so moving a card in and out of "Closed" can't
+// double-count. Per-deal savings reuses the same estimate the ROI email trusts:
+// 35% × (avg sale × commission%). Called after any mutation that can change how
+// many contacts sit in the Closed stage.
+const REFERRAL_AVG_SALE   = Number(process.env.AGENT_ROI_AVG_SALE_USD)   || 475000;
+const REFERRAL_COMMISSION = Number(process.env.AGENT_ROI_COMMISSION_PCT) || 2.5;
+const REFERRAL_PCT        = Number(process.env.AGENT_REFERRAL_PCT)       || 35;
+const REFERRAL_PER_DEAL   = Math.round(REFERRAL_AVG_SALE * (REFERRAL_COMMISSION / 100) * (REFERRAL_PCT / 100));
+
+async function recomputeReferralSavings(agentId) {
+    if (!agentId) return;
+    try {
+        await pool.query(
+            `UPDATE agents SET referral_fees_saved_usd = COALESCE((
+                 SELECT COUNT(*) FROM agent_contacts
+                  WHERE agent_id = $1 AND stage = 'closed' AND archived_at IS NULL
+             ), 0) * $2
+             WHERE id = $1`,
+            [agentId, REFERRAL_PER_DEAL]);
+    } catch (e) { console.warn('[contacts.referralSavings]', e.message); }
+}
+exports.recomputeReferralSavings = recomputeReferralSavings;
+
 // #16 — mirror the agent's routed platform leads into their contact list so it's
 // one list. Idempotent (unique on agent_id+lead_id); skips leads already
 // archived here so a deleted platform contact never reappears. Only pulls
@@ -105,6 +131,7 @@ exports.create = async (req, res) => {
             [agentId, name, clean(req.body?.email), clean(req.body?.phone), contact_type, stage,
              clean(req.body?.area), req.body?.next_step_at || null, clean(req.body?.next_step_note, 500)]
         );
+        if (stage === 'closed') await recomputeReferralSavings(agentId);   // AL-04
         res.status(201).json(rows[0]);
     } catch (e) {
         console.error('[contacts.create]', e.message);
@@ -136,6 +163,7 @@ exports.update = async (req, res) => {
             vals
         );
         if (!rows.length) return res.status(404).json({ error: 'Contact not found.' });
+        if ('stage' in req.body) await recomputeReferralSavings(agentId);   // AL-04
         res.json(rows[0]);
     } catch (e) {
         console.error('[contacts.update]', e.message);
@@ -155,6 +183,7 @@ exports.remove = async (req, res) => {
             [agentId, req.params.id]
         );
         if (!rowCount) return res.status(404).json({ error: 'Contact not found.' });
+        await recomputeReferralSavings(agentId);   // AL-04 — archiving a closed deal lowers the tally
         res.json({ success: true });
     } catch (e) {
         console.error('[contacts.remove]', e.message);

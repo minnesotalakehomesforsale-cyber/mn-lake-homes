@@ -538,6 +538,11 @@
                                 <div class="roi-chip"><span id="roi-inquiries">0</span><small>listing inquiries</small></div>
                             </div>
                         </div>
+                        <!-- AL-04 referral-fee savings — you keep 100%, no referral cut -->
+                        <div id="roi-referral" style="display:none; margin-top:1rem; border:1px solid #cbd8ea; background:#f7faff; border-radius:12px; padding:0.9rem 1.1rem;">
+                            <div style="font-size:0.98rem; color:#1a202c;">Referral fees paid: <b>$0</b> &nbsp;·&nbsp; What a 35% referral would have cost you: <b id="roi-referral-saved" style="color:#1d6df2;">$0</b></div>
+                            <div style="font-size:0.78rem; color:#4a5568; margin-top:0.25rem;">Every deal you close through the portal is one we take no cut on. On MN Lake Homes you keep 100%.</div>
+                        </div>
                         <p class="roi-foot" id="roi-foot"></p>
                     </div>
 
@@ -2312,6 +2317,10 @@
                 document.getElementById('roi-foot').textContent = wonLine
                     + `Estimate: ${d.leads_month} lead${d.leads_month === 1 ? '' : 's'} × ${money(d.expected_per_lead)} expected value each `
                     + `(≈ ${money(d.avg_sale)} avg sale × ${d.commission_pct}% commission × ${Math.round(d.close_rate * 100)}% close rate). Actual results vary.`;
+                // AL-04 — always show the referral-savings line (even at $0), so it
+                // reads $0 rather than blank for an agent with no closings yet.
+                document.getElementById('roi-referral-saved').textContent = money(d.referral_saved);
+                document.getElementById('roi-referral').style.display = 'block';
                 document.getElementById('dash-roi').style.display = 'block';
             } catch (_) {}
         }

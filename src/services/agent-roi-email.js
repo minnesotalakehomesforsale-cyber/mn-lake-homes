@@ -46,6 +46,7 @@ async function runMonthlyRoiEmails() {
 
         const { rows } = await pool.query(`
             SELECT a.id AS agent_id, u.email, u.full_name, m.code AS plan_code,
+                   COALESCE(a.referral_fees_saved_usd, 0)::int AS referral_saved,
                    COUNT(l.*)::int AS leads,
                    COUNT(l.*) FILTER (WHERE l.listing_id IS NOT NULL)::int AS showings
               FROM agents a
@@ -75,6 +76,10 @@ async function runMonthlyRoiEmails() {
                         ${mult ? `<div style="opacity:0.92;font-weight:600;">About ${mult}× your ${money(planPrice)}/mo plan</div>` : ''}
                     </div>
                     <p style="margin:1.1rem 0 0.3rem;font-size:1.05rem;"><b>${r.leads}</b> lead${r.leads === 1 ? '' : 's'}${r.showings ? ` · <b>${r.showings}</b> showing request${r.showings === 1 ? '' : 's'}` : ''} routed to you.</p>
+                    <div style="border:1px solid #e6eaf0;border-radius:12px;padding:0.9rem 1.1rem;margin:0.9rem 0 0.3rem;background:#f7faff;">
+                        <div style="font-size:0.95rem;color:#1a202c;"><b>Referral fees paid: ${money(0)}</b> &nbsp;·&nbsp; What a 35% referral would have cost you: <b style="color:#1d6df2;">${money(r.referral_saved)}</b></div>
+                        <div style="font-size:0.78rem;color:#718096;margin-top:0.25rem;">Every deal you close through the portal is one we take no cut on. On MN Lake Homes you keep 100%.</div>
+                    </div>
                     <p style="color:#718096;font-size:0.9rem;">Responding fast wins deals — leads left unworked get reassigned. Jump into your inbox to follow up.</p>
                     <p style="text-align:center;margin:1.3rem 0 0.5rem;">
                         <a href="${SITE_URL}/pages/agent/dashboard.html" style="background:#1d6df2;color:#fff;text-decoration:none;font-weight:700;padding:0.7rem 1.5rem;border-radius:10px;display:inline-block;">Open my dashboard →</a>

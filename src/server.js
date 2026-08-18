@@ -2844,6 +2844,9 @@ async function ensureTables() {
             -- spaced out) so it never spams.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS last_profile_nudge_at TIMESTAMPTZ;
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS profile_nudge_count  INTEGER NOT NULL DEFAULT 0;
+            -- AL-04: running "what a 35% referral would have cost you" tally.
+            -- Recomputed from the agent's closed contacts (contacts.controller).
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS referral_fees_saved_usd NUMERIC NOT NULL DEFAULT 0;
             -- Agent-authored FAQ answers, keyed by the fixed question keys in
             -- services/agent-faq.js. Only answered questions render publicly.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS faq JSONB NOT NULL DEFAULT '{}'::jsonb;
