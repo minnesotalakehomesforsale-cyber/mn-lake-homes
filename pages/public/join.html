@@ -530,7 +530,9 @@
     </section>
     <script>
         (function () {
-            var _pricing = null, _period = 'monthly', _gate = { kind: 'loading' };
+            // Default the gate to logged_out (the common /join visitor) so prices
+            // that render before the gate resolves show a safe CTA, not a dead one.
+            var _pricing = null, _period = 'monthly', _gate = { kind: 'logged_out' };
             var jpEsc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
             var jpDollars = function (n) { return '$' + Number(n || 0).toLocaleString('en-US'); };
             var SLUG_TO_CODE = { free: 'free', standard: 'basic', prime: 'mn_lake_specialist', founder_public: 'top_agent' };
@@ -596,10 +598,18 @@
             }
 
             function jpInit() {
-                Promise.all([
-                    fetch('/api/stripe/pricing').then(function (r) { return r.json(); }).then(function (p) { _pricing = p; }).catch(function () { document.getElementById('jp-tier-grid').innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#c53030;">Could not load plans — refresh to retry.</p>'; }),
-                    jpGate(),
-                ]).then(jpRender);
+                // Render the prices the moment they load — do NOT wait on the gate.
+                // Previously this was Promise.all([pricing, jpGate()]).then(jpRender),
+                // which meant any rejection inside jpGate (auth/session or billing
+                // hiccup) blanked the whole grid even though the price data was fine.
+                // Price display must never be coupled to the auth/billing lookup.
+                fetch('/api/stripe/pricing')
+                    .then(function (r) { return r.json(); })
+                    .then(function (p) { _pricing = p; jpRender(); })
+                    .catch(function () { document.getElementById('jp-tier-grid').innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#c53030;">Could not load plans — refresh to retry.</p>'; });
+                // Resolve the gate independently; re-render to refine CTA labels once
+                // we know who's looking. A gate failure just leaves generic CTAs.
+                jpGate().catch(function () { _gate = { kind: 'logged_out' }; }).then(jpRender);
             }
             if (document.readyState !== 'loading') jpInit(); else document.addEventListener('DOMContentLoaded', jpInit);
         })();
