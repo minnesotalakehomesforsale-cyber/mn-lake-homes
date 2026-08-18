@@ -13,8 +13,12 @@ const CASH_OFFER_VALUE = num(process.env.CASH_OFFER_VALUE_USD, 3000);
 const q = (sql, params = []) => pool.query(sql, params).then(r => r.rows).catch(() => []);
 
 async function agentMrr() {
+    // NOTE: agents has NO subscription_status column (only businesses does), so
+    // the old `WHERE subscription_status='active'` threw and was swallowed by q()'s
+    // .catch → agent MRR silently read $0. paid_membership_code IS NOT NULL is the
+    // correct "actively billed" signal (it's nulled on downgrade).
     const rows = await q(`SELECT paid_membership_code AS code, COUNT(*)::int n FROM agents
-                           WHERE subscription_status = 'active' AND paid_membership_code IS NOT NULL
+                           WHERE paid_membership_code IS NOT NULL
                         GROUP BY paid_membership_code`);
     let mrr = 0, seats = 0;
     for (const r of rows) { mrr += (AGENT_PRICE[r.code] || 0) * r.n; seats += r.n; }
