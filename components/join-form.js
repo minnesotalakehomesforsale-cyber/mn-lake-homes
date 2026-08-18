@@ -164,9 +164,12 @@
         window.scrollTo(0, saved);
     }
 
-    function openJoinForm() {
+    // opts.plan = a tier slug ('standard'|'prime'|'founder_public') when opened from
+    // a pricing card, so a paid choice flows straight into checkout after signup.
+    // opts.period = 'monthly'|'annual'. No opts → the plain free-profile signup.
+    function openJoinForm(opts) {
         _injectOverlay();
-        _js = { step: 0, data: {} };
+        _js = { step: 0, data: {}, plan: (opts && opts.plan) || null, period: (opts && opts.period) || 'monthly' };
         document.getElementById('join-success').style.display = 'none';
         document.getElementById('join-body').style.display = 'block';
         document.getElementById('join-back').style.visibility = 'hidden';
@@ -402,6 +405,20 @@
             document.getElementById('join-body').style.display = 'none';
             document.getElementById('join-back').style.visibility = 'hidden';
             document.getElementById('join-success').style.display = 'flex';
+            // Paid plan chosen on a pricing card → go straight to Stripe checkout
+            // (the account exists + they're now logged in). Free → the dashboard.
+            if (_js.plan && _js.plan !== 'free') {
+                try {
+                    const sc = document.getElementById('join-success');
+                    const h = sc.querySelector('h3, .join-success-title'); if (h) h.textContent = 'Account created — taking you to checkout…';
+                    const co = await fetch('/api/stripe/checkout', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                        body: JSON.stringify({ tier: _js.plan, period: _js.period || 'monthly' })
+                    });
+                    const cd = await co.json().catch(() => ({}));
+                    if (co.ok && cd.url) { window.location.href = cd.url; return; }
+                } catch (_) { /* fall through to the dashboard — they can upgrade there */ }
+            }
             setTimeout(() => { window.location.href = '/pages/agent/dashboard.html'; }, 2200);
         } catch (e) {
             const err = document.getElementById('join-error');

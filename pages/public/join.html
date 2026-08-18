@@ -595,7 +595,12 @@
 
             window.jpSubscribe = function (tier) {
                 if (tier === 'free') { if (typeof window.openJoinForm === 'function') window.openJoinForm(); else window.location.href = '#join-form'; return; }
-                if (_gate.kind === 'logged_out') { window.location.href = '/agent-login?redirect=' + encodeURIComponent('/join'); return; }
+                if (_gate.kind === 'logged_out') {
+                    // Unified flow: sign up in the join form, then flow straight into
+                    // checkout for the plan they picked — no separate login wall.
+                    if (typeof window.openJoinForm === 'function') { window.openJoinForm({ plan: tier, period: _period }); return; }
+                    window.location.href = '/agent-login?redirect=' + encodeURIComponent('/join'); return;
+                }
                 if (_gate.kind === 'no_profile') { window.location.href = '/pages/agent/dashboard.html'; return; }
                 if (_gate.kind !== 'ready') return;
                 fetch('/api/stripe/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ tier: tier, period: _period }) })
