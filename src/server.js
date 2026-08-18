@@ -3080,7 +3080,7 @@ async function ensureTables() {
             VALUES
                 ('Founder',  'founder',  'Exclusive founding agent for a lake — gets 100% of that lake''s leads, plus top priority (most lottery weight) in their service-area towns.', 'Founder',  50),
                 ('Premium',  'premium',  'Premium network agent — competes in the weighted lead lottery in their service areas.',         'Premium',  150),
-                ('Free',     'free',     'Free community profile — listed on the site, but not featured, not in the lead rotation, and cannot post properties. Upgrade any time for matched leads, featured placement, and listings.', 'Free', 400)
+                ('Lake Agent', 'free',   'Lake Agent — a public profile listed on the site, but not featured, not in the lead rotation, and cannot post properties. Upgrade any time for matched leads, featured placement, and listings.', 'Lake Agent', 400)
             ON CONFLICT (code) DO UPDATE
                 SET name                = EXCLUDED.name,
                     description         = EXCLUDED.description,

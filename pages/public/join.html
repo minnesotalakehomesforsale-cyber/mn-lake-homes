@@ -497,18 +497,27 @@
         #join-pricing .jp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.35rem; align-items: stretch; }
         @media (max-width: 1024px) { #join-pricing .jp-grid { grid-template-columns: repeat(2, 1fr); max-width: 680px; margin: 0 auto; } }
         @media (max-width: 560px)  { #join-pricing .jp-grid { grid-template-columns: 1fr; max-width: 420px; } }
-        #join-pricing .jp-tier { background: #fff; border: 1px solid #e6eaf0; border-radius: 16px; padding: 2.25rem 1.9rem; display: flex; flex-direction: column; position: relative; min-height: 340px; }
-        #join-pricing .jp-tier.hi { border: 2px solid #1d6df2; box-shadow: 0 12px 30px rgba(29,109,242,0.12); }
-        #join-pricing .jp-badge { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); background: #1d6df2; color: #fff; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; padding: 0.25rem 0.7rem; border-radius: 999px; }
-        #join-pricing .jp-tier h3 { font-size: 1.3rem; font-weight: 800; margin: 0 0 0.3rem; color: #1a202c; }
-        #join-pricing .jp-tier .tl { font-size: 0.85rem; color: #718096; line-height: 1.45; margin: 0 0 1.1rem; min-height: 3.4rem; }
-        #join-pricing .jp-amt { font-size: 2.4rem; font-weight: 800; letter-spacing: -1.5px; color: #1a202c; line-height: 1; }
-        #join-pricing .jp-per-lbl { font-size: 0.85rem; color: #4a5568; font-weight: 600; }
-        #join-pricing .jp-note { font-size: 0.74rem; color: #a0aec0; min-height: 1.1rem; margin: 0.35rem 0 1.25rem; }
-        #join-pricing .jp-cta { margin-top: auto; background: #1d6df2; color: #fff; border: none; border-radius: 999px; padding: 0.8rem 1rem; font: inherit; font-weight: 700; cursor: pointer; }
-        #join-pricing .jp-cta:hover { background: #155bc8; }
-        #join-pricing .jp-cta[disabled] { background: #cbd5e0; cursor: default; }
-        #join-pricing .jp-tier.free .jp-cta { background: #1a202c; }
+        #join-pricing .jp-tier { background: #fff; border: 1px solid #e6eaf0; border-radius: 18px; padding: 2.6rem 1.9rem 2rem; display: flex; flex-direction: column; position: relative; min-height: 520px; transition: transform .2s var(--ease-out, ease), box-shadow .2s ease, border-color .2s ease; }
+        #join-pricing .jp-tier:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(16,24,40,0.10); border-color: #cbd8ea; }
+        #join-pricing .jp-tier.hi { border: 2px solid #1d6df2; box-shadow: 0 16px 40px rgba(29,109,242,0.16); }
+        #join-pricing .jp-tier.hi:hover { box-shadow: 0 22px 50px rgba(29,109,242,0.22); }
+        #join-pricing .jp-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #1d6df2; color: #fff; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; padding: 0.3rem 0.85rem; border-radius: 999px; box-shadow: 0 4px 12px rgba(29,109,242,0.35); }
+        #join-pricing .jp-tier h3 { font-size: 1.4rem; font-weight: 800; margin: 0 0 0.35rem; color: #1a202c; letter-spacing: -0.3px; }
+        #join-pricing .jp-tier .tl { font-size: 0.9rem; color: #718096; line-height: 1.5; margin: 0 0 1.25rem; min-height: 3.9rem; }
+        #join-pricing .jp-amt { font-size: 2.7rem; font-weight: 800; letter-spacing: -1.5px; color: #1a202c; line-height: 1; }
+        #join-pricing .jp-per-lbl { font-size: 0.9rem; color: #4a5568; font-weight: 600; }
+        #join-pricing .jp-note { font-size: 0.76rem; color: #a0aec0; min-height: 1.1rem; margin: 0.4rem 0 1.4rem; }
+        /* Benefit list */
+        #join-pricing .jp-feats { list-style: none; margin: 0 0 1.6rem; padding: 1.4rem 0 0; border-top: 1px solid #eef2f7; display: flex; flex-direction: column; gap: 0.7rem; }
+        #join-pricing .jp-feat { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.88rem; line-height: 1.4; color: #2d3748; }
+        #join-pricing .jp-feat .jp-mk { flex-shrink: 0; width: 1.15rem; height: 1.15rem; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 800; background: #e7f0ff; color: #1d6df2; margin-top: 0.05rem; }
+        #join-pricing .jp-feat.neg { color: #a0aec0; }
+        #join-pricing .jp-feat.neg .jp-mk { background: #f1f4f8; color: #b0b8c4; }
+        #join-pricing .jp-feat-head { list-style: none; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin: 0.2rem 0 0.1rem; }
+        #join-pricing .jp-cta { margin-top: auto; background: #1d6df2; color: #fff; border: none; border-radius: 999px; padding: 0.95rem 1rem; font: inherit; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: background .15s; }
+        #join-pricing .jp-cta:hover:not([disabled]) { background: #155bc8; }
+        #join-pricing .jp-cta[disabled] { background: #eef2f7; color: #94a3b8; cursor: default; }
+        #join-pricing .jp-tier.free .jp-cta:not([disabled]) { background: #1a202c; }
         #join-pricing .jp-per { border: none; background: transparent; padding: 0.45rem 1.1rem; border-radius: 999px; font: inherit; font-weight: 700; font-size: 0.85rem; color: #4a5568; cursor: pointer; }
         #join-pricing .jp-per.on { background: #1a202c; color: #fff; }
     </style>
@@ -516,7 +525,7 @@
         <div style="max-width: 1180px; margin: 0 auto;">
             <div style="text-align: center; margin-bottom: 0.5rem;">
                 <h2 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; margin: 0 0 0.6rem; color: #1a202c;">Simple, flat pricing</h2>
-                <p style="color: #4a5568; font-size: 1.05rem; max-width: 560px; margin: 0 auto; line-height: 1.6;"><strong>Start free with a public profile</strong>, then upgrade any time. No commissions, no referral fees, cancel whenever.</p>
+                <p style="color: #4a5568; font-size: 1.05rem; max-width: 560px; margin: 0 auto; line-height: 1.6;"><strong>Start with a public profile at no cost</strong>, then upgrade any time. No commissions, no referral fees, cancel whenever.</p>
             </div>
             <div style="display: flex; justify-content: center; margin: 1.75rem 0 2.5rem;">
                 <div style="display: inline-flex; background: #e6eaf0; border-radius: 999px; padding: 4px;">
@@ -555,20 +564,30 @@
                     var note = isFree ? 'No card required · upgrade any time'
                         : (_period === 'annual' ? 'Billed annually · ' + jpDollars(Math.round(price / 12)) + ' / mo' : 'Billed monthly · cancel anytime');
                     var label, disabled = false;
-                    if (isFree) { label = _gate.kind === 'logged_out' ? 'Get started free' : (isCurrent ? '✓ Your plan' : 'Free profile included'); disabled = _gate.kind !== 'logged_out'; }
+                    if (isFree) { label = _gate.kind === 'logged_out' ? 'Get started' : (isCurrent ? '✓ Your plan' : 'Included'); disabled = _gate.kind !== 'logged_out'; }
                     else if (isCurrent) { label = '✓ Current plan'; disabled = true; }
                     else if (_gate.kind === 'logged_out') { label = 'Get started'; }
                     else if (_gate.kind === 'wrong_role') { label = 'Agent account required'; disabled = true; }
                     else if (_gate.kind === 'no_profile') { label = 'Create your profile first'; }
                     else if (!stripeReady) { label = 'Coming soon'; disabled = true; }
                     else { label = 'Upgrade to ' + t.name; }
+                    // Benefit list — ✓ for what you get, a muted dash for limitations,
+                    // "Everything in X, plus:" rendered as a divider so upgrades read
+                    // as additive.
+                    var feats = (Array.isArray(t.features) ? t.features : []).map(function (f) {
+                        var s = String(f);
+                        if (/^everything in/i.test(s)) return '<li class="jp-feat-head">' + jpEsc(s.replace(/:\s*$/, '')) + '</li>';
+                        var neg = /^(not|no |cannot|can’t|can't)/i.test(s);
+                        return '<li class="jp-feat' + (neg ? ' neg' : '') + '"><span class="jp-mk">' + (neg ? '–' : '✓') + '</span><span>' + jpEsc(s) + '</span></li>';
+                    }).join('');
                     return '<div class="jp-tier ' + (t.highlight ? 'hi' : '') + (isFree ? ' free' : '') + '">'
                         + (t.highlight ? '<span class="jp-badge">Recommended</span>' : '')
                         + '<h3>' + jpEsc(t.name) + '</h3>'
                         + '<p class="tl">' + jpEsc(t.tagline) + '</p>'
-                        + '<div><span class="jp-amt">' + (isFree ? 'Free' : jpDollars(price)) + '</span>'
+                        + '<div><span class="jp-amt">' + (isFree ? '$0' : jpDollars(price)) + '</span>'
                         + (isFree ? '' : ' <span class="jp-per-lbl">/ ' + (_period === 'annual' ? 'yr' : 'mo') + '</span>') + '</div>'
                         + '<div class="jp-note">' + jpEsc(note) + '</div>'
+                        + (feats ? '<ul class="jp-feats">' + feats + '</ul>' : '')
                         + '<button class="jp-cta" ' + (disabled ? 'disabled' : '') + ' onclick="jpSubscribe(\'' + jpEsc(t.tier) + '\')">' + jpEsc(label) + '</button>'
                         + '</div>';
                 }).join('');

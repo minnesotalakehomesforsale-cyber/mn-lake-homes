@@ -587,7 +587,7 @@ function buildAgentPricing() {
         tiers: [
             {
                 tier: 'free',
-                name: 'Free',
+                name: 'Lake Agent',
                 tagline: 'Get listed — a public agent profile at no cost. Upgrade any time for leads.',
                 features: [
                     'Public agent profile on the site',
@@ -673,7 +673,7 @@ exports.renderJoinTiersHtml = function renderJoinTiersHtml() {
     const { tiers } = buildAgentPricing();
     return (tiers || []).map(t => {
         const isFree = t.is_free || t.tier === 'free';
-        const amt = isFree ? 'Free' : dollars(t.monthly_price);
+        const amt = isFree ? '$0' : dollars(t.monthly_price);
         const note = isFree ? 'No card required · upgrade any time' : 'Billed monthly · cancel anytime';
         const feats = (t.features || []).map(f => `<li>${esc(f)}</li>`).join('');
         return `<div class="jp-tier ${t.highlight ? 'hi' : ''}${isFree ? ' free' : ''}">`

@@ -468,8 +468,8 @@
                     <div id="banner-free" style="display:none; margin-top:1.5rem; background:linear-gradient(135deg,#0f2b46,#1d6df2); color:#fff; border-radius:14px; padding:1.5rem 1.75rem;">
                         <div style="display:flex; gap:1.25rem; align-items:center; flex-wrap:wrap; justify-content:space-between;">
                             <div style="flex:1; min-width:240px;">
-                                <div style="font-weight:800; font-size:1.15rem; margin-bottom:0.35rem;">You're on the Free plan</div>
-                                <p style="margin:0; opacity:0.9; font-size:0.93rem; line-height:1.5;">Your profile is live, but Free agents aren't in the lead rotation, aren't featured, and can't post properties. Upgrade to start receiving matched leads and list your homes.</p>
+                                <div style="font-weight:800; font-size:1.15rem; margin-bottom:0.35rem;">You're on the Lake Agent plan</div>
+                                <p style="margin:0; opacity:0.9; font-size:0.93rem; line-height:1.5;">Your profile is live, but the Lake Agent plan isn't in the lead rotation, isn't featured, and can't post properties. Upgrade to start receiving matched leads and list your homes.</p>
                             </div>
                             <a href="/pricing" style="flex-shrink:0; background:#fff; color:#0f2b46; border-radius:10px; padding:0.8rem 1.4rem; font-weight:800; text-decoration:none; font-size:0.95rem;">Upgrade my plan →</a>
                         </div>
@@ -1567,7 +1567,7 @@
             const joinUrl = location.origin + '/join';
             const pEl = document.getElementById('ref-profile-url'); if (pEl) pEl.value = profileUrl;
             const jEl = document.getElementById('ref-join-url');   if (jEl) jEl.value = joinUrl;
-            const msg = "Thought of you — I list on MinnesotaLakeHomesForSale.com, a lake-focused network that matches buyers and sellers with local lake-home agents. If you work lake markets it's worth a look, and you can start with a free profile here: " + joinUrl;
+            const msg = "Thought of you — I list on MinnesotaLakeHomesForSale.com, a lake-focused network that matches buyers and sellers with local lake-home agents. If you work lake markets it's worth a look, and you can start with a Lake Agent profile here: " + joinUrl;
             const mEl = document.getElementById('ref-message'); if (mEl) mEl.value = msg;
             const eEl = document.getElementById('ref-email');
             if (eEl) eEl.href = 'mailto:?subject=' + encodeURIComponent('A lake-home agent network worth a look') + '&body=' + encodeURIComponent(msg);
@@ -2540,7 +2540,7 @@
                 // Publishing is free, so this copy is about UPGRADING, not going live.
                 billEl.textContent = 'Not subscribed';
                 btn.textContent = 'Choose a plan →';
-                helpEl.textContent = 'Your public profile is free. Upgrade to receive matched leads, featured placement, and property listings.';
+                helpEl.textContent = 'Your Lake Agent profile is live. Upgrade to receive matched leads, featured placement, and property listings.';
                 renewT.style.display = 'none';
                 statusT.style.display = 'none';
                 return;

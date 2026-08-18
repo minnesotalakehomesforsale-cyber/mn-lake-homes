@@ -193,8 +193,8 @@
                 let disabled, ctaLabel;
                 if (isFree) {
                     if (isCurrent)                          { disabled = true;  ctaLabel = '✓ Your current plan'; }
-                    else if (_gateState.kind === 'logged_out') { disabled = false; ctaLabel = 'Get started free'; }
-                    else                                    { disabled = true;  ctaLabel = 'Free profile included'; }
+                    else if (_gateState.kind === 'logged_out') { disabled = false; ctaLabel = 'Get started'; }
+                    else                                    { disabled = true;  ctaLabel = 'Included'; }
                 } else if (isCurrent) {
                     disabled = true; ctaLabel = '✓ Current plan';
                 } else {
@@ -211,7 +211,7 @@
                         <h3>${esc(t.name)}</h3>
                         <p class="tagline">${esc(t.tagline)}</p>
                         <div class="price-row">
-                            <span class="price-amt">${isFree ? 'Free' : dollars(price)}</span>
+                            <span class="price-amt">${isFree ? '$0' : dollars(price)}</span>
                             ${isFree ? '' : `<span class="price-sub">/ ${_period === 'annual' ? 'year' : 'month'}</span>`}
                         </div>
                         <div class="price-note">${isFree ? 'No card required · upgrade any time' : esc(note)}</div>
