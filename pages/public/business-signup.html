@@ -13,6 +13,13 @@
 <script src="../../components/components.js" defer></script>
 
     <style>
+        /* Base text color for this light page. The shared style.css sets body
+           color to var(--text-primary) — near-WHITE for the dark public site —
+           so every heading with no explicit color (Create your account, Three
+           small steps, Three plans, the value cards…) inherited white and
+           vanished. The one dark element (the lakeside-image band) wraps its
+           text in a color:#fff div, so it's unaffected. */
+        body { color: #1a202c; }
         :root {
             --brand: #d97706;
             --brand-dark: #b45309;
