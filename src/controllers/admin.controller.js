@@ -2419,6 +2419,44 @@ const getAgentEmailHistory = async (req, res) => {
     }
 };
 
+// GET /api/admin/email-log/summary — the whole email_log picture in one call:
+// the category×status breakdown (attempted / errored / since when), the earliest
+// error date (compare to 2026-07-03 = the cockpit-MRR bug date), plus the actual
+// error rows with subject + recipient + detail so lead-notification failures can
+// be identified by subject and the lead hand-forwarded. NOTE: status='error'
+// captures sends the provider REJECTED; a Resend 200-then-drop logs as 'sent', so
+// treat these counts as a floor on the damage, not a ceiling.
+const emailLogSummary = async (req, res) => {
+    try {
+        const [breakdown, earliest, leadErrors, recentErrors] = await Promise.all([
+            pool.query(`SELECT category, status, COUNT(*)::int AS count,
+                               MIN(created_at) AS first_at, MAX(created_at) AS last_at
+                          FROM email_log GROUP BY category, status ORDER BY category, status`),
+            pool.query(`SELECT MIN(created_at) AS earliest_error FROM email_log WHERE status = 'error'`),
+            // Best-effort surface of the urgent ones: a lead notification that
+            // errored means a consumer lead never reached an agent.
+            pool.query(`SELECT category, subject, to_email, detail, created_at
+                          FROM email_log
+                         WHERE status = 'error'
+                           AND (category ILIKE '%lead%' OR subject ILIKE '%lead%' OR subject ILIKE '%match%')
+                         ORDER BY created_at DESC LIMIT 500`),
+            pool.query(`SELECT category, subject, to_email, detail, created_at
+                          FROM email_log WHERE status = 'error'
+                         ORDER BY created_at DESC LIMIT 500`),
+        ]);
+        res.json({
+            breakdown: breakdown.rows,
+            earliest_error: earliest.rows[0].earliest_error,
+            lead_errors: leadErrors.rows,      // ← urgent: leads that never reached an agent
+            recent_errors: recentErrors.rows,  // every error, newest first, to catch what the lead filter misses
+            note: "status='error' = provider rejected. A 200-then-drop logs as 'sent', so these are a floor, not a ceiling.",
+        });
+    } catch (err) {
+        console.error('[emailLogSummary]', err.message);
+        res.status(500).json({ error: 'Failed to load email-log summary.' });
+    }
+};
+
 // ─── Tag launch presets ──────────────────────────────────────────────────────
 // One-shot bulk active flip on the tags table. Currently supports the
 // 'top-20-mn-cities' preset — activates the 20 largest MN cities by 2020
@@ -3556,6 +3594,7 @@ module.exports = {
     resumeAgentSubscription,
     sendAgentBillingEmail,
     getAgentEmailHistory,
+    emailLogSummary,
     getSeoAudit,
     getLeadReconciliation,
     getRoutingSla,

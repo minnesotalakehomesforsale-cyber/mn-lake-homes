@@ -189,6 +189,8 @@ router.delete('/:id/notes/:noteId',  verifyToken, requireRole(['admin', 'super_a
 // Payments tab on agent-review.html.
 router.get   ('/:id/payments',       verifyToken, requireRole(['admin', 'super_admin']), adminController.getPaymentsForAgent);
 router.get   ('/:id/emails',         verifyToken, requireRole(['admin', 'super_admin']), adminController.getAgentEmailHistory);
+// Whole-picture email_log health (category×status, earliest error, error rows).
+router.get   ('/email-log/summary',  verifyToken, requireRole(['admin', 'super_admin']), adminController.emailLogSummary);
 
 // Impersonate a regular user (log in as them). Specific prefix — before /:id.
 router.post('/users/:id/impersonate', verifyToken, requireRole(['admin', 'super_admin']), adminController.impersonateUser);
