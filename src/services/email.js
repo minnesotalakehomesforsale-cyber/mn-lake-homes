@@ -1415,6 +1415,28 @@ function sendAgentProfileNudge({ to, first_name, missing = [], nudgeNumber = 1 }
     });
 }
 
+// AL-13 — exit survey. One free-text question on cancellation, written to look
+// typed and personal (no template chrome, no CTA button), and set to reply
+// straight back to the owner's inbox. The first fifty answers are the roadmap.
+function sendAgentExitSurvey({ to, first_name }) {
+    if (!to) return { skipped: true };
+    const name = first_name || 'there';
+    const owner = process.env.OWNER_EMAIL || process.env.ADMIN_EMAIL || process.env.LEAD_NOTIFY_EMAIL || 'hburnside99@gmail.com';
+    return sendEmail({
+        to,
+        replyTo: owner,
+        category: 'transactional',
+        subject: 'one question',
+        html: `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;color:#1a202c;font-size:15px;line-height:1.65;">
+            <p style="margin:0 0 14px;">Hi ${_esc(name)},</p>
+            <p style="margin:0 0 14px;">I saw your MN Lake Homes subscription ended. No hard feelings at all — your profile stays live on the free tier.</p>
+            <p style="margin:0 0 14px;">One question, and it genuinely helps me: <b>what would we have had to do for you to stay?</b></p>
+            <p style="margin:0 0 14px;">Just hit reply — one line is plenty.</p>
+            <p style="margin:0;">Thanks,<br>Hunter</p>
+        </div>`,
+    });
+}
+
 function sendAgentPaymentFailed({ to, name, attempt = 1, final = false, nextAttempt = null }) {
     if (!to) return { skipped: true };
     const first = (name || '').split(' ')[0] || 'there';
@@ -1474,6 +1496,7 @@ module.exports = {
     sendManualLeadOffer,
     sendLeadAgentMatched,
     sendAgentProfileNudge,
+    sendAgentExitSurvey,
     sendAgentMessageNotification,
     sendCashOfferToPartner,
     sendBusinessWelcome,

@@ -1066,6 +1066,18 @@ exports.handleWebhook = async (req, res) => {
                         userId: a.user_id, agentId: a.agent_id, email: a.email,
                         name: a.display_name || a.full_name,
                     }).catch(e => console.warn('[win-back enqueue]', e.message));
+
+                    // AL-13 — exit survey. Auto-capture the churn reason Stripe already
+                    // collected in its cancel flow, then send the one-question survey
+                    // from the owner's address. exit_survey_response is filled from the
+                    // reply (lands in the owner's inbox). Collecting the data is the work.
+                    const cd = subscription.cancellation_details || {};
+                    const churnReason = [cd.feedback, cd.comment].filter(Boolean).join(' — ') || null;
+                    pool.query(`UPDATE agents SET churn_reason = $1 WHERE id = $2`, [churnReason, a.agent_id])
+                        .catch(e => console.warn('[exit-survey] churn_reason save failed:', e.message));
+                    try {
+                        emailService.sendAgentExitSurvey({ to: a.email, first_name: (a.display_name || a.full_name || '').split(' ')[0] });
+                    } catch (e) { console.warn('[exit-survey] send failed:', e.message); }
                 }
                 break;
             }

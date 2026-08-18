@@ -2849,6 +2849,10 @@ async function ensureTables() {
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS referral_fees_saved_usd NUMERIC NOT NULL DEFAULT 0;
             -- AL-07 (Route A, +72h): one-time done-for-you SMS to draft agents.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS dfy_sms_sent_at TIMESTAMPTZ;
+            -- AL-13: exit survey. churn_reason auto-captured from Stripe's
+            -- cancellation feedback; exit_survey_response holds the agent's reply.
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS churn_reason         TEXT;
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS exit_survey_response TEXT;
             -- Agent-authored FAQ answers, keyed by the fixed question keys in
             -- services/agent-faq.js. Only answered questions render publicly.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS faq JSONB NOT NULL DEFAULT '{}'::jsonb;
