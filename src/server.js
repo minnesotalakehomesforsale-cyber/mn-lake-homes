@@ -2856,6 +2856,12 @@ async function ensureTables() {
             -- AL-14: last time a churned agent got the "a buyer came through on
             -- your lake" nudge (rate-limited to once per 30 days).
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS last_lead_winback_at TIMESTAMPTZ;
+            -- AL-03: one authoritative lifecycle state per agent, written only by
+            -- setLifecycleState() (src/services/lifecycle.js). Sweeps will filter on
+            -- it in a later slice; for now it is populated but nothing reads it.
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS lifecycle_state        TEXT NOT NULL DEFAULT 'draft';
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS lifecycle_state_since  TIMESTAMPTZ;
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS lifecycle_state_reason TEXT;
             -- Agent-authored FAQ answers, keyed by the fixed question keys in
             -- services/agent-faq.js. Only answered questions render publicly.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS faq JSONB NOT NULL DEFAULT '{}'::jsonb;
@@ -2928,6 +2934,19 @@ async function ensureTables() {
                 created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
             CREATE INDEX IF NOT EXISTS idx_agent_contact_notes_contact ON agent_contact_notes(contact_id, created_at DESC);
+
+            -- AL-03: append-only audit of every lifecycle_state transition. The
+            -- only way to answer "why did this agent get that email" months later.
+            CREATE TABLE IF NOT EXISTS agent_lifecycle_events (
+                id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                agent_id   UUID NOT NULL,
+                from_state TEXT,
+                to_state   TEXT NOT NULL,
+                reason     TEXT,
+                source     TEXT NOT NULL DEFAULT 'system',
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_agent_lifecycle_events_agent ON agent_lifecycle_events(agent_id, created_at DESC);
         `).catch(e => console.warn('[agent_contacts tables]', e.message));
 
         // In-app agent notification centre (portal #11) — gives the portal a
@@ -4506,6 +4525,9 @@ async function ensureTables() {
         await seedLakeIndexability();
         await seedMarketTiers();
         await seedTier1Content();
+        // AL-03: one-time lifecycle_state backfill (guarded by seed_flags). Dark —
+        // populates the column + event log; no sweep filters on it yet.
+        await require('./services/lifecycle').backfillLifecycleStates();
         await seedTier2Content();
         await seedBrokerages();
         await reconcilePartnerBusinesses();
