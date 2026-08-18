@@ -433,6 +433,13 @@ const login = async (req, res) => {
 
         // Update last_login_at
         await pool.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [user.id]);
+        // AL-03: an agent logging in reactivates them from dormant_draft → draft
+        // (re-enters Route A). Fire-and-forget — never block the login.
+        if (user.role === 'agent') {
+            pool.query('SELECT id FROM agents WHERE user_id = $1 LIMIT 1', [user.id])
+                .then(r => r.rows[0] && require('../services/lifecycle').onAgentLogin(r.rows[0].id))
+                .catch(() => {});
+        }
 
         const token = jwt.sign(
             { userId: user.id, role: user.role, pwd_iat: user.pwd_iat || null },

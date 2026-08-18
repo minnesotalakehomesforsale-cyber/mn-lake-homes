@@ -296,12 +296,14 @@ const publishProfile = async (req, res) => {
             });
         }
 
-        await pool.query(
+        const pub = await pool.query(
             `UPDATE agents
                 SET is_published = true, profile_status = 'published', updated_at = NOW()
-              WHERE user_id = $1`,
+              WHERE user_id = $1 RETURNING id`,
             [req.user.userId]
         );
+        // AL-03: draft/dormant_draft → free_live (leaves a paying agent alone).
+        if (pub.rows[0]) await require('../services/lifecycle').onProfilePublished(pub.rows[0].id).catch(() => {});
         res.json({ success: true, is_published: true, profile_status: 'published' });
     } catch (err) {
         console.error('[publishProfile]', err.message);
@@ -318,10 +320,12 @@ const unpublishProfile = async (req, res) => {
         const r = await pool.query(
             `UPDATE agents
                 SET is_published = false, profile_status = 'draft', updated_at = NOW()
-              WHERE user_id = $1 AND profile_status <> 'suspended'`,
+              WHERE user_id = $1 AND profile_status <> 'suspended' RETURNING id`,
             [req.user.userId]
         );
         if (r.rowCount === 0) return res.status(404).json({ error: 'Agent profile not found.' });
+        // AL-03: free_live → draft (leaves a paying agent who hides their profile alone).
+        await require('../services/lifecycle').onProfileUnpublished(r.rows[0].id).catch(() => {});
         res.json({ success: true, is_published: false, profile_status: 'draft' });
     } catch (err) {
         console.error('[unpublishProfile]', err.message);

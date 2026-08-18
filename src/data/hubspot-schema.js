@@ -64,6 +64,19 @@ const SUBSCRIPTION_STATUS_OPTIONS = [
     { label: 'None',      value: 'none' },
 ];
 
+// AL-03 — the one authoritative agent lifecycle state, mirrored from our DB one
+// direction (Stripe/our app is the source of truth; HubSpot never writes back).
+// Set every HubSpot workflow to UNENROL when this property changes.
+const LIFECYCLE_STATE_OPTIONS = [
+    { label: 'Lead',           value: 'lead' },
+    { label: 'Draft',          value: 'draft' },
+    { label: 'Dormant draft',  value: 'dormant_draft' },
+    { label: 'Free (live)',    value: 'free_live' },
+    { label: 'Paying',         value: 'paying' },
+    { label: 'At risk',        value: 'at_risk' },
+    { label: 'Churned',        value: 'churned' },
+];
+
 // Lead grade (B1) — stamped at submission, never retroactively. Unqualified
 // leads are excluded from every lead-density count. The exact grading rules +
 // the unqualified_reason option set live in the Measurement doc; this provisions
@@ -108,6 +121,8 @@ const CONTACT_PROPERTIES = [
     { name: 'subscription_status', label: 'Subscription Status', type: 'enumeration', fieldType: 'select', groupName: CONTACT_PROPERTY_GROUP.name, options: ordered(SUBSCRIPTION_STATUS_OPTIONS) },
     // Set when a paying contact cancels (A2) so churn is queryable for win-back.
     { name: 'churned_at', label: 'Churned At', type: 'datetime', fieldType: 'date', groupName: CONTACT_PROPERTY_GROUP.name },
+    // AL-03 — authoritative lifecycle state, one-direction mirror from our DB.
+    { name: 'lifecycle_state', label: 'Lifecycle State', type: 'enumeration', fieldType: 'select', groupName: CONTACT_PROPERTY_GROUP.name, options: ordered(LIFECYCLE_STATE_OPTIONS) },
     // Lead grade (B1). unqualified_reason is intentionally NOT created yet — its
     // option set comes from the Measurement doc; add it there to avoid churning
     // enum values in HubSpot.

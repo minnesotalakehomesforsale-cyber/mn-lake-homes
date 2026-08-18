@@ -99,6 +99,10 @@ async function runDunningSweep() {
                     const dg = await downgradeAgentToFree(row.subscription_id);
                     if (dg) {
                         downgraded++;
+                        // AL-03: dunning day-7 downgrade → at_risk becomes free_live.
+                        // (Only here, not inside downgradeAgentToFree, which also runs
+                        // on cancel where the agent should become churned instead.)
+                        await require('./lifecycle').setLifecycleState(dg.id, 'free_live', 'dunning day-7 downgrade', 'dunning').catch(() => {});
                         try {
                             require('./agent-notify').notifyAgent(dg.id, {
                                 type: 'billing',

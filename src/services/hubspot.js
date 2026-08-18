@@ -99,7 +99,7 @@ const QUAL_PROPS = ['target_lake', 'intent_type', 'price_band', 'lead_source_det
 // to HubSpot's built-in hs_google_click_id / hs_facebook_click_id (see remap in syncContact).
 const ATTR_PROPS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'landing_page', 'landing_page_lake', 'landing_page_town', 'referrer', 'hs_google_click_id', 'hs_facebook_click_id'];
 // Billing state mirrored from Stripe (T074 / A2).
-const BILLING_PROPS = ['subscription_status', 'churned_at'];
+const BILLING_PROPS = ['subscription_status', 'churned_at', 'lifecycle_state'];
 const ALLOWED_PROPS = new Set([...BUILTIN_PROPS, ...QUAL_PROPS, ...ATTR_PROPS, ...BILLING_PROPS]);
 
 function whitelistProps(props, allowed = ALLOWED_PROPS) {

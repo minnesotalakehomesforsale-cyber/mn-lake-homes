@@ -888,10 +888,15 @@ exports.handleWebhook = async (req, res) => {
                 });
 
                 // B3: a newly-paying agent auto-claims any held leads on their lakes.
+                // AL-03: and transitions to 'paying' (which cancels any pending
+                // win-back/dunning for them).
                 try {
                     const aid = await pool.query(`SELECT id FROM agents WHERE user_id = $1 LIMIT 1`, [userId]);
-                    if (aid.rows[0]) require('./lead.controller').releaseHeldLeads(aid.rows[0].id);
-                } catch (e) { console.warn('[Stripe Webhook] releaseHeldLeads failed:', e.message); }
+                    if (aid.rows[0]) {
+                        require('./lead.controller').releaseHeldLeads(aid.rows[0].id);
+                        await require('../services/lifecycle').setLifecycleState(aid.rows[0].id, 'paying', 'subscription activated', 'stripe');
+                    }
+                } catch (e) { console.warn('[Stripe Webhook] releaseHeldLeads/lifecycle failed:', e.message); }
 
                 // "Your profile is live" email — fires once on first payment.
                 // Renewals come through invoice.payment_succeeded and don't
@@ -1059,25 +1064,35 @@ exports.handleWebhook = async (req, res) => {
                     target: { type: 'user', id: agentRows[0].user_id, label: 'agent' },
                     details: { subscription_id: subscriptionId },
                 });
-                // Win-back sequence (skip comped agents — they never paid).
+                // Churn handling — skip comped agents (never billed), and skip any
+                // subscription cancelled before its first invoice (an abandoned
+                // checkout is not a churn: no churned state, no win-back, no "what
+                // would we have had to do to stay"). Defaults to treating it as paid
+                // if the payments lookup errors, so a real churn is never dropped.
                 if (!agentRows[0].tier_comped) {
                     const a = agentRows[0];
-                    require('../services/win-back').enqueueWinBack({
-                        userId: a.user_id, agentId: a.agent_id, email: a.email,
-                        name: a.display_name || a.full_name,
-                    }).catch(e => console.warn('[win-back enqueue]', e.message));
+                    const paid = await pool.query(
+                        `SELECT 1 FROM payments WHERE user_id = $1 AND status = 'paid' LIMIT 1`, [a.user_id])
+                        .then(r => r.rowCount > 0).catch(() => true);
+                    if (paid) {
+                        // AL-03: → churned (win-back.js owns this state once slice-2 sweeps flip).
+                        await require('../services/lifecycle').setLifecycleState(a.agent_id, 'churned', 'subscription canceled', 'stripe');
+                        require('../services/win-back').enqueueWinBack({
+                            userId: a.user_id, agentId: a.agent_id, email: a.email,
+                            name: a.display_name || a.full_name,
+                        }).catch(e => console.warn('[win-back enqueue]', e.message));
 
-                    // AL-13 — exit survey. Auto-capture the churn reason Stripe already
-                    // collected in its cancel flow, then send the one-question survey
-                    // from the owner's address. exit_survey_response is filled from the
-                    // reply (lands in the owner's inbox). Collecting the data is the work.
-                    const cd = subscription.cancellation_details || {};
-                    const churnReason = [cd.feedback, cd.comment].filter(Boolean).join(' — ') || null;
-                    pool.query(`UPDATE agents SET churn_reason = $1 WHERE id = $2`, [churnReason, a.agent_id])
-                        .catch(e => console.warn('[exit-survey] churn_reason save failed:', e.message));
-                    try {
-                        emailService.sendAgentExitSurvey({ to: a.email, first_name: (a.display_name || a.full_name || '').split(' ')[0] });
-                    } catch (e) { console.warn('[exit-survey] send failed:', e.message); }
+                        // AL-13 — exit survey. Auto-capture the churn reason Stripe already
+                        // collected in its cancel flow, then send the one-question survey from
+                        // the owner's address. exit_survey_response fills from the reply.
+                        const cd = subscription.cancellation_details || {};
+                        const churnReason = [cd.feedback, cd.comment].filter(Boolean).join(' — ') || null;
+                        pool.query(`UPDATE agents SET churn_reason = $1 WHERE id = $2`, [churnReason, a.agent_id])
+                            .catch(e => console.warn('[exit-survey] churn_reason save failed:', e.message));
+                        try {
+                            emailService.sendAgentExitSurvey({ to: a.email, first_name: (a.display_name || a.full_name || '').split(' ')[0] });
+                        } catch (e) { console.warn('[exit-survey] send failed:', e.message); }
+                    }
                 }
                 break;
             }
@@ -1270,6 +1285,8 @@ exports.handleWebhook = async (req, res) => {
                             agentId: ag.agent_id, userId: ag.user_id, email: ag.email, subscriptionId: invoice.subscription,
                         });
                     } catch (e) { console.warn('[Stripe Webhook] enqueueDunning failed:', e.message); }
+                    // AL-03: payment failing → at_risk (dunning.js owns this state).
+                    await require('../services/lifecycle').setLifecycleState(ag.agent_id, 'at_risk', 'payment failed', 'stripe');
                     // In-app notification centre (#11) — once, on first failure.
                     try {
                         require('../services/agent-notify').notifyAgent(ag.agent_id, {
@@ -1307,9 +1324,15 @@ exports.handleWebhook = async (req, res) => {
                         SET is_published = true,
                             profile_status = 'published'
                       WHERE stripe_subscription_id = $1
-                      RETURNING user_id`,
+                      RETURNING id AS agent_id, user_id`,
                     [invoice.subscription]
                 );
+                // AL-03: a successful charge means paying. No-op for a normal renewal
+                // (already paying); on a recovery it flips at_risk→paying and cancels
+                // the in-flight dunning/win-back queues (see setLifecycleState).
+                if (agentRes.rowCount) {
+                    await require('../services/lifecycle').setLifecycleState(agentRes.rows[0].agent_id, 'paying', 'payment succeeded', 'stripe');
+                }
                 // Log against whichever table owned the subscription. Only
                 // billing_reason=subscription_cycle (renewals) and =subscription_create
                 // (first charge) are worth logging; ignore proration adjustments.

@@ -27,7 +27,7 @@ const ALLOWED = {
     lead:          ['draft', 'paying'],
     draft:         ['free_live', 'dormant_draft', 'paying'],
     dormant_draft: ['draft'],
-    free_live:     ['paying'],
+    free_live:     ['paying', 'draft'],   // draft = agent unpublished their profile
     paying:        ['at_risk', 'churned'],
     at_risk:       ['paying', 'free_live', 'churned'],
     churned:       ['paying', 'free_live'],
@@ -56,11 +56,56 @@ async function setLifecycleState(agentId, next, reason, source) {
             `INSERT INTO agent_lifecycle_events (agent_id, from_state, to_state, reason, source)
              VALUES ($1, $2, $3, $4, $5)`,
             [agentId, from, next, reason || null, source || 'system']);
+        // Entering a state ends the sequences owned by the states it comes from.
+        // 'paying' can be reached from 'churned' (win-back) or 'at_risk' (dunning);
+        // cancel both queues' pending rows so a recovered/resubscribed agent stops
+        // getting "we miss you" / "your card failed" mid-stream.
+        if (next === 'paying') {
+            await pool.query(`UPDATE win_back_queue SET canceled = TRUE WHERE agent_id = $1 AND sent_at IS NULL AND NOT canceled`, [agentId]).catch(() => {});
+            await pool.query(`UPDATE dunning_queue  SET status = 'canceled' WHERE agent_id = $1 AND status = 'pending'`, [agentId]).catch(() => {});
+        }
+        // Mirror to HubSpot, one direction (our DB is the source of truth; HubSpot
+        // never writes back). Best-effort + non-blocking so it never slows the
+        // webhook/login hot paths; no-op when HubSpot is unconfigured. The
+        // `lifecycle_state` property must be provisioned first (ensure-schema).
+        pool.query(`SELECT u.email FROM agents a JOIN users u ON u.id = a.user_id WHERE a.id = $1`, [agentId])
+            .then(r => { const email = r.rows[0] && r.rows[0].email; if (email) require('./hubspot').syncContact({ email, lifecycle_state: next }).catch(() => {}); })
+            .catch(() => {});
         return { changed: true, from, to: next };
     } catch (e) {
         console.warn('[lifecycle] setLifecycleState failed:', e.message);
         return { changed: false, error: e.message };
     }
+}
+
+// Conditional helpers so callers don't each re-implement "only from these states".
+// Publishing a profile moves a draft/dormant_draft agent to free_live, but must
+// NOT touch a paying/at_risk agent who re-publishes (they stay where they are).
+async function onProfilePublished(agentId) {
+    if (!agentId) return { changed: false };
+    const r = await pool.query(`SELECT lifecycle_state FROM agents WHERE id = $1`, [agentId]).catch(() => null);
+    const cur = r && r.rows[0] && r.rows[0].lifecycle_state;
+    if (cur === 'draft' || cur === 'dormant_draft') return setLifecycleState(agentId, 'free_live', 'profile published', 'agent');
+    return { changed: false, from: cur };
+}
+
+// Any login reactivates a dormant_draft agent back to draft (re-enters Route A).
+async function onAgentLogin(agentId) {
+    if (!agentId) return { changed: false };
+    const r = await pool.query(`SELECT lifecycle_state FROM agents WHERE id = $1`, [agentId]).catch(() => null);
+    const cur = r && r.rows[0] && r.rows[0].lifecycle_state;
+    if (cur === 'dormant_draft') return setLifecycleState(agentId, 'draft', 'logged in', 'auth');
+    return { changed: false, from: cur };
+}
+
+// Unpublishing sends a free_live agent back to draft (re-enters Route A). A
+// paying/at_risk agent who hides their profile stays where they are (still billed).
+async function onProfileUnpublished(agentId) {
+    if (!agentId) return { changed: false };
+    const r = await pool.query(`SELECT lifecycle_state FROM agents WHERE id = $1`, [agentId]).catch(() => null);
+    const cur = r && r.rows[0] && r.rows[0].lifecycle_state;
+    if (cur === 'free_live') return setLifecycleState(agentId, 'draft', 'profile unpublished', 'agent');
+    return { changed: false, from: cur };
 }
 
 // Derive the correct state for an existing agent row — first match wins, in the
@@ -135,4 +180,4 @@ async function backfillLifecycleStates() {
     }
 }
 
-module.exports = { STATES, setLifecycleState, deriveState, backfillLifecycleStates };
+module.exports = { STATES, setLifecycleState, deriveState, backfillLifecycleStates, onProfilePublished, onProfileUnpublished, onAgentLogin };

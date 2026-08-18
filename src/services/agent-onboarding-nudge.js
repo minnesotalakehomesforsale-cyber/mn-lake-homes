@@ -61,6 +61,19 @@ async function runProfileCompletionNudge() {
             } catch (e) { console.warn('[profile-nudge] one failed:', e.message); }
         }
         if (sent) console.log(`[profile-nudge] sent ${sent} finish-your-profile nudge(s)`);
+
+        // AL-03: a draft that's gone 21 days without publishing → dormant_draft
+        // (newsletter only; re-enters as draft on next login via onAgentLogin).
+        try {
+            const stale = await pool.query(
+                `SELECT id FROM agents
+                  WHERE lifecycle_state = 'draft' AND deleted_at IS NULL
+                    AND created_at < NOW() - INTERVAL '21 days'`);
+            for (const s of stale.rows) {
+                await require('./lifecycle').setLifecycleState(s.id, 'dormant_draft', '21 days without publishing', 'onboarding-nudge');
+            }
+            if (stale.rows.length) console.log(`[profile-nudge] ${stale.rows.length} draft(s) → dormant_draft`);
+        } catch (e) { console.warn('[profile-nudge] dormancy transition failed:', e.message); }
     } catch (e) {
         console.warn('[profile-nudge]', e.message);
     }
