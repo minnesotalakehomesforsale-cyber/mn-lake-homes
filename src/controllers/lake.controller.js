@@ -147,12 +147,16 @@ exports.list = async (req, res) => {
                 where.push(`status = $${params.length}`);
             }
         } else {
-            // Public callers see only published lakes that have a hero
-            // photo. Half-baked rows (slug-only, gradient placeholder)
-            // auto-hide from the public grid until a real photo is set —
-            // the moment hero_image_url is populated, the lake reappears.
+            // Public callers see published lakes worth browsing: a real photo OR
+            // real written content. Image dedupe nulled shared stock photos, so a
+            // lake with content now shows as a gradient-placeholder card rather than
+            // dropping out — matching the content-gated robots/sitemap. Truly empty
+            // slug-only rows still auto-hide.
             where.push(`status = 'published'`);
-            where.push(`hero_image_url IS NOT NULL AND hero_image_url <> ''`);
+            where.push(`(
+                (hero_image_url IS NOT NULL AND hero_image_url <> '')
+                OR COALESCE(intro_text,'') <> '' OR COALESCE(description,'') <> ''
+            )`);
         }
 
         // Join counts for the admin table view (linked agents + businesses).

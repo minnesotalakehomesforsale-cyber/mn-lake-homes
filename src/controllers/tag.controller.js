@@ -100,12 +100,16 @@ exports.list = async (req, res) => {
         if (active === 'true')  where.push(`t.active = TRUE`);
         if (active === 'false') where.push(`t.active = FALSE`);
         if (active !== 'true' && active !== 'false' && active !== 'all') where.push(`t.active = TRUE`);
-        // Public callers see only towns that have a hero photo. Half-baked
-        // rows (slug-only, gradient placeholder) auto-hide from the public
-        // grid until a real photo is set. Admins still see everything for
-        // curation, regardless of image state.
+        // Public callers see towns worth browsing: ones with a real photo OR real
+        // written content. Image dedupe nulled shared stock photos, so a curated
+        // town now shows as a gradient-placeholder card (the grid card handles that)
+        // rather than dropping out — matching the content-gated robots/sitemap.
+        // Truly empty slug-only rows still auto-hide. Admins see everything.
         if (!isAdmin(req)) {
-            where.push(`t.hero_image_url IS NOT NULL AND t.hero_image_url <> ''`);
+            where.push(`(
+                (t.hero_image_url IS NOT NULL AND t.hero_image_url <> '')
+                OR COALESCE(t.intro_text,'') <> '' OR COALESCE(t.description,'') <> ''
+            )`);
         }
         // When ?with_lakes=true, restrict to towns that have at least one
         // published lake attached — powers the public /towns browse page.
