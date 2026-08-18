@@ -43,8 +43,11 @@
 
         /* ── Hero banner image (full content width, below the head) ──────── */
         .post-banner-wrap { margin-block: 0.5rem 3.5rem; }
-        .post-banner { border-radius: 22px; overflow: hidden; aspect-ratio: 21 / 9; background: linear-gradient(135deg, #1d6df2 0%, #155bc8 100%); box-shadow: 0 24px 60px rgba(16,24,40,0.14); }
-        .post-banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        /* Bulletproof: min-height guarantees the box has height even if aspect-ratio
+           is ignored, and the img is absolutely positioned to fill it — so the
+           banner can never collapse to nothing. */
+        .post-banner { position: relative; width: 100%; aspect-ratio: 21 / 9; min-height: 260px; border-radius: 22px; overflow: hidden; background: linear-gradient(135deg, #1d6df2 0%, #155bc8 100%); box-shadow: 0 24px 60px rgba(16,24,40,0.14); }
+        .post-banner img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 
         /* ── 3-column body layout (same width as head + banner) ──────────── */
         .post-layout {
@@ -112,7 +115,7 @@
             .post-head { padding-block: 6rem 1.5rem; }
             .post-title { font-size: 2.4rem; letter-spacing: -1.25px; }
             .post-subtitle { font-size: 1.1rem; }
-            .post-banner { border-radius: 16px; aspect-ratio: 16 / 9; }
+            .post-banner { border-radius: 16px; aspect-ratio: 16 / 9; min-height: 180px; }
             .post-banner-wrap { margin-block: 0.5rem 2.5rem; }
             .post-body p { font-size: 1.05rem; line-height: 1.75; }
             .post-body h2 { font-size: 1.5rem; margin-top: 2.25rem; }
