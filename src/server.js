@@ -2086,6 +2086,7 @@ function stripCtaButtons(html) {
 // for users but invisible to crawlers). Article + BreadcrumbList JSON-LD
 // follows the same pattern as the lake/town pages.
 app.get('/blog/:slug', async (req, res, next) => {
+    res.set('Cache-Control', 'no-cache');   // always revalidate — never serve a stale SSR post (e.g. an old copy with no cover image)
     try {
         const { rows } = await pool.query(
             `SELECT id, title, slug, excerpt, body, cover_image_url, tag,
