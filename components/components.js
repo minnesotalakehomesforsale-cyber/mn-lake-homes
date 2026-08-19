@@ -40,7 +40,9 @@ window.mnlhAgentCard = function (agent) {
     const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const code = agent.membership_code || '';
     const featured = !!agent.is_featured || ['mn_lake_specialist', 'top_agent', 'premium', 'founder'].includes(code);
-    const bioRaw = agent.bio || 'A dedicated Minnesota lake home specialist ready to help you find your perfect waterfront property.';
+    // No fallback bio — a bio-less agent omits the block entirely (empty beats
+    // boilerplate repeated across the lake pages we rank).
+    const bioRaw = (agent.bio || '').trim();
     const shortBio = bioRaw.length > 120 ? bioRaw.slice(0, 120).trimEnd() + '…' : bioRaw;
     const areas = Array.isArray(agent.geo_tags) && agent.geo_tags.length
         ? agent.geo_tags.map(t => t.name)
@@ -77,7 +79,7 @@ window.mnlhAgentCard = function (agent) {
                     ${years}
                 </div>
             </div>
-            <p class="ac-bio">${esc(shortBio)}</p>
+            ${shortBio ? `<p class="ac-bio">${esc(shortBio)}</p>` : ''}
             ${areas.length ? `<div class="ac-serves"><span class="ac-serves-label">Serves</span><div class="ac-chips">${chips}</div></div>` : ''}
             <span class="ac-btn">View Profile</span>
         </div>

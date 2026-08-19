@@ -374,7 +374,7 @@
             const photoUrl = agent.profile_photo_url || '/assets/images/agent-placeholder.svg';
             const featured = isFeaturedAgent(agent);
             const title = featured ? 'Lake Specialist' : 'Agent';
-            const fullBio = agent.bio || 'A dedicated Minnesota lake home specialist ready to help you find your perfect waterfront property.';
+            const fullBio = (agent.bio || '').trim();  // no boilerplate fallback — omit when empty
             const shortBio = fullBio.length > 120 ? fullBio.slice(0, 120).trimEnd() + '…' : fullBio;
 
             const starSvg = (w) => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
@@ -409,7 +409,7 @@
                             ${years}
                         </div>
                     </div>
-                    <p class="ac-bio">${escHtml(shortBio)}</p>
+                    ${shortBio ? `<p class="ac-bio">${escHtml(shortBio)}</p>` : ''}
                     ${areas.length ? `<div class="ac-serves"><span class="ac-serves-label">Serves</span><div class="ac-chips">${servesChips}</div></div>` : ''}
                     <span class="ac-btn">View Profile</span>
                 </div>`;

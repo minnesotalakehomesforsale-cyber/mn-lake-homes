@@ -271,9 +271,10 @@ const register = async (req, res) => {
         // makes them VISIBLE — free tier is still out of the lead rotation. If
         // anything's missing they land as a draft and publish from the dashboard.
         const canPublish = !!(display_name && phone && city && tagIds.length && specs.length);
-        const seededBio = canPublish
-            ? `${display_name} is a Minnesota lake home specialist based in ${city}${brokerage_name ? `, with ${brokerage_name}` : ''}. Reach out about buying or selling on the water.`
-            : null;
+        // Deliberately NO seeded bio. Identical boilerplate across 10–25 agents is
+        // duplicate thin content on the very lake pages we're ranking. Leave the
+        // bio empty; the profile + cards omit the block until the agent writes
+        // their own (the dashboard nudges it). Empty beats duplicated for SEO.
 
         const agentRes = await client.query(
             `INSERT INTO agents
@@ -287,7 +288,7 @@ const register = async (req, res) => {
                  $12, $13, $14, $15)
              RETURNING id`,
             [userId, startingMembershipId, slugStr, display_name, license_number || null,
-             brokerage_name || null, phone || null, email || null, city || null, seededBio,
+             brokerage_name || null, phone || null, email || null, city || null, null,
              JSON.stringify(specs), (canPublish ? 'published' : 'draft'), canPublish, myRefCode, refCode]
         );
         const newAgentId = agentRes.rows[0].id;

@@ -323,8 +323,9 @@
             // Main content block — white card, matches site card style
             body.innerHTML = `
                 <div style="background:#fff; border-radius:12px; border:1px solid #edf2f7; box-shadow:0 4px 6px rgba(0,0,0,0.02); padding:3rem;">
+                    ${agent.bio && agent.bio.trim() ? `
                     <h2 style="font-size:1.1rem; font-weight:800; color:#1a202c; text-transform:uppercase; letter-spacing:1px; margin-bottom:1.5rem; padding-bottom:0.75rem; border-bottom:2px solid #edf2f7;">About</h2>
-                    <p style="font-size:1.05rem; line-height:1.8; color:#4a5568; margin-bottom:3rem;">${agent.bio || 'Professional biography coming soon.'}</p>
+                    <p style="font-size:1.05rem; line-height:1.8; color:#4a5568; margin-bottom:3rem;">${xesc(agent.bio)}</p>` : ''}
 
                     ${areaPills ? `
                         <h2 style="font-size:1.1rem; font-weight:800; color:#1a202c; text-transform:uppercase; letter-spacing:1px; margin-bottom:1rem; padding-bottom:0.75rem; border-bottom:2px solid #edf2f7;">Service Areas</h2>
