@@ -24,11 +24,6 @@
       /* Hero section top-padding clears the fixed header. */
       .fa-hero-section { padding: 9rem 1.5rem 5rem; }
       .fa-eyebrow-txt { font-weight: 600; color: #1d6df2; margin-bottom: 1rem; letter-spacing: 1px; text-transform: uppercase; font-size: 0.85rem; }
-      .fa-hero-label { display: block; font-size: 0.78rem; font-weight: 700; color: #4a5568; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
-      .fa-input-wrap { position: relative; margin-bottom: 0.75rem; }
-      .fa-input-wrap svg { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #a0aec0; pointer-events: none; }
-      .fa-input-wrap input { width: 100%; padding: 1rem 1rem 1rem 3rem; border: 2px solid #e2e8f0; border-radius: 12px; font-family: inherit; font-size: 1rem; background: #fff; box-sizing: border-box; outline: none; transition: border-color .15s, box-shadow .15s; }
-      .fa-input-wrap input:focus { border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.12); }
 
       /* Floating social-proof badges over the hero image (from the sell page). */
       .sell-float { position: absolute; background: #fff; padding: 0.6rem 0.85rem; border-radius: 11px;
@@ -154,14 +149,9 @@
             <div class="sp-grey-box" style="padding: 5rem 4rem; background: #f7f9fa;">
                 <div class="fa-eyebrow-txt">For Minnesota lake agents</div>
                 <h2 class="sp-title" style="font-size: 3rem; margin-bottom: 2rem; line-height: 1.1;">Get found by the<br>buyers searching<br><span>your lake —</span><br>free.</h2>
-                <p style="color: #4a5568; line-height: 1.6; margin-bottom: 2rem;">Lake buyers don't search "MN real estate" — they search their lake by name. Claim that page, get matched with real buyers and sellers, and keep 100% of what you close. No commission, no referral fee.</p>
+                <p style="color: #4a5568; line-height: 1.6; margin-bottom: 2.5rem;">Lake buyers don't search "MN real estate" — they search their lake by name. Claim that page, get matched with real buyers and sellers, and keep 100% of what you close. No commission, no referral fee.</p>
 
-                <label class="fa-hero-label" for="fa-hero-lake">Which lakes do you work?</label>
-                <div class="fa-input-wrap">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                    <input id="fa-hero-lake" type="text" placeholder="e.g. Gull Lake, Lake Minnetonka…" autocomplete="off" onkeydown="if(event.key==='Enter')faStart()">
-                </div>
-                <button class="btn btn-primary" style="margin-top:0.5rem;width:100%;" onclick="faStart()">Create your free profile &rarr;</button>
+                <button class="btn btn-primary" style="width:100%;" onclick="openJoinForm()">Create your free profile &rarr;</button>
             </div>
         </div>
     </section>
@@ -340,17 +330,6 @@
     <script src="../../components/join-form.js" defer></script>
 
     <script>
-      // Hero CTA — stash the typed lake (optional) so the join form can prefill,
-      // then open the full-screen popup where they finish signing up.
-      function faStart() {
-        try {
-          var v = (document.getElementById('fa-hero-lake') || {}).value;
-          if (v && v.trim()) sessionStorage.setItem('fa_lake', v.trim());
-        } catch (e) {}
-        if (typeof window.openJoinForm === 'function') window.openJoinForm();
-        else window.location.href = '/join';
-      }
-
       // Stat numbers count up when the strip scrolls into view.
       (function () {
         var box = document.querySelector('.fa-stats');
