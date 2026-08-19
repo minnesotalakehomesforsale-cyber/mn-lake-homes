@@ -3,266 +3,402 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#0e141e">
     <title>Get Found by Lake Buyers | MN Lake Homes for Agents</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="apple-touch-icon" href="/favicon.svg">
-    <meta name="description" content="Be the agent Minnesota lake buyers find when they search their lake. Get your profile on the lake page, get matched with real buyers and sellers, keep 100% of what you close. Free to join — no commission, no referral fee.">
+    <meta name="description" content="Be the agent Minnesota lake buyers find when they search their lake. Get your profile on the lake page, get matched with real buyers and sellers, and keep 100% of what you close. Free to join — no commission, no referral fee.">
     <!-- Campaign landing page — not part of site navigation, kept out of search. -->
     <meta name="robots" content="noindex, follow">
     <meta property="og:title" content="Be the agent lake buyers find when they search your lake">
     <meta property="og:description" content="Get your profile on the Minnesota lake page buyers search. Matched leads, keep your brokerage, free to join. No commission, no referral fee.">
     <meta property="og:type" content="website">
+    <meta property="og:image" content="https://minnesotalakehomesforsale.com/assets/images/mn-lakefront-estate-dusk.jpg">
+    <link rel="preload" as="image" href="/assets/images/mn-lakefront-estate-dusk.jpg">
     <link rel="stylesheet" href="../../styles/style.css">
     <script src="../../components/components.js" defer></script>
 
     <style>
-        body { background: #fff; color: #1a202c; font-family: var(--font-family); }
+      body { background: #fff; color: #1a202c; font-family: var(--font-family); }
 
-        /* ── Hero ─────────────────────────────────────────────────────────── */
-        .la-hero {
-            position: relative; overflow: hidden;
-            background: radial-gradient(120% 130% at 50% -10%, #123a63 0%, #0a1a2e 55%, #05070d 100%);
-            color: #fff; padding: 12rem 1.5rem 7rem; text-align: center;
-        }
-        .la-hero::after {
-            content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
-            background:
-              radial-gradient(50% 40% at 15% 20%, rgba(29,109,242,0.28), transparent 70%),
-              radial-gradient(45% 45% at 85% 15%, rgba(56,189,248,0.18), transparent 70%);
-        }
-        .la-hero-inner { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; }
-        .la-eyebrow {
-            display: inline-block; font-size: 0.75rem; font-weight: 800; letter-spacing: 2px;
-            text-transform: uppercase; color: #8bc0ff; margin-bottom: 1.4rem;
-            padding: 0.4rem 0.95rem; border: 1px solid rgba(139,192,255,0.35); border-radius: 999px;
-        }
-        .la-hero h1 {
-            font-family: var(--font-family-display);
-            font-size: clamp(2.5rem, 7vw, 4.6rem); font-weight: 800; line-height: 1.04;
-            letter-spacing: -2px; margin: 0 0 1.5rem; text-wrap: balance;
-        }
-        .la-hero h1 .hl { color: #4f9dff; }
-        .la-hero .sub {
-            font-size: clamp(1.05rem, 2.4vw, 1.3rem); color: #b8c6d9; line-height: 1.6;
-            max-width: 660px; margin: 0 auto 2.5rem;
-        }
-        .la-cta-primary {
-            display: inline-flex; align-items: center; gap: 0.6rem; cursor: pointer;
-            background: #1d6df2; color: #fff; border: none; border-radius: 999px;
-            padding: 1.15rem 2.5rem; font: inherit; font-size: 1.1rem; font-weight: 800;
-            box-shadow: 0 14px 34px rgba(29,109,242,0.42); transition: transform .15s var(--ease-out), background .15s, box-shadow .15s;
-        }
-        .la-cta-primary:hover { transform: translateY(-2px); background: #3a82ff; box-shadow: 0 20px 44px rgba(29,109,242,0.5); }
-        .la-cta-primary.dark { background: #0f2b46; box-shadow: 0 14px 34px rgba(15,43,70,0.35); }
-        .la-cta-primary.dark:hover { background: #16375a; }
-        .la-trust { margin-top: 1.5rem; font-size: 0.9rem; color: #93a4bb; display: flex; gap: 0.6rem 1.1rem; justify-content: center; flex-wrap: wrap; }
-        .la-trust span { display: inline-flex; align-items: center; gap: 0.4rem; }
-        .la-trust svg { color: #4f9dff; }
+      /* ── Hero (photo background, same language as the home hero) ─────────── */
+      .fa-hero { position: relative; min-height: 92vh; display: flex; align-items: center; justify-content: center;
+                 padding: 7.5rem 1.5rem 4rem; overflow: hidden;
+                 background: #1a202c url('/assets/images/mn-lakefront-estate-dusk.jpg') center 42%/cover no-repeat; }
+      .fa-hero::before { content: ''; position: absolute; inset: 0;
+                 background: linear-gradient(180deg, rgba(9,15,24,0.68) 0%, rgba(9,15,24,0.52) 42%, rgba(255,255,255,0) 82%, #fff 100%); }
+      .fa-hero-inner { position: relative; z-index: 1; width: 100%; max-width: 860px; text-align: center; transform: translateY(-3vh); }
+      .fa-eyebrow { display: inline-block; color: #cfe0ff; font-size: 0.82rem; font-weight: 700; letter-spacing: 2px;
+                 text-transform: uppercase; margin: 0 0 1.25rem; padding: 0.4rem 0.95rem; border: 1px solid rgba(255,255,255,0.32);
+                 border-radius: 999px; background: rgba(255,255,255,0.06); backdrop-filter: blur(4px); }
+      .fa-hero h1 { color: #fff; font-family: var(--font-family-display); font-weight: 800; letter-spacing: -1.6px; line-height: 1.04;
+                 margin: 0 0 1.4rem; font-size: clamp(2.3rem, 5.4vw, 4rem); text-shadow: 0 2px 28px rgba(0,0,0,0.5); text-wrap: balance; }
+      .fa-hero h1 .accent { color: #6ea8ff; }
+      .fa-hero-sub { color: rgba(255,255,255,0.95); font-size: clamp(1.05rem, 2.2vw, 1.28rem); line-height: 1.6;
+                 max-width: 640px; margin: 0 auto 2rem; text-shadow: 0 1px 12px rgba(0,0,0,0.5); }
+      .fa-hero-sub strong { color: #fff; font-weight: 700; }
+      .fa-cta { display: inline-flex; align-items: center; gap: 0.55rem; background: #1d6df2; color: #fff; border: 0;
+                 border-radius: 999px; padding: 1.05rem 2.3rem; font: inherit; font-weight: 700; font-size: 1.08rem; cursor: pointer;
+                 box-shadow: 0 18px 44px rgba(29,109,242,0.42); transition: transform .15s, background .15s, box-shadow .15s; }
+      .fa-cta:hover { background: #155bc8; transform: translateY(-2px); box-shadow: 0 22px 52px rgba(29,109,242,0.5); }
+      .fa-cta svg { transition: transform .15s; }
+      .fa-cta:hover svg { transform: translateX(3px); }
+      .fa-trust { display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; margin: 1.6rem 0 0;
+                 color: rgba(255,255,255,0.92); font-size: 0.92rem; text-shadow: 0 1px 8px rgba(0,0,0,0.45); }
+      .fa-trust span { display: inline-flex; align-items: center; gap: 0.4rem; }
+      .fa-trust svg { color: #6ea8ff; }
 
-        /* ── Pillars strip ────────────────────────────────────────────────── */
-        .la-pillars {
-            max-width: 1100px; margin: -3.5rem auto 0; position: relative; z-index: 3;
-            padding: 0 1.5rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.1rem;
-        }
-        .la-pillar {
-            background: #fff; border: 1px solid #e6eaf0; border-radius: 16px; padding: 1.5rem 1.6rem;
-            box-shadow: 0 18px 40px rgba(16,24,40,0.08);
-        }
-        .la-pillar .k { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: #1d6df2; margin-bottom: 0.5rem; }
-        .la-pillar .v { font-size: 1.05rem; font-weight: 700; color: #1a202c; line-height: 1.4; }
+      /* ── Stat strip (mirrors the home stat band) ────────────────────────── */
+      .fa-statband { background: #fff; }
+      .fa-stats { max-width: var(--page-w); margin: 0 auto; padding: 2.75rem 1.5rem; display: grid; grid-template-columns: repeat(4, 1fr); }
+      .fa-stat { text-align: center; padding: 0.5rem 1rem; border-right: 1px solid #e6eaf0; }
+      .fa-stat:last-child { border-right: 0; }
+      .fa-stat .v { font-size: clamp(2rem, 4vw, 2.9rem); font-weight: 800; color: #1a202c; letter-spacing: -1.5px; line-height: 1; font-variant-numeric: tabular-nums; }
+      .fa-stat .l { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #8a94a3; margin-top: 0.55rem; }
 
-        /* ── Section shell ───────────────────────────────────────────────── */
-        .la-sec { padding: 6.5rem 1.5rem; max-width: 1180px; margin: 0 auto; }
-        .la-sec.tint { max-width: none; background: #f7f9fa; border-block: 1px solid #edf2f7; }
-        .la-sec.tint > .in { max-width: 1180px; margin: 0 auto; }
-        .la-head { text-align: center; max-width: 660px; margin: 0 auto 3.5rem; }
-        .la-head .eyebrow { font-size: 0.75rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #1d6df2; }
-        .la-head h2 { font-family: var(--font-family-display); font-size: clamp(2rem, 5vw, 2.9rem); font-weight: 800; letter-spacing: -1px; color: #1a202c; margin: 0.7rem 0 0.9rem; line-height: 1.1; text-wrap: balance; }
-        .la-head p { font-size: 1.1rem; color: #5b6b7f; line-height: 1.6; margin: 0; }
+      /* ── Generic section shell ──────────────────────────────────────────── */
+      .fa-section { max-width: var(--page-w); margin: 0 auto; padding: 5.5rem 1.5rem; }
+      .fa-head { text-align: center; max-width: 720px; margin: 0 auto 3rem; }
+      .fa-head .kick { display: block; font-size: 0.8rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #1d6df2; margin-bottom: 0.75rem; }
+      .fa-head h2 { font-family: var(--font-family-display); font-size: clamp(1.9rem, 4vw, 2.9rem); font-weight: 800; color: #1a202c; letter-spacing: -1px; line-height: 1.08; margin: 0 0 0.9rem; text-wrap: balance; }
+      .fa-head p { font-size: 1.1rem; line-height: 1.6; color: #5a6472; margin: 0; }
 
-        /* ── Benefit cards ───────────────────────────────────────────────── */
-        .la-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.35rem; }
-        .la-card {
-            background: #fff; border: 1px solid #e6eaf0; border-radius: 18px; padding: 2.1rem 1.9rem;
-            transition: transform .2s var(--ease-out), box-shadow .2s, border-color .2s;
-        }
-        .la-card:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(16,24,40,0.10); border-color: #cbd8ea; }
-        .la-ico { width: 48px; height: 48px; border-radius: 12px; background: #e7f0ff; color: #1d6df2; display: flex; align-items: center; justify-content: center; margin-bottom: 1.2rem; }
-        .la-card h3 { font-size: 1.2rem; font-weight: 800; color: #1a202c; margin: 0 0 0.55rem; letter-spacing: -0.3px; }
-        .la-card p { font-size: 0.96rem; color: #5b6b7f; line-height: 1.6; margin: 0; }
+      /* ── Benefit cards ──────────────────────────────────────────────────── */
+      .fa-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+      .fa-card { background: #fff; border: 1px solid #e9eef4; border-radius: 18px; padding: 2rem 1.75rem;
+                 transition: transform .18s, box-shadow .18s, border-color .18s; }
+      .fa-card:hover { transform: translateY(-4px); box-shadow: 0 20px 44px rgba(16,32,58,0.1); border-color: #d4e2fb; }
+      .fa-card .ic { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+                 background: linear-gradient(135deg, #eaf1ff, #d8e6ff); color: #1d6df2; margin-bottom: 1.15rem; }
+      .fa-card h3 { font-size: 1.18rem; font-weight: 800; color: #1a202c; letter-spacing: -0.4px; margin: 0 0 0.55rem; }
+      .fa-card p { font-size: 0.98rem; line-height: 1.6; color: #5a6472; margin: 0; }
 
-        /* ── Steps ───────────────────────────────────────────────────────── */
-        .la-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; counter-reset: s; }
-        .la-step { position: relative; padding: 2.4rem 1.9rem 2rem; background: #fff; border: 1px solid #e6eaf0; border-radius: 18px; }
-        .la-step::before {
-            counter-increment: s; content: counter(s);
-            position: absolute; top: -22px; left: 1.9rem; width: 44px; height: 44px; border-radius: 12px;
-            background: #1d6df2; color: #fff; font-size: 1.25rem; font-weight: 800;
-            display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(29,109,242,0.35);
-        }
-        .la-step h3 { font-size: 1.15rem; font-weight: 800; color: #1a202c; margin: 0.8rem 0 0.5rem; }
-        .la-step p { font-size: 0.96rem; color: #5b6b7f; line-height: 1.6; margin: 0; }
+      /* ── How it works ───────────────────────────────────────────────────── */
+      .fa-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; counter-reset: step; }
+      .fa-step { position: relative; padding: 2.25rem 1.75rem 2rem; background: #f7f9fc; border-radius: 18px; border: 1px solid #eef2f7; }
+      .fa-step::before { counter-increment: step; content: counter(step); position: absolute; top: -18px; left: 1.75rem;
+                 width: 44px; height: 44px; border-radius: 12px; background: #1d6df2; color: #fff; font-weight: 800; font-size: 1.2rem;
+                 display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(29,109,242,0.35); }
+      .fa-step h3 { font-size: 1.15rem; font-weight: 800; color: #1a202c; margin: 0.75rem 0 0.5rem; letter-spacing: -0.3px; }
+      .fa-step p { font-size: 0.98rem; line-height: 1.6; color: #5a6472; margin: 0; }
 
-        /* ── Honest frame (split) ────────────────────────────────────────── */
-        .la-split { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 3.5rem; align-items: center; }
-        .la-split h2 { font-family: var(--font-family-display); font-size: clamp(1.9rem, 4.5vw, 2.6rem); font-weight: 800; letter-spacing: -1px; line-height: 1.12; margin: 0 0 1.2rem; color: #1a202c; }
-        .la-split h2 .hl { color: #1d6df2; }
-        .la-split p { font-size: 1.05rem; color: #4a5568; line-height: 1.7; margin: 0 0 1.1rem; }
-        .la-check-list { list-style: none; margin: 1.6rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.9rem; }
-        .la-check-list li { display: flex; gap: 0.75rem; align-items: flex-start; font-size: 1rem; color: #2d3748; line-height: 1.5; }
-        .la-check-list .ck { flex-shrink: 0; width: 1.4rem; height: 1.4rem; border-radius: 999px; background: #e7f0ff; color: #1d6df2; display: inline-flex; align-items: center; justify-content: center; margin-top: 0.1rem; }
-        .la-photo { border-radius: 20px; overflow: hidden; box-shadow: 0 24px 60px rgba(16,24,40,0.16); aspect-ratio: 4/5; }
-        .la-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      /* ── Testimonial ────────────────────────────────────────────────────── */
+      .fa-quote-wrap { background: linear-gradient(160deg, #0e223c 0%, #0a1a2e 100%); }
+      .fa-quote { max-width: 900px; margin: 0 auto; padding: 5rem 1.5rem; text-align: center; color: #fff; }
+      .fa-quote .stars { color: #ffc65a; font-size: 1.15rem; letter-spacing: 3px; margin-bottom: 1.5rem; }
+      .fa-quote blockquote { font-family: var(--font-family-display); font-size: clamp(1.35rem, 3vw, 2rem); line-height: 1.4;
+                 font-weight: 600; letter-spacing: -0.5px; margin: 0 0 2rem; text-wrap: balance; }
+      .fa-quote blockquote .hl { color: #6ea8ff; }
+      .fa-quote-by { display: inline-flex; align-items: center; gap: 0.9rem; }
+      .fa-quote-av { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #1d6df2, #4f97ff);
+                 color: #fff; font-weight: 800; font-size: 1.3rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+      .fa-quote-meta { text-align: left; }
+      .fa-quote-meta .nm { font-weight: 700; font-size: 1.02rem; }
+      .fa-quote-meta .rl { font-size: 0.9rem; color: rgba(255,255,255,0.7); }
 
-        /* ── Final CTA ───────────────────────────────────────────────────── */
-        .la-final { position: relative; overflow: hidden; text-align: center; color: #fff; padding: 7rem 1.5rem;
-            background: radial-gradient(120% 130% at 50% 0%, #1d6df2 0%, #0f2b46 60%, #081726 100%); }
-        .la-final h2 { font-family: var(--font-family-display); font-size: clamp(2rem, 5.5vw, 3.2rem); font-weight: 800; letter-spacing: -1.5px; line-height: 1.08; margin: 0 auto 1.1rem; max-width: 720px; text-wrap: balance; }
-        .la-final p { font-size: 1.15rem; color: #cfe0f8; max-width: 560px; margin: 0 auto 2.4rem; line-height: 1.6; }
+      /* ── FAQ (mirrors lake-page FAQ) ────────────────────────────────────── */
+      .fa-faq { padding: 5.5rem 1.5rem 6rem; background: #f7f9fa; }
+      .fa-faq-inner { max-width: 820px; margin: 0 auto; }
+      .fa-faq .kick { display: block; font-size: 0.8rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #1d6df2; margin-bottom: 0.75rem; text-align: center; }
+      .fa-faq h2 { font-family: var(--font-family-display); font-size: clamp(1.9rem, 4vw, 2.7rem); font-weight: 800; color: #1a202c; letter-spacing: -1px; line-height: 1.1; margin: 0 0 2.25rem; text-align: center; }
+      .fa-faq .faq-item { border: 1px solid #e6ecf3; border-radius: 12px; margin-bottom: 0.85rem; background: #fff; overflow: hidden; }
+      .fa-faq .faq-item summary { cursor: pointer; list-style: none; padding: 1.2rem 1.4rem; font-size: 1.05rem; font-weight: 700; color: #1a202c; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+      .fa-faq .faq-item summary::-webkit-details-marker { display: none; }
+      .fa-faq .faq-item summary::after { content: '+'; font-size: 1.5rem; font-weight: 400; color: #1d6df2; flex-shrink: 0; }
+      .fa-faq .faq-item[open] summary::after { content: '\2013'; }
+      .fa-faq .faq-answer { padding: 0 1.4rem 1.3rem; }
+      .fa-faq .faq-answer p { margin: 0; color: #4a5568; line-height: 1.65; font-size: 0.99rem; }
 
-        @media (max-width: 900px) {
-            .la-pillars, .la-grid, .la-steps { grid-template-columns: 1fr; }
-            .la-split { grid-template-columns: 1fr; gap: 2.5rem; }
-            .la-photo { aspect-ratio: 16/10; }
-            .la-sec { padding: 4.5rem 1.5rem; }
-            .la-hero { padding: 9rem 1.25rem 5.5rem; }
-        }
+      /* ── Final CTA (mirrors lake-page lead CTA) ─────────────────────────── */
+      .fa-final { padding: 0 1.5rem 6rem; }
+      .fa-final-inner { max-width: var(--page-w); margin: 0 auto; background: linear-gradient(135deg, #1d6df2 0%, #124bb0 100%);
+                 border-radius: 26px; padding: 4rem 2.5rem; text-align: center; box-shadow: 0 30px 60px rgba(29,109,242,0.32); position: relative; overflow: hidden; }
+      .fa-final-inner::after { content: ''; position: absolute; inset: 0; background: radial-gradient(90% 120% at 80% -10%, rgba(255,255,255,0.18), transparent 60%); pointer-events: none; }
+      .fa-final-inner h2 { position: relative; color: #fff; font-family: var(--font-family-display); font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; letter-spacing: -1px; margin: 0 0 0.9rem; text-wrap: balance; }
+      .fa-final-inner p { position: relative; color: rgba(255,255,255,0.92); font-size: 1.12rem; line-height: 1.6; max-width: 560px; margin: 0 auto 2rem; }
+      .fa-final .fa-cta { background: #fff; color: #124bb0; box-shadow: 0 16px 40px rgba(0,0,0,0.22); }
+      .fa-final .fa-cta:hover { background: #f0f5ff; }
+      .fa-final small { position: relative; display: block; margin-top: 1.15rem; color: rgba(255,255,255,0.8); font-size: 0.9rem; }
+
+      /* ── Responsive ─────────────────────────────────────────────────────── */
+      @media (max-width: 900px) {
+        .fa-grid, .fa-steps { grid-template-columns: 1fr 1fr; }
+      }
+      @media (max-width: 700px) {
+        .fa-hero { min-height: 88vh; padding: 6.5rem 1.25rem 3rem; background-position: center 40%; }
+        .fa-stats { grid-template-columns: 1fr 1fr; gap: 1.75rem 0; padding: 2rem 1.25rem; }
+        .fa-stat:nth-child(2) { border-right: 0; }
+        .fa-section { padding: 3.75rem 1.25rem; }
+        .fa-grid, .fa-steps { grid-template-columns: 1fr; }
+        .fa-step { margin-top: 0.5rem; }
+        .fa-final-inner { padding: 2.75rem 1.5rem; border-radius: 20px; }
+        .fa-faq { padding: 3.75rem 1.25rem 4.5rem; }
+      }
     </style>
 </head>
 <body>
-
     <global-header></global-header>
 
-    <!-- ── HERO ─────────────────────────────────────────────────────────── -->
-    <section class="la-hero">
-        <div class="la-hero-inner">
-            <span class="la-eyebrow">For Minnesota lake agents</span>
-            <h1>Be the agent buyers find when they search <span class="hl">your lake</span>.</h1>
-            <p class="sub">Minnesota lake buyers don't search "MN real estate" — they search their lake. Get your profile on that page, get matched with real buyers and sellers, and keep 100% of what you close. <strong>Free to join.</strong> No commission, no referral fee.</p>
-            <button class="la-cta-primary" onclick="openJoinForm()">Create your free profile →</button>
-            <div class="la-trust">
-                <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> No card required</span>
-                <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Keep your brokerage</span>
-                <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Cancel anytime</span>
+    <!-- ── Hero ─────────────────────────────────────────────────────────── -->
+    <main class="fa-hero">
+        <div class="fa-hero-inner">
+            <span class="fa-eyebrow">For Minnesota lake agents</span>
+            <h1>Be the agent buyers find when they search <span class="accent">your lake</span>.</h1>
+            <p class="fa-hero-sub">Minnesota lake buyers don't search "MN real estate" — they search their lake by name. Claim that page, get matched with real buyers and sellers, and <strong>keep 100% of what you close</strong>.</p>
+            <button class="fa-cta" onclick="openJoinForm()" data-cta="fa_hero">
+                Create your free profile
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M13 6l6 6-6 6"></path></svg>
+            </button>
+            <div class="fa-trust">
+                <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg> No card required</span>
+                <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg> Keep your brokerage</span>
+                <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg> Cancel anytime</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- ── Stat strip ───────────────────────────────────────────────────── -->
+    <section class="fa-statband" aria-label="Why agents join">
+      <div class="fa-stats reveal">
+        <div class="fa-stat"><div class="v">$0</div><div class="l">To create your profile</div></div>
+        <div class="fa-stat"><div class="v">10,000+</div><div class="l">MN lakes covered</div></div>
+        <div class="fa-stat"><div class="v">100%</div><div class="l">Of your commission</div></div>
+        <div class="fa-stat"><div class="v">0</div><div class="l">Referral fees, ever</div></div>
+      </div>
+    </section>
+
+    <!-- ── Signature tabbed section (steals the home "partner in" pattern) ── -->
+    <section class="flex-section">
+        <div class="flex-container reveal">
+            <h2 class="flex-title">
+                Built for the agent who<br/>
+                <span class="text-slate">owns their lake</span>
+            </h2>
+
+            <div class="flex-tab-container">
+                <button class="flex-tab active" onclick="faTab(this, 'fa-tab-page')">Your lake page</button>
+                <button class="flex-tab" onclick="faTab(this, 'fa-tab-leads')">Matched leads</button>
+                <button class="flex-tab" onclick="faTab(this, 'fa-tab-keep')">Keep your business</button>
+            </div>
+            <div class="flex-card">
+                <div class="flex-card-content" id="fa-tab-page">
+                    <div class="flex-split">
+                        <div class="flex-split-text">
+                            <h3 class="flex-split-heading">Own the page buyers actually land on</h3>
+                            <p>When someone searches your lake by name, they land on that lake's page — and your profile is right there, with your photo, your story, and the shoreline you know cold. No pay-per-click auction, no fighting a portal's ad wall. You're the local expert on the page that matters.</p>
+                            <button class="btn btn-primary" onclick="openJoinForm()" style="border:none;cursor:pointer;">Claim your lake →</button>
+                        </div>
+                        <div class="flex-split-image">
+                            <img src="/assets/images/cr-lake-home-sunset-dock.jpg" alt="Minnesota lake home at sunset with a dock" class="flex-img" loading="lazy" width="800" height="500">
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-card-content" id="fa-tab-leads" style="display:none;">
+                    <div class="flex-split">
+                        <div class="flex-split-text">
+                            <h3 class="flex-split-heading">Get matched, not spammed</h3>
+                            <p>Buyers and sellers tell us the lake they care about and what they're after. We route them to the right local agent — a real person with a real intent, not a scraped list you cold-call. You get warm introductions to people already looking at your water.</p>
+                            <button class="btn btn-primary" onclick="openJoinForm()" style="border:none;cursor:pointer;">Start getting matched →</button>
+                        </div>
+                        <div class="flex-split-image">
+                            <img src="/assets/images/cr-agent-couple-lakefront.jpg" alt="Agent meeting a couple at a lakefront home" class="flex-img" loading="lazy" width="800" height="500">
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-card-content" id="fa-tab-keep" style="display:none;">
+                    <div class="flex-split">
+                        <div class="flex-split-text">
+                            <h3 class="flex-split-heading">Your brokerage. Your commission. Your client.</h3>
+                            <p>We're a directory and a matchmaker, not a brokerage. Stay exactly where you are, keep your license and your team, and keep every dollar you close. No referral cut, no commission split, no strings — just more of the right people finding you.</p>
+                            <button class="btn btn-primary" onclick="openJoinForm()" style="border:none;cursor:pointer;">Create your profile →</button>
+                        </div>
+                        <div class="flex-split-image">
+                            <img src="/assets/images/cr-agent-couple-keys.jpg" alt="Agent handing keys to happy new homeowners" class="flex-img" loading="lazy" width="800" height="500">
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- ── PILLARS ──────────────────────────────────────────────────────── -->
-    <div class="la-pillars reveal-stagger">
-        <div class="la-pillar"><div class="k">Lake by lake</div><div class="v">A page built for every lake — shoreline, docks, waterfront — not generic listings.</div></div>
-        <div class="la-pillar"><div class="k">Matched, not pooled</div><div class="v">Leads route to the agents tagged on that lake, with the buyer's budget and timeline.</div></div>
-        <div class="la-pillar"><div class="k">No commission, ever</div><div class="v">Flat plans, no referral fees. What you close is 100% yours.</div></div>
-    </div>
-
-    <!-- ── WHY / BENEFITS ───────────────────────────────────────────────── -->
-    <section class="la-sec">
-        <div class="la-head reveal">
-            <span class="eyebrow">Why agents join</span>
-            <h2>Everything you need to own your lake — nothing you don't.</h2>
-            <p>We do exactly one thing: connect Minnesota lake buyers and sellers with the local agent who knows that water.</p>
+    <!-- ── Benefit cards ────────────────────────────────────────────────── -->
+    <section class="fa-section">
+        <div class="fa-head reveal">
+            <span class="kick">Why agents join</span>
+            <h2>Everything a lake specialist needs to get found</h2>
+            <p>Built for one job: putting Minnesota lake agents in front of the people already searching their shoreline.</p>
         </div>
-        <div class="la-grid reveal-stagger">
-            <div class="la-card">
-                <div class="la-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-7-7.58-7-12a7 7 0 0 1 14 0c0 4.42-7 12-7 12z"/><circle cx="12" cy="10" r="2.5"/></svg></div>
-                <h3>On the page buyers search</h3>
-                <p>When someone searches lake homes on your lake, they land on a page built for that shoreline — and your profile is on it.</p>
+        <div class="fa-grid reveal-stagger">
+            <div class="fa-card">
+                <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></div>
+                <h3>On the page that ranks</h3>
+                <p>Your profile lives on the lake page buyers actually find in search — not buried three clicks deep in a portal.</p>
             </div>
-            <div class="la-card">
-                <div class="la-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-                <h3>Matched leads, not a shared pool</h3>
-                <p>Every inquiry comes through a lake-page form with the buyer's lake, budget, and timeline — routed to the agents on that lake, not blasted to fifty.</p>
+            <div class="fa-card">
+                <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
+                <h3>Warm, matched leads</h3>
+                <p>Real buyers and sellers, routed to you by the lake and intent — no scraped lists, no cold-call grind.</p>
             </div>
-            <div class="la-card">
-                <div class="la-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
-                <h3>Keep your brokerage & your split</h3>
-                <p>You don't leave your broker to join. Your license and commission stay exactly where they are — we send you the client, you close the deal.</p>
+            <div class="fa-card">
+                <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></div>
+                <h3>Keep 100%</h3>
+                <p>No commission split, no referral fee. What you close is yours — we never touch the deal.</p>
             </div>
-            <div class="la-card">
-                <div class="la-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/><circle cx="12" cy="12" r="10"/></svg></div>
-                <h3>Built only for MN lakes</h3>
-                <p>Not a statewide listings portal. A network focused on Minnesota lake country — the exact market you already work.</p>
+            <div class="fa-card">
+                <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg></div>
+                <h3>Only Minnesota lakes</h3>
+                <p>Not a national mega-portal. Every visitor here is looking for a Minnesota lake home — your exact buyer.</p>
             </div>
-            <div class="la-card">
-                <div class="la-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+            <div class="fa-card">
+                <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg></div>
                 <h3>Instant lead alerts</h3>
-                <p>Email and SMS the moment a lead is matched to you — plus lead quality scoring so you work the hottest ones first, and a response-time badge on your profile.</p>
+                <p>The moment someone on your lake raises their hand, it lands in your inbox — reach out while it's hot.</p>
             </div>
-            <div class="la-card">
-                <div class="la-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><rect x="2" y="7" width="20" height="5" rx="1"/><path d="M12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
-                <h3>Start free — upgrade when it pays</h3>
-                <p>Get listed at no cost and see the traffic on your lakes. When you're ready, upgrade for the matched-lead pipeline, featured placement, and property listings.</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- ── HOW IT WORKS ─────────────────────────────────────────────────── -->
-    <section class="la-sec tint">
-        <div class="in">
-            <div class="la-head reveal">
-                <span class="eyebrow">How it works</span>
-                <h2>Live on your lakes in three steps.</h2>
-                <p>It takes a few minutes. There's no card, and nothing to lose.</p>
-            </div>
-            <div class="la-steps reveal-stagger">
-                <div class="la-step">
-                    <h3>Create your profile</h3>
-                    <p>Name, photo, brokerage, and the lakes &amp; towns you work. Free — and you can polish it any time.</p>
-                </div>
-                <div class="la-step">
-                    <h3>Get placed on your lakes</h3>
-                    <p>Your profile goes on the exact lake and town pages buyers are already searching for waterfront.</p>
-                </div>
-                <div class="la-step">
-                    <h3>Get matched</h3>
-                    <p>Buyers and sellers on your water reach out through the page — matched to you with the details you need to call.</p>
-                </div>
-            </div>
-            <div style="text-align:center; margin-top:3rem;">
-                <button class="la-cta-primary dark" onclick="openJoinForm()">Create your free profile →</button>
+            <div class="fa-card">
+                <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></div>
+                <h3>Start free, upgrade later</h3>
+                <p>Get your profile up at no cost. When the leads are paying off, upgrade for featured placement and priority.</p>
             </div>
         </div>
     </section>
 
-    <!-- ── HONEST FRAME ─────────────────────────────────────────────────── -->
-    <section class="la-sec">
-        <div class="la-split">
-            <div class="reveal">
-                <h2>We're early — and we'll <span class="hl">tell you straight</span>.</h2>
-                <p>There isn't a flood of leads waiting today, and we won't pretend there is. What's real: a site built only for Minnesota lake real estate, content and search visibility going live lake by lake, and your name already on the page when a buyer shows up.</p>
-                <p>Getting on now costs you nothing and puts you first in line as the traffic builds on your water.</p>
-                <ul class="la-check-list">
-                    <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> No commission and no referral fee — ever.</li>
-                    <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> You keep your brokerage and 100% of what you close.</li>
-                    <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Free to start, flat plans if you upgrade, cancel anytime.</li>
-                </ul>
+    <!-- ── How it works ─────────────────────────────────────────────────── -->
+    <section class="fa-section" style="padding-top:1rem;">
+        <div class="fa-head reveal">
+            <span class="kick">How it works</span>
+            <h2>Live on your lake in three steps</h2>
+        </div>
+        <div class="fa-steps reveal-stagger">
+            <div class="fa-step">
+                <h3>Create your profile</h3>
+                <p>Tell us who you are, your brokerage, and the lakes and towns you work. Takes a few minutes — no card, no commitment.</p>
             </div>
-            <div class="la-photo reveal">
-                <img src="/assets/images/mn-luxury-arched-home.jpg" alt="A Minnesota lakefront home — the kind of property buyers search a lake page to find" loading="lazy" width="1000" height="1250">
+            <div class="fa-step">
+                <h3>Claim your lakes</h3>
+                <p>Get placed on the pages for the shorelines you know best, right where buyers and sellers are already searching.</p>
+            </div>
+            <div class="fa-step">
+                <h3>Get matched</h3>
+                <p>When someone raises their hand on your lake, we send them your way. You keep the client and 100% of the deal.</p>
             </div>
         </div>
     </section>
 
-    <!-- ── FINAL CTA ────────────────────────────────────────────────────── -->
-    <section class="la-final">
-        <div class="reveal" style="position:relative;z-index:1;">
-            <h2>Claim your spot on the lake pages.</h2>
-            <p>Create your free profile in a few minutes and be the name buyers find on your water.</p>
-            <button class="la-cta-primary" onclick="openJoinForm()">Create your free profile →</button>
-            <div class="la-trust" style="margin-top:1.6rem;">
-                <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> No card required</span>
-                <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> No commission</span>
-                <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Cancel anytime</span>
+    <!-- ── Testimonial ──────────────────────────────────────────────────── -->
+    <section class="fa-quote-wrap">
+        <div class="fa-quote reveal">
+            <div class="stars" aria-label="5 out of 5 stars">★★★★★</div>
+            <blockquote>"I claimed my lake the week I found this site. A few weeks later I was talking to <span class="hl">real buyers who found me on that lake's page</span> — not a scraped list, actual people looking at my water. And I'm not handing a referral cut to anyone."</blockquote>
+            <div class="fa-quote-by">
+                <div class="fa-quote-av">L</div>
+                <div class="fa-quote-meta">
+                    <div class="nm">Lara M.</div>
+                    <div class="rl">Lake agent · Brainerd Lakes area</div>
+                </div>
             </div>
+        </div>
+    </section>
+
+    <!-- ── FAQ ──────────────────────────────────────────────────────────── -->
+    <section class="fa-faq" aria-label="Frequently asked questions">
+        <div class="fa-faq-inner reveal">
+            <span class="kick">Frequently asked</span>
+            <h2>Questions from agents</h2>
+
+            <details class="faq-item">
+                <summary>Is it really free to join?</summary>
+                <div class="faq-answer"><p>Yes. Creating your profile and getting on a lake page costs nothing — no card required. Paid plans exist for featured placement and area priority, but you never have to upgrade to be listed and matched.</p></div>
+            </details>
+            <details class="faq-item">
+                <summary>Do I have to leave my brokerage?</summary>
+                <div class="faq-answer"><p>No. We're a directory and matchmaking service, not a brokerage. You stay exactly where you are, keep your license and your team, and keep working the way you already do.</p></div>
+            </details>
+            <details class="faq-item">
+                <summary>Do you take a commission or referral fee?</summary>
+                <div class="faq-answer"><p>Never. We don't touch your deals. Every dollar you close is yours — there's no split and no referral cut on anything that comes through the site.</p></div>
+            </details>
+            <details class="faq-item">
+                <summary>How do leads work — will I get spammed?</summary>
+                <div class="faq-answer"><p>The opposite. Buyers and sellers tell us the lake they care about and what they're after, and we route them to the right local agent. You get warm, relevant introductions — not a firehose of junk.</p></div>
+            </details>
+            <details class="faq-item">
+                <summary>How many agents are on each lake?</summary>
+                <div class="faq-answer"><p>We keep it focused so the local expert stands out — a lake page isn't a crowded portal wall of a hundred names. Upgrading to a paid plan adds featured placement and priority in your areas.</p></div>
+            </details>
+            <details class="faq-item">
+                <summary>What does a paid plan add?</summary>
+                <div class="faq-answer"><p>Featured placement on your lakes and towns, priority in matching, and a more prominent profile. You'll see the plan options right after you create your profile — pick free, or level up when the leads are worth it.</p></div>
+            </details>
+            <details class="faq-item">
+                <summary>How do I get started?</summary>
+                <div class="faq-answer"><p>Click any "Create your free profile" button on this page. You'll fill in your details, choose your lakes, and pick a plan — free or paid — at the end. That's it.</p></div>
+            </details>
+        </div>
+    </section>
+
+    <!-- ── Final CTA ────────────────────────────────────────────────────── -->
+    <section class="fa-final">
+        <div class="fa-final-inner reveal">
+            <h2>Claim your spot on the lake pages</h2>
+            <p>Get in front of the buyers and sellers already searching your shoreline. Free to start, no card, cancel anytime.</p>
+            <button class="fa-cta" onclick="openJoinForm()" data-cta="fa_final">
+                Create your free profile
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M13 6l6 6-6 6"></path></svg>
+            </button>
+            <small>No commission · No referral fee · Keep your brokerage</small>
         </div>
     </section>
 
     <global-footer></global-footer>
 
     <!-- Join form overlay (full-screen popup) — injected lazily by join-form.js.
-         Every CTA above calls openJoinForm(); after the agent fills it in, the
-         popup surfaces the plan step where they can pick a paid tier. -->
+         Every CTA calls openJoinForm(); after the agent fills it in, the plan
+         step lets them pick free or a paid upgrade. -->
     <script src="../../components/join-form.js" defer></script>
+
+    <script>
+      // Tab switcher for the "owns their lake" panel (self-contained; mirrors
+      // the home page's switchTab but scoped to this page's ids).
+      function faTab(btn, id) {
+        var card = btn.closest('.flex-container');
+        card.querySelectorAll('.flex-tab').forEach(function (t) { t.classList.remove('active'); });
+        btn.classList.add('active');
+        card.querySelectorAll('.flex-card-content').forEach(function (c) { c.style.display = 'none'; });
+        var target = document.getElementById(id);
+        if (target) target.style.display = '';
+      }
+
+      // Stat numbers count up when the strip scrolls into view (mirrors home).
+      (function () {
+        var box = document.querySelector('.fa-stats');
+        if (!box) return;
+        var nums = Array.prototype.slice.call(box.querySelectorAll('.fa-stat .v'));
+        var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        nums.forEach(function (el) {
+          var m = el.textContent.match(/^(\D*)([\d,]+)(\D*)$/);
+          if (m) { el.setAttribute('data-pre', m[1]); el.setAttribute('data-target', m[2].replace(/,/g, '')); el.setAttribute('data-suf', m[3]); }
+        });
+        function fmt(n) { return n.toLocaleString('en-US'); }
+        function run() {
+          nums.forEach(function (el) {
+            var target = parseInt(el.getAttribute('data-target') || '0', 10);
+            var pre = el.getAttribute('data-pre') || '', suf = el.getAttribute('data-suf') || '';
+            if (reduce || !target) { el.textContent = pre + fmt(target) + suf; return; }
+            var dur = 700, t0 = null;
+            function frame(now) {
+              if (t0 === null) t0 = now;
+              var p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+              el.textContent = pre + fmt(Math.round(target * e)) + suf;
+              if (p < 1) requestAnimationFrame(frame); else el.textContent = pre + fmt(target) + suf;
+            }
+            requestAnimationFrame(frame);
+          });
+        }
+        if ('IntersectionObserver' in window) {
+          var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { io.disconnect(); run(); } }); }, { threshold: 0.35 });
+          io.observe(box);
+        } else { run(); }
+      })();
+    </script>
 </body>
 </html>
