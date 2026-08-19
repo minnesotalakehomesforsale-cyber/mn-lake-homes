@@ -922,7 +922,7 @@ const getMyReach = async (req, res) => {
 
         const leadsRes = await pool.query(
             `SELECT COUNT(*)::int AS active FROM leads
-              WHERE agent_id = $1 AND deleted_at IS NULL AND status NOT IN ('closed','archived')`,
+              WHERE agent_id = $1 AND deleted_at IS NULL AND lead_status NOT IN ('closed','archived')`,
             [agent_id]);
 
         const trend = (cur, prev) => prev > 0 ? Math.round(((cur - prev) / prev) * 100) : (cur > 0 ? 100 : 0);

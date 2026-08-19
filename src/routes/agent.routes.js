@@ -15,11 +15,12 @@ router.get('/public/:slug/blog-posts', agentController.listBlogPostsForAgent);
 router.get('/by-blog-post/:postId', verifyToken, agentController.listAgentsForBlogPost);
 router.put('/by-blog-post/:postId', verifyToken, agentController.replaceAgentsForBlogPost);
 
-// Photo upload — returns a URL; caller (agent or admin) PATCHes it via their
-// own route to persist against a specific agent record.
-router.post('/upload-photo', agentController.uploadPhoto);
-
 // ─── PROTECTED — Agent only ───────────────────────────────────────────────────
+
+// Photo upload — returns a URL; caller (agent or admin) PATCHes it via their
+// own route to persist against a specific agent record. Auth required so the
+// endpoint can't be used as an open image host on our Cloudinary account.
+router.post('/upload-photo', verifyToken, requireRole(['agent', 'admin', 'super_admin']), agentController.uploadPhoto);
 router.get('/me', verifyToken, requireRole('agent'), agentController.getMyProfile);
 router.get('/me/leads', verifyToken, requireRole('agent'), agentController.getMyLeads);
 // Partner Perks — tier-gated offer feed for the signed-in agent.
@@ -46,7 +47,7 @@ router.post('/me/notifications/mark-read',    verifyToken, requireRole('agent'),
 router.get('/me/upgrade-status', verifyToken, requireRole('agent'), agentController.getUpgradeStatus);
 router.get('/me/referrals', verifyToken, requireRole('agent'), agentController.getMyReferrals);
 router.get('/me/leaderboard', verifyToken, requireRole('agent'), agentController.getMyLeaderboard);
-router.get('/admin/at-risk', verifyToken, agentController.getAtRiskAgents);
+router.get('/admin/at-risk', verifyToken, requireRole(['admin', 'super_admin']), agentController.getAtRiskAgents);
 router.patch('/me/leads/:id/status', verifyToken, requireRole('agent'), agentController.updateMyLeadStatus);
 router.patch('/me/leads/:id/followup', verifyToken, requireRole('agent'), agentController.setMyLeadFollowUp);
 router.patch('/me/pause', verifyToken, requireRole('agent'), agentController.setMyPause);

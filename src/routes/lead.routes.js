@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const leadController = require('../controllers/lead.controller');
-const { attachUserIfPresent, verifyToken } = require('../middleware/auth');
+const { attachUserIfPresent, verifyToken, requireRole } = require('../middleware/auth');
 const { rateLimit } = require('../middleware/rate-limit');
 const { leadSpamGuard } = require('../middleware/spam-guard');
 
@@ -23,6 +23,7 @@ router.post('/partial',
 
 router.get('/mine', verifyToken, leadController.getMyLeads);      // Signed-in user's own submissions
 
-router.get('/admin/inbox', leadController.getAdminLeads);
+// Admin-only: returns the full leads table incl. PII. MUST stay behind auth.
+router.get('/admin/inbox', verifyToken, requireRole(['admin', 'super_admin']), leadController.getAdminLeads);
 
 module.exports = router;
