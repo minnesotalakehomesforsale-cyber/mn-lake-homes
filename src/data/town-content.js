@@ -247,7 +247,7 @@ Real estate here includes lakefront homes, townhomes, and condominiums along wit
 Life in Spring Park is lake-forward and low-key — marinas and boat access, quick trips to Mound and Wayzata, and the full open water of Minnetonka just off the shore. It's served by the Westonka schools. For buyers who want to be on Lake Minnetonka at a more accessible price, Spring Park is one of the best doors in.`,
         seo_title: 'Spring Park MN Homes for Sale | Lake Minnetonka Real Estate',
         seo_description: "Spring Park, MN homes for sale on Lake Minnetonka's west side — marinas, condos, and a more attainable way onto the lake. Get new listings with a local agent.",
-        hero_image_url: '/assets/images/mn-purple-sunset-marina.webp',
+        hero_image_url: '/assets/images/mn-lake-town-marina-aerial.jpg',
     },
     {
         slug: 'minnetrista',
@@ -283,7 +283,7 @@ Real estate here is anchored by Lake Osakis frontage — from traditional cabins
 Life in Osakis runs on the lake: fishing, boating, and a lakefront park, with an easy-going small-town pace and quick interstate access to Alexandria and St. Cloud. For buyers who want an affordable spot on a big, established fishing lake in central Minnesota, Osakis is a solid pick.`,
         seo_title: 'Osakis MN Homes for Sale | Lake Osakis Real Estate',
         seo_description: "Osakis, MN homes for sale on Lake Osakis — a big, well-known fishing lake between Alexandria and Sauk Centre. Get new listings with a local agent.",
-        hero_image_url: '/assets/images/mn-harbor-town.webp',
+        hero_image_url: '/assets/images/mn-marina-night.webp',
     },
     {
         slug: 'perham',
@@ -295,7 +295,7 @@ Real estate ranges from lakefront homes and cabins on Otter Tail Lake and the su
 Life in Perham balances the lakes with a real town — boating and fishing across the county's water, a walkable downtown, and community events that run all year. For buyers who want to be surrounded by lakes while living in a genuine, working town rather than a resort strip, Perham is one of the best bases in Otter Tail County.`,
         seo_title: 'Perham MN Homes for Sale | Otter Tail Lakes Real Estate',
         seo_description: "Perham, MN homes for sale near Otter Tail Lake — the hub of Otter Tail County's lake country, a real town among dozens of lakes. Get new listings.",
-        hero_image_url: '/assets/images/mn-lake-town-sunset-aerial.jpg',
+        hero_image_url: '/assets/images/cr-aerial-lake-town-marina.jpg',
     },
     {
         slug: 'pelican-rapids',
@@ -307,7 +307,7 @@ Real estate here spans lakefront homes and cabins on Lake Lida and the surroundi
 Life in Pelican Rapids is small-town and lake-adjacent — fishing and boating on Lida and the nearby lakes, a walkable downtown, and a strong community feel. For buyers who want clear-water lake access with an affordable, genuine town nearby, Pelican Rapids and Lake Lida are a west-central Minnesota value.`,
         seo_title: 'Pelican Rapids MN Homes for Sale | Lake Lida Real Estate',
         seo_description: "Pelican Rapids, MN homes for sale near Lake Lida — clear-water lake country and an affordable small town in Otter Tail County. Get new listings.",
-        hero_image_url: '/assets/images/mn-lake-dock-golden.jpg',
+        hero_image_url: '/assets/images/cr-lakefront-home-dock-sunset.jpg',
     },
     {
         slug: 'battle-lake',
@@ -319,7 +319,7 @@ Real estate is anchored by West Battle Lake and the neighboring lakes — from c
 Life in Battle Lake runs on the lake and the arts — boating and swimming on clear water, a summer Main Street of galleries, shops, and dining, and the wider Otter Tail lakes a short drive in any direction. For buyers who want a genuine small resort town on clear water, Battle Lake is one of the most charming spots in the region.`,
         seo_title: 'Battle Lake MN Homes for Sale | West Battle Lake Real Estate',
         seo_description: "Battle Lake, MN homes for sale on West Battle Lake — a clear-water resort-and-arts town in Otter Tail County's lake country. Get new listings.",
-        hero_image_url: '/assets/images/mn-lake-home-from-water.jpg',
+        hero_image_url: '/assets/images/mn-lakeside-cottage-porch.jpg',
     },
     {
         slug: 'pine-river',
@@ -331,7 +331,7 @@ Real estate ranges from cabins and year-round homes on Norway Lake and the nearb
 Life in Pine River is northwoods and lake-forward — boating and fishing, the Paul Bunyan State Trail running through town, and a friendly Main Street. The Whitefish Chain, Crosslake, and the wider Brainerd Lakes are all close. For buyers who want a real town and a more accessible foothold near the Whitefish Chain, Pine River is a smart base.`,
         seo_title: 'Pine River MN Homes for Sale | Whitefish Chain Real Estate',
         seo_description: "Pine River, MN homes for sale — the northern gateway to the Whitefish Chain in the Brainerd Lakes, a walkable northwoods town. Get new listings.",
-        hero_image_url: '/assets/images/mn-lake-town-street.jpg',
+        hero_image_url: '/assets/images/cr-autumn-tree-lined-street-homes.jpg',
     },
     {
         slug: 'pequot-lakes',
@@ -343,7 +343,7 @@ Real estate ranges from cabins and year-round lake homes on Pelican Lake and the
 Life in Pequot Lakes is Brainerd-Lakes summer at its best — boating and watersports, golf nearby, the Paul Bunyan State Trail through town, and a lively Main Street. Breezy Point, Nisswa, and Crosslake are all minutes away. For buyers who want a walkable town in the middle of the Brainerd Lakes, Pequot Lakes is a natural fit.`,
         seo_title: 'Pequot Lakes MN Homes for Sale | Brainerd Lakes Real Estate',
         seo_description: "Pequot Lakes, MN homes for sale near Pelican Lake and the Whitefish Chain — a walkable Brainerd Lakes resort town. Get new listings with a local agent.",
-        hero_image_url: '/assets/images/mn-aerial-small-town.jpg',
+        hero_image_url: '/assets/images/cr-luxury-sunset-aerial.jpg',
     },
     {
         slug: 'crosby',
@@ -355,7 +355,7 @@ Real estate here is anchored by Serpent Lake and the clear Cuyuna mine lakes, fr
 Life in Crosby blends lake and trail — swimming and boating on clear water, world-class mountain biking out the back door, and a walkable downtown that has grown a real food-and-coffee scene. For buyers who want clear water, a genuine town, and a recreation lifestyle at a relative value, Crosby and Serpent Lake are one of central Minnesota's most interesting markets.`,
         seo_title: 'Crosby MN Homes for Sale | Serpent Lake Real Estate',
         seo_description: "Crosby, MN homes for sale on Serpent Lake — clear Cuyuna Range mine lakes and a mountain-biking town in central Minnesota. Get new listings.",
-        hero_image_url: '/assets/images/mn-purple-sunset-marina.webp',
+        hero_image_url: '/assets/images/mn-aerial-lake-homes.jpg',
     },
     {
         slug: 'deerwood',
@@ -367,7 +367,7 @@ Real estate centers on Bay Lake and the surrounding waters — clear, spring-fed
 Life in Deerwood is quiet and lake-forward — golf and boating at Ruttger's, clear-water swimming and fishing, and the Cuyuna biking trails minutes away. For buyers who want a settled, clear-water lake community with a bit of resort history, Deerwood and Bay Lake are a calm, classic choice.`,
         seo_title: 'Deerwood MN Homes for Sale | Bay Lake Real Estate',
         seo_description: "Deerwood, MN homes for sale near Bay Lake — clear Cuyuna-area water and the historic Ruttger's resort in central Minnesota. Get new listings.",
-        hero_image_url: '/assets/images/mn-lake-home-from-water.jpg',
+        hero_image_url: '/assets/images/cr-lake-cottage-boat-dock.jpg',
     },
     {
         slug: 'aitkin',
@@ -379,7 +379,7 @@ Real estate ranges from lakefront homes and cabins on Big Sandy Lake and the sur
 Life in Aitkin is river, lake, and small-town — fishing and boating on Big Sandy, the Mississippi and Rice Lake wildlife refuge nearby, and a walkable downtown with a working-town feel. For buyers who want an affordable base near big water and the northwoods, Aitkin and Big Sandy Lake are a practical, uncrowded pick.`,
         seo_title: 'Aitkin MN Homes for Sale | Big Sandy Lake Real Estate',
         seo_description: "Aitkin, MN homes for sale near Big Sandy Lake and the upper Mississippi — an affordable gateway to central Minnesota's lakes. Get new listings.",
-        hero_image_url: '/assets/images/mn-harbor-town.webp',
+        hero_image_url: '/assets/images/cr-waterfront-homes-sunset.jpg',
     },
     {
         slug: 'cass-lake',
@@ -391,7 +391,7 @@ Real estate centers on Cass Lake and the surrounding forest lakes — cabins and
 Life in Cass Lake is fishing, boating, and the northwoods — walleye and muskie water, the Chippewa National Forest, and a quiet, lake-first pace. Bemidji's services and college-town amenities are a short drive west. For buyers who want affordable, wild, clear-water lake country, Cass Lake delivers the real northwoods.`,
         seo_title: 'Cass Lake MN Homes for Sale | Chippewa Forest Waterfront',
         seo_description: "Cass Lake, MN homes for sale on Cass Lake — clear northwoods water in the Chippewa National Forest near Bemidji. Get new listings with a local agent.",
-        hero_image_url: '/assets/images/mn-clearwater-lakeshore.jpg',
+        hero_image_url: '/assets/images/mn-canoe-shore.webp',
     },
     {
         slug: 'ottertail',
@@ -403,7 +403,7 @@ Real estate here is anchored by Otter Tail Lake frontage — from classic cabins
 Life in Ottertail runs on the lake — boating and watersports on big open water, swimming off sandy beaches, and fishing across the county's many lakes. Nearby Perham and Battle Lake add services and small-town charm. For buyers who want big, sandy recreation water in the heart of Otter Tail lake country, Ottertail is right on it.`,
         seo_title: 'Ottertail MN Homes for Sale | Otter Tail Lake Real Estate',
         seo_description: "Ottertail, MN homes for sale on Otter Tail Lake — big, sandy recreation water in the heart of Otter Tail County. Get new listings with a local agent.",
-        hero_image_url: '/assets/images/mn-lake-dock-golden.jpg',
+        hero_image_url: '/assets/images/cr-lakeside-homes-boats.jpg',
     },
     {
         slug: 'annandale',
@@ -415,7 +415,7 @@ Real estate ranges from lakefront homes and cabins on Clearwater, Sugar, Sylvia,
 Life in Annandale balances lakes and town — boating and swimming on the area's clear water, a walkable downtown, and quick access to both the Cities and St. Cloud. For buyers who want central-Minnesota lake living within commuting distance, Annandale and its ring of lakes are one of the most convenient options in the region.`,
         seo_title: 'Annandale MN Homes for Sale | Central MN Lakes Real Estate',
         seo_description: "Annandale, MN homes for sale — the Heart of the Lakes, ringed by Clearwater, Sugar, and Sylvia lakes an hour from the Twin Cities. Get new listings.",
-        hero_image_url: '/assets/images/mn-lake-town-sunset-aerial.jpg',
+        hero_image_url: '/assets/images/mn-maple-lake-aerial.jpg',
     },
     {
         slug: 'lindstrom',
@@ -427,7 +427,7 @@ Real estate ranges from lakefront homes on the Chisago Lakes chain to in-town an
 Life in Lindström is lake-and-heritage: boating and swimming across the connected chain, a downtown of Swedish bakeries and shops, and festivals that lean into the town's history. The wider Chisago Lakes towns of Center City and Chisago City are minutes away. For buyers who want a real lake town with a short metro commute, Lindström is a standout.`,
         seo_title: 'Lindstrom MN Homes for Sale | Chisago Lakes Real Estate',
         seo_description: "Lindström, MN homes for sale on the Chisago Lakes chain — 'America's Little Sweden,' a historic lake town 45 minutes from the Twin Cities. Get new listings.",
-        hero_image_url: '/assets/images/mn-harbor-town.webp',
+        hero_image_url: '/assets/images/mn-dock-water-tower.webp',
     },
     {
         slug: 'chisago-city',
@@ -439,7 +439,7 @@ Real estate spans lakefront homes on the chain to established and newer neighbor
 Life in Chisago City runs on the chain and the trail — boating and fishing across the connected lakes, regional parks, and quick access to Lindström and Center City. For buyers who want connected-lake living with an easy commute and more attainable pricing than the west-metro lakes, Chisago City is a smart pick.`,
         seo_title: 'Chisago City MN Homes for Sale | Chisago Lakes Real Estate',
         seo_description: "Chisago City, MN homes for sale on the Chisago Lakes chain — connected northeast-metro lakes with an easy Twin Cities commute. Get new listings.",
-        hero_image_url: '/assets/images/mn-stillwater-aerial.webp',
+        hero_image_url: '/assets/images/cr-lakeside-culdesac-sunset.jpg',
     },
     {
         slug: 'center-city',
@@ -451,7 +451,7 @@ Real estate here is anchored by the Chisago Lakes chain — lakefront homes and 
 Life in Center City is small-town and lake-forward — boating across the chain, historic architecture, and the wider Chisago Lakes towns of Lindström and Chisago City minutes away. For buyers who want a quiet, historic lake town on connected water within metro reach, Center City is a rare, characterful option.`,
         seo_title: 'Center City MN Homes for Sale | Chisago Lakes Real Estate',
         seo_description: "Center City, MN homes for sale on the Chisago Lakes chain — the historic Chisago County seat on connected northeast-metro water. Get new listings.",
-        hero_image_url: '/assets/images/mn-purple-sunset-marina.webp',
+        hero_image_url: '/assets/images/mn-red-brick-victorian-street.jpg',
     },
     {
         slug: 'park-rapids',
@@ -463,7 +463,7 @@ Real estate ranges from lakefront homes and cabins on Fish Hook Lake and the sur
 Life in Park Rapids is lakes and the northwoods — boating and fishing across the area's water, the Heartland State Trail, Itasca State Park, and a downtown known for its wide Main Street and summer buzz. For buyers who want a real town surrounded by hundreds of lakes, Park Rapids is one of the best bases in north-central Minnesota.`,
         seo_title: 'Park Rapids MN Homes for Sale | Fish Hook Lake Real Estate',
         seo_description: "Park Rapids, MN homes for sale on Fish Hook Lake — a walkable north-central Minnesota town at the gateway to hundreds of lakes. Get new listings.",
-        hero_image_url: '/assets/images/mn-lake-town-sunset-aerial.jpg',
+        hero_image_url: '/assets/images/mn-lakefront-firepit-sunset.jpg',
     },
     {
         slug: 'willmar',
@@ -475,7 +475,7 @@ Real estate here pairs a real, year-round city — jobs, schools, healthcare, an
 Life in Willmar is city-and-lakes: boating and fishing across the area's water, the Glacial Lakes State Trail, and the amenities of a regional center. Nearby Spicer and New London round out the lake scene on Green Lake. For buyers who want lake country with the convenience of a real city, the Willmar Lakes Area is one of the best combinations in west-central Minnesota.`,
         seo_title: 'Willmar MN Homes for Sale | Kandiyohi Lakes Real Estate',
         seo_description: "Willmar, MN homes for sale in the Kandiyohi lakes area — a regional city minutes from Green Lake and Spicer in west-central Minnesota. Get new listings.",
-        hero_image_url: '/assets/images/mn-lake-town-street.jpg',
+        hero_image_url: '/assets/images/cr-suburban-street-sunset-aerial.jpg',
     },
     {
         slug: 'new-london',
@@ -487,7 +487,7 @@ Real estate ranges from lakefront and near-lake homes on Green Lake and the surr
 Life in New London is lakes, river, and arts — boating and swimming on Green Lake, paddling the Crow, a downtown known for its galleries and Little Crow Ski Team water-ski shows, and the trails of Sibley State Park. For buyers who want Green Lake access with small-town character, New London is the area's hidden-gem side.`,
         seo_title: 'New London MN Homes for Sale | Green Lake Area Real Estate',
         seo_description: "New London, MN homes for sale near Green Lake — a historic arts-and-mill town in Kandiyohi County's lake country. Get new listings with a local agent.",
-        hero_image_url: '/assets/images/mn-purple-sunset-marina.webp',
+        hero_image_url: '/assets/images/mn-lanesboro-downtown.jpg',
     },
     {
         slug: 'worthington',
@@ -499,7 +499,7 @@ Real estate here pairs an affordable, full-service town with genuine lakefront o
 Life in Worthington centers on the lake and the community — boating and fishing on Okabena, the lakeside trail and parks, and the famous King Turkey Day festival each fall. For buyers who want affordable in-town lake living in a real regional city, Worthington and Lake Okabena are southwest Minnesota's answer.`,
         seo_title: 'Worthington MN Homes for Sale | Lake Okabena Real Estate',
         seo_description: "Worthington, MN homes for sale on Lake Okabena — an affordable in-town lake in a regional southwest Minnesota city. Get new listings with a local agent.",
-        hero_image_url: '/assets/images/mn-lake-home-from-water.jpg',
+        hero_image_url: '/assets/images/cr-aerial-community-lake.jpg',
     },
     {
         slug: 'albert-lea',
@@ -511,7 +511,7 @@ Real estate here pairs an affordable, full-service city with genuine lakefront o
 Life in Albert Lea centers on the lake and the outdoors — boating and fishing on Fountain Lake, the lakeside trails and Fountain Lake Park, and easy interstate access in every direction. For buyers who want affordable in-town lake living in a real southern-Minnesota city, Albert Lea and Fountain Lake are an easy, uncrowded pick.`,
         seo_title: 'Albert Lea MN Homes for Sale | Fountain Lake Real Estate',
         seo_description: "Albert Lea, MN homes for sale on Fountain Lake — an affordable in-town lake in a southern Minnesota city at I-35 and I-90. Get new listings with a local agent.",
-        hero_image_url: '/assets/images/mn-lake-town-street.jpg',
+        hero_image_url: '/assets/images/cr-aerial-community-pool-lake.jpg',
     },
     {
         slug: 'fairmont',
@@ -523,7 +523,7 @@ Real estate here is defined by that in-town chain: lakefront homes on the connec
 Life in Fairmont runs on the chain — boating between the connected lakes, lakeside parks and trails, and a downtown with real amenities. Its location at the interstate crossroads makes it an easy stop and a practical base. For buyers who want connected in-town lakes at an accessible price in southern Minnesota, Fairmont delivers its City-of-Lakes name.`,
         seo_title: 'Fairmont MN Homes for Sale | Chain of Lakes Real Estate',
         seo_description: "Fairmont, MN homes for sale on the Chain of Lakes — five connected in-town lakes in southern Minnesota's 'City of Lakes.' Get new listings with a local agent.",
-        hero_image_url: '/assets/images/mn-purple-sunset-marina.webp',
+        hero_image_url: '/assets/images/cr-aerial-lakes-sunset.jpg',
     },
     {
         slug: 'buffalo',
@@ -535,7 +535,7 @@ Real estate here pairs metro-commutable convenience with genuine lakefront on Bu
 Life in Buffalo balances the lake and the town — boating and fishing on Buffalo Lake, the lakeside park and trails, and a downtown known for its shops and summer events. For buyers who want a real lake town within commuting distance of the metro, Buffalo is one of the northwest edge's best options.`,
         seo_title: 'Buffalo MN Homes for Sale | Buffalo Lake Real Estate',
         seo_description: "Buffalo, MN homes for sale on Buffalo Lake — a growing lake town with a walkable downtown on the northwest edge of the metro. Get new listings with a local agent.",
-        hero_image_url: '/assets/images/mn-lake-home-from-water.jpg',
+        hero_image_url: '/assets/images/cr-aerial-lake-neighborhood.jpg',
     },
     {
         slug: 'big-lake',
@@ -547,7 +547,7 @@ Real estate here is driven by that commuter-plus-lake combination: lakefront and
 Life in Big Lake mixes the lake with easy metro access — boating and fishing on the water, lakeside parks, and the Northstar line into the Cities. For buyers who want an affordable lake town with a rail commute to Minneapolis, Big Lake is one of the north metro's most practical picks.`,
         seo_title: 'Big Lake MN Homes for Sale | Sherburne County Real Estate',
         seo_description: "Big Lake, MN homes for sale — a growing commuter lake town on the Northstar line in Sherburne County, an easy drive from the metro. Get new listings.",
-        hero_image_url: '/assets/images/mn-clearwater-lakeshore.jpg',
+        hero_image_url: '/assets/images/cr-lake-beach-adirondack-chairs.jpg',
     },
     {
         slug: 'hutchinson',
@@ -559,7 +559,7 @@ Real estate here pairs an affordable, full-service town with in-town lake and ri
 Life in Hutchinson runs on the water and the trail — paddling and fishing the Crow and the town lakes, biking the Luce Line, and a downtown known for its arts and events. For buyers who want affordable in-town water and a genuine central-Minnesota town, Hutchinson is a practical, walkable choice.`,
         seo_title: 'Hutchinson MN Homes for Sale | Otter Lake &amp; Crow River',
         seo_description: "Hutchinson, MN homes for sale on Otter Lake and the Crow River — a walkable central-Minnesota town an hour from the Twin Cities. Get new listings.",
-        hero_image_url: '/assets/images/mn-lake-sunset-firepit.jpg',
+        hero_image_url: '/assets/images/cr-neighborhood-pond-fountain-dock.jpg',
     },
     {
         slug: 'faribault',
@@ -571,6 +571,6 @@ Real estate here ranges from lakefront and near-lake homes on Cannon and Roberds
 Life in Faribault blends history, town, and lakes — boating and fishing on Cannon and Roberds, the Sakatah Singing Hills State Trail, and a downtown of historic architecture and local shops. For buyers who want affordable lake access near a genuine southern-Minnesota city on the I-35 corridor, Faribault is a solid, characterful pick.`,
         seo_title: 'Faribault MN Homes for Sale | Cannon Lake Real Estate',
         seo_description: "Faribault, MN homes for sale near Cannon and Roberds lakes — a historic southern Minnesota city just off I-35. Get new listings with a local agent.",
-        hero_image_url: '/assets/images/mn-lake-dock-golden.jpg',
+        hero_image_url: '/assets/images/cr-craftsman-tree-lined-street.jpg',
     },
 ];
