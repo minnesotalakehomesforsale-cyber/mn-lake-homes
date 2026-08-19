@@ -385,7 +385,20 @@
             });
         }
 
-        document.addEventListener('DOMContentLoaded', () => { loadPost(); wireNewsletter(); });
+        // Related cards use the SAME generated gradient tile as the hero + the blog
+        // cards — never stock photos. The SSR emits <div class="related-img"
+        // data-cover-tag="…"> and we fill it here with mnlhBlogCover.
+        function fillRelatedCovers() {
+            document.querySelectorAll('.related-img[data-cover-tag]').forEach(el => {
+                if (typeof window.mnlhBlogCover !== 'function') return;
+                el.style.position = 'relative';
+                el.innerHTML = window.mnlhBlogCover(el.getAttribute('data-cover-tag'));
+                const bc = el.querySelector('.blog-cover');
+                if (bc) bc.style.cssText += ';position:absolute;inset:0;width:100%;height:100%;border-radius:0;margin:0;box-shadow:none;';
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => { loadPost(); wireNewsletter(); fillRelatedCovers(); });
     </script>
 </body>
 </html>
