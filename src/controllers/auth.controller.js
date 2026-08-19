@@ -138,7 +138,7 @@ const waitlist = async (req, res) => {
  * Creates a new user + linked agent record.
  */
 const register = async (req, res) => {
-    let { email, password, display_name, phone, license_number, brokerage_name, service_area_tag_ids, ref } = req.body;
+    let { email, password, display_name, phone, license_number, brokerage_name, city, specialties, service_area_tag_ids, ref } = req.body;
     const refCode = (ref || '').toString().trim().toUpperCase().slice(0, 16) || null;
 
     email = (email || '').trim().toLowerCase();
@@ -169,6 +169,12 @@ const register = async (req, res) => {
     } catch (_) { /* keep default */ }
     const tagIds = Array.isArray(service_area_tag_ids)
         ? service_area_tag_ids.filter(id => typeof id === 'string' && UUID_RE.test(id)).slice(0, signupCap)
+        : [];
+
+    // City + specialties are collected by the signup popup and needed to publish.
+    city = (city || '').trim().slice(0, 100);
+    const specs = Array.isArray(specialties)
+        ? [...new Set(specialties.map(s => String(s).trim()).filter(Boolean))].slice(0, 10)
         : [];
 
     const phoneNorm = phoneSvc.normalize(phone);
@@ -243,15 +249,10 @@ const register = async (req, res) => {
         // Assign this agent their own referral code up front (deterministic from
         // the new user id so it's stable). refCode is the code they SIGNED UP under.
         const myRefCode = 'REF' + require('crypto').createHash('md5').update(userId + 'mlh-ref').digest('hex').slice(0, 6).toUpperCase();
-        const agentRes = await client.query(
-            `INSERT INTO agents (user_id, membership_id, slug, display_name, license_number, brokerage_name, phone_public, email_public, profile_status, is_published, referral_code, referred_by_code)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'draft', false, $9, $10) RETURNING id`,
-            [userId, startingMembershipId, slugStr, display_name, license_number || null, brokerage_name || null, phone || null, email || null, myRefCode, refCode]
-        );
-        const newAgentId = agentRes.rows[0].id;
 
-        // Attach initial service-area tags. Silently skips any id that
-        // doesn't match an active tag in the catalog.
+        // Attach initial service-area tags FIRST — they drive lake-page
+        // visibility and the service_areas mirror in the agent insert below.
+        // Silently skips any id that doesn't match an active tag in the catalog.
         if (tagIds.length) {
             const values = tagIds.map((_, i) => `($1, $${i + 2})`).join(', ');
             await client.query(
@@ -262,6 +263,34 @@ const register = async (req, res) => {
                 [userId, ...tagIds]
             );
         }
+
+        // A free signup goes LIVE immediately when it has the minimum a public
+        // profile needs — name, phone, city, ≥1 service area, ≥1 specialty (all
+        // collected by the signup popup). Bio is seeded so the profile/card isn't
+        // blank; the dashboard nudges the agent to enrich it. Publishing only
+        // makes them VISIBLE — free tier is still out of the lead rotation. If
+        // anything's missing they land as a draft and publish from the dashboard.
+        const canPublish = !!(display_name && phone && city && tagIds.length && specs.length);
+        const seededBio = canPublish
+            ? `${display_name} is a Minnesota lake home specialist based in ${city}${brokerage_name ? `, with ${brokerage_name}` : ''}. Reach out about buying or selling on the water.`
+            : null;
+
+        const agentRes = await client.query(
+            `INSERT INTO agents
+                (user_id, membership_id, slug, display_name, license_number, brokerage_name,
+                 phone_public, email_public, city, bio, specialties, service_areas,
+                 profile_status, is_published, referral_code, referred_by_code)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb,
+                 COALESCE((SELECT jsonb_agg(t.name ORDER BY t.name)
+                             FROM tags t JOIN user_tags ut ON ut.tag_id = t.id
+                            WHERE ut.user_id = $1 AND t.active = TRUE), '[]'::jsonb),
+                 $12, $13, $14, $15)
+             RETURNING id`,
+            [userId, startingMembershipId, slugStr, display_name, license_number || null,
+             brokerage_name || null, phone || null, email || null, city || null, seededBio,
+             JSON.stringify(specs), (canPublish ? 'published' : 'draft'), canPublish, myRefCode, refCode]
+        );
+        const newAgentId = agentRes.rows[0].id;
 
         await client.query('COMMIT');
 
@@ -311,7 +340,10 @@ const register = async (req, res) => {
             });
         } catch (_) {}
 
-        // Fire-and-forget HubSpot mirror for the new agent.
+        // Fire-and-forget HubSpot mirror for the new agent: upsert the contact,
+        // then enroll them in the Agent Acquisition pipeline at "Free Profile
+        // Claimed" so campaign signups actually populate the funnel (not just the
+        // contacts list). A later paying subscription flips that same deal to Won.
         (async () => {
             const r = await hubspot.syncContact({
                 email,
@@ -326,6 +358,10 @@ const register = async (req, res) => {
                 pool.query(`UPDATE users SET hs_contact_id = $1 WHERE id = $2`, [r.id, userId])
                     .catch(e => console.error('[hubspot] save id failed:', e.message));
             }
+            try {
+                const d = await hubspot.createAgentAcquisitionDeal(email, { contactId: r?.id, name: display_name });
+                if (d?.ok && d.action === 'created') console.log(`[hubspot] acquisition deal created for ${email}`);
+            } catch (e) { console.error('[hubspot] acquisition deal failed:', e.message); }
         })();
 
         logActivity({
@@ -337,7 +373,7 @@ const register = async (req, res) => {
             req,
         });
 
-        res.status(201).json({ success: true, role: 'agent', display_name });
+        res.status(201).json({ success: true, role: 'agent', display_name, published: canPublish });
 
     } catch (err) {
         await client.query('ROLLBACK');

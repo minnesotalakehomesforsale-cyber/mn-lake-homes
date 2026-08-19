@@ -655,6 +655,48 @@ async function markAgentAcquisitionWon(email, opts = {}) {
     }
 }
 
+/**
+ * Enroll a brand-new free signup in the Agent Acquisition pipeline at the
+ * "Free Profile Claimed" stage, associated to their contact. Idempotent: if a
+ * deal already exists on the contact in this pipeline, it's left as-is (so a
+ * later Won–Paying flip isn't clobbered). Best-effort; never throws.
+ */
+async function createAgentAcquisitionDeal(email, opts = {}) {
+    try {
+        if (!isActiveFn()) return { ok: false, reason: 'not_active' };
+        if (!email) return { ok: false, reason: 'no_email' };
+        const pipe = await getAcqPipeline();
+        if (!pipe) return { ok: false, reason: 'pipeline_missing' };
+        const stageId = pipe.byLabel['Free Profile Claimed'] || pipe.byLabel['Target'];
+        if (!stageId) return { ok: false, reason: 'stage_missing' };
+
+        const contactId = opts.contactId || await findContactIdByEmail(email);
+
+        // Don't create a duplicate — reuse any existing deal for this contact in
+        // the acquisition pipeline (e.g. one we were already prospecting).
+        if (contactId) {
+            try {
+                const assoc = await hsFetch(`/crm/v3/objects/contacts/${contactId}/associations/deals`);
+                for (const a of (assoc.results || [])) {
+                    const d = await hsFetch(`/crm/v3/objects/deals/${a.id || a.toObjectId}?properties=pipeline`);
+                    if (d.properties && d.properties.pipeline === pipe.id) return { ok: true, action: 'exists', dealId: d.id };
+                }
+            } catch (e) { /* fall through to create */ }
+        }
+
+        const body = { properties: { dealname: `${opts.name || email} — free profile`, pipeline: pipe.id, dealstage: stageId } };
+        if (contactId) body.associations = [{
+            to: { id: contactId },
+            types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 3 }], // deal→contact
+        }];
+        const created = await hsFetch('/crm/v3/objects/deals', { method: 'POST', body });
+        return { ok: true, action: 'created', dealId: created.id };
+    } catch (e) {
+        console.error('[hubspot] createAgentAcquisitionDeal failed:', e.message);
+        return { ok: false, reason: e.message };
+    }
+}
+
 // ── Backend-driven deal maintenance (B4 automations, free-tier friendly) ─────
 // HubSpot Workflows/Sequences need Sales/Ops Hub Professional. We replicate the
 // two achievable automations with the FREE CRM API instead: (1) a deal idle
@@ -778,5 +820,6 @@ module.exports = {
     ensureProperty,
     ensureDealPipeline,
     markAgentAcquisitionWon,
+    createAgentAcquisitionDeal,
     runAcquisitionMaintenance,
 };
