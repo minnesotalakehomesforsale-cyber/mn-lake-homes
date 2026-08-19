@@ -695,7 +695,8 @@
                             <h2 style="font-size: 2.1rem; font-weight: 800; margin-bottom: 0.25rem;">Edit Public Profile</h2>
                             <p style="color: #4a5568;">Ensure all information is accurate and perfectly formatted.</p>
                         </div>
-                        <div style="display: flex; gap: 1rem;">
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <span id="profile-save-state" style="font-size: 0.82rem; font-weight: 600; color: #38a169;"></span>
                             <button class="btn" onclick="saveDraft()" style="background: #edf2f7; color: #4a5568; font-weight: 600; border: none; padding: 0.75rem 1.5rem;">Save Draft</button>
                         </div>
                     </div>
@@ -1472,6 +1473,7 @@
         let _accountSub = 'account';
 
         function switchView(view) {
+            if (_profileDirty) saveProfileNow();   // flush any pending profile edit before leaving
             let topView = view;
             if (view === 'profile')      { topView = 'account'; _accountSub = 'profile'; }
             else if (view === 'account') { _accountSub = 'account'; }  // nav tab → account info
@@ -1856,6 +1858,7 @@
 
         // Account section sub-tabs: Account info vs Profile Editor.
         function setAccountSub(sub) {
+            if (_profileDirty) saveProfileNow();   // flush any pending profile edit before switching sub-tab
             _accountSub = sub;
             document.getElementById('view-account').style.display = sub === 'account' ? 'block' : 'none';
             document.getElementById('view-profile').style.display = sub === 'profile' ? 'block' : 'none';
@@ -1882,10 +1885,22 @@
                 window.location.href = REDIRECT_LOGIN;
             }
 
+            // Auto-save the profile editor: any edit debounce-saves, so an agent
+            // never loses a bio/specialty/FAQ by navigating away. Closing the tab
+            // with an unsaved or in-flight change prompts a confirm.
+            const _pForm = document.getElementById('profile-edit-form');
+            if (_pForm) {
+                _pForm.addEventListener('input',  scheduleProfileSave);
+                _pForm.addEventListener('change', scheduleProfileSave);
+            }
+            window.addEventListener('beforeunload', (e) => {
+                if (_profileDirty || _profileSaving) { e.preventDefault(); e.returnValue = ''; }
+            });
+
             // Upgrade the Brokerage field into a type-to-filter combobox.
             try {
                 const bInput = document.getElementById('f-brokerage');
-                if (bInput && window.mnlhBrokerageCombobox) window.mnlhBrokerageCombobox(bInput, { onPick: calcProgress });
+                if (bInput && window.mnlhBrokerageCombobox) window.mnlhBrokerageCombobox(bInput, { onPick: () => { calcProgress(); scheduleProfileSave(); } });
             } catch (_) {}
 
             loadDashProps();   // "My Properties" preview on the overview
@@ -2158,6 +2173,11 @@
 
             // Store agent slug for the "view profile" link on success page
             if (agent.slug) window._agentSlug = agent.slug;
+
+            // Fields are now populated — from here on, user edits auto-save.
+            _profileReady = true;
+            _profileDirty = false;
+            setSaveState('saved');
         }
 
         // ── Dashboard landing ─────────────────────────────────────────────────
@@ -3827,34 +3847,84 @@
             closeSpecDropdown();
             renderSpecChips();
             calcProgress();
+            scheduleProfileSave();
         }
         function removeSpec(name) {
             window._selectedSpecs.delete(name);
             renderSpecChips();
             if (document.getElementById('f-specs-dropdown')?.classList.contains('show')) onSpecSearch();
             calcProgress();
+            scheduleProfileSave();
         }
 
-        // ── Save Draft ───────────────────────────────────────────────────────────
+        // ── Save + auto-save ──────────────────────────────────────────────────
+        // Every field in the profile editor persists on its own. Text fields
+        // debounce-save ~0.9s after you stop typing; the specialty picker saves
+        // on add/remove; leaving the editor or closing the tab flushes anything
+        // pending. No more losing a bio or specialties by navigating away. The
+        // Save Draft button remains as an explicit "save now".
+        let _profileReady  = false;   // gate: don't auto-save while hydrateForm() populates
+        let _profileTimer  = null;
+        let _profileDirty  = false;   // unsaved edits exist
+        let _profileSaving = false;
+
+        function setSaveState(state) {
+            const el = document.getElementById('profile-save-state');
+            if (!el) return;
+            const map = {
+                saved:   ['All changes saved', '#38a169'],
+                saving:  ['Saving…',           '#718096'],
+                unsaved: ['Unsaved changes…',  '#b7791f'],
+                error:   ['Couldn’t save — will retry', '#c53030'],
+            };
+            const [txt, col] = map[state] || ['', '#38a169'];
+            el.textContent = txt;
+            el.style.color = col;
+        }
+
+        function scheduleProfileSave() {
+            if (!_profileReady) return;
+            _profileDirty = true;
+            setSaveState('unsaved');
+            clearTimeout(_profileTimer);
+            _profileTimer = setTimeout(saveProfileNow, 900);
+        }
+
+        async function saveProfileNow() {
+            clearTimeout(_profileTimer);
+            if (!_profileReady || !_profileDirty) return;
+            if (_profileSaving) { _profileTimer = setTimeout(saveProfileNow, 500); return; } // retry after in-flight save
+            _profileSaving = true;
+            setSaveState('saving');
+            try {
+                const res = await fetch('/api/agents/me', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(extractFormPayload()),
+                });
+                if (res.status === 401) { window.location.href = REDIRECT_LOGIN; return; }
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.success) throw new Error(data.error || `HTTP ${res.status}`);
+                _profileDirty = false;
+                setSaveState('saved');
+            } catch (err) {
+                setSaveState('error');   // keep _profileDirty=true so the next edit or nav-flush retries
+            } finally {
+                _profileSaving = false;
+            }
+        }
+
+        // ── Save Draft (explicit "save now") ─────────────────────────────────
         async function saveDraft() {
             const btn = document.querySelector('button[onclick="saveDraft()"]');
             const orig = btn.textContent;
             btn.textContent = 'Saving...';
             btn.disabled = true;
-            try {
-                const res = await fetch('/api/agents/me', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(extractFormPayload())
-                });
-                if (res.status === 401) { window.location.href = REDIRECT_LOGIN; return; }
-                const data = await res.json();
-                btn.textContent = data.success ? 'Draft Saved ✓' : 'Save Failed';
-            } catch(err) {
-                btn.textContent = 'Network Error';
-            } finally {
-                setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2500);
-            }
+            _profileDirty = true;               // force a write even if nothing changed
+            await saveProfileNow();
+            btn.textContent = _profileDirty ? 'Save Failed' : 'Draft Saved ✓';
+            setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2500);
         }
 
         // (Submit for review removed — Phase 1 uses self-serve Stripe checkout instead)
