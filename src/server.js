@@ -1720,6 +1720,14 @@ app.get('/business/dashboard', (req, res) => {
 // /join — server-render the agent tier prices so crawlers (and no-JS requests)
 // see real prices instead of "Loading plans…". The client script still runs and
 // re-renders the grid for interactivity (period toggle + account gating).
+// Campaign landing page for agent acquisition. Not linked in nav / kept out of
+// search (noindex in the page). Standalone URL to point ad traffic at; every CTA
+// opens the join popup, which upsells a paid plan after signup.
+app.get('/for-agents', (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.sendFile(path.join(PROJECT_ROOT, 'pages/public/for-agents.html'));
+});
+
 app.get('/join', (req, res, next) => {
     try {
         const tpl = fs.readFileSync(path.join(PROJECT_ROOT, 'pages/public/join.html'), 'utf8');
