@@ -21,13 +21,15 @@
     <style>
       body { background: #fff; color: #1a202c; font-family: var(--font-family); }
 
-      /* ── Hero (photo background, same language as the home hero) ─────────── */
-      .fa-hero { position: relative; min-height: 92vh; display: flex; align-items: center; justify-content: center;
-                 padding: 7.5rem 1.5rem 4rem; overflow: hidden;
-                 background: #1a202c url('/assets/images/mn-lakefront-estate-dusk.jpg') center 42%/cover no-repeat; }
-      .fa-hero::before { content: ''; position: absolute; inset: 0;
-                 background: linear-gradient(180deg, rgba(9,15,24,0.68) 0%, rgba(9,15,24,0.52) 42%, rgba(255,255,255,0) 82%, #fff 100%); }
-      .fa-hero-inner { position: relative; z-index: 1; width: 100%; max-width: 860px; text-align: center; transform: translateY(-3vh); }
+      /* ── Header band (normal interior-page header — solid nav + dark band,
+           like the Join / About pages, not a full-screen photo hero) ──────── */
+      .fa-hero { position: relative; overflow: hidden; text-align: center;
+                 padding: 11rem 1.5rem 6.5rem; background-color: var(--bg-dark); color: #fff; }
+      .fa-hero::before { content: ''; position: absolute; inset: 0; z-index: 0;
+                 background: url('/assets/images/mn-lakefront-estate-dusk.jpg') center 42%/cover no-repeat; opacity: 0.16; }
+      .fa-hero::after { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+                 background: radial-gradient(80% 95% at 50% 0%, rgba(29,109,242,0.14), transparent 62%); }
+      .fa-hero-inner { position: relative; z-index: 1; width: 100%; max-width: 820px; margin: 0 auto; }
       .fa-eyebrow { display: inline-block; color: #cfe0ff; font-size: 0.82rem; font-weight: 700; letter-spacing: 2px;
                  text-transform: uppercase; margin: 0 0 1.25rem; padding: 0.4rem 0.95rem; border: 1px solid rgba(255,255,255,0.32);
                  border-radius: 999px; background: rgba(255,255,255,0.06); backdrop-filter: blur(4px); }
@@ -125,7 +127,7 @@
         .fa-grid, .fa-steps { grid-template-columns: 1fr 1fr; }
       }
       @media (max-width: 700px) {
-        .fa-hero { min-height: 88vh; padding: 6.5rem 1.25rem 3rem; background-position: center 40%; }
+        .fa-hero { padding: 8rem 1.25rem 4rem; }
         .fa-stats { grid-template-columns: 1fr 1fr; gap: 1.75rem 0; padding: 2rem 1.25rem; }
         .fa-stat:nth-child(2) { border-right: 0; }
         .fa-section { padding: 3.75rem 1.25rem; }
@@ -292,8 +294,8 @@
             <div class="fa-quote-by">
                 <div class="fa-quote-av">L</div>
                 <div class="fa-quote-meta">
-                    <div class="nm">Lara M.</div>
-                    <div class="rl">Lake agent · Brainerd Lakes area</div>
+                    <div class="nm">Lara B.</div>
+                    <div class="rl">Lake agent · Detroit Lakes area</div>
                 </div>
             </div>
         </div>
