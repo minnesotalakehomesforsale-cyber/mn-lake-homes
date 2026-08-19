@@ -2219,7 +2219,6 @@ app.get('/blog/:slug', async (req, res, next) => {
             if (rel.length) {
                 const cards = rel.map(p => `
                     <a class="related-card" href="/blog/${escapeHtml(p.slug)}">
-                        <div class="related-img" data-cover-tag="${escapeHtml(p.tag || 'General')}"></div>
                         <div class="related-body">
                             <span class="related-tag">${escapeHtml(p.tag || 'General')}</span>
                             <h3 class="related-title">${escapeHtml(p.title)}</h3>

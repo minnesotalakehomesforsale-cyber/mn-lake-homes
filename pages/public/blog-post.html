@@ -159,11 +159,6 @@
         </div>
     </header>
 
-    <!-- Hero banner: same width as the head and the body below -->
-    <div class="post-banner-wrap post-container" id="post-banner-wrap">
-        <div class="post-banner"><img id="hero-img" src="" alt=""></div>
-    </div>
-
     <!-- Body: TOC | article | CTAs -->
     <div class="post-layout post-container">
         <aside class="post-toc" id="post-toc" hidden>
@@ -316,19 +311,7 @@
                 // and blurry and repeat across the site. On-brand, consistent, and it
                 // always renders. Falls back to the real cover only if the generator
                 // isn't loaded for some reason.
-                const bannerWrap = document.getElementById('post-banner-wrap');
-                const banner = bannerWrap ? bannerWrap.querySelector('.post-banner') : null;
-                if (banner && typeof window.mnlhBlogCover === 'function') {
-                    banner.style.position = 'relative';
-                    banner.innerHTML = window.mnlhBlogCover(post.tag);
-                    const bc = banner.querySelector('.blog-cover');
-                    if (bc) bc.style.cssText += ';position:absolute;inset:0;width:100%;height:100%;border-radius:0;margin:0;box-shadow:none;';
-                    if (bannerWrap) bannerWrap.style.display = '';
-                } else {
-                    const heroImg = document.getElementById('hero-img');
-                    if (heroImg && post.cover_image_url) { heroImg.src = post.cover_image_url; heroImg.alt = post.title; }
-                    if (bannerWrap) bannerWrap.style.display = '';
-                }
+                // No hero banner — blog posts are text-first (no cover image).
 
                 // Tailor the primary CTA to the post's category.
                 const tag = post.tag || '';
