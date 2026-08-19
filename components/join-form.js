@@ -23,9 +23,44 @@
         { q: "Best phone number to reach you?",                    hint: 'For our team to follow up on your application.',                                                 field: 'phone',    type: 'tel',      ph: '(612) 555-0000',          required: true },
         { q: "Which brokerage are you with?",                      hint: 'Independent? No worries — just press Continue.',                                                 field: 'brokerage',type: 'text',     ph: "e.g. Keller Williams, Sotheby's", required: false },
         { q: "Do you have a real estate license number?",          hint: 'Optional — you can update this later in your profile.',                                          field: 'license',  type: 'text',     ph: 'e.g. MN-40012345',        required: false },
+        { q: "What city are you based in?",                        hint: "Your home base — it shows on your public profile and helps us place you.",                        field: 'city',     type: 'text',     ph: 'e.g. Nisswa',             required: true },
         { q: "Which areas do you serve?",                          hint: 'Pick up to 10 cities or towns. We route leads near these areas to you. You can change this later.', field: 'service_area_tag_ids', type: 'tags',     required: true },
+        { q: "What do you specialize in?",                         hint: 'Pick a few — buyers filter by these, and they show on your profile. Change them any time.',       field: 'specialties', type: 'specialties', required: true },
         { q: "Create a password for your account.",                hint: 'Needed for the upcoming agent portal — this site is launching as the beta. Min 8 characters.', field: 'password', type: 'password', ph: '••••••••',                required: true, minlength: 8 },
     ];
+
+    // Specialty catalog for the signup picker (mirrors the dashboard editor).
+    const JOIN_SPECIALTY_CATALOG = [
+        'Luxury Waterfront', 'Lake Cabins', 'First-Time Buyers', 'Investment Properties',
+        'Relocation', 'New Construction', 'Buyer Representation', 'Seller Representation',
+        'Year-Round Lake Homes', 'Seasonal Cabins', 'Vacant Lakeshore Land', 'Historic Lake Homes',
+    ];
+    const JOIN_SPECS_MAX = 6;
+
+    function _renderSpecialtiesStep(container) {
+        const selected = new Set(Array.isArray(_js.data.specialties) ? _js.data.specialties : []);
+        _js.data.specialties = [...selected];
+        function paint() {
+            container.innerHTML =
+                '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;justify-content:center;max-width:460px;margin:0 auto;">' +
+                JOIN_SPECIALTY_CATALOG.map(s => {
+                    const on = selected.has(s);
+                    return `<button type="button" data-spec="${s.replace(/"/g, '&quot;')}" style="font:inherit;font-size:0.9rem;cursor:pointer;padding:0.5rem 0.9rem;border-radius:999px;border:1.5px solid ${on ? '#1d6df2' : '#d5dbe4'};background:${on ? '#1d6df2' : '#fff'};color:${on ? '#fff' : '#4a5568'};transition:all .12s;">${s}</button>`;
+                }).join('') +
+                '</div>' +
+                `<p style="text-align:center;color:#a0aec0;font-size:0.8rem;margin:0.85rem 0 0;">${selected.size}/${JOIN_SPECS_MAX} selected</p>`;
+            container.querySelectorAll('[data-spec]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const name = btn.getAttribute('data-spec');
+                    if (selected.has(name)) selected.delete(name);
+                    else { if (selected.size >= JOIN_SPECS_MAX) return; selected.add(name); }
+                    _js.data.specialties = [...selected];
+                    paint();
+                });
+            });
+        }
+        paint();
+    }
 
     // Admin-tunable via app_config.signup_max_service_areas. We fetch the
     // current cap from /api/config/public the first time the tags step
@@ -205,6 +240,8 @@
         const area = document.getElementById('join-field');
         if (s.type === 'tags') {
             _renderTagsStep(area);
+        } else if (s.type === 'specialties') {
+            _renderSpecialtiesStep(area);
         } else {
             area.innerHTML = `<input id="join-input" type="${s.type}" placeholder="${s.ph}" autocomplete="off"
                 style="${iStyle}" ${focus} value="${(_js.data[s.field] || '').toString().replace(/"/g, '&quot;')}">`;
@@ -361,6 +398,19 @@
             return;
         }
 
+        // Specialties step: kept in _js.data.specialties as the agent taps chips.
+        if (s.type === 'specialties') {
+            const picks = Array.isArray(_js.data.specialties) ? _js.data.specialties : [];
+            if (s.required && picks.length === 0) {
+                err.textContent = 'Pick at least one specialty — buyers filter by these.';
+                err.style.display = 'block';
+                return;
+            }
+            if (_js.step < JOIN_STEPS.length - 1) { _js.step++; _joinSlide(); }
+            else await _joinSubmit();
+            return;
+        }
+
         const val = (document.getElementById('join-input')?.value || '').trim();
 
         if (s.required && !val) { err.textContent = 'This field is required.'; err.style.display = 'block'; return; }
@@ -390,7 +440,9 @@
                     phone:          _js.data.phone     || null,
                     license_number: _js.data.license   || null,
                     brokerage_name: _js.data.brokerage || null,
+                    city:           _js.data.city      || null,
                     service_area_tag_ids: Array.isArray(_js.data.service_area_tag_ids) ? _js.data.service_area_tag_ids : [],
+                    specialties:    Array.isArray(_js.data.specialties) ? _js.data.specialties : [],
                 })
             });
             const result = await res.json();
