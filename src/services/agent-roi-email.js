@@ -11,7 +11,9 @@ const emailService = require('./email');
 const AVG_SALE   = Number(process.env.AGENT_ROI_AVG_SALE_USD)  || 475000;
 const COMMISSION = Number(process.env.AGENT_ROI_COMMISSION_PCT) || 2.5;
 const CLOSE_RATE = Number(process.env.AGENT_ROI_CLOSE_RATE)     || 0.08;
-const PLAN_PRICE = { founder: 249, top_agent: 149, premium: 149, mn_lake_specialist: 39, basic: 9 };
+// Plan prices come from the single env-driven source (STRIPE_PRICING_*), not
+// hardcoded here — so a price change can't silently make this recap's math wrong.
+const { monthlyPriceForCode } = require('../controllers/stripe.controller');
 const SITE_URL   = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
 const money = n => '$' + Number(n || 0).toLocaleString('en-US');
 
@@ -61,7 +63,7 @@ async function runMonthlyRoiEmails() {
         let sent = 0;
         for (const r of rows) {
             if (!r.email || !r.leads) continue;   // skip agents with no leads that month
-            const planPrice = PLAN_PRICE[r.plan_code] ?? 9;
+            const planPrice = monthlyPriceForCode(r.plan_code);
             const perLead = Math.round(AVG_SALE * (COMMISSION / 100) * CLOSE_RATE);
             const monthValue = r.leads * perLead;
             const mult = planPrice ? (monthValue / planPrice).toFixed(1) : null;

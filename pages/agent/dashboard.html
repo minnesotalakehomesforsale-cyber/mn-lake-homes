@@ -3982,89 +3982,11 @@
             }
         }
 
-        // ── Tier Pricing / Go-Live ──────────────────────────────────────────────
-        // Prices mirror the env-driven source of truth in stripe.controller.js
-        // (getAgentPricing → STRIPE_PRICING_* with defaults 9/39/149). Keep these
-        // in sync with pricing.html, or the dashboard shows agents the wrong price.
-        const tierPricing = {
-            standard: { monthly: { display: '$9',   period: '/month' }, annual: { display: '$90',   period: '/year' } },
-            prime:    { monthly: { display: '$39',  period: '/month' }, annual: { display: '$390',  period: '/year' } },
-            founder:  { monthly: { display: '$149', period: '/month' }, annual: { display: '$1490', period: '/year' } }
-        };
-
-        const tierPeriodState = { standard: 'monthly', prime: 'monthly', founder: 'monthly' };
-
-        function getTierPeriod(tier) {
-            return tierPeriodState[tier] || 'monthly';
-        }
-
-        function setTierPeriod(tier, period, btnEl) {
-            tierPeriodState[tier] = period;
-            const p = tierPricing[tier][period];
-            document.getElementById('price-' + tier).textContent = p.display;
-            document.getElementById('period-' + tier).textContent = p.period;
-
-            // Toggle active button within the same card
-            const card = btnEl.closest('.tier-card');
-            card.querySelectorAll('.tier-toggle-btn').forEach(b => b.classList.remove('active'));
-            btnEl.classList.add('active');
-
-            // Show/hide save label
-            const saveEl = document.getElementById('save-' + tier);
-            if (saveEl) {
-                saveEl.classList.toggle('visible', period === 'annual' && tier !== 'founder');
-            }
-        }
-
-        async function activateTier(tier, period) {
-            const card = document.getElementById('tier-card-' + tier);
-            const btn = card.querySelector('.tier-get-started');
-            const origText = btn.textContent;
-            btn.textContent = 'Saving profile...';
-            btn.disabled = true;
-            btn.style.opacity = '0.7';
-
-            try {
-                // Auto-save profile before sending to Stripe so nothing is lost
-                await fetch('/api/agents/me', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify(extractFormPayload())
-                });
-
-                btn.textContent = 'Redirecting to checkout...';
-
-                const res = await fetch('/api/stripe/checkout', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ tier, period })
-                });
-
-                if (res.status === 401) {
-                    window.location.href = REDIRECT_LOGIN;
-                    return;
-                }
-
-                const data = await res.json();
-
-                if (!res.ok) {
-                    throw new Error(data.error || 'Failed to create checkout session.');
-                }
-
-                if (data.url) {
-                    window.location.href = data.url;
-                } else {
-                    throw new Error('No checkout URL returned.');
-                }
-            } catch (err) {
-                alert(err.message || 'Something went wrong. Please try again.');
-                btn.textContent = origText;
-                btn.disabled = false;
-                btn.style.opacity = '1';
-            }
-        }
+        // ── Go-Live / plan selection ────────────────────────────────────────────
+        // Plan selection + pricing live on /pricing, driven by the env-based
+        // source of truth (stripe.controller.buildAgentPricing → STRIPE_PRICING_*).
+        // The old in-dashboard tier cards + their hardcoded 9/39/149 prices were
+        // removed to eliminate price drift; #view-activate now links out to /pricing.
     </script>
 
     <!-- ── Lead detail slide-over ──────────────────────────────────── -->

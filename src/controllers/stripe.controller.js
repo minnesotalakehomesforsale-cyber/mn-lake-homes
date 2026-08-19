@@ -658,6 +658,25 @@ function buildAgentPricing() {
 }
 exports.buildAgentPricing = buildAgentPricing;
 
+// Monthly price ($) for a membership CODE, read from the same env-driven source
+// as the pricing page — so nothing hardcodes 9/39/149 and drifts on a price
+// change. Founder (per-lake seat) falls back to its own env / $249 floor.
+function monthlyPriceForCode(code) {
+    const { tiers } = buildAgentPricing();
+    const bySlug = Object.fromEntries(tiers.map(t => [t.tier, t.monthly_price]));
+    const map = {
+        free: 0,
+        basic: bySlug.standard,
+        mn_lake_specialist: bySlug.prime,
+        top_agent: bySlug.founder_public,
+        premium: bySlug.founder_public,
+        founder: Number(process.env.STRIPE_PRICING_FOUNDER_SEAT) || 249,
+    };
+    const v = map[code];
+    return Number.isFinite(v) ? v : (bySlug.standard ?? 9);
+}
+exports.monthlyPriceForCode = monthlyPriceForCode;
+
 exports.getAgentPricing = (req, res) => {
     res.json(buildAgentPricing());
 };
