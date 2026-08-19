@@ -94,6 +94,7 @@
 
         /* Blog card grid */
         .tn-blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
+        .lk-blog-thumb .blog-cover { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 0; margin: 0; box-shadow: none; }
 
         .tn-empty { grid-column: 1/-1; text-align: center; padding: 3rem 2rem; color: #718096; background: #fff; border: 1px dashed #cbd5e0; border-radius: 14px; }
 
@@ -621,14 +622,13 @@
                 if (!posts.length) return;
                 section.style.display = '';
                 grid.innerHTML = posts.slice(0, 6).map(p => {
-                    const thumb = p.cover_image_url || '/assets/images/mn-canoe-shore.webp';
+                    // Same generated gradient tile as the blog hero/cards — not a stock photo.
+                    const cover = window.mnlhBlogCover ? window.mnlhBlogCover(p.tag) : '';
                     const date = p.published_at ? new Date(p.published_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '';
                     return `
                         <a href="/blog-post?slug=${encodeURIComponent(p.slug)}"
                            style="display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid #edf2f7;border-radius:14px;overflow:hidden;transition:transform 0.15s,box-shadow 0.15s;">
-                            <div style="height:180px;background:#f7f9fa;overflow:hidden;">
-                                <img src="${escHtml(thumb)}" alt="${escHtml(p.title)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">
-                            </div>
+                            <div class="lk-blog-thumb" style="height:180px;overflow:hidden;position:relative;background:linear-gradient(135deg,#0f2b46,#1d6df2);">${cover}</div>
                             <div style="padding:1.1rem 1.25rem 1.25rem;">
                                 <div style="font-size:0.72rem;font-weight:800;color:#1d6df2;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.4rem;">${escHtml(p.tag || 'General')}${date ? ` · ${escHtml(date)}` : ''}</div>
                                 <div style="font-size:1.05rem;font-weight:700;color:#1a202c;line-height:1.35;margin-bottom:0.4rem;">${escHtml(p.title)}</div>
