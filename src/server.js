@@ -1728,6 +1728,11 @@ app.get('/for-agents', (req, res) => {
     res.sendFile(path.join(PROJECT_ROOT, 'pages/public/for-agents.html'));
 });
 
+// No dedicated /agents/signup page — the working signup lives at /join (the
+// join popup registers the agent). Redirect so any ad/email that uses this URL
+// lands on the real flow instead of 404-ing via the /agents/:slug handler.
+app.get('/agents/signup', (req, res) => res.redirect('/join'));
+
 app.get('/join', (req, res, next) => {
     try {
         const tpl = fs.readFileSync(path.join(PROJECT_ROOT, 'pages/public/join.html'), 'utf8');
