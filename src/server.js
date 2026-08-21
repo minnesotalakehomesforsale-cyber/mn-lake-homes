@@ -4866,7 +4866,7 @@ async function seedDemoFreeAgent() {
                      'This is a demo profile on the Free plan — a public listing with no leads, featured placement, or property listings until upgraded.',
                      '(612) 555-0100',$3,7,$4,'published',TRUE,$5)`,
                 [userId, freeId, EMAIL, JSON.stringify(['First-Time Buyers', 'Waterfront Homes', 'Cabins']), refCode]);
-            console.log('[seed] demo free agent created:', EMAIL, '(password:', PASSWORD + ')');
+            console.log('[seed] demo free agent created:', EMAIL);
         } else {
             // Keep it on the free tier + published for previewing.
             await pool.query(`UPDATE agents SET membership_id = $2, profile_status = 'published', is_published = TRUE WHERE user_id = $1`, [userId, freeId]);

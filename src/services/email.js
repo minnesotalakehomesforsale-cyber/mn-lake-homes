@@ -42,7 +42,12 @@ const RESEND_KEY     = process.env.RESEND_API_KEY;
 // Marketing/automated email must carry a working unsubscribe + a physical
 // postal address. Set EMAIL_PHYSICAL_ADDRESS in prod.
 const PHYSICAL_ADDRESS = process.env.EMAIL_PHYSICAL_ADDRESS || 'MN Lake Homes, Minnesota, USA';
-const UNSUB_SECRET = process.env.JWT_SECRET || 'mnlakehomes-unsub';
+// Dedicated secret for unsubscribe-token HMAC (SEC-04). Falls back to JWT_SECRET
+// during the transition so existing links keep verifying until UNSUB_SECRET is
+// set in the environment; no hardcoded literal (the source is public). Set
+// UNSUB_SECRET in prod, ideally before rotating JWT_SECRET, to avoid breaking
+// already-sent unsubscribe links.
+const UNSUB_SECRET = process.env.UNSUB_SECRET || process.env.JWT_SECRET;
 
 // Stateless, verifiable unsubscribe token (HMAC of the lowercased email).
 function unsubToken(email) {
