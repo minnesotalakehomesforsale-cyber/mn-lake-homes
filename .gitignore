@@ -4,6 +4,14 @@
 .env.staging
 .env.production
 
+# Operator data / dev artifacts — never track, never deploy, never web-serve
+# (SEC-02). The repo root is the web root; committing data or stray HTML here
+# publishes it. Prospect lists and one-off pages live locally only.
+/lake-agent-prospects.csv
+/*.csv
+/image-library.html
+/property-page-standalone.html
+
 # Dependencies
 node_modules/
 npm-debug.log*
