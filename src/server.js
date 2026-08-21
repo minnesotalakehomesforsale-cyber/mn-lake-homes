@@ -675,8 +675,11 @@ app.get('/sitemap.xml', async (req, res) => {
             pool.query(`SELECT slug, updated_at FROM businesses
                         WHERE status = 'active'
                           AND (user_id IS NULL OR subscription_status = 'active' OR tier_comped)`),
+            // Agents enter the sitemap only with a real written bio — MUST match
+            // the /agents/:slug robots gate (agentRobots) so index==sitemap holds.
             pool.query(`SELECT slug, updated_at FROM agents
-                        WHERE profile_status = 'published' AND is_published = TRUE AND deleted_at IS NULL`),
+                        WHERE profile_status = 'published' AND is_published = TRUE AND deleted_at IS NULL
+                          AND COALESCE(bio, '') <> ''`),
             pool.query(`SELECT slug, updated_at, published_at FROM blog_posts
                         WHERE is_published = TRUE AND deleted_at IS NULL`),
             pool.query(`SELECT slug, updated_at FROM listings WHERE status = 'active'`),
@@ -2435,6 +2438,15 @@ app.get('/agents/:slug', async (req, res, next) => {
             const title = `${agent.display_name}${agent.brokerage_name ? ' · ' + agent.brokerage_name : ''} | Minnesota Lake Home Agent`;
             const bioText = (agent.bio || '').replace(/\s+/g, ' ').trim();
             const desc = bioText ? bioText.slice(0, 155) : `${agent.display_name} is a vetted Minnesota lake home specialist${loc ? ' serving ' + loc : ''}. Get matched and start your lakefront search.`;
+            // Index only agents with a real written bio — the page's one piece of
+            // unique content. Bio-less (auto-published) profiles stay visible on
+            // the site and keep receiving leads, but are noindex so they don't
+            // compete in search as thin, near-duplicate-meta pages. This predicate
+            // MUST match the sitemap agent query (COALESCE(bio,'')<>'') so index
+            // and sitemap never drift (same invariant as lakes/towns).
+            const agentRobots = bioText
+                ? 'index, follow, max-snippet:-1, max-image-preview:large'
+                : 'noindex, follow';
             const photoAbs = agent.profile_photo_url
                 ? (agent.profile_photo_url.startsWith('http') ? agent.profile_photo_url : `${baseUrl}${agent.profile_photo_url}`)
                 : '';
@@ -2488,6 +2500,7 @@ app.get('/agents/:slug', async (req, res, next) => {
                 : '';
 
             const head = `
+    <meta name="robots" content="${agentRobots}">
     <link rel="canonical" href="${escapeHtml(canonical)}">
     <meta property="og:type" content="profile">
     <meta property="og:title" content="${escapeHtml(title)}">
@@ -2509,6 +2522,7 @@ app.get('/agents/:slug', async (req, res, next) => {
                 .replace('<meta name="description" content="MN Lake Homes agent profile page.">', `<meta name="description" content="${escapeHtml(desc)}">`)
                 .replace('</head>', `${head}<script>window.__AGENT__=${agentJson};</script>\n</head>`)
                 .replace('<div style="color: #a0aec0; font-size: 1.1rem;">Loading profile...</div>', heroSsr);
+            res.set('X-Robots-Tag', agentRobots);   // belt-and-suspenders with the meta tag
             res.type('html').send(out);
         });
     } catch (err) { next(err); }
