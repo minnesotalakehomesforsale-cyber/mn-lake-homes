@@ -1,3 +1,7 @@
+> ⛔ **SUPERSEDED — do not work from this file.**
+> The plan of record is the ticketed **"Roadmap to A+"** (tickets `SEO-01…32`), tracked in `docs/`.
+> This document is retained for historical context only; its status labels and page counts are stale.
+
 # SEO Action Plan — MinnesotaLakeHomesForSale.com
 
 Goal: rank #1 organically for Minnesota lake-home terms. On-page/technical SEO is
