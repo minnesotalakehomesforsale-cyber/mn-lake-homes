@@ -1,0 +1,133 @@
+{
+  "capturedAt": "2026-08-21T06:44:53.155Z",
+  "base": "https://minnesotalakehomesforsale.com",
+  "sitemap": {
+    "total": 203,
+    "byType": {
+      "static/other": 23,
+      "lakes": 54,
+      "towns": 54,
+      "businesses": 2,
+      "agents": 5,
+      "blog": 65
+    }
+  },
+  "robotsSample": {
+    "static/other": [
+      {
+        "url": "/",
+        "status": 200,
+        "robots": "index"
+      },
+      {
+        "url": "/buy",
+        "status": 200,
+        "robots": "index"
+      },
+      {
+        "url": "/sell",
+        "status": 200,
+        "robots": "index"
+      }
+    ],
+    "lakes": [
+      {
+        "url": "/lakes/forest-lake",
+        "status": 200,
+        "robots": "index"
+      },
+      {
+        "url": "/lakes/big-lake",
+        "status": 200,
+        "robots": "index"
+      },
+      {
+        "url": "/lakes/cannon-lake",
+        "status": 200,
+        "robots": "index"
+      }
+    ],
+    "towns": [
+      {
+        "url": "/towns/willmar",
+        "status": 200,
+        "robots": "index"
+      },
+      {
+        "url": "/towns/minnetrista",
+        "status": 200,
+        "robots": "index"
+      },
+      {
+        "url": "/towns/buffalo",
+        "status": 200,
+        "robots": "index"
+      }
+    ],
+    "businesses": [
+      {
+        "url": "/businesses/photographer-granite-city-aerial-llc",
+        "status": 200,
+        "robots": "index"
+      },
+      {
+        "url": "/businesses/other-simply-sally-co-organizing-creations",
+        "status": 200,
+        "robots": "index"
+      }
+    ],
+    "agents": [
+      {
+        "url": "/agents/the-minnesota-real-estate-team",
+        "status": 200,
+        "robots": "none"
+      },
+      {
+        "url": "/agents/danielle-rose",
+        "status": 200,
+        "robots": "none"
+      },
+      {
+        "url": "/agents/julie-sabby",
+        "status": 200,
+        "robots": "none"
+      }
+    ],
+    "blog": [
+      {
+        "url": "/blog/why-a-local-lake-specialist-beats-a-national-portal",
+        "status": 200,
+        "robots": "none"
+      },
+      {
+        "url": "/blog/top-10-minnesota-lakes-for-boating",
+        "status": 200,
+        "robots": "none"
+      },
+      {
+        "url": "/blog/5-things-to-look-for-in-a-lake-property",
+        "status": 200,
+        "robots": "none"
+      }
+    ]
+  },
+  "security": {
+    "/src/server.js": 404,
+    "/lake-agent-prospects.csv": 404,
+    "/package.json": 404
+  },
+  "securityHeaders": {
+    "hsts": "max-age=15552000; includeSubDomains",
+    "xcto": "nosniff",
+    "xfo": "SAMEORIGIN",
+    "referrer": "no-referrer"
+  },
+  "gsc": {
+    "note": "Populate at 30/60/90 from Search Console once the property has history.",
+    "indexedPages": null,
+    "impressions": null,
+    "clicks": null,
+    "top50Queries": null,
+    "top50Pages": null
+  }
+}

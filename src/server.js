@@ -50,13 +50,32 @@ app.use(helmet({
     contentSecurityPolicy: false, // Temporarily disabled to allow inline scripts from existing UI prototypes
 }));
 
-// Permissive CORS — this is a staging/admin environment with no auth walls.
-// Previous config rejected requests from any origin except http://localhost:3000
-// unless ALLOWED_ORIGINS was set, which silently broke every POST/PATCH/DELETE
-// on the live site because browsers send Origin headers for non-GET requests.
+// CORS — allowlist the apex, www, and localhost (SEC-05). Runs in LOG-AND-ALLOW
+// mode by default: every cross-origin request is STILL allowed exactly as before,
+// but any origin outside the allowlist is logged so we can see what actually
+// calls the API (e.g. a HubSpot embed) before enforcing. This avoids silently
+// killing cross-origin lead capture. After the 48h observation window, set
+// CORS_ENFORCE=true to reject unknown origins (no code change needed).
+const CORS_ALLOW = [
+    'https://minnesotalakehomesforsale.com',
+    'https://www.minnesotalakehomesforsale.com',
+    /^https?:\/\/localhost(:\d+)?$/,
+    /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
+];
+const corsOriginAllowed = (origin) =>
+    !origin || CORS_ALLOW.some(a => a instanceof RegExp ? a.test(origin) : a === origin);
+const CORS_ENFORCE = process.env.CORS_ENFORCE === 'true';
 app.use(cors({
-    origin: true,       // reflect the request origin (effectively 'accept any')
-    credentials: true
+    origin: (origin, cb) => {
+        const ok = corsOriginAllowed(origin);
+        if (!ok) {
+            console.warn(`[CORS] non-allowlisted origin: ${origin || '(none)'} — ${CORS_ENFORCE ? 'BLOCKED' : 'allowed (48h log-and-allow window)'}`);
+        }
+        // Log-and-allow until CORS_ENFORCE flips: always reflect the origin so
+        // nothing breaks while we watch the logs. Enforcing: reflect only if allowed.
+        return cb(null, CORS_ENFORCE ? ok : true);
+    },
+    credentials: true,
 }));
 
 // Stripe webhook needs the raw body for signature verification — must come BEFORE express.json()
