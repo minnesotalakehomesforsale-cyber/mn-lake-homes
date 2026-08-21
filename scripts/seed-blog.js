@@ -3,8 +3,21 @@
  * Upserts the canonical blog posts (from src/data/default-blog-posts.js)
  * into the database. Safe to re-run — uses ON CONFLICT DO UPDATE.
  *
- * Run: node scripts/seed-blog.js
+ * Run: ALLOW_PUBLISH_WRITES=1 node scripts/seed-blog.js
  */
+
+// Wave-3 canary guard. This script UPSERTs with `ON CONFLICT DO UPDATE SET
+// is_published = EXCLUDED.is_published` from src/data/default-blog-posts.js —
+// whose flags mark only 7 posts published while ~65 are live. A single re-run
+// would silently reset dozens of live posts to draft, OFF-GIT and with no
+// activity-log entry, making a Wave-3 result indistinguishable from an accident.
+// Blog publish state must move only through the admin UI (logged) during Wave 3.
+if (process.env.ALLOW_PUBLISH_WRITES !== '1') {
+    console.error('\n⛔ seed-blog.js refuses to run: it writes blog is_published and can flip many live posts to draft off-git.');
+    console.error('   During Wave 3, publish state moves only via the admin UI (logged, attributable).');
+    console.error('   To run deliberately: ALLOW_PUBLISH_WRITES=1 node scripts/seed-blog.js\n');
+    process.exit(1);
+}
 
 require('dotenv').config({ path: '.env.local' });
 const pool = require('../src/database/pool');

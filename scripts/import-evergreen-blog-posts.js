@@ -21,6 +21,15 @@
  * preserves their id + created_at — safe for content corrections.
  */
 
+// Wave-3 canary guard: this script UPSERTs blog posts with is_published = TRUE,
+// so a re-run publishes a whole batch off-git with no activity-log entry. During
+// Wave 3, blog publish state must move only through the admin UI (logged).
+if (process.env.ALLOW_PUBLISH_WRITES !== '1') {
+    console.error('\n⛔ Refusing to run: this script batch-publishes blog posts (is_published = TRUE) off-git.');
+    console.error('   During Wave 3, publish state moves only via the admin UI (logged, attributable).');
+    console.error('   To run deliberately: ALLOW_PUBLISH_WRITES=1 node scripts/import-evergreen-blog-posts.js\n');
+    process.exit(1);
+}
 const pool = require('../src/database/pool');
 
 const PUBLISHED_AT = new Date('2026-06-15T12:00:00Z');
