@@ -30,13 +30,16 @@ const ROOT_FILES = new Set([
     'browserconfig.xml',
 ]);
 
-// Same freshness policy the old blanket handler used: HTML always revalidates,
-// JS/CSS get a short must-revalidate window.
+// Freshness policy. HTML and the shared JS/CSS bundles all revalidate on every
+// load: express.static sets a strong ETag + Last-Modified, so an unchanged file
+// returns a cheap 304 and a changed file returns 200 immediately — no stale
+// window, no hard-refresh needed to see a CSS/JS edit. (A content-hash
+// fingerprint + immutable 1-year cache would save the revalidation roundtrip,
+// but that needs a build step; at this scale the 304 is negligible.) Fingerprinted
+// or hashed asset URLs, if introduced later, can opt into a long immutable cache.
 function setHeaders(res, filePath) {
-    if (/\.html$/i.test(filePath)) {
+    if (/\.(html|js|css)$/i.test(filePath)) {
         res.setHeader('Cache-Control', 'no-cache');
-    } else if (/\.(js|css)$/i.test(filePath)) {
-        res.setHeader('Cache-Control', 'public, max-age=300, must-revalidate');
     }
 }
 
