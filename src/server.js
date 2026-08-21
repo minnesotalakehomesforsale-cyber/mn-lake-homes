@@ -2611,19 +2611,13 @@ app.use((req, res, next) => {
     return res.redirect(301, '/' + name + (qi >= 0 ? req.originalUrl.slice(qi) : ''));
 });
 
-app.use(express.static(PROJECT_ROOT, {
-    // Freshness policy so edits show up without a manual cache purge:
-    //  • HTML: always revalidate (etag → instant 304 when unchanged).
-    //  • JS/CSS: short cache + must-revalidate so shared component/style
-    //    changes propagate within minutes instead of being pinned.
-    setHeaders: (res, filePath) => {
-        if (/\.html$/i.test(filePath)) {
-            res.setHeader('Cache-Control', 'no-cache');
-        } else if (/\.(js|css)$/i.test(filePath)) {
-            res.setHeader('Cache-Control', 'public, max-age=300, must-revalidate');
-        }
-    },
-}));
+// Allowlisted static serving (SEO-03). Serves only the front-end asset
+// directories + a short list of root files — NOT the whole repo root, which
+// previously exposed src/, the operator scripts, and lake-agent-prospects.csv
+// over HTTP. Freshness policy (HTML no-cache; JS/CSS short must-revalidate)
+// lives in the module. Enforced by test/static-exposure.test.js.
+const { mountStaticAssets } = require('./middleware/static-assets');
+mountStaticAssets(app, PROJECT_ROOT);
 
 // Fallback for Next.js-style clean URL resolution. Most public pages
 // Retired the standalone "instant estimate" page — the cash-offer flow

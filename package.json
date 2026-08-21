@@ -10,7 +10,7 @@
     "db:seed:staging": "NODE_ENV=staging node scripts/seed-staging.js",
     "test:guard": "node test/schema-guard.test.js",
     "test:towns": "node test/town-visibility.test.js",
-    "test": "node test/schema-guard.test.js && node test/town-visibility.test.js && node test/unique-heroes.test.js && node test/manual-release.test.js && node test/lifecycle.test.js && node test/admin-auth.test.js && node test/agent-auth.test.js",
+    "test": "node test/schema-guard.test.js && node test/town-visibility.test.js && node test/unique-heroes.test.js && node test/static-exposure.test.js && node test/manual-release.test.js && node test/lifecycle.test.js && node test/admin-auth.test.js && node test/agent-auth.test.js",
     "test:manual": "node test/manual-release.test.js",
     "test:auth": "node test/admin-auth.test.js"
   },
