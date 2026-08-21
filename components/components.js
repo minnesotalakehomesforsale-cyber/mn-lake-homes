@@ -2283,68 +2283,45 @@ document.addEventListener('keydown', e => {
     }
 })();
 
-// ─── Launch tracking layer ─────────────────────────────────────────────────
-// Loads GA4 (gtag.js) and HubSpot's first-party tracking script (hs-scripts)
-// driven entirely by /api/config/public — so the snippets activate the moment
-// GA4_MEASUREMENT_ID / HUBSPOT_PORTAL_ID are set in Render and stay dormant
-// otherwise. Also exposes window.trackConversion(eventName, params) which
-// forms call on success to fire GA4 events + HubSpot custom behavioral
-// events at the same time. If neither pixel is loaded, the helper is a
-// no-op — forms keep working unchanged.
+// ─── First-party analytics layer ───────────────────────────────────────────
+// Cookieless, first-party ONLY (organic-only Phase 1). Exposes
+// window.trackConversion(eventName, params), which mirrors high-intent events to
+// /api/analytics/conversion (read by the admin dashboard + metrics tab). The
+// third-party pixels (GA4, Meta, Google Ads) and the cookie-consent banner were
+// removed — no GA4/Meta/Ads IDs are coming, and HubSpot lead capture runs
+// server-side. The helper never breaks a flow.
 (function loadLaunchTracking() {
     if (window.__launchTrackingInit) return;
     window.__launchTrackingInit = true;
 
-    // Helper available immediately even before scripts load — calls queue
-    // into the gtag/hsq globals which buffer until the SDK boots. Also
-    // mirrors the event to /api/analytics/conversion so the admin
-    // dashboard can show counts/feed without needing GA4 or HubSpot
-    // API access. The server-side mirror is fire-and-forget (sendBeacon
-    // when available, fetch keepalive otherwise) so it survives a
-    // page navigation that happens immediately after submit.
+    // Fire-and-forget: mirror the event to /api/analytics/conversion (sendBeacon
+    // when available, else fetch keepalive) so it survives a navigation right
+    // after submit. Cookieless; no third-party SDKs involved.
     window.trackConversion = function (eventName, params) {
         try {
-            if (typeof window.gtag === 'function') {
-                window.gtag('event', eventName, params || {});
+            let sid = null;
+            try { sid = sessionStorage.getItem('lt_sid'); } catch (_) {}
+            const payload = JSON.stringify({
+                event_name: eventName,
+                params: params || {},
+                path: location.pathname + location.search,
+                referrer: document.referrer || null,
+                session_id: sid,
+            });
+            const url = '/api/analytics/conversion';
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon(url, new Blob([payload], { type: 'application/json' }));
+            } else {
+                fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: payload,
+                    keepalive: true,
+                    credentials: 'omit',
+                }).catch(() => {});
             }
-            if (Array.isArray(window._hsq)) {
-                window._hsq.push(['trackCustomBehavioralEvent', {
-                    name: eventName,
-                    properties: params || {},
-                }]);
-            }
-            // Server-side mirror (admin dashboard + metrics tab read from this).
-            try {
-                let sid = null;
-                try { sid = sessionStorage.getItem('lt_sid'); } catch (_) {}
-                const payload = JSON.stringify({
-                    event_name: eventName,
-                    params: params || {},
-                    path: location.pathname + location.search,
-                    referrer: document.referrer || null,
-                    session_id: sid,
-                });
-                const url = '/api/analytics/conversion';
-                if (navigator.sendBeacon) {
-                    navigator.sendBeacon(url, new Blob([payload], { type: 'application/json' }));
-                } else {
-                    fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: payload,
-                        keepalive: true,
-                        credentials: 'omit',
-                    }).catch(() => {});
-                }
-            } catch (_) { /* mirror is best-effort */ }
         } catch (_) { /* tracking must never break a flow */ }
     };
-
-    // Pre-allocate the gtag/hsq globals so trackConversion calls fired
-    // before the SDKs finish loading are queued and replayed.
-    window.dataLayer = window.dataLayer || [];
-    window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
-    window._hsq = window._hsq || [];
 
     // ── Auto-capture high-intent actions (no per-page wiring needed) ──────────
     // These are the signals that actually predict a lead: someone tapping an
@@ -2382,113 +2359,6 @@ document.addEventListener('keydown', e => {
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initIntentTracking);
     else initIntentTracking();
-
-    // The cookie-consent gate: third-party pixels (GA4, HubSpot — both set
-    // cookies) only load once the visitor has ACCEPTED. Until then they stay off.
-    // The first-party /api/analytics/conversion mirror above is cookieless and
-    // keeps working regardless. window.__applyTrackingPixels is called by the
-    // consent banner on Accept (or immediately if consent was already granted).
-    const consentOk = () => { try { return localStorage.getItem('mlh_cookie_consent') === 'accepted'; } catch (_) { return false; } };
-
-    fetch('/api/config/public', { credentials: 'omit' })
-        .then(r => (r.ok ? r.json() : null))
-        .then(cfg => {
-            if (!cfg) return;
-            let loaded = false;
-            window.__applyTrackingPixels = function () {
-                if (loaded) return; loaded = true;
-                // DEV-04: never load third-party pixels on the app surfaces
-                // (admin / agent / business / user portals), and respect Do Not
-                // Track. The cookieless first-party mirror above still works.
-                const p = location.pathname;
-                const appSurface = /^\/(pages\/admin|admin|pages\/agent|agent|business|pages\/business|pages\/user)\b/.test(p);
-                const dnt = navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNotTrack === '1';
-                if (appSurface || dnt) return;
-
-                // ── GA4 (gtag.js) — only when GA4_MEASUREMENT_ID is set ──
-                if (cfg.ga4_id) {
-                    const s = document.createElement('script');
-                    s.async = true;
-                    s.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(cfg.ga4_id)}`;
-                    document.head.appendChild(s);
-                    window.gtag('js', new Date());
-                    window.gtag('config', cfg.ga4_id, { anonymize_ip: true, send_page_view: true });
-                }
-                // ── HubSpot tracking pixel ──
-                if (cfg.hubspot_portal_id) {
-                    const h = document.createElement('script');
-                    h.async = true; h.defer = true;
-                    h.id = 'hs-script-loader';
-                    h.src = `//js.hs-scripts.com/${encodeURIComponent(cfg.hubspot_portal_id)}.js`;
-                    document.head.appendChild(h);
-                }
-                // ── Meta pixel — INERT in Phase 1 (META_PIXEL_ID unset). Phase 2
-                //    sets the env var to activate retargeting; no code change. ──
-                if (cfg.meta_pixel_id) {
-                    !function (f, b, e, v, n, t, s) { if (f.fbq) return; n = f.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); }; if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0'; n.queue = []; t = b.createElement(e); t.async = !0; t.src = v; s = b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t, s); }(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
-                    window.fbq('init', cfg.meta_pixel_id); window.fbq('track', 'PageView');
-                }
-                // ── Google Ads — INERT in Phase 1 (GOOGLE_ADS_ID unset) ──
-                if (cfg.google_ads_id) {
-                    if (!document.querySelector('script[src*="googletagmanager.com/gtag/js"]')) {
-                        const g = document.createElement('script');
-                        g.async = true; g.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(cfg.google_ads_id)}`;
-                        document.head.appendChild(g); window.gtag('js', new Date());
-                    }
-                    window.gtag('config', cfg.google_ads_id);
-                }
-            };
-            if (consentOk()) window.__applyTrackingPixels();
-        })
-        .catch(() => { /* config endpoint unreachable — fall through silently */ });
-})();
-
-// ─── Cookie consent banner ──────────────────────────────────────────────────
-// GDPR/CCPA-friendly: no cookie-setting analytics load until the visitor
-// accepts. Decline keeps only the cookieless first-party event mirror. The
-// choice persists in localStorage; the banner never nags again once answered.
-(function cookieConsent() {
-    if (window.__cookieConsentInit) return;
-    window.__cookieConsentInit = true;
-
-    // Hidden for now per owner request — the banner does not render. Consent
-    // stays UN-answered, so the cookie-setting pixels (GA4/HubSpot) remain OFF
-    // by default (privacy-safe); the cookieless first-party event mirror still
-    // works. Flip this to true to bring the banner back.
-    const CONSENT_BANNER_ENABLED = false;
-    if (!CONSENT_BANNER_ENABLED) return;
-
-    let choice = null;
-    try { choice = localStorage.getItem('mlh_cookie_consent'); } catch (_) {}
-    if (choice === 'accepted' || choice === 'declined') return;   // already answered
-
-    function render() {
-        const bar = document.createElement('div');
-        bar.setAttribute('role', 'dialog');
-        bar.setAttribute('aria-label', 'Cookie consent');
-        bar.style.cssText = 'position:fixed;left:1rem;right:1rem;bottom:1rem;z-index:9600;max-width:640px;margin:0 auto;background:#0f2b46;color:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.28);padding:1.1rem 1.25rem;font-family:inherit;display:flex;gap:1rem;align-items:center;flex-wrap:wrap;';
-        bar.innerHTML = `
-            <div style="flex:1;min-width:200px;font-size:0.85rem;line-height:1.45;">
-              We use cookies to understand site traffic and improve your experience. See our
-              <a href="/privacy" style="color:#9ae6b4;text-decoration:underline;">Privacy Policy</a>.
-            </div>
-            <div style="display:flex;gap:0.5rem;flex-shrink:0;">
-              <button type="button" data-c="declined" style="background:transparent;color:#cbd5e0;border:1px solid rgba(255,255,255,0.3);border-radius:9px;padding:0.55rem 1rem;font-weight:700;font-size:0.85rem;cursor:pointer;font-family:inherit;">Decline</button>
-              <button type="button" data-c="accepted" style="background:#1d6df2;color:#fff;border:0;border-radius:9px;padding:0.55rem 1.1rem;font-weight:800;font-size:0.85rem;cursor:pointer;font-family:inherit;">Accept</button>
-            </div>`;
-        bar.addEventListener('click', e => {
-            const b = e.target.closest('button[data-c]');
-            if (!b) return;
-            const c = b.getAttribute('data-c');
-            try { localStorage.setItem('mlh_cookie_consent', c); } catch (_) {}
-            bar.remove();
-            if (c === 'accepted' && typeof window.__applyTrackingPixels === 'function') window.__applyTrackingPixels();
-            if (typeof window.trackConversion === 'function') window.trackConversion('cookie_consent', { choice: c });
-        });
-        document.body.appendChild(bar);
-    }
-    if (document.body) render();
-    else document.addEventListener('DOMContentLoaded', render);
 })();
 
 // ─── Conversion boosters ────────────────────────────────────────────────────
