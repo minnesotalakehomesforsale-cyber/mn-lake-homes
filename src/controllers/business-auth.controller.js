@@ -33,6 +33,7 @@ const { logActivity } = require('../services/activity-log');
 // variable name (req.body.email).
 const emailService = require('./../services/email');
 const hubspot = require('./../services/hubspot');
+const { SECURE_COOKIES } = require('../config/security');
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -96,7 +97,7 @@ function priceIdFor(tier, period) {
 function setCookie(res, token) {
     res.cookie('auth_session', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: SECURE_COOKIES,
         sameSite: 'strict',
         maxAge: 86_400_000,
     });

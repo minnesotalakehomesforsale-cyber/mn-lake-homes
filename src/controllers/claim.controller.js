@@ -11,12 +11,13 @@ const emailService = require('../services/email');
 const hubspot = require('../services/hubspot');
 const { verifyTurnstile } = require('../middleware/spam-guard');
 const { logActivity } = require('../services/activity-log');
+const { SECURE_COOKIES } = require('../config/security');
 
 const SITE = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 function setCookie(res, token) {
-    res.cookie('auth_session', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', maxAge: 86_400_000 });
+    res.cookie('auth_session', token, { httpOnly: true, secure: SECURE_COOKIES, sameSite: 'strict', maxAge: 86_400_000 });
 }
 const clientIp = req => (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || null;
 

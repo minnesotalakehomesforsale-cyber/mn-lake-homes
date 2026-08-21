@@ -6,11 +6,12 @@ const emailService = require('../services/email');
 const hubspot = require('../services/hubspot');
 const phoneSvc = require('../services/phone');
 const { logActivity } = require('../services/activity-log');
+const { SECURE_COOKIES } = require('../config/security');
 
 const setAuthCookie = (res, token) => {
     res.cookie('auth_session', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: SECURE_COOKIES,
         sameSite: 'strict',
         maxAge: 86400000 // 24 hours
     });
@@ -522,7 +523,7 @@ const logout = (req, res) => {
     }
     res.clearCookie('auth_session', {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: SECURE_COOKIES,
         sameSite: 'strict'
     });
     res.json({ success: true });

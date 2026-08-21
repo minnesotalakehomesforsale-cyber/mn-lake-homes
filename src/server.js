@@ -10,6 +10,11 @@ require('dotenv').config({ path: envFile });
 
 const app = express();
 
+// Behind Render's TLS-terminating proxy: trust X-Forwarded-* so req.secure /
+// req.protocol / req.ip reflect the real HTTPS client (SEC-05). Auth-cookie
+// Secure is set explicitly (see config/security.js), independent of this.
+app.set('trust proxy', 1);
+
 // ── Error monitoring (optional; enabled when SENTRY_DSN is set) ──────────────
 // Guarded require so a missing package never blocks boot. Also wires
 // process-level handlers so crashes are always logged (Render captures logs)
@@ -2638,6 +2643,29 @@ app.get('/:page', (req, res, next) => {
             if (err2) next();
         });
     });
+});
+
+// ── Terminal error handler (LAST in the chain) ──────────────────────────────
+// Catches anything a route throws or passes to next(err). Express's built-in
+// handler leaks the FULL stack trace to the client whenever NODE_ENV !==
+// 'production' — and this service runs as 'staging', so unhandled 500s were
+// exposing stacks (SEC-05). Full detail is logged + sent to Sentry; the client
+// gets a generic message (JSON for /api, a plain page otherwise) with NO stack,
+// regardless of NODE_ENV.
+app.use((err, req, res, next) => {
+    console.error(`[Error] ${req.method} ${req.originalUrl}:`, err && err.stack ? err.stack : err);
+    if (Sentry) { try { Sentry.captureException(err, { extra: { url: req.originalUrl, method: req.method } }); } catch (_) {} }
+    if (res.headersSent) return next(err);
+    const status = (err && err.status) || 500;
+    if (req.path.startsWith('/api/')) {
+        return res.status(status).json({ error: 'Server error.' });
+    }
+    res.status(status).type('html').send(
+        '<!doctype html><meta charset="utf-8"><title>Error</title>' +
+        '<body style="font:16px/1.5 system-ui;max-width:32rem;margin:12vh auto;padding:0 1.5rem;color:#33475f">' +
+        '<h1 style="color:#0f1c2e">Something went wrong</h1>' +
+        '<p>An unexpected error occurred. Please try again — if it keeps happening, let us know.</p>' +
+        '<p><a href="/" style="color:#1d6df2">Back to home</a></p></body>');
 });
 
 // ==========================================
