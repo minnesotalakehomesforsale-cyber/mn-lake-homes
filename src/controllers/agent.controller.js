@@ -169,7 +169,7 @@ const getPublicAgents = async (req, res) => {
                    a.years_experience,
                    a.service_areas, a.specialties, a.is_featured,
                    a.phone_public, a.email_public, a.profile_photo_url,
-                   a.paid_membership_code, a.subscription_status, a.tier_comped,
+                   a.paid_membership_code, a.lifecycle_state, a.tier_comped,
                    m.code as membership_code, m.sort_priority,
                    ${RESP_SQL},
                    COALESCE((
@@ -208,7 +208,7 @@ const getAgentBySlug = async (req, res) => {
                    a.service_areas, a.specialties, a.is_featured, a.license_number, a.bio,
                    a.years_experience, a.phone_public, a.email_public, a.website_url,
                    a.facebook_url, a.instagram_url, a.linkedin_url, a.profile_photo_url, a.faq, a.profile_extra,
-                   a.paid_membership_code, a.subscription_status, a.tier_comped, m.name as membership_name,
+                   a.paid_membership_code, a.lifecycle_state, a.tier_comped, m.name as membership_name,
                    (a.user_id IS NULL) AS claimable,
                    ${RESP_SQL}
             FROM agents a

@@ -2415,7 +2415,7 @@ app.get('/agents/:slug', async (req, res, next) => {
                     a.phone_public, a.email_public,
                     a.website_url, a.facebook_url, a.instagram_url, a.linkedin_url,
                     a.profile_photo_url, a.faq, a.paid_membership_code,
-                    a.subscription_status, a.tier_comped
+                    a.lifecycle_state, a.tier_comped
                FROM agents a JOIN memberships m ON a.membership_id = m.id
               WHERE a.slug = $1 AND a.profile_status = 'published' AND a.is_published = true
               LIMIT 1`,

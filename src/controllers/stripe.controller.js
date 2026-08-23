@@ -699,7 +699,9 @@ const AGENT_TIER_LABELS = {
 // "live paid" predicate (subscription_status='active' OR tier_comped).
 function agentTierLabel(agent) {
     const a = agent || {};
-    const isPaidLive = a.subscription_status === 'active' || a.tier_comped === true;
+    // agents has NO subscription_status column (only businesses does). The agent's
+    // live-paying signal is tier_comped OR lifecycle_state in paying/at_risk.
+    const isPaidLive = a.tier_comped === true || a.lifecycle_state === 'paying' || a.lifecycle_state === 'at_risk';
     const code = isPaidLive ? (a.paid_membership_code || 'free') : 'free';
     return AGENT_TIER_LABELS[code] || 'Lake Agent';
 }
