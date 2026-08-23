@@ -677,6 +677,26 @@ function monthlyPriceForCode(code) {
 }
 exports.monthlyPriceForCode = monthlyPriceForCode;
 
+// Single source of truth for the PUBLIC tier label an agent shows (profile pill,
+// dashboard, cards). Keyed on `paid_membership_code` — what the agent is actually
+// BILLED for — NOT on membership_id/membership.code, which is the routing tier and
+// defaults to 'basic' for imported/admin-created agents who pay nothing. NULL/absent
+// paid code = free = 'Lake Agent'. This is why a free prospect and a $9 agent must
+// resolve differently even though both can carry membership.code = 'basic'.
+const AGENT_TIER_LABELS = {
+    free:               'Lake Agent',
+    basic:              'Certified Lake Agent',
+    mn_lake_specialist: 'Lake Specialist',
+    top_agent:          'Elite Lake Agent',
+    premium:            'Elite Lake Agent',
+    founder:            'Founder',
+};
+function agentTierLabel(paidCode) {
+    return AGENT_TIER_LABELS[paidCode || 'free'] || 'Lake Agent';
+}
+exports.agentTierLabel = agentTierLabel;
+exports.AGENT_TIER_LABELS = AGENT_TIER_LABELS;
+
 exports.getAgentPricing = (req, res) => {
     res.json(buildAgentPricing());
 };
@@ -1064,7 +1084,7 @@ exports.handleWebhook = async (req, res) => {
                 // Alert the owner inbox that an agent churned.
                 {
                     const a = agentRows[0];
-                    const PLAN_LABEL = { basic: 'Standard ($9)', mn_lake_specialist: 'Prime ($39)', top_agent: 'Elite ($149)' };
+                    const PLAN_LABEL = { basic: 'Certified Lake Agent ($9)', mn_lake_specialist: 'Lake Specialist ($39)', top_agent: 'Elite Lake Agent ($149)' };
                     emailService.sendAdminSubscriptionCancelled({
                         kind: 'Agent',
                         who: a.display_name || a.full_name || 'An agent',

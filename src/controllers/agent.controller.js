@@ -5,6 +5,7 @@ const cloudinary = require('cloudinary').v2;
 const hubspot = require('../services/hubspot');
 const emailService = require('../services/email');
 const { logActivity } = require('../services/activity-log');
+const { agentTierLabel } = require('./stripe.controller');
 
 // When an agent marks a lead Won, email the buyer a token link to leave a
 // verified review. One request per lead (ON CONFLICT guards re-marking).
@@ -168,7 +169,7 @@ const getPublicAgents = async (req, res) => {
                    a.years_experience,
                    a.service_areas, a.specialties, a.is_featured,
                    a.phone_public, a.email_public, a.profile_photo_url,
-                   m.display_badge_label as membership_badge,
+                   a.paid_membership_code,
                    m.code as membership_code, m.sort_priority,
                    ${RESP_SQL},
                    COALESCE((
@@ -188,7 +189,7 @@ const getPublicAgents = async (req, res) => {
         `;
         const { rows } = await pool.query(query);
         const topId = await require('../services/leaderboard').getTopPerformerId().catch(() => null);
-        res.json(rows.map(r => { const o = withResponseBadge(r); o.top_performer = (topId && o.id === topId); return o; }));
+        res.json(rows.map(r => { const o = withResponseBadge(r); o.membership_badge = agentTierLabel(o.paid_membership_code); o.top_performer = (topId && o.id === topId); return o; }));
     } catch (err) {
         console.error('[getPublicAgents]', err.message);
         res.status(500).json({ error: 'Failed to load agent directory.' });
@@ -207,7 +208,7 @@ const getAgentBySlug = async (req, res) => {
                    a.service_areas, a.specialties, a.is_featured, a.license_number, a.bio,
                    a.years_experience, a.phone_public, a.email_public, a.website_url,
                    a.facebook_url, a.instagram_url, a.linkedin_url, a.profile_photo_url, a.faq, a.profile_extra,
-                   m.display_badge_label as membership_badge, m.name as membership_name,
+                   a.paid_membership_code, m.name as membership_name,
                    (a.user_id IS NULL) AS claimable,
                    ${RESP_SQL}
             FROM agents a
@@ -218,6 +219,7 @@ const getAgentBySlug = async (req, res) => {
         if (rows.length === 0) return res.status(404).json({ error: 'Agent not found.' });
         const topId = await require('../services/leaderboard').getTopPerformerId().catch(() => null);
         const out = withResponseBadge(rows[0]);
+        out.membership_badge = agentTierLabel(out.paid_membership_code);
         out.top_performer = (topId && out.id === topId);
         res.json(out);
     } catch (err) {
@@ -242,6 +244,7 @@ const getMyProfile = async (req, res) => {
         `;
         const { rows } = await pool.query(query, [req.user.userId]);
         if (rows.length === 0) return res.status(404).json({ error: 'Agent profile not found for this account.' });
+        rows[0].membership_badge = agentTierLabel(rows[0].paid_membership_code);
         res.json(rows[0]);
     } catch (err) {
         console.error('[getMyProfile]', err.message);

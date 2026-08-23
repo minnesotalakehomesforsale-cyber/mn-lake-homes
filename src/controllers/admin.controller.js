@@ -1838,7 +1838,7 @@ const getSubscriberBilling = async (req, res) => {
 // ─── BILLING ALERTS REPORT + RESUME ─────────────────────────────────────────
 // Live Stripe reads are the source of truth. These power the Financials →
 // "Billing Alerts" tab and the one-click Resume in an agent's profile.
-const _PLAN_LABELS = { basic: 'Standard ($9)', mn_lake_specialist: 'Prime ($39)', top_agent: 'Elite ($149)' };
+const _PLAN_LABELS = { basic: 'Certified Lake Agent ($9)', mn_lake_specialist: 'Lake Specialist ($39)', top_agent: 'Elite Lake Agent ($149)' };
 const _PROBLEM_STATUSES = new Set(['canceled', 'past_due', 'unpaid', 'incomplete', 'incomplete_expired']);
 
 function _billingBase(r) {
