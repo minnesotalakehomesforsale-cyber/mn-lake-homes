@@ -602,7 +602,7 @@ function buildAgentPricing() {
             },
             {
                 tier: 'standard',
-                name: 'Standard',
+                name: 'Certified Lake Agent',
                 tagline: 'Get on the map — your profile on a lake page, in the lead rotation at base priority.',
                 features: [
                     'Agent profile on your lake page',
@@ -619,10 +619,10 @@ function buildAgentPricing() {
             },
             {
                 tier: 'prime',
-                name: 'Prime',
+                name: 'Lake Specialist',
                 tagline: 'Featured placement and higher lead priority across your service areas.',
                 features: [
-                    'Everything in Standard, plus:',
+                    'Everything in Certified Lake Agent, plus:',
                     'Featured profile, top of your lake page',
                     'Higher lead priority than Standard in your areas',
                     'Cover up to 10 service-area towns',
@@ -640,10 +640,10 @@ function buildAgentPricing() {
                 // checkout depend on them) — only the display name changes, to
                 // stop colliding with the per-lake "Founder" (lake ownership).
                 tier: 'founder_public',
-                name: 'Elite',
+                name: 'Elite Lake Agent',
                 tagline: 'Top placement and the highest lead priority of any plan, across your region.',
                 features: [
-                    'Everything in Prime, across your whole region',
+                    'Everything in Lake Specialist, across your whole region',
                     'Highest lead priority of any plan',
                     'Top placement across your region + homepage region slot',
                     'Early-adopter pricing — 30 days\' notice before any increase',
