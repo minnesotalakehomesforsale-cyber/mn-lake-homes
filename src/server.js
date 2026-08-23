@@ -2414,7 +2414,8 @@ app.get('/agents/:slug', async (req, res, next) => {
                     a.service_areas, a.specialties, a.is_featured, a.bio,
                     a.phone_public, a.email_public,
                     a.website_url, a.facebook_url, a.instagram_url, a.linkedin_url,
-                    a.profile_photo_url, a.faq, a.paid_membership_code
+                    a.profile_photo_url, a.faq, a.paid_membership_code,
+                    a.subscription_status, a.tier_comped
                FROM agents a JOIN memberships m ON a.membership_id = m.id
               WHERE a.slug = $1 AND a.profile_status = 'published' AND a.is_published = true
               LIMIT 1`,
@@ -2424,7 +2425,7 @@ app.get('/agents/:slug', async (req, res, next) => {
         if (!agent) { renderFriendly404(res, { kind: 'agent', slug: req.params.slug }); return; }
         // Public tier label from what the agent actually pays for
         // (paid_membership_code), NOT the routing membership — see agentTierLabel.
-        agent.membership_badge = require('./controllers/stripe.controller').agentTierLabel(agent.paid_membership_code);
+        agent.membership_badge = require('./controllers/stripe.controller').agentTierLabel(agent);
 
         // Real approved-review aggregate — drives the ⭐ AggregateRating in the
         // JSON-LD. count 0 → omitted entirely (never fabricate ratings).

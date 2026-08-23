@@ -691,8 +691,17 @@ const AGENT_TIER_LABELS = {
     premium:            'Elite Lake Agent',
     founder:            'Founder',
 };
-function agentTierLabel(paidCode) {
-    return AGENT_TIER_LABELS[paidCode || 'free'] || 'Lake Agent';
+// Takes the agent ROW, not a bare code — because paid_membership_code defaults to
+// 'basic' on creation and is NOT proof of payment. An agent only shows a PAID tier
+// when they're a live paying agent: subscription_status='active' OR tier_comped.
+// Everyone else — free signups, imported/claimed prospects defaulted to 'basic',
+// unclaimed listings — is a free Lake Agent. This mirrors the site's own
+// "live paid" predicate (subscription_status='active' OR tier_comped).
+function agentTierLabel(agent) {
+    const a = agent || {};
+    const isPaidLive = a.subscription_status === 'active' || a.tier_comped === true;
+    const code = isPaidLive ? (a.paid_membership_code || 'free') : 'free';
+    return AGENT_TIER_LABELS[code] || 'Lake Agent';
 }
 exports.agentTierLabel = agentTierLabel;
 exports.AGENT_TIER_LABELS = AGENT_TIER_LABELS;
