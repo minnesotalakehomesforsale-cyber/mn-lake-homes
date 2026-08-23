@@ -2109,7 +2109,7 @@
             const nameEl = document.getElementById('sidebar-name');
             const tierEl = document.getElementById('sidebar-tier');
             if (nameEl) nameEl.innerText = agent.display_name || '—';
-            if (tierEl) tierEl.innerText = agent.membership_badge || agent.membership_name || 'Agent';
+            if (tierEl) tierEl.innerText = agent.membership_badge || agent.membership_name || 'Lake Agent';
 
             document.getElementById('f-name').value      = agent.display_name   || '';
             document.getElementById('f-brokerage').value = agent.brokerage_name  || '';
@@ -2187,7 +2187,7 @@
             const first = (agent.display_name || agent.account_full_name || '').trim().split(/\s+/)[0];
             document.getElementById('dash-firstname').textContent = first ? `, ${first}` : '';
             const tierStat = document.getElementById('dash-stat-tier');
-            if (tierStat) tierStat.textContent = agent.membership_badge || agent.membership_name || 'Agent';
+            if (tierStat) tierStat.textContent = agent.membership_badge || agent.membership_name || 'Lake Agent';
 
             const pill  = document.getElementById('dash-status');
             const label = document.getElementById('dash-status-label');
@@ -2213,7 +2213,7 @@
             }
 
             document.getElementById('dash-acct-desc').textContent =
-                (agent.membership_badge || agent.membership_name || 'Agent') + ' · billing & login';
+                (agent.membership_badge || agent.membership_name || 'Lake Agent') + ' · billing & login';
 
             // Pause-leads (vacation) state.
             _leadsPaused = !!agent.leads_paused;
@@ -2515,7 +2515,7 @@
             }
 
             document.getElementById('acct-membership').textContent =
-                agent.membership_badge || agent.membership_name || 'Agent';
+                agent.membership_badge || agent.membership_name || 'Lake Agent';
             document.getElementById('acct-billing').textContent =
                 agent.stripe_subscription_id ? 'Active subscription' : 'Not subscribed';
             // Pull the live Stripe snapshot (renewal date, amount, status)

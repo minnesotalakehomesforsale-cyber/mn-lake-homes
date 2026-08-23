@@ -2433,7 +2433,7 @@ app.get('/agents/:slug', async (req, res, next) => {
             if (err) return next(err);
             const baseUrl = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
             const canonical = `/agents/${agent.slug}`;
-            const role = agent.membership_badge || 'Lake Home Specialist';
+            const role = agent.membership_badge || 'Lake Agent';
             const loc = [agent.city, agent.state].filter(Boolean).join(', ');
             const title = `${agent.display_name}${agent.brokerage_name ? ' · ' + agent.brokerage_name : ''} | Minnesota Lake Home Agent`;
             const bioText = (agent.bio || '').replace(/\s+/g, ' ').trim();
