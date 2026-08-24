@@ -824,7 +824,7 @@
             document.getElementById('hdr-photo').innerHTML = `<img src="${a.profile_photo_url}" alt="">`;
         }
         const memLabels = { founder:'Founder', premium:'Premium', top_agent:'Top Agent', mn_lake_specialist:'MN Lake Specialist', basic:'Basic', free:'Free' };
-        document.getElementById('hdr-membership').textContent   = memLabels[a.membership_code] || a.membership_code || '—';
+        document.getElementById('hdr-membership').textContent   = a.tier_label || memLabels[a.membership_code] || a.membership_code || '—';
         document.getElementById('hdr-profile-status').innerHTML = statusBadge(a.profile_status);
         document.getElementById('hdr-account-status').innerHTML = (a.user_status === 'active')
             ? '<span class="s-badge s-published">Active</span>'

@@ -2,6 +2,7 @@ const pool = require('../database/pool');
 const bcrypt = require('bcrypt');
 const { logActivity } = require('../services/activity-log');
 const hubspot = require('../services/hubspot');
+const { agentTierLabel } = require('./stripe.controller');
 
 /**
  * GET /api/admin
@@ -53,6 +54,7 @@ const getLedger = async (req, res) => {
         `;
 
         const { rows } = await pool.query(query, values);
+        rows.forEach(r => { r.tier_label = agentTierLabel(r); });   // true tier (paid + active), matches the public badge
         res.json(rows);
     } catch (err) {
         console.error('[getLedger]', err.message);
@@ -81,6 +83,7 @@ const getAgentDetail = async (req, res) => {
         const { rows } = await pool.query(query, [req.params.id]);
         if (rows.length === 0) return res.status(404).json({ error: 'Agent not found.' });
         const out = rows[0];
+        out.tier_label = agentTierLabel(out);   // true tier (paid + active), matches the public badge
         out.hs_contact_url = hubspot.getPortalContactUrl(out.hs_contact_id);
         res.json(out);
     } catch (err) {
