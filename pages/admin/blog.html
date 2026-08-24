@@ -46,13 +46,14 @@
         .act-btn.danger:hover { background: #fed7d7; }
 
         /* Editor overlay */
-        .editor-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 500; overflow-y: auto; padding: 2rem; }
-        .editor-overlay.open { display: flex; align-items: flex-start; justify-content: center; }
-        .editor-panel { background: #fff; border-radius: 16px; width: 100%; max-width: 860px; margin: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        /* Editor is an in-page content view that swaps with the list — not a modal popup */
+        .editor-overlay { display: none; }
+        .editor-overlay.open { display: block; }
+        .editor-panel { background: #fff; border-radius: 14px; width: 100%; max-width: 920px; border: 1px solid #edf2f7; }
         .editor-header { padding: 1.75rem 2rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; }
         .editor-header h2 { font-size: 1.25rem; font-weight: 800; margin: 0; }
-        .editor-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #718096; padding: 0.25rem 0.5rem; border-radius: 6px; }
-        .editor-close:hover { background: #f7f9fa; color: #1a202c; }
+        .editor-close { background: #f7f9fa; border: 1px solid #e2e8f0; font-size: 0.9rem; font-weight: 700; cursor: pointer; color: #4a5568; padding: 0.5rem 0.9rem; border-radius: 8px; font-family: inherit; }
+        .editor-close:hover { background: #edf2f7; color: #1a202c; }
         .editor-body { padding: 2rem; }
         .field-row { display: grid; gap: 1.25rem; margin-bottom: 1.5rem; }
         .field-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
@@ -110,15 +111,12 @@
             <div style="text-align:center; padding:4rem; color:#a0aec0;">Loading posts...</div>
         </div>
 
-    </main>
-</div>
-
-<!-- Editor Overlay -->
-<div class="editor-overlay" id="editor-overlay">
+        <!-- Editor: in-page content view that swaps with the list (like a lead detail) -->
+        <div class="editor-overlay" id="editor-overlay">
     <div class="editor-panel">
         <div class="editor-header">
             <h2 id="editor-title">New Post</h2>
-            <button class="editor-close" onclick="closeEditor()">✕</button>
+            <button class="editor-close" onclick="closeEditor()">← Back to posts</button>
         </div>
         <div class="editor-body">
 
@@ -219,6 +217,9 @@
             <button class="btn-save" id="save-btn" onclick="savePost()">Save Post</button>
         </div>
     </div>
+</div>
+
+    </main>
 </div>
 
 <script>
@@ -364,8 +365,7 @@
             }
         }
 
-        document.getElementById('editor-overlay').classList.add('open');
-        document.body.style.overflow = 'hidden';
+        setBlogView('editor');
         updateBodyWordCount();
     }
 
@@ -386,9 +386,16 @@
         el.textContent = note;
     }
 
+    // Swap between the posts list and the editor content view (in-page, like a lead detail).
+    function setBlogView(which) {
+        const editing = which === 'editor';
+        document.getElementById('editor-overlay').classList.toggle('open', editing);
+        ['filter-row', 'posts-list'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = editing ? 'none' : ''; });
+        const hdr = document.querySelector('.admin-main > header'); if (hdr) hdr.style.display = editing ? 'none' : '';
+        window.scrollTo(0, 0);
+    }
     function closeEditor() {
-        document.getElementById('editor-overlay').classList.remove('open');
-        document.body.style.overflow = '';
+        setBlogView('list');
         editingId = null;
     }
 
@@ -700,10 +707,7 @@
     document.addEventListener('DOMContentLoaded', loadLakeCatalog);
     document.addEventListener('DOMContentLoaded', loadAgentCatalog);
 
-    // Close overlay on background click
-    document.getElementById('editor-overlay').addEventListener('click', function(e) {
-        if (e.target === this) closeEditor();
-    });
+    // Editor is an in-page content view now — no background-click close.
 </script>
 
 <!-- Embed-mode helper. Active only when iframed via marketing.html?...embed=1.
