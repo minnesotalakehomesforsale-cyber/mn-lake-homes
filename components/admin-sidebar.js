@@ -37,6 +37,12 @@
         body.lt-embed,
         body.lt-embed .admin-wrap,
         body.lt-embed .admin-main { min-height: 0 !important; height: auto !important; }
+        /* Embedded editor frames sit INSIDE a parent admin page that already has the
+           nav chrome. Hide the duplicate sidebar + hamburger and collapse the grid so
+           the frame shows only its editor content — no "page inside a page". */
+        body.lt-embed .admin-side { display: none !important; }
+        body.lt-embed .admin-hamburger { display: none !important; }
+        body.lt-embed .admin-wrap { grid-template-columns: 1fr !important; }
         .admin-side {
             background: #1a202c; color: #fff;
             padding: 2rem 1.5rem;
