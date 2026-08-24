@@ -13,18 +13,19 @@
            Hide the standalone admin chrome so only the page content shows. */
         body.lt-embed admin-sidebar,
         body.lt-embed admin-assistant,
-        body.lt-embed .admin-main > header { display: none !important; }
+        body.lt-embed #blog-list > header { display: none !important; }
         body.lt-embed .admin-wrap { display: block !important; }
         body.lt-embed .admin-main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
-        /* Stats row */
-        .stat-row { display: flex; gap: 1rem; margin-bottom: 2rem; }
+
+        /* ── Stats / filter pills ─────────────────────────────────────────── */
+        .stat-row { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
         .stat-pill { background: #fff; border: 1px solid #edf2f7; border-radius: 99px; padding: 0.5rem 1.25rem; font-size: 0.85rem; font-weight: 700; color: #718096; cursor: pointer; transition: all 0.15s; }
         .stat-pill:hover { border-color: #1d6df2; color: #1d6df2; }
         .stat-pill.active { background: #1d6df2; color: #fff; border-color: #1d6df2; }
         .stat-pill .pill-count { font-size: 0.75rem; font-weight: 800; margin-left: 0.35rem; opacity: 0.8; }
 
-        /* Post list */
-        .post-row { background: #fff; border: 1px solid #edf2f7; border-radius: 10px; padding: 1.5rem; margin-bottom: 0.75rem; display: grid; grid-template-columns: 72px 1fr auto; gap: 1.25rem; align-items: center; transition: box-shadow 0.15s; }
+        /* ── Post list ────────────────────────────────────────────────────── */
+        .post-row { background: #fff; border: 1px solid #edf2f7; border-radius: 10px; padding: 1.5rem; margin-bottom: 0.75rem; display: grid; grid-template-columns: 72px 1fr auto; gap: 1.25rem; align-items: center; transition: box-shadow 0.15s; cursor: pointer; }
         .post-row:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
         .post-thumb { width: 72px; height: 52px; border-radius: 6px; object-fit: cover; background: #edf2f7; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
         .post-thumb img { width: 100%; height: 100%; object-fit: cover; }
@@ -45,17 +46,44 @@
         .act-btn.danger { border-color: #fed7d7; color: #c53030; background: #fff5f5; }
         .act-btn.danger:hover { background: #fed7d7; }
 
-        /* Editor overlay */
-        /* Editor is an in-page content view that swaps with the list — not a modal popup */
-        .editor-overlay { display: none; }
-        .editor-overlay.open { display: block; }
-        .editor-panel { background: #fff; border-radius: 14px; width: 100%; max-width: 920px; border: 1px solid #edf2f7; }
-        .editor-header { padding: 1.75rem 2rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; }
-        .editor-header h2 { font-size: 1.25rem; font-weight: 800; margin: 0; }
-        .editor-close { background: #f7f9fa; border: 1px solid #e2e8f0; font-size: 0.9rem; font-weight: 700; cursor: pointer; color: #4a5568; padding: 0.5rem 0.9rem; border-radius: 8px; font-family: inherit; }
-        .editor-close:hover { background: #edf2f7; color: #1a202c; }
-        .editor-body { padding: 2rem; }
+        /* ── Detail view (mirrors the agent lead-detail layout) ───────────── */
+        .s-badge { padding: 0.4rem 1rem; border-radius: 99px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; border: 1px solid transparent; display: inline-block; }
+        .s-published { background: #f0fff4; color: #2f855a; border-color: #c6f6d5; }
+        .s-draft     { background: #fefcbf; color: #975a16; border-color: #f6e05e; }
+
+        .profile-header { position: relative; display: flex; gap: 1.75rem; background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 2px 6px rgba(0,0,0,0.03); padding: 1.75rem 2rem; margin-bottom: 1.5rem; }
+        .ph-actions { position: absolute; top: 1.25rem; right: 1.5rem; display: flex; gap: 0.5rem; }
+        .ph-view-btn { display: inline-flex; align-items: center; gap: 0.4rem; height: 38px; padding: 0 0.9rem; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; color: #4a5568; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.15s; text-decoration: none; font-family: inherit; }
+        .ph-view-btn:hover { border-color: #1d6df2; color: #1d6df2; background: #f7faff; }
+        .ph-photo { width: 116px; height: 82px; border-radius: 10px; background: #edf2f7; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; font-size: 1.75rem; }
+        .ph-photo img { width: 100%; height: 100%; object-fit: cover; }
+        .ph-main { flex: 1; min-width: 0; }
+        .ph-name-row { display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap; }
+        .ph-name-row h1 { font-size: 1.6rem; font-weight: 800; color: #1a202c; letter-spacing: -0.5px; margin: 0; }
+        .profile-header .sub { color: #718096; font-size: 0.9rem; margin-top: 0.3rem; }
+        .ph-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.1rem 1.5rem; margin-top: 1.35rem; }
+        .ph-field { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+        .ph-label { font-size: 0.68rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; }
+        .ph-value { font-size: 0.9rem; font-weight: 600; color: #1a202c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .page-tabs { display: flex; gap: 0.25rem; margin-bottom: 2rem; border-bottom: 2px solid #edf2f7;
+            overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .page-tabs::-webkit-scrollbar { display: none; }
+        .page-tab { flex-shrink: 0; white-space: nowrap; padding: 0.75rem 1.5rem; font-size: 0.9rem; font-weight: 600; color: #718096; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; font-family: inherit; transition: all 0.15s; }
+        .page-tab:hover { color: #1a202c; }
+        .page-tab.active { color: #1d6df2; border-bottom-color: #1d6df2; }
+        .page-tab .tab-count { background: #edf2f7; color: #4a5568; border-radius: 20px; padding: 0.1rem 0.5rem; font-size: 0.7rem; font-weight: 700; margin-left: 0.4rem; }
+        .page-tab.active .tab-count { background: #1d6df2; color: #fff; }
+
+        .panel { background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 2px 6px rgba(0,0,0,0.03); margin-bottom: 1.5rem; overflow: hidden; }
+        .panel-header { padding: 1.35rem 1.75rem; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+        .panel-title { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #4a5568; }
+        .panel-hint { font-size: 0.8rem; color: #a0aec0; font-weight: 500; }
+        .panel-body { padding: 1.75rem; }
+
+        /* ── Form fields ──────────────────────────────────────────────────── */
         .field-row { display: grid; gap: 1.25rem; margin-bottom: 1.5rem; }
+        .field-row:last-child { margin-bottom: 0; }
         .field-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
         .field-row.cols-2 { grid-template-columns: 1fr 1fr; }
         .field-row.cols-1 { grid-template-columns: 1fr; }
@@ -64,19 +92,54 @@
         .field-inp { padding: 0.7rem 0.9rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; font-family: inherit; color: #1a202c; background: #fff; width: 100%; box-sizing: border-box; }
         .field-inp:focus { outline: none; border-color: #1d6df2; box-shadow: 0 0 0 3px rgba(29,109,242,0.08); }
         textarea.field-inp { resize: vertical; }
-        .cover-preview { width: 100%; height: 160px; border-radius: 8px; object-fit: cover; margin-top: 0.5rem; display: none; background: #f7f9fa; border: 1px solid #edf2f7; }
-        .pub-toggle-row { display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: #f7f9fa; border-radius: 8px; margin-bottom: 1.5rem; }
+        .cover-preview { width: 100%; height: 200px; border-radius: 8px; object-fit: cover; margin-top: 0.75rem; display: none; background: #f7f9fa; border: 1px solid #edf2f7; }
+        .pub-toggle-row { display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: #f7f9fa; border-radius: 8px; }
         .toggle-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .toggle-slider { position: absolute; inset: 0; background: #cbd5e0; border-radius: 24px; cursor: pointer; transition: 0.2s; }
         .toggle-slider:before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.2s; }
         .toggle-switch input:checked + .toggle-slider { background: #38a169; }
         .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
-        .editor-footer { padding: 1.25rem 2rem; border-top: 1px solid #edf2f7; display: flex; justify-content: flex-end; gap: 0.75rem; }
+
+        /* ── Sticky save bar ─────────────────────────────────────────────── */
+        .save-bar { position: sticky; bottom: 0; background: rgba(247,249,250,0.92); backdrop-filter: blur(6px); border-top: 1px solid #e2e8f0; padding: 1rem 0; display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem; z-index: 5; }
         .btn-cancel { padding: 0.7rem 1.5rem; background: #edf2f7; color: #4a5568; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .btn-cancel:hover { background: #e2e8f0; }
         .btn-save { padding: 0.7rem 1.75rem; background: #1d6df2; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
         .btn-save:hover { opacity: 0.9; }
         .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ── Preview (renders the post as it will appear) ─────────────────── */
+        .qlinks { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+        .qlink { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.95rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; color: #4a5568; font-size: 0.83rem; font-weight: 700; cursor: pointer; text-decoration: none; font-family: inherit; transition: all 0.15s; }
+        .qlink:hover { border-color: #1d6df2; color: #1d6df2; background: #f7faff; }
+        .qlink.disabled { opacity: 0.45; pointer-events: none; }
+        .blog-article { max-width: 720px; }
+        .blog-article h2 { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.3px; margin: 2rem 0 0.75rem; }
+        .blog-article h3 { font-size: 1.15rem; font-weight: 700; margin: 1.5rem 0 0.5rem; }
+        .blog-article p { font-size: 1.02rem; line-height: 1.7; color: #2d3748; margin: 0 0 1.1rem; }
+        .blog-article a { color: #1d6df2; text-decoration: underline; }
+        .blog-article ul, .blog-article ol { line-height: 1.7; color: #2d3748; padding-left: 1.4rem; margin: 0 0 1.1rem; }
+        .blog-article img { max-width: 100%; border-radius: 10px; margin: 1rem 0; }
+
+        /* ── Performance ─────────────────────────────────────────────────── */
+        .perf-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+        .perf-stat { background: #fff; border: 1px solid #edf2f7; border-radius: 10px; padding: 1.25rem 1.4rem; }
+        .perf-stat .ps-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 0.45rem; }
+        .perf-stat .ps-value { font-size: 1.9rem; font-weight: 800; color: #1a202c; letter-spacing: -1px; line-height: 1; }
+        .perf-stat .ps-sub { font-size: 0.76rem; font-weight: 600; margin-top: 0.4rem; }
+        .health-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 0; border-bottom: 1px solid #f1f5f9; }
+        .health-row:last-child { border-bottom: none; }
+        .health-icon { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 800; flex-shrink: 0; }
+        .health-pass { background: #f0fff4; color: #2f855a; }
+        .health-warn { background: #fffaf0; color: #dd6b20; }
+        .health-txt { font-size: 0.9rem; color: #2d3748; font-weight: 600; }
+        .health-note { font-size: 0.82rem; color: #a0aec0; font-weight: 500; margin-left: auto; text-align: right; }
+        .dist-chip { display: inline-flex; align-items: center; gap: 0.35rem; background: #ebf4ff; color: #1d6df2; font-size: 0.8rem; font-weight: 700; padding: 0.3rem 0.7rem; border-radius: 99px; text-decoration: none; }
+        .dist-chip:hover { background: #dbeafe; }
+
+        @media (max-width: 1000px) { .ph-grid { grid-template-columns: repeat(2, 1fr); } .perf-grid { grid-template-columns: repeat(2, 1fr); } .field-row.cols-3, .field-row.cols-2 { grid-template-columns: 1fr; } }
+        @media (max-width: 760px) { .profile-header { flex-direction: column; } .ph-actions { position: static; margin-top: 0.5rem; } .ph-grid { grid-template-columns: 1fr 1fr; } .panel-body { padding: 1.25rem; } }
     </style>
     <script src="../../components/admin-guard.js"></script>
     <script src="../../components/admin-responsive.js" defer></script>
@@ -91,133 +154,235 @@
 
     <main class="admin-main">
 
-        <header style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:2rem;">
-            <div>
-                <h1 style="font-size:2rem; font-weight:800; letter-spacing:-1px; margin:0 0 0.25rem;">Blog & Content</h1>
-                <p style="color:#718096; margin:0;">Create and manage all published and draft posts.</p>
-            </div>
-            <button onclick="openEditor()" style="padding:0.75rem 1.5rem; background:#1d6df2; color:#fff; border:none; border-radius:8px; font-weight:700; font-size:0.9rem; cursor:pointer; font-family:inherit;">+ New Post</button>
-        </header>
-
-        <!-- Filter pills -->
-        <div class="stat-row" id="filter-row">
-            <button class="stat-pill active" onclick="filterPosts('all', this)">All <span class="pill-count" id="cnt-all">—</span></button>
-            <button class="stat-pill" onclick="filterPosts('published', this)">Published <span class="pill-count" id="cnt-pub">—</span></button>
-            <button class="stat-pill" onclick="filterPosts('draft', this)">Drafts <span class="pill-count" id="cnt-draft">—</span></button>
-        </div>
-
-        <!-- Posts list -->
-        <div id="posts-list">
-            <div style="text-align:center; padding:4rem; color:#a0aec0;">Loading posts...</div>
-        </div>
-
-        <!-- Editor: in-page content view that swaps with the list (like a lead detail) -->
-        <div class="editor-overlay" id="editor-overlay">
-    <div class="editor-panel">
-        <div class="editor-header">
-            <h2 id="editor-title">New Post</h2>
-            <button class="editor-close" onclick="closeEditor()">← Back to posts</button>
-        </div>
-        <div class="editor-body">
-
-            <div class="field-row cols-1">
-                <div class="field-grp">
-                    <label class="field-lbl">Title *</label>
-                    <input type="text" class="field-inp" id="f-title" placeholder="Enter post title…">
-                </div>
-            </div>
-
-            <div class="field-row cols-3">
-                <div class="field-grp">
-                    <label class="field-lbl">Tag / Category</label>
-                    <select class="field-inp" id="f-tag">
-                        <option>Buyer Guide</option>
-                        <option>Seller Resources</option>
-                        <option>Local Life</option>
-                        <option>Community</option>
-                        <option>Market Update</option>
-                        <option>General</option>
-                    </select>
-                </div>
-                <div class="field-grp">
-                    <label class="field-lbl">Read Time (minutes)</label>
-                    <input type="number" class="field-inp" id="f-readtime" min="1" max="60" value="4">
-                </div>
-                <div class="field-grp">
-                    <label class="field-lbl">Author Name</label>
-                    <input type="text" class="field-inp" id="f-author" placeholder="MN Lake Homes Team">
-                </div>
-            </div>
-
-            <div class="field-row cols-1">
-                <div class="field-grp">
-                    <label class="field-lbl">Cover Image</label>
-                    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-                        <input type="url" class="field-inp" id="f-cover" placeholder="Paste an image URL or upload a file →" oninput="previewCover(this.value)" style="flex:1; min-width:220px;">
-                        <label for="f-upload" style="padding:0.7rem 1rem; border:1px solid #e2e8f0; border-radius:8px; background:#f7f9fa; color:#1a202c; font-size:0.85rem; font-weight:700; cursor:pointer; white-space:nowrap; font-family:inherit;">
-                            📤 Upload Image
-                        </label>
-                        <input type="file" id="f-upload" accept="image/*" style="display:none;" onchange="uploadImage(this.files[0])">
-                        <span id="upload-status" style="font-size:0.8rem; color:#718096; font-weight:500;"></span>
-                    </div>
-                    <img id="cover-preview" class="cover-preview" alt="Cover preview">
-                </div>
-            </div>
-
-            <div class="field-row cols-1">
-                <div class="field-grp">
-                    <label class="field-lbl">Lakes this post covers <span style="font-weight:400;text-transform:none;letter-spacing:0;">(appears in each lake's "From the blog" section)</span></label>
-                    <div id="f-lakes-chips" style="display:flex;flex-wrap:wrap;gap:0.4rem;min-height:2.5rem;padding:0.55rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;align-items:center;">
-                        <span id="f-lakes-empty" style="color:#a0aec0;font-size:0.85rem;">None selected — click a lake below to attach it.</span>
-                    </div>
-                    <div id="f-lakes-options" style="margin-top:0.5rem;display:flex;flex-wrap:wrap;gap:0.35rem;max-height:180px;overflow:auto;padding:0.35rem;">
-                        <span style="color:#a0aec0;font-size:0.85rem;">Loading lakes…</span>
-                    </div>
-                </div>
-                <div class="field-grp">
-                    <label class="field-lbl">Agents featured in this post <span style="font-weight:400;text-transform:none;letter-spacing:0;">(appears in each agent's "Related articles" section — co-branded posts, spotlights)</span></label>
-                    <div id="f-agents-chips" style="display:flex;flex-wrap:wrap;gap:0.4rem;min-height:2.5rem;padding:0.55rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;align-items:center;">
-                        <span id="f-agents-empty" style="color:#a0aec0;font-size:0.85rem;">None selected — click an agent below to attach it.</span>
-                    </div>
-                    <div id="f-agents-options" style="margin-top:0.5rem;display:flex;flex-wrap:wrap;gap:0.35rem;max-height:180px;overflow:auto;padding:0.35rem;">
-                        <span style="color:#a0aec0;font-size:0.85rem;">Loading agents…</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="field-row cols-1">
-                <div class="field-grp">
-                    <label class="field-lbl">Excerpt <span style="font-weight:400;text-transform:none;letter-spacing:0;">(shown in card previews)</span></label>
-                    <textarea class="field-inp" id="f-excerpt" rows="3" placeholder="One or two sentences summarising the post…"></textarea>
-                </div>
-            </div>
-
-            <div class="field-row cols-1">
-                <div class="field-grp">
-                    <label class="field-lbl">Body <span style="font-weight:400;text-transform:none;letter-spacing:0;">(HTML accepted)</span></label>
-                    <textarea class="field-inp" id="f-body" rows="12" placeholder="<p>Start writing your post here...</p>&#10;<h2>Section heading</h2>&#10;<p>More content...</p>" oninput="updateBodyWordCount()"></textarea>
-                    <div id="body-wc" style="margin-top:0.4rem;font-size:0.82rem;font-weight:600;color:#a0aec0;">Target: 700–1,000 words · aim for 4–6 H2 subheads, internal links to /buy, /sell, tools &amp; other posts, and a CTA at the end.</div>
-                </div>
-            </div>
-
-            <div class="pub-toggle-row">
-                <label class="toggle-switch">
-                    <input type="checkbox" id="f-published">
-                    <span class="toggle-slider"></span>
-                </label>
+        <!-- ═══ LIST VIEW ═══ -->
+        <div id="blog-list">
+            <header style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
                 <div>
-                    <div style="font-weight:700; font-size:0.9rem; color:#1a202c;">Publish immediately</div>
-                    <div style="font-size:0.8rem; color:#718096;">Post goes live on the blog the moment you save.</div>
+                    <h1 style="font-size:2rem; font-weight:800; letter-spacing:-1px; margin:0 0 0.25rem;">Blog & Content</h1>
+                    <p style="color:#718096; margin:0;">Create and manage all published and draft posts.</p>
+                </div>
+                <button onclick="openEditor()" style="padding:0.75rem 1.5rem; background:#1d6df2; color:#fff; border:none; border-radius:8px; font-weight:700; font-size:0.9rem; cursor:pointer; font-family:inherit;">+ New Post</button>
+            </header>
+
+            <div class="stat-row" id="filter-row">
+                <button class="stat-pill active" onclick="filterPosts('all', this)">All <span class="pill-count" id="cnt-all">—</span></button>
+                <button class="stat-pill" onclick="filterPosts('published', this)">Published <span class="pill-count" id="cnt-pub">—</span></button>
+                <button class="stat-pill" onclick="filterPosts('draft', this)">Drafts <span class="pill-count" id="cnt-draft">—</span></button>
+            </div>
+
+            <div id="posts-list">
+                <div style="text-align:center; padding:4rem; color:#a0aec0;">Loading posts...</div>
+            </div>
+        </div>
+
+        <!-- ═══ DETAIL VIEW (opens like a lead) ═══ -->
+        <div id="blog-detail" style="display:none;">
+
+            <a onclick="closeEditor()" style="color:#718096;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:0.5rem;margin-bottom:1.5rem;cursor:pointer;">
+                ← Back to posts
+            </a>
+
+            <!-- Header card -->
+            <div class="profile-header">
+                <div class="ph-photo" id="bh-cover">📷</div>
+                <div class="ph-main">
+                    <div class="ph-name-row">
+                        <h1 id="bh-title">New Post</h1>
+                        <span class="s-badge s-draft" id="bh-badge">Draft</span>
+                    </div>
+                    <div class="sub" id="bh-sub">General · 4 min read · MN Lake Homes Team</div>
+                    <div class="ph-grid">
+                        <div class="ph-field"><div class="ph-label">Status</div><div class="ph-value" id="bh-status">Draft</div></div>
+                        <div class="ph-field"><div class="ph-label">Category</div><div class="ph-value" id="bh-tag">—</div></div>
+                        <div class="ph-field"><div class="ph-label">Word Count</div><div class="ph-value" id="bh-words">—</div></div>
+                        <div class="ph-field"><div class="ph-label">Read Time</div><div class="ph-value" id="bh-readtime">4 min</div></div>
+                        <div class="ph-field"><div class="ph-label">Author</div><div class="ph-value" id="bh-author">MN Lake Homes Team</div></div>
+                        <div class="ph-field"><div class="ph-label">Published</div><div class="ph-value" id="bh-published">—</div></div>
+                        <div class="ph-field"><div class="ph-label">On Lake Pages</div><div class="ph-value" id="bh-lakes">0</div></div>
+                        <div class="ph-field"><div class="ph-label">Featured Agents</div><div class="ph-value" id="bh-agents">0</div></div>
+                    </div>
+                </div>
+                <div class="ph-actions">
+                    <a class="ph-view-btn" id="bh-view" href="#" target="_blank" rel="noopener" style="display:none;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                        View live
+                    </a>
                 </div>
             </div>
 
+            <!-- Tabs -->
+            <div class="page-tabs">
+                <button class="page-tab active" id="bptab-content"     onclick="switchBlogTab('content')">Content</button>
+                <button class="page-tab"        id="bptab-placement"   onclick="switchBlogTab('placement')">Cover &amp; Placement</button>
+                <button class="page-tab"        id="bptab-preview"     onclick="switchBlogTab('preview')">Preview</button>
+                <button class="page-tab"        id="bptab-performance" onclick="switchBlogTab('performance')">Performance</button>
+            </div>
+
+            <!-- TAB: Content -->
+            <div id="btab-content">
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">Post content</div><div class="panel-hint">The words that go live on the blog</div></div>
+                    <div class="panel-body">
+                        <div class="field-row cols-1">
+                            <div class="field-grp">
+                                <label class="field-lbl">Title *</label>
+                                <input type="text" class="field-inp" id="f-title" placeholder="Enter post title…">
+                            </div>
+                        </div>
+                        <div class="field-row cols-3">
+                            <div class="field-grp">
+                                <label class="field-lbl">Tag / Category</label>
+                                <select class="field-inp" id="f-tag">
+                                    <option>Buyer Guide</option>
+                                    <option>Seller Resources</option>
+                                    <option>Local Life</option>
+                                    <option>Community</option>
+                                    <option>Market Update</option>
+                                    <option>General</option>
+                                </select>
+                            </div>
+                            <div class="field-grp">
+                                <label class="field-lbl">Read Time (minutes)</label>
+                                <input type="number" class="field-inp" id="f-readtime" min="1" max="60" value="4">
+                            </div>
+                            <div class="field-grp">
+                                <label class="field-lbl">Author Name</label>
+                                <input type="text" class="field-inp" id="f-author" placeholder="MN Lake Homes Team">
+                            </div>
+                        </div>
+                        <div class="field-row cols-1">
+                            <div class="field-grp">
+                                <label class="field-lbl">Excerpt <span style="font-weight:400;text-transform:none;letter-spacing:0;">(shown in card previews)</span></label>
+                                <textarea class="field-inp" id="f-excerpt" rows="3" placeholder="One or two sentences summarising the post…"></textarea>
+                            </div>
+                        </div>
+                        <div class="field-row cols-1">
+                            <div class="field-grp">
+                                <label class="field-lbl">Body <span style="font-weight:400;text-transform:none;letter-spacing:0;">(HTML accepted)</span></label>
+                                <textarea class="field-inp" id="f-body" rows="16" placeholder="<p>Start writing your post here...</p>&#10;<h2>Section heading</h2>&#10;<p>More content...</p>" oninput="updateBodyWordCount()"></textarea>
+                                <div id="body-wc" style="margin-top:0.4rem;font-size:0.82rem;font-weight:600;color:#a0aec0;">Target: 700–1,000 words · aim for 4–6 H2 subheads, internal links to /buy, /sell, tools &amp; other posts, and a CTA at the end.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">Visibility</div></div>
+                    <div class="panel-body">
+                        <div class="pub-toggle-row">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="f-published">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <div>
+                                <div style="font-weight:700; font-size:0.9rem; color:#1a202c;">Publish immediately</div>
+                                <div style="font-size:0.8rem; color:#718096;">Post goes live on the blog the moment you save.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Cover & Placement -->
+            <div id="btab-placement" style="display:none;">
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">Cover image</div></div>
+                    <div class="panel-body">
+                        <div class="field-grp">
+                            <label class="field-lbl">Cover Image</label>
+                            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                                <input type="url" class="field-inp" id="f-cover" placeholder="Paste an image URL or upload a file →" oninput="previewCover(this.value)" style="flex:1; min-width:220px;">
+                                <label for="f-upload" style="padding:0.7rem 1rem; border:1px solid #e2e8f0; border-radius:8px; background:#f7f9fa; color:#1a202c; font-size:0.85rem; font-weight:700; cursor:pointer; white-space:nowrap; font-family:inherit;">
+                                    📤 Upload Image
+                                </label>
+                                <input type="file" id="f-upload" accept="image/*" style="display:none;" onchange="uploadImage(this.files[0])">
+                                <span id="upload-status" style="font-size:0.8rem; color:#718096; font-weight:500;"></span>
+                            </div>
+                            <img id="cover-preview" class="cover-preview" alt="Cover preview">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">Appears on lake pages</div><div class="panel-hint">Shows in each lake's “From the blog” section</div></div>
+                    <div class="panel-body">
+                        <div id="f-lakes-chips" style="display:flex;flex-wrap:wrap;gap:0.4rem;min-height:2.5rem;padding:0.55rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;align-items:center;">
+                            <span id="f-lakes-empty" style="color:#a0aec0;font-size:0.85rem;">None selected — click a lake below to attach it.</span>
+                        </div>
+                        <div id="f-lakes-options" style="margin-top:0.6rem;display:flex;flex-wrap:wrap;gap:0.35rem;max-height:200px;overflow:auto;padding:0.35rem;">
+                            <span style="color:#a0aec0;font-size:0.85rem;">Loading lakes…</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">Featured in agent profiles</div><div class="panel-hint">Shows in each agent's “Related articles” — co-branded posts &amp; spotlights</div></div>
+                    <div class="panel-body">
+                        <div id="f-agents-chips" style="display:flex;flex-wrap:wrap;gap:0.4rem;min-height:2.5rem;padding:0.55rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;align-items:center;">
+                            <span id="f-agents-empty" style="color:#a0aec0;font-size:0.85rem;">None selected — click an agent below to attach it.</span>
+                        </div>
+                        <div id="f-agents-options" style="margin-top:0.6rem;display:flex;flex-wrap:wrap;gap:0.35rem;max-height:200px;overflow:auto;padding:0.35rem;">
+                            <span style="color:#a0aec0;font-size:0.85rem;">Loading agents…</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Preview -->
+            <div id="btab-preview" style="display:none;">
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">Quick links</div></div>
+                    <div class="panel-body">
+                        <div class="qlinks">
+                            <a class="qlink disabled" id="ql-view" href="#" target="_blank" rel="noopener">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                                View live post
+                            </a>
+                            <button class="qlink" id="ql-copy" onclick="copyBlogLink()">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                Copy link
+                            </button>
+                            <a class="qlink" href="/blog" target="_blank" rel="noopener">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                                Open blog index
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">Live preview</div><div class="panel-hint">How the post renders on the site</div></div>
+                    <div class="panel-body">
+                        <div class="blog-article" id="blog-preview-body">
+                            <p style="color:#a0aec0;">Write the post in the Content tab to see it here.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Performance -->
+            <div id="btab-performance" style="display:none;">
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">At a glance</div></div>
+                    <div class="panel-body">
+                        <div class="perf-grid" id="perf-stats"></div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">Content health</div><div class="panel-hint">House standard: 700–1,000 words, 4–6 H2s, internal links, a CTA</div></div>
+                    <div class="panel-body"><div id="perf-health"></div></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">Distribution</div><div class="panel-hint">Where this post surfaces across the site</div></div>
+                    <div class="panel-body"><div id="perf-dist"></div></div>
+                </div>
+            </div>
+
+            <!-- Save bar -->
+            <div class="save-bar">
+                <button class="btn-cancel" onclick="closeEditor()">Cancel</button>
+                <button class="btn-save" id="save-btn" onclick="savePost()">Save Post</button>
+            </div>
         </div>
-        <div class="editor-footer">
-            <button class="btn-cancel" onclick="closeEditor()">Cancel</button>
-            <button class="btn-save" id="save-btn" onclick="savePost()">Save Post</button>
-        </div>
-    </div>
-</div>
 
     </main>
 </div>
@@ -226,6 +391,7 @@
     let allPosts = [];
     let editingId = null;
     let currentFilter = 'all';
+    let currentPost = null;    // the post object currently open in the detail view
 
     document.addEventListener('DOMContentLoaded', loadPosts);
 
@@ -280,19 +446,19 @@
                 ? `<div class="post-thumb"><img src="${p.cover_image_url}" alt="" onerror="this.parentElement.innerHTML='📷'"></div>`
                 : `<div class="post-thumb-placeholder" style="font-size:1.25rem;">📷</div>`;
             return `
-                <div class="post-row">
+                <div class="post-row" onclick="openEditor('${p.id}')">
                     ${thumb}
                     <div>
-                        <div class="post-title">${p.title}</div>
+                        <div class="post-title">${escapeHtml(p.title)}</div>
                         <div class="post-meta">
-                            <span class="tag-badge">${p.tag || 'General'}</span>
+                            <span class="tag-badge">${escapeHtml(p.tag || 'General')}</span>
                             <span class="${p.is_published ? 'pub-badge pub-live' : 'pub-badge pub-draft'}">${p.is_published ? 'Live' : 'Draft'}</span>
                             <span>${p.read_time_minutes || 4} min read</span>
-                            <span>${p.author_name || 'MN Lake Homes Team'}</span>
+                            <span>${escapeHtml(p.author_name || 'MN Lake Homes Team')}</span>
                             <span style="color:#cbd5e0;">•</span>
                             <span>${date}</span>
                         </div>
-                        ${p.excerpt ? `<div style="font-size:0.82rem;color:#718096;margin-top:0.4rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">${p.excerpt}</div>` : ''}
+                        ${p.excerpt ? `<div style="font-size:0.82rem;color:#718096;margin-top:0.4rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">${escapeHtml(p.excerpt)}</div>` : ''}
                     </div>
                     <div class="post-actions">
                         ${p.is_published
@@ -337,7 +503,7 @@
     // ── Open / close editor ────────────────────────────────────────────────────
     function openEditor(id) {
         editingId = id || null;
-        document.getElementById('editor-title').textContent = id ? 'Edit Post' : 'New Post';
+        currentPost = id ? (allPosts.find(p => p.id === id) || null) : null;
 
         // Reset form
         document.getElementById('f-title').value     = '';
@@ -349,60 +515,223 @@
         document.getElementById('f-body').value      = '';
         document.getElementById('f-published').checked = false;
         document.getElementById('cover-preview').style.display = 'none';
+        document.getElementById('upload-status').textContent = '';
 
-        if (id) {
-            const p = allPosts.find(p => p.id === id);
-            if (p) {
-                document.getElementById('f-title').value    = p.title || '';
-                document.getElementById('f-tag').value      = p.tag || 'General';
-                document.getElementById('f-readtime').value = p.read_time_minutes || 4;
-                document.getElementById('f-author').value   = p.author_name || '';
-                document.getElementById('f-cover').value    = p.cover_image_url || '';
-                document.getElementById('f-excerpt').value  = p.excerpt || '';
-                document.getElementById('f-body').value     = p.body || '';
-                document.getElementById('f-published').checked = !!p.is_published;
-                if (p.cover_image_url) previewCover(p.cover_image_url);
-            }
+        if (id && currentPost) {
+            const p = currentPost;
+            document.getElementById('f-title').value    = p.title || '';
+            document.getElementById('f-tag').value      = p.tag || 'General';
+            document.getElementById('f-readtime').value = p.read_time_minutes || 4;
+            document.getElementById('f-author').value   = p.author_name || '';
+            document.getElementById('f-cover').value    = p.cover_image_url || '';
+            document.getElementById('f-excerpt').value  = p.excerpt || '';
+            document.getElementById('f-body').value     = p.body || '';
+            document.getElementById('f-published').checked = !!p.is_published;
+            if (p.cover_image_url) previewCover(p.cover_image_url);
         }
 
         setBlogView('editor');
+        switchBlogTab('content');
         updateBodyWordCount();
+        renderBlogHeader();
     }
 
-    // House standard: every post should be 700–1,000 words. Live-count the body
-    // (HTML stripped) and coach toward the target.
-    function updateBodyWordCount() {
-        const el = document.getElementById('body-wc');
-        if (!el) return;
-        const words = (document.getElementById('f-body').value || '')
+    // Live word count. House standard: every post 700–1,000 words.
+    function wordCount() {
+        return (document.getElementById('f-body').value || '')
             .replace(/<[^>]+>/g, ' ').replace(/&[a-z]+;/gi, ' ')
             .split(/\s+/).filter(Boolean).length;
-        let color, note;
-        if (words === 0)        { color = '#a0aec0'; note = 'Target: 700–1,000 words · 4–6 H2 subheads, internal links (/buy, /sell, tools, other posts), CTA at the end.'; }
-        else if (words < 700)   { color = '#dd6b20'; note = `${words} words — below the 700-word standard. Add depth: more sections, examples, and internal links.`; }
-        else if (words <= 1000) { color = '#2f855a'; note = `${words} words — on standard (700–1,000). ✓`; }
-        else                    { color = '#3182ce'; note = `${words} words — over 1,000. Fine if it's all substance; otherwise tighten.`; }
-        el.style.color = color;
-        el.textContent = note;
     }
 
-    // Swap between the posts list and the editor content view (in-page, like a lead detail).
+    function updateBodyWordCount() {
+        const el = document.getElementById('body-wc');
+        if (el) {
+            const words = wordCount();
+            let color, note;
+            if (words === 0)        { color = '#a0aec0'; note = 'Target: 700–1,000 words · 4–6 H2 subheads, internal links (/buy, /sell, tools, other posts), CTA at the end.'; }
+            else if (words < 700)   { color = '#dd6b20'; note = `${words} words — below the 700-word standard. Add depth: more sections, examples, and internal links.`; }
+            else if (words <= 1000) { color = '#2f855a'; note = `${words} words — on standard (700–1,000). ✓`; }
+            else                    { color = '#3182ce'; note = `${words} words — over 1,000. Fine if it's all substance; otherwise tighten.`; }
+            el.style.color = color;
+            el.textContent = note;
+        }
+        renderBlogHeader();
+        if (document.getElementById('btab-performance').style.display !== 'none') renderBlogPerformance();
+    }
+
+    // ── Detail view tab switching ───────────────────────────────────────────────
+    function switchBlogTab(tab) {
+        ['content', 'placement', 'preview', 'performance'].forEach(t => {
+            document.getElementById('btab-' + t).style.display = (t === tab) ? 'block' : 'none';
+            document.getElementById('bptab-' + t).classList.toggle('active', t === tab);
+        });
+        if (tab === 'preview')     renderBlogPreview();
+        if (tab === 'performance') renderBlogPerformance();
+    }
+
+    // ── Header card (live) ──────────────────────────────────────────────────────
+    function renderBlogHeader() {
+        if (!document.getElementById('bh-title')) return;
+        const title     = document.getElementById('f-title').value.trim();
+        const cover     = document.getElementById('f-cover').value.trim();
+        const tag       = document.getElementById('f-tag').value;
+        const rt        = document.getElementById('f-readtime').value || '4';
+        const author    = document.getElementById('f-author').value.trim() || 'MN Lake Homes Team';
+        const published = document.getElementById('f-published').checked;
+        const words     = wordCount();
+
+        document.getElementById('bh-title').textContent = title || (editingId ? 'Untitled post' : 'New Post');
+        const badge = document.getElementById('bh-badge');
+        badge.className = 's-badge ' + (published ? 's-published' : 's-draft');
+        badge.textContent = published ? 'Live' : 'Draft';
+        document.getElementById('bh-sub').textContent = `${tag} · ${rt} min read · ${author}`;
+
+        const ph = document.getElementById('bh-cover');
+        if (cover) ph.innerHTML = `<img src="${cover}" alt="" onerror="this.parentElement.textContent='📷'">`;
+        else       ph.textContent = '📷';
+
+        document.getElementById('bh-status').textContent   = published ? 'Published' : 'Draft';
+        document.getElementById('bh-tag').textContent      = tag;
+        document.getElementById('bh-words').textContent    = words ? words.toLocaleString() : '—';
+        document.getElementById('bh-readtime').textContent = rt + ' min';
+        document.getElementById('bh-author').textContent   = author;
+        document.getElementById('bh-published').textContent =
+            (currentPost && currentPost.published_at)
+                ? new Date(currentPost.published_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+                : '—';
+        document.getElementById('bh-lakes').textContent  = _selectedLakeIds.size;
+        document.getElementById('bh-agents').textContent = _selectedAgentIds.size;
+
+        // "View live" — only meaningful for a published post that has a slug.
+        const slug = currentPost && currentPost.slug;
+        const live = slug ? `/blog/${slug}` : null;
+        const viewBtn = document.getElementById('bh-view');
+        if (live && published) { viewBtn.href = live; viewBtn.style.display = 'inline-flex'; }
+        else                   { viewBtn.style.display = 'none'; }
+        const ql = document.getElementById('ql-view');
+        if (ql) {
+            if (live && published) { ql.href = live; ql.classList.remove('disabled'); }
+            else                   { ql.href = '#';  ql.classList.add('disabled'); }
+        }
+    }
+
+    // ── Preview (renders the post as it appears on the site) ────────────────────
+    function renderBlogPreview() {
+        const c = document.getElementById('blog-preview-body');
+        if (!c) return;
+        const title   = document.getElementById('f-title').value.trim() || 'Untitled post';
+        const cover   = document.getElementById('f-cover').value.trim();
+        const tag     = document.getElementById('f-tag').value;
+        const rt      = document.getElementById('f-readtime').value || '4';
+        const author  = document.getElementById('f-author').value.trim() || 'MN Lake Homes Team';
+        const excerpt = document.getElementById('f-excerpt').value.trim();
+        const body    = document.getElementById('f-body').value.trim();
+        c.innerHTML = `
+            ${cover ? `<img src="${cover}" style="width:100%;max-height:320px;object-fit:cover;border-radius:12px;margin-bottom:1.5rem;" onerror="this.style.display='none'">` : ''}
+            <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#1d6df2;margin-bottom:0.65rem;">${escapeHtml(tag)}</div>
+            <h1 style="font-size:2.1rem;font-weight:800;letter-spacing:-1px;line-height:1.15;margin:0 0 0.6rem;">${escapeHtml(title)}</h1>
+            <div style="color:#718096;font-size:0.9rem;margin-bottom:1.5rem;">${escapeHtml(author)} · ${escapeHtml(String(rt))} min read</div>
+            ${excerpt ? `<p style="font-size:1.12rem;color:#4a5568;font-style:italic;border-left:3px solid #1d6df2;padding-left:1rem;margin:0 0 1.75rem;">${escapeHtml(excerpt)}</p>` : ''}
+            ${body || '<p style="color:#a0aec0;">No body content yet — write the post in the Content tab.</p>'}
+        `;
+    }
+
+    // ── Performance (real, derived — no fabricated numbers) ─────────────────────
+    function renderBlogPerformance() {
+        const body      = document.getElementById('f-body').value || '';
+        const words     = wordCount();
+        const h2        = (body.match(/<h2[\s>]/gi) || []).length;
+        const internal  = (body.match(/href=["']\/(?!\/)/gi) || []).length;   // site-relative links
+        const external  = (body.match(/href=["']https?:\/\//gi) || []).length;
+        const rt        = parseInt(document.getElementById('f-readtime').value) || 4;
+        const published = document.getElementById('f-published').checked;
+        const excerpt   = document.getElementById('f-excerpt').value.trim();
+        const cover     = document.getElementById('f-cover').value.trim();
+
+        let daysLive = '—';
+        if (currentPost && currentPost.published_at) {
+            const d = Math.floor((Date.now() - new Date(currentPost.published_at).getTime()) / 86400000);
+            daysLive = d <= 0 ? 'Today' : `${d} day${d === 1 ? '' : 's'}`;
+        }
+
+        // Stat cards
+        document.getElementById('perf-stats').innerHTML = [
+            { label: 'Word Count', value: words.toLocaleString(), sub: words >= 700 && words <= 1000 ? 'On standard' : (words < 700 ? 'Below 700' : 'Over 1,000'), color: (words >= 700 && words <= 1000) ? '#2f855a' : '#dd6b20' },
+            { label: 'H2 Subheads', value: h2, sub: h2 >= 4 ? 'Good structure' : 'Aim for 4–6', color: h2 >= 4 ? '#2f855a' : '#dd6b20' },
+            { label: 'Internal Links', value: internal, sub: internal >= 1 ? 'Linked in' : 'Add site links', color: internal >= 1 ? '#2f855a' : '#dd6b20' },
+            { label: published ? 'Days Live' : 'Status', value: published ? daysLive : 'Draft', sub: published ? 'Published' : 'Not live yet', color: published ? '#2f855a' : '#a0aec0' },
+        ].map(s => `
+            <div class="perf-stat">
+                <div class="ps-label">${s.label}</div>
+                <div class="ps-value">${s.value}</div>
+                <div class="ps-sub" style="color:${s.color};">${s.sub}</div>
+            </div>`).join('');
+
+        // Content-health checklist
+        const checks = [
+            { ok: words >= 700 && words <= 1000, txt: '700–1,000 words', note: `${words.toLocaleString()} words` },
+            { ok: h2 >= 4,        txt: '4–6 H2 subheads',          note: `${h2} found` },
+            { ok: internal >= 1,  txt: 'Internal links to the site', note: `${internal} link${internal === 1 ? '' : 's'}` },
+            { ok: !!excerpt,      txt: 'Excerpt for card previews',  note: excerpt ? 'Set' : 'Missing' },
+            { ok: !!cover,        txt: 'Cover image',                note: cover ? 'Set' : 'Missing' },
+            { ok: (_selectedLakeIds.size + _selectedAgentIds.size) >= 1, txt: 'Placed on a lake or agent page', note: `${_selectedLakeIds.size + _selectedAgentIds.size} placement${(_selectedLakeIds.size + _selectedAgentIds.size) === 1 ? '' : 's'}` },
+        ];
+        document.getElementById('perf-health').innerHTML = checks.map(c => `
+            <div class="health-row">
+                <div class="health-icon ${c.ok ? 'health-pass' : 'health-warn'}">${c.ok ? '✓' : '!'}</div>
+                <div class="health-txt">${c.txt}</div>
+                <div class="health-note">${c.note}</div>
+            </div>`).join('');
+
+        // Distribution — the actual lake/agent pages this post surfaces on
+        const lakeNames  = _allLakes.filter(l => _selectedLakeIds.has(l.id));
+        const agentNames = _allBlogAgents.filter(a => _selectedAgentIds.has(a.id));
+        const extLine = external ? `<span style="font-size:0.82rem;color:#a0aec0;font-weight:500;">${external} external link${external === 1 ? '' : 's'} · reading time ${rt} min</span>` : `<span style="font-size:0.82rem;color:#a0aec0;font-weight:500;">Reading time ${rt} min</span>`;
+        document.getElementById('perf-dist').innerHTML = `
+            <div style="margin-bottom:1rem;">
+                <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#a0aec0;margin-bottom:0.6rem;">Lake pages (${lakeNames.length})</div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+                    ${lakeNames.length ? lakeNames.map(l => `<span class="dist-chip">🌊 ${escapeHtml(l.name)}</span>`).join('') : '<span style="color:#a0aec0;font-size:0.85rem;">Not placed on any lake page yet — add lakes in Cover &amp; Placement.</span>'}
+                </div>
+            </div>
+            <div style="margin-bottom:1rem;">
+                <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#a0aec0;margin-bottom:0.6rem;">Agent profiles (${agentNames.length})</div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+                    ${agentNames.length ? agentNames.map(a => `<span class="dist-chip">👤 ${escapeHtml(a.display_name)}</span>`).join('') : '<span style="color:#a0aec0;font-size:0.85rem;">Not featured on any agent profile yet.</span>'}
+                </div>
+            </div>
+            ${extLine}`;
+    }
+
+    function copyBlogLink() {
+        const slug = currentPost && currentPost.slug;
+        if (!slug) { alert('Save the post first — the public link is created on save.'); return; }
+        const url = `${window.location.origin}/blog/${slug}`;
+        navigator.clipboard.writeText(url).then(() => {
+            const btn = document.getElementById('ql-copy');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '✓ Copied';
+            setTimeout(() => { btn.innerHTML = orig; }, 1800);
+        }).catch(() => alert(url));
+    }
+
+    // Swap between the posts list and the detail view (in-page, like a lead).
     function setBlogView(which) {
         const editing = which === 'editor';
-        document.getElementById('editor-overlay').classList.toggle('open', editing);
-        ['filter-row', 'posts-list'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = editing ? 'none' : ''; });
-        const hdr = document.querySelector('.admin-main > header'); if (hdr) hdr.style.display = editing ? 'none' : '';
+        document.getElementById('blog-detail').style.display = editing ? 'block' : 'none';
+        document.getElementById('blog-list').style.display   = editing ? 'none'  : 'block';
         window.scrollTo(0, 0);
     }
     function closeEditor() {
         setBlogView('list');
         editingId = null;
+        currentPost = null;
     }
 
     // ── Save post ──────────────────────────────────────────────────────────────
     async function savePost() {
         const title = document.getElementById('f-title').value.trim();
-        if (!title) { alert('Title is required.'); document.getElementById('f-title').focus(); return; }
+        if (!title) { alert('Title is required.'); switchBlogTab('content'); document.getElementById('f-title').focus(); return; }
 
         const btn = document.getElementById('save-btn');
         btn.disabled = true;
@@ -451,6 +780,7 @@
         } else {
             img.style.display = 'none';
         }
+        renderBlogHeader();
     }
 
     // ── File upload ────────────────────────────────────────────────────────────
@@ -481,7 +811,7 @@
         }
     }
 
-    // ── Lakes picker (Phase 2) ─────────────────────────────────────────────────
+    // ── Lakes picker ────────────────────────────────────────────────────────────
     // Lets an author tag each post with one or more lakes. Saved via a
     // separate PUT to /api/lakes/by-blog-post/:postId after the post
     // itself is created/updated (we need the post id first for new posts).
@@ -520,12 +850,10 @@
 
     function renderLakeChips() {
         const chips = document.getElementById('f-lakes-chips');
-        const empty = document.getElementById('f-lakes-empty');
         const selected = _allLakes.filter(l => _selectedLakeIds.has(l.id));
         if (!selected.length) {
-            empty.style.display = '';
-            // keep the empty span as the only child
             chips.innerHTML = '<span id="f-lakes-empty" style="color:#a0aec0;font-size:0.85rem;">None selected — click a lake below to attach it.</span>';
+            renderBlogHeader();
             return;
         }
         chips.innerHTML = selected.map(l => `
@@ -534,6 +862,7 @@
                 <button type="button" onclick="toggleLakeTag('${l.id}')"
                         style="border:0;background:transparent;color:#1d6df2;cursor:pointer;font-size:0.9rem;line-height:1;padding:0;">×</button>
             </span>`).join('');
+        renderBlogHeader();
     }
 
     function toggleLakeTag(id) {
@@ -645,6 +974,7 @@
         const selected = _allBlogAgents.filter(a => _selectedAgentIds.has(a.id));
         if (!selected.length) {
             chips.innerHTML = '<span id="f-agents-empty" style="color:#a0aec0;font-size:0.85rem;">None selected — click an agent below to attach it.</span>';
+            renderBlogHeader();
             return;
         }
         chips.innerHTML = selected.map(a => `
@@ -653,6 +983,7 @@
                 <button type="button" onclick="toggleAgentTag('${a.id}')"
                         style="border:0;background:transparent;color:#1d6df2;cursor:pointer;font-size:0.9rem;line-height:1;padding:0;">×</button>
             </span>`).join('');
+        renderBlogHeader();
     }
 
     function toggleAgentTag(id) {
@@ -707,7 +1038,15 @@
     document.addEventListener('DOMContentLoaded', loadLakeCatalog);
     document.addEventListener('DOMContentLoaded', loadAgentCatalog);
 
-    // Editor is an in-page content view now — no background-click close.
+    // Live-update the header card as the author types the core fields.
+    document.addEventListener('DOMContentLoaded', () => {
+        ['f-title', 'f-cover', 'f-tag', 'f-readtime', 'f-author', 'f-published'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('input', renderBlogHeader);
+            el.addEventListener('change', renderBlogHeader);
+        });
+    });
 </script>
 
 <!-- Embed-mode helper. Active only when iframed via marketing.html?...embed=1.
