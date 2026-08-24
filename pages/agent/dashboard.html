@@ -96,11 +96,12 @@
         .nav-tab.active { background: #ebf4ff; color: #1d6df2; font-weight: 700; }
         .nav-tab .badge-count { background: #1d6df2; color: #fff; border-radius: 20px; padding: 0.1rem 0.5rem; font-size: 0.7rem; font-weight: 700; margin-left: auto; }
 
-        /* Mobile menu bar + off-canvas drawer — all hidden on desktop, shown ≤900px */
-        .dash-mobile-bar { display: none; }
-        .dash-hamburger { display: inline-flex; align-items: center; justify-content: center; background: none; border: 0; padding: 0.4rem 0.5rem; border-radius: 8px; color: #1a202c; cursor: pointer; }
+        /* Off-canvas tab drawer + a floating hamburger — hidden on desktop, shown ≤900px */
+        .dash-hamburger { display: none; align-items: center; justify-content: center; background: #fff; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(16,24,40,0.12); padding: 0.5rem; border-radius: 10px; color: #1a202c; cursor: pointer; }
         .dash-hamburger:hover { background: #f7f9fa; }
         .dash-nav-overlay { display: none; }
+        /* Lock the page behind the open drawer (position:fixed — iOS ignores overflow:hidden) */
+        body.dash-nav-locked { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
 
         /* Dashboard landing */
         .dash-status { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 700; padding: 0.4rem 0.9rem; border-radius: 99px; white-space: nowrap; }
@@ -317,15 +318,10 @@
 
         /* ── Mobile ≤ 900px: rail becomes a sticky horizontal tab strip ─────── */
         @media (max-width: 900px) {
-            .dash-grid { grid-template-columns: 1fr; padding-top: calc(var(--header-h) + 52px); }
+            .dash-grid { grid-template-columns: 1fr; padding-top: var(--header-h); }
 
-            /* Thin mobile bar under the global header, with the menu button */
-            .dash-mobile-bar {
-                display: flex; align-items: center; gap: 0.6rem;
-                position: fixed; top: var(--header-h); left: 0; right: 0; z-index: 30;
-                height: 52px; background: #fff; border-bottom: 1px solid #edf2f7; padding: 0 0.85rem;
-            }
-            .dash-mobile-title { font-weight: 800; font-size: 1.02rem; color: #1a202c; }
+            /* Just a floating hamburger, fixed in the top-left below the global header */
+            .dash-hamburger { display: inline-flex; position: fixed; top: calc(var(--header-h) + 10px); left: 12px; z-index: 40; }
 
             /* Sidebar → off-canvas slide-in drawer with the full vertical tab list */
             .dash-sidebar {
@@ -347,7 +343,7 @@
             }
             .dash-nav-overlay.open { opacity: 1; visibility: visible; }
 
-            .dash-content { padding: 1.75rem 1.25rem 3rem; min-height: 0; }
+            .dash-content { padding: 4rem 1.25rem 3rem; min-height: 0; }   /* top room for the floating hamburger */
             .dash-content > .view-card { padding: 1.5rem 1.25rem !important; }
             .view-card .grid-2 { grid-template-columns: 1fr !important; gap: 0.75rem !important; }
             /* Catch every inline two-column grid in the editor (By the numbers,
@@ -386,13 +382,10 @@
 
     <global-header></global-header>
 
-    <!-- Mobile menu bar: hamburger opens the tab drawer (replaces the old scroll strip) -->
-    <div class="dash-mobile-bar">
-        <button class="dash-hamburger" onclick="toggleDashNav()" aria-label="Open menu" aria-controls="dash-sidebar" aria-expanded="false">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-        </button>
-        <span class="dash-mobile-title" id="dash-mobile-title">Dashboard</span>
-    </div>
+    <!-- Floating menu button (mobile): opens the tab drawer -->
+    <button class="dash-hamburger" onclick="toggleDashNav()" aria-label="Open menu" aria-controls="dash-sidebar" aria-expanded="false">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
     <div class="dash-nav-overlay" id="dash-nav-overlay" onclick="toggleDashNav(false)"></div>
 
     <div class="dashboard-container">
@@ -1495,25 +1488,33 @@
         // switchView('profile') is an alias that opens Account → Profile.
         let _accountSub = 'account';
 
-        // Mobile nav drawer: hamburger toggles the off-canvas sidebar + backdrop.
+        // Mobile nav drawer: hamburger toggles the off-canvas sidebar + backdrop,
+        // and locks the page behind it (position:fixed body — iOS-safe).
+        let _dashScrollY = 0;
         function toggleDashNav(force) {
             const sb = document.getElementById('dash-sidebar');
             const ov = document.getElementById('dash-nav-overlay');
             if (!sb || !ov) return;
             const open = (force === undefined) ? !sb.classList.contains('open') : !!force;
+            if (open === sb.classList.contains('open')) return;   // already in that state — no-op
             sb.classList.toggle('open', open);
             ov.classList.toggle('open', open);
             const btn = document.querySelector('.dash-hamburger');
             if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-            document.body.style.overflow = open ? 'hidden' : '';
+            if (open) {
+                _dashScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+                document.body.style.top = `-${_dashScrollY}px`;
+                document.body.classList.add('dash-nav-locked');
+            } else {
+                document.body.classList.remove('dash-nav-locked');
+                document.body.style.top = '';
+                window.scrollTo(0, _dashScrollY);
+            }
         }
         window.toggleDashNav = toggleDashNav;
-        const DASH_VIEW_LABELS = { dashboard: 'Dashboard', leads: 'Leads', contacts: 'Contacts', messages: 'Messages', properties: 'Properties', referrals: 'Referrals', perks: 'Perks', account: 'Account', profile: 'Profile', resources: 'Resources' };
 
         function switchView(view) {
             if (_profileDirty) saveProfileNow();   // flush any pending profile edit before leaving
-            const _mt = document.getElementById('dash-mobile-title');
-            if (_mt) _mt.textContent = DASH_VIEW_LABELS[view] || 'Dashboard';
             toggleDashNav(false);   // close the mobile drawer after picking a tab
             let topView = view;
             if (view === 'profile')      { topView = 'account'; _accountSub = 'profile'; }
