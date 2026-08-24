@@ -209,6 +209,36 @@ window.mnlhBlogCover = function (tag) {
         + `</g></svg></div>`;
 };
 
+// ── Lake photo-gallery image sync ───────────────────────────────────────────
+// The buy/sell/about pages show a grid of lake cards (photo + lake-name caption).
+// Point each card's photo at that lake's OFFICIAL hero — the same image its
+// /lakes/<slug> page uses — so the photo always matches the caption and the page
+// (no generic stock mislabeled as a specific lake). Pulls the real hero from
+// /api/lakes, so it stays correct even for Cloudinary-uploaded heroes and never
+// needs a per-page image list. Reusing a lake's hero here is intentional.
+(function syncLakeGalleryImages() {
+    function run() {
+        const cards = document.querySelectorAll('.gallery-card[href^="/lakes/"]');
+        if (!cards.length) return;   // no lake gallery on this page — do nothing
+        fetch('/api/lakes', { credentials: 'omit' })
+            .then(r => (r.ok ? r.json() : null))
+            .then(lakes => {
+                if (!Array.isArray(lakes)) return;
+                const bySlug = {};
+                lakes.forEach(l => { if (l && l.slug) bySlug[l.slug] = l.hero_image_url || l.featured_image_url || ''; });
+                cards.forEach(card => {
+                    const m = (card.getAttribute('href') || '').match(/^\/lakes\/([a-z0-9-]+)/);
+                    const hero = m && bySlug[m[1]];
+                    const img = card.querySelector('img');
+                    if (hero && img && img.getAttribute('src') !== hero) img.src = hero;
+                });
+            })
+            .catch(() => { /* gallery keeps its static image if the fetch fails */ });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+    else run();
+})();
+
 // ── PWA: make the site installable (manifest + icons + service worker) ───────
 // Injected here so every page that loads components.js becomes app-installable
 // without editing each page's <head>.
