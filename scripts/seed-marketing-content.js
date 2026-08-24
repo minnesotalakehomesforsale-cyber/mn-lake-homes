@@ -55,44 +55,67 @@ const newsletter = {
     performance: {},
 };
 
-// ── Starter social posts (edit/replace freely) ──────────────────────────────
-const POSTS = [
-    { title: 'New listing spotlight — lakefront cabin', caption: 'Just listed on the water 🌅 Swipe for the dock view. Link in bio to tour.', channel: 'instagram', due: plus(2), tags: ['listing', 'new-listing'] },
-    { title: 'Buyer tip: 5 things to check on a lakefront home', caption: 'Before you fall in love with the view, check these 5 things: shoreline type, well/septic, water depth, easements, and lake association rules.', channel: 'facebook', due: plus(4), tags: ['buyer-tips', 'education'] },
-    { title: 'Market update: MN lake home prices this season', caption: 'Where lake-country prices are landing this month — and what it means if you\'re buying or selling.', channel: 'facebook', due: plus(6), tags: ['market-update'] },
-    { title: 'Why fall is a great time to buy on the lake', caption: 'Fewer buyers, motivated sellers, and you get to see the property in shoulder season. 🍂', channel: 'instagram', due: plus(9), tags: ['buyer-tips', 'fall'] },
-    { title: 'Local spotlight: best swimming beaches', caption: 'Our favorite sandy-bottom spots for a summer swim. Save this one 📌', channel: 'instagram', due: plus(11), tags: ['local', 'lake-life'] },
-    { title: 'Fishing report — walleye & bass', caption: 'What\'s biting and where. Tag the angler who needs to see this. 🎣', channel: 'facebook', due: plus(13), tags: ['fishing', 'lake-life'] },
-    { title: 'Dock & shoreline fall maintenance', caption: 'Getting the dock ready for winter? Here\'s the short checklist.', channel: 'instagram', due: plus(16), tags: ['tips', 'seasonal'] },
-    { title: 'Sunset over the lake', caption: 'No caption needed. 🌇 Which lake is this? Guess below.', channel: 'instagram', due: plus(18), tags: ['photo', 'lake-life'] },
-    { title: 'Financing a lake cabin vs a primary home', caption: 'Second-home and cabin loans work a little differently. Here\'s what to know before you shop.', channel: 'facebook', due: plus(20), tags: ['financing', 'education'] },
-    { title: 'Client testimonial', caption: '"They found us the cabin we\'d been dreaming about for years." — happy buyers on [Lake]. 💙', channel: 'instagram', due: plus(23), tags: ['testimonial', 'social-proof'] },
-    { title: 'Weekend open house announcement', caption: 'Open house this Saturday 11–1 on the water. Details + directions in bio.', channel: 'facebook', due: plus(25), tags: ['open-house', 'listing'] },
-    { title: 'Agent spotlight — meet your lake specialist', caption: 'Local, on the water, and here to help you buy or sell in lake country.', channel: 'instagram', due: plus(28), tags: ['agent', 'brand'] },
-];
+// ── Feed posts (the 54-post "Social Calendar — Feed") ───────────────────────
+// This sheet lives in the owner's workbook. Paste it in here — Nb, Day →
+// due_date, Headline → title, Caption, Hashtags → tags — to bulk-load with the
+// exact copy + X/Twitter versions. Left empty until the sheet is exported as
+// text so we don't seed misread captions off a screenshot.
+const POSTS = [];
 
-// ── Starter stories (edit/replace freely) ───────────────────────────────────
+// ── The 33 stories (owner's "2 - Social Posts (Working)/Stories/") ──────────
+// Vertical / 24-hour, no fixed order — seeded UNDATED as a story bank tagged by
+// set. Drop them onto days to support whatever the feed is that week. Set 2
+// pairs with feed slots 21–27 (agent-join), Set 3 with 29–45 (business map).
 const STORIES = [
-    { title: 'Poll: lake life or city life?', caption: 'Tap your pick 👆', channel: 'instagram', due: plus(1), tags: ['poll', 'engagement'] },
-    { title: 'This or that: pontoon vs kayak', caption: 'Vote in the sticker!', channel: 'instagram', due: plus(3), tags: ['engagement'] },
-    { title: 'Behind the scenes: showing a lakefront home', caption: 'Come along on today\'s showing 🎥', channel: 'instagram', due: plus(5), tags: ['bts', 'brand'] },
-    { title: 'Quick tip: lakefront insurance', caption: 'One thing buyers forget to budget for.', channel: 'instagram', due: plus(8), tags: ['tips', 'education'] },
-    { title: 'Countdown: open house this weekend', caption: 'Countdown sticker + address.', channel: 'instagram', due: plus(10), tags: ['open-house'] },
-    { title: 'Q&A: ask me about buying on the lake', caption: 'Drop your questions in the box 📥', channel: 'instagram', due: plus(14), tags: ['qa', 'engagement'] },
-    { title: 'Sunset time-lapse', caption: 'Golden hour on the water.', channel: 'instagram', due: plus(17), tags: ['photo', 'lake-life'] },
-    { title: 'New listing teaser', caption: 'Coming to market this week 👀 Swipe up when it\'s live.', channel: 'instagram', due: plus(22), tags: ['listing', 'teaser'] },
+    // Set 1 — Mixed opener
+    { title: '1a — Some mornings you can own',       set: 'Set 1 — Mixed opener',                        tags: ['set-1', 'buyers'] },
+    { title: '1b — Free profile poll (interactive)', set: 'Set 1 — Mixed opener',                        tags: ['set-1', 'agent-join', 'interactive'] },
+    { title: '1c — Stand on the dock at 4pm',        set: 'Set 1 — Mixed opener',                        tags: ['set-1', 'buyer-tip'] },
+    // Set 2 — Agent recruitment (pairs with feed 21–27)
+    { title: '2a — Your name on your water',         set: 'Set 2 — Agent recruitment · pairs feed 21–27', tags: ['set-2', 'agent-recruitment'] },
+    { title: '2b — Profile preview',                 set: 'Set 2 — Agent recruitment · pairs feed 21–27', tags: ['set-2', 'agent-recruitment'] },
+    { title: '2c — Three zeros price list',          set: 'Set 2 — Agent recruitment · pairs feed 21–27', tags: ['set-2', 'agent-recruitment'] },
+    { title: '2d — Live by tonight',                 set: 'Set 2 — Agent recruitment · pairs feed 21–27', tags: ['set-2', 'agent-recruitment'] },
+    { title: '2e — What the free profile includes',  set: 'Set 2 — Agent recruitment · pairs feed 21–27', tags: ['set-2', 'agent-recruitment'] },
+    { title: "2f — CEO quote — Why it's free for agents", set: 'Set 2 — Agent recruitment · pairs feed 21–27', tags: ['set-2', 'agent-recruitment', 'ceo-quote'] },
+    { title: '2g — Do you make the list',            set: 'Set 2 — Agent recruitment · pairs feed 21–27', tags: ['set-2', 'agent-recruitment'] },
+    { title: "2h — What's the catch",                set: 'Set 2 — Agent recruitment · pairs feed 21–27', tags: ['set-2', 'agent-recruitment'] },
+    { title: "2i — They're searching your lake now", set: 'Set 2 — Agent recruitment · pairs feed 21–27', tags: ['set-2', 'agent-recruitment'] },
+    { title: '2j — Claim your water',                set: 'Set 2 — Agent recruitment · pairs feed 21–27', tags: ['set-2', 'agent-recruitment'] },
+    // Set 3 — Business listing / lake business map (pairs with feed 29–45)
+    { title: '3a — Get on the lake business map',    set: 'Set 3 — Business listing · pairs feed 29–45',  tags: ['set-3', 'business-listing'] },
+    { title: '3b — Who belongs on it',               set: 'Set 3 — Business listing · pairs feed 29–45',  tags: ['set-3', 'business-listing'] },
+    { title: '3c — The four questions',              set: 'Set 3 — Business listing · pairs feed 29–45',  tags: ['set-3', 'business-listing'] },
+    { title: '3d — What it costs',                   set: 'Set 3 — Business listing · pairs feed 29–45',  tags: ['set-3', 'business-listing'] },
+    { title: '3e — Three steps to get listed',       set: 'Set 3 — Business listing · pairs feed 29–45',  tags: ['set-3', 'business-listing'] },
+    { title: '3f — CEO quote — The lake economy',    set: 'Set 3 — Business listing · pairs feed 29–45',  tags: ['set-3', 'business-listing', 'ceo-quote'] },
+    { title: "3g — What's included",                 set: 'Set 3 — Business listing · pairs feed 29–45',  tags: ['set-3', 'business-listing'] },
+    { title: '3h — Respect the trades',              set: 'Set 3 — Business listing · pairs feed 29–45',  tags: ['set-3', 'business-listing'] },
+    { title: "3i — What's the catch",                set: 'Set 3 — Business listing · pairs feed 29–45',  tags: ['set-3', 'business-listing'] },
+    { title: '3j — Claim your pin',                  set: 'Set 3 — Business listing · pairs feed 29–45',  tags: ['set-3', 'business-listing'] },
+    // Set 4 — Photo stories, brand + buyers
+    { title: '4a — Ten thousand lakes',              set: 'Set 4 — Photo · brand + buyers',               tags: ['set-4', 'brand'] },
+    { title: '4b — People who know the water',       set: 'Set 4 — Photo · brand + buyers',               tags: ['set-4', 'about-us'] },
+    { title: '4c — The cabin is the whole point',    set: 'Set 4 — Photo · brand + buyers',               tags: ['set-4', 'buyers'] },
+    { title: '4d — Buying a lake town',              set: 'Set 4 — Photo · brand + buyers',               tags: ['set-4', 'buyers'] },
+    { title: '4e — Every window earns its view',     set: 'Set 4 — Photo · brand + buyers',               tags: ['set-4', 'buyers'] },
+    { title: '4f — Cabins to legacy lakefront',      set: 'Set 4 — Photo · brand + buyers',               tags: ['set-4', 'about-us'] },
+    { title: '4g — Which way does the dock face',    set: 'Set 4 — Photo · brand + buyers',               tags: ['set-4', 'buyer-tip'] },
+    { title: '4h — Two blocks back is still lake life', set: 'Set 4 — Photo · brand + buyers',            tags: ['set-4', 'buyers'] },
+    { title: '4i — Your lake your listings',         set: 'Set 4 — Photo · brand + buyers',               tags: ['set-4', 'agent-join'] },
+    { title: '4j — On the map lake owners use',      set: 'Set 4 — Photo · brand + buyers',               tags: ['set-4', 'business-listing'] },
 ];
 
 function toRow(x, content_type) {
     return {
         title: x.title,
         content_type,
-        channel: x.channel || null,
+        channel: x.channel || (content_type === 'story' ? 'instagram' : null),
         status: 'idea',
         due_date: x.due || null,
         scheduled_time: x.time || null,
         caption: x.caption || null,
-        description: null,
+        description: x.set || x.description || null,
         tags: x.tags || [],
         performance: {},
     };
@@ -125,7 +148,9 @@ async function seed() {
         }
         console.log(`\n✅ Content calendar seeded — ${inserted} new item(s), ${skipped} already present.`);
         console.log(`   • Newsletter scheduled for ${MON} at 09:00 (Central).`);
-        console.log(`   • ${POSTS.length} starter posts + ${STORIES.length} starter stories (drafts — edit in Marketing).\n`);
+        console.log(`   • ${POSTS.length} feed posts + ${STORIES.length} stories (undated story bank, tagged by set).`);
+        if (!POSTS.length) console.log(`   • Feed posts pending — paste the "Social Calendar — Feed" sheet into POSTS to load all 54.\n`);
+        else console.log('');
     } finally {
         client.release();
         await pool.end();
