@@ -1760,9 +1760,20 @@ app.get('/for-agents', (req, res) => {
 // lands on the real flow instead of 404-ing via the /agents/:slug handler.
 app.get('/agents/signup', (req, res) => res.redirect('/join'));
 
-app.get('/join', (req, res, next) => {
+// /join now serves the free-profile funnel (a dupe of /for-agents). The
+// marketing campaign already went out pointing at /join, so this URL is the
+// live landing + join page. Static — the join popup handles registration.
+app.get('/join', (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.sendFile(path.join(PROJECT_ROOT, 'pages/public/join.html'));
+});
+
+// Preserved previous /join — the pricing-ladder version — kept reachable at
+// /join-2 so it isn't lost. SSR-injects the live plan grid, exactly as the old
+// /join did (join-2.html still carries the "Loading plans…" placeholder).
+app.get('/join-2', (req, res, next) => {
     try {
-        const tpl = fs.readFileSync(path.join(PROJECT_ROOT, 'pages/public/join.html'), 'utf8');
+        const tpl = fs.readFileSync(path.join(PROJECT_ROOT, 'pages/public/join-2.html'), 'utf8');
         const grid = require('./controllers/stripe.controller').renderJoinTiersHtml();
         const html = tpl.replace(
             '<p style="grid-column:1/-1;text-align:center;color:#a0aec0;">Loading plans…</p>',
@@ -1770,7 +1781,7 @@ app.get('/join', (req, res, next) => {
         );
         res.set('Content-Type', 'text/html; charset=utf-8');
         res.send(html);
-    } catch (e) { console.warn('[/join SSR]', e.message); next(); }
+    } catch (e) { console.warn('[/join-2 SSR]', e.message); next(); }
 });
 
 // Build a crawlable link directory injected into hub pages, so every

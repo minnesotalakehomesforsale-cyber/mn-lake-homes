@@ -3,660 +3,365 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#000000">
-
-    <title>Join the Network | Minnesota Lake Home Agent Partnership</title>
+    <meta name="theme-color" content="#0e141e">
+    <title>Get Found by Lake Buyers | MN Lake Homes for Agents</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="apple-touch-icon" href="/favicon.svg">
-    <meta name="description" content="Join the Minnesota lake home agent network. Get your profile on the lake page buyers search, matched leads from your service area, and three tiers to fit your scale — basic visibility through Elite placement across a region. Flat subscription — no commission, no referral fee.">
-    <meta name="keywords" content="minnesota lake home agents, lakefront real estate agent, waterfront agent network minnesota, founding lake agent, lake home buyer leads minnesota">
-    <meta name="author" content="MinnesotaLakeHomesForSale.com">
+    <meta name="description" content="Be the agent Minnesota lake buyers find when they search their lake. Get your free profile on the lake page they land on — then turn on matched leads and featured placement when you're ready. No commission, no referral fee.">
+    <!-- Primary agent join page — the marketing-campaign link points here. Indexable. -->
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
     <link rel="canonical" href="https://minnesotalakehomesforsale.com/join">
-
-    <!-- Open Graph -->
+    <meta property="og:title" content="Be the agent lake buyers find when they search your lake">
+    <meta property="og:description" content="Get your free profile on the Minnesota lake page buyers search — then turn on matched leads when you're ready. Keep your brokerage. No commission, no referral fee.">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="MinnesotaLakeHomesForSale.com">
-    <meta property="og:url" content="https://minnesotalakehomesforsale.com/join">
-    <meta property="og:title" content="Join the Network | Minnesota Lake Home Agent Partnership">
-    <meta property="og:description" content="Match with local Minnesota lake home buyers and sellers. Lake-page profile placement, matched leads, and three tiers to fit your scale.">
-    <meta property="og:image" content="https://minnesotalakehomesforsale.com/assets/images/beach-style-exterior.jpg">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:locale" content="en_US">
-
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Join the Network | Minnesota Lake Home Agent Partnership">
-    <meta name="twitter:description" content="Match with local Minnesota lake home buyers and sellers. Lake-page profile placement, matched leads, and three tiers to fit your scale.">
-    <meta name="twitter:image" content="https://minnesotalakehomesforsale.com/assets/images/beach-style-exterior.jpg">
-
+    <meta property="og:image" content="https://minnesotalakehomesforsale.com/assets/images/cr-agent-couple-lakefront.jpg">
+    <link rel="preload" as="image" href="/assets/images/cr-agent-couple-lakefront.jpg">
     <link rel="stylesheet" href="../../styles/style.css">
-<!-- Structured data -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "JobPosting",
-      "title": "Minnesota Lake Home Agent — Network Membership",
-      "description": "Join the Minnesota lake home agent network. Get your profile on the lake page buyers search, matched leads from your service area, and three tiers to fit your scale — basic visibility through Elite placement across a region. Flat subscription — no commission, no referral fee.",
-      "hiringOrganization": {
-        "@type": "RealEstateAgent",
-        "name": "MinnesotaLakeHomesForSale.com",
-        "url": "https://minnesotalakehomesforsale.com/"
-      },
-      "jobLocation": {
-        "@type": "Place",
-        "address": { "@type": "PostalAddress", "addressRegion": "MN", "addressCountry": "US" }
-      },
-      "employmentType": "CONTRACTOR",
-      "datePosted": "2026-01-01"
-    }
-    </script>
-    <style>
-        /* Base text color for the light page. The shared style.css sets
-           body color to var(--text-primary) — near-WHITE for the dark public
-           site — so any heading with no explicit color (the "Simple, flat
-           pricing" h2, the .value-title cards, etc.) inherited white and
-           vanished on the light sections. The two dark sections set color:#fff
-           on themselves, so their headings stay correctly white. */
-        body { color: #1a202c; }
-        /* Hero Section */
-        .join-hero {
-            padding: 12rem 2rem 8rem 2rem;
-            text-align: center;
-            background-color: var(--bg-dark);
-            color: #fff;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .join-hero::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-image: url('/assets/images/beach-style-exterior.jpg');
-            background-size: cover;
-            background-position: center;
-            opacity: 0.15;
-            z-index: 0;
-        }
-
-        .join-hero-content {
-            position: relative;
-            z-index: 1;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .join-title {
-            font-size: 4.5rem;
-            font-weight: 800;
-            letter-spacing: -2px;
-            margin-bottom: 1.5rem;
-            line-height: 1.1;
-        }
-
-        .join-subtitle {
-            font-size: 1.35rem;
-            color: #cbd5e0;
-            font-weight: 400;
-            max-width: 700px;
-            margin: 0 auto 3rem auto;
-            line-height: 1.6;
-        }
-
-        /* Value Props */
-        .value-section {
-            padding: 8rem 2rem;
-            background-color: #fff;
-        }
-        
-        .value-grid {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 4rem;
-        }
-
-        .value-card {
-            text-align: left;
-        }
-
-        .value-icon {
-            width: 64px;
-            height: 64px;
-            background-color: rgba(29,109,242, 0.1);
-            color: var(--accent-blue);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .value-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            color: #1a202c;
-        }
-
-        .value-desc {
-            color: #718096;
-            line-height: 1.7;
-            font-size: 1.05rem;
-        }
-
-        /* Analytics Section */
-        .analytics-section {
-            padding: 6rem 2rem;
-            background-color: #1a202c;
-            color: #fff;
-        }
-
-        .stats-grid {
-            max-width: 1000px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 4rem;
-            font-weight: 800;
-            color: var(--accent-blue);
-            margin-bottom: 0.5rem;
-            letter-spacing: -1px;
-        }
-
-        .stat-label {
-            font-size: 1.1rem;
-            font-weight: 500;
-            color: #a0aec0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-
-
-        @media (max-width: 900px) {
-            .stats-grid { grid-template-columns: 1fr; gap: 3rem; }
-            .value-grid { grid-template-columns: 1fr !important; gap: 1.25rem !important; }
-            .value-card { padding: 2rem 1.5rem !important; }
-            .agent-hero-split { grid-template-columns: 1fr !important; gap: 2rem !important; }
-        }
-        @media (max-width: 600px) {
-            /* ── Hero ─────────────────────────────────────────────────────── */
-            .join-hero,
-            section[style*="padding: 12rem 2rem 5rem"] {
-                padding: 7rem 1.25rem 3.5rem !important;
-            }
-            .join-hero h1,
-            section[style*="padding: 12rem 2rem 5rem"] > h1 {
-                font-size: 2.6rem !important;
-                letter-spacing: -1.25px !important;
-                line-height: 1.1 !important;
-                margin-bottom: 1.25rem !important;
-            }
-            .join-hero h1 br { display: inline; }
-            .join-hero + * p,
-            section[style*="padding: 12rem 2rem 5rem"] > p {
-                font-size: 1.02rem !important;
-                margin-bottom: 1.75rem !important;
-            }
-            /* ── Section headings across the page ─────────────────────────── */
-            .value-section,
-            .analytics-section {
-                padding: 4rem 1.25rem !important;
-            }
-            .value-section h2 { font-size: 1.85rem !important; }
-            .value-section p  { font-size: 1rem !important; }
-            .value-title { font-size: 1.2rem !important; }
-            .value-desc { font-size: 0.98rem !important; }
-            .value-icon { width: 52px; height: 52px; margin-bottom: 1rem; }
-            /* ── Stats ────────────────────────────────────────────────────── */
-            .stat-number { font-size: 2.8rem !important; }
-            .stat-label { font-size: 0.85rem !important; letter-spacing: 0.75px !important; }
-            /* ── Testimonials ─────────────────────────────────────────────── */
-            /* No mobile overrides for testimonial typography — the global
-               styles/style.css mobile @media block is the single source of
-               truth so every page's testimonials match. */
-            .slide-nav-btn { min-width: 44px; min-height: 44px; font-size: 1.1rem; }
-            /* ── Final CTA ────────────────────────────────────────────────── */
-            section[style*="padding: 8rem 2rem"][style*="border-top"] {
-                padding: 4rem 1.25rem !important;
-            }
-            section[style*="padding: 8rem 2rem"][style*="border-top"] h2 {
-                font-size: 2.1rem !important;
-                margin-bottom: 1rem !important;
-            }
-            section[style*="padding: 8rem 2rem"][style*="border-top"] p {
-                font-size: 1rem !important;
-                margin-bottom: 1.75rem !important;
-            }
-            section[style*="padding: 8rem 2rem"][style*="border-top"] .btn {
-                padding: 1.05rem 1.75rem !important;
-                font-size: 1rem !important;
-            }
-            /* ── Join overlay form ────────────────────────────────────────── */
-            #join-overlay {
-                width: 100vw !important;
-                height: 100vh !important;
-                height: 100dvh !important;
-                overflow-y: auto !important;
-                overscroll-behavior: contain !important;
-                -webkit-overflow-scrolling: touch !important;
-            }
-            #join-overlay > div:nth-child(3) {
-                padding: 4.5rem 1rem 2rem !important;
-                min-height: 100vh;
-                min-height: 100dvh;
-            }
-            #join-overlay .coo-close,
-            #join-overlay [onclick="closeJoinForm()"] {
-                width: 44px !important;
-                height: 44px !important;
-            }
-            #join-question { font-size: 1.75rem !important; }
-            .reg-form-container { padding: 2rem 1.5rem !important; border-radius: 14px !important; }
-            .reg-form-container h2 { font-size: 1.8rem !important; }
-            .reg-form .form-row { grid-template-columns: 1fr !important; }
-        }
-        @media (max-width: 400px) {
-            section[style*="padding: 12rem 2rem 5rem"] > h1 { font-size: 2.15rem !important; }
-            .stat-number { font-size: 2.4rem !important; }
-            #join-question { font-size: 1.5rem !important; }
-        }
-    </style>
     <script src="../../components/components.js" defer></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('agent-register-form');
-            if (!form) return;
 
-            form.addEventListener('submit', async function (e) {
-                e.preventDefault();
-                const alertBox = document.getElementById('register-alert');
-                alertBox.style.display = 'block';
+    <style>
+      body { background: #fff; color: #1a202c; font-family: var(--font-family); }
 
-                const setMsg = (bg, color, msg) => {
-                    alertBox.style.backgroundColor = bg;
-                    alertBox.style.color = color;
-                    alertBox.innerText = msg;
-                };
+      /* Hero section top-padding clears the fixed header. */
+      .fa-hero-section { padding: 9rem 1.5rem 5rem; }
+      .fa-eyebrow-txt { font-weight: 600; color: #1d6df2; margin-bottom: 1rem; letter-spacing: 1px; text-transform: uppercase; font-size: 0.85rem; }
 
-                const firstName = document.getElementById('reg-firstName').value.trim();
-                const lastName  = document.getElementById('reg-lastName').value.trim();
-                const email     = document.getElementById('reg-email').value.trim();
-                const phone     = document.getElementById('reg-phone').value.trim();
-                const brokerage = document.getElementById('reg-brokerage').value.trim();
-                const pwd       = document.getElementById('reg-password').value;
-                const confirm   = document.getElementById('reg-confirm').value;
+      /* Floating social-proof badges over the hero image (from the sell page). */
+      .sell-float { position: absolute; background: #fff; padding: 0.6rem 0.85rem; border-radius: 11px;
+                 box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 0.55rem;
+                 font-family: 'SF Pro Text', sans-serif; white-space: nowrap; z-index: 2; }
+      .sell-float-icon { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+      .sell-float-icon svg { width: 12px; height: 12px; }
+      .sell-float-title { font-size: 0.78rem; font-weight: 700; color: #1a202c; margin-bottom: 0.05rem; }
+      .sell-float-sub   { font-size: 0.65rem; color: #718096; font-weight: 500; }
+      .sell-float-offer   { top: 1.25rem;    left: 1.25rem;   animation: sell-bob 4.5s ease-in-out infinite; }
+      .sell-float-showing { top: 45%;        right: 1.25rem;  animation: sell-bob 5.2s ease-in-out 0.6s infinite; }
+      .sell-float-value   { bottom: 1.25rem; left: 1.25rem;   animation: sell-bob 4.8s ease-in-out 1.2s infinite; }
+      @keyframes sell-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+      @media (prefers-reduced-motion: reduce) { .sell-float { animation: none !important; } }
+      @media (max-width: 900px) {
+        .sell-float-sub { display: none; }
+        .sell-float { padding: 0.45rem 0.65rem; border-radius: 9px; }
+        .sell-float-icon { width: 22px; height: 22px; }
+        .sell-float-icon svg { width: 11px; height: 11px; }
+        .sell-float-title { font-size: 0.72rem; }
+        .sell-float-offer   { top: 0.75rem;  left: 0.75rem; }
+        .sell-float-showing { top: 0.75rem;  right: 0.75rem; }
+        .sell-float-value   { bottom: 0.75rem; left: 0.75rem; }
+      }
+      @media (max-width: 480px) { .sell-float-offer, .sell-float-showing { display: none; } }
 
-                if (pwd !== confirm) {
-                    setMsg('#fff5f5', '#c53030', 'Passwords do not match.');
-                    return;
-                }
-                if (pwd.length < 8) {
-                    setMsg('#fff5f5', '#c53030', 'Password must be at least 8 characters.');
-                    return;
-                }
+      /* ── Stat strip ─────────────────────────────────────────────────────── */
+      .fa-statband { background: #fff; border-top: 1px solid #eef2f7; border-bottom: 1px solid #eef2f7; }
+      .fa-stats { max-width: var(--page-w); margin: 0 auto; padding: 2.75rem 1.5rem; display: grid; grid-template-columns: repeat(4, 1fr); }
+      .fa-stat { text-align: center; padding: 0.5rem 1rem; border-right: 1px solid #e6eaf0; }
+      .fa-stat:last-child { border-right: 0; }
+      .fa-stat .v { font-size: clamp(2rem, 4vw, 2.9rem); font-weight: 800; color: #1a202c; letter-spacing: -1.5px; line-height: 1; font-variant-numeric: tabular-nums; }
+      .fa-stat .l { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #8a94a3; margin-top: 0.55rem; }
 
-                const display_name = [firstName, lastName].filter(Boolean).join(' ').trim();
-                if (!display_name) {
-                    setMsg('#fff5f5', '#c53030', 'Please enter your first and last name.');
-                    return;
-                }
+      /* ── Centered section heads ─────────────────────────────────────────── */
+      .fa-head { text-align: center; max-width: 720px; margin: 0 auto 3.5rem; }
+      .fa-head .kick { display: block; font-size: 0.8rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #1d6df2; margin-bottom: 0.9rem; }
 
-                setMsg('#ebf8ff', '#1d6df2', 'Creating your account…');
+      /* ── Testimonial ────────────────────────────────────────────────────── */
+      .fa-quote-wrap { background: linear-gradient(160deg, #0e223c 0%, #0a1a2e 100%); }
+      .fa-quote { max-width: 900px; margin: 0 auto; padding: 5rem 1.5rem; text-align: center; color: #fff; }
+      .fa-quote .stars { color: #ffc65a; font-size: 1.15rem; letter-spacing: 3px; margin-bottom: 1.5rem; }
+      .fa-quote blockquote { font-family: var(--font-family-display); font-size: clamp(1.35rem, 3vw, 2rem); line-height: 1.4; font-weight: 600; letter-spacing: -0.5px; margin: 0 0 2rem; text-wrap: balance; }
+      .fa-quote blockquote .hl { color: #6ea8ff; }
+      .fa-quote-by { display: inline-flex; align-items: center; gap: 0.9rem; }
+      .fa-quote-av { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #1d6df2, #4f97ff); color: #fff; font-weight: 800; font-size: 1.3rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+      .fa-quote-meta { text-align: left; }
+      .fa-quote-meta .nm { font-weight: 700; font-size: 1.02rem; }
+      .fa-quote-meta .rl { font-size: 0.9rem; color: rgba(255,255,255,0.7); }
 
-                try {
-                    const res = await fetch('/api/auth/register', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({
-                            email,
-                            password:       pwd,
-                            display_name,
-                            phone,
-                            brokerage_name: brokerage || null,
-                            // Referral attribution — an agent who came in via a
-                            // colleague's "Refer an agent" link (/join?ref=CODE).
-                            // Persisted so it survives navigation before signup.
-                            ref: (function () {
-                                try {
-                                    const u = (new URLSearchParams(location.search).get('ref') || '').trim();
-                                    if (u) { localStorage.setItem('mlh_agent_ref', u); return u; }
-                                    return (localStorage.getItem('mlh_agent_ref') || '').trim() || null;
-                                } catch (_) { return (new URLSearchParams(location.search).get('ref') || '').trim() || null; }
-                            })(),
-                        }),
-                    });
-                    const data = await res.json().catch(() => ({}));
-                    if (!res.ok) throw new Error(data.error || `Registration failed (${res.status}).`);
+      /* ── FAQ (mirrors lake-page FAQ) ────────────────────────────────────── */
+      .fa-faq { padding: 5.5rem 1.5rem 6rem; background: #f7f9fa; }
+      .fa-faq-inner { max-width: 820px; margin: 0 auto; }
+      .fa-faq .kick { display: block; font-size: 0.8rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #1d6df2; margin-bottom: 0.75rem; text-align: center; }
+      .fa-faq h2 { font-family: var(--font-family-display); font-size: clamp(1.9rem, 4vw, 2.7rem); font-weight: 800; color: #1a202c; letter-spacing: -1px; line-height: 1.1; margin: 0 0 2.25rem; text-align: center; }
+      .fa-faq .faq-item { border: 1px solid #e6ecf3; border-radius: 12px; margin-bottom: 0.85rem; background: #fff; overflow: hidden; }
+      .fa-faq .faq-item summary { cursor: pointer; list-style: none; padding: 1.2rem 1.4rem; font-size: 1.05rem; font-weight: 700; color: #1a202c; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+      .fa-faq .faq-item summary::-webkit-details-marker { display: none; }
+      .fa-faq .faq-item summary::after { content: '+'; font-size: 1.5rem; font-weight: 400; color: #1d6df2; flex-shrink: 0; }
+      .fa-faq .faq-item[open] summary::after { content: '\2013'; }
+      .fa-faq .faq-answer { padding: 0 1.4rem 1.3rem; }
+      .fa-faq .faq-answer p { margin: 0; color: #4a5568; line-height: 1.65; font-size: 0.99rem; }
 
-                    if (typeof window.trackConversion === 'function') {
-                        window.trackConversion('sign_up', { form_name: 'agent_join', signup_source: 'agent_register' });
-                    }
-                    setMsg('#f0fff4', '#2f855a', 'Account created! Redirecting to your dashboard…');
-                    setTimeout(() => { window.location.href = '/pages/agent/dashboard.html'; }, 1200);
-                } catch (err) {
-                    setMsg('#fff5f5', '#c53030', err.message || 'Something went wrong. Please try again.');
-                }
-            });
-        });
-    </script>
+      /* ── Final CTA ──────────────────────────────────────────────────────── */
+      .fa-final { padding: 5rem 1.5rem 6rem; }
+      .fa-cta { display: inline-flex; align-items: center; gap: 0.55rem; background: #1d6df2; color: #fff; border: 0; border-radius: 999px; padding: 1.05rem 2.3rem; font: inherit; font-weight: 700; font-size: 1.08rem; cursor: pointer; box-shadow: 0 18px 44px rgba(29,109,242,0.42); transition: transform .15s, background .15s, box-shadow .15s; text-decoration: none; }
+      .fa-cta svg { transition: transform .15s; }
+      .fa-cta:hover svg { transform: translateX(3px); }
+      .fa-final-inner { max-width: var(--page-w); margin: 0 auto; background: linear-gradient(135deg, #1d6df2 0%, #124bb0 100%); border-radius: 26px; padding: 4rem 2.5rem; text-align: center; box-shadow: 0 30px 60px rgba(29,109,242,0.32); position: relative; overflow: hidden; }
+      .fa-final-inner::after { content: ''; position: absolute; inset: 0; background: radial-gradient(90% 120% at 80% -10%, rgba(255,255,255,0.18), transparent 60%); pointer-events: none; }
+      .fa-final-inner h2 { position: relative; color: #fff; font-family: var(--font-family-display); font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; letter-spacing: -1px; margin: 0 0 0.9rem; text-wrap: balance; }
+      .fa-final-inner p { position: relative; color: rgba(255,255,255,0.92); font-size: 1.12rem; line-height: 1.6; max-width: 560px; margin: 0 auto 2rem; }
+      .fa-final .fa-cta { background: #fff; color: #124bb0; box-shadow: 0 16px 40px rgba(0,0,0,0.22); }
+      .fa-final .fa-cta:hover { background: #f0f5ff; transform: translateY(-2px); }
+      .fa-final small { position: relative; display: block; margin-top: 1.15rem; color: rgba(255,255,255,0.8); font-size: 0.9rem; }
+
+      @media (max-width: 700px) {
+        .fa-hero-section { padding: 7rem 1.25rem 3rem; }
+        .fa-stats { grid-template-columns: 1fr 1fr; gap: 1.75rem 0; padding: 2rem 1.25rem; }
+        .fa-stat:nth-child(2) { border-right: 0; }
+        .fa-final-inner { padding: 2.75rem 1.5rem; border-radius: 20px; }
+        .fa-faq { padding: 3.75rem 1.25rem 4.5rem; }
+      }
+    </style>
 </head>
-<body style="background-color: #fff;">
-
+<body>
     <global-header></global-header>
 
-    <!-- Hero Section -->
-    <section style="padding: 12rem 2rem 5rem; text-align: center; background-color: var(--bg-dark); color: #fff;">
-        <h1 style="font-size: 4.5rem; font-weight: 700; letter-spacing: -2px; line-height: 1.05; margin-bottom: 1.5rem;">Get your agent profile on<br><span style="color: var(--accent-blue);">the lake page buyers search</span></h1>
-        <p style="font-size: 1.25rem; color: var(--text-secondary); font-weight: 400; max-width: 700px; margin: 0 auto 2.5rem; line-height: 1.6;">MinnesotaLakeHomesForSale.com matches lake home buyers and sellers with vetted, local agents. <strong>Start free</strong> with a public profile, then upgrade any time for matched leads, featured placement, and property listings. Flat subscription, no commission.</p>
-        <button class="btn btn-primary" style="padding: 1.1rem 2.25rem; font-size: 1.05rem; border: none;" onclick="openJoinForm()">Create your profile</button>
-    </section>
+    <!-- ── Hero: split image + floating proof | grey box with CTA ────────── -->
+    <section class="sp-section fa-hero-section">
+        <div class="sp-grid">
+            <div class="sp-media-wrapper sell-hero-media" style="height: 600px; position: relative;">
+                <img src="/assets/images/cr-agent-couple-lakefront.jpg" style="height: 100%; width: 100%; object-fit: cover; border-radius: 20px;" alt="A Minnesota lake specialist meeting buyers outside a lakefront home" width="1600" height="1067" fetchpriority="high">
 
-    <!-- Value Propositions -->
-    <section class="value-section">
-        <div style="text-align: center; margin-bottom: 5rem;">
-            <h2 style="font-size: 2.5rem; font-weight: 700; color: #1a202c; margin-bottom: 1rem;">Why join the network?</h2>
-            <p style="font-size: 1.2rem; color: #718096;">We do one thing: match Minnesota lake home buyers and sellers with the right local agent.</p>
-        </div>
-
-        <div class="value-grid">
-            <div class="value-card">
-                <div class="value-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-7-7.58-7-12a7 7 0 0 1 14 0c0 4.42-7 12-7 12z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
+                <div class="sell-float sell-float-offer">
+                    <div class="sell-float-icon" style="background: #dcfce7; color: #15803d;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <div>
+                        <div class="sell-float-title">New lead matched</div>
+                        <div class="sell-float-sub">Gull Lake &middot; buyer</div>
+                    </div>
                 </div>
-                <h3 class="value-title">Built only for MN lakes</h3>
-                <p class="value-desc">We're not a statewide listings site. When someone searches lake homes in your town, they land on a page built for that lake — shoreline, docks, waterfront — not generic Minnesota real estate.</p>
+                <div class="sell-float sell-float-showing">
+                    <div class="sell-float-icon" style="background: #e0e7ff; color: #4338ca;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    </div>
+                    <div>
+                        <div class="sell-float-title">Showing requested</div>
+                        <div class="sell-float-sub">This weekend</div>
+                    </div>
+                </div>
+                <div class="sell-float sell-float-value">
+                    <div class="sell-float-icon" style="background: #dbeafe; color: #1d4ed8;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                    </div>
+                    <div>
+                        <div class="sell-float-title">You're featured</div>
+                        <div class="sell-float-sub">Top of your lake</div>
+                    </div>
+                </div>
             </div>
+            <div class="sp-grey-box" style="padding: 5rem 4rem; background: #f7f9fa;">
+                <div class="fa-eyebrow-txt">For Minnesota lake agents</div>
+                <h2 class="sp-title" style="font-size: 3rem; margin-bottom: 2rem; line-height: 1.1;">Get found by the<br>buyers searching<br><span>your lake —</span><br>free.</h2>
+                <p style="color: #4a5568; line-height: 1.6; margin-bottom: 2.5rem;">Lake buyers don't search "MN real estate" — they search their lake by name. Get your free profile on that page so the right buyers find you — then switch on matched leads from your lake whenever you're ready. No commission, no referral fee.</p>
 
-            <div class="value-card">
-                <div class="value-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                </div>
-                <h3 class="value-title">Matched leads from your lake page</h3>
-                <p class="value-desc">When a buyer or seller fills out the form on your lake page, it becomes a matched lead — routed to an agent tagged on that lake, not dropped in a shared pool. Matched leads start with a paid plan; higher tiers get priority.</p>
-            </div>
-
-            <div class="value-card">
-                <div class="value-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-                </div>
-                <h3 class="value-title">Keep Your Brokerage</h3>
-                <p class="value-desc">You don't leave your broker to join. Your license and commission splits stay exactly where they are — we match clients to you, and what you close is yours.</p>
-            </div>
-
-            <div class="value-card">
-                <div class="value-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                </div>
-                <h3 class="value-title">Help shape the platform</h3>
-                <p class="value-desc">You're one of the first agents on the platform. Your feedback shapes how matching, routing, and the lake pages actually work.</p>
-            </div>
-
-            <div class="value-card">
-                <div class="value-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                </div>
-                <h3 class="value-title">Three tiers, one flat subscription</h3>
-                <p class="value-desc">Pick the level that fits — a basic profile for visibility, your lake's matched lead pipeline, or Elite placement across an entire region. No commissions, no referral fees, cancel anytime.</p>
+                <button class="btn btn-primary" style="width:100%;" onclick="openJoinForm()">Create your free profile &rarr;</button>
             </div>
         </div>
     </section>
 
+    <!-- ── Stat strip ───────────────────────────────────────────────────── -->
+    <section class="fa-statband" aria-label="Why agents join">
+      <div class="fa-stats">
+        <div class="fa-stat"><div class="v">$0</div><div class="l">To create your profile</div></div>
+        <div class="fa-stat"><div class="v">10,000+</div><div class="l">MN lakes covered</div></div>
+        <div class="fa-stat"><div class="v">100%</div><div class="l">Of your commission</div></div>
+        <div class="fa-stat"><div class="v">0</div><div class="l">Referral fees, ever</div></div>
+      </div>
+    </section>
 
-
-    <!-- "What you get when you join" — image + honest frame + matched-lead feature -->
+    <!-- ── Tools: image + stat card | feature list ──────────────────────── -->
     <section class="sp-section" style="padding-top: 6rem;">
-        <div style="text-align: center; max-width: 760px; margin: 0 auto 3.5rem;">
-            <h2 class="sp-title" style="font-size: 2.5rem; margin-bottom: 1rem;">What you get when you join</h2>
-            <p style="font-size: 1.1rem; color: #4a5568; line-height: 1.65;">We're early — and we'll say so. There isn't a flood of leads waiting today. There's a site built only for Minnesota lake real estate, content and SEO going live lake by lake, and three tiers so you can start at whatever level fits your business. You're getting your profile in front of buyers who are searching now, not a guaranteed lead count.</p>
+        <div class="fa-head">
+            <span class="kick">When you turn on leads</span>
+            <h2 class="sp-title" style="font-size: 2.5rem; margin: 0;">Turn your lake into a pipeline</h2>
         </div>
         <div class="sp-grid">
             <div class="sp-media-wrapper" style="height: 600px;">
-                <img src="/assets/images/mn-luxury-arched-home.jpg" alt="A Minnesota lakefront home — the kind of property buyers search for on a lake page" style="height: 100%; width: 100%; object-fit: cover;" loading="lazy" width="1200" height="800">
+                <img src="/assets/images/cr-agent-showing-home.jpg" alt="A Minnesota lake specialist giving buyers a home tour" style="height: 100%; width: 100%; object-fit: cover;" loading="lazy" width="1600" height="1067">
+
+                <div class="sp-stat-card">
+                    <div class="sp-stat-title">Minnesota lake markets you can claim</div>
+                    <div class="sp-stat-value">50+</div>
+                    <div class="sp-stat-desc">From Lake Minnetonka to Lake of the Woods</div>
+                </div>
             </div>
 
             <div class="sp-feat-list">
                 <div class="sp-feat-item">
-                    <svg class="sp-feat-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="10" r="3"></circle><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path></svg>
+                    <svg class="sp-feat-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                     <div class="sp-feat-content">
-                        <h4>Matched, not pooled</h4>
-                        <p>Matched buyer and seller leads route to you based on the lakes and service areas you're tagged on &mdash; not a shared pool.</p>
+                        <h4>Lead analytics</h4>
+                        <p>See profile views, lead volume, and buyer engagement across your lakes in real time — so you know exactly what's working.</p>
                     </div>
                 </div>
-                <button class="btn btn-primary" onclick="openJoinForm()" style="margin-top: 1rem; width: max-content;">Create your profile</button>
+                <div class="sp-feat-item">
+                    <svg class="sp-feat-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
+                    <div class="sp-feat-content">
+                        <h4>Instant lead alerts</h4>
+                        <p>The moment someone raises their hand on one of your lakes, it lands in your inbox — reach out while it's hot.</p>
+                    </div>
+                </div>
+                <div class="sp-feat-item">
+                    <svg class="sp-feat-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    <div class="sp-feat-content">
+                        <h4>Market intel</h4>
+                        <p>Stay posted on new listings and recent comparable sales across your lakes, so your pricing advice always stays sharp.</p>
+                    </div>
+                </div>
+                <div class="sp-feat-item">
+                    <svg class="sp-feat-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="7" r="4"></circle><path d="M18 21v-2a4 4 0 0 0-4-4H10a4 4 0 0 0-4 4v2"></path></svg>
+                    <div class="sp-feat-content">
+                        <h4>Featured placement</h4>
+                        <p>Upgrade to sit at the top of your lakes and towns — ahead of every other name on the page.</p>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="openJoinForm()" style="margin-top: 1rem; width: max-content;">Create your free profile</button>
             </div>
         </div>
     </section>
 
-    <!-- How matching works -->
-    <section class="sp-section" style="background-color: #fff;">
+    <!-- ── Pipeline: heading + grey box (3 feats) | aerial image ─────────── -->
+    <section class="sp-section">
         <div style="text-align: center; margin-bottom: 4rem;">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-            <h2 class="sp-title" style="font-size: 2.5rem; margin-top: 1rem;">How matching works</h2>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1d6df2" stroke-width="1.5"><path d="M3 10V4h18v6"/><path d="M5 10v10h14V10"/><path d="M9 14h6"/><path d="M9 18h6"/></svg>
+            <h2 class="sp-title" style="font-size: 2.5rem; margin-top: 1rem;">A pipeline that<br>fills itself</h2>
         </div>
         <div class="sp-grid">
-            <div class="sp-grey-box" style="background-color: #f7f9fa;">
-                <h3 class="sp-title" style="font-size: 2.2rem; margin-bottom: 1.5rem;">Your profile sits on the <span>lake page</span><br>buyers are already searching</h3>
-                <p style="margin-bottom: 3rem; color: #4a5568;">When someone searches lake homes on your lake, your profile is on the page they land on. They fill out the form; you get the match.</p>
+            <div class="sp-grey-box">
+                <h3 class="sp-title" style="font-size: 2.2rem; margin-bottom: 1.5rem;">Keep <span>leads coming</span><br>every single day</h3>
+                <p style="margin-bottom: 3rem; color: #4a5568;">You shouldn't have to cold-call for business on your own lake. We put you in front of the buyers and sellers already looking at your water — not every name in a portal database.</p>
 
                 <div class="sp-feat-list">
                     <div class="sp-feat-item">
+                        <svg class="sp-feat-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                        <div class="sp-feat-content">
+                            <h4>Targeted reach</h4>
+                            <p>We run geofenced, demographically targeted campaigns that hunt down people specifically searching for Minnesota lake homes — and route them to the agent on that lake.</p>
+                        </div>
+                    </div>
+                    <div class="sp-feat-item">
+                        <svg class="sp-feat-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <div class="sp-feat-content">
+                            <h4>Where buyers actually look</h4>
+                            <p>Your profile lives on the lake pages that rank in search — the pages buyers land on before they ever open a national portal.</p>
+                        </div>
+                    </div>
+                    <div class="sp-feat-item">
                         <svg class="sp-feat-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                         <div class="sp-feat-content">
-                            <h4>Matched, not dumped</h4>
-                            <p>Every inquiry comes through a lake page form with the buyer's lake, budget, and timeline &mdash; so you know the basics before you call. No shared pool.</p>
+                            <h4>Real, qualified leads</h4>
+                            <p>Every match is a real person who told us the lake they care about and what they're after — vetted intent, not a scraped list.</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="sp-media-wrapper" style="height: 100%;">
-                <img src="/assets/images/mn-lake-town-marina-aerial.jpg" style="height: 100%; width: 100%; object-fit: cover;" alt="Minnesota lake-town downtown where our agents close deals" loading="lazy" width="1200" height="800">
+                <img src="/assets/images/cr-agent-couple-keys.jpg" style="height: 100%; width: 100%; object-fit: cover;" alt="A Minnesota lake agent handing keys to happy new homeowners" loading="lazy" width="1600" height="1067">
             </div>
         </div>
     </section>
 
-    <!-- Built for your lake -->
-    <section class="sp-section">
-        <div class="sp-header-split">
-            <h2 class="sp-title" style="font-size: 3.5rem; margin: 0;">Built for<br>your lake</h2>
-            <p style="color: #4a5568; line-height: 1.6; max-width: 400px; margin: 0;">Be the first call for buyers and sellers searching your lake.</p>
-        </div>
-        <img src="/assets/images/mn-chateau-aerial.jpg" class="sp-fw-image" alt="Aerial view of a Minnesota lakefront estate — the kind of property buyers search a lake page for" loading="lazy" width="1480" height="987">
-        <div class="sp-grid-3">
-            <div>
-                <h4 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Matched lake leads</h4>
-                <p style="color: #4a5568; line-height: 1.6; margin-bottom: 1.5rem;">Matched buyer and seller inquiries from your lake page route to agents tagged on that lake &mdash; not a shared pool.</p>
-                <a href="#" onclick="event.preventDefault(); openJoinForm();" class="sp-link-blue">Create your profile &rarr;</a>
-            </div>
-            <div>
-                <h4 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Three tiers to fit your scale</h4>
-                <p style="color: #4a5568; line-height: 1.6; margin-bottom: 1.5rem;">Certified Lake Agent to get in the lead rotation on your lake, Lake Specialist for featured placement and priority, or Elite Lake Agent for top placement across an entire region. Flat subscription, cancel anytime &mdash; and Lake Specialist and Elite Lake Agent tiers can claim a lake's exclusive Founder seat for 100% of its leads.</p>
-                <a href="#" onclick="event.preventDefault(); openJoinForm();" class="sp-link-blue">Create your profile &rarr;</a>
-            </div>
-            <div>
-                <h4 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Included with every plan</h4>
-                <p style="color: #4a5568; line-height: 1.6; margin-bottom: 1.5rem;"><strong>Instant email + SMS lead alerts</strong>, <strong>lead quality scoring</strong> so you work the hottest leads first, a <strong>response-time badge</strong> on your profile, and our <strong>refer-an-agent, get-a-month-free</strong> program.</p>
-                <a href="#" onclick="event.preventDefault(); openJoinForm();" class="sp-link-blue">Create your profile &rarr;</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- DEV-03: live pricing pulled from Stripe (env-driven), free-first. -->
-    <style>
-        #join-pricing .jp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.35rem; align-items: stretch; }
-        @media (max-width: 1024px) { #join-pricing .jp-grid { grid-template-columns: repeat(2, 1fr); max-width: 680px; margin: 0 auto; } }
-        @media (max-width: 560px)  { #join-pricing .jp-grid { grid-template-columns: 1fr; max-width: 420px; } }
-        #join-pricing .jp-tier { background: #fff; border: 1px solid #e6eaf0; border-radius: 18px; padding: 2.6rem 1.9rem 2rem; display: flex; flex-direction: column; position: relative; min-height: 520px; transition: transform .2s var(--ease-out, ease), box-shadow .2s ease, border-color .2s ease; }
-        #join-pricing .jp-tier:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(16,24,40,0.10); border-color: #cbd8ea; }
-        #join-pricing .jp-tier.hi { border: 2px solid #1d6df2; box-shadow: 0 16px 40px rgba(29,109,242,0.16); }
-        #join-pricing .jp-tier.hi:hover { box-shadow: 0 22px 50px rgba(29,109,242,0.22); }
-        #join-pricing .jp-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #1d6df2; color: #fff; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; padding: 0.3rem 0.85rem; border-radius: 999px; box-shadow: 0 4px 12px rgba(29,109,242,0.35); }
-        #join-pricing .jp-tier h3 { font-size: 1.4rem; font-weight: 800; margin: 0 0 0.35rem; color: #1a202c; letter-spacing: -0.3px; }
-        #join-pricing .jp-tier .tl { font-size: 0.9rem; color: #718096; line-height: 1.5; margin: 0 0 1.25rem; min-height: 3.9rem; }
-        #join-pricing .jp-amt { font-size: 2.7rem; font-weight: 800; letter-spacing: -1.5px; color: #1a202c; line-height: 1; }
-        #join-pricing .jp-per-lbl { font-size: 0.9rem; color: #4a5568; font-weight: 600; }
-        #join-pricing .jp-note { font-size: 0.76rem; color: #a0aec0; min-height: 1.1rem; margin: 0.4rem 0 1.4rem; }
-        /* Benefit list */
-        #join-pricing .jp-feats { list-style: none; margin: 0 0 1.6rem; padding: 1.4rem 0 0; border-top: 1px solid #eef2f7; display: flex; flex-direction: column; gap: 0.7rem; }
-        #join-pricing .jp-feat { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.88rem; line-height: 1.4; color: #2d3748; }
-        #join-pricing .jp-feat .jp-mk { flex-shrink: 0; width: 1.15rem; height: 1.15rem; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 800; background: #e7f0ff; color: #1d6df2; margin-top: 0.05rem; }
-        #join-pricing .jp-feat.neg { color: #a0aec0; }
-        #join-pricing .jp-feat.neg .jp-mk { background: #f1f4f8; color: #b0b8c4; }
-        #join-pricing .jp-feat-head { list-style: none; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin: 0.2rem 0 0.1rem; }
-        #join-pricing .jp-cta { margin-top: auto; background: #1d6df2; color: #fff; border: none; border-radius: 999px; padding: 0.95rem 1rem; font: inherit; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: background .15s; }
-        #join-pricing .jp-cta:hover:not([disabled]) { background: #155bc8; }
-        #join-pricing .jp-cta[disabled] { background: #eef2f7; color: #94a3b8; cursor: default; }
-        #join-pricing .jp-tier.free .jp-cta:not([disabled]) { background: #1a202c; }
-        #join-pricing .jp-per { border: none; background: transparent; padding: 0.45rem 1.1rem; border-radius: 999px; font: inherit; font-weight: 700; font-size: 0.85rem; color: #4a5568; cursor: pointer; }
-        #join-pricing .jp-per.on { background: #1a202c; color: #fff; }
-    </style>
-    <section id="join-pricing" style="padding: 6rem 2rem; background: #f7f9fa; border-top: 1px solid #edf2f7;">
-        <div style="max-width: 1180px; margin: 0 auto;">
-            <div style="text-align: center; margin-bottom: 0.5rem;">
-                <h2 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; margin: 0 0 0.6rem; color: #1a202c;">Simple, flat pricing</h2>
-                <p style="color: #4a5568; font-size: 1.05rem; max-width: 560px; margin: 0 auto; line-height: 1.6;"><strong>Start with a public profile at no cost</strong>, then upgrade any time. No commissions, no referral fees, cancel whenever.</p>
-            </div>
-            <div style="display: flex; justify-content: center; margin: 1.75rem 0 2.5rem;">
-                <div style="display: inline-flex; background: #e6eaf0; border-radius: 999px; padding: 4px;">
-                    <button id="jp-btn-monthly" class="jp-per on" onclick="jpPeriod('monthly')">Monthly</button>
-                    <button id="jp-btn-annual" class="jp-per" onclick="jpPeriod('annual')">Annual</button>
+    <!-- ── Testimonial ──────────────────────────────────────────────────── -->
+    <section class="fa-quote-wrap">
+        <div class="fa-quote">
+            <div class="stars" aria-label="5 out of 5 stars">★★★★★</div>
+            <blockquote>"I claimed my lake the week I found this site. A few weeks later I was talking to <span class="hl">real buyers who found me on that lake's page</span> — not a scraped list, actual people looking at my water. And I'm not handing a referral cut to anyone."</blockquote>
+            <div class="fa-quote-by">
+                <div class="fa-quote-av">L</div>
+                <div class="fa-quote-meta">
+                    <div class="nm">Lara B.</div>
+                    <div class="rl">Lake agent · Detroit Lakes area</div>
                 </div>
             </div>
-            <div id="jp-tier-grid" class="jp-grid"><p style="grid-column:1/-1;text-align:center;color:#a0aec0;">Loading plans…</p></div>
-            <p id="jp-gate" style="text-align: center; color: #718096; font-size: 0.9rem; margin-top: 1.75rem;"></p>
-        </div>
-    </section>
-    <script>
-        (function () {
-            // Default the gate to logged_out (the common /join visitor) so prices
-            // that render before the gate resolves show a safe CTA, not a dead one.
-            var _pricing = null, _period = 'monthly', _gate = { kind: 'logged_out' };
-            var jpEsc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
-            var jpDollars = function (n) { return '$' + Number(n || 0).toLocaleString('en-US'); };
-            var SLUG_TO_CODE = { free: 'free', standard: 'basic', prime: 'mn_lake_specialist', founder_public: 'top_agent' };
-
-            window.jpPeriod = function (p) {
-                _period = p;
-                document.getElementById('jp-btn-monthly').classList.toggle('on', p === 'monthly');
-                document.getElementById('jp-btn-annual').classList.toggle('on', p === 'annual');
-                jpRender();
-            };
-
-            function jpRender() {
-                if (!_pricing) return;
-                var grid = document.getElementById('jp-tier-grid');
-                grid.innerHTML = (_pricing.tiers || []).map(function (t) {
-                    var isFree = t.is_free || t.tier === 'free';
-                    var price = _period === 'annual' ? t.annual_price : t.monthly_price;
-                    var stripeReady = _period === 'annual' ? t.stripe_price_annual : t.stripe_price_monthly;
-                    var isCurrent = _gate.kind === 'ready' && _gate.plan && SLUG_TO_CODE[t.tier] === _gate.plan;
-                    var note = isFree ? 'No card required · upgrade any time'
-                        : (_period === 'annual' ? 'Billed annually · ' + jpDollars(Math.round(price / 12)) + ' / mo' : 'Billed monthly · cancel anytime');
-                    var label, disabled = false;
-                    if (isFree) { label = _gate.kind === 'logged_out' ? 'Get started' : (isCurrent ? '✓ Your plan' : 'Included'); disabled = _gate.kind !== 'logged_out'; }
-                    else if (isCurrent) { label = '✓ Current plan'; disabled = true; }
-                    else if (_gate.kind === 'logged_out') { label = 'Get started'; }
-                    else if (_gate.kind === 'wrong_role') { label = 'Agent account required'; disabled = true; }
-                    else if (_gate.kind === 'no_profile') { label = 'Create your profile first'; }
-                    else if (!stripeReady) { label = 'Coming soon'; disabled = true; }
-                    else { label = 'Upgrade to ' + t.name; }
-                    // Benefit list — ✓ for what you get, a muted dash for limitations,
-                    // "Everything in X, plus:" rendered as a divider so upgrades read
-                    // as additive.
-                    var feats = (Array.isArray(t.features) ? t.features : []).map(function (f) {
-                        var s = String(f);
-                        if (/^everything in/i.test(s)) return '<li class="jp-feat-head">' + jpEsc(s.replace(/:\s*$/, '')) + '</li>';
-                        var neg = /^(not|no |cannot|can’t|can't)/i.test(s);
-                        return '<li class="jp-feat' + (neg ? ' neg' : '') + '"><span class="jp-mk">' + (neg ? '–' : '✓') + '</span><span>' + jpEsc(s) + '</span></li>';
-                    }).join('');
-                    return '<div class="jp-tier ' + (t.highlight ? 'hi' : '') + (isFree ? ' free' : '') + '">'
-                        + (t.highlight ? '<span class="jp-badge">Recommended</span>' : '')
-                        + '<h3>' + jpEsc(t.name) + '</h3>'
-                        + '<p class="tl">' + jpEsc(t.tagline) + '</p>'
-                        + '<div><span class="jp-amt">' + (isFree ? '$0' : jpDollars(price)) + '</span>'
-                        + (isFree ? '' : ' <span class="jp-per-lbl">/ ' + (_period === 'annual' ? 'yr' : 'mo') + '</span>') + '</div>'
-                        + '<div class="jp-note">' + jpEsc(note) + '</div>'
-                        + (feats ? '<ul class="jp-feats">' + feats + '</ul>' : '')
-                        + '<button class="jp-cta" ' + (disabled ? 'disabled' : '') + ' onclick="jpSubscribe(\'' + jpEsc(t.tier) + '\')">' + jpEsc(label) + '</button>'
-                        + '</div>';
-                }).join('');
-            }
-
-            window.jpSubscribe = function (tier) {
-                if (tier === 'free') { if (typeof window.openJoinForm === 'function') window.openJoinForm(); else window.location.href = '#join-form'; return; }
-                if (_gate.kind === 'logged_out') {
-                    // Unified flow: sign up in the join form, then flow straight into
-                    // checkout for the plan they picked — no separate login wall.
-                    if (typeof window.openJoinForm === 'function') { window.openJoinForm({ plan: tier, period: _period }); return; }
-                    window.location.href = '/agent-login?redirect=' + encodeURIComponent('/join'); return;
-                }
-                if (_gate.kind === 'no_profile') { window.location.href = '/pages/agent/dashboard.html'; return; }
-                if (_gate.kind !== 'ready') return;
-                fetch('/api/stripe/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ tier: tier, period: _period }) })
-                    .then(function (r) { return r.json().then(function (d) { if (!r.ok || !d.url) throw new Error(d.error || ('HTTP ' + r.status)); window.location.href = d.url; }); })
-                    .catch(function (e) { alert(e.message); });
-            };
-
-            function jpGate() {
-                return fetch('/api/auth/session', { credentials: 'include' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
-                    .then(function (session) {
-                        var g = document.getElementById('jp-gate');
-                        if (!session) { _gate = { kind: 'logged_out' }; g.innerHTML = 'Already have an agent account? <a href="/agent-login?redirect=' + encodeURIComponent('/join') + '" style="color:#1d6df2;font-weight:700;">Sign in to subscribe &rarr;</a>'; return; }
-                        if (session.role !== 'agent') { _gate = { kind: 'wrong_role' }; return; }
-                        return fetch('/api/stripe/billing', { credentials: 'include' }).then(function (r) {
-                            if (r.status === 404) { _gate = { kind: 'no_profile' }; return; }
-                            return r.json().catch(function () { return {}; }).then(function (b) { _gate = { kind: 'ready', plan: b.plan_code || null }; });
-                        }).catch(function () { _gate = { kind: 'ready' }; });
-                    });
-            }
-
-            function jpInit() {
-                // Render the prices the moment they load — do NOT wait on the gate.
-                // Previously this was Promise.all([pricing, jpGate()]).then(jpRender),
-                // which meant any rejection inside jpGate (auth/session or billing
-                // hiccup) blanked the whole grid even though the price data was fine.
-                // Price display must never be coupled to the auth/billing lookup.
-                fetch('/api/stripe/pricing')
-                    .then(function (r) { return r.json(); })
-                    .then(function (p) { _pricing = p; jpRender(); })
-                    .catch(function () { document.getElementById('jp-tier-grid').innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#c53030;">Could not load plans — refresh to retry.</p>'; });
-                // Resolve the gate independently; re-render to refine CTA labels once
-                // we know who's looking. A gate failure just leaves generic CTAs.
-                jpGate().catch(function () { _gate = { kind: 'logged_out' }; }).then(jpRender);
-            }
-            if (document.readyState !== 'loading') jpInit(); else document.addEventListener('DOMContentLoaded', jpInit);
-        })();
-    </script>
-
-    <!-- Final CTA -->
-    <section style="padding: 8rem 2rem; background-color: var(--bg-dark); color: #fff; text-align: center; border-top: 1px solid rgba(255,255,255,0.05);">
-        <div style="max-width: 700px; margin: 0 auto;">
-            <h2 style="font-size: 3.5rem; font-weight: 800; margin-bottom: 1.5rem; letter-spacing: -1px; line-height: 1.1;">Ready to get your profile on the lake pages?</h2>
-            <p style="font-size: 1.25rem; color: #a0aec0; margin-bottom: 3rem; line-height: 1.6;">Create your profile, pick the tier that fits, and start matching with buyers and sellers on your lake. I'll personally follow up within two business days.</p>
-            <button class="btn btn-primary" style="padding: 1.25rem 3rem; font-size: 1.2rem; border: none; box-shadow: 0 10px 25px rgba(29,109,242, 0.3);" onclick="openJoinForm()">Create your profile</button>
         </div>
     </section>
 
-    
-    <!-- Global Footer -->
+    <!-- ── FAQ ──────────────────────────────────────────────────────────── -->
+    <section class="fa-faq" aria-label="Frequently asked questions">
+        <div class="fa-faq-inner">
+            <span class="kick">Frequently asked</span>
+            <h2>Questions from agents</h2>
+
+            <details class="faq-item">
+                <summary>Is it really free to join?</summary>
+                <div class="faq-answer"><p>Yes. Creating your profile and getting on your lake page costs nothing — no card required. The free profile is about getting <em>found</em>; matched leads, featured placement, and area priority come with a paid plan when you're ready to turn them on.</p></div>
+            </details>
+            <details class="faq-item">
+                <summary>Do I have to leave my brokerage?</summary>
+                <div class="faq-answer"><p>No. We're a directory and matchmaking service, not a brokerage. You stay exactly where you are, keep your license and your team, and keep working the way you already do.</p></div>
+            </details>
+            <details class="faq-item">
+                <summary>Do you take a commission or referral fee?</summary>
+                <div class="faq-answer"><p>Never. We don't touch your deals. Every dollar you close is yours — there's no split and no referral cut on anything that comes through the site.</p></div>
+            </details>
+            <details class="faq-item">
+                <summary>How do leads work — will I get spammed?</summary>
+                <div class="faq-answer"><p>No spam — the opposite. Matched leads come with a paid plan: buyers and sellers tell us the lake they care about and what they're after, and we route them to the agent on that lake. Warm, relevant introductions, not a firehose of junk.</p></div>
+            </details>
+            <details class="faq-item">
+                <summary>How many agents are on each lake?</summary>
+                <div class="faq-answer"><p>We keep it focused so the local expert stands out — a lake page isn't a crowded portal wall of a hundred names. Upgrading to a paid plan adds featured placement and priority in your areas.</p></div>
+            </details>
+            <details class="faq-item">
+                <summary>What does a paid plan add?</summary>
+                <div class="faq-answer"><p>Matched buyer and seller leads from your lakes — that's the big one — plus featured placement, priority in matching, and a more prominent profile. The free profile gets you found; a paid plan turns on the lead flow. You'll see the options right after you create your profile.</p></div>
+            </details>
+            <details class="faq-item">
+                <summary>How do I get started?</summary>
+                <div class="faq-answer"><p>Click any "Create your free profile" button on this page. You'll fill in your details, choose your lakes, and pick a plan — free or paid — at the end. That's it.</p></div>
+            </details>
+        </div>
+    </section>
+
+    <!-- ── Final CTA ────────────────────────────────────────────────────── -->
+    <section class="fa-final">
+        <div class="fa-final-inner">
+            <h2>Claim your spot on the lake pages</h2>
+            <p>Get in front of the buyers and sellers already searching your shoreline. Free to start, no card, cancel anytime.</p>
+            <button class="fa-cta" onclick="openJoinForm()" data-cta="fa_final">
+                Create your free profile
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M13 6l6 6-6 6"></path></svg>
+            </button>
+            <small>No commission · No referral fee · Keep your brokerage</small>
+        </div>
+    </section>
 
     <global-footer></global-footer>
 
-    <!-- Join form overlay is injected lazily by components/join-form.js -->
+    <!-- Join form overlay (full-screen popup) — injected lazily by join-form.js. -->
     <script src="../../components/join-form.js" defer></script>
 
-    <lead-modal></lead-modal>
-
+    <script>
+      // Stat numbers count up when the strip scrolls into view.
+      (function () {
+        var box = document.querySelector('.fa-stats');
+        if (!box) return;
+        var nums = Array.prototype.slice.call(box.querySelectorAll('.fa-stat .v'));
+        var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        nums.forEach(function (el) {
+          var m = el.textContent.match(/^(\D*)([\d,]+)(\D*)$/);
+          if (m) { el.setAttribute('data-pre', m[1]); el.setAttribute('data-target', m[2].replace(/,/g, '')); el.setAttribute('data-suf', m[3]); }
+        });
+        function fmt(n) { return n.toLocaleString('en-US'); }
+        function run() {
+          nums.forEach(function (el) {
+            var target = parseInt(el.getAttribute('data-target') || '0', 10);
+            var pre = el.getAttribute('data-pre') || '', suf = el.getAttribute('data-suf') || '';
+            if (reduce || !target) { el.textContent = pre + fmt(target) + suf; return; }
+            var dur = 700, t0 = null;
+            function frame(now) {
+              if (t0 === null) t0 = now;
+              var p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+              el.textContent = pre + fmt(Math.round(target * e)) + suf;
+              if (p < 1) requestAnimationFrame(frame); else el.textContent = pre + fmt(target) + suf;
+            }
+            requestAnimationFrame(frame);
+          });
+        }
+        if ('IntersectionObserver' in window) {
+          var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { io.disconnect(); run(); } }); }, { threshold: 0.35 });
+          io.observe(box);
+        } else { run(); }
+      })();
+    </script>
 </body>
 </html>
