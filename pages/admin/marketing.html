@@ -252,6 +252,16 @@
 
             <div class="mk-card">
                 <div class="mk-card-hd">
+                    <span class="mk-card-title">Newsletters</span>
+                    <button class="mk-btn primary" onclick="openContentDetail(null,{type:'email'})">+ New newsletter</button>
+                </div>
+                <div class="mk-card-body flush">
+                    <div id="nl-list"><div class="mk-skel">Loading…</div></div>
+                </div>
+            </div>
+
+            <div class="mk-card">
+                <div class="mk-card-hd">
                     <span class="mk-card-title">Mailing list</span>
                     <div style="display:flex; gap:0.5rem; align-items:center;">
                         <button class="mk-btn ghost" onclick="exportSubscribersCSV()">⤓ Export CSV</button>
@@ -354,6 +364,9 @@
             .cal-day:hover { border-color:#cbd5e0; box-shadow:0 4px 12px rgba(16,24,40,0.06); }
             .cal-day.out { background:#f7f9fa; }
             .cal-day.today { border-color:#1d6df2; box-shadow:0 0 0 1px #1d6df2 inset; }
+            .cal-day.drag-over { border-color:#1d6df2; background:#ebf4ff; box-shadow:0 0 0 2px #1d6df2 inset; }
+            .cal-ev { cursor:grab; }
+            .cal-ev:active { cursor:grabbing; }
             .cal-daynum { font-size:0.74rem; font-weight:700; color:#718096; }
             .cal-day.today .cal-daynum { color:#1d6df2; }
             .cal-ev { display:flex; align-items:center; gap:0.28rem; font-size:0.68rem; font-weight:700; color:#fff; border-radius:5px; padding:0.16rem 0.36rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
@@ -744,6 +757,7 @@
         history.replaceState(null, '', url);
 
         if (name === 'newsletter' && !_subscribersLoaded) loadSubscribers();
+        if (name === 'newsletter' && !_postsLoaded)       loadPosts();
         if (name === 'social'     && !_postsLoaded)       loadPosts();
         if (name === 'calendar'   && !_calLoaded)         loadCalendar();
         if (name === 'agents'     && !_agentInsightsLoaded) loadAgentInsights();
@@ -890,6 +904,41 @@
     function calShift(n) { _calRef.setMonth(_calRef.getMonth() + n); renderCalendar(); }
     function calToday() { _calRef = new Date(); _calRef.setDate(1); renderCalendar(); }
 
+    // ── Drag-to-reschedule ───────────────────────────────────────
+    let _calDrag = null;
+    function calDragStart(e, kind, id) {
+        _calDrag = { kind, id };
+        e.dataTransfer.effectAllowed = 'move';
+        try { e.dataTransfer.setData('text/plain', id); } catch (_) {}
+    }
+    function calDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; e.currentTarget.classList.add('drag-over'); }
+    function calDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+    function calDrop(e, key) {
+        e.preventDefault();
+        e.currentTarget.classList.remove('drag-over');
+        const d = _calDrag; _calDrag = null;
+        if (!d || !key) return;
+        rescheduleItem(d.kind, d.id, key);
+    }
+    async function rescheduleItem(kind, id, date) {
+        // Optimistic: move it in the local model so the grid updates instantly.
+        const it = _calData.find(x => x.kind === kind && x.id === id);
+        const prev = it ? it.date : null;
+        if (it) it.date = date;
+        renderCalendar();
+        try {
+            const url = kind === 'blog' ? `/api/blog/admin/${id}` : `/api/admin/marketing/posts/${id}`;
+            const body = kind === 'blog' ? { scheduled_for: date } : { due_date: date };
+            const res = await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) });
+            if (!res.ok) throw new Error();
+            _postsLoaded = false; loadPosts();     // keep social/newsletter cards in sync
+        } catch (_) {
+            if (it) it.date = prev;                // roll back on failure
+            renderCalendar();
+            alert('Could not move that item. Try again.');
+        }
+    }
+
     function renderCalendar() {
         const y = _calRef.getFullYear(), m = _calRef.getMonth();
         document.getElementById('cal-title').textContent = _calRef.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -904,9 +953,9 @@
             const key = ymdLocal(d);
             const out = d.getMonth() !== m;
             const items = (byDate[key] || []).sort((a, b) => CT_ORDER.indexOf(a.content_type) - CT_ORDER.indexOf(b.content_type));
-            const evs = items.slice(0, 3).map(it => `<div class="cal-ev" style="background:${CT[it.content_type]?.color || '#718096'};" onclick="event.stopPropagation();openCalItem('${it.kind}','${it.id}')" title="${escHtml(it.title)}"><span class="ev-t">${escHtml(it.title)}</span></div>`).join('');
+            const evs = items.slice(0, 3).map(it => `<div class="cal-ev" draggable="true" ondragstart="calDragStart(event,'${it.kind}','${it.id}')" style="background:${CT[it.content_type]?.color || '#718096'};" onclick="event.stopPropagation();openCalItem('${it.kind}','${it.id}')" title="${escHtml(it.title)} — drag to another day to reschedule"><span class="ev-t">${escHtml(it.title)}</span></div>`).join('');
             const more = items.length > 3 ? `<div class="cal-more">+${items.length - 3} more</div>` : '';
-            cells.push(`<div class="cal-day ${out ? 'out' : ''} ${key === todayKey ? 'today' : ''}" onclick="openCalDay('${key}')"><div class="cal-daynum">${d.getDate()}</div>${evs}${more}</div>`);
+            cells.push(`<div class="cal-day ${out ? 'out' : ''} ${key === todayKey ? 'today' : ''}" ondragover="calDragOver(event)" ondragleave="calDragLeave(event)" ondrop="calDrop(event,'${key}')" onclick="openCalDay('${key}')"><div class="cal-daynum">${d.getDate()}</div>${evs}${more}</div>`);
         }
         document.getElementById('cal-grid').innerHTML = cells.join('');
     }
@@ -1181,6 +1230,7 @@
             _allPosts = await res.json();
             _postsLoaded = true;
             renderPosts();
+            renderNewsletters();
             // Refresh the dashboard week-strip too so adding a post updates both.
             loadOverview();
         } catch (_) {
@@ -1240,6 +1290,50 @@
                 ${rows.map(p => postCardHtml(p, key === 'overdue', p.due_date === today)).join('')}
             </div>
         `).join('');
+    }
+
+    // ── Newsletters (content_type='email') ───────────────────────
+    function renderNewsletters() {
+        const box = document.getElementById('nl-list');
+        if (!box) return;
+        const items = _allPosts.filter(p => p.content_type === 'email');
+        if (!items.length) {
+            box.innerHTML = '<div class="mk-empty">No newsletters yet. Click “+ New newsletter” to plan one.</div>';
+            return;
+        }
+        const today = ymd(new Date());
+        items.sort((a, b) => {
+            if (!!a.due_date !== !!b.due_date) return a.due_date ? -1 : 1;   // dated first
+            return String(a.due_date || '').localeCompare(String(b.due_date || ''));
+        });
+        box.innerHTML = `<div class="sm-section">${items.map(p => newsletterCardHtml(p, today)).join('')}</div>`;
+    }
+
+    function newsletterCardHtml(p, today) {
+        const isOverdue = p.due_date && p.due_date < today && !['posted', 'cancelled'].includes(p.status);
+        const isToday   = p.due_date === today;
+        const cls = isOverdue ? ' overdue' : (isToday ? ' today' : '');
+        const when = p.due_date ? `📅 ${fmtDate(p.due_date)}${p.scheduled_time ? ' ' + p.scheduled_time : ''}` : 'No date';
+        const perf = p.performance || {};
+        const stats = [];
+        if (perf.recipients != null) stats.push(`${Number(perf.recipients).toLocaleString()} sent`);
+        if (perf.open_rate != null)  stats.push(`${perf.open_rate}% opens`);
+        else if (perf.opens != null) stats.push(`${Number(perf.opens).toLocaleString()} opens`);
+        const statLine = stats.length ? `<span class="sm-perf">📊 ${escHtml(stats.join(' · '))}</span>` : '';
+        const body = p.caption || p.description || '';
+        return `
+            <div class="sm-post${cls}" onclick="openContentDetail('${p.id}')">
+                <div class="sm-thumb">✉️</div>
+                <div style="min-width:0;">
+                    <div class="sm-title">${escHtml(p.title)}</div>
+                    ${body ? `<div class="sm-desc">${escHtml(body)}</div>` : ''}
+                    <div class="sm-meta"><span>${escHtml(when)}</span> ${statLine}</div>
+                </div>
+                <div class="sm-side">
+                    <span class="mk-pill ${p.status}">${escHtml(p.status.replace('_',' '))}</span>
+                    <button class="mk-btn danger" style="padding:0.28rem 0.65rem;font-size:0.76rem;" onclick="event.stopPropagation();deletePost('${p.id}')">Delete</button>
+                </div>
+            </div>`;
     }
 
     function postCardHtml(p, isOverdue, isToday) {
