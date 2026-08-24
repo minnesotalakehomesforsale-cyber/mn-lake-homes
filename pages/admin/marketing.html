@@ -124,16 +124,28 @@
         }
         .sm-post {
             background: #f7f9fa; border: 1px solid #edf2f7; border-radius: 10px;
-            padding: 0.95rem 1.1rem; margin-bottom: 0.55rem;
-            display: grid; grid-template-columns: 1fr auto; gap: 0.75rem; align-items: start;
+            padding: 0.85rem 1rem; margin-bottom: 0.55rem; cursor: pointer;
+            display: grid; grid-template-columns: 52px 1fr auto; gap: 0.85rem; align-items: center;
+            transition: box-shadow 0.14s, border-color 0.14s;
         }
+        .sm-post:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.07); border-color: #cbd5e0; }
         .sm-post.overdue { border-left: 3px solid #c53030; background: #fff5f5; }
         .sm-post.today   { border-left: 3px solid #1d6df2; background: #ebf4ff; }
-        .sm-post .sm-title { font-weight: 700; color: #1a202c; font-size: 0.95rem; margin-bottom: 0.25rem; }
-        .sm-post .sm-desc  { color: #4a5568; font-size: 0.85rem; line-height: 1.45; }
-        .sm-post .sm-meta  { display: flex; gap: 0.5rem; align-items: center; font-size: 0.75rem; color: #718096; margin-top: 0.4rem; flex-wrap: wrap; }
+        .sm-thumb { width: 52px; height: 52px; border-radius: 9px; background: #edf2f7; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 1.4rem; flex-shrink: 0; }
+        .sm-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .sm-post .sm-title { font-weight: 700; color: #1a202c; font-size: 0.95rem; margin-bottom: 0.2rem; }
+        .sm-post .sm-desc  { color: #4a5568; font-size: 0.83rem; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+        .sm-post .sm-meta  { display: flex; gap: 0.45rem; align-items: center; font-size: 0.74rem; color: #718096; margin-top: 0.4rem; flex-wrap: wrap; }
+        .sm-typebadge { font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; padding: 0.12rem 0.45rem; border-radius: 5px; }
+        .sm-tag  { color: #1d6df2; font-weight: 600; }
+        .sm-perf { color: #2f855a; font-weight: 700; }
         .sm-post .sm-side  { display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-end; }
         .sm-post .sm-actions { display: flex; gap: 0.4rem; }
+        .sm-filterbar { display: flex; gap: 0.4rem; flex-wrap: wrap; padding: 0.9rem 1.4rem 0; }
+        .sm-fchip { padding: 0.3rem 0.8rem; border: 1px solid #e2e8f0; border-radius: 99px; background: #fff; font-size: 0.78rem; font-weight: 700; color: #718096; cursor: pointer; }
+        .sm-fchip:hover { border-color: #1d6df2; color: #1d6df2; }
+        .sm-fchip.active { background: #1d6df2; color: #fff; border-color: #1d6df2; }
+        .sm-fchip .fc-count { opacity: 0.7; margin-left: 0.25rem; font-size: 0.72rem; }
 
         /* ── New-post modal ────────────────────────────────────────── */
         .mk-modal { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.55); z-index: 9999; align-items: center; justify-content: center; padding: 1.5rem; }
@@ -278,9 +290,14 @@
         <div id="pane-social" class="tab-pane" role="tabpanel">
             <div class="mk-card">
                 <div class="mk-card-hd">
-                    <span class="mk-card-title">Post ideas &amp; schedule</span>
-                    <button class="mk-btn primary" onclick="openPostModal()">+ New post idea</button>
+                    <span class="mk-card-title">Social content</span>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="mk-btn ghost"    onclick="openContentDetail(null,{type:'story'})">+ Story</button>
+                        <button class="mk-btn ghost"    onclick="openContentDetail(null,{type:'reel'})">+ Reel</button>
+                        <button class="mk-btn primary"  onclick="openContentDetail(null,{type:'post'})">+ Post</button>
+                    </div>
                 </div>
+                <div class="sm-filterbar" id="sm-filterbar"></div>
                 <div class="mk-card-body flush">
                     <div id="sm-list">
                         <div class="mk-skel">Loading…</div>
@@ -427,8 +444,188 @@
             </div>
             <div id="businesses-body" class="ag-scope"><p style="color:#a0aec0;">Loading…</p></div>
         </div>
+
+        <!-- ══ FULL-SCREEN CONTENT DETAIL (posts / stories / newsletters) ══ -->
+        <div id="mk-detail" class="mk-detail" style="display:none;">
+            <a onclick="closeContentDetail()" class="mk-back">← Back</a>
+
+            <div class="md-header">
+                <div class="mdh-thumb" id="mdh-thumb"></div>
+                <div class="mdh-main">
+                    <div class="mdh-name-row">
+                        <h1 id="mdh-title">New content</h1>
+                        <span class="s-badge s-draft" id="mdh-badge">Idea</span>
+                    </div>
+                    <div class="mdh-sub" id="mdh-sub">Social post</div>
+                    <div class="mdh-grid">
+                        <div class="mdh-field"><div class="mdh-label">Type</div><div class="mdh-value" id="mdh-type">—</div></div>
+                        <div class="mdh-field"><div class="mdh-label">Platform</div><div class="mdh-value" id="mdh-channel">—</div></div>
+                        <div class="mdh-field"><div class="mdh-label">Scheduled</div><div class="mdh-value" id="mdh-when">—</div></div>
+                        <div class="mdh-field"><div class="mdh-label">Status</div><div class="mdh-value" id="mdh-status">—</div></div>
+                        <div class="mdh-field"><div class="mdh-label">Reminder</div><div class="mdh-value" id="mdh-reminder">—</div></div>
+                        <div class="mdh-field"><div class="mdh-label">Tags</div><div class="mdh-value" id="mdh-tagcount">0</div></div>
+                    </div>
+                </div>
+                <div class="mdh-actions">
+                    <a class="mk-view-btn" id="mdh-view" href="#" target="_blank" rel="noopener" style="display:none;">↗ View live</a>
+                </div>
+            </div>
+
+            <div class="mk-dtabs">
+                <button class="mk-dtab active" id="mdtab-content"  onclick="switchMkTab('content')">Content</button>
+                <button class="mk-dtab"        id="mdtab-schedule" onclick="switchMkTab('schedule')">Schedule &amp; Reminders</button>
+                <button class="mk-dtab"        id="mdtab-perf"     onclick="switchMkTab('perf')">Performance</button>
+            </div>
+
+            <!-- TAB: Content -->
+            <div id="mdpane-content">
+                <div class="mk-panel">
+                    <div class="mk-panel-hd">Content</div>
+                    <div class="mk-panel-bd">
+                        <div class="mk-frow cols-1">
+                            <div class="mk-fg"><label class="mk-fl">Title *</label>
+                                <input type="text" class="mk-fi" id="d-title" maxlength="300" placeholder="What's the content?"></div>
+                        </div>
+                        <div class="mk-frow cols-2">
+                            <div class="mk-fg"><label class="mk-fl">Type</label><select class="mk-fi" id="d-type"></select></div>
+                            <div class="mk-fg"><label class="mk-fl">Platform / channel</label><select class="mk-fi" id="d-channel"></select></div>
+                        </div>
+                        <div class="mk-frow cols-1">
+                            <div class="mk-fg"><label class="mk-fl">Caption <span class="mk-hint">— the exact copy that goes out</span></label>
+                                <textarea class="mk-fi" id="d-caption" rows="5" placeholder="Hook, body, CTA, hashtags…"></textarea></div>
+                        </div>
+                        <div class="mk-frow cols-1">
+                            <div class="mk-fg"><label class="mk-fl">Internal notes <span class="mk-hint">— angle, brief, who's making it (not published)</span></label>
+                                <textarea class="mk-fi" id="d-desc" rows="2" placeholder="Notes for the team…"></textarea></div>
+                        </div>
+                        <div class="mk-frow cols-2">
+                            <div class="mk-fg"><label class="mk-fl">Asset / cover image URL</label>
+                                <input type="url" class="mk-fi" id="d-asset" placeholder="https://… (image shown on the card)" oninput="renderMkHeader()"></div>
+                            <div class="mk-fg"><label class="mk-fl">Live link <span class="mk-hint">— the published post/newsletter</span></label>
+                                <input type="url" class="mk-fi" id="d-link" placeholder="https://…" oninput="renderMkHeader()"></div>
+                        </div>
+                        <div class="mk-frow cols-1">
+                            <div class="mk-fg"><label class="mk-fl">Tags</label>
+                                <div class="mk-chips" id="d-tag-chips"></div>
+                                <input type="text" class="mk-fi" id="d-tag-input" placeholder="Type a tag and press Enter (e.g. lake-minnetonka, summer, listing)" style="margin-top:0.5rem;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Schedule -->
+            <div id="mdpane-schedule" style="display:none;">
+                <div class="mk-panel">
+                    <div class="mk-panel-hd">Schedule</div>
+                    <div class="mk-panel-bd">
+                        <div class="mk-frow cols-3">
+                            <div class="mk-fg"><label class="mk-fl">Publish date</label>
+                                <input type="date" class="mk-fi" id="d-date" oninput="renderMkHeader()"></div>
+                            <div class="mk-fg"><label class="mk-fl">Time <span class="mk-hint">(local)</span></label>
+                                <input type="time" class="mk-fi" id="d-time" oninput="renderMkHeader()"></div>
+                            <div class="mk-fg"><label class="mk-fl">Status</label><select class="mk-fi" id="d-status" onchange="renderMkHeader()"></select></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mk-panel">
+                    <div class="mk-panel-hd">Reminder</div>
+                    <div class="mk-panel-bd">
+                        <div class="mk-frow cols-2">
+                            <div class="mk-fg"><label class="mk-fl">Remind me on</label>
+                                <input type="date" class="mk-fi" id="d-reminder" oninput="renderMkHeader()"></div>
+                            <div class="mk-fg" style="justify-content:flex-end;">
+                                <div id="d-reminder-note" class="mk-hint" style="align-self:flex-start;">A reminder date surfaces this item in “Needs attention” on the dashboard as it approaches.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Performance -->
+            <div id="mdpane-perf" style="display:none;">
+                <div class="mk-panel">
+                    <div class="mk-panel-hd">Performance <span class="mk-hint" id="d-perf-hint"></span></div>
+                    <div class="mk-panel-bd">
+                        <div class="mk-perf-grid" id="d-perf-fields"></div>
+                    </div>
+                </div>
+                <div class="mk-panel">
+                    <div class="mk-panel-hd">At a glance</div>
+                    <div class="mk-panel-bd"><div class="mk-perf-stats" id="d-perf-stats"></div></div>
+                </div>
+            </div>
+
+            <div class="mk-savebar">
+                <button class="mk-btn danger" id="d-delete" onclick="deleteContentDetail()" style="display:none;">Delete</button>
+                <div style="flex:1;"></div>
+                <span id="d-err" style="color:#c53030;font-size:0.85rem;display:none;align-self:center;"></span>
+                <button class="mk-btn ghost" onclick="closeContentDetail()">Cancel</button>
+                <button class="mk-btn primary" id="d-save" onclick="saveContentDetail()">Save</button>
+            </div>
+        </div>
     </main>
 </div>
+
+<style>
+    /* ── Full-screen content detail (shared by posts / stories / newsletters) ── */
+    .mk-detail { max-width: 1000px; }
+    .mk-back { color:#718096; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:0.5rem; margin-bottom:1.25rem; cursor:pointer; }
+    .mk-back:hover { color:#1a202c; }
+    .s-badge { padding:0.35rem 0.9rem; border-radius:99px; font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; display:inline-block; }
+    .s-draft       { background:#fefcbf; color:#975a16; }
+    .s-idea        { background:#edf2f7; color:#4a5568; }
+    .s-in_progress { background:#ebf4ff; color:#4c51bf; }
+    .s-scheduled   { background:#ebf8ff; color:#1d6df2; }
+    .s-posted      { background:#f0fff4; color:#2f855a; }
+    .s-cancelled   { background:#fff5f5; color:#c53030; }
+
+    .md-header { position:relative; display:flex; gap:1.5rem; background:#fff; border-radius:14px; border:1px solid #edf2f7; box-shadow:0 2px 6px rgba(0,0,0,0.03); padding:1.6rem 1.75rem; margin-bottom:1.25rem; }
+    .mdh-thumb { width:104px; height:104px; border-radius:12px; background:#edf2f7; border:1px solid #e2e8f0; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; font-size:2rem; }
+    .mdh-thumb img { width:100%; height:100%; object-fit:cover; }
+    .mdh-main { flex:1; min-width:0; }
+    .mdh-name-row { display:flex; align-items:center; gap:0.8rem; flex-wrap:wrap; }
+    .mdh-name-row h1 { font-size:1.5rem; font-weight:800; color:#1a202c; letter-spacing:-0.5px; margin:0; }
+    .mdh-sub { color:#718096; font-size:0.9rem; margin-top:0.25rem; }
+    .mdh-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem 1.5rem; margin-top:1.25rem; }
+    .mdh-field { display:flex; flex-direction:column; gap:0.15rem; min-width:0; }
+    .mdh-label { font-size:0.66rem; font-weight:700; color:#a0aec0; text-transform:uppercase; letter-spacing:1px; }
+    .mdh-value { font-size:0.88rem; font-weight:600; color:#1a202c; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .mdh-actions { position:absolute; top:1.4rem; right:1.6rem; }
+    .mk-view-btn { display:inline-flex; align-items:center; gap:0.35rem; height:36px; padding:0 0.85rem; border-radius:8px; border:1px solid #e2e8f0; background:#fff; color:#4a5568; font-size:0.82rem; font-weight:700; cursor:pointer; text-decoration:none; }
+    .mk-view-btn:hover { border-color:#1d6df2; color:#1d6df2; }
+
+    .mk-dtabs { display:flex; gap:0.25rem; margin-bottom:1.5rem; border-bottom:2px solid #edf2f7; overflow-x:auto; scrollbar-width:none; }
+    .mk-dtabs::-webkit-scrollbar { display:none; }
+    .mk-dtab { flex-shrink:0; white-space:nowrap; padding:0.7rem 1.4rem; font-size:0.9rem; font-weight:600; color:#718096; border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; font-family:inherit; }
+    .mk-dtab:hover { color:#1a202c; }
+    .mk-dtab.active { color:#1d6df2; border-bottom-color:#1d6df2; }
+
+    .mk-panel { background:#fff; border-radius:12px; border:1px solid #edf2f7; box-shadow:0 2px 6px rgba(0,0,0,0.03); margin-bottom:1.25rem; overflow:hidden; }
+    .mk-panel-hd { padding:1.1rem 1.5rem; border-bottom:1px solid #edf2f7; font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; color:#4a5568; }
+    .mk-panel-bd { padding:1.5rem; }
+    .mk-frow { display:grid; gap:1.25rem; margin-bottom:1.25rem; }
+    .mk-frow:last-child { margin-bottom:0; }
+    .mk-frow.cols-1 { grid-template-columns:1fr; }
+    .mk-frow.cols-2 { grid-template-columns:1fr 1fr; }
+    .mk-frow.cols-3 { grid-template-columns:1fr 1fr 1fr; }
+    .mk-fg { display:flex; flex-direction:column; gap:0.35rem; }
+    .mk-fl { font-size:0.74rem; font-weight:700; color:#718096; text-transform:uppercase; letter-spacing:0.6px; }
+    .mk-hint { font-weight:400; text-transform:none; letter-spacing:0; color:#a0aec0; }
+    .mk-fi { padding:0.65rem 0.85rem; border:1px solid #e2e8f0; border-radius:8px; font-size:0.9rem; font-family:inherit; color:#1a202c; background:#fff; width:100%; box-sizing:border-box; }
+    .mk-fi:focus { outline:none; border-color:#1d6df2; box-shadow:0 0 0 3px rgba(29,109,242,0.08); }
+    textarea.mk-fi { resize:vertical; }
+    .mk-chips { display:flex; flex-wrap:wrap; gap:0.4rem; }
+    .mk-chip { display:inline-flex; align-items:center; gap:0.35rem; background:#ebf4ff; color:#1d6df2; font-size:0.78rem; font-weight:700; padding:0.28rem 0.65rem; border-radius:99px; }
+    .mk-chip button { border:0; background:transparent; color:#1d6df2; cursor:pointer; font-size:0.95rem; line-height:1; padding:0; }
+    .mk-perf-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.1rem; }
+    .mk-perf-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:0.9rem; }
+    .mk-pstat { background:#f7f9fa; border:1px solid #edf2f7; border-radius:10px; padding:1rem 1.1rem; }
+    .mk-pstat .pv { font-size:1.6rem; font-weight:800; color:#1a202c; letter-spacing:-1px; line-height:1; }
+    .mk-pstat .pl { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#a0aec0; margin-top:0.4rem; }
+    .mk-savebar { position:sticky; bottom:0; background:rgba(247,249,250,0.92); backdrop-filter:blur(6px); border-top:1px solid #e2e8f0; padding:0.9rem 0; display:flex; gap:0.75rem; align-items:center; margin-top:0.5rem; z-index:5; }
+    @media (max-width:820px){ .mdh-grid{grid-template-columns:1fr 1fr;} .mk-frow.cols-2,.mk-frow.cols-3{grid-template-columns:1fr;} .mk-perf-grid{grid-template-columns:1fr 1fr;} .mk-perf-stats{grid-template-columns:1fr 1fr;} .md-header{flex-direction:column;} .mdh-actions{position:static;margin-top:0.5rem;} }
+</style>
 
 <style>
     .ag-scope .ag-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.85rem; margin-bottom: 1.5rem; }
@@ -747,46 +944,28 @@
     }
 
     function openCalItem(kind, id, presetDate) {
-        _calEdit = (kind && id) ? { kind, id } : null;
+        // Marketing content + brand-new items open in the full-screen editor;
+        // only blog "plan go-live" stays a lightweight modal.
+        if (kind !== 'blog') {
+            closeCalModal();
+            openContentDetail(kind === 'marketing' ? id : null, { date: presetDate || '' });
+            return;
+        }
+        _calEdit = { kind, id };
         const body = document.getElementById('cal-modal-body');
         const ft = document.getElementById('cal-modal-ft');
         const titleEl = document.getElementById('cal-modal-title');
-        if (_calEdit && kind === 'blog') {
-            const b = _calData.find(x => x.kind === 'blog' && x.id === id) || {};
-            titleEl.textContent = 'Blog — plan its go-live';
-            body.innerHTML = `
-                <div class="cal-field"><label>Post</label><input type="text" value="${escHtml(b.title || '')}" disabled></div>
-                <div class="cal-field"><label>Scheduled go-live date</label><input type="date" id="cal-blog-date" value="${b.date || ''}"></div>
-                <p style="font-size:0.8rem;color:#718096;margin:0;">A date just plans it on the calendar. Hit <b>Publish now</b> to take it live immediately, or open the Blog tab to edit the content.</p>`;
-            ft.innerHTML = `
-                <button class="mk-btn ghost" onclick="showMK('blog')">Open Blog tab</button>
-                <div style="flex:1;"></div>
-                <button class="mk-btn ghost" onclick="saveBlogSchedule('${id}')">Save date</button>
-                <button class="mk-btn primary" onclick="publishBlogNow('${id}')">Publish now</button>`;
-        } else {
-            const it = _calEdit ? _calData.find(x => x.kind === 'marketing' && x.id === id) : null;
-            titleEl.textContent = it ? 'Edit content' : 'New content';
-            const typeOpts = CT_ORDER.filter(t => t !== 'blog').map(t => `<option value="${t}" ${it && it.content_type === t ? 'selected' : ''}>${CT[t].label}</option>`).join('');
-            const chanOpts = ['<option value="">— platform —</option>'].concat(CAL_CHANNELS.map(c => `<option value="${c}" ${it && it.channel === c ? 'selected' : ''}>${c[0].toUpperCase() + c.slice(1)}</option>`)).join('');
-            const statOpts = ['idea', 'in_progress', 'scheduled', 'posted', 'cancelled'].map(s => `<option value="${s}" ${it && it.status === s ? 'selected' : ''}>${s.replace('_', ' ')}</option>`).join('');
-            body.innerHTML = `
-                <div class="cal-field"><label>Title</label><input type="text" id="cal-f-title" maxlength="300" placeholder="What's the content?" value="${it ? escHtml(it.title) : ''}"></div>
-                <div class="cal-2col">
-                    <div class="cal-field"><label>Type</label><select id="cal-f-type">${typeOpts}</select></div>
-                    <div class="cal-field"><label>Platform / channel</label><select id="cal-f-channel">${chanOpts}</select></div>
-                </div>
-                <div class="cal-2col">
-                    <div class="cal-field"><label>Date</label><input type="date" id="cal-f-date" value="${it ? (it.date || '') : (presetDate || '')}"></div>
-                    <div class="cal-field"><label>Status</label><select id="cal-f-status">${statOpts}</select></div>
-                </div>
-                <div class="cal-field"><label>Notes / caption</label><textarea id="cal-f-desc" rows="4" placeholder="Hook, caption, CTA, links…">${it ? escHtml(it.description || '') : ''}</textarea></div>
-                <div id="cal-f-err" style="color:#c53030;font-size:0.85rem;display:none;"></div>`;
-            ft.innerHTML = `
-                ${it ? `<button class="mk-btn danger" onclick="deleteCalItem('${id}')">Delete</button>` : ''}
-                <div style="flex:1;"></div>
-                <button class="mk-btn ghost" onclick="closeCalModal()">Cancel</button>
-                <button class="mk-btn primary" onclick="saveCalItem()">Save</button>`;
-        }
+        const b = _calData.find(x => x.kind === 'blog' && x.id === id) || {};
+        titleEl.textContent = 'Blog — plan its go-live';
+        body.innerHTML = `
+            <div class="cal-field"><label>Post</label><input type="text" value="${escHtml(b.title || '')}" disabled></div>
+            <div class="cal-field"><label>Scheduled go-live date</label><input type="date" id="cal-blog-date" value="${b.date || ''}"></div>
+            <p style="font-size:0.8rem;color:#718096;margin:0;">A date just plans it on the calendar. Hit <b>Publish now</b> to take it live immediately, or open the Blog tab to edit the content.</p>`;
+        ft.innerHTML = `
+            <button class="mk-btn ghost" onclick="showMK('blog')">Open Blog tab</button>
+            <div style="flex:1;"></div>
+            <button class="mk-btn ghost" onclick="saveBlogSchedule('${id}')">Save date</button>
+            <button class="mk-btn primary" onclick="publishBlogNow('${id}')">Publish now</button>`;
         document.getElementById('cal-modal').classList.add('open');
     }
     function closeCalModal() { document.getElementById('cal-modal').classList.remove('open'); _calEdit = null; }
@@ -1009,22 +1188,42 @@
         }
     }
 
+    // Social pane shows every marketing_post that isn't an email (Newsletter tab)
+    // or a blog. A type-filter narrows to posts / stories / reels / etc.
+    let _smFilter = 'all';
+    function socialPosts() { return _allPosts.filter(p => p.content_type !== 'email' && p.content_type !== 'blog'); }
+    function setSmFilter(t) { _smFilter = t; renderPosts(); }
+
+    function renderSmFilter(posts) {
+        const bar = document.getElementById('sm-filterbar');
+        if (!bar) return;
+        const counts = {};
+        posts.forEach(p => { counts[p.content_type] = (counts[p.content_type] || 0) + 1; });
+        const present = ['post', 'story', 'reel', 'dm', 'sms', 'other'].filter(t => counts[t]);
+        const chip = (key, label, n) => `<button class="sm-fchip ${_smFilter === key ? 'active' : ''}" onclick="setSmFilter('${key}')">${escHtml(label)}<span class="fc-count">${n}</span></button>`;
+        bar.innerHTML = chip('all', 'All', posts.length) + present.map(t => chip(t, CT[t].label, counts[t])).join('');
+    }
+
     function renderPosts() {
         const list = document.getElementById('sm-list');
-        if (!_allPosts.length) {
-            list.innerHTML = '<div class="mk-empty">No posts yet. Click "+ New post idea" to add one.</div>';
+        const all = socialPosts();
+        renderSmFilter(all);
+        if (!all.length) {
+            list.innerHTML = '<div class="mk-empty">No social content yet. Add a post, story, or reel above.</div>';
             return;
         }
+        const posts = _smFilter === 'all' ? all : all.filter(p => p.content_type === _smFilter);
+        if (!posts.length) { list.innerHTML = `<div class="mk-empty">No ${escHtml(CT[_smFilter]?.label || _smFilter)} content yet.</div>`; return; }
+
         const today = ymd(new Date());
         const in7  = (d) => { const dt = new Date(); dt.setDate(dt.getDate() + 7); return d <= ymd(dt); };
-
         const groups = {
-            overdue:  _allPosts.filter(p => p.due_date && p.due_date < today && !['posted','cancelled'].includes(p.status)),
-            today:    _allPosts.filter(p => p.due_date === today),
-            upcoming: _allPosts.filter(p => p.due_date && p.due_date > today && in7(p.due_date)),
-            later:    _allPosts.filter(p => p.due_date && !in7(p.due_date)),
-            undated:  _allPosts.filter(p => !p.due_date && !['posted','cancelled'].includes(p.status)),
-            done:     _allPosts.filter(p => ['posted','cancelled'].includes(p.status)),
+            overdue:  posts.filter(p => p.due_date && p.due_date < today && !['posted','cancelled'].includes(p.status)),
+            today:    posts.filter(p => p.due_date === today),
+            upcoming: posts.filter(p => p.due_date && p.due_date > today && in7(p.due_date)),
+            later:    posts.filter(p => p.due_date && !in7(p.due_date)),
+            undated:  posts.filter(p => !p.due_date && !['posted','cancelled'].includes(p.status)),
+            done:     posts.filter(p => ['posted','cancelled'].includes(p.status)),
         };
         const sections = [
             ['Overdue',           'overdue',  groups.overdue],
@@ -1045,47 +1244,40 @@
 
     function postCardHtml(p, isOverdue, isToday) {
         const cls = isOverdue ? ' overdue' : (isToday ? ' today' : '');
-        const meta = [
-            p.due_date ? `📅 ${fmtDate(p.due_date)}` : 'No date',
-            p.channel  ? `📣 ${p.channel}` : null,
-        ].filter(Boolean).map(escHtml).join(' · ');
+        const ct  = CT[p.content_type] || CT.other;
+        const thumb = p.asset_url
+            ? `<div class="sm-thumb"><img src="${escHtml(p.asset_url)}" alt="" onerror="this.parentElement.textContent='${CT_EMOJI[p.content_type] || '📌'}'"></div>`
+            : `<div class="sm-thumb">${CT_EMOJI[p.content_type] || '📌'}</div>`;
+        const when = p.due_date ? `📅 ${fmtDate(p.due_date)}${p.scheduled_time ? ' ' + p.scheduled_time : ''}` : 'No date';
+        const tags = (p.tags || []).slice(0, 3).map(t => `<span class="sm-tag">#${escHtml(t)}</span>`).join(' ');
+        const nPerf = p.performance ? Object.keys(p.performance).length : 0;
+        const perf = nPerf ? `<span class="sm-perf">📊 ${nPerf}</span>` : '';
+        const body = p.caption || p.description || '';
         return `
-            <div class="sm-post${cls}">
-                <div>
+            <div class="sm-post${cls}" onclick="openContentDetail('${p.id}')">
+                ${thumb}
+                <div style="min-width:0;">
                     <div class="sm-title">${escHtml(p.title)}</div>
-                    ${p.description ? `<div class="sm-desc">${escHtml(p.description)}</div>` : ''}
-                    <div class="sm-meta">${meta}</div>
+                    ${body ? `<div class="sm-desc">${escHtml(body)}</div>` : ''}
+                    <div class="sm-meta">
+                        <span class="sm-typebadge" style="background:${ct.color}1a;color:${ct.color};">${escHtml(ct.label)}</span>
+                        <span>${escHtml(when)}</span>
+                        ${p.channel ? `<span>· ${escHtml(p.channel)}</span>` : ''}
+                        ${tags} ${perf}
+                    </div>
                 </div>
                 <div class="sm-side">
                     <span class="mk-pill ${p.status}">${escHtml(p.status.replace('_',' '))}</span>
-                    <div class="sm-actions">
-                        <button class="mk-btn ghost" style="padding:0.3rem 0.7rem;font-size:0.78rem;" onclick="openPostModal('${p.id}')">Edit</button>
-                        <button class="mk-btn danger" style="padding:0.3rem 0.7rem;font-size:0.78rem;" onclick="deletePost('${p.id}')">Delete</button>
-                    </div>
+                    <button class="mk-btn danger" style="padding:0.28rem 0.65rem;font-size:0.76rem;" onclick="event.stopPropagation();deletePost('${p.id}')">Delete</button>
                 </div>
             </div>
         `;
     }
 
-    // ── New/edit post modal ──────────────────────────────────────
-    function openPostModal(id) {
-        _editingPostId = id || null;
-        document.getElementById('post-modal-title').textContent = id ? 'Edit post' : 'New post idea';
-        document.getElementById('pm-err').style.display = 'none';
-        if (id) {
-            const p = _allPosts.find(x => x.id === id);
-            if (!p) return;
-            document.getElementById('pm-title').value = p.title || '';
-            document.getElementById('pm-description').value = p.description || '';
-            document.getElementById('pm-due').value = ymdOnly(p.due_date);
-            document.getElementById('pm-channel').value = p.channel || '';
-            document.getElementById('pm-status').value = p.status || 'idea';
-        } else {
-            ['pm-title','pm-description','pm-due','pm-channel'].forEach(k => document.getElementById(k).value = '');
-            document.getElementById('pm-status').value = 'idea';
-        }
-        document.getElementById('post-modal').classList.add('open');
-        setTimeout(() => document.getElementById('pm-title').focus(), 60);
+    // Social-pane "new/edit post" now opens the full-screen content editor.
+    // Kept as a thin alias so every existing call site routes there.
+    function openPostModal(id, presetType) {
+        openContentDetail(id || null, id ? {} : { type: presetType || 'post' });
     }
 
     function closePostModal() {
@@ -1134,6 +1326,224 @@
             await loadPosts();
         } catch (_) { alert('Delete failed. Try again.'); }
     }
+
+    // ══ FULL-SCREEN CONTENT DETAIL EDITOR (posts / stories / newsletters) ══
+    const MK_STATUS   = ['idea', 'in_progress', 'scheduled', 'posted', 'cancelled'];
+    const CT_EMOJI    = { post:'📷', story:'⭕', reel:'🎬', dm:'📨', email:'✉️', sms:'💬', blog:'📝', other:'📌' };
+    // Per-type performance metrics. Keys are stored verbatim in the JSONB bag.
+    const PERF_FIELDS = {
+        post:  [['reach','Reach'],['impressions','Impressions'],['likes','Likes'],['comments','Comments'],['shares','Shares'],['saves','Saves'],['link_clicks','Link clicks'],['profile_visits','Profile visits'],['new_followers','New followers']],
+        reel:  [['reach','Reach'],['plays','Plays'],['likes','Likes'],['comments','Comments'],['shares','Shares'],['saves','Saves'],['avg_watch','Avg watch (s)'],['link_clicks','Link clicks']],
+        story: [['reach','Reach'],['impressions','Impressions'],['taps_forward','Taps forward'],['taps_back','Taps back'],['exits','Exits'],['replies','Replies'],['link_clicks','Link clicks']],
+        email: [['recipients','Recipients'],['delivered','Delivered'],['opens','Opens'],['open_rate','Open rate %'],['clicks','Clicks'],['click_rate','Click rate %'],['unsubscribes','Unsubscribes'],['bounces','Bounces']],
+        sms:   [['sent','Sent'],['delivered','Delivered'],['clicks','Clicks'],['replies','Replies'],['opt_outs','Opt-outs']],
+        dm:    [['sent','Sent'],['replies','Replies'],['meetings','Meetings booked'],['conversions','Conversions']],
+        other: [['reach','Reach'],['engagement','Engagement'],['clicks','Clicks'],['conversions','Conversions']],
+    };
+    const perfFieldsFor = (t) => PERF_FIELDS[t] || PERF_FIELDS.other;
+
+    let _mkEditId = null;
+    let _mkTags   = [];
+    let _mkPerf   = {};
+    let _mkCurrent = null;   // the row object being edited (for slug/published/created_at)
+
+    function openContentDetail(id, opts = {}) {
+        _mkEditId = id || null;
+        const p = id ? _allPosts.find(x => x.id === id) : null;
+        _mkCurrent = p;
+        _mkTags = p && Array.isArray(p.tags) ? [...p.tags] : [];
+        _mkPerf = p && p.performance && typeof p.performance === 'object' ? { ...p.performance } : {};
+
+        // Build the selects
+        document.getElementById('d-type').innerHTML = CT_ORDER.filter(t => t !== 'blog')
+            .map(t => `<option value="${t}">${CT[t].label}</option>`).join('');
+        document.getElementById('d-channel').innerHTML = ['<option value="">— platform —</option>']
+            .concat(CAL_CHANNELS.map(c => `<option value="${c}">${c[0].toUpperCase() + c.slice(1)}</option>`)).join('');
+        document.getElementById('d-status').innerHTML = MK_STATUS
+            .map(s => `<option value="${s}">${s.replace('_', ' ')}</option>`).join('');
+
+        // Populate
+        document.getElementById('d-title').value     = p ? (p.title || '') : '';
+        document.getElementById('d-type').value      = p ? (p.content_type || 'post') : (opts.type || 'post');
+        document.getElementById('d-channel').value   = p ? (p.channel || '') : (opts.channel || '');
+        document.getElementById('d-caption').value   = p ? (p.caption || '') : '';
+        document.getElementById('d-desc').value       = p ? (p.description || '') : '';
+        document.getElementById('d-asset').value      = p ? (p.asset_url || '') : '';
+        document.getElementById('d-link').value       = p ? (p.link_url || '') : '';
+        document.getElementById('d-date').value       = p ? ymdOnly(p.due_date) : (opts.date || '');
+        document.getElementById('d-time').value       = p ? (p.scheduled_time || '') : '';
+        document.getElementById('d-status').value     = p ? (p.status || 'idea') : 'idea';
+        document.getElementById('d-reminder').value   = p ? ymdOnly(p.reminder_date) : '';
+        document.getElementById('d-tag-input').value  = '';
+        document.getElementById('d-delete').style.display = id ? '' : 'none';
+        document.getElementById('d-err').style.display = 'none';
+
+        renderMkTags();
+        renderPerfFields();
+        switchMkTab('content');
+        renderMkHeader();
+
+        // Swap to the full-screen view
+        document.querySelector('.admin-main > header').style.display = 'none';
+        document.querySelector('.page-tabs[role="tablist"]').style.display = 'none';
+        document.querySelectorAll('.tab-pane').forEach(el => { el.style.display = 'none'; });
+        document.getElementById('mk-detail').style.display = 'block';
+        window.scrollTo(0, 0);
+    }
+
+    function closeContentDetail() {
+        document.getElementById('mk-detail').style.display = 'none';
+        document.querySelector('.admin-main > header').style.display = '';
+        document.querySelector('.page-tabs[role="tablist"]').style.display = '';
+        // Clear inline display so the .active CSS rule governs which pane shows.
+        document.querySelectorAll('.tab-pane').forEach(el => { el.style.display = ''; });
+        _mkEditId = null; _mkCurrent = null;
+        window.scrollTo(0, 0);
+        // Refresh every view that shows this content.
+        _postsLoaded = false; loadPosts();
+        _calLoaded = false; loadCalendar();
+    }
+
+    function switchMkTab(tab) {
+        ['content', 'schedule', 'perf'].forEach(t => {
+            document.getElementById('mdpane-' + t).style.display = (t === tab) ? 'block' : 'none';
+            document.getElementById('mdtab-' + t).classList.toggle('active', t === tab);
+        });
+        if (tab === 'perf') renderPerfStats();
+    }
+
+    function renderMkHeader() {
+        const title  = document.getElementById('d-title').value.trim();
+        const type   = document.getElementById('d-type').value;
+        const chan   = document.getElementById('d-channel').value;
+        const date   = document.getElementById('d-date').value;
+        const time   = document.getElementById('d-time').value;
+        const status = document.getElementById('d-status').value;
+        const remind = document.getElementById('d-reminder').value;
+        const asset  = document.getElementById('d-asset').value.trim();
+        const link   = document.getElementById('d-link').value.trim();
+
+        document.getElementById('mdh-title').textContent = title || (_mkEditId ? 'Untitled' : 'New content');
+        const badge = document.getElementById('mdh-badge');
+        badge.className = 's-badge s-' + status;
+        badge.textContent = status.replace('_', ' ');
+        document.getElementById('mdh-sub').textContent = (CT[type]?.label || 'Content') + (chan ? ' · ' + chan : '');
+        const thumb = document.getElementById('mdh-thumb');
+        if (asset) thumb.innerHTML = `<img src="${escHtml(asset)}" alt="" onerror="this.parentElement.textContent='${CT_EMOJI[type]||'📌'}'">`;
+        else       thumb.textContent = CT_EMOJI[type] || '📌';
+
+        document.getElementById('mdh-type').textContent    = CT[type]?.label || '—';
+        document.getElementById('mdh-channel').textContent = chan ? (chan[0].toUpperCase() + chan.slice(1)) : '—';
+        document.getElementById('mdh-when').textContent    = date ? (fmtDate(date) + (time ? ' · ' + time : '')) : 'Unscheduled';
+        document.getElementById('mdh-status').textContent  = status.replace('_', ' ');
+        document.getElementById('mdh-reminder').textContent = remind ? fmtDate(remind) : '—';
+        document.getElementById('mdh-tagcount').textContent = _mkTags.length;
+
+        const view = document.getElementById('mdh-view');
+        if (link) { view.href = link; view.style.display = 'inline-flex'; }
+        else      { view.style.display = 'none'; }
+    }
+
+    // ── Tags ─────────────────────────────────────────────────────
+    function renderMkTags() {
+        const box = document.getElementById('d-tag-chips');
+        box.innerHTML = _mkTags.length
+            ? _mkTags.map((t, i) => `<span class="mk-chip">${escHtml(t)}<button type="button" onclick="removeMkTag(${i})">×</button></span>`).join('')
+            : '<span style="color:#a0aec0;font-size:0.85rem;">No tags yet.</span>';
+        renderMkHeader();
+    }
+    function addMkTag(raw) {
+        const t = (raw || '').trim().replace(/^#/, '').toLowerCase();
+        if (t && !_mkTags.includes(t)) { _mkTags.push(t); renderMkTags(); }
+    }
+    function removeMkTag(i) { _mkTags.splice(i, 1); renderMkTags(); }
+
+    // ── Performance ──────────────────────────────────────────────
+    function renderPerfFields() {
+        const type = document.getElementById('d-type').value;
+        const fields = perfFieldsFor(type);
+        document.getElementById('d-perf-hint').textContent = `— metrics for a ${(CT[type]?.label || 'post').toLowerCase()}`;
+        document.getElementById('d-perf-fields').innerHTML = fields.map(([k, label]) => `
+            <div class="mk-fg">
+                <label class="mk-fl">${escHtml(label)}</label>
+                <input type="number" min="0" step="any" class="mk-fi" data-perf="${k}"
+                       value="${_mkPerf[k] != null ? _mkPerf[k] : ''}"
+                       oninput="_mkPerf['${k}'] = this.value === '' ? undefined : Number(this.value); renderPerfStats();">
+            </div>`).join('');
+        renderPerfStats();
+    }
+    function renderPerfStats() {
+        const type = document.getElementById('d-type').value;
+        const fields = perfFieldsFor(type).slice(0, 4);
+        document.getElementById('d-perf-stats').innerHTML = fields.map(([k, label]) => `
+            <div class="mk-pstat">
+                <div class="pv">${_mkPerf[k] != null && _mkPerf[k] !== '' ? Number(_mkPerf[k]).toLocaleString() : '—'}</div>
+                <div class="pl">${escHtml(label)}</div>
+            </div>`).join('');
+    }
+
+    async function saveContentDetail() {
+        const title = document.getElementById('d-title').value.trim();
+        const err = document.getElementById('d-err');
+        if (!title) { err.textContent = 'Title is required.'; err.style.display = 'block'; switchMkTab('content'); return; }
+        // Drop empty perf values so the JSON stays clean.
+        const perf = {};
+        Object.entries(_mkPerf).forEach(([k, v]) => { if (v !== undefined && v !== '' && !Number.isNaN(v)) perf[k] = v; });
+
+        const payload = {
+            title,
+            content_type:   document.getElementById('d-type').value,
+            channel:        document.getElementById('d-channel').value || null,
+            caption:        document.getElementById('d-caption').value.trim() || null,
+            description:    document.getElementById('d-desc').value.trim() || null,
+            asset_url:      document.getElementById('d-asset').value.trim() || null,
+            link_url:       document.getElementById('d-link').value.trim() || null,
+            due_date:       document.getElementById('d-date').value || null,
+            scheduled_time: document.getElementById('d-time').value || null,
+            status:         document.getElementById('d-status').value,
+            reminder_date:  document.getElementById('d-reminder').value || null,
+            tags:           _mkTags,
+            performance:    perf,
+        };
+        const btn = document.getElementById('d-save');
+        btn.disabled = true; btn.textContent = 'Saving…';
+        try {
+            const url    = _mkEditId ? `/api/admin/marketing/posts/${_mkEditId}` : '/api/admin/marketing/posts';
+            const method = _mkEditId ? 'PATCH' : 'POST';
+            const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+            if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Save failed.'); }
+            closeContentDetail();
+        } catch (e) {
+            err.textContent = e.message; err.style.display = 'block';
+        } finally {
+            btn.disabled = false; btn.textContent = 'Save';
+        }
+    }
+
+    async function deleteContentDetail() {
+        if (!_mkEditId) return;
+        if (!confirm('Delete this content item? This cannot be undone.')) return;
+        try {
+            const res = await fetch(`/api/admin/marketing/posts/${_mkEditId}`, { method: 'DELETE', credentials: 'include' });
+            if (!res.ok) throw new Error();
+            closeContentDetail();
+        } catch (_) { alert('Delete failed. Try again.'); }
+    }
+
+    // Enter-to-add on the tag input.
+    document.addEventListener('DOMContentLoaded', () => {
+        const ti = document.getElementById('d-tag-input');
+        if (ti) ti.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addMkTag(ti.value); ti.value = ''; }
+        });
+        // Live header + perf-field swap when core fields change.
+        ['d-title', 'd-channel', 'd-status'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', renderMkHeader);
+        });
+        const typeSel = document.getElementById('d-type');
+        if (typeSel) typeSel.addEventListener('change', () => { renderPerfFields(); renderMkHeader(); });
+    });
 
     // ── Boot ────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
