@@ -526,7 +526,13 @@
     function ensureFrameLoaded(name) {
         if (name !== 'blog' && name !== 'resources') return;
         const f = document.getElementById('frame-' + name);
-        if (f && !f.src) f.src = f.dataset.src;
+        // Cache-bust per page load so a fresh visit always pulls the latest
+        // editor build — otherwise a tab left open across a deploy keeps
+        // showing the stale iframe it lazy-loaded before the deploy.
+        if (f && !f.src) {
+            const sep = f.dataset.src.includes('?') ? '&' : '?';
+            f.src = f.dataset.src + sep + '_v=' + Date.now();
+        }
     }
 
     function showMK(name) {
