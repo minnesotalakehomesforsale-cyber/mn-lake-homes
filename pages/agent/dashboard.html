@@ -96,6 +96,12 @@
         .nav-tab.active { background: #ebf4ff; color: #1d6df2; font-weight: 700; }
         .nav-tab .badge-count { background: #1d6df2; color: #fff; border-radius: 20px; padding: 0.1rem 0.5rem; font-size: 0.7rem; font-weight: 700; margin-left: auto; }
 
+        /* Mobile menu bar + off-canvas drawer — all hidden on desktop, shown ≤900px */
+        .dash-mobile-bar { display: none; }
+        .dash-hamburger { display: inline-flex; align-items: center; justify-content: center; background: none; border: 0; padding: 0.4rem 0.5rem; border-radius: 8px; color: #1a202c; cursor: pointer; }
+        .dash-hamburger:hover { background: #f7f9fa; }
+        .dash-nav-overlay { display: none; }
+
         /* Dashboard landing */
         .dash-status { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 700; padding: 0.4rem 0.9rem; border-radius: 99px; white-space: nowrap; }
         .dash-status .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
@@ -311,28 +317,36 @@
 
         /* ── Mobile ≤ 900px: rail becomes a sticky horizontal tab strip ─────── */
         @media (max-width: 900px) {
-            .dash-grid { grid-template-columns: 1fr; padding-top: var(--header-h); }
+            .dash-grid { grid-template-columns: 1fr; padding-top: calc(var(--header-h) + 52px); }
+
+            /* Thin mobile bar under the global header, with the menu button */
+            .dash-mobile-bar {
+                display: flex; align-items: center; gap: 0.6rem;
+                position: fixed; top: var(--header-h); left: 0; right: 0; z-index: 30;
+                height: 52px; background: #fff; border-bottom: 1px solid #edf2f7; padding: 0 0.85rem;
+            }
+            .dash-mobile-title { font-weight: 800; font-size: 1.02rem; color: #1a202c; }
+
+            /* Sidebar → off-canvas slide-in drawer with the full vertical tab list */
             .dash-sidebar {
-                position: sticky;
-                top: var(--header-h);
-                height: auto;
-                z-index: 20;
-                flex-direction: row;
-                align-items: center;
-                gap: 0.4rem;
-                overflow-x: auto;
-                overflow-y: hidden;
-                -webkit-overflow-scrolling: touch;
-                border-right: 0;
-                border-bottom: 1px solid #edf2f7;
-                padding: 0.7rem 1rem;
+                position: fixed; top: var(--header-h); left: 0;
+                width: 84vw; max-width: 300px; height: calc(100vh - var(--header-h));
+                z-index: 1000; flex-direction: column; align-items: stretch;
+                border-right: 1px solid #edf2f7; box-shadow: 2px 0 24px rgba(15,23,42,0.18);
+                padding: 1.5rem 1.25rem 2rem; overflow-y: auto;
+                transform: translateX(-100%); transition: transform 0.25s ease;
             }
-            .dash-sidebar h4,
-            .dash-sidebar > div:first-child { display: none; }
-            .dash-sidebar .nav-tab {
-                width: auto; display: inline-flex; flex-shrink: 0;
-                white-space: nowrap; padding: 0.55rem 0.9rem; font-size: 0.9rem;
+            .dash-sidebar.open { transform: translateX(0); }
+            .dash-sidebar .nav-tab { width: 100%; display: flex; }
+
+            /* Dim backdrop behind the open drawer (tap to close) */
+            .dash-nav-overlay {
+                display: block; position: fixed; inset: 0; z-index: 999;
+                background: rgba(15,23,42,0.45); opacity: 0; visibility: hidden;
+                transition: opacity 0.2s ease, visibility 0.2s ease;
             }
+            .dash-nav-overlay.open { opacity: 1; visibility: visible; }
+
             .dash-content { padding: 1.75rem 1.25rem 3rem; min-height: 0; }
             .dash-content > .view-card { padding: 1.5rem 1.25rem !important; }
             .view-card .grid-2 { grid-template-columns: 1fr !important; gap: 0.75rem !important; }
@@ -372,11 +386,20 @@
 
     <global-header></global-header>
 
+    <!-- Mobile menu bar: hamburger opens the tab drawer (replaces the old scroll strip) -->
+    <div class="dash-mobile-bar">
+        <button class="dash-hamburger" onclick="toggleDashNav()" aria-label="Open menu" aria-controls="dash-sidebar" aria-expanded="false">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="dash-mobile-title" id="dash-mobile-title">Dashboard</span>
+    </div>
+    <div class="dash-nav-overlay" id="dash-nav-overlay" onclick="toggleDashNav(false)"></div>
+
     <div class="dashboard-container">
         <div class="dash-grid">
 
-            <!-- Sidebar Navigation (fixed left rail) -->
-            <div class="dash-sidebar">
+            <!-- Sidebar Navigation (fixed left rail on desktop, slide-in drawer on mobile) -->
+            <div class="dash-sidebar" id="dash-sidebar">
 
                 <div style="margin-bottom: 2rem; text-align: center; padding-bottom: 1.5rem; border-bottom: 1px solid #edf2f7;">
                     <div id="sidebar-name" style="font-weight: 800; font-size: 1.1rem; color: #1a202c; margin-bottom: 0.25rem;">Loading...</div>
@@ -1472,8 +1495,26 @@
         // switchView('profile') is an alias that opens Account → Profile.
         let _accountSub = 'account';
 
+        // Mobile nav drawer: hamburger toggles the off-canvas sidebar + backdrop.
+        function toggleDashNav(force) {
+            const sb = document.getElementById('dash-sidebar');
+            const ov = document.getElementById('dash-nav-overlay');
+            if (!sb || !ov) return;
+            const open = (force === undefined) ? !sb.classList.contains('open') : !!force;
+            sb.classList.toggle('open', open);
+            ov.classList.toggle('open', open);
+            const btn = document.querySelector('.dash-hamburger');
+            if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            document.body.style.overflow = open ? 'hidden' : '';
+        }
+        window.toggleDashNav = toggleDashNav;
+        const DASH_VIEW_LABELS = { dashboard: 'Dashboard', leads: 'Leads', contacts: 'Contacts', messages: 'Messages', properties: 'Properties', referrals: 'Referrals', perks: 'Perks', account: 'Account', profile: 'Profile', resources: 'Resources' };
+
         function switchView(view) {
             if (_profileDirty) saveProfileNow();   // flush any pending profile edit before leaving
+            const _mt = document.getElementById('dash-mobile-title');
+            if (_mt) _mt.textContent = DASH_VIEW_LABELS[view] || 'Dashboard';
+            toggleDashNav(false);   // close the mobile drawer after picking a tab
             let topView = view;
             if (view === 'profile')      { topView = 'account'; _accountSub = 'profile'; }
             else if (view === 'account') { _accountSub = 'account'; }  // nav tab → account info
