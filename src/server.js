@@ -4530,6 +4530,18 @@ async function ensureTables() {
             -- blog/other), separate from channel (the platform). Powers the
             -- unified content calendar's colour-coding + type filter.
             ALTER TABLE marketing_posts ADD COLUMN IF NOT EXISTS content_type VARCHAR(24) NOT NULL DEFAULT 'post';
+            -- Rich content-tracker fields. A marketing_post (feed post / story /
+            -- reel / email newsletter …) opens as a full detail record: a caption,
+            -- freeform tags, a scheduled time-of-day beside due_date, a cover
+            -- asset + live link, a reminder date, and a flexible JSONB bag of
+            -- performance metrics (reach/likes/clicks/opens — shape varies by type).
+            ALTER TABLE marketing_posts ADD COLUMN IF NOT EXISTS caption        TEXT;
+            ALTER TABLE marketing_posts ADD COLUMN IF NOT EXISTS tags           JSONB NOT NULL DEFAULT '[]'::jsonb;
+            ALTER TABLE marketing_posts ADD COLUMN IF NOT EXISTS scheduled_time VARCHAR(5);   -- 'HH:MM' local (e.g. 09:00)
+            ALTER TABLE marketing_posts ADD COLUMN IF NOT EXISTS asset_url      TEXT;
+            ALTER TABLE marketing_posts ADD COLUMN IF NOT EXISTS link_url       TEXT;
+            ALTER TABLE marketing_posts ADD COLUMN IF NOT EXISTS reminder_date  DATE;
+            ALTER TABLE marketing_posts ADD COLUMN IF NOT EXISTS performance    JSONB NOT NULL DEFAULT '{}'::jsonb;
             -- Optional scheduled publish date for a blog draft, so it shows on
             -- the content calendar with a "go live" date (manual publish).
             ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS scheduled_for DATE;

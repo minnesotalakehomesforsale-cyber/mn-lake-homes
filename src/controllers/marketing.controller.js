@@ -23,6 +23,28 @@ const VALID_STATUS = ['idea', 'in_progress', 'scheduled', 'posted', 'cancelled']
 // The KIND of content on the calendar (separate from channel/platform).
 const VALID_CONTENT_TYPE = ['post', 'story', 'reel', 'dm', 'email', 'sms', 'blog', 'other'];
 
+// Columns returned by every write, so create/update echo the full record.
+const RETURN_COLS = `id, title, description, caption, tags, due_date::text AS due_date,
+    scheduled_time, channel, content_type, status, asset_url, link_url,
+    reminder_date::text AS reminder_date, performance, created_at, updated_at`;
+
+// JSONB columns — the client sends a JS array/object; pg needs a JSON string
+// for a JSONB param, so we stringify and cast the placeholder `::jsonb`.
+const JSON_FIELDS = new Set(['tags', 'performance']);
+function toJsonParam(v, fallback) {
+    if (v === undefined || v === null) return fallback;
+    try { return JSON.stringify(v); } catch { return fallback; }
+}
+// 'HH:MM' 24h or null.
+function normTime(v) {
+    if (!v) return null;
+    const m = String(v).trim().match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return null;
+    const h = Math.min(23, parseInt(m[1], 10));
+    const min = Math.min(59, parseInt(m[2], 10));
+    return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+}
+
 // ─── Public: newsletter signup ──────────────────────────────────────────────
 // Writes the email to the leads table so it shows up in the admin Marketing →
 // Newsletter mailing list (which UNIONs users + leads by email) and pushes
@@ -113,8 +135,9 @@ exports.listPosts = async (req, res) => {
         // string equality with today's date stops matching). Cast to text
         // here so the wire format is always plain calendar dates.
         const { rows } = await pool.query(
-            `SELECT id, title, description, due_date::text AS due_date,
-                    channel, content_type, status, created_at, updated_at
+            `SELECT id, title, description, caption, tags, due_date::text AS due_date,
+                    scheduled_time, channel, content_type, status, asset_url, link_url,
+                    reminder_date::text AS reminder_date, performance, created_at, updated_at
                FROM marketing_posts
               ORDER BY
                   (due_date IS NULL),       -- dated first, undated last
@@ -136,8 +159,8 @@ exports.calendar = async (req, res) => {
     try {
         const [posts, blogs] = await Promise.all([
             pool.query(
-                `SELECT id, title, description, due_date::text AS date, channel,
-                        content_type, status, updated_at
+                `SELECT id, title, description, due_date::text AS date, scheduled_time,
+                        channel, content_type, status, asset_url, updated_at
                    FROM marketing_posts`
             ),
             pool.query(
@@ -149,8 +172,9 @@ exports.calendar = async (req, res) => {
         const items = [
             ...posts.rows.map(p => ({
                 kind: 'marketing', id: p.id, title: p.title, description: p.description,
-                date: p.date, channel: p.channel, content_type: p.content_type || 'post',
-                status: p.status, updated_at: p.updated_at,
+                date: p.date, scheduled_time: p.scheduled_time, channel: p.channel,
+                content_type: p.content_type || 'post', status: p.status,
+                asset_url: p.asset_url, updated_at: p.updated_at,
             })),
             ...blogs.rows.map(b => ({
                 kind: 'blog', id: b.id, title: b.title, slug: b.slug,
@@ -166,7 +190,8 @@ exports.calendar = async (req, res) => {
 };
 
 exports.createPost = async (req, res) => {
-    let { title, description, due_date, channel, status, content_type } = req.body || {};
+    let { title, description, caption, tags, due_date, scheduled_time, channel,
+          status, content_type, asset_url, link_url, reminder_date, performance } = req.body || {};
     title = (title || '').trim();
     if (!title) return res.status(400).json({ error: 'Title is required.' });
     if (title.length > 300) title = title.slice(0, 300);
@@ -175,11 +200,17 @@ exports.createPost = async (req, res) => {
 
     try {
         const { rows } = await pool.query(
-            `INSERT INTO marketing_posts (title, description, due_date, channel, status, content_type)
-             VALUES ($1, $2, $3, $4, COALESCE($5, 'idea'), COALESCE($6, 'post'))
-             RETURNING id, title, description, due_date::text AS due_date,
-                       channel, content_type, status, created_at, updated_at`,
-            [title, description || null, due_date || null, channel || null, status || null, content_type || null]
+            `INSERT INTO marketing_posts
+                 (title, description, caption, tags, due_date, scheduled_time, channel,
+                  status, content_type, asset_url, link_url, reminder_date, performance)
+             VALUES ($1, $2, $3, COALESCE($4,'[]')::jsonb, $5, $6, $7,
+                     COALESCE($8, 'idea'), COALESCE($9, 'post'), $10, $11, $12,
+                     COALESCE($13,'{}')::jsonb)
+             RETURNING ${RETURN_COLS}`,
+            [title, description || null, caption || null, toJsonParam(tags, '[]'),
+             due_date || null, normTime(scheduled_time), channel || null, status || null,
+             content_type || null, asset_url || null, link_url || null, reminder_date || null,
+             toJsonParam(performance, '{}')]
         );
         logActivity({
             event_type: 'marketing.post.create',
@@ -200,7 +231,12 @@ exports.updatePost = async (req, res) => {
     const sets = [];
     const vals = [];
     let i = 1;
-    const allow = { title: 'title', description: 'description', due_date: 'due_date', channel: 'channel', status: 'status', content_type: 'content_type' };
+    const allow = {
+        title: 'title', description: 'description', caption: 'caption', tags: 'tags',
+        due_date: 'due_date', scheduled_time: 'scheduled_time', channel: 'channel',
+        status: 'status', content_type: 'content_type', asset_url: 'asset_url',
+        link_url: 'link_url', reminder_date: 'reminder_date', performance: 'performance',
+    };
     for (const [k, col] of Object.entries(allow)) {
         if (k in (req.body || {})) {
             let v = req.body[k];
@@ -215,6 +251,13 @@ exports.updatePost = async (req, res) => {
             if (k === 'content_type' && v && !VALID_CONTENT_TYPE.includes(v)) {
                 return res.status(400).json({ error: `Invalid type. Allowed: ${VALID_CONTENT_TYPE.join(', ')}.` });
             }
+            if (JSON_FIELDS.has(k)) {
+                // JSONB: stringify + cast. Missing/invalid → empty array/object.
+                vals.push(toJsonParam(v, k === 'tags' ? '[]' : '{}'));
+                sets.push(`${col} = $${i++}::jsonb`);
+                continue;
+            }
+            if (k === 'scheduled_time') v = normTime(v);
             if (v === '') v = null;
             vals.push(v);
             sets.push(`${col} = $${i++}`);
@@ -227,8 +270,7 @@ exports.updatePost = async (req, res) => {
     try {
         const { rows, rowCount } = await pool.query(
             `UPDATE marketing_posts SET ${sets.join(', ')} WHERE id = $${i}
-             RETURNING id, title, description, due_date::text AS due_date,
-                       channel, content_type, status, created_at, updated_at`,
+             RETURNING ${RETURN_COLS}`,
             vals
         );
         if (!rowCount) return res.status(404).json({ error: 'Post not found.' });
