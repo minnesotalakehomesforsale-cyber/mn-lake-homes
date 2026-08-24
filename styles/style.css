@@ -74,7 +74,7 @@
     /* Header bar spans a touch wider than page content so the logo/nav sit
        closer to the screen edges on wide screens. Tune here. */
     --header-w: 1760px;
-    --bg-dark: #000000;
+    --bg-dark: #0e141e;   /* brand dark (matches the hero + charcoal footer) — was pure #000, which showed as a stark black bar in the iOS bottom safe-area */
     --text-primary: #ffffff;
     --text-secondary: #a3a3a3;
     --highlight-color: #8c9ba5; /* Grey/blue metallic tone */
