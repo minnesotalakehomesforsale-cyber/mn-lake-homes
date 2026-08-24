@@ -99,6 +99,7 @@
         /* Off-canvas tab drawer + a floating hamburger — hidden on desktop, shown ≤900px */
         .dash-hamburger { display: none; align-items: center; justify-content: center; background: #fff; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(16,24,40,0.12); padding: 0.5rem; border-radius: 10px; color: #1a202c; cursor: pointer; }
         .dash-hamburger:hover { background: #f7f9fa; }
+        .dash-drawer-close { display: none; }   /* close (✕) button inside the drawer — mobile only */
         .dash-nav-overlay { display: none; }
         /* Lock the page behind the open drawer (position:fixed — iOS ignores overflow:hidden) */
         body.dash-nav-locked { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
@@ -322,6 +323,13 @@
 
             /* Just a floating hamburger, fixed in the top-left below the global header */
             .dash-hamburger { display: inline-flex; position: fixed; top: calc(var(--header-h) + 10px); left: 12px; z-index: 40; }
+            /* Close (✕) button inside the drawer, top-right */
+            .dash-drawer-close {
+                display: inline-flex; align-items: center; justify-content: center;
+                position: absolute; top: 0.85rem; right: 0.85rem; width: 36px; height: 36px;
+                border-radius: 9px; background: #f7f9fa; border: 1px solid #e2e8f0; color: #4a5568; cursor: pointer; z-index: 2;
+            }
+            .dash-drawer-close:hover { background: #edf2f7; }
 
             /* Sidebar → off-canvas slide-in drawer with the full vertical tab list */
             .dash-sidebar {
@@ -393,6 +401,9 @@
 
             <!-- Sidebar Navigation (fixed left rail on desktop, slide-in drawer on mobile) -->
             <div class="dash-sidebar" id="dash-sidebar">
+                <button class="dash-drawer-close" onclick="toggleDashNav(false)" aria-label="Close menu">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+                </button>
 
                 <div style="margin-bottom: 2rem; text-align: center; padding-bottom: 1.5rem; border-bottom: 1px solid #edf2f7;">
                     <div id="sidebar-name" style="font-weight: 800; font-size: 1.1rem; color: #1a202c; margin-bottom: 0.25rem;">Loading...</div>
