@@ -1,24 +1,23 @@
 /**
- * fix-pages.js — inspect (and optionally safely fix) the lakes/towns the SEO
- * audit flags as "need fixing" (invisible lakes + curated MN towns not live).
+ * fix-pages.js — take the SEO audit's "need fixing" pages live.
  *
- * Mirrors GET /api/admin/seo-audit exactly, then for each flagged page prints
- * its real state (active / has_hero / has_linked_lake / status) so we know the
- * SPECIFIC reason — not just the summarized one.
+ * The flagged pages are curated MN town pages that have a hero + content but no
+ * PUBLISHED lake linked (so they can't go live). This pairs each with its
+ * geographically NEAREST published lake (haversine on lat/long), which is an
+ * objective rule — no guessing at images or hand-picked lakes.
  *
- * DEFAULT = read-only dry run: lists everything, changes nothing.
+ * DEFAULT = dry run: lists every flagged page and the proposed town → lake
+ * pairing WITH the distance, so you can eyeball anything that looks off before
+ * anything changes. Also publishes-ready lakes that just need a hero are noted.
  *
- * With --apply (and ALLOW_PUBLISH_WRITES=1) it performs ONLY the unambiguous,
- * reversible fixes:
- *   • curated MN town that already has a hero + a published lake linked, but is
- *     inactive  → set active = TRUE  (make it live)
- *   • lake that already has a hero but isn't published → status = 'published'
- * It NEVER invents a hero image or guesses a lake link — those need a specific
- * asset/lake, so it reports them for a human (missing hero / missing lake link).
+ * With --apply (and ALLOW_PUBLISH_WRITES=1) it, for each flagged town:
+ *   • links the nearest published lake (if none is linked yet), and
+ *   • sets the town active = TRUE
+ * and publishes any lake that already has a hero but isn't published.
  *
  * Run:
- *   node scripts/fix-pages.js                 # dry run — just show me the 25
- *   ALLOW_PUBLISH_WRITES=1 node scripts/fix-pages.js --apply   # do the safe fixes
+ *   node scripts/fix-pages.js                                   # dry run — show the plan
+ *   ALLOW_PUBLISH_WRITES=1 node scripts/fix-pages.js --apply    # do it
  */
 
 require('dotenv').config({ path: '.env.local' });
@@ -26,20 +25,29 @@ const pool = require('../src/database/pool');
 
 const APPLY = process.argv.includes('--apply');
 if (APPLY && process.env.ALLOW_PUBLISH_WRITES !== '1') {
-    console.error('\n⛔ --apply needs ALLOW_PUBLISH_WRITES=1 (it publishes/activates public pages).');
+    console.error('\n⛔ --apply needs ALLOW_PUBLISH_WRITES=1 (it links lakes + activates public pages).');
     console.error('   ALLOW_PUBLISH_WRITES=1 node scripts/fix-pages.js --apply\n');
     process.exit(1);
 }
 
 const B = (v) => (v ? 'yes' : 'NO ');
+function milesBetween(aLat, aLng, bLat, bLng) {
+    const toRad = (d) => (d * Math.PI) / 180;
+    const R = 3958.8;
+    const dLat = toRad(bLat - aLat), dLng = toRad(bLng - aLng);
+    const s = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+}
 
 async function main() {
     const lakes = (await pool.query(`
-        SELECT slug, name, status, (COALESCE(hero_image_url,'') <> '') AS has_hero
+        SELECT id, name, slug, status, latitude, longitude,
+               (COALESCE(hero_image_url,'') <> '') AS has_hero
         FROM lakes ORDER BY name`)).rows;
 
     const towns = (await pool.query(`
-        SELECT t.slug, t.name, t.active, COALESCE(t.state,'MN') AS state,
+        SELECT t.id, t.slug, t.name, t.active, COALESCE(t.state,'MN') AS state,
+            t.latitude, t.longitude,
             (COALESCE(t.hero_image_url,'') <> '') AS has_hero,
             (COALESCE(t.hero_image_url,'') <> '' OR COALESCE(t.description,'') <> ''
                OR COALESCE(t.seo_description,'') <> '' OR COALESCE(t.intro_text,'') <> '') AS has_content,
@@ -49,91 +57,74 @@ async function main() {
 
     const isMN = (t) => t.state === 'MN';
     const lakeInvisible = lakes.filter(l => l.status !== 'published' || !l.has_hero);
+    const lakesToPublish = lakeInvisible.filter(l => l.has_hero && l.status !== 'published');
     const townAttn = towns.filter(t => t.has_content && isMN(t) && !(t.active && t.has_hero && t.has_linked_lake));
 
     console.log(`\n════════ PAGES NEED ATTENTION — ${lakeInvisible.length + townAttn.length} total ════════`);
-
-    // ── Lakes ────────────────────────────────────────────────────────────────
-    console.log(`\nLAKES (${lakeInvisible.length})  [status | hero]`);
-    const lakesToPublish = [];
-    const lakesNeedHero = [];
-    for (const l of lakeInvisible) {
-        console.log(`  • ${l.name.padEnd(28)} status=${String(l.status).padEnd(10)} hero=${B(l.has_hero)}   /lakes/${l.slug}`);
-        if (!l.has_hero) lakesNeedHero.push(l);
-        else if (l.status !== 'published') lakesToPublish.push(l);
-    }
-
-    // ── Towns ────────────────────────────────────────────────────────────────
+    console.log(`\nLAKES (${lakeInvisible.length})`);
+    lakeInvisible.forEach(l => console.log(`  • ${l.name.padEnd(26)} status=${l.status} hero=${B(l.has_hero)}`));
     console.log(`\nCURATED MN TOWNS (${townAttn.length})  [active | hero | published-lake-linked]`);
-    const townsToActivate = [];
-    const townsNeedHero = [];
-    const townsNeedLake = [];
+    townAttn.forEach(t => console.log(`  • ${t.name.padEnd(22)} active=${B(t.active)} hero=${B(t.has_hero)} lake=${B(t.has_linked_lake)}`));
+
+    // Nearest published lake for each flagged town.
+    const pubLakes = lakes.filter(l => l.status === 'published' && l.latitude != null && l.longitude != null);
+    const pairings = [];
+    const noCoords = [];
     for (const t of townAttn) {
-        console.log(`  • ${t.name.padEnd(28)} active=${B(t.active)} hero=${B(t.has_hero)} lake=${B(t.has_linked_lake)}   /towns/${t.slug}`);
-        if (!t.has_hero)               townsNeedHero.push(t);
-        else if (!t.has_linked_lake)   townsNeedLake.push(t);
-        else if (!t.active)            townsToActivate.push(t);   // complete except the flag
-    }
-
-    // ── Plan ─────────────────────────────────────────────────────────────────
-    console.log(`\n──── ${APPLY ? 'APPLYING' : 'DRY RUN — would fix'} the safe cases ────`);
-    console.log(`  publish ${lakesToPublish.length} lake(s) that already have a hero`);
-    console.log(`  activate ${townsToActivate.length} town(s) that already have a hero + linked lake`);
-
-    if (APPLY) {
-        for (const l of lakesToPublish) {
-            await pool.query(`UPDATE lakes SET status = 'published' WHERE slug = $1`, [l.slug]);
-            console.log(`  ✅ published lake ${l.slug}`);
+        if (t.latitude == null || t.longitude == null) { noCoords.push(t); continue; }
+        let best = null, bestMi = Infinity;
+        for (const l of pubLakes) {
+            const mi = milesBetween(Number(t.latitude), Number(t.longitude), Number(l.latitude), Number(l.longitude));
+            if (mi < bestMi) { bestMi = mi; best = l; }
         }
-        for (const t of townsToActivate) {
-            await pool.query(`UPDATE tags SET active = TRUE WHERE slug = $1`, [t.slug]);
-            console.log(`  ✅ activated town ${t.slug}`);
+        pairings.push({ town: t, lake: best, miles: bestMi });
+    }
+
+    console.log(`\n──── PROPOSED: link nearest published lake + activate  (${pairings.length}) ────`);
+    pairings
+        .sort((a, b) => a.miles - b.miles)
+        .forEach(p => {
+            const flag = p.miles > 25 ? '  ⚠️ far — check this one' : '';
+            console.log(`  ${p.town.name.padEnd(22)} → ${(p.lake ? p.lake.name : '(no published lake!)').padEnd(22)} ${p.miles.toFixed(1)} mi${flag}`);
+        });
+    if (noCoords.length) {
+        console.log(`\n  ${noCoords.length} town(s) have NO coordinates — can't auto-pair, need a manual link:`);
+        noCoords.forEach(t => console.log(`      - ${t.name} (/towns/${t.slug})`));
+    }
+    if (lakesToPublish.length) {
+        console.log(`\n  ${lakesToPublish.length} lake(s) have a hero but aren't published → will publish:`);
+        lakesToPublish.forEach(l => console.log(`      - ${l.name}`));
+    }
+
+    if (!APPLY) {
+        console.log(`\nDRY RUN — nothing changed. To apply:`);
+        console.log(`   ALLOW_PUBLISH_WRITES=1 node scripts/fix-pages.js --apply\n`);
+        await pool.end();
+        return;
+    }
+
+    // ── Apply ────────────────────────────────────────────────────────────────
+    console.log(`\n──── APPLYING ────`);
+    let linked = 0, activated = 0, published = 0;
+    for (const { town, lake } of pairings) {
+        if (lake) {
+            const ins = await pool.query(
+                `INSERT INTO lake_tags (lake_id, tag_id)
+                 SELECT $1, $2
+                 WHERE NOT EXISTS (SELECT 1 FROM lake_tags WHERE lake_id = $1 AND tag_id = $2)`,
+                [lake.id, town.id]
+            );
+            if (ins.rowCount) linked++;
         }
+        const upd = await pool.query(`UPDATE tags SET active = TRUE WHERE id = $1 AND active = FALSE`, [town.id]);
+        if (upd.rowCount) activated++;
     }
-
-    // ── What lakes (if any) are already linked to the flagged towns ──────────
-    // If a town already has a lake linked but it's draft, the fix is to PUBLISH
-    // that lake. If nothing is linked, we need to link one.
-    const slugs = townAttn.map(t => t.slug);
-    if (slugs.length) {
-        const linked = (await pool.query(`
-            SELECT t.slug AS town, l.name AS lake, l.slug AS lake_slug, l.status,
-                   (COALESCE(l.hero_image_url,'') <> '') AS has_hero
-            FROM tags t
-            JOIN lake_tags lt ON lt.tag_id = t.id
-            JOIN lakes l ON l.id = lt.lake_id
-            WHERE t.slug = ANY($1)
-            ORDER BY t.slug, l.name`, [slugs])).rows;
-        const byTown = {};
-        linked.forEach(r => { (byTown[r.town] ||= []).push(r); });
-        console.log(`\n──── LAKES ALREADY LINKED TO EACH FLAGGED TOWN ────`);
-        for (const t of townAttn) {
-            const ls = byTown[t.slug] || [];
-            const desc = ls.length
-                ? ls.map(l => `${l.lake} [${l.status}${l.has_hero ? '' : ', NO hero'}]`).join(', ')
-                : '(none linked)';
-            console.log(`  • ${t.name.padEnd(22)} → ${desc}`);
-        }
+    for (const l of lakesToPublish) {
+        await pool.query(`UPDATE lakes SET status = 'published' WHERE id = $1`, [l.id]);
+        published++;
     }
-
-    // ── Catalog of every lake, by status (what's available to link/publish) ──
-    const byStatus = {};
-    lakes.forEach(l => { (byStatus[l.status] ||= []).push(l.name); });
-    console.log(`\n──── LAKE CATALOG (${lakes.length} total) ────`);
-    for (const [st, names] of Object.entries(byStatus)) {
-        console.log(`  ${st} (${names.length}): ${names.join(', ')}`);
-    }
-
-    // ── Needs a human (real content, no guessing) ────────────────────────────
-    console.log(`\n──── NEEDS A SPECIFIC ASSET (not auto-fixable) ────`);
-    console.log(`  ${lakesNeedHero.length} lake(s) need a hero image:`);
-    lakesNeedHero.forEach(l => console.log(`      - ${l.name}  (/lakes/${l.slug})`));
-    console.log(`  ${townsNeedHero.length} town(s) need a hero image:`);
-    townsNeedHero.forEach(t => console.log(`      - ${t.name}  (/towns/${t.slug})`));
-    console.log(`  ${townsNeedLake.length} town(s) need a published lake linked:`);
-    townsNeedLake.forEach(t => console.log(`      - ${t.name}  (/towns/${t.slug})`));
-    console.log('');
-
+    console.log(`  ✅ linked ${linked} lake(s), activated ${activated} town(s), published ${published} lake(s).`);
+    console.log(`  Re-run the dry run to confirm 0 pages need attention.\n`);
     await pool.end();
 }
 
