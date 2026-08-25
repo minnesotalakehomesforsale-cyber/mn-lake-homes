@@ -206,7 +206,7 @@
 <div class="modal-overlay-admin" id="add-agent-modal">
     <div class="modal-box">
         <h2>Add New Agent</h2>
-        <p>Create a new user account and agent profile. Use <strong>Invite</strong> to send them a comped account with login credentials by email — they'll log in and finish their profile.</p>
+        <p>Create a new user account and agent profile. Use <strong>Invite</strong> to email them a login link to finish their profile — free by default (they can upgrade anytime); comping to a paid tier is optional.</p>
         <!-- Mode toggle: "Create" leaves the existing flow alone; "Invite"
              swaps the modal to the new admin-invite endpoint (auto-generated
              password, comped tier, walkthrough email). -->
@@ -240,12 +240,19 @@
                 <label>License Number</label>
                 <input type="text" id="a-license" class="modal-input" placeholder="MN-12345">
             </div>
-            <div class="modal-field">
+            <div class="modal-field full" id="a-comp-wrap" style="display:none;">
+                <label style="display:flex;align-items:center;gap:0.55rem;cursor:pointer;font-weight:600;">
+                    <input type="checkbox" id="a-comp" onchange="toggleCompTier()" style="width:auto;margin:0;">
+                    Comp them at a paid tier (optional)
+                </label>
+                <p style="font-size:0.8rem;color:#718096;margin:0.3rem 0 0;">Leave off to invite them on the free <strong>Lake Agent</strong> tier — they just log in and finish their profile. Turn on only to gift a paid tier.</p>
+            </div>
+            <div class="modal-field" id="a-membership-wrap">
                 <label id="a-membership-label">Membership Tier</label>
                 <select id="a-membership" class="modal-input">
-                    <option value="basic">Basic</option>
-                    <option value="mn_lake_specialist">MN Lake Specialist</option>
-                    <option value="top_agent">Top Agent</option>
+                    <option value="basic">Certified Lake Agent</option>
+                    <option value="mn_lake_specialist">Lake Specialist</option>
+                    <option value="top_agent">Elite Lake Agent</option>
                 </select>
             </div>
             <div class="modal-field" id="a-status-wrap">
@@ -444,10 +451,20 @@
         // Invite mode hides the password (auto-generated) and profile-status
         // (always 'draft' so the invitee finishes setup themselves), and
         // relabels the tier as the comped tier.
-        document.getElementById('a-pass-wrap').style.display    = mode === 'invite' ? 'none' : '';
-        document.getElementById('a-status-wrap').style.display  = mode === 'invite' ? 'none' : '';
-        document.getElementById('a-membership-label').textContent = mode === 'invite' ? 'Comp them at this tier' : 'Membership Tier';
-        document.getElementById('save-agent-btn').textContent     = mode === 'invite' ? 'Send Invite Email' : 'Create Agent';
+        const invite = mode === 'invite';
+        document.getElementById('a-pass-wrap').style.display    = invite ? 'none' : '';
+        document.getElementById('a-status-wrap').style.display  = invite ? 'none' : '';
+        document.getElementById('a-comp-wrap').style.display    = invite ? '' : 'none';
+        document.getElementById('a-membership-label').textContent = invite ? 'Comp tier' : 'Membership Tier';
+        document.getElementById('save-agent-btn').textContent     = invite ? 'Send Invite Email' : 'Create Agent';
+        if (invite) document.getElementById('a-comp').checked = false;   // free by default
+        toggleCompTier();
+    }
+    // Invite mode: the tier dropdown only appears when you choose to comp.
+    function toggleCompTier() {
+        const invite = _addMode === 'invite';
+        const comp = document.getElementById('a-comp').checked;
+        document.getElementById('a-membership-wrap').style.display = (!invite || comp) ? '' : 'none';
     }
 
     async function submitAgentForm() {
@@ -470,11 +487,13 @@
         try {
             if (_addMode === 'invite') {
                 btn.textContent = 'Sending…';
+                const comp = document.getElementById('a-comp').checked;
                 const payload = {
                     first_name, last_name, email,
                     brokerage_name:  document.getElementById('a-brokerage').value.trim(),
                     license_number:  document.getElementById('a-license').value.trim(),
-                    comp_tier:       document.getElementById('a-membership').value,
+                    comp,   // false = free Lake Agent invite (default); true = gift a paid tier
+                    comp_tier:       comp ? document.getElementById('a-membership').value : undefined,
                 };
                 const res = await fetch('/api/admin/invite-agent', {
                     method: 'POST',
@@ -494,6 +513,7 @@
                     : `⚠️ Account created, but the email did NOT send${data.email_error ? `:\n${data.email_error}` : '.'}\n\nShare these credentials with them manually:`;
                 alert(
                     `${header}\n\n` +
+                    `Tier: ${data.tier_label}${data.comped ? ' (comped)' : ' (free — they can upgrade anytime)'}\n` +
                     `Login URL: ${data.login_url}\n` +
                     `Temporary password: ${data.tempPassword}\n\n` +
                     `(Always save these — they log in with them, then change the password from Account.)`

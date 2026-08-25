@@ -1123,18 +1123,27 @@ function credBlock(loginUrl, email, tempPassword) {
         </div>`;
 }
 
-function sendAgentInvite({ to, first_name, tier_label, tempPassword }) {
+function sendAgentInvite({ to, first_name, tier_label, tempPassword, comped = false }) {
     const name = first_name || 'there';
     const loginUrl = `${SITE_URL}/pages/public/agent-login.html`;
+    const subject = comped
+        ? `You're invited to MN Lake Homes — your ${tier_label} profile is ready`
+        : `You're invited to MN Lake Homes — finish your agent profile`;
+    const preheader = comped
+        ? `Your ${tier_label} agent profile is comped and ready to set up.`
+        : `Your free agent profile is ready — log in and finish it.`;
+    const intro = comped
+        ? `Our team set up a complimentary <strong>${tier_label}</strong> agent profile for you on Minnesota Lake Homes. Your account is live and the membership is fully paid for — you just need to log in and fill in your details so buyers and sellers can find you.`
+        : `Our team started an agent profile for you on Minnesota Lake Homes — the site where buyers search for their lake. Just log in and fill in your details so buyers and sellers can find you. Getting listed is free; you can turn on matched leads and featured placement whenever you're ready.`;
     return sendEmail({
         to,
-        subject: `You're invited to MN Lake Homes — your ${tier_label} profile is ready`,
+        subject,
         html: layout({
             title: `Welcome to the network, ${name}.`,
-            preheader: `Your ${tier_label} agent profile is comped and ready to set up.`,
+            preheader,
             body: `
                 <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
-                  Our team set up a complimentary <strong>${tier_label}</strong> agent profile for you on Minnesota Lake Homes. Your account is live and the membership is fully paid for — you just need to log in and fill in your details so buyers and sellers can find you.
+                  ${intro}
                 </p>
                 ${credBlock(loginUrl, to, tempPassword)}
                 <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">

@@ -2688,15 +2688,24 @@ function slugifyName(s) {
  * returns the temp password so the admin can re-share if the email failed.
  */
 const inviteAgent = async (req, res) => {
-    let { first_name, last_name, email, brokerage_name, license_number, comp_tier } = req.body || {};
+    let { first_name, last_name, email, brokerage_name, license_number, comp, comp_tier } = req.body || {};
     first_name = String(first_name || '').trim();
     last_name  = String(last_name  || '').trim();
     email      = String(email      || '').trim().toLowerCase();
-    comp_tier  = String(comp_tier || 'mn_lake_specialist').trim();
 
     if (!first_name || !email) return res.status(400).json({ error: 'First name and email are required.' });
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email format.' });
-    if (!VALID_AGENT_TIERS.has(comp_tier)) return res.status(400).json({ error: `Unknown comp tier "${comp_tier}".` });
+
+    // An invite defaults to the FREE "Lake Agent" tier — it's just "here's your
+    // profile, log in and finish it," not a paid comp. Only comp to a paid tier
+    // when the admin explicitly opts in.
+    const doComp = comp === true || comp === 'true';
+    let membershipCode = 'free';
+    if (doComp) {
+        comp_tier = String(comp_tier || 'mn_lake_specialist').trim();
+        if (!VALID_AGENT_TIERS.has(comp_tier)) return res.status(400).json({ error: `Unknown comp tier "${comp_tier}".` });
+        membershipCode = comp_tier;
+    }
 
     const client = await pool.connect();
     try {
@@ -2721,10 +2730,10 @@ const inviteAgent = async (req, res) => {
         );
         const userId = userRes.rows[0].id;
 
-        const memRes = await client.query(`SELECT id FROM memberships WHERE code = $1 LIMIT 1`, [comp_tier]);
+        const memRes = await client.query(`SELECT id FROM memberships WHERE code = $1 LIMIT 1`, [membershipCode]);
         if (!memRes.rowCount) {
             await client.query('ROLLBACK');
-            return res.status(400).json({ error: `Membership tier "${comp_tier}" not found in the DB.` });
+            return res.status(400).json({ error: `Membership tier "${membershipCode}" not found in the DB.` });
         }
         const membershipId = memRes.rows[0].id;
 
@@ -2736,9 +2745,9 @@ const inviteAgent = async (req, res) => {
         await client.query(
             `INSERT INTO agents (user_id, membership_id, slug, display_name, brokerage_name,
                                  license_number, profile_status, is_published, tier_comped)
-             VALUES ($1, $2, $3, $4, $5, $6, 'draft', false, TRUE)`,
+             VALUES ($1, $2, $3, $4, $5, $6, 'draft', false, $7)`,
             [userId, membershipId, slug, display_name,
-             brokerage_name?.trim() || null, license_number?.trim() || null]
+             brokerage_name?.trim() || null, license_number?.trim() || null, doComp]
         );
 
         await client.query('COMMIT');
@@ -2749,8 +2758,9 @@ const inviteAgent = async (req, res) => {
             inviteEmail = await emailService.sendAgentInvite({
                 to: email,
                 first_name,
-                tier_label: TIER_LABEL[comp_tier] || comp_tier,
+                tier_label: doComp ? (TIER_LABEL[comp_tier] || comp_tier) : 'Lake Agent',
                 tempPassword,
+                comped: doComp,
             });
         } catch (err) {
             inviteEmail = { error: err.message };
@@ -2766,7 +2776,7 @@ const inviteAgent = async (req, res) => {
             event_scope: 'agents',
             actor: { type: 'admin', id: req.user?.userId, label: req.user?.display_name || 'admin' },
             target: { type: 'user', id: userId, label: email },
-            details: { comp_tier, brokerage_name: brokerage_name || null },
+            details: { comped: doComp, membership_code: membershipCode, brokerage_name: brokerage_name || null },
             req,
         });
 
@@ -2774,7 +2784,9 @@ const inviteAgent = async (req, res) => {
             success: true,
             user_id: userId,
             email,
-            comp_tier,
+            comped: doComp,
+            membership_code: membershipCode,
+            tier_label: doComp ? (TIER_LABEL[comp_tier] || comp_tier) : 'Lake Agent',
             tempPassword,     // returned so admin can copy/paste if email fails
             login_url: `${(process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '')}/pages/public/agent-login.html`,
             email_sent: emailSent,
