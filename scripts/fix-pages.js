@@ -91,6 +91,39 @@ async function main() {
         }
     }
 
+    // ── What lakes (if any) are already linked to the flagged towns ──────────
+    // If a town already has a lake linked but it's draft, the fix is to PUBLISH
+    // that lake. If nothing is linked, we need to link one.
+    const slugs = townAttn.map(t => t.slug);
+    if (slugs.length) {
+        const linked = (await pool.query(`
+            SELECT t.slug AS town, l.name AS lake, l.slug AS lake_slug, l.status,
+                   (COALESCE(l.hero_image_url,'') <> '') AS has_hero
+            FROM tags t
+            JOIN lake_tags lt ON lt.tag_id = t.id
+            JOIN lakes l ON l.id = lt.lake_id
+            WHERE t.slug = ANY($1)
+            ORDER BY t.slug, l.name`, [slugs])).rows;
+        const byTown = {};
+        linked.forEach(r => { (byTown[r.town] ||= []).push(r); });
+        console.log(`\n──── LAKES ALREADY LINKED TO EACH FLAGGED TOWN ────`);
+        for (const t of townAttn) {
+            const ls = byTown[t.slug] || [];
+            const desc = ls.length
+                ? ls.map(l => `${l.lake} [${l.status}${l.has_hero ? '' : ', NO hero'}]`).join(', ')
+                : '(none linked)';
+            console.log(`  • ${t.name.padEnd(22)} → ${desc}`);
+        }
+    }
+
+    // ── Catalog of every lake, by status (what's available to link/publish) ──
+    const byStatus = {};
+    lakes.forEach(l => { (byStatus[l.status] ||= []).push(l.name); });
+    console.log(`\n──── LAKE CATALOG (${lakes.length} total) ────`);
+    for (const [st, names] of Object.entries(byStatus)) {
+        console.log(`  ${st} (${names.length}): ${names.join(', ')}`);
+    }
+
     // ── Needs a human (real content, no guessing) ────────────────────────────
     console.log(`\n──── NEEDS A SPECIFIC ASSET (not auto-fixable) ────`);
     console.log(`  ${lakesNeedHero.length} lake(s) need a hero image:`);
