@@ -4472,6 +4472,9 @@ async function ensureTables() {
             'pelican-lake':      ['pelican-rapids','detroit-lakes'],
             'cass-lake':         ['cass-lake','bemidji'],
             'white-bear-lake':   ['white-bear-lake','mahtomedi','lino-lakes'],
+            'lake-superior':     ['duluth','two-harbors'],
+            'island-lake':       ['hermantown','proctor','cloquet'],
+            'grindstone-lake':   ['hinckley'],
         };
         const seedPairs = [];
         Object.entries(LAKE_TOWN_SEED).forEach(([lakeSlug, townSlugs]) => {
