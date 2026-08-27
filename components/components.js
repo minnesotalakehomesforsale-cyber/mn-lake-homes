@@ -39,7 +39,10 @@ window.mnPlaceCard = function (opts) {
 window.mnlhAgentCard = function (agent) {
     const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const code = agent.membership_code || '';
-    const featured = !!agent.is_featured || ['mn_lake_specialist', 'top_agent', 'premium', 'founder'].includes(code);
+    // Elite ($149 — top_agent/premium/founder) gets a distinct GOLD badge; Prime
+    // ($39 — mn_lake_specialist) and any manually-featured agent keep the blue star.
+    const elite = ['top_agent', 'premium', 'founder', 'founder_public'].includes(code);
+    const featured = elite || !!agent.is_featured || code === 'mn_lake_specialist';
     // No fallback bio — a bio-less agent omits the block entirely (empty beats
     // boilerplate repeated across the lake pages we rank).
     const bioRaw = (agent.bio || '').trim();
@@ -57,7 +60,9 @@ window.mnlhAgentCard = function (agent) {
         ? `<img src="${esc(agent.profile_photo_url)}" alt="${esc(agent.display_name)}" loading="lazy">`
         : `<span class="ac-initials">${initials}</span>`;
     const star = '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
-    const badge = featured ? `<span class="ac-badge" title="Lake Specialist">${star}</span>` : '';
+    const badge = elite
+        ? `<span class="ac-badge ac-badge-elite" title="Elite Lake Agent">${star}</span>`
+        : (featured ? `<span class="ac-badge" title="Lake Specialist">${star}</span>` : '');
     const yrs = Number(agent.years_experience);
     const years = yrs > 0 ? `<div class="ac-years">${yrs} year${yrs === 1 ? '' : 's'} experience</div>` : '';
     const broker = agent.brokerage_name ? `<div class="ac-broker">${esc(agent.brokerage_name)}</div>` : '';

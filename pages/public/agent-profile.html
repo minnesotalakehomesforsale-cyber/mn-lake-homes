@@ -229,9 +229,10 @@
                 : '';
 
             const badgeLabel = agent.membership_badge || 'Lake Agent';
+            const isElite = badgeLabel.trim().toLowerCase() === 'elite lake agent';
             const showPlainBadge = !(agent.is_featured && badgeLabel.trim().toLowerCase() === 'top agent');
             const plainBadge = showPlainBadge
-                ? `<span style="display:inline-block; background:var(--accent-blue); color:#fff; padding:0.4rem 1.2rem; border-radius:99px; font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;">${badgeLabel}</span>`
+                ? `<span style="display:inline-block; ${isElite ? 'background:linear-gradient(135deg,#f6d365 0%,#c79a2e 100%); color:#3d2c00; box-shadow:0 4px 14px rgba(199,154,46,0.5);' : 'background:var(--accent-blue); color:#fff;'} padding:0.4rem 1.2rem; border-radius:99px; font-size:0.85rem; font-weight:800; text-transform:uppercase; letter-spacing:1px;">${badgeLabel}</span>`
                 : '';
 
             // (Removed per owner: the "Top Performer" and "Responds within an

@@ -3320,6 +3320,8 @@ body.hero-nav.nav-menu-open .navbar .nav-actions a { border-color: #d9e0ea !impo
 .ac-avatar img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; }
 .ac-initials { font-weight: 800; color: #4a5568; font-size: 1.1rem; }
 .ac-badge { position: absolute; right: -2px; bottom: -2px; width: 20px; height: 20px; border-radius: 50%; background: #1d6df2; color: #fff; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; }
+/* Elite ($149) — distinct gold badge that sets the top tier apart from Prime's blue. */
+.ac-badge-elite { background: linear-gradient(135deg, #f6d365 0%, #c79a2e 100%); width: 22px; height: 22px; box-shadow: 0 2px 7px rgba(199, 154, 46, 0.55); }
 .ac-id { min-width: 0; }
 .ac-name { font-size: 1.05rem; font-weight: 800; color: #1a202c; margin: 0; line-height: 1.2; }
 .ac-broker { font-size: 0.85rem; color: #718096; margin-top: 0.12rem; }
