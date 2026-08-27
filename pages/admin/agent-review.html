@@ -363,6 +363,70 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Rich profile sections — 1:1 with what the agent edits in their portal -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Profile Content</div>
+                        <span style="font-size:0.8rem;color:#a0aec0;font-weight:500;">The same sections the agent edits in their portal</span>
+                    </div>
+                    <div class="panel-body">
+                        <style>
+                            .px-block { margin-bottom: 1.5rem; }
+                            .px-block > .field-label { margin-bottom: 0.5rem; }
+                            .px-row { display: grid; gap: 0.6rem; align-items: start; background: #f7f9fa; border: 1px solid #edf2f7; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.6rem; }
+                            .px-row .px-del { justify-self: end; background: none; border: none; color: #c53030; font-size: 0.8rem; font-weight: 700; cursor: pointer; padding: 0; }
+                            .px-add-btn { padding: 0.5rem 0.9rem; border: 1px dashed #cbd5e0; background: #fff; border-radius: 8px; font-size: 0.82rem; font-weight: 700; color: #4a5568; cursor: pointer; font-family: inherit; }
+                            .px-add-btn:hover { border-color: #1d6df2; color: #1d6df2; }
+                            .px-faq-q { font-size: 0.85rem; font-weight: 700; color: #2d3748; margin: 0 0 0.35rem; }
+                        </style>
+
+                        <div class="px-block">
+                            <div class="field-label">FAQ answers</div>
+                            <div id="px-faq"></div>
+                        </div>
+
+                        <div class="px-block">
+                            <div class="field-label">By the numbers</div>
+                            <div class="field-grid">
+                                <div class="field-group"><div class="field-label">Homes sold</div><input class="field-input" id="px-homes-sold" placeholder="e.g. 214"></div>
+                                <div class="field-group"><div class="field-label">Total volume</div><input class="field-input" id="px-total-volume" placeholder="e.g. $96M"></div>
+                                <div class="field-group"><div class="field-label">Avg days on market</div><input class="field-input" id="px-avg-days" placeholder="e.g. 23"></div>
+                                <div class="field-group"><div class="field-label">Sale-to-list price</div><input class="field-input" id="px-sale-to-list" placeholder="e.g. 99.2%"></div>
+                            </div>
+                        </div>
+
+                        <div class="px-block">
+                            <div class="field-label">Services offered <span style="text-transform:none;color:#a0aec0;font-weight:600;">— one per line</span></div>
+                            <div class="field-grid">
+                                <div class="field-group"><div class="field-label">Buyer services</div><textarea class="field-input" id="px-services-buyer" rows="5"></textarea></div>
+                                <div class="field-group"><div class="field-label">Seller services</div><textarea class="field-input" id="px-services-seller" rows="5"></textarea></div>
+                            </div>
+                        </div>
+
+                        <div class="px-block">
+                            <div class="field-label">How I work <span style="text-transform:none;color:#a0aec0;font-weight:600;">— ordered steps</span></div>
+                            <div id="px-how-rows"></div>
+                            <button type="button" class="px-add-btn" onclick="pxAddHow()">+ Add step</button>
+                        </div>
+
+                        <div class="px-block">
+                            <div class="field-label">Credentials <span style="text-transform:none;color:#a0aec0;font-weight:600;">— one per line</span></div>
+                            <textarea class="field-input" id="px-credentials" rows="4" placeholder="ABR — Accredited Buyer's Representative&#10;GRI — Graduate, REALTOR Institute"></textarea>
+                        </div>
+
+                        <div class="px-block">
+                            <div class="field-label">Awards &amp; recognition</div>
+                            <div id="px-award-rows"></div>
+                            <button type="button" class="px-add-btn" onclick="pxAddAward()">+ Add award</button>
+                        </div>
+
+                        <div class="save-row">
+                            <span id="px-save-msg" class="save-msg">✓ Saved</span>
+                            <button class="btn-save" onclick="saveAgentProfile()">Save Profile Changes</button>
+                        </div>
+                    </div>
+                </div>
         </div><!-- end tab-content-profile -->
 
         <!-- TAB: Service Areas -->
@@ -864,6 +928,7 @@
         document.getElementById('p-city').value     = a.city            || '';
         document.getElementById('p-state').value    = a.state           || 'Minnesota';
         document.getElementById('p-bio').value      = a.bio             || '';
+        populatePxEditors(a);   // FAQ + profile_extra sections (1:1 with agent portal)
         document.getElementById('p-slug').value     = a.slug            || '';
         document.getElementById('p-id').value       = a.id              || '';
 
@@ -1269,6 +1334,87 @@
     }
 
     // ── Save Agent Profile ───────────────────────────────────────────────────
+    // ── Rich profile sections (FAQ + profile_extra) — 1:1 with the agent portal ──
+    const PX_FAQS = [
+        { key: 'why_me',          q: 'Why work with me?' },
+        { key: 'local_knowledge', q: 'Which areas and lakes do you know best?' },
+        { key: 'buyers',          q: 'How do you help buyers find the right lake home?' },
+        { key: 'sellers',         q: "What's your approach to selling lakefront property?" },
+        { key: 'experience',      q: 'What experience do you have with waterfront real estate?' },
+    ];
+    function pxEsc(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
+    function pxLines(id) { return (document.getElementById(id)?.value || '').split('\n').map(s => s.trim()).filter(Boolean); }
+
+    function populatePxEditors(a) {
+        const asObj = (v) => (v && typeof v === 'object') ? v : (() => { try { return JSON.parse(v || '{}'); } catch { return {}; } })();
+        const px = asObj(a && a.profile_extra);
+        const faq = asObj(a && a.faq);
+        document.getElementById('px-faq').innerHTML = PX_FAQS.map(f =>
+            `<div style="margin-bottom:0.9rem;"><div class="px-faq-q">${pxEsc(f.q)}</div>`
+            + `<textarea class="field-input" id="px-faq-${f.key}" rows="3">${pxEsc(faq[f.key] || '')}</textarea></div>`).join('');
+        const st = px.stats || {};
+        document.getElementById('px-homes-sold').value   = st.homes_sold   || '';
+        document.getElementById('px-total-volume').value = st.total_volume || '';
+        document.getElementById('px-avg-days').value     = st.avg_days     || '';
+        document.getElementById('px-sale-to-list').value = st.sale_to_list || '';
+        document.getElementById('px-services-buyer').value  = (px.services_buyer  || []).join('\n');
+        document.getElementById('px-services-seller').value = (px.services_seller || []).join('\n');
+        document.getElementById('px-credentials').value     = (px.credentials     || []).join('\n');
+        renderPxHowRows(px.how_i_work || []);
+        renderPxAwardRows(px.awards || []);
+    }
+
+    function renderPxHowRows(steps) { const h = document.getElementById('px-how-rows'); h.innerHTML = ''; (steps || []).forEach(s => pxAddHow(s)); }
+    function pxAddHow(step) {
+        step = (step && typeof step === 'object') ? step : {};
+        const row = document.createElement('div');
+        row.className = 'px-row px-how-row';
+        row.innerHTML = `<input class="field-input px-how-title" placeholder="Step title" value="${pxEsc(step.title || '')}">`
+            + `<textarea class="field-input px-how-body" rows="2" placeholder="What happens in this step…">${pxEsc(step.body || '')}</textarea>`
+            + `<button type="button" class="px-del" onclick="this.closest('.px-row').remove()">Remove</button>`;
+        document.getElementById('px-how-rows').appendChild(row);
+    }
+    function renderPxAwardRows(awards) { const h = document.getElementById('px-award-rows'); h.innerHTML = ''; (awards || []).forEach(a => pxAddAward(a)); }
+    function pxAddAward(aw) {
+        aw = (aw && typeof aw === 'object') ? aw : {};
+        const row = document.createElement('div');
+        row.className = 'px-row px-award-row';
+        row.style.gridTemplateColumns = '90px 1fr 1fr auto';
+        row.innerHTML = `<input class="field-input px-award-year" placeholder="Year" value="${pxEsc(aw.year || '')}">`
+            + `<input class="field-input px-award-title" placeholder="Award / recognition" value="${pxEsc(aw.title || '')}">`
+            + `<input class="field-input px-award-org" placeholder="Organization" value="${pxEsc(aw.org || '')}">`
+            + `<button type="button" class="px-del" onclick="this.closest('.px-row').remove()">×</button>`;
+        document.getElementById('px-award-rows').appendChild(row);
+    }
+
+    function collectFaq() {
+        const out = {};
+        PX_FAQS.forEach(f => { const v = (document.getElementById('px-faq-' + f.key)?.value || '').trim(); if (v) out[f.key] = v; });
+        return out;
+    }
+    function collectProfileExtra() {
+        const stats = {};
+        [['homes_sold', 'px-homes-sold'], ['total_volume', 'px-total-volume'], ['avg_days', 'px-avg-days'], ['sale_to_list', 'px-sale-to-list']]
+            .forEach(([k, id]) => { const v = (document.getElementById(id)?.value || '').trim(); if (v) stats[k] = v; });
+        const how = [...document.querySelectorAll('.px-how-row')].map(r => ({
+            title: r.querySelector('.px-how-title').value.trim(),
+            body:  r.querySelector('.px-how-body').value.trim(),
+        })).filter(s => s.title);
+        const awards = [...document.querySelectorAll('.px-award-row')].map(r => ({
+            year:  r.querySelector('.px-award-year').value.trim(),
+            title: r.querySelector('.px-award-title').value.trim(),
+            org:   r.querySelector('.px-award-org').value.trim(),
+        })).filter(a => a.title);
+        const out = {};
+        if (Object.keys(stats).length) out.stats = stats;
+        const sb = pxLines('px-services-buyer');  if (sb.length) out.services_buyer  = sb;
+        const ss = pxLines('px-services-seller'); if (ss.length) out.services_seller = ss;
+        if (how.length) out.how_i_work = how;
+        const creds = pxLines('px-credentials');  if (creds.length) out.credentials = creds;
+        if (awards.length) out.awards = awards;
+        return out;
+    }
+
     async function saveAgentProfile() {
         const payload = {
             display_name:    document.getElementById('p-name').value.trim(),
@@ -1286,6 +1432,8 @@
             // yet (e.g. saving very fast before the catalog fetch returns).
             service_areas:   [...(window._profileAreas || [])],
             specialties:     [...(window._profileSpecs || [])],
+            faq:             collectFaq(),
+            profile_extra:   collectProfileExtra(),
         };
 
         try {
@@ -1296,6 +1444,7 @@
             });
             if (res.ok) {
                 showMsg('profile-save-msg');
+                showMsg('px-save-msg');
                 // Refresh header
                 document.getElementById('agent-headline').textContent = payload.display_name || agentData.display_name;
             } else {

@@ -189,11 +189,15 @@ const updateAgentProfile = async (req, res) => {
         display_name, brokerage_name, license_number, years_experience,
         phone_public, email_public, website_url,
         city, state, service_areas, specialties, bio,
-        profile_photo_url, is_featured
+        profile_photo_url, is_featured, faq, profile_extra
     } = req.body;
 
     try {
         const cleanArray = (arr) => Array.isArray(arr) ? arr.map(a => a.trim()).filter(Boolean) : [];
+        // Same sanitizers the agent portal uses — so admin edits are stored
+        // identically to agent self-edits (1:1 field parity).
+        const { cleanAgentFaq } = require('../services/agent-faq');
+        const { cleanProfileExtra } = require('../services/agent-profile-extra');
 
         await pool.query(
             `UPDATE agents SET
@@ -211,8 +215,10 @@ const updateAgentProfile = async (req, res) => {
                 bio = COALESCE($12, bio),
                 profile_photo_url = COALESCE($13, profile_photo_url),
                 is_featured = COALESCE($14, is_featured),
+                faq = COALESCE($15::jsonb, faq),
+                profile_extra = COALESCE($16::jsonb, profile_extra),
                 updated_at = NOW()
-             WHERE id = $15`,
+             WHERE id = $17`,
             [
                 display_name || null,
                 brokerage_name || null,
@@ -228,6 +234,8 @@ const updateAgentProfile = async (req, res) => {
                 bio || null,
                 profile_photo_url || null,
                 typeof is_featured === 'boolean' ? is_featured : null,
+                faq !== undefined ? JSON.stringify(cleanAgentFaq(faq)) : null,
+                profile_extra !== undefined ? JSON.stringify(cleanProfileExtra(profile_extra)) : null,
                 id
             ]
         );
