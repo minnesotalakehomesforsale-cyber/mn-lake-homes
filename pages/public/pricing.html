@@ -133,7 +133,7 @@
         <div class="toggle-row">
             <div class="period-toggle" role="tablist" aria-label="Billing period">
                 <button id="btn-monthly" class="on" onclick="setPeriod('monthly')">Monthly</button>
-                <button id="btn-annual"          onclick="setPeriod('annual')">Annual <span class="save-pill">Save ~15%</span></button>
+                <button id="btn-annual"          onclick="setPeriod('annual')">Annual <span class="save-pill">2 months free</span></button>
             </div>
         </div>
     </section>
@@ -177,7 +177,7 @@
             grid.innerHTML = tiers.map(t => {
                 const price = _period === 'annual' ? t.annual_price : t.monthly_price;
                 const note  = _period === 'annual'
-                    ? `Billed annually · ${dollars(Math.round(price / 12))} / month`
+                    ? `Billed annually · ${dollars(Math.round(price / 12))} / month · 2 months free`
                     : 'Billed monthly · cancel anytime';
                 const stripeReady = _period === 'annual' ? t.stripe_price_annual : t.stripe_price_monthly;
                 const features = (t.features || []).map(f => `
