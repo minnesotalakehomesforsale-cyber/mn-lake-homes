@@ -2315,14 +2315,29 @@ document.addEventListener('keydown', e => {
 
 // ─── First-party analytics layer ───────────────────────────────────────────
 // Cookieless, first-party ONLY (organic-only Phase 1). Exposes
-// window.trackConversion(eventName, params), which mirrors high-intent events to
-// /api/analytics/conversion (read by the admin dashboard + metrics tab). The
-// third-party pixels (GA4, Meta, Google Ads) and the cookie-consent banner were
-// removed — no GA4/Meta/Ads IDs are coming, and HubSpot lead capture runs
-// server-side. The helper never breaks a flow.
+// window.trackConversion(eventName, params) mirrors high-intent events to
+// /api/analytics/conversion (read by the admin dashboard + metrics tab) AND,
+// when a GA4 measurement ID is configured (ga4_id in /api/config/public),
+// forwards them to GA4 as gtag events. GA4 loads ONLY when that ID is set — with
+// no ID, nothing third-party loads. HubSpot lead capture runs server-side. The
+// helper never breaks a flow.
 (function loadLaunchTracking() {
     if (window.__launchTrackingInit) return;
     window.__launchTrackingInit = true;
+
+    // ── GA4 (Google Analytics 4) — loads only when a measurement ID is set ────
+    fetch('/api/config/public').then(r => r.json()).then(cfg => {
+        const id = cfg && cfg.ga4_id;
+        if (!id) return;                        // no ID → GA4 never loads
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = function () { window.dataLayer.push(arguments); };
+        window.gtag('js', new Date());
+        window.gtag('config', id, { anonymize_ip: true });   // sends the initial page_view
+        const s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(id);
+        document.head.appendChild(s);
+    }).catch(() => { /* analytics must never break the page */ });
 
     // Fire-and-forget: mirror the event to /api/analytics/conversion (sendBeacon
     // when available, else fetch keepalive) so it survives a navigation right
@@ -2350,6 +2365,8 @@ document.addEventListener('keydown', e => {
                     credentials: 'omit',
                 }).catch(() => {});
             }
+            // Forward to GA4 as a gtag event — no-op unless GA4 is configured.
+            if (window.gtag) window.gtag('event', eventName, params || {});
         } catch (_) { /* tracking must never break a flow */ }
     };
 
