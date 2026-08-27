@@ -382,10 +382,9 @@
             if (_map) return _map;
             // Minnesota-centered starting view; user can zoom/pan as needed.
             _map = L.map('map', { zoomControl: true }).setView([46.3, -94.3], 6);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                subdomains: 'abcd',
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+                maxNativeZoom: 16, maxZoom: 19,
+                attribution: '&copy; <a href="https://www.esri.com">Esri</a> &copy; OpenStreetMap contributors',
             }).addTo(_map);
             // Click anywhere empty on the map to open a "new lake" modal
             // pre-filled with the clicked coordinates. Ignores clicks that
