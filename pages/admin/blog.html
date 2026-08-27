@@ -392,6 +392,8 @@
     let editingId = null;
     let currentFilter = 'all';
     let currentPost = null;    // the post object currently open in the detail view
+    let blogPage = 1;          // admin list pagination — was rendering all ~85 posts at once
+    const BLOG_PER_PAGE = 20;
 
     document.addEventListener('DOMContentLoaded', loadPosts);
 
@@ -423,6 +425,7 @@
 
     function filterPosts(filter, el) {
         currentFilter = filter;
+        blogPage = 1;   // reset to page 1 whenever the filter changes
         document.querySelectorAll('.stat-pill').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
         renderPosts(filterList(filter));
@@ -440,7 +443,11 @@
                 </div>`;
             return;
         }
-        container.innerHTML = posts.map(p => {
+        const totalPages = Math.max(1, Math.ceil(posts.length / BLOG_PER_PAGE));
+        if (blogPage > totalPages) blogPage = totalPages;
+        if (blogPage < 1) blogPage = 1;
+        const startIdx = (blogPage - 1) * BLOG_PER_PAGE;
+        const rows = posts.slice(startIdx, startIdx + BLOG_PER_PAGE).map(p => {
             const date = new Date(p.published_at || p.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
             const thumb = p.cover_image_url
                 ? `<div class="post-thumb"><img src="${p.cover_image_url}" alt="" onerror="this.parentElement.innerHTML='📷'"></div>`
@@ -470,6 +477,18 @@
                     </div>
                 </div>`;
         }).join('');
+        const pager = totalPages > 1 ? `
+            <div style="display:flex;align-items:center;justify-content:center;gap:0.75rem;margin-top:1.5rem;flex-wrap:wrap;">
+                <button class="act-btn" ${blogPage <= 1 ? 'disabled' : ''} onclick="goToBlogPage(${blogPage - 1})">← Prev</button>
+                <span style="font-size:0.85rem;color:#718096;font-weight:600;">Page ${blogPage} of ${totalPages} · ${posts.length} posts</span>
+                <button class="act-btn" ${blogPage >= totalPages ? 'disabled' : ''} onclick="goToBlogPage(${blogPage + 1})">Next →</button>
+            </div>` : '';
+        container.innerHTML = rows + pager;
+    }
+    function goToBlogPage(n) {
+        blogPage = n;
+        renderPosts(filterList(currentFilter));
+        try { document.getElementById('filter-row').scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
     }
 
     // ── Toggle publish ─────────────────────────────────────────────────────────
