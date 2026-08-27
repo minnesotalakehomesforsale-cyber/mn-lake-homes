@@ -16,6 +16,8 @@
            each section shrinks to its content width and margin:auto centers
            that shrunk block, which reads as "centered" instead of left. */
         .post-container { width: 100%; max-width: var(--page-w); margin: 0 auto; padding-inline: 1.5rem; box-sizing: border-box; }
+        .post-cover { margin: 0 auto 2.25rem; }
+        .post-cover .blog-cover { aspect-ratio: 24 / 9; margin-bottom: 0; }
 
         /* ── Article head (above the image, left-aligned) ────────────────── */
         .post-head { padding-block: 7.5rem 2rem; }
@@ -158,6 +160,9 @@
             </div>
         </div>
     </header>
+
+    <!-- Generated gradient cover hero (same "blue" tile as the cards) -->
+    <div class="post-cover post-container" id="post-cover" hidden></div>
 
     <!-- Body: TOC | article | CTAs -->
     <div class="post-layout post-container">
@@ -306,12 +311,13 @@
                     ? new Date(pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                     : '';
 
-                // Hero cover: use the SAME generated gradient tile as the blog cards
-                // (mnlhBlogCover) — NOT the reused stock photos, which look stretched
-                // and blurry and repeat across the site. On-brand, consistent, and it
-                // always renders. Falls back to the real cover only if the generator
-                // isn't loaded for some reason.
-                // No hero banner — blog posts are text-first (no cover image).
+                // Hero cover: the generated gradient tile (mnlhBlogCover) — the same
+                // "blue" cover used on the blog cards. On-brand, consistent, always renders.
+                const coverEl = document.getElementById('post-cover');
+                if (coverEl && typeof window.mnlhBlogCover === 'function') {
+                    coverEl.innerHTML = window.mnlhBlogCover(post.tag);
+                    coverEl.hidden = false;
+                }
 
                 // Tailor the primary CTA to the post's category.
                 const tag = post.tag || '';

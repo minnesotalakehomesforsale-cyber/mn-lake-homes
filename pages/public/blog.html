@@ -184,10 +184,12 @@
         const clockSVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
 
         function buildCard(p) {
-            // Text-first cards — no cover image (blogs don't need them, and the
-            // per-tag tile just repeated across same-tag posts).
+            // Generated gradient cover tile (window.mnlhBlogCover), keyed on the
+            // tag — the same "blue" cover used on the post hero + related cards.
+            const cover = window.mnlhBlogCover ? window.mnlhBlogCover(p.tag) : '';
             return `
                 <a href="/blog/${p.slug}" class="blog-card">
+                    ${cover}
                     <div class="blog-meta">
                         <span class="blog-tag">${p.tag || 'General'}</span>
                         <span class="blog-time">${clockSVG} Read: ${p.read_time_minutes || 4} minutes</span>
