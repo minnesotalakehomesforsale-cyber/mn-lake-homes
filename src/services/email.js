@@ -1488,6 +1488,39 @@ function sendAgentProfileEnrichmentNudge({ to, first_name, missing = [], nudgeNu
     });
 }
 
+// Referral reward — sent to BOTH sides when a referred agent goes paid. `kind`
+// = 'referrer' | 'referred'; `auto` flips the wording between "applied" and
+// "we'll apply it".
+function sendReferralRewardEmail({ to, first_name, kind = 'referrer', auto = false }) {
+    if (!to) return { skipped: true };
+    const name = first_name || 'there';
+    const dash = `${SITE_URL}/pages/agent/dashboard.html`;
+    const isReferrer = kind === 'referrer';
+    const monthLine = auto
+        ? `A one-month credit has been applied to your account — it comes off your next invoice automatically.`
+        : `Your one-month credit will be applied to your next invoice.`;
+    return sendEmail({
+        to,
+        subject: isReferrer ? `You earned a free month 🎉` : `Welcome — a free month is on us 🎉`,
+        html: layout({
+            title: isReferrer ? `Nice work, ${name} — you earned a free month` : `Thanks for joining, ${name}`,
+            preheader: isReferrer ? 'An agent you referred just went paid.' : 'You were referred — a free month is on us.',
+            body: `
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  ${isReferrer
+                    ? `An agent you referred to MinnesotaLakeHomesForSale.com just upgraded to a paid plan. As a thank-you, you've earned <strong>one month free</strong>.`
+                    : `You joined MinnesotaLakeHomesForSale.com through a referral and upgraded to a paid plan — so <strong>a month is on us</strong>, and the agent who referred you gets one too.`}
+                </p>
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">${monthLine}</p>
+                <p style="margin:0;font-size:14px;line-height:1.6;color:#718096;">
+                  ${isReferrer ? 'Know another great agent? Your referral link is in the Referrals tab of your dashboard.' : 'Questions? Just reply to this email.'}
+                </p>`,
+            ctaText: 'Open my dashboard',
+            ctaUrl: dash,
+        })
+    });
+}
+
 // AL-14 — lead-landed win-back. When a real buyer lands on a lake where a
 // churned agent used to pay to be listed, nudge them: the demand is real, their
 // profile is still up, and reactivating puts them back in the rotation.
@@ -1598,6 +1631,7 @@ module.exports = {
     sendLeadAgentMatched,
     sendAgentProfileNudge,
     sendAgentProfileEnrichmentNudge,
+    sendReferralRewardEmail,
     sendAgentExitSurvey,
     sendLeadLandedWinBack,
     mailerHealth,

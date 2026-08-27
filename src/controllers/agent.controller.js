@@ -1303,8 +1303,9 @@ const getUpgradeStatus = async (req, res) => {
 };
 
 // GET /api/agents/me/referrals — the agent's referral code, share link, and the
-// agents they've brought in. "Refer an agent, get a month free" — each signed-up
-// referral is one earned reward (applied by the team as a Stripe credit/coupon).
+// agents they've brought in. "Refer an agent, get a month free" — a reward is
+// EARNED when the referred agent goes paid (the referral flips to 'rewarded' and
+// both sides get a free month, see services/agent-referral.js).
 const getMyReferrals = async (req, res) => {
     try {
         const me = await pool.query(
@@ -1322,12 +1323,14 @@ const getMyReferrals = async (req, res) => {
               ORDER BY r.created_at DESC`, [id]);
 
         const site = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
+        const rewarded = referrals.filter(r => r.reward_granted).length;
         res.json({
             code: referral_code,
             link: `${site}/join?ref=${encodeURIComponent(referral_code || '')}`,
             total: referrals.length,
-            rewards_earned: referrals.length,          // 1 free month per signed-up referral
-            rewards_applied: referrals.filter(r => r.reward_granted).length,
+            rewards_earned: rewarded,                                            // free months earned (referral went paid)
+            pending: referrals.filter(r => r.status === 'signed_up').length,     // referred, not yet upgraded
+            rewards_applied: rewarded,
             referrals,
         });
     } catch (err) {

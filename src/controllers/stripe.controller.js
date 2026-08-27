@@ -203,6 +203,15 @@ async function persistPaymentAndMirrorToHubspot(invoice, status) {
         }
     }
 
+    // Referral reward — the first time a REFERRED agent pays, qualify their
+    // referral and reward both sides. Idempotent (acts only on a still-'signed_up'
+    // referral). Best-effort: never let it break the webhook. Lazy require avoids
+    // a circular dependency with this controller.
+    if (status === 'paid' && userId) {
+        try { await require('../services/agent-referral').maybeRewardReferral(userId); }
+        catch (e) { console.error('[Stripe Webhook] referral reward failed:', e.message); }
+    }
+
     return paymentRow;
 }
 
@@ -676,6 +685,7 @@ function monthlyPriceForCode(code) {
     return Number.isFinite(v) ? v : (bySlug.standard ?? 9);
 }
 exports.monthlyPriceForCode = monthlyPriceForCode;
+exports.getStripe = getStripe;
 
 // Single source of truth for the PUBLIC tier label an agent shows (profile pill,
 // dashboard, cards). Keyed on `paid_membership_code` — what the agent is actually
