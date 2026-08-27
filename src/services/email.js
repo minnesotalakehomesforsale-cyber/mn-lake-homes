@@ -1454,6 +1454,40 @@ function sendAgentProfileNudge({ to, first_name, missing = [], nudgeNumber = 1 }
     });
 }
 
+// Enrichment nudge — for agents who ARE published but haven't filled the rich
+// profile sections (FAQ answers, by-the-numbers, services, how-I-work,
+// credentials/awards). Buyers comparing agents on a lake page reach out to the
+// most complete profile, so this drives updates, not first-time completion.
+function sendAgentProfileEnrichmentNudge({ to, first_name, missing = [], nudgeNumber = 1 }) {
+    if (!to) return { skipped: true };
+    const name = first_name || 'there';
+    const dash = `${SITE_URL}/pages/agent/dashboard.html`;
+    const missingHtml = missing.length
+        ? `<p style="margin:0 0 6px;font-size:15px;font-weight:700;color:#1a202c;">A few sections still to add:</p>
+           <ul style="margin:0 0 18px;padding-left:1.15rem;font-size:15px;line-height:1.7;color:#2d3748;">${missing.map(m => `<li>${_esc(m)}</li>`).join('')}</ul>`
+        : '';
+    return sendEmail({
+        to,
+        subject: nudgeNumber >= 2
+            ? `${name}, buyers pick the most complete profile — yours is missing a few pieces`
+            : `${name}, make your lake profile stand out (a few quick additions)`,
+        html: layout({
+            title: `Make your profile work harder, ${name}`,
+            preheader: 'FAQs, your stats, and how you work help buyers choose you.',
+            body: `
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Your profile is live on MinnesotaLakeHomesForSale.com — nice work. Buyers comparing agents on a lake page tend to reach out to the most complete, credible profile, and yours is missing a few sections that do exactly that.
+                </p>
+                ${missingHtml}
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  Each takes a couple of minutes in your dashboard, and they appear right on your public profile.
+                </p>`,
+            ctaText: 'Update my profile',
+            ctaUrl: dash,
+        })
+    });
+}
+
 // AL-14 — lead-landed win-back. When a real buyer lands on a lake where a
 // churned agent used to pay to be listed, nudge them: the demand is real, their
 // profile is still up, and reactivating puts them back in the rotation.
@@ -1563,6 +1597,7 @@ module.exports = {
     sendManualLeadOffer,
     sendLeadAgentMatched,
     sendAgentProfileNudge,
+    sendAgentProfileEnrichmentNudge,
     sendAgentExitSurvey,
     sendLeadLandedWinBack,
     mailerHealth,

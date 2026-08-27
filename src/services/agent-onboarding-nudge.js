@@ -131,4 +131,68 @@ async function runDraftDoneForYouSms() {
     return { sent };
 }
 
-module.exports = { runProfileCompletionNudge, runDraftDoneForYouSms };
+// Enrichment nudge — PUBLISHED agents who never filled the rich profile
+// sections (FAQ, by-the-numbers, services, how-I-work, credentials/awards).
+// A live-but-thin profile still ranks and gets shown, but converts worse than
+// a complete one, so this drives ongoing updates. Gentler cadence than
+// onboarding (they're already live, not dead inventory) and its OWN counter so
+// it never collides with the finish-your-profile sweep.
+const ENRICH_MAX_NUDGES  = 3;
+const ENRICH_MIN_DAYS    = 7;    // give them a week live before asking for more
+const ENRICH_RESEND_DAYS = 14;   // spacing between enrichment nudges
+
+async function runProfileEnrichmentNudge() {
+    let sent = 0;
+    try {
+        const { rows } = await pool.query(
+            `SELECT a.id, a.display_name, a.faq, a.profile_extra, a.enrich_nudge_count,
+                    u.first_name, u.email
+               FROM agents a JOIN users u ON u.id = a.user_id
+              WHERE a.is_published = TRUE
+                AND a.deleted_at IS NULL
+                AND COALESCE(u.email, '') <> ''
+                AND COALESCE(a.published_at, a.created_at) < NOW() - ($1 || ' days')::interval
+                AND a.enrich_nudge_count < $2
+                AND (a.last_enrich_nudge_at IS NULL OR a.last_enrich_nudge_at < NOW() - ($3 || ' days')::interval)
+                AND (COALESCE(a.faq, '{}')::jsonb = '{}'::jsonb
+                     OR COALESCE(a.profile_extra, '{}')::jsonb = '{}'::jsonb)
+              ORDER BY COALESCE(a.published_at, a.created_at) ASC
+              LIMIT 100`,
+            [String(ENRICH_MIN_DAYS), ENRICH_MAX_NUDGES, String(ENRICH_RESEND_DAYS)]);
+
+        for (const a of rows) {
+            const faq = (a.faq && typeof a.faq === 'object') ? a.faq : {};
+            let px = a.profile_extra;
+            if (typeof px === 'string') { try { px = JSON.parse(px); } catch (_) { px = {}; } }
+            px = px || {};
+
+            // Name exactly what's missing so the email is actionable.
+            const missing = [];
+            if (!Object.keys(faq).length) missing.push('Answers to the buyer & seller FAQ');
+            if (!px.stats || !Object.keys(px.stats).length) missing.push('Your “by the numbers” stats (homes sold, volume)');
+            if (!(px.services_buyer || []).length && !(px.services_seller || []).length) missing.push('The services you offer');
+            if (!(px.how_i_work || []).length) missing.push('Your “how I work” steps');
+            if (!(px.credentials || []).length && !(px.awards || []).length) missing.push('Credentials & awards');
+            if (!missing.length) continue;   // fully filled — skip (shouldn't hit given the WHERE)
+
+            try {
+                email.sendAgentProfileEnrichmentNudge({
+                    to: a.email,
+                    first_name: a.first_name || String(a.display_name || '').split(' ')[0],
+                    missing,
+                    nudgeNumber: (a.enrich_nudge_count || 0) + 1,
+                });
+                await pool.query(
+                    `UPDATE agents SET last_enrich_nudge_at = NOW(), enrich_nudge_count = enrich_nudge_count + 1, updated_at = NOW() WHERE id = $1`,
+                    [a.id]);
+                sent++;
+            } catch (e) { console.warn('[enrich-nudge] one failed:', e.message); }
+        }
+        if (sent) console.log(`[enrich-nudge] sent ${sent} profile-enrichment nudge(s)`);
+    } catch (e) {
+        console.warn('[enrich-nudge]', e.message);
+    }
+    return { sent };
+}
+
+module.exports = { runProfileCompletionNudge, runDraftDoneForYouSms, runProfileEnrichmentNudge };

@@ -2998,6 +2998,10 @@ async function ensureTables() {
             -- spaced out) so it never spams.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS last_profile_nudge_at TIMESTAMPTZ;
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS profile_nudge_count  INTEGER NOT NULL DEFAULT 0;
+            -- Enrichment nudge: email PUBLISHED agents who never filled the rich
+            -- profile sections (FAQ, stats, services, how-I-work, credentials).
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS last_enrich_nudge_at TIMESTAMPTZ;
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS enrich_nudge_count   INTEGER NOT NULL DEFAULT 0;
             -- AL-04: running "what a 35% referral would have cost you" tally.
             -- Recomputed from the agent's closed contacts (contacts.controller).
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS referral_fees_saved_usd NUMERIC NOT NULL DEFAULT 0;
@@ -5879,12 +5883,15 @@ const PORT = process.env.PORT || 3000;
     // sweep self-throttles (min age, resend spacing, max 3). Off with
     // PROFILE_NUDGE_ENABLED=false.
     if (process.env.PROFILE_NUDGE_ENABLED !== 'false') {
-        const { runProfileCompletionNudge, runDraftDoneForYouSms } = require('./services/agent-onboarding-nudge');
+        const { runProfileCompletionNudge, runDraftDoneForYouSms, runProfileEnrichmentNudge } = require('./services/agent-onboarding-nudge');
         setTimeout(() => runProfileCompletionNudge().catch(e => console.warn('[profile-nudge]', e.message)), 5 * 60 * 1000);
         setInterval(() => runProfileCompletionNudge().catch(e => console.warn('[profile-nudge]', e.message)), 12 * 60 * 60 * 1000);
         // AL-07 (+72h) done-for-you SMS to draft agents — no-op until Twilio is set.
         setTimeout(() => runDraftDoneForYouSms().catch(e => console.warn('[dfy-sms]', e.message)), 6 * 60 * 1000);
         setInterval(() => runDraftDoneForYouSms().catch(e => console.warn('[dfy-sms]', e.message)), 12 * 60 * 60 * 1000);
+        // Enrichment nudge — PUBLISHED-but-thin profiles → email to add FAQ/stats/services/etc. Gentler cadence.
+        setTimeout(() => runProfileEnrichmentNudge().catch(e => console.warn('[enrich-nudge]', e.message)), 8 * 60 * 1000);
+        setInterval(() => runProfileEnrichmentNudge().catch(e => console.warn('[enrich-nudge]', e.message)), 24 * 60 * 60 * 1000);
     }
 
     // Churn-risk sweep — nudge disengaged agents + weekly admin digest.
