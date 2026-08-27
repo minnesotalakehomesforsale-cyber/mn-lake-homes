@@ -146,8 +146,8 @@
             const thumb = u => (typeof u === 'string' && u.includes('/upload/')) ? u.replace('/upload/', '/upload/w_320,h_180,c_fill,q_auto,f_auto/') : u;
 
             const map = L.map('props-map', { scrollWheelZoom: true }).setView([46.7, -94.6], 6);
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-                maxNativeZoom: 16, maxZoom: 19, attribution: '&copy; Esri &copy; OpenStreetMap contributors'
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
             // Tiles render blank if the container was sized after init (common on
             // mobile). Re-measure once layout settles and on orientation change.
