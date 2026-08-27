@@ -495,8 +495,8 @@
                     <div id="banner-free" style="display:none; margin-top:1.5rem; background:linear-gradient(135deg,#0f2b46,#1d6df2); color:#fff; border-radius:14px; padding:1.5rem 1.75rem;">
                         <div style="display:flex; gap:1.25rem; align-items:center; flex-wrap:wrap; justify-content:space-between;">
                             <div style="flex:1; min-width:240px;">
-                                <div style="font-weight:800; font-size:1.15rem; margin-bottom:0.35rem;">You're on the Lake Agent plan</div>
-                                <p style="margin:0; opacity:0.9; font-size:0.93rem; line-height:1.5;">Your profile is live, but the Lake Agent plan isn't in the lead rotation, isn't featured, and can't post properties. Upgrade to start receiving matched leads and list your homes.</p>
+                                <div id="banner-free-title" style="font-weight:800; font-size:1.15rem; margin-bottom:0.35rem;">You're on the Lake Agent plan</div>
+                                <p id="banner-free-body" style="margin:0; opacity:0.9; font-size:0.93rem; line-height:1.5;">Your profile is live, but the Lake Agent plan isn't in the lead rotation, isn't featured, and can't post properties. Upgrade to start receiving matched leads and list your homes.</p>
                             </div>
                             <a href="/pricing" style="flex-shrink:0; background:#fff; color:#0f2b46; border-radius:10px; padding:0.8rem 1.4rem; font-weight:800; text-decoration:none; font-size:0.95rem;">Upgrade my plan →</a>
                         </div>
@@ -2339,6 +2339,27 @@
                     : `Views on the ${d.lakes_served} lake page${d.lakes_served === 1 ? '' : 's'} you serve.`;
                 if (num('dash-sub-leads')) num('dash-sub-leads').textContent =
                     (d.active_leads > 0) ? 'Matched buyers & sellers to work' : "We'll text you the moment one arrives.";
+
+                // Market insight — lead demand on the lakes this agent serves. A paid-tier
+                // signal (the competition you're in the rotation for); also reinforces the
+                // free-tier upgrade hook below.
+                if (num('dash-sub-lakeviews') && (d.area_demand_30d || 0) > 0) {
+                    num('dash-sub-lakeviews').innerHTML += ` · <strong>${d.area_demand_30d}</strong> lead request${d.area_demand_30d === 1 ? '' : 's'} on your lakes (30d)`;
+                }
+
+                // Free-tier upgrade trigger — make the banner concrete with the real
+                // demand the Lake Agent plan is leaving on the table.
+                const bt = num('banner-free-title'), bb = num('banner-free-body');
+                if (bt && bb) {
+                    const v = d.profile_views_30d || 0, dem = d.area_demand_30d || 0;
+                    if (v > 0 || dem > 0) {
+                        const bits = [];
+                        if (v > 0)   bits.push(`${v} ${v === 1 ? 'buyer' : 'buyers'} viewed your profile`);
+                        if (dem > 0) bits.push(`${dem} requested an agent on your lakes`);
+                        bt.textContent = `📈 ${bits.join(' · ')} — last 30 days`;
+                        bb.innerHTML = `On the <strong>Lake Agent</strong> (free) plan you're not in the lead rotation, so these buyers can't reach you. Upgrade to turn this demand into matched leads, featured placement, and listings.`;
+                    }
+                }
             } catch (_) {}
         }
 

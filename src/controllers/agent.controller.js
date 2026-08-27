@@ -899,18 +899,33 @@ const getMyReach = async (req, res) => {
         // are /lakes/<slug>. If none are assigned, lake reach is 0 (with a
         // reason the UI can show) rather than a misleading number.
         const lakesRes = await pool.query(
-            `SELECT l.slug FROM agent_lakes al JOIN lakes l ON l.id = al.lake_id
+            `SELECT l.slug, al.lake_id FROM agent_lakes al JOIN lakes l ON l.id = al.lake_id
               WHERE al.agent_id = $1 AND l.slug IS NOT NULL`, [agent_id]);
         const lakePaths = lakesRes.rows.map(r => '/lakes/' + r.slug);
+        const lakeIds   = lakesRes.rows.map(r => r.lake_id).filter(Boolean);
 
         // Window counts: last 30 days vs the 30 days before that (for a trend).
         const profilePath = '/agents/' + slug;
         const pv = await pool.query(
             `SELECT
+                COUNT(*) FILTER (WHERE created_at >= now() - interval '7 days')::int  AS wk,
                 COUNT(*) FILTER (WHERE created_at >= now() - interval '30 days')::int AS cur,
                 COUNT(*) FILTER (WHERE created_at >= now() - interval '60 days'
                                    AND created_at <  now() - interval '30 days')::int AS prev
                FROM page_views WHERE path = $1`, [profilePath]);
+
+        // Area demand — lead requests on the lakes this agent serves (last 30d),
+        // regardless of who they were routed to. For a free agent this is the
+        // upgrade hook (demand they can't receive); for a paid agent it's a
+        // market-insight metric — the competition they're in the rotation for.
+        let areaDemand30d = 0;
+        if (lakeIds.length) {
+            const ad = await pool.query(
+                `SELECT COUNT(*)::int AS n FROM leads
+                  WHERE lake_id = ANY($1) AND deleted_at IS NULL
+                    AND created_at >= now() - interval '30 days'`, [lakeIds]);
+            areaDemand30d = ad.rows[0].n;
+        }
 
         let lakeCur = 0, lakePrev = 0;
         if (lakePaths.length) {
@@ -930,11 +945,13 @@ const getMyReach = async (req, res) => {
 
         const trend = (cur, prev) => prev > 0 ? Math.round(((cur - prev) / prev) * 100) : (cur > 0 ? 100 : 0);
         res.json({
+            profile_views_7d: pv.rows[0].wk,
             profile_views_30d: pv.rows[0].cur,
             profile_views_trend: trend(pv.rows[0].cur, pv.rows[0].prev),
             lake_page_views_30d: lakeCur,
             lake_page_views_trend: trend(lakeCur, lakePrev),
             lakes_served: lakePaths.length,
+            area_demand_30d: areaDemand30d,
             active_leads: leadsRes.rows[0].active,
         });
     } catch (e) { console.error('[getMyReach]', e.message); res.status(500).json({ error: 'Failed to load reach.' }); }
