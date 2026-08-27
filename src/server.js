@@ -1791,12 +1791,15 @@ app.get('/join-2', (req, res, next) => {
 // tools, surfaced on every lake and town page so the whole site interlinks
 // (lakes <-> towns <-> blog <-> tools) and topical authority compounds. All
 // guide targets are live published posts, so these never 404.
+// NOTE: every href here must be a PUBLISHED post — these render as internal
+// links on every lake + town page, so an unpublished slug 404s sitewide. All
+// six below verified live (200).
 const BLOG_GUIDE_LINKS = [
-    { href: '/blog/buying-a-cabin-in-minnesota-2026-guide', name: 'Buying a Cabin in Minnesota' },
-    { href: '/blog/true-cost-of-owning-a-minnesota-lake-cabin', name: 'True Cost of Owning a Cabin' },
+    { href: '/blog/first-time-lake-home-buyer-guide', name: 'First-Time Lake Home Buyer Guide' },
+    { href: '/blog/minnesota-lake-home-financing-guide', name: 'Financing a Minnesota Lake Home' },
     { href: '/blog/5-things-to-look-for-in-a-lake-property', name: '5 Things to Look For' },
-    { href: '/blog/best-minnesota-lakes-for-families', name: 'Best Lakes for Families' },
-    { href: '/blog/minnesota-shoreland-rules-before-you-buy', name: 'Minnesota Shoreland Rules' },
+    { href: '/blog/best-minnesota-lakes-first-time-buyers', name: 'Best Lakes for First-Time Buyers' },
+    { href: '/blog/building-a-dock-permits-materials-costs-minnesota', name: 'Dock Permits, Materials & Costs' },
     { href: '/blog', name: 'All lake guides →' },
 ];
 const LAKE_TOOL_LINKS = [
