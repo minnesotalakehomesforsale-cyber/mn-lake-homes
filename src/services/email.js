@@ -108,6 +108,9 @@ function footerHtml(email, emailClass, audience, usageGrant) {
     // 3. per-template usage grant (media rights)
     if (usageGrant) {
         blocks.push('By replying with photos, text, or images, you give MinnesotaLakeHomesForSale.com permission to publish them on our website and social channels with credit to you. You keep ownership of your material, and you can ask us to remove anything at any time.');
+        if (usageGrant === 'headshot') {
+            blocks.push("This includes your headshot and name on a Featured Agent graphic. Nothing is published until you've seen it and said yes.");
+        }
     }
     blocks.push(esc(PHYSICAL_ADDRESS));
     return `<div style="margin-top:1.75rem;padding-top:1rem;border-top:1px solid #edf2f7;font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:0.72rem;color:#a0aec0;line-height:1.5;text-align:center;">${blocks.join('<br><br>')}</div>`;
@@ -1637,6 +1640,77 @@ function sendDidTheyReachOut({ to, first_name, agent_full_name, yesUrl, notYetUr
     });
 }
 
+// EM-18 — ladder rung 1: photos of your lake. Lowest-friction ask (photos already
+// on their phone) and it fixes the thin-lake-page problem. Reply-to is a monitored
+// inbox that accepts attachments. Content-ask/agent + usage grant (required).
+function sendLadderPhotos({ to, first_name, lake_name, replyTo }) {
+    if (!to) return { skipped: true };
+    const lake = _esc(lake_name) || 'your lake';
+    const p = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;';
+    return sendEmail({
+        emailClass: 'content_ask', templateKey: 'ladder_photos', to, replyTo,
+        subject: `Do you have any photos of ${lake_name || 'your lake'}?`,
+        html: layout({ title: '', preheader: "Three or four from your phone. We'll put your name on them.", body: `
+            <p style="${p}">Hi ${_esc(first_name) || 'there'},</p>
+            <p style="${p}">${lake}'s page gets found by people searching for that exact lake. Right now it's mostly text.</p>
+            <p style="${p}">If you've got three or four photos on your phone — the shoreline, a dock, the town, a sunset off someone's deck — just reply to this email with them attached. We'll put them on the page with your name and a link to your profile underneath.</p>
+            <p style="${p}">No editing needed, phone photos are exactly right. We'll skip anything with recognisable faces or house numbers.</p>
+            <p style="${p}">That's the whole ask.</p>
+            <p style="${p}">— Hunter</p>
+            <p style="margin:18px 0 0;font-size:13px;line-height:1.6;color:#718096;">P.S. If you'd rather the credit go to your brokerage than to you, just say so in the reply.</p>` }),
+    });
+}
+
+// EM-19 — ladder rung 2: one question about your lake. 90 seconds → unique,
+// attributed, locally-specific FAQ text. Only after rung 1 got a response.
+function sendLadderQuestion({ to, first_name, lake_name, replyTo }) {
+    if (!to) return { skipped: true };
+    const lake = _esc(lake_name) || 'your lake';
+    const p = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;';
+    const question = `What's the one thing you'd tell a buyer about ${lake} that they'd never get from a listing?`;
+    return sendEmail({
+        emailClass: 'content_ask', templateKey: 'ladder_question', to, replyTo,
+        subject: `One question about ${lake_name || 'your lake'}`,
+        html: layout({ title: '', preheader: "Two sentences is plenty. We'll publish it with your name on it.", body: `
+            <p style="${p}">Hi ${_esc(first_name) || 'there'},</p>
+            <p style="${p}">One question, and two sentences is plenty:</p>
+            <p style="${p}font-weight:700;color:#1a202c;">${question}</p>
+            <p style="${p}">Write it the way you'd say it to a client standing on the dock — no need to make it sound like marketing. We'll publish it on ${lake}'s page under your name with a link to your profile, in the FAQ section, which is the part that tends to show up when someone Googles a question about the lake.</p>
+            <p style="${p}">Just reply.</p>
+            <p style="${p}">— Hunter</p>` }),
+    });
+}
+
+// EM-20 — ladder rung 4: Featured Agent invite. Sample spotlight graphic embedded
+// (copy still reads with images blocked). Usage grant extended to headshot/likeness;
+// nothing publishes without Hunter's send. Only for agents who cleared rung 1 or 2.
+function sendLadderFeatured({ to, first_name, lake_name, contributed, lake_url, replyTo }) {
+    if (!to) return { skipped: true };
+    const lake = _esc(lake_name) || 'your lake';
+    const p = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;';
+    const thing = contributed === 'answer' ? 'answer' : 'photos';
+    const pageUrl = lake_url || `${SITE_URL}/find-your-lake`;
+    const sampleImg = `${SITE_URL}/assets/images/featured-agent-sample.png`;
+    return sendEmail({
+        emailClass: 'content_ask', templateKey: 'ladder_featured', to, replyTo,
+        subject: 'Want to be our next Featured Agent?',
+        html: layout({ title: '', preheader: 'Four fields from you. We make the graphic and post it.', body: `
+            <p style="${p}">Hi ${_esc(first_name) || 'there'},</p>
+            <p style="${p}">Thanks for the ${thing} — it's on ${lake}'s page now: <a href="${pageUrl}" style="color:#1d6df2;">see it here</a>.</p>
+            <p style="${p}">Next thing, if you're up for it. We run a Featured Agent spotlight on our social channels and on your profile. It looks like this:</p>
+            <p style="${p}"><img src="${sampleImg}" alt="Sample MN Lake Homes Featured Agent spotlight graphic — a headshot, name, brokerage, and a line about the agent's lake." width="480" style="max-width:100%;border-radius:10px;"></p>
+            <p style="${p}">To make yours I need four things:</p>
+            <ul style="margin:0 0 16px;padding-left:1.2rem;font-size:15px;line-height:1.8;color:#2d3748;">
+              <li>A headshot you like</li>
+              <li>Your brokerage as you want it written</li>
+              <li>One line about what you're known for on ${lake}</li>
+              <li>The phone or email you want on it</li>
+            </ul>
+            <p style="${p}">Reply with those and I'll send you the finished graphic before it goes anywhere — you get final say, and the file is yours to post on your own channels too.</p>
+            <p style="${p}">— Hunter</p>` }),
+    });
+}
+
 // ─── New in-app message arrived from MN Lake Homes ─────────────────────────
 // Fires whenever the admin sends a 1:1 message OR the agent is in the
 // audience of a broadcast. The email is the wake-up; the actual thread
@@ -1992,6 +2066,9 @@ const EMAIL_TEMPLATES = [
     { key: 'lead_reroute_agent',              class: 'transactional', audience: 'agent',    label: 'Rerouted (agent)' },
     { key: 'agent_response_nudge',            class: 'transactional', audience: 'agent',    label: 'Agent response nudge' },
     { key: 'buyer_feedback_72h',              class: 'transactional', audience: 'consumer', label: 'Did they reach out? (72h)' },
+    { key: 'ladder_photos',                   class: 'content_ask',   audience: 'agent',    usage_grant: true,        label: 'Ladder 1 — photos' },
+    { key: 'ladder_question',                 class: 'content_ask',   audience: 'agent',    usage_grant: true,        label: 'Ladder 2 — one question' },
+    { key: 'ladder_featured',                 class: 'content_ask',   audience: 'agent',    usage_grant: 'headshot',  label: 'Ladder 4 — Featured Agent' },
     { key: 'agent_profile_nudge',             class: 'lifecycle',     audience: 'agent',    label: 'Agent profile nudge' },
     { key: 'agent_profile_enrichment_nudge',  class: 'lifecycle',     audience: 'agent',    label: 'Agent profile enrichment nudge' },
     { key: 'referral_reward',                 class: 'transactional', audience: 'agent',    label: 'Referral reward' },
@@ -2097,6 +2174,9 @@ module.exports = {
     sendRerouteAgent,
     sendAgentNudge,
     sendDidTheyReachOut,
+    sendLadderPhotos,
+    sendLadderQuestion,
+    sendLadderFeatured,
     sendAgentProfileNudge,
     sendAgentProfileEnrichmentNudge,
     sendReferralRewardEmail,

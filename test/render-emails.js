@@ -21,7 +21,11 @@ resendMod.Resend = class { constructor() { this.emails = { send: async (p) => { 
 
 // Quiet pool — templates don't hit it, but suppression/cap checks might.
 const pool = require('../src/database/pool');
-pool.query = async (sql) => (/email_unsubscribes|COUNT/.test(sql) ? { rows: [{ n: 0 }] } : { rows: [] });
+pool.query = async (sql) => {
+    if (/email_unsubscribes/.test(sql)) return { rows: [] };   // not suppressed
+    if (/COUNT/.test(sql)) return { rows: [{ n: 0 }] };          // frequency cap = 0
+    return { rows: [] };
+};
 
 const email = require('../src/services/email');
 const OUT = path.join(__dirname, '..', '_email-previews');
@@ -74,6 +78,12 @@ const AGENT = { display_name: 'Dana Smith', slug: 'dana-smith' };
     // EM-14 — offer expired, rerouting (buyer + agent)
     await dump('EM-14_reroute_buyer', () => email.sendRerouteBuyer({ to: 'buyer@x.com', first_name: 'Sam', lake_name: 'Gull Lake' }));
     await dump('EM-14_reroute_agent', () => email.sendRerouteAgent({ to: 'agent@x.com', agentFirstName: 'Dana', buyer_first: 'Sam', lake_name: 'Gull Lake', timeline: 'this summer', windowHours: 24 }));
+
+    // Block E — ladder rungs (content-ask; note the content-ask footer + usage grant)
+    const rt = 'replies+EXAMPLE.0000000000000000@reply.minnesotalakehomesforsale.com';
+    await dump('EM-18_ladder-1-photos', () => email.sendLadderPhotos({ to: 'agent@x.com', first_name: 'Dana', lake_name: 'Gull Lake', replyTo: rt }));
+    await dump('EM-19_ladder-2-question', () => email.sendLadderQuestion({ to: 'agent@x.com', first_name: 'Dana', lake_name: 'Gull Lake', replyTo: rt }));
+    await dump('EM-20_ladder-4-featured', () => email.sendLadderFeatured({ to: 'agent@x.com', first_name: 'Dana', lake_name: 'Gull Lake', contributed: 'photos', lake_url: 'https://minnesotalakehomesforsale.com/lakes/gull-lake', replyTo: rt }));
 
     console.log('Done.');
 })();

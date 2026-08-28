@@ -930,6 +930,7 @@ exports.handleWebhook = async (req, res) => {
                             paid_membership_code  = $5,
                             profile_status        = 'published',
                             is_published          = true,
+                            published_at          = COALESCE(published_at, NOW()),
                             stripe_customer_id    = $2,
                             stripe_subscription_id = $3
                       WHERE user_id = $4`,

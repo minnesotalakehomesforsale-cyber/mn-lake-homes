@@ -302,7 +302,8 @@ const publishProfile = async (req, res) => {
 
         const pub = await pool.query(
             `UPDATE agents
-                SET is_published = true, profile_status = 'published', updated_at = NOW()
+                SET is_published = true, profile_status = 'published',
+                    published_at = COALESCE(published_at, NOW()), updated_at = NOW()
               WHERE user_id = $1 RETURNING id`,
             [req.user.userId]
         );

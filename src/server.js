@@ -4301,6 +4301,10 @@ async function ensureTables() {
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS last_rung_resent     BOOLEAN NOT NULL DEFAULT FALSE;  -- the one 30-day re-send happened
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS last_response_at     TIMESTAMPTZ;
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS last_contribution_at TIMESTAMPTZ;
+            -- When the profile first went live — the ladder's day-N clock. Backfill
+            -- existing published agents so they enter the ladder (capped, so no burst).
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS published_at         TIMESTAMPTZ;
+            UPDATE agents SET published_at = updated_at WHERE is_published = TRUE AND published_at IS NULL;
 
             -- Monthly MRR snapshots for the admin revenue cockpit trend.
             CREATE TABLE IF NOT EXISTS mrr_snapshots (
@@ -6066,6 +6070,14 @@ const PORT = process.env.PORT || 3000;
         const { runFeedbackRequest } = require('./services/feedback-request');
         setTimeout(() => runFeedbackRequest().catch(e => console.warn('[feedback-request]', e.message)), 10 * 60 * 1000);
         setInterval(() => runFeedbackRequest().catch(e => console.warn('[feedback-request]', e.message)), 3 * 60 * 60 * 1000);
+    }
+
+    // Block E — the content-ladder sweep (EM-17 governor drives EM-18/19/20).
+    // Daily. Content-ask class, so the global cap + suppression apply. LADDER_ENABLED=false to disable.
+    if (process.env.LADDER_ENABLED !== 'false') {
+        const { runLadderSweep } = require('./services/ladder-sweep');
+        setTimeout(() => runLadderSweep().catch(e => console.warn('[ladder]', e.message)), 12 * 60 * 1000);
+        setInterval(() => runLadderSweep().catch(e => console.warn('[ladder]', e.message)), 24 * 60 * 60 * 1000);
     }
 
     // T141 manual-release acceptance SLA — reclaim hand-placed held leads the
