@@ -83,6 +83,13 @@ async function logEvent({ key, title, detail }) {
     } catch (e) { console.warn('[incidents] logEvent failed:', e.message); return { ok: false }; }
 }
 
+// Record a raw failure occurrence (Stripe webhook, DB error) as a lightweight
+// row the monitors count over a window to decide if a rate threshold tripped.
+// Never emails on its own — the threshold check raises the P1.
+async function recordFailure(kind, detail) {
+    return logEvent({ key: `failure:${kind}`, title: `failure:${kind}`, detail: detail ? String(detail).slice(0, 300) : null });
+}
+
 // Auto-resolve: close the open incident for a key. Safe to call every sweep even
 // when nothing is open. The weekly report still shows it as resolved this period.
 async function resolve(key) {
@@ -135,4 +142,4 @@ async function weeklyIncidents(sinceDays = 7) {
     return rows;
 }
 
-module.exports = { raise, resolve, logEvent, runP2Batch, weeklyIncidents };
+module.exports = { raise, resolve, logEvent, recordFailure, runP2Batch, weeklyIncidents };

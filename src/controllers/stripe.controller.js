@@ -1474,6 +1474,9 @@ exports.handleWebhook = async (req, res) => {
     } catch (err) {
         // Log but don't crash — Stripe will retry on 5xx, so return 200 to prevent loops
         console.error(`[Stripe Webhook] Error processing ${event.type}:`, err.message);
+        // EM-06: count the failure; the monitor raises a P1 at 3+/hour (money
+        // events may not be recording).
+        try { require('../services/incidents').recordFailure('stripe_webhook', `${event.type}: ${err.message}`); } catch (_) {}
     }
 
     // Always return 200 to acknowledge receipt

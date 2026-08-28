@@ -4197,6 +4197,15 @@ async function ensureTables() {
             -- At most one OPEN incident per key (partial unique) so raise() upserts cleanly.
             CREATE UNIQUE INDEX IF NOT EXISTS idx_incidents_open_key ON incidents(incident_key) WHERE status = 'open';
             CREATE INDEX IF NOT EXISTS idx_incidents_triage ON incidents(status, severity, last_seen_at);
+            CREATE INDEX IF NOT EXISTS idx_incidents_failures ON incidents(incident_key, created_at) WHERE severity = 'P3';
+
+            -- EM-06: sweep heartbeats. Each recurring worker stamps its name here on
+            -- a completed run; checkHeartbeats() raises a P2 when one goes stale (a
+            -- dead worker at low volume shows up here, not weeks later as a slump).
+            CREATE TABLE IF NOT EXISTS heartbeats (
+                name         VARCHAR(60) PRIMARY KEY,
+                last_run_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
 
             -- Monthly MRR snapshots for the admin revenue cockpit trend.
             CREATE TABLE IF NOT EXISTS mrr_snapshots (
@@ -5907,8 +5916,9 @@ const PORT = process.env.PORT || 3000;
     // Runs shortly after boot, then every 15 min. Disable with LEAD_SLA_ENABLED=false.
     if (process.env.LEAD_SLA_ENABLED !== 'false') {
         const { runSlaSweep } = require('./services/lead-sla');
-        setTimeout(() => runSlaSweep().catch(e => console.warn('[lead-sla]', e.message)), 60 * 1000);
-        setInterval(() => runSlaSweep().catch(e => console.warn('[lead-sla]', e.message)), 15 * 60 * 1000);
+        const slaRun = () => runSlaSweep().then(() => require('./services/incident-monitors').beat('lead-sla')).catch(e => console.warn('[lead-sla]', e.message));
+        setTimeout(slaRun, 60 * 1000);
+        setInterval(slaRun, 15 * 60 * 1000);
     }
 
     // EM-04 send-health monitor — the alarm against SILENT email failure. Every
@@ -5918,16 +5928,25 @@ const PORT = process.env.PORT || 3000;
     // EMAIL_HEALTH_MONITOR_ENABLED=false.
     if (process.env.EMAIL_HEALTH_MONITOR_ENABLED !== 'false') {
         const { runSendHealthSweep } = require('./services/email-health');
-        setTimeout(() => runSendHealthSweep().catch(e => console.warn('[email-health]', e.message)), 3 * 60 * 1000);
-        setInterval(() => runSendHealthSweep().catch(e => console.warn('[email-health]', e.message)), 15 * 60 * 1000);
+        const { beat } = require('./services/incident-monitors');
+        const run = () => runSendHealthSweep().then(() => beat('email-health')).catch(e => console.warn('[email-health]', e.message));
+        setTimeout(run, 3 * 60 * 1000);
+        setInterval(run, 15 * 60 * 1000);
     }
 
     // EM-06 incident router — the hourly P2 digest (one email listing everything
-    // that needs attention today). P1s email immediately from raise(); this is the
-    // batch for the non-urgent tier. Disable with INCIDENT_ROUTER_ENABLED=false.
+    // that needs attention today) + the timer-based condition monitors (missed
+    // sweep, site-health, failure rates, zero-leads). P1s email immediately from
+    // raise(). Disable with INCIDENT_ROUTER_ENABLED=false.
     if (process.env.INCIDENT_ROUTER_ENABLED !== 'false') {
         const { runP2Batch } = require('./services/incidents');
-        setInterval(() => runP2Batch().catch(e => console.warn('[incidents]', e.message)), 60 * 60 * 1000);
+        const { runMonitors, runDailyMonitors, beat } = require('./services/incident-monitors');
+        setInterval(() => runP2Batch().then(() => beat('p2-batch')).catch(e => console.warn('[incidents]', e.message)), 60 * 60 * 1000);
+        setTimeout(() => runMonitors().catch(e => console.warn('[monitors]', e.message)), 4 * 60 * 1000);
+        setInterval(() => runMonitors().catch(e => console.warn('[monitors]', e.message)), 10 * 60 * 1000);
+        setInterval(() => runDailyMonitors().catch(e => console.warn('[monitors]', e.message)), 24 * 60 * 60 * 1000);
+        // DB-level errors → failure rows the monitor counts (5+/10min → P1).
+        try { pool.on('error', e => { try { require('./services/incidents').recordFailure('db', e && e.message); } catch (_) {} }); } catch (_) {}
     }
 
     // T141 manual-release acceptance SLA — reclaim hand-placed held leads the
