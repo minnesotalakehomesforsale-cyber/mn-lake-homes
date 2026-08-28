@@ -1976,7 +1976,6 @@ app.post('/leads/accept', async (req, res) => {
                     [a.user_id, agentId, lead.target_lake || null]);
                 if (nl.length) nearby = nl.map(r => r.name).join(', ');
             } catch (_) {}
-            const licenseYear = a.years_experience ? (new Date().getFullYear() - Number(a.years_experience)) : null;
             const fullName = a.display_name || lead.agent_name || '';
             require('./services/email').sendLeadAgentMatched({
                 to:               lead.email,
@@ -1987,7 +1986,7 @@ app.post('/leads/accept', async (req, res) => {
                 lake_name:        lead.target_lake,
                 town:             a.city,
                 agent_bio:        a.bio,
-                license_year:     licenseYear,
+                years_experience: a.years_experience,
                 nearby_lakes:     nearby,
                 agent_phone:      a.phone_public,
                 agent_email:      a.email_public,

@@ -73,23 +73,40 @@ function unsubUrl(email) {
     const base = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
     return `${base}/unsubscribe?e=${encodeURIComponent(String(email).toLowerCase())}&t=${unsubToken(email)}`;
 }
-// EM-05 — one footer per email CLASS. Internal (to the team) gets none;
-// transactional gets a service-message note + postal address (no unsubscribe —
-// you can't opt out of account email); lifecycle + content-ask get the full
-// CAN-SPAM footer: a working unsubscribe + the postal address.
-function footerHtml(email, emailClass) {
+// Footer as TWO independent axes plus a per-template flag (EM-06 refinement):
+//   class    → the unsubscribe decision (lifecycle/content-ask get a working
+//              unsubscribe; transactional gets a service note; internal: none)
+//   audience → the disclosure block (consumer: not-a-brokerage + no commission/
+//              referral + EHO · agent: placement affects visibility/routing weight,
+//              not licensure/qualification · business/internal: none)
+//   usageGrant → the media-rights line, only where the email asks for photos
+// The postal address is appended once. This composes so Blocks D/E can add
+// templates without re-deriving footers.
+function footerHtml(email, emailClass, audience, usageGrant) {
     const esc = s => String(s ?? '').replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
-    const addr = esc(PHYSICAL_ADDRESS);
-    const wrap = inner => `<div style="margin-top:1.75rem;padding-top:1rem;border-top:1px solid #edf2f7;font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:0.72rem;color:#a0aec0;line-height:1.5;text-align:center;">${inner}</div>`;
-    if (emailClass === 'internal') return '';
+    if (emailClass === 'internal') return '';   // to the team — no footer
+    const blocks = [];
+    // 1. class → unsubscribe / service note
     if (emailClass === 'lifecycle' || emailClass === 'content_ask') {
         const lead = emailClass === 'content_ask'
             ? "You're receiving this because you're part of the MN Lake Homes network."
             : "You're receiving this update from MN Lake Homes.";
-        return wrap(`${lead} <a href="${unsubUrl(email)}" style="color:#718096;">Unsubscribe</a> from these emails.<br>${addr}`);
+        blocks.push(`${lead} <a href="${unsubUrl(email)}" style="color:#718096;">Unsubscribe</a> from these emails.`);
+    } else {
+        blocks.push('This is a service message about your MN Lake Homes account.');
     }
-    // transactional (and any unclassified single-recipient send)
-    return wrap(`This is a service message about your MN Lake Homes account.<br>${addr}`);
+    // 2. audience → disclosure
+    if (audience === 'consumer') {
+        blocks.push('MinnesotaLakeHomesForSale.com is not a brokerage and is not paid a commission or referral fee on your transaction. Equal Housing Opportunity.');
+    } else if (audience === 'agent') {
+        blocks.push('Placement affects your visibility and routing weight — not whether an agent is licensed, local, or qualified.');
+    }
+    // 3. per-template usage grant (media rights)
+    if (usageGrant) {
+        blocks.push('By replying with photos, text, or images, you give MinnesotaLakeHomesForSale.com permission to publish them on our website and social channels with credit to you. You keep ownership of your material, and you can ask us to remove anything at any time.');
+    }
+    blocks.push(esc(PHYSICAL_ADDRESS));
+    return `<div style="margin-top:1.75rem;padding-top:1rem;border-top:1px solid #edf2f7;font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:0.72rem;color:#a0aec0;line-height:1.5;text-align:center;">${blocks.join('<br><br>')}</div>`;
 }
 
 // EM-05 — a plain-text alternative for every HTML email. Not a full HTML parser;
@@ -264,8 +281,10 @@ async function sendEmail({ to, subject, html, replyTo, category, emailClass, tem
                 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
             };
         }
-        // EM-05 — per-class footer on every single-recipient send (internal: none).
-        html = (html || '') + footerHtml(to, emailClass);
+        // Footer composes class (unsubscribe) + audience (disclosure) + usage-grant,
+        // the last two looked up from the registry by templateKey.
+        const meta = templateKey ? EMAIL_TEMPLATES.find(t => t.key === templateKey) : null;
+        html = (html || '') + footerHtml(to, emailClass, meta && meta.audience, meta && meta.usage_grant);
     }
     // EM-05 — plain-text alternative on every send (built after the footer).
     const text = htmlToText(html);
@@ -1385,7 +1404,7 @@ function nextLakeSeason() {
 }
 function sendLeadAgentMatched({
     to, lead_first_name, agent_full_name, agent_first_name, brokerage,
-    lake_name, town, agent_bio, license_year, nearby_lakes, agent_phone, agent_email, photo_url, specialty,
+    lake_name, town, agent_bio, years_experience, nearby_lakes, agent_phone, agent_email, photo_url, specialty,
 }) {
     if (!to) return { skipped: true };
     const aFull = _esc(agent_full_name) || 'your agent';
@@ -1399,10 +1418,13 @@ function sendLeadAgentMatched({
         ? `<img src="${photo}" width="120" height="120" alt="${aFull}" style="border-radius:60px;object-fit:cover;display:block;">`
         : `<table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="width:120px;height:120px;border-radius:60px;background:#1d6df2;color:#fff;font-size:40px;font-weight:800;text-align:center;vertical-align:middle;font-family:-apple-system,Segoe UI,Arial,sans-serif;">${_esc(initials) || 'A'}</td></tr></table>`;
 
-    // "Why [Agent]" — only the bullets we actually have.
+    // "Why [Agent]" — only the bullets we actually have. Experience is stated as
+    // the self-reported number it is ("X years in the business"), NOT derived into
+    // a licensure-year claim we can't stand behind.
+    const yrs = Number(years_experience) > 0 ? Math.round(Number(years_experience)) : null;
     const whyBits = [
-        license_year ? `in Minnesota real estate since ${_esc(license_year)}` : null,
         `works ${lake}${_esc(nearby_lakes) ? ` and ${_esc(nearby_lakes)}` : ''}`,
+        yrs ? `${yrs} year${yrs === 1 ? '' : 's'} in the business` : null,
         _esc(specialty) || null,
     ].filter(Boolean);
     const p = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;';
@@ -1436,8 +1458,7 @@ function sendLeadAgentMatched({
                 </ol>
                 <h3 style="${h}">How this works, briefly</h3>
                 <p style="${p}">We're not a brokerage, and we're not paid a commission or a referral fee on your purchase. ${aFirst} is a licensed Minnesota agent we've vetted and matched to your lake and your situation. If they're not the right fit, reply to this email and I'll match you with someone else. No cost either way.</p>
-                <p style="${p}">— Hunter Burnside<br>MinnesotaLakeHomesForSale.com</p>
-                <p style="margin:20px 0 0;font-size:12px;color:#a0aec0;line-height:1.5;">Equal Housing Opportunity.</p>`,
+                <p style="${p}">— Hunter Burnside<br>MinnesotaLakeHomesForSale.com</p>`,
         })
     });
 }
@@ -1776,38 +1797,40 @@ function sendAgentPaymentFailed({ to, name, attempt = 1, final = false, nextAtte
 //   content_ask   — commercial ask, suppressible + capped
 //   internal      — to the owner/admins, exempt
 const EMAIL_TEMPLATES = [
-    { key: 'welcome',                         class: 'transactional', label: 'Consumer welcome' },
-    { key: 'agent_welcome',                   class: 'transactional', label: 'Agent welcome' },
-    { key: 'agent_profile_live',              class: 'transactional', label: 'Agent profile live' },
-    { key: 'agent_admin_notification',        class: 'internal',      label: 'Agent signup → admin' },
-    { key: 'password_reset',                  class: 'transactional', label: 'Password reset' },
-    { key: 'admin_password_reset',            class: 'transactional', label: 'Admin password reset' },
-    { key: 'lead_confirmation',               class: 'transactional', label: 'Lead confirmation' },
-    { key: 'admin_lead_notification',         class: 'internal',      label: 'Lead → admin' },
-    { key: 'inquiry_notification',            class: 'internal',      label: 'Inquiry → admin' },
-    { key: 'inquiry_confirmation',            class: 'transactional', label: 'Inquiry confirmation' },
-    { key: 'matched_agent_notification',      class: 'transactional', label: 'Matched agent notification' },
-    { key: 'agent_lead_assigned',             class: 'transactional', label: 'Agent lead assigned' },
-    { key: 'manual_lead_offer',               class: 'transactional', label: 'Manual lead offer' },
-    { key: 'lead_agent_matched',              class: 'transactional', label: 'Lead → agent matched' },
-    { key: 'agent_profile_nudge',             class: 'lifecycle',     label: 'Agent profile nudge' },
-    { key: 'agent_profile_enrichment_nudge',  class: 'lifecycle',     label: 'Agent profile enrichment nudge' },
-    { key: 'referral_reward',                 class: 'transactional', label: 'Referral reward' },
-    { key: 'agent_exit_survey',               class: 'lifecycle',     label: 'Agent exit survey' },
-    { key: 'lead_landed_win_back',            class: 'lifecycle',     label: 'Lead win-back' },
-    { key: 'agent_message_notification',      class: 'transactional', label: 'Agent message notification' },
-    { key: 'cash_offer_to_partner',           class: 'transactional', label: 'Cash offer → partner' },
-    { key: 'business_welcome',                class: 'transactional', label: 'Business welcome' },
-    { key: 'business_admin_notification',     class: 'internal',      label: 'Business signup → admin' },
-    { key: 'business_payment_received',       class: 'transactional', label: 'Business payment received' },
-    { key: 'business_approved',               class: 'transactional', label: 'Business approved' },
-    { key: 'business_payment_failed',         class: 'transactional', label: 'Business payment failed' },
-    { key: 'agent_payment_failed',            class: 'transactional', label: 'Agent payment failed' },
-    { key: 'business_subscription_cancelled', class: 'transactional', label: 'Business subscription cancelled' },
-    { key: 'admin_subscription_cancelled',    class: 'internal',      label: 'Subscription cancelled → admin' },
-    { key: 'agent_invite',                    class: 'transactional', label: 'Agent invite' },
-    { key: 'business_invite',                 class: 'transactional', label: 'Business invite' },
-    { key: 'email_health_alert',              class: 'internal',      label: 'Send-health P1 alert' },
+    // class → the unsubscribe decision; audience → the disclosure block;
+    // usage_grant → the media-rights line (only where the email asks for photos).
+    { key: 'welcome',                         class: 'transactional', audience: 'consumer', label: 'Consumer welcome' },
+    { key: 'agent_welcome',                   class: 'transactional', audience: 'agent',    label: 'Agent welcome' },
+    { key: 'agent_profile_live',              class: 'transactional', audience: 'agent',    usage_grant: true, label: 'Agent profile live' },
+    { key: 'agent_admin_notification',        class: 'internal',      audience: 'internal', label: 'Agent signup → admin' },
+    { key: 'password_reset',                  class: 'transactional', audience: 'consumer', label: 'Password reset' },
+    { key: 'admin_password_reset',            class: 'transactional', audience: 'internal', label: 'Admin password reset' },
+    { key: 'lead_confirmation',               class: 'transactional', audience: 'consumer', label: 'Lead confirmation' },
+    { key: 'admin_lead_notification',         class: 'internal',      audience: 'internal', label: 'Lead → admin' },
+    { key: 'inquiry_notification',            class: 'internal',      audience: 'internal', label: 'Inquiry → admin' },
+    { key: 'inquiry_confirmation',            class: 'transactional', audience: 'consumer', label: 'Inquiry confirmation' },
+    { key: 'matched_agent_notification',      class: 'transactional', audience: 'agent',    label: 'Matched agent notification' },
+    { key: 'agent_lead_assigned',             class: 'transactional', audience: 'agent',    label: 'Agent lead assigned' },
+    { key: 'manual_lead_offer',               class: 'transactional', audience: 'agent',    label: 'Manual lead offer' },
+    { key: 'lead_agent_matched',              class: 'transactional', audience: 'consumer', label: 'Lead → agent matched' },
+    { key: 'agent_profile_nudge',             class: 'lifecycle',     audience: 'agent',    label: 'Agent profile nudge' },
+    { key: 'agent_profile_enrichment_nudge',  class: 'lifecycle',     audience: 'agent',    label: 'Agent profile enrichment nudge' },
+    { key: 'referral_reward',                 class: 'transactional', audience: 'agent',    label: 'Referral reward' },
+    { key: 'agent_exit_survey',               class: 'lifecycle',     audience: 'agent',    label: 'Agent exit survey' },
+    { key: 'lead_landed_win_back',            class: 'lifecycle',     audience: 'agent',    label: 'Lead win-back' },
+    { key: 'agent_message_notification',      class: 'transactional', audience: 'agent',    label: 'Agent message notification' },
+    { key: 'cash_offer_to_partner',           class: 'transactional', audience: 'business', label: 'Cash offer → partner' },
+    { key: 'business_welcome',                class: 'transactional', audience: 'business', label: 'Business welcome' },
+    { key: 'business_admin_notification',     class: 'internal',      audience: 'internal', label: 'Business signup → admin' },
+    { key: 'business_payment_received',       class: 'transactional', audience: 'business', label: 'Business payment received' },
+    { key: 'business_approved',               class: 'transactional', audience: 'business', label: 'Business approved' },
+    { key: 'business_payment_failed',         class: 'transactional', audience: 'business', label: 'Business payment failed' },
+    { key: 'agent_payment_failed',            class: 'transactional', audience: 'agent',    label: 'Agent payment failed' },
+    { key: 'business_subscription_cancelled', class: 'transactional', audience: 'business', label: 'Business subscription cancelled' },
+    { key: 'admin_subscription_cancelled',    class: 'internal',      audience: 'internal', label: 'Subscription cancelled → admin' },
+    { key: 'agent_invite',                    class: 'transactional', audience: 'agent',    label: 'Agent invite' },
+    { key: 'business_invite',                 class: 'transactional', audience: 'business', label: 'Business invite' },
+    { key: 'email_health_alert',              class: 'internal',      audience: 'internal', label: 'Send-health P1 alert' },
 ];
 
 // Registry integrity audit — the load-bearing check behind both the CI test and
