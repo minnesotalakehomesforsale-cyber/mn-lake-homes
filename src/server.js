@@ -6089,6 +6089,13 @@ const PORT = process.env.PORT || 3000;
         setInterval(() => runWeeklyReport().catch(e => console.warn('[weekly-report]', e.message)), 25 * 60 * 1000);
     }
 
+    // EM-09 — quarterly + six-month review. Checked daily; self-guards to once per
+    // period, fires in the first days after a quarter/half boundary (CT). Same flag.
+    if (process.env.WEEKLY_REPORT_ENABLED !== 'false') {
+        const { runPeriodicIfDue } = require('./services/report-periodic');
+        setInterval(() => runPeriodicIfDue().catch(e => console.warn('[periodic-report]', e.message)), 12 * 60 * 60 * 1000);
+    }
+
     // T141 manual-release acceptance SLA — reclaim hand-placed held leads the
     // free-tier agent didn't accept within 24h. Every 15 min. Disable with
     // MANUAL_RELEASE_SWEEP_ENABLED=false.

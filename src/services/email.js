@@ -980,6 +980,56 @@ function sendWeeklyReport({ subject, statusLine, report, actions }) {
     });
 }
 
+// EM-09 — quarterly + six-month review. Same query layer as EM-08 over a longer
+// window (the weekly asks "what do I do Monday"; this asks "is this working").
+// The six-month adds a willing-to-be-negative "what to stop doing" section.
+function sendPeriodicReport({ kind, subject, statusLine, report, sections, actions }) {
+    const p = 'margin:0 0 14px;font-size:15px;line-height:1.6;color:#2d3748;';
+    const h = 'margin:24px 0 8px;font-size:16px;font-weight:800;color:#1a202c;';
+    const nn = v => v == null ? '<span style="color:#cbd5e0;">—</span>' : v;
+    const cell = 'padding:6px 8px;font-size:13px;border-bottom:1px solid #f2f5f8;font-variant-numeric:tabular-nums;';
+    const two = (a, b) => `<div style="overflow-x:auto;"><table role="presentation" width="100%" style="border-collapse:collapse;min-width:320px;"><tr><td style="${cell}color:#a0aec0;font-weight:700;">By traffic</td><td style="${cell}color:#a0aec0;font-weight:700;">By leads</td></tr>${Array.from({ length: Math.max(a.length, b.length) }).map((_, i) => `<tr><td style="${cell}">${a[i] ? `${_esc(a[i].lake)} (${a[i].views})` : ''}</td><td style="${cell}">${b[i] ? `${_esc(b[i].lake)} (${b[i].leads})` : ''}</td></tr>`).join('')}</table></div>`;
+    const list = arr => arr && arr.length ? `<ul style="margin:0 0 8px;padding-left:1.2rem;font-size:14px;line-height:1.6;color:#2d3748;">${arr.map(x => `<li>${_esc(x)}</li>`).join('')}</ul>` : `<p style="${p}color:#718096;">—</p>`;
+
+    const grouped = actions || {};
+    const groupHtml = ['recruit', 'content', 'product', 'fix'].map(g => (grouped[g] && grouped[g].length)
+        ? `<p style="margin:12px 0 4px;font-weight:700;text-transform:capitalize;color:#1a202c;">${g}</p>${list(grouped[g].map(a => a.text))}` : '').join('');
+
+    const s = sections || {};
+    return sendEmail({
+        emailClass: 'internal', templateKey: 'periodic_report',
+        to: OWNER_EMAIL(),
+        subject,
+        html: layout({ title: '', preheader: statusLine, body: `
+            <p style="${p}font-weight:700;color:#1a202c;">${_esc(statusLine)}</p>
+
+            <h3 style="${h}">The numbers${s.sparkNote ? ` <span style="font-weight:600;color:#a0aec0;font-size:12px;">${_esc(s.sparkNote)}</span>` : ''}</h3>
+            ${s.numbersTable || '<p style="' + p + '">—</p>'}
+
+            <h3 style="${h}">Lakes — traffic vs leads <span style="font-weight:600;color:#a0aec0;font-size:12px;">(the gap is the point)</span></h3>
+            ${two(s.topByTraffic || [], s.topByLeads || [])}
+
+            <h3 style="${h}">Tiers &amp; MRR</h3>
+            <p style="${p}">${nn(s.tierLine)}</p>
+
+            <h3 style="${h}">Agents this period</h3>
+            <p style="${p}">Joined: ${nn(s.cohort && s.cohort.joined)} · Still active: ${nn(s.cohort && s.cohort.active)} · Churned: ${nn(s.cohort && s.cohort.churned)}</p>
+
+            <h3 style="${h}">Content inventory</h3>
+            <p style="${p}">${nn(s.contentLine)}</p>
+
+            <h3 style="${h}">What to do this ${kind === 'six_month' ? 'half' : 'quarter'}</h3>
+            ${groupHtml || `<p style="${p}color:#718096;">Nothing urgent.</p>`}
+
+            ${kind === 'six_month' ? `
+            <h3 style="${h}">What to stop doing</h3>
+            ${list(s.stopDoing)}
+            <h3 style="${h}">Retention</h3>
+            <p style="${p}">${nn(s.retentionLine)}</p>` : ''}
+            ` }),
+    });
+}
+
 // EM-06 — the P1 incident email. States, in order: what broke · the user-visible
 // effect · what to check first · the admin link. Fired by the incident router,
 // never directly. Internal class. `repeated` flags a recurring/ongoing P1.
@@ -2162,6 +2212,7 @@ const EMAIL_TEMPLATES = [
     { key: 'incident_p1_alert',               class: 'internal',      audience: 'internal', label: 'P1 incident alert' },
     { key: 'incident_p2_digest',              class: 'internal',      audience: 'internal', label: 'P2 hourly digest' },
     { key: 'weekly_report',                   class: 'internal',      audience: 'internal', label: 'Weekly website report' },
+    { key: 'periodic_report',                 class: 'internal',      audience: 'internal', label: 'Quarterly / six-month review' },
 ];
 
 // Registry integrity audit — the load-bearing check behind both the CI test and
@@ -2270,6 +2321,7 @@ module.exports = {
     sendAgentInvite,
     sendBusinessInvite,
     sendWeeklyReport,
+    sendPeriodicReport,
     sendIncidentAlert,
     sendIncidentDigest,
     sendCustom,

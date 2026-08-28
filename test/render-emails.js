@@ -106,5 +106,20 @@ const AGENT = { display_name: 'Dana Smith', slug: 'dana-smith' };
     await dump('EM-08_weekly-report', () => email.sendWeeklyReport({ subject: 'MN Lake Homes — week of Aug 24', statusLine: 'All systems normal — 3 emails sent, no incidents.', report: sampleReport, actions: sampleActions }));
     await dump('EM-08_weekly-report_quiet', () => email.sendWeeklyReport({ subject: 'MN Lake Homes — week of Aug 24', statusLine: 'All systems normal — 0 emails sent, no incidents.', report: { numbers: { current: {}, previous: {}, avg: {} }, mrr: null, topLakes: [], leads: [], content: {}, whatRan: { open_incidents: 0, emailsByTemplate: [], sweeps: [] } }, actions: [] }));
 
+    // EM-09 — quarterly + six-month review
+    const periodicReport = { numbers: { current: {}, previous: {}, avg: {} }, mrr: 250, whatRan: { open_incidents: 0 } };
+    const periodicSections = {
+        numbersTable: '<p style="font-size:13px;color:#718096;">(numbers table renders from the same query layer)</p>',
+        sparkNote: 'trend = weekly buckets',
+        topByTraffic: [{ lake: 'gull-lake', views: 812 }, { lake: 'bald-eagle-lake', views: 640 }],
+        topByLeads: [{ lake: 'gull-lake', leads: 9 }, { lake: 'north-long-lake', leads: 4 }],
+        tierLine: 'Free 4 · Standard 2 · Prime 1 · Elite 1 — MRR $250.',
+        cohort: { joined: 5, active: 6, churned: 1 },
+        contentLine: '51 blog posts live · 120 lake pages · 38 still under 200 words',
+    };
+    const groupedActions = { recruit: [{ text: 'Recruit an agent on Bald Eagle Lake — 640 views, no agent' }], content: [{ text: 'Fill out North Long Lake — traffic but thin' }], fix: [{ text: '2 unrouted leads this quarter' }] };
+    await dump('EM-09_quarterly', () => email.sendPeriodicReport({ kind: 'quarterly', subject: 'MN Lake Homes — Quarterly review', statusLine: 'Quarterly review: 24 leads, 5 new agents, MRR $250.', report: periodicReport, sections: periodicSections, actions: groupedActions }));
+    await dump('EM-09_six-month', () => email.sendPeriodicReport({ kind: 'six_month', subject: 'MN Lake Homes — Six-month review', statusLine: 'Six-month review: 51 leads, 8 new agents, MRR $250.', report: periodicReport, sections: { ...periodicSections, stopDoing: ['Bald Eagle Lake: a built-out page with an agent that produced no leads in six months — stop investing until demand shows up.'], retentionLine: '4 paying now · 1 churned all-time.' }, actions: groupedActions }));
+
     console.log('Done.');
 })();
