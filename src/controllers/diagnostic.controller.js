@@ -142,11 +142,40 @@ async function checkLastLead() {
     }
 }
 
+// EM-01: expose the email transport so a silent no-op is never invisible again.
+// Reports the transport, the configured sender + CAN-SPAM address, and a 30-day
+// email_log summary — the same numbers as `SELECT status, count(*) FROM email_log`,
+// answering "is email actually sending" from data.
+async function checkEmail() {
+    const resend = !!process.env.RESEND_API_KEY;
+    const gmail  = !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD);
+    const configured = resend || gmail;
+    let last30 = null, recentSent = null;
+    try {
+        const r = await timedQuery(
+            `SELECT status, COUNT(*)::int AS n FROM email_log
+              WHERE created_at >= NOW() - INTERVAL '30 days' GROUP BY status`);
+        last30 = {};
+        for (const row of r.rows) last30[row.status] = row.n;
+        const s = await timedQuery(`SELECT MAX(created_at) AS at FROM email_log WHERE status = 'sent'`);
+        recentSent = s.rows[0]?.at || null;
+    } catch (_) { /* email_log may not exist in some envs */ }
+    return {
+        ok: true,                                   // exposure only — EM-04 is the alarm
+        status: configured ? 'ok' : 'not_configured',
+        transport: resend ? 'resend' : (gmail ? 'gmail' : 'none'),
+        email_from: process.env.EMAIL_FROM || null,
+        physical_address_set: !!process.env.EMAIL_PHYSICAL_ADDRESS,   // required before bulk sends (CAN-SPAM)
+        last_sent_at: recentSent,
+        last_30d: last30,                           // { sent, error, skipped } — the V1 answer
+    };
+}
+
 async function buildReport() {
-    const [database, hubspotCheck, stripe, mlsFeed, lastLead] = await Promise.all([
-        checkDatabase(), checkHubspot(), checkStripe(), checkMlsFeed(), checkLastLead(),
+    const [database, hubspotCheck, stripe, mlsFeed, lastLead, emailCheck] = await Promise.all([
+        checkDatabase(), checkHubspot(), checkStripe(), checkMlsFeed(), checkLastLead(), checkEmail(),
     ]);
-    const checks = { database, hubspot: hubspotCheck, stripe, mls_feed: mlsFeed, last_lead: lastLead };
+    const checks = { database, hubspot: hubspotCheck, stripe, mls_feed: mlsFeed, last_lead: lastLead, email: emailCheck };
     // Overall: DB failing is a hard fail; any *configured* integration failing is
     // "degraded"; not_configured is neutral (green). All green → ok.
     const anyFail = Object.values(checks).some(c => c.ok === false);
