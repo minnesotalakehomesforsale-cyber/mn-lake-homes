@@ -68,6 +68,9 @@ const AGENT = { display_name: 'Dana Smith', slug: 'dana-smith' };
     await dump('EM-15_agent-nudge_1h', () => email.sendAgentNudge({ variant: '1h', to: 'agent@x.com', agentFirstName: 'Dana', buyer_first: 'Sam', lake_name: 'Gull Lake', timeline: 'this summer', budget: '$300k–$450k', intent: 'buying', phone: '218-555-0100', markContactedUrl: mk }));
     await dump('EM-15_agent-nudge_24h', () => email.sendAgentNudge({ variant: '24h', to: 'agent@x.com', agentFirstName: 'Dana', buyer_first: 'Sam', lake_name: 'Gull Lake', markContactedUrl: mk, passBackUrl: pb }));
 
+    // EM-16 — did they reach out? (72h buyer check-in)
+    await dump('EM-16_did-they-reach-out', () => email.sendDidTheyReachOut({ to: 'buyer@x.com', first_name: 'Sam', agent_full_name: 'Dana Smith', yesUrl: mk, notYetUrl: pb, pausedUrl: 'https://minnesotalakehomesforsale.com/a/EXAMPLETOKEN3' }));
+
     // EM-14 — offer expired, rerouting (buyer + agent)
     await dump('EM-14_reroute_buyer', () => email.sendRerouteBuyer({ to: 'buyer@x.com', first_name: 'Sam', lake_name: 'Gull Lake' }));
     await dump('EM-14_reroute_agent', () => email.sendRerouteAgent({ to: 'agent@x.com', agentFirstName: 'Dana', buyer_first: 'Sam', lake_name: 'Gull Lake', timeline: 'this summer', windowHours: 24 }));

@@ -6012,6 +6012,14 @@ const PORT = process.env.PORT || 3000;
         setInterval(() => runAgentResponseNudge().catch(e => console.warn('[agent-nudge]', e.message)), 20 * 60 * 1000);
     }
 
+    // EM-16 — 72h "did they reach out?" buyer check-in. Every few hours.
+    // FEEDBACK_REQUEST_ENABLED=false to disable.
+    if (process.env.FEEDBACK_REQUEST_ENABLED !== 'false') {
+        const { runFeedbackRequest } = require('./services/feedback-request');
+        setTimeout(() => runFeedbackRequest().catch(e => console.warn('[feedback-request]', e.message)), 10 * 60 * 1000);
+        setInterval(() => runFeedbackRequest().catch(e => console.warn('[feedback-request]', e.message)), 3 * 60 * 60 * 1000);
+    }
+
     // T141 manual-release acceptance SLA — reclaim hand-placed held leads the
     // free-tier agent didn't accept within 24h. Every 15 min. Disable with
     // MANUAL_RELEASE_SWEEP_ENABLED=false.

@@ -16,6 +16,7 @@ async function runNoAgentFollowup() {
             `SELECT id, email, first_name, target_lake
                FROM leads
               WHERE held_no_agent = TRUE AND deleted_at IS NULL AND agent_id IS NULL
+                AND (buyer_feedback IS NULL OR buyer_feedback <> 'paused')
                 AND no_agent_email_count >= 1 AND no_agent_email_count < 2
                 AND no_agent_last_at < NOW() - INTERVAL '7 days'
               LIMIT 100`));

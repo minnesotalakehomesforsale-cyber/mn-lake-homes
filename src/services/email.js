@@ -1593,6 +1593,28 @@ function sendAgentNudge({ variant, to, agentFirstName, buyer_first, lake_name, t
     });
 }
 
+// EM-16 — "Did they reach out?" 72h after routing, to the buyer/seller. Quality
+// control on the whole product: the answers feed routing weight, "yes" becomes a
+// testimonial, "not yet" fixes a bad match before the person writes us off. One
+// question, one click. Consumer/transactional.
+function sendDidTheyReachOut({ to, first_name, agent_full_name, yesUrl, notYetUrl, pausedUrl }) {
+    if (!to) return { skipped: true };
+    const first = _esc(first_name) || 'there';
+    const agentFirst = agent_full_name ? _esc(String(agent_full_name).split(' ')[0]) : 'your agent';
+    const p = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;';
+    const btn = (url, label, primary) => `<a href="${url}" style="display:inline-block;padding:12px 20px;margin:0 8px 8px 0;border-radius:8px;font-weight:700;font-size:15px;text-decoration:none;${primary ? 'background:#1d6df2;color:#fff;' : 'background:#edf2f7;color:#2d3748;'}">${label}</a>`;
+    return sendEmail({
+        emailClass: 'transactional', templateKey: 'buyer_feedback_72h', to,
+        subject: `Did ${agentFirst} get in touch?`,
+        html: layout({ title: '', preheader: 'One click, and it genuinely helps.', body: `
+            <p style="${p}">Hi ${first},</p>
+            <p style="${p}">I matched you with ${_esc(agent_full_name) || 'an agent'} a few days ago. One question, one click:</p>
+            <p style="margin:8px 0 0;">${btn(yesUrl, "Yes, we've connected", true)}${btn(notYetUrl, 'Not yet', false)}${btn(pausedUrl, "I've paused my search", false)}</p>
+            <p style="${p}margin-top:20px;">That's the whole email. If the answer is "not yet," I'll find you someone else today — you shouldn't have to chase an agent.</p>
+            <p style="${p}">— Hunter</p>` }),
+    });
+}
+
 // ─── New in-app message arrived from MN Lake Homes ─────────────────────────
 // Fires whenever the admin sends a 1:1 message OR the agent is in the
 // audience of a broadcast. The email is the wake-up; the actual thread
@@ -1947,6 +1969,7 @@ const EMAIL_TEMPLATES = [
     { key: 'lead_reroute_buyer',              class: 'transactional', audience: 'consumer', label: 'Rerouting (buyer)' },
     { key: 'lead_reroute_agent',              class: 'transactional', audience: 'agent',    label: 'Rerouted (agent)' },
     { key: 'agent_response_nudge',            class: 'transactional', audience: 'agent',    label: 'Agent response nudge' },
+    { key: 'buyer_feedback_72h',              class: 'transactional', audience: 'consumer', label: 'Did they reach out? (72h)' },
     { key: 'agent_profile_nudge',             class: 'lifecycle',     audience: 'agent',    label: 'Agent profile nudge' },
     { key: 'agent_profile_enrichment_nudge',  class: 'lifecycle',     audience: 'agent',    label: 'Agent profile enrichment nudge' },
     { key: 'referral_reward',                 class: 'transactional', audience: 'agent',    label: 'Referral reward' },
@@ -2051,6 +2074,7 @@ module.exports = {
     sendRerouteBuyer,
     sendRerouteAgent,
     sendAgentNudge,
+    sendDidTheyReachOut,
     sendAgentProfileNudge,
     sendAgentProfileEnrichmentNudge,
     sendReferralRewardEmail,

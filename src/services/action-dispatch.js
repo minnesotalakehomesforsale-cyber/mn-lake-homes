@@ -63,4 +63,51 @@ register('pass_back', {
     },
 });
 
+// ── 72h buyer feedback (EM-16) ───────────────────────────────────────────────
+// Three one-click answers. First answer wins (claimed on buyer_feedback IS NULL),
+// so the sibling tokens no-op if clicked after.
+async function claimFeedback(leadId, value) {
+    const r = await pool.query(
+        `UPDATE leads SET buyer_feedback = $2, buyer_feedback_at = NOW(), updated_at = NOW()
+          WHERE id = $1 AND buyer_feedback IS NULL RETURNING id`, [leadId, value]);
+    return r.rowCount > 0;
+}
+
+register('feedback_connected', {
+    describe: async () => ({ title: "Yes — you've connected?", body: 'Great. This confirms your agent reached out.', confirmLabel: 'Confirm' }),
+    perform: async (claim) => {
+        const first = await claimFeedback(claim.lead_id, 'connected');
+        if (!first) return { message: "Thanks — we've already recorded your answer." };
+        // "Connected" implies contact happened — log a response time if none.
+        try { await pool.query(`UPDATE leads SET first_contact_at = COALESCE(first_contact_at, NOW()) WHERE id = $1`, [claim.lead_id]); } catch (_) {}
+        return { message: "Thanks — glad you two connected. That's exactly what we wanted to hear." };
+    },
+});
+
+register('feedback_not_yet', {
+    describe: async () => ({ title: 'No contact yet?', body: "Sorry about that — confirm and I'll find you someone else today.", confirmLabel: 'Find me someone else' }),
+    perform: async (claim) => {
+        const first = await claimFeedback(claim.lead_id, 'not_yet');
+        if (!first) return { message: "Thanks — we've already recorded your answer." };
+        // Record the strike + a P2 quality signal for the weekly.
+        if (claim.agent_id) { try { await pool.query(`UPDATE agents SET response_strikes = response_strikes + 1 WHERE id = $1`, [claim.agent_id]); } catch (_) {} }
+        try { require('./incidents').raise({ key: `buyer_not_yet:${claim.lead_id}`, severity: 'P2', title: 'Buyer says the agent never reached out', detail: '72h check-in came back "not yet" — rerouting to another agent.', adminLink: '/pages/admin/leads.html' }); } catch (_) {}
+        // Offer an alternate immediately — the person shouldn't have to chase.
+        let rr = {};
+        try { rr = await require('./reroute-lead').rerouteLead({ leadId: claim.lead_id }); } catch (_) {}
+        return { message: rr.rerouted
+            ? "Thank you — I've matched you with a different agent and you'll hear from them shortly."
+            : "Thank you — I'm on it personally and will find you someone. Sorry you had to wait." };
+    },
+});
+
+register('feedback_paused', {
+    describe: async () => ({ title: 'Paused your search?', body: "No problem — confirm and I'll stop the emails about this.", confirmLabel: 'Confirm' }),
+    perform: async (claim) => {
+        const first = await claimFeedback(claim.lead_id, 'paused');
+        if (!first) return { message: "Thanks — we've already recorded your answer." };
+        return { message: "No problem at all — I'll pause things on our end. Reach out whenever you're ready and we'll pick right back up." };
+    },
+});
+
 module.exports = { register, describe, perform, _handlers: HANDLERS };

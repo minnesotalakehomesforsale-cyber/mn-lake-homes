@@ -3,9 +3,15 @@
 // EM-15 — the tokenised button actions behind the agent nudges.
 
 const pool = require('../src/database/pool');
-let marks = 0;
-pool.query = async (sql) => {
+let marks = 0, strikes = 0;
+let feedbackClaimed = null;   // simulate "first answer wins": null until claimed
+pool.query = async (sql, params = []) => {
     if (/UPDATE leads[\s\S]*first_contact_at = COALESCE/.test(sql)) { marks++; return { rowCount: 1, rows: [] }; }
+    if (/UPDATE leads SET buyer_feedback = \$2/.test(sql)) {
+        if (feedbackClaimed) return { rowCount: 0, rows: [] };
+        feedbackClaimed = params[1]; return { rowCount: 1, rows: [{ id: params[0] }] };
+    }
+    if (/UPDATE agents SET response_strikes/.test(sql)) { strikes++; return { rowCount: 1, rows: [] }; }
     return { rows: [] };
 };
 
@@ -31,6 +37,15 @@ const ok = (c, m) => { if (c) console.log('  ✓ ' + m); else { failures++; cons
 
     const unknown = await dispatch.perform({ action: 'nope' });
     ok(/no longer available/i.test(unknown.message), 'an unknown action degrades gracefully');
+
+    // EM-16 feedback: first answer wins; "not yet" strikes the agent + reroutes.
+    rerouted = [];
+    const notYet = await dispatch.perform({ action: 'feedback_not_yet', lead_id: 'L2', agent_id: 'a1' });
+    ok(feedbackClaimed === 'not_yet' && strikes === 1 && rerouted.length === 1, '"not yet" records feedback, strikes the agent, and reroutes');
+    ok(/different agent|find you someone/i.test(notYet.message), '"not yet" tells the buyer they\'re being rematched');
+    // A second answer on the same (already-answered) lead is a no-op.
+    const late = await dispatch.perform({ action: 'feedback_connected', lead_id: 'L2' });
+    ok(/already recorded/i.test(late.message), 'a second feedback answer is ignored (first answer wins)');
 
     if (failures) { console.error(`\nlead-actions: ${failures} FAIL`); process.exit(1); }
     console.log('\nlead-actions: ALL PASSED');
