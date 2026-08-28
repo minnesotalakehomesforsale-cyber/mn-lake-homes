@@ -1534,6 +1534,65 @@ function sendNoAgentYet({ to, first_name, lake_name, lake_slug, nearby_lakes, va
     });
 }
 
+// EM-14 (buyer) — the reroute note. Short, no blame, no mention that an agent
+// ignored them. Used on offer-expiry AND when the buyer/agent triggers a reroute
+// (EM-15 pass-back, EM-16 "not yet"). Consumer/transactional.
+function sendRerouteBuyer({ to, first_name, lake_name }) {
+    if (!to) return { skipped: true };
+    const lake = _esc(lake_name) || 'your lake';
+    const p = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;';
+    return sendEmail({
+        emailClass: 'transactional', templateKey: 'lead_reroute_buyer', to,
+        subject: `Quick update on your ${lake_name || 'lake'} request`,
+        html: layout({ title: '', preheader: "A quick update — you'll hear back shortly.", body: `
+            <p style="${p}">Hi ${_esc(first_name) || 'there'} — quick update: I'm matching you with a different ${lake} agent to make sure you hear back quickly. You'll have an introduction within 24 hours.</p>
+            <p style="${p}">— Hunter</p>` }),
+    });
+}
+
+// EM-14 (agent) — factual, states the consequence, no scolding. Sent to the agent
+// who let a manual offer's window lapse. Agent/transactional.
+function sendRerouteAgent({ to, agentFirstName, buyer_first, lake_name, timeline, windowHours }) {
+    if (!to) return { skipped: true };
+    const p = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;';
+    const lake = _esc(lake_name) || 'the';
+    return sendEmail({
+        emailClass: 'transactional', templateKey: 'lead_reroute_agent', to,
+        subject: `The ${lake_name || 'lake'} lead went to another agent`,
+        html: layout({ title: '', preheader: 'Response time factors into routing weight.', body: `
+            <p style="${p}">${_esc(agentFirstName) || 'Hi'} — the ${lake} lead (${_esc(buyer_first) || 'a buyer'}${timeline ? `, ${_esc(timeline)}` : ''}) went to another agent after the ${windowHours || 'response'}-hour window passed. No hard feelings, but response time factors into routing weight, so faster replies mean more leads. If the window's too short for how you work, reply and tell me.</p>` }),
+    });
+}
+
+// EM-15 — agent response nudge, +1h then +24h after routing if no contact is
+// logged. Speed to first contact is the whole difference between a lead and a
+// wasted one. Buttons are tokenised (no login). Agent/transactional.
+function sendAgentNudge({ variant, to, agentFirstName, buyer_first, lake_name, timeline, budget, intent, phone, markContactedUrl, passBackUrl }) {
+    if (!to) return { skipped: true };
+    const p = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;';
+    const btn = (url, label, primary) => `<a href="${url}" style="display:inline-block;padding:12px 22px;margin:0 8px 8px 0;border-radius:8px;font-weight:700;font-size:15px;text-decoration:none;${primary ? 'background:#1d6df2;color:#fff;' : 'background:#edf2f7;color:#2d3748;'}">${label}</a>`;
+    const facts = [_esc(lake_name), _esc(timeline), _esc(budget), _esc(intent)].filter(Boolean).join(' · ');
+
+    if (variant === '24h') {
+        return sendEmail({
+            emailClass: 'transactional', templateKey: 'agent_response_nudge', to,
+            subject: `Still no contact logged on the ${lake_name || 'lake'} lead`,
+            html: layout({ title: '', preheader: 'Reply to reroute, or mark it contacted.', body: `
+                <p style="${p}">${_esc(buyer_first) || 'A buyer'} submitted a request 24 hours ago and we haven't seen contact logged.</p>
+                <p style="${p}">If you can't take this one, reply and I'll reroute it now — that's a completely fine answer. If you have reached out, just mark it contacted so the system knows.</p>
+                <p style="margin:8px 0 0;">${btn(markContactedUrl, 'Mark as contacted', true)}${btn(passBackUrl, 'Pass this one back', false)}</p>` }),
+        });
+    }
+    return sendEmail({
+        emailClass: 'transactional', templateKey: 'agent_response_nudge', to,
+        subject: `${buyer_first || 'A buyer'} is waiting — ${lake_name || 'your lake'}`,
+        html: layout({ title: '', preheader: 'First agent to reach them usually wins the client.', body: `
+            <p style="${p}"><strong>${_esc(buyer_first) || 'A buyer'} is waiting</strong> — ${facts}</p>
+            <p style="margin:8px 0 0;">${phone ? btn(`tel:${String(phone).replace(/[^0-9+]/g, '')}`, `Call ${_esc(phone)}`, true) : ''}${btn(markContactedUrl, 'Mark as contacted', !phone)}</p>
+            <p style="margin:14px 0 0;font-size:13px;color:#718096;">First agent to reach them usually wins the client.</p>` }),
+    });
+}
+
 // ─── New in-app message arrived from MN Lake Homes ─────────────────────────
 // Fires whenever the admin sends a 1:1 message OR the agent is in the
 // audience of a broadcast. The email is the wake-up; the actual thread
@@ -1885,6 +1944,9 @@ const EMAIL_TEMPLATES = [
     { key: 'manual_lead_offer',               class: 'transactional', audience: 'agent',    label: 'Manual lead offer' },
     { key: 'lead_agent_matched',              class: 'transactional', audience: 'consumer', label: 'Lead → agent matched' },
     { key: 'lead_no_agent_yet',               class: 'transactional', audience: 'consumer', label: 'No agent on your lake yet' },
+    { key: 'lead_reroute_buyer',              class: 'transactional', audience: 'consumer', label: 'Rerouting (buyer)' },
+    { key: 'lead_reroute_agent',              class: 'transactional', audience: 'agent',    label: 'Rerouted (agent)' },
+    { key: 'agent_response_nudge',            class: 'transactional', audience: 'agent',    label: 'Agent response nudge' },
     { key: 'agent_profile_nudge',             class: 'lifecycle',     audience: 'agent',    label: 'Agent profile nudge' },
     { key: 'agent_profile_enrichment_nudge',  class: 'lifecycle',     audience: 'agent',    label: 'Agent profile enrichment nudge' },
     { key: 'referral_reward',                 class: 'transactional', audience: 'agent',    label: 'Referral reward' },
@@ -1986,6 +2048,9 @@ module.exports = {
     sendManualLeadOffer,
     sendLeadAgentMatched,
     sendNoAgentYet,
+    sendRerouteBuyer,
+    sendRerouteAgent,
+    sendAgentNudge,
     sendAgentProfileNudge,
     sendAgentProfileEnrichmentNudge,
     sendReferralRewardEmail,

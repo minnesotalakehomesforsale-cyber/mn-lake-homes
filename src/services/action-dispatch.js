@@ -44,4 +44,23 @@ register('mark_contacted', {
     },
 });
 
+// ── pass_back (EM-15) ────────────────────────────────────────────────────────
+// The agent hands the lead back. Reroute immediately to another eligible agent
+// and notify the buyer — no human in the path unless nobody else covers the lake.
+register('pass_back', {
+    describe: async () => ({
+        title: 'Pass this lead back?',
+        body: "We'll reroute it to another agent right away and let the buyer know. No hard feelings — it just goes back in the pool.",
+        confirmLabel: 'Yes, pass it back',
+    }),
+    perform: async (claim) => {
+        const r = await require('./reroute-lead').rerouteLead({ leadId: claim.lead_id });
+        return {
+            message: r.rerouted
+                ? "Done — rerouted to another agent, and the buyer has been notified. Thanks for the fast, honest answer."
+                : "Passed back. There's no other agent on this lake yet, so we've let the buyer know and flagged it for the team.",
+        };
+    },
+});
+
 module.exports = { register, describe, perform, _handlers: HANDLERS };

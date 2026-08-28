@@ -6004,6 +6004,14 @@ const PORT = process.env.PORT || 3000;
         setInterval(() => runNoAgentFollowup().catch(e => console.warn('[no-agent-followup]', e.message)), 24 * 60 * 60 * 1000);
     }
 
+    // EM-15 — nudge the assigned agent at +1h/+24h if no contact is logged.
+    // Every 20 min so the windows fire promptly. AGENT_NUDGE_ENABLED=false to disable.
+    if (process.env.AGENT_NUDGE_ENABLED !== 'false') {
+        const { runAgentResponseNudge } = require('./services/agent-response-nudge');
+        setTimeout(() => runAgentResponseNudge().catch(e => console.warn('[agent-nudge]', e.message)), 6 * 60 * 1000);
+        setInterval(() => runAgentResponseNudge().catch(e => console.warn('[agent-nudge]', e.message)), 20 * 60 * 1000);
+    }
+
     // T141 manual-release acceptance SLA — reclaim hand-placed held leads the
     // free-tier agent didn't accept within 24h. Every 15 min. Disable with
     // MANUAL_RELEASE_SWEEP_ENABLED=false.
