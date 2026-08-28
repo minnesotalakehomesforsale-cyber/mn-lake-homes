@@ -191,6 +191,10 @@ router.get   ('/:id/payments',       verifyToken, requireRole(['admin', 'super_a
 router.get   ('/:id/emails',         verifyToken, requireRole(['admin', 'super_admin']), adminController.getAgentEmailHistory);
 // Whole-picture email_log health (category×status, earliest error, error rows).
 router.get   ('/email-log/summary',  verifyToken, requireRole(['admin', 'super_admin']), adminController.emailLogSummary);
+// EM-23a — read-only email system map: per-template class/last-sent/30d counts,
+// site-wide totals + health, and a filterable recent-sends feed.
+router.get   ('/email/oversight',    verifyToken, requireRole(['admin', 'super_admin']), adminController.getEmailOversight);
+router.get   ('/email/recent',       verifyToken, requireRole(['admin', 'super_admin']), adminController.getEmailRecent);
 
 // Impersonate a regular user (log in as them). Specific prefix — before /:id.
 router.post('/users/:id/impersonate', verifyToken, requireRole(['admin', 'super_admin']), adminController.impersonateUser);

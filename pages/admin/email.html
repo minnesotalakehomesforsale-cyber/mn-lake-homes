@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email System | MN Lake Homes Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="../../styles/style.css">
+    <style>
+        html, body { margin: 0; padding: 0; background: #f7f9fa; font-family: 'SF Pro Text', -apple-system, sans-serif; color: #1a202c; }
+        body.lt-embed admin-sidebar,
+        body.lt-embed .admin-main > header { display: none !important; }
+        body.lt-embed .admin-wrap { display: block !important; }
+        body.lt-embed .admin-main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+
+        .em-status { display: flex; align-items: center; gap: 1rem; padding: 1.4rem 1.6rem; border-radius: 14px; margin-bottom: 1.5rem; border: 1px solid; }
+        .em-status .dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+        .em-status h2 { margin: 0; font-size: 1.15rem; font-weight: 800; }
+        .em-status p { margin: 0.15rem 0 0; font-size: 0.9rem; }
+        .em-status.green  { background: #f0fff4; border-color: #9ae6b4; color: #22543d; } .em-status.green .dot  { background: #38a169; }
+        .em-status.yellow { background: #fffaf0; border-color: #f6e05e; color: #744210; } .em-status.yellow .dot { background: #d69e2e; }
+        .em-status.red    { background: #fff5f5; border-color: #feb2b2; color: #742a2a; } .em-status.red .dot    { background: #e53e3e; }
+        .em-status.grey   { background: #f7fafc; border-color: #e2e8f0; color: #4a5568; } .em-status.grey .dot   { background: #a0aec0; }
+
+        .em-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .em-stat { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.15rem 1.3rem; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 10px 26px rgba(16,24,40,0.05); }
+        .em-stat .k { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #718096; margin: 0 0 0.5rem; }
+        .em-stat .v { font-size: 1.85rem; font-weight: 800; letter-spacing: -1px; color: #1a202c; line-height: 1; }
+        .em-stat .s { font-size: 0.8rem; color: #718096; margin-top: 0.35rem; }
+        .em-stat .v.ok { color: #2f855a; } .em-stat .v.warn { color: #c05621; } .em-stat .v.bad { color: #c53030; }
+
+        .em-panel { background: #fff; border: 1px solid #edf2f7; border-radius: 14px; padding: 1.4rem 1.6rem; margin-bottom: 1.25rem; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 10px 26px rgba(16,24,40,0.05); }
+        .em-panel h3 { margin: 0 0 0.3rem; font-size: 0.95rem; font-weight: 800; color: #1a202c; }
+        .em-panel .sub { margin: 0 0 1rem; font-size: 0.82rem; color: #718096; }
+
+        table.em-tbl { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+        table.em-tbl th { text-align: left; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; color: #718096; font-weight: 800; padding: 0.5rem 0.6rem; border-bottom: 2px solid #edf2f7; white-space: nowrap; }
+        table.em-tbl td { padding: 0.55rem 0.6rem; border-bottom: 1px solid #f2f5f8; vertical-align: middle; }
+        table.em-tbl tr:last-child td { border-bottom: none; }
+        table.em-tbl td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .em-scroll { overflow-x: auto; }
+
+        .badge { display: inline-block; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; padding: 0.2rem 0.5rem; border-radius: 999px; border: 1px solid; }
+        .badge.transactional { background: #ebf8ff; border-color: #bee3f8; color: #2b6cb0; }
+        .badge.lifecycle     { background: #faf5ff; border-color: #e9d8fd; color: #6b46c1; }
+        .badge.content_ask   { background: #fffaf0; border-color: #feebc8; color: #b7791f; }
+        .badge.internal      { background: #f0fff4; border-color: #c6f6d5; color: #2f855a; }
+        .badge.sent { background:#f0fff4;border-color:#c6f6d5;color:#2f855a;} .badge.error{background:#fff5f5;border-color:#fed7d7;color:#c53030;}
+        .badge.suppressed{background:#faf5ff;border-color:#e9d8fd;color:#6b46c1;} .badge.bounced{background:#fffaf0;border-color:#feebc8;color:#b7791f;}
+        .badge.skipped{background:#f7fafc;border-color:#e2e8f0;color:#718096;}
+
+        .num.z { color: #cbd5e0; } .num.pos { color: #1a202c; font-weight: 700; }
+        .num.err { color: #c53030; font-weight: 700; } .num.warn { color: #c05621; font-weight: 700; }
+        .em-muted { color: #a0aec0; font-size: 0.85rem; }
+        .em-refresh { border: 1px solid #e2e8f0; background: #fff; border-radius: 10px; padding: 0.5rem 1rem; font-weight: 700; font-size: 0.85rem; cursor: pointer; color: #2d3748; }
+        .em-note { font-size: 0.8rem; color: #718096; background: #f7fafc; border-left: 3px solid #cbd5e0; padding: 0.55rem 0.85rem; border-radius: 0 8px 8px 0; margin-top: 0.8rem; line-height: 1.5; }
+        .em-ro { display:inline-block; font-size:0.7rem; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; color:#718096; background:#edf2f7; padding:0.25rem 0.6rem; border-radius:999px; }
+        .em-filters { display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center; margin-bottom:1rem; }
+        .em-filters select, .em-filters input { font: inherit; font-size:0.85rem; padding:0.4rem 0.6rem; border:1px solid #e2e8f0; border-radius:9px; background:#fff; color:#2d3748; }
+        .em-filters input[type=text] { min-width: 200px; }
+    </style>
+</head>
+<body>
+    <script src="../../components/admin-guard.js"></script>
+    <script src="../../components/admin-sidebar.js" defer></script>
+    <script src="../../components/admin-responsive.js" defer></script>
+
+    <div class="admin-wrap">
+        <admin-sidebar active="system"></admin-sidebar>
+        <main class="admin-main">
+            <header style="margin-bottom:2rem; display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; flex-wrap:wrap;">
+                <div>
+                    <h1 style="font-size:1.85rem; font-weight:800; letter-spacing:-0.75px; margin:0 0 0.25rem;">Email System</h1>
+                    <p style="color:#718096; margin:0; font-size:0.95rem;">Every template, its compliance class, and what it's actually done — <span class="em-ro">read-only</span></p>
+                </div>
+                <button class="em-refresh" onclick="loadEmail()">↻ Refresh</button>
+            </header>
+            <div id="em-content"><p class="em-muted">Loading email system…</p></div>
+        </main>
+    </div>
+
+    <script>
+        const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+        const fmtDate = s => { if (!s) return '—'; const d = new Date(s); return d.toLocaleDateString('en-US', { month:'short', day:'numeric' }) + ' ' + d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' }); };
+        const numCell = (n, kind) => `<td class="num ${n === 0 ? 'z' : (kind || 'pos')}">${n}</td>`;
+
+        const HEALTH_UI = {
+            ok:       ['green',  'Sending normally', ''],
+            idle:     ['grey',   'Idle', ''],
+            degraded: ['yellow', 'Degraded', ''],
+            blocked:  ['red',    'Commercial email blocked', ''],
+            down:     ['red',    'No transport', ''],
+        };
+
+        async function loadEmail() {
+            const el = document.getElementById('em-content');
+            el.innerHTML = '<p class="em-muted">Loading email system…</p>';
+            try {
+                const res = await fetch('/api/admin/email/oversight', { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to load email oversight.');
+                render(await res.json());
+                loadRecent();
+            } catch (err) {
+                el.innerHTML = `<p style="color:#c53030;">${esc(err.message)}</p>`;
+            }
+        }
+
+        function render(d) {
+            const [cls, title] = HEALTH_UI[d.health] || ['grey', d.health];
+            const t = d.totals_30d || {};
+            const cfg = d.config || {};
+            const errCls = t.error_rate >= 20 ? 'bad' : (t.error_rate > 0 ? 'warn' : 'ok');
+            const bounceCls = t.bounce_rate >= 5 ? 'bad' : (t.bounce_rate > 0 ? 'warn' : 'ok');
+
+            const rows = (d.templates || []).map(tpl => {
+                const c = tpl.counts || {};
+                return `<tr>
+                    <td><strong>${esc(tpl.label)}</strong><br><span class="em-muted" style="font-size:0.75rem;">${esc(tpl.key)}</span></td>
+                    <td><span class="badge ${tpl.class}">${esc(tpl.class)}</span>${tpl.commercial ? ' <span class="em-muted" style="font-size:0.72rem;">capped</span>' : ''}</td>
+                    <td class="num">${fmtDate(tpl.last_at)}</td>
+                    ${numCell(c.sent, 'pos')}
+                    ${numCell(c.error, 'err')}
+                    ${numCell(c.suppressed, 'warn')}
+                    ${numCell(c.bounced, 'err')}
+                    <td class="num ${tpl.bounce_rate == null ? 'z' : (tpl.bounce_rate >= 5 ? 'err' : 'pos')}">${tpl.bounce_rate == null ? '—' : tpl.bounce_rate + '%'}</td>
+                </tr>`;
+            }).join('');
+
+            document.getElementById('em-content').innerHTML = `
+                <div class="em-status ${cls}">
+                    <span class="dot"></span>
+                    <div><h2>${esc(title)}</h2><p>${esc(d.reason || '')}</p></div>
+                </div>
+
+                <div class="em-grid">
+                    <div class="em-stat"><p class="k">Transport</p><div class="v ${cfg.transport === 'none' ? 'bad' : 'ok'}">${cfg.transport === 'none' ? 'None' : esc(cfg.transport)}</div><div class="s">${cfg.email_from ? esc(cfg.email_from) : 'EMAIL_FROM unset'}</div></div>
+                    <div class="em-stat"><p class="k">Postal address</p><div class="v ${cfg.physical_address_set ? 'ok' : 'bad'}">${cfg.physical_address_set ? 'Set' : 'Missing'}</div><div class="s">${cfg.physical_address_set ? 'CAN-SPAM ok' : 'commercial mail refused'}</div></div>
+                    <div class="em-stat"><p class="k">Sent · 30d</p><div class="v">${t.sent || 0}</div><div class="s">last: ${fmtDate(t.last_sent_at)}</div></div>
+                    <div class="em-stat"><p class="k">Error rate · 30d</p><div class="v ${errCls}">${t.error_rate || 0}%</div><div class="s">${t.error || 0} rejected</div></div>
+                    <div class="em-stat"><p class="k">Bounce rate · 30d</p><div class="v ${bounceCls}">${t.bounce_rate || 0}%</div><div class="s">${t.bounced || 0} bounced · ${t.suppressed || 0} suppressed</div></div>
+                </div>
+
+                <div class="em-panel">
+                    <h3>Templates <span class="em-muted" style="font-weight:600;">(${(d.templates || []).length})</span></h3>
+                    <p class="sub">${d.classes ? `${d.classes.transactional} transactional · ${d.classes.lifecycle} lifecycle · ${d.classes.content_ask} content-ask · ${d.classes.internal} internal` : ''} — counts are the last 30 days.</p>
+                    <div class="em-scroll">
+                    <table class="em-tbl">
+                        <thead><tr>
+                            <th>Template</th><th>Class</th><th>Last sent</th>
+                            <th class="num">Sent</th><th class="num">Error</th><th class="num">Suppr.</th><th class="num">Bounced</th><th class="num">Bounce %</th>
+                        </tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                    </div>
+                    <div class="em-note">${esc(d.note || '')}</div>
+                </div>
+
+                <div class="em-panel">
+                    <h3>Recent sends</h3>
+                    <p class="sub">The email_log tail, newest first. Filters are AND-combined.</p>
+                    <div class="em-filters">
+                        <select id="f-class" onchange="loadRecent()">
+                            <option value="">All classes</option>
+                            <option value="transactional">Transactional</option>
+                            <option value="lifecycle">Lifecycle</option>
+                            <option value="content_ask">Content-ask</option>
+                            <option value="internal">Internal</option>
+                        </select>
+                        <select id="f-status" onchange="loadRecent()">
+                            <option value="">All statuses</option>
+                            <option value="sent">Sent</option>
+                            <option value="error">Error</option>
+                            <option value="suppressed">Suppressed</option>
+                            <option value="bounced">Bounced</option>
+                            <option value="skipped">Skipped</option>
+                        </select>
+                        <input type="text" id="f-q" placeholder="subject or recipient…" onkeydown="if(event.key==='Enter')loadRecent()">
+                        <button class="em-refresh" onclick="loadRecent()">Apply</button>
+                    </div>
+                    <div id="em-recent"><p class="em-muted">Loading recent sends…</p></div>
+                </div>
+            `;
+        }
+
+        async function loadRecent() {
+            const box = document.getElementById('em-recent');
+            if (!box) return;
+            const p = new URLSearchParams();
+            const cls = document.getElementById('f-class')?.value; if (cls) p.set('class', cls);
+            const st  = document.getElementById('f-status')?.value; if (st) p.set('status', st);
+            const q   = document.getElementById('f-q')?.value?.trim(); if (q) p.set('q', q);
+            p.set('limit', '100');
+            box.innerHTML = '<p class="em-muted">Loading…</p>';
+            try {
+                const res = await fetch('/api/admin/email/recent?' + p.toString(), { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to load recent sends.');
+                const d = await res.json();
+                if (!d.rows.length) { box.innerHTML = '<p class="em-muted">No matching sends.</p>'; return; }
+                const rows = d.rows.map(r => `<tr>
+                    <td class="num" style="white-space:nowrap;">${fmtDate(r.created_at)}</td>
+                    <td>${esc(r.to_email)}</td>
+                    <td>${esc(r.subject || '—')}</td>
+                    <td>${r.email_class ? `<span class="badge ${esc(r.email_class)}">${esc(r.email_class)}</span>` : '<span class="em-muted">—</span>'}</td>
+                    <td><span class="em-muted" style="font-size:0.78rem;">${esc(r.template_key || '—')}</span></td>
+                    <td><span class="badge ${esc(r.status)}">${esc(r.status)}</span></td>
+                    <td><span class="em-muted" style="font-size:0.78rem;">${esc((r.detail || '').slice(0, 60))}</span></td>
+                </tr>`).join('');
+                box.innerHTML = `<div class="em-scroll"><table class="em-tbl">
+                    <thead><tr><th>When</th><th>To</th><th>Subject</th><th>Class</th><th>Template</th><th>Status</th><th>Detail</th></tr></thead>
+                    <tbody>${rows}</tbody></table></div>
+                    <p class="em-muted" style="margin-top:0.7rem;">Showing ${d.count} most recent${d.count >= d.limit ? ` (capped at ${d.limit})` : ''}.</p>`;
+            } catch (err) {
+                box.innerHTML = `<p style="color:#c53030;">${esc(err.message)}</p>`;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadEmail);
+    </script>
+
+    <!-- Embed-mode helper — hide chrome + post height when iframed in system.html -->
+    <script>
+        (function () {
+            if (new URLSearchParams(window.location.search).get('embed') !== '1') return;
+            document.body.classList.add('lt-embed');
+            let lastH = 0;
+            function postHeight() {
+                const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+                if (h !== lastH) { lastH = h; window.parent.postMessage({ lt: 'height', frame: 'email', h }, '*'); }
+            }
+            window.addEventListener('load', postHeight);
+            setInterval(postHeight, 600);
+        })();
+    </script>
+</body>
+</html>

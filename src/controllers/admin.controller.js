@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const { logActivity } = require('../services/activity-log');
 const hubspot = require('../services/hubspot');
 const { agentTierLabel } = require('./stripe.controller');
+const { EMAIL_TEMPLATES } = require('../services/email');
 
 /**
  * GET /api/admin
@@ -2468,6 +2469,123 @@ const emailLogSummary = async (req, res) => {
     }
 };
 
+// GET /api/admin/email/oversight — EM-23a, READ-ONLY email system map.
+// One call renders the whole picture: every template with its class + last-sent
+// + 30-day status counts, the site-wide 30d totals + bounce rate, the derived
+// health state, and the transport/address config. This is observation only —
+// nothing here sends, pauses, or edits (that is Slice B, still PROPOSED).
+//
+// Caveat surfaced to the operator: template_key is only stamped on rows sent
+// from EM-03 onward, so per-template history is shallow until the log fills. The
+// site-wide totals count every row and are accurate immediately.
+const getEmailOversight = async (req, res) => {
+    try {
+        const [perTemplate, totals, lastSent, bounceCap] = await Promise.all([
+            // Per-template 30d counts, keyed on template_key.
+            pool.query(
+                `SELECT template_key,
+                        COUNT(*) FILTER (WHERE status='sent')::int       AS sent,
+                        COUNT(*) FILTER (WHERE status='error')::int      AS error,
+                        COUNT(*) FILTER (WHERE status='suppressed')::int AS suppressed,
+                        COUNT(*) FILTER (WHERE status='bounced')::int    AS bounced,
+                        COUNT(*) FILTER (WHERE status='skipped')::int    AS skipped,
+                        MAX(created_at) AS last_at
+                   FROM email_log
+                  WHERE created_at >= NOW() - INTERVAL '30 days'
+                    AND template_key IS NOT NULL
+                  GROUP BY template_key`),
+            // Site-wide 30d status totals.
+            pool.query(
+                `SELECT status, COUNT(*)::int AS n FROM email_log
+                  WHERE created_at >= NOW() - INTERVAL '30 days' GROUP BY status`),
+            pool.query(`SELECT MAX(created_at) AS at FROM email_log WHERE status='sent'`),
+            // Whether the physical-address gate is currently blocking commercial mail.
+            Promise.resolve(null),
+        ]);
+
+        const byKey = new Map(perTemplate.rows.map(r => [r.template_key, r]));
+        const templates = EMAIL_TEMPLATES.map(t => {
+            const r = byKey.get(t.key) || {};
+            const sent = r.sent || 0, error = r.error || 0, bounced = r.bounced || 0;
+            const delivered = sent; // 'sent' = accepted by provider
+            const bounceRate = (sent + bounced) > 0 ? +(bounced / (sent + bounced) * 100).toFixed(1) : null;
+            return {
+                key: t.key, label: t.label, class: t.class,
+                last_at: r.last_at || null,
+                counts: { sent, error, suppressed: r.suppressed || 0, bounced, skipped: r.skipped || 0 },
+                bounce_rate: bounceRate,
+                commercial: t.class === 'lifecycle' || t.class === 'content_ask',
+            };
+        });
+
+        const total = {}; for (const row of totals.rows) total[row.status] = row.n;
+        const sent30 = total.sent || 0, err30 = total.error || 0, bounced30 = total.bounced || 0;
+        const errorRate = (sent30 + err30) > 0 ? +(err30 / (sent30 + err30) * 100).toFixed(1) : 0;
+        const bounceRate = (sent30 + bounced30) > 0 ? +(bounced30 / (sent30 + bounced30) * 100).toFixed(1) : 0;
+
+        const resend = !!process.env.RESEND_API_KEY;
+        const gmail  = !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD);
+        const transport = resend ? 'resend' : (gmail ? 'gmail' : 'none');
+        const addr = process.env.EMAIL_PHYSICAL_ADDRESS;
+        const addressSet = !!addr && addr.trim() !== '' && !/Minnesota, USA$/.test(addr.trim());
+
+        // Derived health — worst wins. Observation, not an alarm (EM-04 is the alarm).
+        let health = 'ok', reason = 'sending normally';
+        if (transport === 'none')      { health = 'down';     reason = 'no email transport configured — nothing can send'; }
+        else if (!addressSet)          { health = 'blocked';  reason = 'no physical mailing address — commercial (lifecycle) email is refused for CAN-SPAM'; }
+        else if (errorRate >= 20)      { health = 'degraded'; reason = `provider error rate ${errorRate}% over 30 days`; }
+        else if (bounceRate >= 5)      { health = 'degraded'; reason = `bounce rate ${bounceRate}% over 30 days`; }
+        else if (sent30 === 0)         { health = 'idle';     reason = 'no email sent in the last 30 days'; }
+
+        res.json({
+            generated_at: new Date().toISOString(),
+            health, reason,
+            config: { transport, email_from: process.env.EMAIL_FROM || null, physical_address_set: addressSet },
+            totals_30d: { ...total, error_rate: errorRate, bounce_rate: bounceRate, last_sent_at: lastSent.rows[0]?.at || null },
+            classes: {
+                transactional: templates.filter(t => t.class === 'transactional').length,
+                lifecycle:     templates.filter(t => t.class === 'lifecycle').length,
+                content_ask:   templates.filter(t => t.class === 'content_ask').length,
+                internal:      templates.filter(t => t.class === 'internal').length,
+            },
+            templates,
+            note: 'Read-only. Per-template history begins when template_key logging shipped (EM-03); site-wide totals count every row.',
+        });
+    } catch (err) {
+        console.error('[getEmailOversight]', err.message);
+        res.status(500).json({ error: 'Failed to build email oversight.' });
+    }
+};
+
+// GET /api/admin/email/recent — last N email_log rows with optional filters.
+// Filters: ?class= ?status= ?template= ?q= (subject/recipient substring) ?limit=
+const getEmailRecent = async (req, res) => {
+    try {
+        const where = [];
+        const params = [];
+        let i = 1;
+        if (req.query.class)    { where.push(`email_class = $${i++}`);  params.push(String(req.query.class)); }
+        if (req.query.status)   { where.push(`status = $${i++}`);        params.push(String(req.query.status)); }
+        if (req.query.template) { where.push(`template_key = $${i++}`);  params.push(String(req.query.template)); }
+        if (req.query.q) {
+            where.push(`(subject ILIKE $${i} OR to_email ILIKE $${i})`);
+            params.push(`%${String(req.query.q)}%`); i++;
+        }
+        const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
+        const sql =
+            `SELECT id, to_email, subject, category, email_class, template_key, status, detail, created_at
+               FROM email_log
+              ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+              ORDER BY created_at DESC
+              LIMIT ${limit}`;
+        const { rows } = await pool.query(sql, params);
+        res.json({ count: rows.length, limit, rows });
+    } catch (err) {
+        console.error('[getEmailRecent]', err.message);
+        res.status(500).json({ error: 'Failed to load recent email.' });
+    }
+};
+
 // ─── Tag launch presets ──────────────────────────────────────────────────────
 // One-shot bulk active flip on the tags table. Currently supports the
 // 'top-20-mn-cities' preset — activates the 20 largest MN cities by 2020
@@ -3618,6 +3736,8 @@ module.exports = {
     sendAgentBillingEmail,
     getAgentEmailHistory,
     emailLogSummary,
+    getEmailOversight,
+    getEmailRecent,
     getSeoAudit,
     getLeadReconciliation,
     getRoutingSla,

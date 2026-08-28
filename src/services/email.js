@@ -1708,8 +1708,53 @@ function sendAgentPaymentFailed({ to, name, attempt = 1, final = false, nextAtte
     });
 }
 
+// ─── Template registry (EM-23a) ──────────────────────────────────────────────
+// The canonical list of every email this service can send, with its CAN-SPAM
+// class. Mirrors the emailClass/templateKey pairs the send calls carry inline;
+// the oversight slice joins this against email_log so a template with zero rows
+// still shows up (a template that has never fired is exactly what you want to
+// see). classGuard.test asserts this stays in sync with the call sites.
+//   transactional — service email, exempt from suppression + cap
+//   lifecycle     — commercial nudge, suppressible + capped
+//   content_ask   — commercial ask, suppressible + capped
+//   internal      — to the owner/admins, exempt
+const EMAIL_TEMPLATES = [
+    { key: 'welcome',                         class: 'transactional', label: 'Consumer welcome' },
+    { key: 'agent_welcome',                   class: 'transactional', label: 'Agent welcome' },
+    { key: 'agent_profile_live',              class: 'transactional', label: 'Agent profile live' },
+    { key: 'agent_admin_notification',        class: 'internal',      label: 'Agent signup → admin' },
+    { key: 'password_reset',                  class: 'transactional', label: 'Password reset' },
+    { key: 'admin_password_reset',            class: 'transactional', label: 'Admin password reset' },
+    { key: 'lead_confirmation',               class: 'transactional', label: 'Lead confirmation' },
+    { key: 'admin_lead_notification',         class: 'internal',      label: 'Lead → admin' },
+    { key: 'inquiry_notification',            class: 'internal',      label: 'Inquiry → admin' },
+    { key: 'inquiry_confirmation',            class: 'transactional', label: 'Inquiry confirmation' },
+    { key: 'matched_agent_notification',      class: 'transactional', label: 'Matched agent notification' },
+    { key: 'agent_lead_assigned',             class: 'transactional', label: 'Agent lead assigned' },
+    { key: 'manual_lead_offer',               class: 'transactional', label: 'Manual lead offer' },
+    { key: 'lead_agent_matched',              class: 'transactional', label: 'Lead → agent matched' },
+    { key: 'agent_profile_nudge',             class: 'lifecycle',     label: 'Agent profile nudge' },
+    { key: 'agent_profile_enrichment_nudge',  class: 'lifecycle',     label: 'Agent profile enrichment nudge' },
+    { key: 'referral_reward',                 class: 'transactional', label: 'Referral reward' },
+    { key: 'agent_exit_survey',               class: 'lifecycle',     label: 'Agent exit survey' },
+    { key: 'lead_landed_win_back',            class: 'lifecycle',     label: 'Lead win-back' },
+    { key: 'agent_message_notification',      class: 'transactional', label: 'Agent message notification' },
+    { key: 'cash_offer_to_partner',           class: 'transactional', label: 'Cash offer → partner' },
+    { key: 'business_welcome',                class: 'transactional', label: 'Business welcome' },
+    { key: 'business_admin_notification',     class: 'internal',      label: 'Business signup → admin' },
+    { key: 'business_payment_received',       class: 'transactional', label: 'Business payment received' },
+    { key: 'business_approved',               class: 'transactional', label: 'Business approved' },
+    { key: 'business_payment_failed',         class: 'transactional', label: 'Business payment failed' },
+    { key: 'agent_payment_failed',            class: 'transactional', label: 'Agent payment failed' },
+    { key: 'business_subscription_cancelled', class: 'transactional', label: 'Business subscription cancelled' },
+    { key: 'admin_subscription_cancelled',    class: 'internal',      label: 'Subscription cancelled → admin' },
+    { key: 'agent_invite',                    class: 'transactional', label: 'Agent invite' },
+    { key: 'business_invite',                 class: 'transactional', label: 'Business invite' },
+];
+
 module.exports = {
     sendEmail,
+    EMAIL_TEMPLATES,
     verifyUnsub,
     sendWelcome,
     sendAgentWelcome,
