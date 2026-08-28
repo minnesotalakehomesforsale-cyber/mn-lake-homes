@@ -2008,6 +2008,55 @@ app.post('/leads/accept', async (req, res) => {
     } catch (e) { console.error('[leads.accept POST]', e.message); return renderAcceptPage(res, { title: 'Something went wrong', message: 'We couldn\'t process that right now. Please try again shortly.', ok: false }); }
 });
 
+// ─── Block D: tokenised email-button actions (no login) ─────────────────────
+// GET previews (safe for link-scanners that prefetch); the human clicks the
+// confirm button which POSTs and performs the single-use action.
+function actionPage({ heading, message, button }) {
+    return `<!doctype html><html lang="en"><head><meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="robots" content="noindex"><title>${heading} · MN Lake Homes</title>
+      <style>body{margin:0;background:#f7f9fa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Arial,sans-serif;color:#1a202c;}
+      .wrap{max-width:520px;margin:8vh auto;padding:0 20px;}.card{background:#fff;border-radius:16px;padding:36px 32px;box-shadow:0 2px 10px rgba(16,24,40,.06);text-align:center;}
+      .bar{background:#0a0a0a;color:#fff;font-weight:800;font-size:16px;border-radius:12px 12px 0 0;padding:16px;margin:-36px -32px 24px;}
+      h1{font-size:22px;margin:0 0 12px;letter-spacing:-.4px;}p{font-size:15px;line-height:1.6;color:#4a5568;margin:0 0 20px;}
+      button{background:#1d6df2;color:#fff;border:0;border-radius:10px;padding:14px 28px;font-size:16px;font-weight:700;cursor:pointer;}
+      .muted{font-size:13px;color:#a0aec0;margin-top:18px;}</style></head>
+      <body><div class="wrap"><div class="card"><div class="bar">MN Lake Homes</div>
+      <h1>${heading}</h1><p>${message}</p>${button || ''}
+      <p class="muted">Minnesota Lake Homes</p></div></div></body></html>`;
+}
+
+app.get('/a/:token', async (req, res) => {
+    try {
+        const actionTokens = require('./services/action-tokens');
+        const t = await actionTokens.peek(req.params.token);
+        if (!t) return res.status(404).send(actionPage({ heading: 'Link not found', message: 'This link is invalid. Reply to the email and we\'ll sort it out.' }));
+        if (t.used_at) return res.send(actionPage({ heading: 'Already done', message: t.outcome || 'This has already been recorded — nothing more to do.' }));
+        if (new Date(t.expires_at) < new Date()) return res.send(actionPage({ heading: 'Link expired', message: 'This link has expired. Reply to the email and we\'ll pick it back up.' }));
+        const d = await require('./services/action-dispatch').describe(t);
+        const button = d.confirmLabel
+            ? `<form method="POST" action="/a/${encodeURIComponent(req.params.token)}"><button type="submit">${d.confirmLabel}</button></form>`
+            : '';
+        res.send(actionPage({ heading: d.title, message: d.body, button }));
+    } catch (e) { console.error('[action GET]', e.message); res.status(500).send(actionPage({ heading: 'Something went wrong', message: 'Please try again shortly.' })); }
+});
+
+app.post('/a/:token', async (req, res) => {
+    try {
+        const actionTokens = require('./services/action-tokens');
+        const claim = await actionTokens.consume(req.params.token);
+        if (!claim) {
+            const t = await actionTokens.peek(req.params.token);
+            return res.send(actionPage({ heading: 'Already done', message: (t && t.outcome) || 'This link has expired or was already used.' }));
+        }
+        let result;
+        try { result = await require('./services/action-dispatch').perform(claim); }
+        catch (e) { console.error('[action perform]', claim.action, e.message); result = { message: 'We hit a snag doing that — reply to the email and we\'ll finish it manually.' }; }
+        try { await pool.query(`UPDATE action_tokens SET outcome = $2 WHERE token = $1`, [req.params.token, String(result.message || '').slice(0, 300)]); } catch (_) {}
+        res.send(actionPage({ heading: 'Done', message: result.message }));
+    } catch (e) { console.error('[action POST]', e.message); res.status(500).send(actionPage({ heading: 'Something went wrong', message: 'Please try again shortly.' })); }
+});
+
 // Public MN Lake Market Index.
 app.get('/market-index', (req, res, next) => {
     // Hidden until we have enough live listings to make it meaningful.
@@ -4214,6 +4263,34 @@ async function ensureTables() {
                 name         VARCHAR(60) PRIMARY KEY,
                 last_run_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
+
+            -- Block D: single-use, no-login action tokens for email buttons
+            -- (mark-contacted, pass-back, the 72h feedback answers). Consumed by
+            -- POST /a/:token; a GET only previews. 7-day expiry by default.
+            CREATE TABLE IF NOT EXISTS action_tokens (
+                token       VARCHAR(64) PRIMARY KEY,
+                action      VARCHAR(40) NOT NULL,
+                lead_id     UUID,
+                agent_id    UUID,
+                meta        JSONB,
+                expires_at  TIMESTAMPTZ NOT NULL,
+                used_at     TIMESTAMPTZ,
+                outcome     TEXT,
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_action_tokens_lead ON action_tokens(lead_id);
+
+            -- Block D: lead contact + buyer-feedback state (EM-15 / EM-16).
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS first_contact_at   TIMESTAMPTZ;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS nudge_1h_at        TIMESTAMPTZ;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS nudge_24h_at       TIMESTAMPTZ;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS buyer_feedback     VARCHAR(12);   -- connected | not_yet | paused
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS buyer_feedback_at  TIMESTAMPTZ;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS feedback_asked_at  TIMESTAMPTZ;   -- EM-16 sent (dedupe)
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS no_agent_email_count INTEGER NOT NULL DEFAULT 0;  -- EM-13 follow-up cap
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS no_agent_last_at   TIMESTAMPTZ;
+            -- Agent response record (EM-16 "not yet" strike; feeds routing weight later).
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS response_strikes  INTEGER NOT NULL DEFAULT 0;
 
             -- Monthly MRR snapshots for the admin revenue cockpit trend.
             CREATE TABLE IF NOT EXISTS mrr_snapshots (
