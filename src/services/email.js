@@ -419,34 +419,46 @@ function sendWelcome(user) {
 }
 
 /**
- * Agent registration confirmation — sent when a new agent creates an account.
+ * EM-10 — Agent welcome. Fires once a lake exists for the agent (their first
+ * publish, resolved via geo tags), NOT at registration — the copy is lake-centric
+ * and honest about what a free profile does and doesn't do (it does not receive
+ * matched leads). `lake_count > 1` → "your lakes". Class transactional.
  */
-function sendAgentWelcome(user) {
-    const name = user.display_name?.split(' ')[0] || user.first_name || 'there';
+function sendAgentWelcome({ email, display_name, first_name, lake_name, lake_count }) {
+    const first = first_name || display_name?.split(' ')[0] || 'there';
+    const several = (lake_count || 0) > 1;
+    const lakeLabel = several ? 'your lakes' : (lake_name || 'your lake');
+    const pageWord = several ? "your lakes' pages" : `${lakeLabel}'s page`;
+    const p = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;';
+    const h = 'margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;';
+    const finishBtn = `
+        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:4px 0 12px;">
+          <tr><td style="background:#1d6df2;border-radius:8px;">
+            <a href="${SITE_URL}/pages/agent/dashboard.html" style="display:inline-block;padding:14px 28px;color:#fff;font-weight:700;font-size:15px;text-decoration:none;">Finish your profile →</a>
+          </td></tr>
+        </table>`;
     return sendEmail({
         emailClass: 'transactional',
         templateKey: 'agent_welcome',
-        to: user.email,
-        subject: 'Your MN Lake Homes agent account is set up',
+        to: email,
+        subject: several ? "You're on your lakes — here's exactly what that means" : `You're on ${lake_name} — here's exactly what that means`,
         html: layout({
-            title: `Welcome to the network, ${name}.`,
-            preheader: 'Complete your profile and pick a plan — your profile publishes the moment payment clears.',
+            title: '',
+            preheader: 'One thing to do today, and an honest note about leads.',
             body: `
-                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
-                  Your agent account is ready. Two more steps and you're on the directory:
-                </p>
-                <ol style="margin:0 0 18px;padding-left:1.25rem;font-size:15px;line-height:1.7;color:#2d3748;">
-                  <li><strong>Complete your profile</strong> — bio, photo, service areas, specialties.</li>
-                  <li><strong>Pick a plan</strong> that fits how you work.</li>
-                </ol>
-                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
-                  Your profile publishes automatically the moment Stripe confirms payment. No team review, no waiting room — once payment clears, you're on the lake pages.
-                </p>
-                <p style="margin:0;font-size:15px;line-height:1.65;color:#2d3748;">
-                  Questions? Just reply to this email — we read every one.
-                </p>`,
-            ctaText: 'Complete Your Profile',
-            ctaUrl: `${SITE_URL}/pages/agent/dashboard.html`,
+                <p style="${p}">Hi ${first},</p>
+                <p style="${p}">Your profile is set up on MinnesotaLakeHomesForSale.com. Here's exactly what it does, and what it doesn't — I'd rather you know now than find out in three months.</p>
+                <h3 style="${h}">What your free profile does</h3>
+                <p style="${p}">You appear on ${pageWord}, which is where people who are already searching for that specific lake land. They can see who you are, read your bio, and contact you directly. That's real visibility on a page built to rank for the lake you work.</p>
+                <h3 style="${h}">What it doesn't do</h3>
+                <p style="${p}">Free profiles don't receive matched leads. When someone fills out our match form, we route them to paid profiles only. That's a switch you turn on when you're ready — it's not something we'll quietly upgrade you into, and we won't route you a lead and then ask for money.</p>
+                <h3 style="${h}">The one thing worth doing today</h3>
+                ${finishBtn}
+                <p style="${p}">A photo, two or three sentences about the lake you know, and your lakes selected. It takes about five minutes and it's the difference between a page a buyer contacts and one they scroll past.</p>
+                <h3 style="${h}">And one thing that's always true</h3>
+                <p style="${p}">We never take a referral fee. If a match turns into a closing, the commission is entirely yours. That's the whole model — agents pay a flat monthly amount for placement, and we stay out of your deals.</p>
+                <p style="${p}">If anything here doesn't make sense, just reply. This address goes to me.</p>
+                <p style="${p}">— Hunter Burnside<br>MinnesotaLakeHomesForSale.com</p>`,
         })
     });
 }

@@ -330,8 +330,10 @@ const register = async (req, res) => {
         const token = jwt.sign({ userId, role: 'agent', pwd_iat }, process.env.JWT_SECRET, { expiresIn: '24h' });
         setAuthCookie(res, token);
 
-        // Fire-and-forget agent welcome email + admin notification
-        try { emailService.sendAgentWelcome({ email, display_name }); } catch (_) {}
+        // EM-10: the agent welcome no longer fires here. Its copy is lake-centric
+        // and there's no lake at registration, so it now fires on the agent's
+        // first publish (once a lake exists), from agent.controller.publishProfile.
+        // The admin notification still fires immediately.
         try {
             emailService.sendAgentAdminNotification({
                 display_name,

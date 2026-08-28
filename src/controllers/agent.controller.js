@@ -309,44 +309,35 @@ const publishProfile = async (req, res) => {
         // AL-03: draft/dormant_draft → free_live (leaves a paying agent alone).
         if (pub.rows[0]) await require('../services/lifecycle').onProfilePublished(pub.rows[0].id).catch(() => {});
 
-        // EM-11: the free-tier "your profile is live" email. Fires once, on the
-        // draft→published flip, and only for FREE agents — paid agents get the
-        // paid variant from the Stripe webhook, so we must not double-send here.
+        // EM-10: the agent welcome. Fires here (not at registration) so a lake
+        // exists — a free agent appears on lake pages via their town/geo tags, so
+        // we resolve their lakes that way (plus any agent_lakes seat). Once, on the
+        // draft→published flip, for FREE agents only (paid get EM-11 from Stripe),
+        // deduped against any prior welcome. No lake yet → held + logged.
         if (pub.rows[0] && !wasPublished && !agent.paid_membership_code) {
             try {
-                const { rows: lr } = await pool.query(
-                    `SELECT u.email, a.display_name, a.slug,
-                            l.name AS lake_name, l.slug AS lake_slug
-                       FROM agents a
-                       JOIN users u ON u.id = a.user_id
-                  LEFT JOIN LATERAL (
-                           SELECT lk.name, lk.slug
-                             FROM agent_lakes al JOIN lakes lk ON lk.id = al.lake_id
-                            WHERE al.agent_id = a.id
-                            ORDER BY al.is_founder DESC NULLS LAST
-                            LIMIT 1
-                       ) l ON true
-                      WHERE a.id = $1`,
-                    [pub.rows[0].id]
-                );
-                // EM-11 open question: the free copy is lake-centric ("live on
-                // [Lake]") but a free agent usually has no lake seat. Rather than
-                // send copy that reads "on the site's page", we only send when we
-                // can name a lake; free-no-lake is logged until the fallback copy
-                // (or a primary-lake rule) is decided.
-                if (lr[0]?.email && lr[0]?.lake_slug) {
-                    emailService.sendAgentProfileLive({
-                        email:        lr[0].email,
-                        display_name: lr[0].display_name,
-                        slug:         lr[0].slug,
-                        lake_name:    lr[0].lake_name,
-                        lake_slug:    lr[0].lake_slug,
-                        tier:         'free',
-                    });
-                } else if (lr[0]?.email) {
-                    console.log(`[publishProfile] free agent ${pub.rows[0].id} published with no lake seat — profile-live email held (EM-11 no-lake copy pending)`);
+                const { rows: who } = await pool.query(
+                    `SELECT u.email, a.display_name FROM agents a JOIN users u ON u.id = a.user_id WHERE a.id = $1`,
+                    [pub.rows[0].id]);
+                const to = who[0]?.email;
+                const already = to && (await pool.query(
+                    `SELECT 1 FROM email_log WHERE to_email = LOWER($1) AND template_key = 'agent_welcome' AND status = 'sent' LIMIT 1`,
+                    [to])).rows.length > 0;
+                if (to && !already) {
+                    const { rows: lakes } = await pool.query(
+                        `SELECT l.name, l.slug FROM lakes l
+                          WHERE EXISTS (SELECT 1 FROM lake_tags lt JOIN user_tags ut ON ut.tag_id = lt.tag_id
+                                         WHERE lt.lake_id = l.id AND ut.user_id = $1)
+                             OR EXISTS (SELECT 1 FROM agent_lakes al WHERE al.lake_id = l.id AND al.agent_id = $2)
+                          ORDER BY l.name LIMIT 25`,
+                        [req.user.userId, pub.rows[0].id]);
+                    if (lakes.length) {
+                        emailService.sendAgentWelcome({ email: to, display_name: who[0].display_name, lake_name: lakes[0].name, lake_count: lakes.length });
+                    } else {
+                        console.log(`[publishProfile] free agent ${pub.rows[0].id} published with no lake yet — EM-10 welcome held`);
+                    }
                 }
-            } catch (e) { console.warn('[publishProfile] free profile-live email failed:', e.message); }
+            } catch (e) { console.warn('[publishProfile] EM-10 welcome failed:', e.message); }
         }
         res.json({ success: true, is_published: true, profile_status: 'published' });
     } catch (err) {
