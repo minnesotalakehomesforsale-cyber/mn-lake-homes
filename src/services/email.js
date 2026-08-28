@@ -964,6 +964,41 @@ function sendCustom({ to, subject, html, replyTo, emailClass, templateKey }) {
     return sendEmail({ to, subject, html, replyTo, emailClass, templateKey });
 }
 
+/**
+ * EM-04 — the P1 send-health alert to the owner. Internal class (exempt from
+ * suppression + cap, always attempted). Fired by the send-health monitor when a
+ * condition trips. NOTE: if the transport itself is down this email can't land —
+ * the monitor also console.errors every sweep, which the platform logs capture.
+ */
+function sendSendHealthAlert({ conditions, stats }) {
+    const owner = process.env.OWNER_EMAIL || process.env.ADMIN_EMAIL || process.env.LEAD_NOTIFY_EMAIL || 'hburnside99@gmail.com';
+    const list = (conditions || []).map(c =>
+        `<li style="margin-bottom:8px;"><strong>${c.label}</strong>${c.detail ? ` — ${c.detail}` : ''}</li>`).join('');
+    const n = (conditions || []).length;
+    return sendEmail({
+        emailClass: 'internal',
+        templateKey: 'email_health_alert',
+        to: owner,
+        subject: `⛔ P1: email send-health — ${n} condition${n === 1 ? '' : 's'} tripped`,
+        html: layout({
+            title: 'Email send-health: action needed',
+            preheader: 'One or more automated-email health conditions tripped.',
+            body: `
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
+                  The send-health monitor tripped. Until this clears, automated email may not be reaching people — treat it as a P1.
+                </p>
+                <ul style="margin:0 0 16px;padding-left:1.2rem;font-size:15px;line-height:1.6;color:#2d3748;">${list}</ul>
+                <p style="margin:0 0 14px;font-size:13px;line-height:1.6;color:#718096;">
+                  Transport: <strong>${stats?.transport || '?'}</strong> &middot;
+                  sent in last 24h: <strong>${stats?.sent24h ?? '?'}</strong> &middot;
+                  from: ${stats?.from || '?'}
+                </p>`,
+            ctaText: 'Open Email health',
+            ctaUrl: `${SITE_URL}/pages/admin/system.html?tab=email`,
+        })
+    });
+}
+
 // ─── Business-owner lifecycle ────────────────────────────────────────────────
 // Six templates covering the arc from first signup through cancellation.
 // Each one mirrors the visual language of sendLeadConfirmation /
@@ -1830,6 +1865,7 @@ const EMAIL_TEMPLATES = [
     { key: 'admin_subscription_cancelled',    class: 'internal',      label: 'Subscription cancelled → admin' },
     { key: 'agent_invite',                    class: 'transactional', label: 'Agent invite' },
     { key: 'business_invite',                 class: 'transactional', label: 'Business invite' },
+    { key: 'email_health_alert',              class: 'internal',      label: 'Send-health P1 alert' },
 ];
 
 module.exports = {
@@ -1870,6 +1906,7 @@ module.exports = {
     sendAdminSubscriptionCancelled,
     sendAgentInvite,
     sendBusinessInvite,
+    sendSendHealthAlert,
     sendCustom,
     layout,
 };

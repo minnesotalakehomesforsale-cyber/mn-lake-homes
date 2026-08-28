@@ -99,6 +99,7 @@
                 const res = await fetch('/api/admin/email/oversight', { credentials: 'include' });
                 if (!res.ok) throw new Error('Failed to load email oversight.');
                 render(await res.json());
+                loadHealth();
                 loadRecent();
             } catch (err) {
                 el.innerHTML = `<p style="color:#c53030;">${esc(err.message)}</p>`;
@@ -139,6 +140,12 @@
                     <div class="em-stat"><p class="k">Sent · 30d</p><div class="v">${t.sent || 0}</div><div class="s">last: ${fmtDate(t.last_sent_at)}</div></div>
                     <div class="em-stat"><p class="k">Error rate · 30d</p><div class="v ${errCls}">${t.error_rate || 0}%</div><div class="s">${t.error || 0} rejected</div></div>
                     <div class="em-stat"><p class="k">Bounce rate · 30d</p><div class="v ${bounceCls}">${t.bounce_rate || 0}%</div><div class="s">${t.bounced || 0} bounced · ${t.suppressed || 0} suppressed</div></div>
+                </div>
+
+                <div class="em-panel" id="em-health">
+                    <h3>Send-health monitor <span class="em-muted" style="font-weight:600;">(P1 sweep, every 15 min)</span></h3>
+                    <p class="sub">The four conditions that raise a P1 alert to the owner.</p>
+                    <div id="em-health-body"><p class="em-muted">Checking…</p></div>
                 </div>
 
                 <div class="em-panel">
@@ -182,6 +189,28 @@
                     <div id="em-recent"><p class="em-muted">Loading recent sends…</p></div>
                 </div>
             `;
+        }
+
+        async function loadHealth() {
+            const box = document.getElementById('em-health-body');
+            if (!box) return;
+            try {
+                const res = await fetch('/api/admin/email/health', { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to run health check.');
+                const h = await res.json();
+                if (h.healthy) {
+                    box.innerHTML = `<div class="em-status green" style="margin:0;"><span class="dot"></span><div><h2>All clear</h2><p>No send-health condition is tripped.</p></div></div>`;
+                    return;
+                }
+                const items = (h.triggered || []).map(c =>
+                    `<div class="em-row" style="display:flex;gap:0.6rem;align-items:flex-start;padding:0.6rem 0;border-bottom:1px solid #f2f5f8;">
+                        <span class="badge error" style="flex-shrink:0;">P1</span>
+                        <div><strong>${esc(c.label)}</strong>${c.detail ? `<br><span class="em-muted" style="font-size:0.82rem;">${esc(c.detail)}</span>` : ''}</div>
+                    </div>`).join('');
+                box.innerHTML = `<div class="em-status red" style="margin:0 0 0.8rem;"><span class="dot"></span><div><h2>${(h.triggered || []).length} condition(s) tripped</h2><p>The owner is alerted (deduped hourly). Fix below.</p></div></div>${items}`;
+            } catch (err) {
+                box.innerHTML = `<p style="color:#c53030;">${esc(err.message)}</p>`;
+            }
         }
 
         async function loadRecent() {

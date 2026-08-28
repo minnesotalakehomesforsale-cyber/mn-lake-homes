@@ -5842,6 +5842,17 @@ const PORT = process.env.PORT || 3000;
         setInterval(() => runSlaSweep().catch(e => console.warn('[lead-sla]', e.message)), 15 * 60 * 1000);
     }
 
+    // EM-04 send-health monitor — the alarm against SILENT email failure. Every
+    // 15 min it evaluates the four conditions (transport auth/config error, hard
+    // bounce rate, zero sends in 24h with other traffic, a template failing 5×/h)
+    // and raises a P1 (loud log + deduped owner alert). Disable with
+    // EMAIL_HEALTH_MONITOR_ENABLED=false.
+    if (process.env.EMAIL_HEALTH_MONITOR_ENABLED !== 'false') {
+        const { runSendHealthSweep } = require('./services/email-health');
+        setTimeout(() => runSendHealthSweep().catch(e => console.warn('[email-health]', e.message)), 3 * 60 * 1000);
+        setInterval(() => runSendHealthSweep().catch(e => console.warn('[email-health]', e.message)), 15 * 60 * 1000);
+    }
+
     // T141 manual-release acceptance SLA — reclaim hand-placed held leads the
     // free-tier agent didn't accept within 24h. Every 15 min. Disable with
     // MANUAL_RELEASE_SWEEP_ENABLED=false.

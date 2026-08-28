@@ -2558,6 +2558,18 @@ const getEmailOversight = async (req, res) => {
     }
 };
 
+// GET /api/admin/email/health — EM-04, run the send-health check on demand and
+// return the same {healthy, triggered[], stats} the 15-min sweep evaluates.
+const getEmailHealth = async (req, res) => {
+    try {
+        const { checkSendHealth } = require('../services/email-health');
+        res.json(await checkSendHealth());
+    } catch (err) {
+        console.error('[getEmailHealth]', err.message);
+        res.status(500).json({ error: 'Failed to run send-health check.' });
+    }
+};
+
 // GET /api/admin/email/recent — last N email_log rows with optional filters.
 // Filters: ?class= ?status= ?template= ?q= (subject/recipient substring) ?limit=
 const getEmailRecent = async (req, res) => {
@@ -3738,6 +3750,7 @@ module.exports = {
     getAgentEmailHistory,
     emailLogSummary,
     getEmailOversight,
+    getEmailHealth,
     getEmailRecent,
     getSeoAudit,
     getLeadReconciliation,
