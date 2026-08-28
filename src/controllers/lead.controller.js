@@ -650,6 +650,12 @@ const createLead = async (req, res) => {
                         matchedAreas: [pick.lakeName || pick.tagName].filter(Boolean),
                     });
 
+                    // EM-24: the consumer "you've been matched" intro on the
+                    // AUTO-ROUTE path (the default path) — same shared, idempotent
+                    // call site as manual accept + admin assign.
+                    require('../services/match-intro').sendMatchIntro({ leadId: newLeadId, agentId: pick.agentId })
+                        .catch(e => console.warn('[match-intro auto]', e.message));
+
                     // EM-07: routed lead → P3 event (weekly + Email tab), not a
                     // per-lead email to the owner. The agent already got their copy.
                     require('../services/incidents').logEvent({

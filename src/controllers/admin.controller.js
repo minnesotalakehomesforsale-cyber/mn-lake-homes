@@ -1230,6 +1230,13 @@ const assignLead = async (req, res) => {
                         },
                         assignedBy: req.user?.display_name || 'the MN Lake Homes team',
                     });
+                    // EM-24: the consumer intro, via the shared idempotent call
+                    // site — an admin-assigned lead gets the same handoff as an
+                    // auto-routed one. `agentId` is the agents-table id.
+                    if (agentId) {
+                        require('../services/match-intro').sendMatchIntro({ leadId: req.params.id, agentId })
+                            .catch(e => console.warn('[match-intro admin]', e.message));
+                    }
                 } catch (err) {
                     console.error('[assignLead] notify failed:', err.message);
                 }
