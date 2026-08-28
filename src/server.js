@@ -1952,7 +1952,49 @@ app.post('/leads/accept', async (req, res) => {
               WHERE id = $1 AND agent_id = $2 AND accepted_at IS NULL AND assigned_manually = TRUE`,
             [leadId, agentId]);
         if (!upd.rowCount) return renderAcceptPage(res, { title: 'Already handled', message: 'This lead was just accepted or has expired — check your dashboard.', ok: true });
-        try { require('./services/email').sendLeadAgentMatched({ to: lead.email, first_name: lead.first_name, agentName: lead.agent_name, lakeName: lead.target_lake }); } catch (_) {}
+        // EM-12: the concierge handoff to the buyer/seller. Pull the agent's full
+        // profile so the intro is real (bio, brokerage, contact, headshot), derive
+        // "in real estate since [year]" from years_experience, and list a couple of
+        // nearby lakes they also work (via geo tags / agent_lakes, excluding this one).
+        try {
+            const { rows: agRows } = await pool.query(
+                `SELECT a.user_id, a.display_name, a.brokerage_name, a.phone_public, a.email_public,
+                        a.profile_photo_url, a.bio, a.city, a.years_experience, a.specialties
+                   FROM agents a WHERE a.id = $1`, [agentId]);
+            const a = agRows[0] || {};
+            const toArr = v => Array.isArray(v) ? v : (() => { try { return JSON.parse(v || '[]'); } catch (_) { return []; } })();
+            const specs = toArr(a.specialties);
+            let nearby = null;
+            try {
+                const { rows: nl } = await pool.query(
+                    `SELECT l.name FROM lakes l
+                      WHERE (EXISTS (SELECT 1 FROM lake_tags lt JOIN user_tags ut ON ut.tag_id = lt.tag_id
+                                      WHERE lt.lake_id = l.id AND ut.user_id = $1)
+                             OR EXISTS (SELECT 1 FROM agent_lakes al WHERE al.lake_id = l.id AND al.agent_id = $2))
+                        AND ($3::text IS NULL OR l.name <> $3)
+                      ORDER BY l.name LIMIT 3`,
+                    [a.user_id, agentId, lead.target_lake || null]);
+                if (nl.length) nearby = nl.map(r => r.name).join(', ');
+            } catch (_) {}
+            const licenseYear = a.years_experience ? (new Date().getFullYear() - Number(a.years_experience)) : null;
+            const fullName = a.display_name || lead.agent_name || '';
+            require('./services/email').sendLeadAgentMatched({
+                to:               lead.email,
+                lead_first_name:  lead.first_name,
+                agent_full_name:  fullName,
+                agent_first_name: fullName.split(' ')[0],
+                brokerage:        a.brokerage_name,
+                lake_name:        lead.target_lake,
+                town:             a.city,
+                agent_bio:        a.bio,
+                license_year:     licenseYear,
+                nearby_lakes:     nearby,
+                agent_phone:      a.phone_public,
+                agent_email:      a.email_public,
+                photo_url:        a.profile_photo_url,
+                specialty:        specs.length ? ('specializes in ' + specs.slice(0, 3).join(', ')) : null,
+            });
+        } catch (_) {}
         try { require('./services/agent-notify').notifyAgent(agentId, { type: 'lead', title: `You accepted a lead: ${lead.full_name || 'someone'}`, body: 'Their contact details are now in your dashboard — reach out today.', link: '?view=leads' }); } catch (_) {}
         try { require('./services/activity-log').logActivity({ event_type: 'lead.manual_accept', event_scope: 'lead', actor: { type: 'agent', id: agentId, label: lead.agent_name }, target: { type: 'lead', id: leadId, label: lead.full_name || lead.email }, details: {} }); } catch (_) {}
         return renderAcceptPage(res, { title: 'Lead accepted', message: `You've accepted this lead${lead.target_lake ? ` on ${lead.target_lake}` : ''}. Their details are in your dashboard — reach out today.` });

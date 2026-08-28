@@ -1374,28 +1374,70 @@ function sendManualLeadOffer({ to, agentFirstName, lead = {}, acceptUrl, expires
     });
 }
 
-// T141 — fires ONLY when the agent accepts (never at placement). This is the
-// "your agent will contact you" promise; we only make it once someone has
-// actually committed to reaching out.
-function sendLeadAgentMatched({ to, first_name, agentName, lakeName }) {
+// EM-12 — "You've been matched": the concierge handoff to the buyer/seller. This
+// email is the product — everything (lake pages, SEO, vetting, routing) exists to
+// produce this moment, so it reads like an introduction, not a system notice.
+// Fires when an agent accepts the lead. Transactional — no unsubscribe.
+// next_season is computed here; the three questions are static for v1.
+function nextLakeSeason() {
+    const m = new Date().getMonth();               // 0 = Jan
+    return (m <= 2) ? 'spring' : 'next summer';     // Jan–Mar aim for spring, else next summer
+}
+function sendLeadAgentMatched({
+    to, lead_first_name, agent_full_name, agent_first_name, brokerage,
+    lake_name, town, agent_bio, license_year, nearby_lakes, agent_phone, agent_email, photo_url, specialty,
+}) {
     if (!to) return { skipped: true };
-    const who = _esc(agentName) || 'A local lake agent';
-    const place = _esc(lakeName) ? ` about ${_esc(lakeName)}` : '';
+    const aFull = _esc(agent_full_name) || 'your agent';
+    const aFirst = _esc(agent_first_name) || (agent_full_name ? _esc(agent_full_name.split(' ')[0]) : 'They');
+    const lake = _esc(lake_name) || 'your lake';
+    const season = nextLakeSeason();
+    const photo = photo_url ? (String(photo_url).startsWith('http') ? photo_url : `${SITE_URL}${photo_url}`) : null;
+    const initials = (agent_full_name || 'A').split(/\s+/).map(s => s[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+
+    const headshot = photo
+        ? `<img src="${photo}" width="120" height="120" alt="${aFull}" style="border-radius:60px;object-fit:cover;display:block;">`
+        : `<table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="width:120px;height:120px;border-radius:60px;background:#1d6df2;color:#fff;font-size:40px;font-weight:800;text-align:center;vertical-align:middle;font-family:-apple-system,Segoe UI,Arial,sans-serif;">${_esc(initials) || 'A'}</td></tr></table>`;
+
+    // "Why [Agent]" — only the bullets we actually have.
+    const whyBits = [
+        license_year ? `in Minnesota real estate since ${_esc(license_year)}` : null,
+        `works ${lake}${_esc(nearby_lakes) ? ` and ${_esc(nearby_lakes)}` : ''}`,
+        _esc(specialty) || null,
+    ].filter(Boolean);
+    const p = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;';
+    const h = 'margin:24px 0 8px;font-size:16px;font-weight:700;color:#1a202c;';
+    const reach = [_esc(agent_phone), _esc(agent_email)].filter(Boolean).join(' · ');
+
     return sendEmail({
         emailClass: 'transactional',
         templateKey: 'lead_agent_matched',
         to,
-        subject: `Good news — an agent will be in touch${lakeName ? ` about ${lakeName}` : ''}`,
+        subject: `Meet ${aFirst} — your ${lake} agent`,
         html: layout({
-            title: 'Your agent is on it',
-            preheader: `${who} will be reaching out${place}.`,
+            title: '',
+            preheader: 'A quick introduction, what to expect, and three questions worth asking.',
             body: `
-                <p style="margin:0 0 12px;font-size:15px;line-height:1.65;color:#2d3748;">
-                  Hi ${_esc(first_name) || 'there'} — good news. <strong>${who}</strong>, a local lake specialist, will be reaching out to you${place} shortly.
-                </p>
-                <p style="margin:0;font-size:15px;line-height:1.65;color:#2d3748;">
-                  Keep an eye on your phone and email. In the meantime, feel free to reply here with anything you'd like them to know.
-                </p>`,
+                <p style="${p}">Hi ${_esc(lead_first_name) || 'there'},</p>
+                <p style="${p}">You're matched with <strong>${aFull}</strong>${brokerage ? ` at ${_esc(brokerage)}` : ''}, who works ${lake}${town ? ` and the ${_esc(town)} area` : ''}.</p>
+                <div style="margin:0 0 16px;">${headshot}</div>
+                ${agent_bio ? `<p style="${p}">${_esc(agent_bio)}</p>` : ''}
+                <h3 style="${h}">Why ${aFirst}</h3>
+                <ul style="margin:0 0 16px;padding-left:1.2rem;font-size:15px;line-height:1.7;color:#2d3748;">
+                  ${whyBits.map(b => `<li>${b}</li>`).join('')}
+                </ul>
+                <h3 style="${h}">What happens next</h3>
+                <p style="${p}">${aFirst} will reach out within 24 hours by phone or email.${reach ? ` If you'd rather start the conversation yourself, here's how to reach them directly: ${reach}` : ''}</p>
+                <h3 style="${h}">Three questions worth asking on that first call</h3>
+                <ol style="margin:0 0 16px;padding-left:1.2rem;font-size:15px;line-height:1.7;color:#2d3748;">
+                  <li>What's actually selling on ${lake} right now, and what's the price per foot of shoreline?</li>
+                  <li>What should I know about this lake specifically — water clarity, access, septic and well, shoreline rules?</li>
+                  <li>If I want to be in before ${season}, what does the timeline actually look like?</li>
+                </ol>
+                <h3 style="${h}">How this works, briefly</h3>
+                <p style="${p}">We're not a brokerage, and we're not paid a commission or a referral fee on your purchase. ${aFirst} is a licensed Minnesota agent we've vetted and matched to your lake and your situation. If they're not the right fit, reply to this email and I'll match you with someone else. No cost either way.</p>
+                <p style="${p}">— Hunter Burnside<br>MinnesotaLakeHomesForSale.com</p>
+                <p style="margin:20px 0 0;font-size:12px;color:#a0aec0;line-height:1.5;">Equal Housing Opportunity.</p>`,
         })
     });
 }
