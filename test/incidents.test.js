@@ -17,8 +17,9 @@ pool.query = async (sql, params = []) => {
     }
     if (/INSERT INTO incidents/.test(sql)) {
         const [key, severity, title, detail, effect, checkFirst, adminLink] = params;
+        const append = /left\(COALESCE\(incidents\.detail/.test(sql);
         let r = findOpen(key);
-        if (r) { r.occurrences++; r.last_seen_at = new Date().toISOString(); r.title = title; r.detail = detail; r.effect = effect; r.check_first = checkFirst; r.admin_link = adminLink; }
+        if (r) { r.occurrences++; r.last_seen_at = new Date().toISOString(); r.title = title; r.detail = append ? ((r.detail ? r.detail + '\n' : '') + detail) : detail; r.effect = effect; r.check_first = checkFirst; r.admin_link = adminLink; }
         else { r = { id: idSeq++, incident_key: key, severity, title, detail, effect, check_first: checkFirst, admin_link: adminLink, status: 'open', occurrences: 1, notify_count: 0, first_seen_at: new Date().toISOString(), last_seen_at: new Date().toISOString(), last_notified_at: null, resolved_at: null }; store.push(r); }
         return { rows: [{ ...r }] };
     }
@@ -105,6 +106,15 @@ const ok = (c, m) => { if (c) console.log('  ✓ ' + m); else { failures++; cons
     await incidents.runP2Batch();
     ok(p2.length === 1 && /Unrouted lead/.test(p2[0].incidents[0].title), 'P2 digest lists the unrouted lead first');
 
+    // Lake-keyed collapse must NAME every buyer, not just count them — a second
+    // lead on a lake is a person, not a tidier inbox.
+    store = store.filter(r => r.severity !== 'P2');
+    p2 = [];
+    await incidents.raise({ key: 'lead_no_agent:gull', severity: 'P2', title: 'Unrouted leads — Gull Lake', append: true, detail: 'Sam Buyer (sam@x.com) — grade A' });
+    await incidents.raise({ key: 'lead_no_agent:gull', severity: 'P2', title: 'Unrouted leads — Gull Lake', append: true, detail: 'Dana Buyer (dana@x.com) — grade B' });
+    const gull = findOpen('lead_no_agent:gull');
+    ok(gull.occurrences === 2 && /sam@x\.com/.test(gull.detail) && /dana@x\.com/.test(gull.detail), 'lake-keyed collapse names every buyer (one entry, full contents)');
+
     // EM-07 — a P3 event is recorded, is its own row, and never emails.
     p1 = []; p2 = [];
     await incidents.logEvent({ key: 'signup:agent:x@y.com', title: 'New agent signup — Dana', detail: 'x@y.com' });
@@ -112,6 +122,15 @@ const ok = (c, m) => { if (c) console.log('  ✓ ' + m); else { failures++; cons
     const p3rows = store.filter(r => r.severity === 'P3' && r.status === 'logged');
     ok(p3rows.length === 2, 'each P3 event is its own row (no upsert collision)');
     ok(p1.length === 0 && p2.length === 0, 'P3 logEvent never emails');
+
+    // ACCEPTANCE (the number, not the feeling): a quiet week of routine business
+    // events produces ZERO emails to the owner.
+    p1 = []; p2 = []; store = [];
+    for (let i = 0; i < 4; i++) await incidents.logEvent({ key: `signup:agent:${i}`, title: 'New agent signup' });
+    for (let i = 0; i < 2; i++) await incidents.logEvent({ key: `subscription_cancelled:${i}`, title: 'Subscription cancelled' });
+    for (let i = 0; i < 11; i++) await incidents.logEvent({ key: `payment:${i}`, title: 'Payment received' });
+    await incidents.runP2Batch();
+    ok(p1.length === 0 && p2.length === 0, '4 signups + 2 cancels + 11 payments → ZERO emails to the owner');
 
     if (failures) { console.error(`\nincidents: ${failures} FAIL`); process.exit(1); }
     console.log('\nincidents: ALL PASSED');

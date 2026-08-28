@@ -24,15 +24,21 @@ const P1_DEDUPE_MIN = 60;   // at most one P1 email per key per hour
 const P1_MAX_EMAILS = 5;    // then go quiet until resolved
 
 // Upsert the open incident for this key (one open row per key via the partial
-// unique index) and return the current row.
-async function upsert({ key, severity, title, detail, effect, checkFirst, adminLink }) {
+// unique index) and return the current row. `append` ACCUMULATES detail across
+// firings instead of overwriting — so a lake-keyed opportunity that collapses N
+// buyers into one incident still names every one of them in the body (a second
+// lead on a lake must never become invisible), capped so it can't grow unbounded.
+async function upsert({ key, severity, title, detail, effect, checkFirst, adminLink, append }) {
+    const detailSet = append
+        ? `detail = left(COALESCE(incidents.detail,'') || CASE WHEN COALESCE(incidents.detail,'') = '' THEN '' ELSE E'\n' END || EXCLUDED.detail, 6000)`
+        : `detail = EXCLUDED.detail`;
     const { rows } = await pool.query(
         `INSERT INTO incidents (incident_key, severity, title, detail, effect, check_first, admin_link)
          VALUES ($1,$2,$3,$4,$5,$6,$7)
          ON CONFLICT (incident_key) WHERE status = 'open'
          DO UPDATE SET occurrences = incidents.occurrences + 1,
                        last_seen_at = NOW(),
-                       title = EXCLUDED.title, detail = EXCLUDED.detail,
+                       title = EXCLUDED.title, ${detailSet},
                        effect = EXCLUDED.effect, check_first = EXCLUDED.check_first,
                        admin_link = EXCLUDED.admin_link
          RETURNING *`,

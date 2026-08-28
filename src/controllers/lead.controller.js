@@ -587,8 +587,10 @@ const createLead = async (req, res) => {
                             require('../services/incidents').raise({
                                 key: `lead_no_agent:${leadLakeId || leadLakeName || qualTargetLake || 'unknown'}`,
                                 severity: 'P2',
-                                title: `Unrouted lead — no paying agent on ${leadLakeName || qualTargetLake || 'a lake'} (grade ${leadGrade})`,
-                                detail: `Intent: ${qualIntent || '—'} · Price band: ${qualPriceBand || '—'}. Call an agent on this lake — the lead auto-routes the moment they activate.`,
+                                title: `Unrouted leads — no paying agent on ${leadLakeName || qualTargetLake || 'a lake'}`,
+                                // append: every buyer on this lake is named, not just a count.
+                                append: true,
+                                detail: `${name || email || 'A buyer'}${email ? ` (${email})` : ''}${phone ? ` · ${phone}` : ''} — grade ${leadGrade}, intent ${qualIntent || '—'}, ${qualPriceBand || '—'}`,
                                 adminLink: '/pages/admin/leads.html',
                             });
                             return;

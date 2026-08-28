@@ -88,12 +88,34 @@ exports.createInquiry = async (req, res) => {
         const saved = rows[0];
         const adminTo = ADMIN_EMAIL_BY_SOURCE[source];
 
-        // Fire-and-forget notifications
-        email.sendInquiryNotification({
-            to: adminTo,
-            source, name, email: submitterEmail, phone, inquirer_type, message,
-            inquiryId: saved.id, createdAt: saved.created_at,
-        });
+        // EM-06/07 inquiry rule: an inquiry that lands on the OWNER inbox becomes a
+        // P2-human-reply incident (someone is waiting on a reply) — source kept as a
+        // field so the digest reads "2 people waiting — 1 via mnlakehomes, 1 via …".
+        // A source that reaches a genuinely different person (e.g. the commonrealtor
+        // partner inbox) is NOT ours to quieten — it keeps its own email. The
+        // submitter confirmation is untouched either way.
+        const OWNER_INBOXES = new Set([
+            'minnesotalakehomesforsale@gmail.com',
+            (process.env.OWNER_EMAIL || '').toLowerCase(),
+            (process.env.ADMIN_EMAIL || '').toLowerCase(),
+            (process.env.LEAD_NOTIFY_EMAIL || '').toLowerCase(),
+            'hburnside99@gmail.com',
+        ].filter(Boolean));
+        if (!adminTo || OWNER_INBOXES.has(String(adminTo).toLowerCase())) {
+            require('../services/incidents').raise({
+                key: `inquiry:${saved.id}`,
+                severity: 'P2',
+                title: `Someone is waiting on a reply — inquiry via ${source}`,
+                detail: `${name || submitterEmail}${submitterEmail ? ` (${submitterEmail})` : ''}${phone ? ` · ${phone}` : ''}${inquirer_type ? ` · ${inquirer_type}` : ''} — "${String(message || '').slice(0, 200)}"`,
+                adminLink: '/pages/admin/inquiries.html',
+            });
+        } else {
+            email.sendInquiryNotification({
+                to: adminTo,
+                source, name, email: submitterEmail, phone, inquirer_type, message,
+                inquiryId: saved.id, createdAt: saved.created_at,
+            });
+        }
         email.sendInquiryConfirmation({
             to: submitterEmail, name, source,
         });
