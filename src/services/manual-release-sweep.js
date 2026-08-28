@@ -18,7 +18,7 @@ async function runManualReleaseSweep() {
         // not already back in the held pool, and older than the SLA.
         const expired = await pool.query(
             `SELECT l.id, l.full_name, l.email, l.phone, l.lead_type, l.target_lake,
-                    l.agent_id, l.lead_grade,
+                    l.agent_id, l.lead_grade, u.id AS agent_user_id,
                     COALESCE(a.display_name, u.full_name) AS agent_name
                FROM leads l
                LEFT JOIN agents a ON a.id = l.agent_id
@@ -62,16 +62,18 @@ async function runManualReleaseSweep() {
                             details: { agent_id: lead.agent_id, agent: lead.agent_name, grade: lead.lead_grade, reason: 'not_accepted_in_sla' },
                         });
                     } catch (_) {}
-                    // EM-06: offer expired with no fallback → P2 (back in held queue).
+                    // EM-14: reroute to another agent and tell both sides — the
+                    // buyer gets the no-blame "matching you with a different agent"
+                    // note; the old agent gets the factual "went to another agent".
+                    // If nobody else covers the lake, rerouteLead sends the buyer
+                    // EM-13 and raises the P2 (so the person is never left waiting,
+                    // and the team only sees what the system couldn't resolve).
                     try {
-                        require('./incidents').raise({
-                            key: `lead_offer_lapsed:${lead.id}`,
-                            severity: 'P2',
-                            title: `Manual offer lapsed — back in the held queue (${lead.target_lake || 'a lake'})`,
-                            detail: `A hand-placed offer to ${lead.agent_name || 'a free-tier agent'} for ${lead.target_lake || 'a lake'} wasn't accepted within ${ACCEPT_SLA_HOURS}h. The agent's slot was freed.`,
-                            adminLink: '/pages/admin/leads.html',
+                        await require('./reroute-lead').rerouteLead({
+                            leadId: lead.id, notifyOldAgent: true, windowHours: ACCEPT_SLA_HOURS,
+                            oldAgentId: lead.agent_id, oldAgentUserId: lead.agent_user_id,
                         });
-                    } catch (_) {}
+                    } catch (e) { console.warn('[manual-release-sweep] reroute failed:', e.message); }
                 }
             } catch (e) {
                 try { await client.query('ROLLBACK'); } catch (_) {}

@@ -10,20 +10,24 @@
 const pool = require('../database/pool');
 const email = require('./email');
 
-async function rerouteLead({ leadId, notifyOldAgent = false, windowHours = null }) {
+async function rerouteLead({ leadId, notifyOldAgent = false, windowHours = null, oldAgentId = null, oldAgentUserId = null }) {
     const { rows } = await pool.query(
         `SELECT id, email, first_name, target_lake, lake_id, agent_id, assigned_user_id, timeline_text
            FROM leads WHERE id = $1`, [leadId]);
     const lead = rows[0];
     if (!lead) return { rerouted: false, reason: 'not_found' };
+    // The old agent may already be cleared off the lead (e.g. the expiry sweep
+    // reclaims first), so callers can pass it in explicitly for exclusion + notice.
+    const priorAgentId = oldAgentId || lead.agent_id;
+    const priorUserId = oldAgentUserId || lead.assigned_user_id;
 
     const { routeLead } = require('./lead-router');
-    const pick = await routeLead({ lakeId: lead.lake_id, excludeUserIds: [lead.assigned_user_id].filter(Boolean) });
+    const pick = await routeLead({ lakeId: lead.lake_id, excludeUserIds: [priorUserId].filter(Boolean) });
 
     // EM-14 (agent): only on the expiry path, factual, no scolding.
-    if (notifyOldAgent && lead.agent_id) {
+    if (notifyOldAgent && priorAgentId) {
         try {
-            const oa = await pool.query(`SELECT u.email, u.first_name FROM agents a JOIN users u ON u.id = a.user_id WHERE a.id = $1`, [lead.agent_id]);
+            const oa = await pool.query(`SELECT u.email, u.first_name FROM agents a JOIN users u ON u.id = a.user_id WHERE a.id = $1`, [priorAgentId]);
             if (oa.rows[0]?.email) email.sendRerouteAgent({ to: oa.rows[0].email, agentFirstName: oa.rows[0].first_name, buyer_first: lead.first_name, lake_name: lead.target_lake, timeline: lead.timeline_text, windowHours });
         } catch (_) {}
     }
@@ -51,7 +55,7 @@ async function rerouteLead({ leadId, notifyOldAgent = false, windowHours = null 
     // nudged if they go quiet and the buyer gets a fresh intro to them.
     await pool.query(
         `UPDATE leads SET agent_id = $1, assigned_user_id = $2, lead_status = 'contacted', pipeline_status = 'routed',
-                routed_at = NOW(), first_contact_at = NULL, nudge_1h_at = NULL, nudge_24h_at = NULL,
+                held_no_agent = FALSE, routed_at = NOW(), first_contact_at = NULL, nudge_1h_at = NULL, nudge_24h_at = NULL,
                 match_intro_at = NULL, updated_at = NOW()
           WHERE id = $3`, [pick.agentId, pick.userId, leadId]);
 
