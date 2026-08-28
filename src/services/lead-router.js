@@ -114,6 +114,7 @@ async function agentsForTag(tagId) {
                u.last_routed_at,
                a.id               AS agent_id,
                a.display_name,
+               a.response_strikes,
                CASE WHEN EXISTS (
                    SELECT 1 FROM agent_lakes al
                     WHERE al.agent_id = a.id AND al.is_founder
@@ -152,8 +153,13 @@ async function agentsForTag(tagId) {
 function pickFromBuckets(buckets, weights = DEFAULT_TIER_BALLS) {
     const balls = [];
     for (const [code, agents] of Object.entries(buckets)) {
-        const weight = weights[code] ?? DEFAULT_BALLS;
+        const tierWeight = weights[code] ?? DEFAULT_BALLS;
         for (const agent of (agents || [])) {
+            // EM-16 feeds routing weight: each buyer "not yet" (the agent never made
+            // contact) removes one ball, so a slow-to-respond agent gets fewer leads
+            // — the promise made to every paying agent. Floored at 1: it lowers the
+            // odds, never fully excludes. (Strike decay/reset is a future refinement.)
+            const weight = Math.max(1, tierWeight - (Number(agent.response_strikes) || 0));
             for (let i = 0; i < weight; i++) balls.push(agent);
         }
     }
@@ -178,7 +184,7 @@ async function getLakeById(lakeId) {
 async function agentsForLake(lakeId) {
     const sql = `
         SELECT u.id AS user_id, u.full_name, u.email, u.last_routed_at,
-               a.id AS agent_id, a.display_name,
+               a.id AS agent_id, a.display_name, a.response_strikes,
                CASE WHEN al.is_founder THEN 'founder' ELSE m.code END AS tier_code
         FROM agent_lakes al
         JOIN agents a ON a.id = al.agent_id
