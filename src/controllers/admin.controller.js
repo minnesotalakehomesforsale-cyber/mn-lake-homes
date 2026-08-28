@@ -2487,6 +2487,7 @@ const getEmailOversight = async (req, res) => {
                         COUNT(*) FILTER (WHERE status='sent')::int       AS sent,
                         COUNT(*) FILTER (WHERE status='error')::int      AS error,
                         COUNT(*) FILTER (WHERE status='suppressed')::int AS suppressed,
+                        COUNT(*) FILTER (WHERE status='capped')::int     AS capped,
                         COUNT(*) FILTER (WHERE status='bounced')::int    AS bounced,
                         COUNT(*) FILTER (WHERE status='skipped')::int    AS skipped,
                         MAX(created_at) AS last_at
@@ -2512,7 +2513,7 @@ const getEmailOversight = async (req, res) => {
             return {
                 key: t.key, label: t.label, class: t.class,
                 last_at: r.last_at || null,
-                counts: { sent, error, suppressed: r.suppressed || 0, bounced, skipped: r.skipped || 0 },
+                counts: { sent, error, suppressed: r.suppressed || 0, capped: r.capped || 0, bounced, skipped: r.skipped || 0 },
                 bounce_rate: bounceRate,
                 commercial: t.class === 'lifecycle' || t.class === 'content_ask',
             };

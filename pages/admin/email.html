@@ -47,7 +47,7 @@
         .badge.internal      { background: #f0fff4; border-color: #c6f6d5; color: #2f855a; }
         .badge.sent { background:#f0fff4;border-color:#c6f6d5;color:#2f855a;} .badge.error{background:#fff5f5;border-color:#fed7d7;color:#c53030;}
         .badge.suppressed{background:#faf5ff;border-color:#e9d8fd;color:#6b46c1;} .badge.bounced{background:#fffaf0;border-color:#feebc8;color:#b7791f;}
-        .badge.skipped{background:#f7fafc;border-color:#e2e8f0;color:#718096;}
+        .badge.capped{background:#ebf8ff;border-color:#bee3f8;color:#2b6cb0;} .badge.skipped{background:#f7fafc;border-color:#e2e8f0;color:#718096;}
 
         .num.z { color: #cbd5e0; } .num.pos { color: #1a202c; font-weight: 700; }
         .num.err { color: #c53030; font-weight: 700; } .num.warn { color: #c05621; font-weight: 700; }
@@ -121,6 +121,7 @@
                     ${numCell(c.sent, 'pos')}
                     ${numCell(c.error, 'err')}
                     ${numCell(c.suppressed, 'warn')}
+                    ${numCell(c.capped || 0, 'warn')}
                     ${numCell(c.bounced, 'err')}
                     <td class="num ${tpl.bounce_rate == null ? 'z' : (tpl.bounce_rate >= 5 ? 'err' : 'pos')}">${tpl.bounce_rate == null ? '—' : tpl.bounce_rate + '%'}</td>
                 </tr>`;
@@ -147,7 +148,7 @@
                     <table class="em-tbl">
                         <thead><tr>
                             <th>Template</th><th>Class</th><th>Last sent</th>
-                            <th class="num">Sent</th><th class="num">Error</th><th class="num">Suppr.</th><th class="num">Bounced</th><th class="num">Bounce %</th>
+                            <th class="num">Sent</th><th class="num">Error</th><th class="num">Suppr.</th><th class="num">Capped</th><th class="num">Bounced</th><th class="num">Bounce %</th>
                         </tr></thead>
                         <tbody>${rows}</tbody>
                     </table>
@@ -171,6 +172,7 @@
                             <option value="sent">Sent</option>
                             <option value="error">Error</option>
                             <option value="suppressed">Suppressed</option>
+                            <option value="capped">Capped</option>
                             <option value="bounced">Bounced</option>
                             <option value="skipped">Skipped</option>
                         </select>

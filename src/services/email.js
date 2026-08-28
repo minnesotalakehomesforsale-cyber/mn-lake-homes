@@ -72,11 +72,69 @@ function unsubUrl(email) {
     const base = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
     return `${base}/unsubscribe?e=${encodeURIComponent(String(email).toLowerCase())}&t=${unsubToken(email)}`;
 }
-function unsubFooterHtml(email) {
+// EM-05 — one footer per email CLASS. Internal (to the team) gets none;
+// transactional gets a service-message note + postal address (no unsubscribe —
+// you can't opt out of account email); lifecycle + content-ask get the full
+// CAN-SPAM footer: a working unsubscribe + the postal address.
+function footerHtml(email, emailClass) {
     const esc = s => String(s ?? '').replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
-    return `<div style="margin-top:1.75rem;padding-top:1rem;border-top:1px solid #edf2f7;font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:0.72rem;color:#a0aec0;line-height:1.5;text-align:center;">
-        You're receiving this from MN Lake Homes. <a href="${unsubUrl(email)}" style="color:#718096;">Unsubscribe</a> from these emails.<br>${esc(PHYSICAL_ADDRESS)}
-    </div>`;
+    const addr = esc(PHYSICAL_ADDRESS);
+    const wrap = inner => `<div style="margin-top:1.75rem;padding-top:1rem;border-top:1px solid #edf2f7;font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:0.72rem;color:#a0aec0;line-height:1.5;text-align:center;">${inner}</div>`;
+    if (emailClass === 'internal') return '';
+    if (emailClass === 'lifecycle' || emailClass === 'content_ask') {
+        const lead = emailClass === 'content_ask'
+            ? "You're receiving this because you're part of the MN Lake Homes network."
+            : "You're receiving this update from MN Lake Homes.";
+        return wrap(`${lead} <a href="${unsubUrl(email)}" style="color:#718096;">Unsubscribe</a> from these emails.<br>${addr}`);
+    }
+    // transactional (and any unclassified single-recipient send)
+    return wrap(`This is a service message about your MN Lake Homes account.<br>${addr}`);
+}
+
+// EM-05 — a plain-text alternative for every HTML email. Not a full HTML parser;
+// a pragmatic downgrade: drop head/style, turn links into "text (url)", turn
+// block-closers into newlines, strip the rest, decode the entities we actually
+// use, and tidy whitespace. Big deliverability win for near-zero cost.
+function htmlToText(html) {
+    if (!html) return '';
+    return String(html)
+        .replace(/<!DOCTYPE[^>]*>/gi, '')
+        .replace(/<head[\s\S]*?<\/head>/gi, '')
+        .replace(/<style[\s\S]*?<\/style>/gi, '')
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/<a\b[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_, href, txt) => `${txt.replace(/<[^>]+>/g, '').trim()} (${href})`)
+        .replace(/<br\s*\/?>(\s*)/gi, '\n')
+        .replace(/<\/(p|div|tr|h[1-6]|li|ol|ul|table)>/gi, '\n')
+        .replace(/<li\b[^>]*>/gi, '• ')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ').replace(/&mdash;/g, '—').replace(/&ndash;/g, '–')
+        .replace(/&rsquo;|&lsquo;|&#39;/g, "'").replace(/&ldquo;|&rdquo;|&quot;/g, '"')
+        .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+        .split('\n').map(l => l.replace(/[ \t]{2,}/g, ' ').trim()).join('\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+}
+
+// EM-05 — frequency cap: at most EMAIL_CAP_MAX (default 1) commercial
+// (lifecycle/content-ask) emails per recipient per EMAIL_CAP_WINDOW_DAYS
+// (default 7), counting only rows that actually SENT. Transactional + internal
+// are never capped. Fails OPEN on a DB error — a query hiccup must not silently
+// drop a legitimate send (the caller re-tries next window anyway).
+const CAP_WINDOW_DAYS = parseInt(process.env.EMAIL_CAP_WINDOW_DAYS, 10) || 7;
+const CAP_MAX         = parseInt(process.env.EMAIL_CAP_MAX, 10) || 1;
+async function overFrequencyCap(email, emailClass) {
+    if (emailClass !== 'lifecycle' && emailClass !== 'content_ask') return false;
+    try {
+        const pool = require('../database/pool');
+        const { rows } = await pool.query(
+            `SELECT COUNT(*)::int AS n FROM email_log
+              WHERE to_email = $1
+                AND email_class IN ('lifecycle','content_ask')
+                AND status = 'sent'
+                AND sent_at >= NOW() - make_interval(days => $2)`,
+            [String(email).toLowerCase(), CAP_WINDOW_DAYS]);
+        return rows[0].n >= CAP_MAX;
+    } catch (_) { return false; }
 }
 
 // Suppression check (marketing only). Lazy pool require avoids load-order issues.
@@ -182,21 +240,34 @@ async function sendEmail({ to, subject, html, replyTo, category, emailClass, tem
     // suppression list + address requirement rather than being waved through.
     const commercial = emailClass !== 'transactional' && emailClass !== 'internal';
     let headers;
-    if (commercial && !Array.isArray(to)) {
-        // Opt-out is absolute for Lifecycle + Content-ask (and anything unclassified).
-        if (await isSuppressed(to)) { logSkip(`suppressed (${to})`); rec('suppressed', 'unsubscribed'); return { skipped: true, suppressed: true }; }
-        // A commercial email with no valid postal address cannot be compliant — refuse it, loudly.
-        if (!hasRealPhysicalAddress()) {
-            console.error(`[email] BLOCKED (CAN-SPAM): commercial send with no valid EMAIL_PHYSICAL_ADDRESS — to=${to} subject="${subject || ''}"`);
-            rec('skipped', 'no physical address (CAN-SPAM)');
-            return { skipped: true, blocked: 'no_physical_address' };
+    if (!Array.isArray(to)) {
+        if (commercial) {
+            // Opt-out is absolute for Lifecycle + Content-ask (and anything unclassified).
+            if (await isSuppressed(to)) { logSkip(`suppressed (${to})`); rec('suppressed', 'unsubscribed'); return { skipped: true, suppressed: true }; }
+            // A commercial email with no valid postal address cannot be compliant — refuse it, loudly.
+            if (!hasRealPhysicalAddress()) {
+                console.error(`[email] BLOCKED (CAN-SPAM): commercial send with no valid EMAIL_PHYSICAL_ADDRESS — to=${to} subject="${subject || ''}"`);
+                rec('skipped', 'no physical address (CAN-SPAM)');
+                return { skipped: true, blocked: 'no_physical_address' };
+            }
+            // EM-05 frequency cap — 1 commercial email per recipient per window.
+            // Logged as 'capped' (not dropped): the recurring trigger re-attempts
+            // next window, and this makes over-eager automation visible.
+            if (await overFrequencyCap(to, emailClass)) {
+                logSkip(`frequency cap (${to})`);
+                rec('capped', `frequency cap: ${CAP_MAX}/${CAP_WINDOW_DAYS}d`);
+                return { skipped: true, capped: true };
+            }
+            headers = {
+                'List-Unsubscribe': `<${unsubUrl(to)}>`,
+                'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+            };
         }
-        html = (html || '') + unsubFooterHtml(to);
-        headers = {
-            'List-Unsubscribe': `<${unsubUrl(to)}>`,
-            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-        };
+        // EM-05 — per-class footer on every single-recipient send (internal: none).
+        html = (html || '') + footerHtml(to, emailClass);
     }
+    // EM-05 — plain-text alternative on every send (built after the footer).
+    const text = htmlToText(html);
 
     // Prefer Gmail SMTP if configured.
     if (_gmailTransport) {
@@ -206,6 +277,7 @@ async function sendEmail({ to, subject, html, replyTo, category, emailClass, tem
                 to:   Array.isArray(to) ? to.join(', ') : to,
                 subject,
                 html,
+                text,
                 replyTo: replyTo || REPLY_TO,
                 ...(headers ? { headers } : {}),
             });
@@ -226,6 +298,7 @@ async function sendEmail({ to, subject, html, replyTo, category, emailClass, tem
                 to:   Array.isArray(to) ? to : [to],
                 subject,
                 html,
+                text,
                 replyTo: replyTo || REPLY_TO,
                 ...(headers ? { headers } : {}),
             });
@@ -1762,6 +1835,8 @@ const EMAIL_TEMPLATES = [
 module.exports = {
     sendEmail,
     EMAIL_TEMPLATES,
+    htmlToText,
+    footerHtml,
     verifyUnsub,
     sendWelcome,
     sendAgentWelcome,
