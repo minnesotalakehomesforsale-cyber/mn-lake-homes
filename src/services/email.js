@@ -344,6 +344,16 @@ async function sendEmail({ to, subject, html, replyTo, category, emailClass, tem
                 replyTo: replyTo || REPLY_TO,
                 ...(headers ? { headers } : {}),
             });
+            // The Resend SDK returns { data, error } and does NOT throw on a
+            // rejection (bad domain, sandbox non-owner recipient, etc.). Logging
+            // that as 'sent' corrupts the frequency cap, the reports, and the
+            // send-health error rate — so a rejection is an 'error', not a 'sent'.
+            if (res && res.error) {
+                const msg = res.error.message || res.error.name || JSON.stringify(res.error);
+                console.error(`[email] REJECTED (resend) → ${to} · ${subject}: ${msg}`);
+                rec('error', msg);
+                return { error: msg };
+            }
             console.log(`[email] sent → ${to} · ${subject} · id=${res.data?.id || 'n/a'}`);
             rec('sent', res.data?.id || null);
             return res;
