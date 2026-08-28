@@ -225,6 +225,15 @@
             try {
                 const r = await fetch('/api/stripe/pricing');
                 _pricing = await r.json();
+                // Only show the monthly/annual toggle when annual pricing is
+                // actually configured (Stripe annual price IDs set). Otherwise
+                // hide it so the live site never shows a "Coming soon" annual.
+                const annualReady = (_pricing.tiers || []).some(t => t.stripe_price_annual);
+                if (!annualReady) {
+                    const tr = document.querySelector('.toggle-row');
+                    if (tr) tr.style.display = 'none';
+                    _period = 'monthly';
+                }
             } catch (_) {
                 document.getElementById('tier-grid').innerHTML =
                     '<div style="grid-column:1/-1;text-align:center;color:#c53030;padding:2rem;">Could not load plans. Refresh to try again.</div>';

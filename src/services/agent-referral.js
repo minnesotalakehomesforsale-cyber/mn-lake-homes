@@ -18,6 +18,12 @@ const pool = require('../database/pool');
 const email = require('./email');
 
 async function maybeRewardReferral(referredUserId) {
+    // Dormant until the owner turns it on. Off by default so the reward emails +
+    // credits never fire on the live site before the reward mechanics are ready.
+    // Stage 1: REFERRAL_REWARDS_ENABLED=1 → qualify + email both sides (team
+    // applies the credit). Stage 2: also REFERRAL_AUTO_CREDIT=1 → auto Stripe credit.
+    if (process.env.REFERRAL_REWARDS_ENABLED !== '1') return { rewarded: false, disabled: true };
+
     // The referred agent + their still-pending referral + both parties' details.
     const q = await pool.query(
         `SELECT ar.id AS referral_id, da.paid_membership_code, m.code AS referred_plan,
