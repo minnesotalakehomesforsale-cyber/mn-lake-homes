@@ -33,8 +33,11 @@ async function weeklySeries(table, dateCol, where, start, end) {
 async function buildSections(kind, start, end, report) {
     const w = [start, end];
     const [byTraffic, byLeads, tiers, cohort, content, sessSeries, leadSeries] = await Promise.all([
-        qN(`SELECT REPLACE(path,'/lakes/','') AS lake, COUNT(*)::int AS views FROM page_views
-             WHERE created_at >= $1 AND created_at < $2 AND path LIKE '/lakes/%' GROUP BY path ORDER BY views DESC LIMIT 10`, w),
+        qN(`SELECT COALESCE(l.name, REPLACE(pv.path,'/lakes/','')) AS lake, pv.views
+              FROM (SELECT path, COUNT(*)::int AS views FROM page_views
+                     WHERE created_at >= $1 AND created_at < $2 AND path LIKE '/lakes/%' GROUP BY path) pv
+              LEFT JOIN lakes l ON l.slug = REPLACE(pv.path,'/lakes/','')
+             ORDER BY pv.views DESC LIMIT 10`, w),
         qN(`SELECT target_lake AS lake, COUNT(*)::int AS leads FROM leads
              WHERE created_at >= $1 AND created_at < $2 AND deleted_at IS NULL AND target_lake IS NOT NULL GROUP BY target_lake ORDER BY leads DESC LIMIT 10`, w),
         q1(`SELECT COUNT(*) FILTER (WHERE m.code='basic')::int AS standard,

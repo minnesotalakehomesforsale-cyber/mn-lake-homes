@@ -63,9 +63,16 @@ async function runWeeklyReport({ force = false } = {}) {
     const open = report.whatRan.open_incidents || 0;
     const emailsSent = (report.whatRan.emailsByTemplate || []).reduce((a, e) => a + (e.sent || 0), 0);
 
-    const statusLine = thisWeekIncidents > 0
-        ? `${thisWeekIncidents} incident${thisWeekIncidents === 1 ? '' : 's'} this week, ${open} still open.`
-        : `All systems normal — ${emailsSent} email${emailsSent === 1 ? '' : 's'} sent, no incidents.`;
+    // Dead-man's switch: sweeps run daily regardless of activity, so a week with
+    // NO sweep run doesn't mean quiet — it means the workers are dead, and the
+    // report must not say "normal" then. The heartbeat P2 should already have
+    // fired; this makes the reassuring-while-broken state unreachable anyway.
+    const sweptRecently = (report.whatRan.sweeps || []).some(s => s.last_run_at && new Date(s.last_run_at) >= new Date(start));
+    const statusLine = !sweptRecently
+        ? 'No sweeps ran this week — the background workers may be down, so this report can\'t confirm normal operation. Check the Email tab.'
+        : thisWeekIncidents > 0
+            ? `${thisWeekIncidents} incident${thisWeekIncidents === 1 ? '' : 's'} this week, ${open} still open.`
+            : `All systems normal — ${emailsSent} email${emailsSent === 1 ? '' : 's'} sent, no incidents.`;
     const subject = open > 0
         ? `MN Lake Homes — week of ${anchor.label} (${open} open issue${open === 1 ? '' : 's'})`
         : `MN Lake Homes — week of ${anchor.label}`;

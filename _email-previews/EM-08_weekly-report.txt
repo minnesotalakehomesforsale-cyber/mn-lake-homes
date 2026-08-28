@@ -1,6 +1,6 @@
 SUBJECT: MN Lake Homes — week of Aug 24
 
-All systems normal — 3 emails sent, no incidents.
+You had 1 lead on a lake with no agent — Round Lake
 
 MN Lake Homes
 
@@ -8,82 +8,31 @@ All systems normal — 3 emails sent, no incidents.
 
 The numbers
 
-MetricThis wkLast wk4-wk avg
+Metric · This wk · Last wk · 4-wk avg
 
-Sessions
-412
-380
-395
+Sessions · 412 · 380 · 395
+Lake page views · 214 · 190 · 200
+Lead forms started · — · — · —
+Leads submitted · 3 · 2 · 2
+Form completion rate · — · — · —
+Leads routed · 2 · 2 · 2
+Leads unrouted · 1 · 0 · 1
+Median time to contact · 34 min · 51 min · 42 min
+New agent signups · 1 · 0 · 1
+Profiles published · 1 · 0 · 1
+New business signups · 0 · 1 · 0
+Paid conversions · 1 · 0 · 1
+Cancellations · 0 · 0 · 0
 
-Lake page views
-214
-190
-200
+MRR · $87
 
-Lead forms started
-—
-—
-—
-
-Leads submitted
-3
-2
-2
-
-Form completion rate
-—
-—
-—
-
-Leads routed
-2
-2
-2
-
-Leads unrouted
-1
-0
-1
-
-Median time to contact
-34 min
-51 min
-42 min
-
-New agent signups
-1
-0
-1
-
-Profiles published
-1
-0
-1
-
-New business signups
-0
-1
-0
-
-Paid conversions
-1
-0
-1
-
-Cancellations
-0
-0
-0
-
-MRR$87
-
-Top lakes by views: gull-lake (96) · north-long-lake (44)
+Top lakes by views: Gull Lake (96) · North Long Lake (44)
 
 This week's leads
 
-LakeRouted toAcceptedTo contact
-Gull LakeDana Smithyes34 min
-Round Lakeunroutedno—
+Lake · Routed to · Accepted · To contact
+Gull Lake · Dana Smith · yes · 34 min
+Round Lake · unrouted · no · —
 
 See all in admin (https://minnesotalakehomesforsale.com/pages/admin/leads.html)
 
@@ -94,7 +43,7 @@ Pages published this week: 1 · Blog posts live: 51 · Agent replies to asks: 2
 Three things to do this week
 
 • You had 1 lead on a lake with no agent — Round Lake — open (https://minnesotalakehomesforsale.com/pages/admin/leads.html)
-• Recruit an agent on Bald Eagle Lake — 96 views last month, nobody to send them to — open (https://minnesotalakehomesforsale.com/pages/admin/agents.html)
+• Recruit an agent on Bald Eagle Lake — 214 views last month, nobody to send them to — open (https://minnesotalakehomesforsale.com/pages/admin/agents.html)
 • North Long Lake has an agent and almost no content — it's the page most likely to convert if you fix it — open (https://minnesotalakehomesforsale.com/pages/admin/lakes-towns.html)
 
 What ran

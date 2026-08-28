@@ -14,10 +14,11 @@ pool.query = async (sql, params = []) => {
 
 // Stub the query layer + rules so the test is about the assembler, not the SQL.
 const rd = require('../src/services/report-data');
-let openIncidents = 0, emailsSent = 0;
+let openIncidents = 0, emailsSent = 0, noSweeps = false;
 rd.reportData = async () => ({
     numbers: { current: {}, previous: {}, avg: {} }, mrr: null, topLakes: [], leads: [], content: {},
-    whatRan: { open_incidents: openIncidents, emailsByTemplate: emailsSent ? [{ template_key: 'x', sent: emailsSent }] : [], sweeps: [] },
+    whatRan: { open_incidents: openIncidents, emailsByTemplate: emailsSent ? [{ template_key: 'x', sent: emailsSent }] : [],
+               sweeps: noSweeps ? [] : [{ name: 'lead-sla', last_run_at: new Date().toISOString() }] },
 });
 const rr = require('../src/services/report-rules');
 rr.topActions = async () => [];
@@ -38,6 +39,12 @@ const ok = (c, m) => { if (c) console.log('  ✓ ' + m); else { failures++; cons
     ok(r.sent && sent.length === 1, 'sends even on a zero-activity week');
     ok(/All systems normal — 0 emails sent, no incidents/.test(sent[0].statusLine), 'zero-activity status line is honest');
     ok(/week of/.test(sent[0].subject) && !/open issue/.test(sent[0].subject), 'clean subject with no open incidents');
+
+    // Dead-man's switch: a week with NO sweep run cannot say "normal".
+    noSweeps = true; incidentsThisWeek = 0; openIncidents = 0; emailsSent = 0; sent = [];
+    await runWeeklyReport({ force: true });
+    ok(/No sweeps ran this week/.test(sent[0].statusLine) && !/All systems normal/.test(sent[0].statusLine), 'a week with no sweeps reports the workers may be down, not "All systems normal"');
+    noSweeps = false;
 
     // A week with incidents flags it in the status line + subject.
     incidentsThisWeek = 2; openIncidents = 1; emailsSent = 40; sent = [];

@@ -8,74 +8,23 @@ All systems normal — 0 emails sent, no incidents.
 
 The numbers
 
-MetricThis wkLast wk4-wk avg
+Metric · This wk · Last wk · 4-wk avg
 
-Sessions
-—
-—
-—
+Sessions · — · — · —
+Lake page views · — · — · —
+Lead forms started · — · — · —
+Leads submitted · — · — · —
+Form completion rate · — · — · —
+Leads routed · — · — · —
+Leads unrouted · — · — · —
+Median time to contact · — · — · —
+New agent signups · — · — · —
+Profiles published · — · — · —
+New business signups · — · — · —
+Paid conversions · — · — · —
+Cancellations · — · — · —
 
-Lake page views
-—
-—
-—
-
-Lead forms started
-—
-—
-—
-
-Leads submitted
-—
-—
-—
-
-Form completion rate
-—
-—
-—
-
-Leads routed
-—
-—
-—
-
-Leads unrouted
-—
-—
-—
-
-Median time to contact
-—
-—
-—
-
-New agent signups
-—
-—
-—
-
-Profiles published
-—
-—
-—
-
-New business signups
-—
-—
-—
-
-Paid conversions
-—
-—
-—
-
-Cancellations
-—
-—
-—
-
-MRR—
+MRR · —
 
 Top lakes by views: —
 

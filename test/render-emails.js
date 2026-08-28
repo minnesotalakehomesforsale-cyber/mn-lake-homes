@@ -93,14 +93,14 @@ const AGENT = { display_name: 'Dana Smith', slug: 'dana-smith' };
             avg: { sessions: 395, lake_views: 200, leads_submitted: 2, leads_routed: 2, leads_unrouted: 1, completion_rate: null, median_ttc_min: 42, new_agents: 1, profiles_published: 1, new_businesses: 0, paid_conversions: 1, cancellations: 0 },
         },
         mrr: 87,
-        topLakes: [{ lake: 'gull-lake', views: 96 }, { lake: 'north-long-lake', views: 44 }],
+        topLakes: [{ lake: 'Gull Lake', views: 96 }, { lake: 'North Long Lake', views: 44 }],
         leads: [{ lake: 'Gull Lake', agent: 'Dana Smith', accepted_at: '2026-08-25', routed_at: '2026-08-25T10:00:00Z', first_contact_at: '2026-08-25T10:34:00Z' }, { lake: 'Round Lake', agent: null, accepted_at: null, routed_at: null, first_contact_at: null }],
         content: { pages_published: 1, blog_live: 51, agent_replies: 2 },
         whatRan: { open_incidents: 0, bounce_rate: 0, emailsByTemplate: [{ template_key: 'lead_agent_matched', sent: 2 }, { template_key: 'agent_welcome', sent: 1 }], sweeps: [{ name: 'lead-sla', last_run_at: '2026-08-24' }, { name: 'email-health', last_run_at: '2026-08-24' }] },
     };
     const sampleActions = [
         { text: 'You had 1 lead on a lake with no agent — Round Lake', link: '/pages/admin/leads.html' },
-        { text: 'Recruit an agent on Bald Eagle Lake — 96 views last month, nobody to send them to', link: '/pages/admin/agents.html' },
+        { text: 'Recruit an agent on Bald Eagle Lake — 214 views last month, nobody to send them to', link: '/pages/admin/agents.html' },
         { text: 'North Long Lake has an agent and almost no content — it\'s the page most likely to convert if you fix it', link: '/pages/admin/lakes-towns.html' },
     ];
     await dump('EM-08_weekly-report', () => email.sendWeeklyReport({ subject: 'MN Lake Homes — week of Aug 24', statusLine: 'All systems normal — 3 emails sent, no incidents.', report: sampleReport, actions: sampleActions }));
@@ -111,8 +111,8 @@ const AGENT = { display_name: 'Dana Smith', slug: 'dana-smith' };
     const periodicSections = {
         numbersTable: '<p style="font-size:13px;color:#718096;">(numbers table renders from the same query layer)</p>',
         sparkNote: 'trend = weekly buckets',
-        topByTraffic: [{ lake: 'gull-lake', views: 812 }, { lake: 'bald-eagle-lake', views: 640 }],
-        topByLeads: [{ lake: 'gull-lake', leads: 9 }, { lake: 'north-long-lake', leads: 4 }],
+        topByTraffic: [{ lake: 'Gull Lake', views: 812 }, { lake: 'Bald Eagle Lake', views: 640 }],
+        topByLeads: [{ lake: 'Gull Lake', leads: 9 }, { lake: 'North Long Lake', leads: 4 }],
         tierLine: 'Free 4 · Standard 2 · Prime 1 · Elite 1 — MRR $250.',
         cohort: { joined: 5, active: 6, churned: 1 },
         contentLine: '51 blog posts live · 120 lake pages · 38 still under 200 words',

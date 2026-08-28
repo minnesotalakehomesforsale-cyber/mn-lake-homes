@@ -61,9 +61,11 @@ async function reportData(start, end, periodDays = 7) {
         collectWindow(start, end),
         collectWindow(prevStart, start),
         collectWindow(avgStart, start),                    // 4 periods → divide by 4 for the avg
-        qN(`SELECT REPLACE(path, '/lakes/', '') AS lake, COUNT(*)::int AS views
-              FROM page_views WHERE created_at >= $1 AND created_at < $2 AND path LIKE '/lakes/%'
-              GROUP BY path ORDER BY views DESC LIMIT 5`, [start, end]),
+        qN(`SELECT COALESCE(l.name, REPLACE(pv.path, '/lakes/', '')) AS lake, pv.views
+              FROM (SELECT path, COUNT(*)::int AS views FROM page_views
+                     WHERE created_at >= $1 AND created_at < $2 AND path LIKE '/lakes/%' GROUP BY path) pv
+              LEFT JOIN lakes l ON l.slug = REPLACE(pv.path, '/lakes/', '')
+              ORDER BY pv.views DESC LIMIT 5`, [start, end]),
         qN(`SELECT l.target_lake AS lake, l.source_page_url AS source, l.first_contact_at, l.routed_at,
                    l.accepted_at, COALESCE(a.display_name, u.full_name) AS agent
               FROM leads l LEFT JOIN agents a ON a.id = l.agent_id LEFT JOIN users u ON u.id = a.user_id

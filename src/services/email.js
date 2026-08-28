@@ -137,6 +137,12 @@ function htmlToText(html) {
             return /inline-block/.test(m) ? `\n${s}\n` : s;
         })
         .replace(/<br\s*\/?>(\s*)/gi, '\n')
+        // Table cells: keep a whole row on one line ("Sessions · 412 · 380") — first
+        // strip the source-formatting whitespace between cell tags, then separate
+        // cells with " · ". Rows/blocks → newlines.
+        .replace(/<\/(td|th)>\s+/gi, '</$1>')
+        .replace(/\s+<(td|th)\b/gi, '<$1')
+        .replace(/<\/(td|th)>/gi, ' · ')
         .replace(/<\/(p|div|tr|h[1-6]|li|ol|ul|table)>/gi, '\n')
         .replace(/<li\b[^>]*>/gi, '• ')
         .replace(/<[^>]+>/g, '')
@@ -144,7 +150,7 @@ function htmlToText(html) {
         .replace(/&rsquo;|&lsquo;|&#39;/g, "'").replace(/&ldquo;|&rdquo;|&quot;/g, '"')
         .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
         .replace(/\s*(?:→|&rarr;|&#8594;)/g, '')   // decorative arrows read oddly before a bare URL
-        .split('\n').map(l => l.replace(/[ \t]{2,}/g, ' ').trim()).join('\n')
+        .split('\n').map(l => l.replace(/\s*·\s*/g, ' · ').replace(/^(?:\s*·\s*)+/, '').replace(/(?:\s*·\s*)+$/, '').replace(/[ \t]{2,}/g, ' ').trim()).join('\n')
         .replace(/\n{3,}/g, '\n\n')
         .trim();
 }
@@ -951,7 +957,9 @@ function sendWeeklyReport({ subject, statusLine, report, actions }) {
         emailClass: 'internal', templateKey: 'weekly_report',
         to: OWNER_EMAIL(),
         subject,
-        html: layout({ title: '', preheader: statusLine, body: `
+        // Preheader = the top action, not a second copy of the status line — the
+        // inbox preview should tell Hunter whether Monday needs him before opening.
+        html: layout({ title: '', preheader: (actions && actions[0] && actions[0].text) || statusLine, body: `
             <p style="${p}font-weight:700;color:#1a202c;">${_esc(statusLine)}</p>
 
             <h3 style="${h}">The numbers</h3>
@@ -996,11 +1004,14 @@ function sendPeriodicReport({ kind, subject, statusLine, report, sections, actio
         ? `<p style="margin:12px 0 4px;font-weight:700;text-transform:capitalize;color:#1a202c;">${g}</p>${list(grouped[g].map(a => a.text))}` : '').join('');
 
     const s = sections || {};
+    // Preheader = the top action (highest revenue proximity: fix → recruit →
+    // content → product), not a repeat of the status line.
+    const topAction = (grouped.fix || grouped.recruit || grouped.content || grouped.product || [])[0];
     return sendEmail({
         emailClass: 'internal', templateKey: 'periodic_report',
         to: OWNER_EMAIL(),
         subject,
-        html: layout({ title: '', preheader: statusLine, body: `
+        html: layout({ title: '', preheader: (topAction && topAction.text) || statusLine, body: `
             <p style="${p}font-weight:700;color:#1a202c;">${_esc(statusLine)}</p>
 
             <h3 style="${h}">The numbers${s.sparkNote ? ` <span style="font-weight:600;color:#a0aec0;font-size:12px;">${_esc(s.sparkNote)}</span>` : ''}</h3>
