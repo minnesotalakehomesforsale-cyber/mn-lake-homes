@@ -2020,6 +2020,42 @@ app.post('/a/:token', async (req, res) => {
     } catch (e) { console.error('[action POST]', e.message); res.status(500).send(actionPage({ heading: 'Something went wrong', message: 'Please try again shortly.' })); }
 });
 
+// ─── Block E: inbound-email webhook (ladder reply attribution) ──────────────
+// The email provider's inbound parse POSTs here when an agent replies to a
+// ladder email. The Reply-To was a plus-addressed, HMAC-signed token encoding
+// (agentId, rung); we verify it and record the response so the governor advances
+// correctly — automatic even while a human reads the actual photos/answers.
+// Optional shared secret via INBOUND_EMAIL_SECRET (?secret= or x-inbound-secret).
+app.post('/api/inbound-email', async (req, res) => {
+    try {
+        const secret = process.env.INBOUND_EMAIL_SECRET;
+        if (secret && req.query.secret !== secret && req.headers['x-inbound-secret'] !== secret) {
+            return res.status(401).json({ ok: false });
+        }
+        const { parseReplyToken } = require('./services/ladder-reply');
+        // Providers differ; collect every place a recipient address might appear.
+        const b = req.body || {};
+        const candidates = [];
+        const push = v => { if (typeof v === 'string') candidates.push(v); else if (Array.isArray(v)) v.forEach(push); else if (v && typeof v === 'object') { if (v.to) push(v.to); if (v.address) push(v.address); if (v.value) push(v.value); } };
+        push(b.to); push(b.recipient); push(b.recipients); push(b.envelope); push(b['To']);
+        if (typeof b.envelope === 'string') { try { push(JSON.parse(b.envelope)); } catch (_) {} }
+        if (b.headers) push(b.headers.to || b.headers['To']);
+        push(req.query.to);
+
+        let claim = null;
+        for (const c of candidates) { claim = parseReplyToken(c); if (claim) break; }
+        if (!claim) return res.json({ ok: true, matched: false });   // ack anyway so the provider stops retrying
+
+        await pool.query(
+            `UPDATE agents SET last_response_at = NOW(),
+                    ladder_status = CASE WHEN ladder_status = 'stopped' THEN 'stopped' ELSE 'active' END,
+                    updated_at = NOW()
+              WHERE id = $1`, [claim.agentId]);
+        console.log(`[inbound-email] ladder reply from agent ${claim.agentId} (rung ${claim.rung})`);
+        return res.json({ ok: true, matched: true });
+    } catch (e) { console.error('[inbound-email]', e.message); return res.json({ ok: true }); }
+});
+
 // Public MN Lake Market Index.
 app.get('/market-index', (req, res, next) => {
     // Hidden until we have enough live listings to make it meaningful.
@@ -4255,6 +4291,16 @@ async function ensureTables() {
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS match_intro_at     TIMESTAMPTZ;   -- EM-24 dedupe: one consumer intro per routed lead
             -- Agent response record (EM-16 "not yet" strike; feeds routing weight later).
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS response_strikes  INTEGER NOT NULL DEFAULT 0;
+
+            -- Block E: content-ladder governor state (EM-17). ladder_rung = highest
+            -- rung sent (0 none); status active|paused|stopped; last_response_at set
+            -- by an inbound reply; last_contribution_at set when we publish their asset.
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS ladder_rung          INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS ladder_status        VARCHAR(10) NOT NULL DEFAULT 'active';
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS last_rung_sent_at    TIMESTAMPTZ;
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS last_rung_resent     BOOLEAN NOT NULL DEFAULT FALSE;  -- the one 30-day re-send happened
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS last_response_at     TIMESTAMPTZ;
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS last_contribution_at TIMESTAMPTZ;
 
             -- Monthly MRR snapshots for the admin revenue cockpit trend.
             CREATE TABLE IF NOT EXISTS mrr_snapshots (
