@@ -266,12 +266,13 @@ const publishProfile = async (req, res) => {
     try {
         const { rows } = await pool.query(
             `SELECT display_name, brokerage_name, phone_public, city, bio,
-                    service_areas, specialties, profile_status
+                    service_areas, specialties, profile_status, paid_membership_code
                FROM agents WHERE user_id = $1`,
             [req.user.userId]
         );
         if (rows.length === 0) return res.status(404).json({ error: 'Agent profile not found.' });
         const agent = rows[0];
+        const wasPublished = agent.profile_status === 'published';   // EM-11: email only on the draft→published flip
 
         if (agent.profile_status === 'suspended') {
             return res.status(403).json({ error: 'This profile is suspended. Contact support.' });
@@ -307,6 +308,46 @@ const publishProfile = async (req, res) => {
         );
         // AL-03: draft/dormant_draft → free_live (leaves a paying agent alone).
         if (pub.rows[0]) await require('../services/lifecycle').onProfilePublished(pub.rows[0].id).catch(() => {});
+
+        // EM-11: the free-tier "your profile is live" email. Fires once, on the
+        // draft→published flip, and only for FREE agents — paid agents get the
+        // paid variant from the Stripe webhook, so we must not double-send here.
+        if (pub.rows[0] && !wasPublished && !agent.paid_membership_code) {
+            try {
+                const { rows: lr } = await pool.query(
+                    `SELECT u.email, a.display_name, a.slug,
+                            l.name AS lake_name, l.slug AS lake_slug
+                       FROM agents a
+                       JOIN users u ON u.id = a.user_id
+                  LEFT JOIN LATERAL (
+                           SELECT lk.name, lk.slug
+                             FROM agent_lakes al JOIN lakes lk ON lk.id = al.lake_id
+                            WHERE al.agent_id = a.id
+                            ORDER BY al.is_founder DESC NULLS LAST
+                            LIMIT 1
+                       ) l ON true
+                      WHERE a.id = $1`,
+                    [pub.rows[0].id]
+                );
+                // EM-11 open question: the free copy is lake-centric ("live on
+                // [Lake]") but a free agent usually has no lake seat. Rather than
+                // send copy that reads "on the site's page", we only send when we
+                // can name a lake; free-no-lake is logged until the fallback copy
+                // (or a primary-lake rule) is decided.
+                if (lr[0]?.email && lr[0]?.lake_slug) {
+                    emailService.sendAgentProfileLive({
+                        email:        lr[0].email,
+                        display_name: lr[0].display_name,
+                        slug:         lr[0].slug,
+                        lake_name:    lr[0].lake_name,
+                        lake_slug:    lr[0].lake_slug,
+                        tier:         'free',
+                    });
+                } else if (lr[0]?.email) {
+                    console.log(`[publishProfile] free agent ${pub.rows[0].id} published with no lake seat — profile-live email held (EM-11 no-lake copy pending)`);
+                }
+            } catch (e) { console.warn('[publishProfile] free profile-live email failed:', e.message); }
+        }
         res.json({ success: true, is_published: true, profile_status: 'published' });
     } catch (err) {
         console.error('[publishProfile]', err.message);

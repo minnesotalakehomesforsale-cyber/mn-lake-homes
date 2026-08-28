@@ -9,13 +9,11 @@
 //       you the best, top agent, hand-picked as a quality guarantee)
 //   (d) "Basic" as an AGENT tier (agents are Standard $9; Basic $29 is a business tier)
 //
-// EXEMPTIONS: exactly one, for sendAgentProfileLive, which still carries the live
-// "base priority… leads still reach you" (a) line and the "direct line to the
-// founder" (b) line. EM-11 rewrites that template verbatim and its PR DELETES the
-// entry below. ACCEPTANCE (Block C): this list must be EMPTY at the end of Block C.
-const EXEMPTIONS = {
-    sendAgentProfileLive: 'EM-11 rewrites this template; the EM-11 PR removes this entry',
-};
+// EXEMPTIONS: EM-11 rewrote sendAgentProfileLive to its verbatim copy (paid/free
+// variants), clearing the live "leads still reach you" (a) + "founder" (b) lines,
+// so its exemption is removed. ACCEPTANCE (Block C): this list must be EMPTY at
+// the end of Block C — it is. Add an entry only with a ticketed removal condition.
+const EXEMPTIONS = {};
 
 const fs = require('fs');
 const path = require('path');

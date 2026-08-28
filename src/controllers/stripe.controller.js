@@ -960,19 +960,31 @@ exports.handleWebhook = async (req, res) => {
                 // Renewals come through invoice.payment_succeeded and don't
                 // hit this branch, so this email won't double-send.
                 try {
+                    // EM-11: the paid "profile is live" email. Resolve the agent's
+                    // lake (their founder seat first) so the copy can name it.
                     const { rows: liveRows } = await pool.query(
-                        `SELECT u.email, a.display_name, a.slug
+                        `SELECT u.email, a.display_name, a.slug,
+                                l.name AS lake_name, l.slug AS lake_slug
                            FROM agents a
                            JOIN users u ON u.id = a.user_id
+                      LEFT JOIN LATERAL (
+                               SELECT lk.name, lk.slug
+                                 FROM agent_lakes al JOIN lakes lk ON lk.id = al.lake_id
+                                WHERE al.agent_id = a.id
+                                ORDER BY al.is_founder DESC NULLS LAST
+                                LIMIT 1
+                           ) l ON true
                           WHERE a.user_id = $1`,
                         [userId]
                     );
                     if (liveRows[0]?.email) {
                         emailService.sendAgentProfileLive({
-                            email:           liveRows[0].email,
-                            display_name:    liveRows[0].display_name,
-                            slug:            liveRows[0].slug,
-                            membership_code: membershipCode,
+                            email:        liveRows[0].email,
+                            display_name: liveRows[0].display_name,
+                            slug:         liveRows[0].slug,
+                            lake_name:    liveRows[0].lake_name,
+                            lake_slug:    liveRows[0].lake_slug,
+                            tier:         'paid',
                         });
                     }
                 } catch (e) {
