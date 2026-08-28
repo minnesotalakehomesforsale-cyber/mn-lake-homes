@@ -363,7 +363,7 @@ function sendAgentWelcome(user) {
                 </p>
                 <ol style="margin:0 0 18px;padding-left:1.25rem;font-size:15px;line-height:1.7;color:#2d3748;">
                   <li><strong>Complete your profile</strong> — bio, photo, service areas, specialties.</li>
-                  <li><strong>Pick a plan</strong> — Standard, Prime, or Founder.</li>
+                  <li><strong>Pick a plan</strong> that fits how you work.</li>
                 </ol>
                 <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
                   Your profile publishes automatically the moment Stripe confirms payment. No team review, no waiting room — once payment clears, you're on the lake pages.
