@@ -27,6 +27,10 @@ async function collectWindow(start, end) {
         q1(`SELECT COUNT(*)::int AS submitted,
                    COUNT(*) FILTER (WHERE routed_at IS NOT NULL)::int AS routed,
                    COUNT(*) FILTER (WHERE held_no_agent = TRUE OR (routed_at IS NULL AND agent_id IS NULL))::int AS unrouted,
+                   -- Median time-to-contact keys off first_contact_at ON PURPOSE,
+                   -- NOT lead_status='contacted' — the latter is set at route time
+                   -- (means "assigned", see schema.sql) and would report ~0. Only
+                   -- first_contact_at is a real "agent reached the buyer" stamp.
                    ROUND(percentile_cont(0.5) WITHIN GROUP (
                        ORDER BY EXTRACT(EPOCH FROM (first_contact_at - routed_at))/60.0)
                        FILTER (WHERE first_contact_at IS NOT NULL AND routed_at IS NOT NULL))::int AS median_ttc_min

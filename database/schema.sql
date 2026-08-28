@@ -26,6 +26,15 @@ DO $$ BEGIN
     CREATE TYPE profile_status_type AS ENUM ('draft', 'pending_review', 'published', 'suspended');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
+-- WARNING: 'contacted' here does NOT mean an agent actually reached the buyer.
+-- Multiple assignment/routing paths (lead.controller, admin.controller,
+-- reroute-lead, lead-sla, the accept flow) set lead_status='contacted' at ROUTE
+-- time — it effectively means "assigned to an agent". The ONLY truthful "agent
+-- reached the buyer" signal is leads.first_contact_at (written solely by the
+-- EM-15 mark_contacted button + EM-16 feedback_connected). Never judge an agent
+-- or build a time-to-contact metric on lead_status='contacted'; use
+-- first_contact_at. (Renaming this value to 'assigned_to_agent' is a Wave 2
+-- cleanup — enum edits deferred out of the email triage.)
 DO $$ BEGIN
     CREATE TYPE lead_status_type AS ENUM ('new', 'unassigned', 'assigned', 'contacted', 'in_progress', 'closed', 'archived');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
