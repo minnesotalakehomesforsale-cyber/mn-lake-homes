@@ -33,6 +33,7 @@
 const { Resend }    = require('resend');
 const nodemailer    = require('nodemailer');
 const crypto        = require('crypto');
+const fs            = require('fs');
 
 const GMAIL_USER     = process.env.GMAIL_USER;
 const GMAIL_PASSWORD = (process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '');
@@ -1868,9 +1869,68 @@ const EMAIL_TEMPLATES = [
     { key: 'email_health_alert',              class: 'internal',      label: 'Send-health P1 alert' },
 ];
 
+// Registry integrity audit — the load-bearing check behind both the CI test and
+// the boot guard. Scans THIS file's source for every (templateKey, emailClass)
+// pair the send calls carry, and confirms: (1) every call site is in the
+// registry with a matching class, (2) every registry key has a call site, and
+// (3) no `sendEmail({...})` branch is unclassified. #3 is the one that caught
+// the fail-closed defect: a once-per-function classifier left a transactional
+// tier-branch with no class, so a real send was silently suppressed. Fail-closed
+// is correct, but a fail-closed TRANSACTIONAL email is worse than a sent one —
+// this makes that pair honest. Pure function; returns { ok, problems: [] }.
+function auditTemplateClassification() {
+    const problems = [];
+    let src = '';
+    try { src = fs.readFileSync(__filename, 'utf8'); }
+    catch (e) { return { ok: false, problems: [`could not read email.js source: ${e.message}`] }; }
+
+    // (templateKey → emailClass) from the call sites, either object-key order.
+    const call = new Map();
+    const reA = /emailClass:\s*['"]([a-z_]+)['"][\s\S]{0,200}?templateKey:\s*['"]([a-z0-9_]+)['"]/g;
+    const reB = /templateKey:\s*['"]([a-z0-9_]+)['"][\s\S]{0,200}?emailClass:\s*['"]([a-z_]+)['"]/g;
+    let m;
+    while ((m = reA.exec(src))) call.set(m[2], m[1]);
+    while ((m = reB.exec(src))) if (!call.has(m[1])) call.set(m[1], m[2]);
+
+    const reg = new Map(EMAIL_TEMPLATES.map(t => [t.key, t.class]));
+    for (const [key, cls] of call) {
+        if (!reg.has(key)) problems.push(`call site '${key}' (${cls}) missing from EMAIL_TEMPLATES`);
+        else if (reg.get(key) !== cls) problems.push(`'${key}': call site class ${cls} != registry ${reg.get(key)}`);
+    }
+    for (const [key, cls] of reg) if (!call.has(key)) problems.push(`registry key '${key}' (${cls}) matches no send call site`);
+
+    // (3) every sendEmail({...}) call classifies — literal or forwarded param.
+    const lines = src.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+        if (/^\s*(\/\/|\*|\/\*)/.test(lines[i])) continue;                 // skip comments (this file talks about sendEmail)
+        if (!/\bsendEmail\(\{/.test(lines[i]) || /async function sendEmail/.test(lines[i])) continue;
+        const win = lines.slice(i, i + 8).join('\n');
+        if (!/emailClass:\s*['"]/.test(win) && !/emailClass\s*[,}]/.test(win)) {
+            problems.push(`sendEmail call at email.js:${i + 1} has NO emailClass — it will fail closed`);
+        }
+    }
+    return { ok: problems.length === 0, problems };
+}
+
+// Boot guard for the classifier defect — CI catches it before merge, this
+// catches it when someone adds a template branch on an 11pm hotfix. Loud ERROR
+// naming each unclassified/mismatched branch; with EMAIL_STRICT_BOOT=1 it
+// refuses to start. Runs here, after EMAIL_TEMPLATES is initialized.
+{
+    const _audit = auditTemplateClassification();
+    if (!_audit.ok) {
+        console.error(`[email] ✖ TEMPLATE CLASSIFICATION DEFECT (${_audit.problems.length}) — a fail-closed transactional email is worse than a sent one:`);
+        _audit.problems.forEach(p => console.error(`[email]    · ${p}`));
+        if (process.env.EMAIL_STRICT_BOOT === '1') {
+            throw new Error(`email template classification failed: ${_audit.problems.join(' | ')}`);
+        }
+    }
+}
+
 module.exports = {
     sendEmail,
     EMAIL_TEMPLATES,
+    auditTemplateClassification,
     htmlToText,
     footerHtml,
     verifyUnsub,
