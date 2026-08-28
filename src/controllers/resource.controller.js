@@ -253,6 +253,9 @@ exports.captureDownload = async (req, res) => {
         const downloadUrl = `${siteBase}${resource.url}`;
         try {
             emailService.sendCustom({
+                // User asked for this specific PDF — delivering it is transactional.
+                emailClass: 'transactional',
+                templateKey: 'resource_download',
                 to: email,
                 subject: `Your download: ${resource.title}`,
                 html: emailService.layout({

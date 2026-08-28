@@ -41,5 +41,21 @@ for (const t of EMAIL_TEMPLATES) if (!VALID.has(t.class)) fail(`'${t.key}' has u
 // No duplicate keys.
 if (reg.size !== EMAIL_TEMPLATES.length) fail('EMAIL_TEMPLATES contains duplicate keys');
 
+// Every sendEmail({...}) call in the service must classify — either a literal
+// `emailClass: '...'` or a forwarded `emailClass` param (the sendCustom escape
+// hatch). An unclassified branch fails closed at runtime (a transactional email
+// silently address-gated/suppressed) — exactly the multi-tier bug this guards.
+// Scans the whole file so a NEW tier branch that forgets the class goes red.
+{
+    const srcLines = src.split('\n');
+    for (let i = 0; i < srcLines.length; i++) {
+        if (!/\bsendEmail\(\{/.test(srcLines[i])) continue;
+        if (/async function sendEmail/.test(srcLines[i])) continue;   // the definition
+        const win = srcLines.slice(i, i + 8).join('\n');
+        const classified = /emailClass:\s*['"]/.test(win) || /emailClass\s*[,}]/.test(win);
+        if (!classified) fail(`sendEmail call at email.js:${i + 1} has no emailClass — it will fail closed`);
+    }
+}
+
 if (failures) { console.error(`\nemail-registry: ${failures} FAIL`); process.exit(1); }
 console.log(`email-registry: OK — registry matches all ${call.size} send call sites`);

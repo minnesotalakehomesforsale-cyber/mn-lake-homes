@@ -461,6 +461,8 @@ function sendAgentProfileLive({ email, display_name, slug, membership_code }) {
     // ─── Prime ($39) ───────────────────────────────────────────────────────
     if (tier === 'prime') {
         return sendEmail({
+            emailClass: 'transactional',
+            templateKey: 'agent_profile_live',
             to: email,
             subject: 'Welcome to MN Lake Homes — your Prime profile is live',
             html: layout({
@@ -501,6 +503,8 @@ function sendAgentProfileLive({ email, display_name, slug, membership_code }) {
 
     // ─── Standard ($9) ─────────────────────────────────────────────────────
     return sendEmail({
+        emailClass: 'transactional',
+        templateKey: 'agent_profile_live',
         to: email,
         subject: 'Welcome to MN Lake Homes — your Standard profile is live',
         html: layout({
@@ -880,8 +884,11 @@ function sendMatchedAgentNotification({ to, agentFirstName, lead, distanceMiles,
  * Simple custom send — lets us use the base `sendEmail` from elsewhere for
  * ad-hoc sends like newsletter campaigns later.
  */
-function sendCustom({ to, subject, html, replyTo }) {
-    return sendEmail({ to, subject, html, replyTo });
+function sendCustom({ to, subject, html, replyTo, emailClass, templateKey }) {
+    // Generic passthrough. The CLASS must come from the caller — with none, the
+    // send fails closed (treated commercial: suppressible + address-gated), which
+    // is the safe default for an ad-hoc send.
+    return sendEmail({ to, subject, html, replyTo, emailClass, templateKey });
 }
 
 // ─── Business-owner lifecycle ────────────────────────────────────────────────
