@@ -5996,6 +5996,14 @@ const PORT = process.env.PORT || 3000;
         try { pool.on('error', e => { try { require('./services/incidents').recordFailure('db', e && e.message); } catch (_) {} }); } catch (_) {}
     }
 
+    // EM-13 follow-up — a held (still-unrouted) lead gets a short 7-day check-in,
+    // capped at two, so it never goes silent. Daily. NO_AGENT_FOLLOWUP_ENABLED=false to disable.
+    if (process.env.NO_AGENT_FOLLOWUP_ENABLED !== 'false') {
+        const { runNoAgentFollowup } = require('./services/no-agent-followup');
+        setTimeout(() => runNoAgentFollowup().catch(e => console.warn('[no-agent-followup]', e.message)), 8 * 60 * 1000);
+        setInterval(() => runNoAgentFollowup().catch(e => console.warn('[no-agent-followup]', e.message)), 24 * 60 * 60 * 1000);
+    }
+
     // T141 manual-release acceptance SLA — reclaim hand-placed held leads the
     // free-tier agent didn't accept within 24h. Every 15 min. Disable with
     // MANUAL_RELEASE_SWEEP_ENABLED=false.

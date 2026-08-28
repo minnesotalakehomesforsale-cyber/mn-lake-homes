@@ -1487,6 +1487,53 @@ function sendLeadAgentMatched({
     });
 }
 
+// EM-13 — "No agent on your lake yet". The highest-intent traffic we have (they
+// searched a specific lake and filled out a form) would otherwise get a
+// confirmation and then silence forever. Tell them the truth, keep the
+// relationship, and offer a nearby-lake intro. `variant: 'followup'` is the short
+// 7-day check-in. Consumer/transactional.
+function sendNoAgentYet({ to, first_name, lake_name, lake_slug, nearby_lakes, variant }) {
+    if (!to) return { skipped: true };
+    const lake = _esc(lake_name) || 'that lake';
+    const first = _esc(first_name) || 'there';
+    const nearby = Array.isArray(nearby_lakes) ? nearby_lakes.filter(Boolean) : (nearby_lakes ? [nearby_lakes] : []);
+    const nearbyPhrase = nearby.length
+        ? `Agents who work ${nearby.map(_esc).join(' and ')} often cover ${lake} too, and I can make an introduction now.`
+        : `Agents who work the surrounding lakes often cover ${lake} too, and I can make an introduction now.`;
+    const guideUrl = lake_slug ? `${SITE_URL}/lakes/${lake_slug}` : `${SITE_URL}/find-your-lake`;
+    const p = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;';
+    const guideBtn = `
+        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:4px 0 12px;">
+          <tr><td style="background:#1d6df2;border-radius:8px;">
+            <a href="${guideUrl}" style="display:inline-block;padding:14px 28px;color:#fff;font-weight:700;font-size:15px;text-decoration:none;">${lake} guide →</a>
+          </td></tr>
+        </table>`;
+
+    if (variant === 'followup') {
+        return sendEmail({
+            emailClass: 'transactional', templateKey: 'lead_no_agent_yet', to,
+            subject: `Still on it — your ${lake_name || 'lake'} request`,
+            html: layout({ title: '', preheader: 'A quick update — no need to do anything.', body: `
+                <p style="${p}">Hi ${first},</p>
+                <p style="${p}">Quick update on your ${lake} request: still working on finding you an agent I'd send my own family to. I haven't forgotten you.</p>
+                <p style="${p}">${nearbyPhrase} If you'd like that, just reply.</p>
+                <p style="${p}">— Hunter Burnside</p>` }),
+        });
+    }
+    return sendEmail({
+        emailClass: 'transactional', templateKey: 'lead_no_agent_yet', to,
+        subject: `About your ${lake_name || 'lake'} request`,
+        html: layout({ title: '', preheader: 'Where things stand, honestly.', body: `
+            <p style="${p}">Hi ${first},</p>
+            <p style="${p}">Thanks for your request about ${lake}. I want to be straight with you rather than leave you waiting: we don't yet have an agent on our platform who covers ${lake}.</p>
+            <p style="${p}">Here's what I'm doing about it. I'm reaching out to agents who actually work that lake, and I'll email you as soon as I have someone I'd send my own family to. That's usually a few days.</p>
+            <p style="${p}">In the meantime, here's what we know about the lake:</p>
+            ${guideBtn}
+            <p style="${p}">And if you'd rather not wait — reply and tell me. ${nearbyPhrase}</p>
+            <p style="${p}">— Hunter Burnside</p>` }),
+    });
+}
+
 // ─── New in-app message arrived from MN Lake Homes ─────────────────────────
 // Fires whenever the admin sends a 1:1 message OR the agent is in the
 // audience of a broadcast. The email is the wake-up; the actual thread
@@ -1837,6 +1884,7 @@ const EMAIL_TEMPLATES = [
     { key: 'agent_lead_assigned',             class: 'transactional', audience: 'agent',    label: 'Agent lead assigned' },
     { key: 'manual_lead_offer',               class: 'transactional', audience: 'agent',    label: 'Manual lead offer' },
     { key: 'lead_agent_matched',              class: 'transactional', audience: 'consumer', label: 'Lead → agent matched' },
+    { key: 'lead_no_agent_yet',               class: 'transactional', audience: 'consumer', label: 'No agent on your lake yet' },
     { key: 'agent_profile_nudge',             class: 'lifecycle',     audience: 'agent',    label: 'Agent profile nudge' },
     { key: 'agent_profile_enrichment_nudge',  class: 'lifecycle',     audience: 'agent',    label: 'Agent profile enrichment nudge' },
     { key: 'referral_reward',                 class: 'transactional', audience: 'agent',    label: 'Referral reward' },
@@ -1937,6 +1985,7 @@ module.exports = {
     sendAgentLeadAssigned,
     sendManualLeadOffer,
     sendLeadAgentMatched,
+    sendNoAgentYet,
     sendAgentProfileNudge,
     sendAgentProfileEnrichmentNudge,
     sendReferralRewardEmail,

@@ -593,6 +593,31 @@ const createLead = async (req, res) => {
                                 detail: `${name || email || 'A buyer'}${email ? ` (${email})` : ''}${phone ? ` · ${phone}` : ''} — grade ${leadGrade}, intent ${qualIntent || '—'}, ${qualPriceBand || '—'}`,
                                 adminLink: '/pages/admin/leads.html',
                             });
+                            // EM-13: tell the buyer the truth (once) + offer a nearby
+                            // intro, and start the 7-day follow-up clock. The person
+                            // only ever sees what the system genuinely can't resolve.
+                            (async () => {
+                                try {
+                                    const claimed = await pool.query(
+                                        `UPDATE leads SET no_agent_email_count = 1, no_agent_last_at = NOW()
+                                          WHERE id = $1 AND no_agent_email_count = 0 RETURNING id`, [newLeadId]);
+                                    if (!claimed.rowCount || !email) return;
+                                    let lakeSlug = null, nearby = [];
+                                    if (leadLakeId) {
+                                        const s = await pool.query(`SELECT slug FROM lakes WHERE id = $1`, [leadLakeId]);
+                                        lakeSlug = s.rows[0]?.slug || null;
+                                        const nl = await pool.query(
+                                            `SELECT DISTINCT l.name FROM lakes l JOIN lake_tags lt ON lt.lake_id = l.id
+                                              WHERE lt.tag_id IN (SELECT tag_id FROM lake_tags WHERE lake_id = $1) AND l.id <> $1
+                                              ORDER BY l.name LIMIT 2`, [leadLakeId]);
+                                        nearby = nl.rows.map(r => r.name);
+                                    }
+                                    require('../services/email').sendNoAgentYet({
+                                        to: email, first_name: firstName,
+                                        lake_name: leadLakeName || qualTargetLake, lake_slug: lakeSlug, nearby_lakes: nearby,
+                                    });
+                                } catch (e) { console.warn('[EM-13]', e.message); }
+                            })();
                             return;
                         }
                         // Grade C (or ungraded) with no agent — stays unassigned as

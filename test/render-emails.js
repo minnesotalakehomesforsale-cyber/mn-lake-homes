@@ -58,5 +58,9 @@ const AGENT = { display_name: 'Dana Smith', slug: 'dana-smith' };
         agent_email: 'dana@northland.com', photo_url: null, specialty: 'specializes in waterfront and cabins',
     }));
 
+    // EM-13 — no agent on your lake yet (initial + 7-day follow-up)
+    await dump('EM-13_no-agent_initial', () => email.sendNoAgentYet({ to: 'buyer@x.com', first_name: 'Sam', lake_name: 'Gull Lake', lake_slug: 'gull-lake', nearby_lakes: ['North Long Lake', 'Round Lake'] }));
+    await dump('EM-13_no-agent_followup', () => email.sendNoAgentYet({ to: 'buyer@x.com', first_name: 'Sam', lake_name: 'Gull Lake', lake_slug: 'gull-lake', nearby_lakes: ['North Long Lake', 'Round Lake'], variant: 'followup' }));
+
     console.log('Done.');
 })();
