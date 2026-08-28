@@ -195,6 +195,7 @@ router.get   ('/email-log/summary',  verifyToken, requireRole(['admin', 'super_a
 // site-wide totals + health, and a filterable recent-sends feed.
 router.get   ('/email/oversight',    verifyToken, requireRole(['admin', 'super_admin']), adminController.getEmailOversight);
 router.get   ('/email/health',       verifyToken, requireRole(['admin', 'super_admin']), adminController.getEmailHealth);
+router.get   ('/email/events',       verifyToken, requireRole(['admin', 'super_admin']), adminController.getEmailEvents);
 router.get   ('/email/recent',       verifyToken, requireRole(['admin', 'super_admin']), adminController.getEmailRecent);
 
 // Impersonate a regular user (log in as them). Specific prefix — before /:id.

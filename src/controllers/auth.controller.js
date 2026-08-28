@@ -334,13 +334,13 @@ const register = async (req, res) => {
         // and there's no lake at registration, so it now fires on the agent's
         // first publish (once a lake exists), from agent.controller.publishProfile.
         // The admin notification still fires immediately.
+        // EM-07: new agent signup is a routine business event → P3 (weekly report
+        // + Email tab), not a per-signup email to the owner.
         try {
-            emailService.sendAgentAdminNotification({
-                display_name,
-                email,
-                phone:          phone || null,
-                brokerage_name: brokerage_name || null,
-                license_number: license_number || null,
+            require('../services/incidents').logEvent({
+                key: `signup:agent:${email}`,
+                title: `New agent signup — ${display_name || email}`,
+                detail: [email, phone, brokerage_name].filter(Boolean).join(' · '),
             });
         } catch (_) {}
 

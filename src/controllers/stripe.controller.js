@@ -1037,12 +1037,12 @@ exports.handleWebhook = async (req, res) => {
                             businessName: contact.business_name,
                         });
                     }
-                    // Alert the owner inbox that a business churned.
-                    emailService.sendAdminSubscriptionCancelled({
-                        kind: 'Business',
-                        who: contact?.business_name || `Business ${bizHit.rows[0].id}`,
-                        contact: [contact?.full_name, contact?.email].filter(Boolean).join(' · ') || null,
-                        subscriptionId,
+                    // EM-07: routine business event → P3 (weekly report + Email tab),
+                    // not a per-event email to the owner.
+                    require('../services/incidents').logEvent({
+                        key: `subscription_cancelled:${subscriptionId}`,
+                        title: `Subscription cancelled — ${contact?.business_name || `Business ${bizHit.rows[0].id}`}`,
+                        detail: ['Business', [contact?.full_name, contact?.email].filter(Boolean).join(' · ')].filter(Boolean).join(' · '),
                     });
                     logActivity({
                         event_type: 'business.subscription.canceled',
@@ -1070,12 +1070,10 @@ exports.handleWebhook = async (req, res) => {
                     console.log(`[Stripe Webhook] Founder seat released on lake ${lakeId} (subscription canceled)`);
                     // Alert the owner inbox — a founder seat is high-value churn.
                     const { rows: lkRows } = await pool.query(`SELECT name FROM lakes WHERE id = $1`, [lakeId]);
-                    emailService.sendAdminSubscriptionCancelled({
-                        kind: 'Founder seat',
-                        who: lkRows[0]?.name ? `${lkRows[0].name} founder seat` : `Lake ${lakeId}`,
-                        contact: null,
-                        subscriptionId,
-                        note: 'The lake’s founder seat is now open again — its leads fall back to the town lottery until reseated.',
+                    require('../services/incidents').logEvent({
+                        key: `subscription_cancelled:${subscriptionId}`,
+                        title: `Founder seat cancelled — ${lkRows[0]?.name ? `${lkRows[0].name} founder seat` : `Lake ${lakeId}`}`,
+                        detail: 'Founder seat is open again — its leads fall back to the town lottery until reseated.',
                     });
                     logActivity({
                         event_type: 'lake.founder.canceled',
@@ -1118,12 +1116,10 @@ exports.handleWebhook = async (req, res) => {
                 {
                     const a = agentRows[0];
                     const PLAN_LABEL = { basic: 'Certified Lake Agent ($9)', mn_lake_specialist: 'Lake Specialist ($39)', top_agent: 'Elite Lake Agent ($149)' };
-                    emailService.sendAdminSubscriptionCancelled({
-                        kind: 'Agent',
-                        who: a.display_name || a.full_name || 'An agent',
-                        contact: a.email || null,
-                        tier: PLAN_LABEL[a.paid_membership_code] || a.paid_membership_code || null,
-                        subscriptionId,
+                    require('../services/incidents').logEvent({
+                        key: `subscription_cancelled:${subscriptionId}`,
+                        title: `Subscription cancelled — ${a.display_name || a.full_name || 'An agent'}`,
+                        detail: ['Agent', PLAN_LABEL[a.paid_membership_code] || a.paid_membership_code, a.email].filter(Boolean).join(' · '),
                     });
                 }
                 logActivity({

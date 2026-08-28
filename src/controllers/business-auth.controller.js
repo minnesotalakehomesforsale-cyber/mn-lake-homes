@@ -221,13 +221,12 @@ exports.signup = async (req, res) => {
             businessName: business_name,
             businessType: business_type,
         });
-        emailService.sendBusinessAdminNotification({
-            businessName: business_name,
-            businessType: business_type,
-            ownerEmail: email,
-            ownerName: display_name,
-            slug: biz.slug,
-            businessId: biz.id,
+        // EM-07: new business signup is a routine business event → P3 (weekly
+        // report + Email tab), not a per-signup email to the owner.
+        require('../services/incidents').logEvent({
+            key: `signup:business:${biz.id}`,
+            title: `New business signup — ${business_name}`,
+            detail: [business_type, display_name, email].filter(Boolean).join(' · '),
         });
 
         // Fire-and-forget HubSpot mirror for the business owner.

@@ -11,6 +11,10 @@ let store = [];
 const findOpen = key => store.find(r => r.incident_key === key && r.status === 'open');
 
 pool.query = async (sql, params = []) => {
+    if (/INSERT INTO incidents/.test(sql) && /'logged'/.test(sql)) {   // EM-07 P3 logEvent
+        store.push({ id: idSeq++, incident_key: params[0], severity: 'P3', title: params[1], detail: params[2], status: 'logged', occurrences: 1, notify_count: 0, created_at: new Date().toISOString() });
+        return { rows: [] };
+    }
     if (/INSERT INTO incidents/.test(sql)) {
         const [key, severity, title, detail, effect, checkFirst, adminLink] = params;
         let r = findOpen(key);
@@ -85,6 +89,29 @@ const ok = (c, m) => { if (c) console.log('  ✓ ' + m); else { failures++; cons
     inc.last_notified_at = new Date(Date.now() - 2 * 3600e3).toISOString();               // eligible by time
     await incidents.raise({ key: 'k:d', severity: 'P1', title: 'DB errors' });            // notify_count now 5 → muted
     ok(p1.length === 1, 'after 5 emails the P1 goes quiet until resolved');
+
+    // THE edge that matters: a muted P1 must be able to alert again once resolved,
+    // or the mute becomes permanent silence on a live fault.
+    await incidents.resolve('k:d');
+    ok(!findOpen('k:d'), 'resolve closes the muted incident');
+    await incidents.raise({ key: 'k:d', severity: 'P1', title: 'DB errors returned' });
+    ok(p1.length === 2, 'a resolved P1 can alert again — the mute is not permanent');
+
+    // P2 digest sorts the unrouted-lead opportunity to the top, not buried at #9.
+    store = store.filter(r => r.severity !== 'P2');   // clear prior P2s
+    for (let i = 0; i < 3; i++) await incidents.raise({ key: 'sitemap_fail', severity: 'P2', title: 'Sitemap build failed' });
+    await incidents.raise({ key: 'lead_no_agent:gull-lake', severity: 'P2', title: 'Unrouted lead on Gull Lake' });
+    p2 = [];
+    await incidents.runP2Batch();
+    ok(p2.length === 1 && /Unrouted lead/.test(p2[0].incidents[0].title), 'P2 digest lists the unrouted lead first');
+
+    // EM-07 — a P3 event is recorded, is its own row, and never emails.
+    p1 = []; p2 = [];
+    await incidents.logEvent({ key: 'signup:agent:x@y.com', title: 'New agent signup — Dana', detail: 'x@y.com' });
+    await incidents.logEvent({ key: 'signup:agent:z@y.com', title: 'New agent signup — Sam', detail: 'z@y.com' });
+    const p3rows = store.filter(r => r.severity === 'P3' && r.status === 'logged');
+    ok(p3rows.length === 2, 'each P3 event is its own row (no upsert collision)');
+    ok(p1.length === 0 && p2.length === 0, 'P3 logEvent never emails');
 
     if (failures) { console.error(`\nincidents: ${failures} FAIL`); process.exit(1); }
     console.log('\nincidents: ALL PASSED');

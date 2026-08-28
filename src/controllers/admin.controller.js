@@ -2570,6 +2570,23 @@ const getEmailHealth = async (req, res) => {
     }
 };
 
+// GET /api/admin/email/events — EM-07 P3 feed. The routine business events
+// (signups, cancels, …) that used to email the owner now land here; this keeps
+// them visible between the send-retirement (EM-07) and the weekly report (stage 5).
+const getEmailEvents = async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT incident_key, title, detail, created_at
+               FROM incidents WHERE severity = 'P3'
+              ORDER BY created_at DESC LIMIT 100`);
+        res.json({ count: rows.length, rows });
+    } catch (err) {
+        // incidents table may not exist yet in some envs — treat as empty, not a 500.
+        console.warn('[getEmailEvents]', err.message);
+        res.json({ count: 0, rows: [] });
+    }
+};
+
 // GET /api/admin/email/recent — last N email_log rows with optional filters.
 // Filters: ?class= ?status= ?template= ?q= (subject/recipient substring) ?limit=
 const getEmailRecent = async (req, res) => {
@@ -3751,6 +3768,7 @@ module.exports = {
     emailLogSummary,
     getEmailOversight,
     getEmailHealth,
+    getEmailEvents,
     getEmailRecent,
     getSeoAudit,
     getLeadReconciliation,

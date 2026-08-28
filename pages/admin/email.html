@@ -100,6 +100,7 @@
                 if (!res.ok) throw new Error('Failed to load email oversight.');
                 render(await res.json());
                 loadHealth();
+                loadEvents();
                 loadRecent();
             } catch (err) {
                 el.innerHTML = `<p style="color:#c53030;">${esc(err.message)}</p>`;
@@ -164,6 +165,12 @@
                 </div>
 
                 <div class="em-panel">
+                    <h3>Events <span class="em-muted" style="font-weight:600;">(P3 — signups, cancels, payments)</span></h3>
+                    <p class="sub">Routine business events that used to email the owner. They roll up into the weekly report; this is the live view between now and then.</p>
+                    <div id="em-events"><p class="em-muted">Loading events…</p></div>
+                </div>
+
+                <div class="em-panel">
                     <h3>Recent sends</h3>
                     <p class="sub">The email_log tail, newest first. Filters are AND-combined.</p>
                     <div class="em-filters">
@@ -208,6 +215,28 @@
                         <div><strong>${esc(c.label)}</strong>${c.detail ? `<br><span class="em-muted" style="font-size:0.82rem;">${esc(c.detail)}</span>` : ''}</div>
                     </div>`).join('');
                 box.innerHTML = `<div class="em-status red" style="margin:0 0 0.8rem;"><span class="dot"></span><div><h2>${(h.triggered || []).length} condition(s) tripped</h2><p>The owner is alerted (deduped hourly). Fix below.</p></div></div>${items}`;
+            } catch (err) {
+                box.innerHTML = `<p style="color:#c53030;">${esc(err.message)}</p>`;
+            }
+        }
+
+        async function loadEvents() {
+            const box = document.getElementById('em-events');
+            if (!box) return;
+            try {
+                const res = await fetch('/api/admin/email/events', { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to load events.');
+                const d = await res.json();
+                if (!d.rows.length) { box.innerHTML = '<p class="em-muted">No events recorded yet.</p>'; return; }
+                const rows = d.rows.map(r => `<tr>
+                    <td class="num" style="white-space:nowrap;">${fmtDate(r.created_at)}</td>
+                    <td><strong>${esc(r.title)}</strong></td>
+                    <td><span class="em-muted" style="font-size:0.82rem;">${esc(r.detail || '')}</span></td>
+                </tr>`).join('');
+                box.innerHTML = `<div class="em-scroll"><table class="em-tbl">
+                    <thead><tr><th>When</th><th>Event</th><th>Detail</th></tr></thead>
+                    <tbody>${rows}</tbody></table></div>
+                    <p class="em-muted" style="margin-top:0.7rem;">${d.count} most recent.</p>`;
             } catch (err) {
                 box.innerHTML = `<p style="color:#c53030;">${esc(err.message)}</p>`;
             }

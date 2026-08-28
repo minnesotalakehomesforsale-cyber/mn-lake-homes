@@ -64,6 +64,19 @@ async function raise(opts) {
     return { ok: true, incident: inc, notified: true };
 }
 
+// EM-07 — record a P3 event (a routine business signal: signup, cancel, payment).
+// Point-in-time, so it's its own row (status 'logged', outside the open-incident
+// unique index) — NO email, ever. The weekly report and the Email tab read these.
+async function logEvent({ key, title, detail }) {
+    try {
+        await pool.query(
+            `INSERT INTO incidents (incident_key, severity, title, detail, status)
+             VALUES ($1, 'P3', $2, $3, 'logged')`,
+            [key || 'event', title, detail || null]);
+        return { ok: true };
+    } catch (e) { console.warn('[incidents] logEvent failed:', e.message); return { ok: false }; }
+}
+
 // Auto-resolve: close the open incident for a key. Safe to call every sweep even
 // when nothing is open. The weekly report still shows it as resolved this period.
 async function resolve(key) {
@@ -88,6 +101,12 @@ async function runP2Batch() {
               ORDER BY last_seen_at DESC`, [P1_DEDUPE_MIN]));
     } catch (e) { console.warn('[incidents] P2 batch query failed:', e.message); return { sent: false }; }
     if (!rows.length) return { sent: false };
+    // Every other P2 is a fault; an unrouted lead is an OPPORTUNITY — real demand
+    // on a named lake, our best agent-recruiting signal. Sort it to the top so it
+    // doesn't read as fault #9 in an hourly digest.
+    const isOpportunity = r => /^lead_no_agent/.test(r.incident_key || '');
+    rows.sort((a, b) => (isOpportunity(b) ? 1 : 0) - (isOpportunity(a) ? 1 : 0)
+        || new Date(b.last_seen_at) - new Date(a.last_seen_at));
     try {
         await email.sendIncidentDigest({ incidents: rows });
         const ids = rows.map(r => r.id);
@@ -110,4 +129,4 @@ async function weeklyIncidents(sinceDays = 7) {
     return rows;
 }
 
-module.exports = { raise, resolve, runP2Batch, weeklyIncidents };
+module.exports = { raise, resolve, logEvent, runP2Batch, weeklyIncidents };
