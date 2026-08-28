@@ -12,7 +12,10 @@
     "test:towns": "node test/town-visibility.test.js",
     "test": "node test/schema-guard.test.js && node test/town-visibility.test.js && node test/unique-heroes.test.js && node test/static-exposure.test.js && node test/secure-cookies.test.js && node test/manual-release.test.js && node test/lifecycle.test.js && node test/admin-auth.test.js && node test/agent-auth.test.js",
     "test:manual": "node test/manual-release.test.js",
-    "test:auth": "node test/admin-auth.test.js"
+    "test:auth": "node test/admin-auth.test.js",
+    "test:email": "node test/email-registry.test.js && node test/email-compliance.test.js && node test/email-consent.test.js && node test/email-em05.test.js && node test/email-health.test.js && node test/incidents.test.js && node test/incident-monitors.test.js && node test/incident-health-e2e.test.js && node test/action-tokens.test.js && node test/match-intro.test.js && node test/lead-actions.test.js && node test/ladder.test.js && node test/ladder-sweep.test.js && node test/weekly-report.test.js && node test/periodic-report.test.js && node test/no-owner-email.test.js",
+    "render-emails": "node test/render-emails.js",
+    "live-pass": "node test/live-pass.js"
   },
   "dependencies": {
     "@sentry/node": "^8.47.0",
