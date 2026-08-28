@@ -3042,7 +3042,7 @@ async function ensureTables() {
               SELECT id, LEAST(100, GREATEST(0,
                   (CASE WHEN length(regexp_replace(COALESCE(phone,''),'[^0-9]','','g')) >= 10 THEN 25 ELSE 0 END)
                 + (CASE WHEN COALESCE(email,'') <> '' THEN 8 ELSE 0 END)
-                + (CASE WHEN lead_type IN ('seller','cash_offer') THEN 25
+                + (CASE WHEN lead_type = 'seller' THEN 25
                         WHEN lead_type = 'buyer' THEN 12
                         WHEN lead_type = 'property_question' THEN 10 ELSE 0 END)
                 + (CASE WHEN is_waterfront IS TRUE THEN 20 ELSE 0 END)
