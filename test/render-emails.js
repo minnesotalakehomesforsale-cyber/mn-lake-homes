@@ -53,7 +53,7 @@ const AGENT = { display_name: 'Dana Smith', slug: 'dana-smith' };
     await dump('EM-24_match-intro', () => email.sendLeadAgentMatched({
         to: 'buyer@x.com', lead_first_name: 'Sam', agent_full_name: 'Dana Smith', agent_first_name: 'Dana',
         brokerage: 'Northland Realty', lake_name: 'Gull Lake', town: 'Nisswa',
-        agent_bio: 'Dana has helped families find lake homes across the Brainerd Lakes for over a decade.',
+        agent_bio: 'Dana helps families find lake homes across the Brainerd Lakes area.',
         years_experience: 12, nearby_lakes: 'North Long Lake, Round Lake', agent_phone: '218-555-0100',
         agent_email: 'dana@northland.com', photo_url: null, specialty: 'specializes in waterfront and cabins',
     }));

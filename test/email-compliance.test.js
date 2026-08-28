@@ -30,12 +30,16 @@ const CHECKS = [
       re: /\bunbiased\b|\bguarantee(?:d|s)?\b|free[-\s]?trial|rate[-\s]?lock/i },
     { id: 'c-paraphrase', label: '(c) banned quality-guarantee paraphrase',
       re: /perfect agent|best fit guaranteed|we'?ll find you the best|top agent|hand[-\s]?picked/i },
+    { id: 'c-superlative', label: '(c) unverifiable superlative (premier/leading/best/#1)',
+      re: /\bpremier\b|\bleading\b|\bbest\b|#\s?1\b/i },
     { id: 'd-basic-tier', label: '(d) "Basic" used as an agent tier', agentOnly: true,
       re: /\bbasic\b/i },
 ];
 
-// Split the file into top-level template functions (all named sendX).
-const fnRe = /\nfunction\s+(send\w+)\s*\(/g;
+// Split the file into top-level template functions (all named sendX) PLUS the
+// shared chrome (layout, footerHtml) — the tagline that slipped through lived in
+// layout(), so the guard must read it too.
+const fnRe = /\nfunction\s+(send\w+|layout|footerHtml)\s*\(/g;
 const marks = [];
 let m;
 while ((m = fnRe.exec(src))) marks.push({ name: m[1], start: m.index });

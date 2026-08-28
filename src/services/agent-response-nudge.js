@@ -25,6 +25,10 @@ async function runAgentResponseNudge() {
                JOIN users u ON u.id = a.user_id
               WHERE l.agent_id IS NOT NULL AND l.first_contact_at IS NULL AND l.deleted_at IS NULL
                 AND l.routed_at IS NOT NULL
+                -- A PENDING manual offer is on EM-14's own 24h accept clock; never
+                -- also nudge it here, or an agent gets "still no contact" and "it
+                -- went to another agent" in the same hour (warned + punished at once).
+                AND NOT (l.assigned_manually = TRUE AND l.accepted_at IS NULL)
                 AND ( (l.nudge_1h_at IS NULL AND l.routed_at < NOW() - INTERVAL '1 hour')
                    OR (l.nudge_24h_at IS NULL AND l.routed_at < NOW() - INTERVAL '24 hours') )
               LIMIT 200`));

@@ -1767,6 +1767,8 @@ app.get('/for-agents', (req, res) => {
 // join popup registers the agent). Redirect so any ad/email that uses this URL
 // lands on the real flow instead of 404-ing via the /agents/:slug handler.
 app.get('/agents/signup', (req, res) => res.redirect('/join'));
+// Clean alias so customer emails link to /dashboard, not a raw .html path.
+app.get('/dashboard', (req, res) => res.redirect('/pages/agent/dashboard.html'));
 
 // /join now serves the free-profile funnel (a dupe of /for-agents). The
 // marketing campaign already went out pointing at /join, so this URL is the

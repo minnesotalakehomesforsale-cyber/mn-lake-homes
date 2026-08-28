@@ -86,12 +86,16 @@ function footerHtml(email, emailClass, audience, usageGrant) {
     const esc = s => String(s ?? '').replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
     if (emailClass === 'internal') return '';   // to the team — no footer
     const blocks = [];
-    // 1. class → unsubscribe / service note
+    // 1. class → unsubscribe / receipt note. The transactional receipt note is
+    //    audience-aware: a matched buyer/seller has no "account", they asked to be
+    //    matched — so the account wording is only right for agents + businesses.
     if (emailClass === 'lifecycle' || emailClass === 'content_ask') {
         const lead = emailClass === 'content_ask'
             ? "You're receiving this because you're part of the MN Lake Homes network."
             : "You're receiving this update from MN Lake Homes.";
         blocks.push(`${lead} <a href="${unsubUrl(email)}" style="color:#718096;">Unsubscribe</a> from these emails.`);
+    } else if (audience === 'consumer') {
+        blocks.push("You're receiving this because you asked to be matched with a local lake agent.");
     } else {
         blocks.push('This is a service message about your MN Lake Homes account.');
     }
@@ -120,7 +124,15 @@ function htmlToText(html) {
         .replace(/<head[\s\S]*?<\/head>/gi, '')
         .replace(/<style[\s\S]*?<\/style>/gi, '')
         .replace(/<script[\s\S]*?<\/script>/gi, '')
-        .replace(/<a\b[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_, href, txt) => `${txt.replace(/<[^>]+>/g, '').trim()} (${href})`)
+        // Content wrapped in <!--notext-->…<!--/notext--> is decorative (e.g. the
+        // initials avatar) — drop it from the plain-text alternative entirely.
+        .replace(/<!--notext-->[\s\S]*?<!--\/notext-->/gi, '')
+        // Buttons (display:inline-block links) each get their own line so adjacent
+        // ones don't concatenate into one unreadable run; prose links stay inline.
+        .replace(/<a\b([^>]*)href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (m, _pre, href, txt) => {
+            const s = `${txt.replace(/<[^>]+>/g, '').trim()} (${href})`;
+            return /inline-block/.test(m) ? `\n${s}\n` : s;
+        })
         .replace(/<br\s*\/?>(\s*)/gi, '\n')
         .replace(/<\/(p|div|tr|h[1-6]|li|ol|ul|table)>/gi, '\n')
         .replace(/<li\b[^>]*>/gi, '• ')
@@ -362,7 +374,7 @@ function layout({ title, preheader, body, ctaText, ctaUrl }) {
             </td></tr>
             <tr><td style="padding:24px 32px 32px;border-top:1px solid #edf2f7;">
               <p style="margin:0;font-size:13px;line-height:1.6;color:#718096;">
-                Minnesota Lake Homes · Minnesota's premier lakeside real estate platform<br>
+                Minnesota Lake Homes · Lake-by-lake agent matching across Minnesota<br>
                 <a href="${SITE_URL}" style="color:#1d6df2;text-decoration:none;">minnesotalakehomesforsale.com</a>
               </p>
             </td></tr>
@@ -423,7 +435,7 @@ function sendWelcome(user) {
             preheader: "You're in. Here's what happens next.",
             body: `
                 <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
-                  Thanks for joining Minnesota Lake Homes. You're now connected to Minnesota's premier network of lakefront real estate specialists.
+                  Thanks for joining Minnesota Lake Homes. You're now connected to a statewide network of local lakefront real estate specialists.
                 </p>
                 <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
                   We'll be in touch shortly with personalized matches, curated listings from the lakes you care about, and access to off-market inventory as it becomes available.
@@ -453,7 +465,7 @@ function sendAgentWelcome({ email, display_name, first_name, lake_name, lake_cou
     const finishBtn = `
         <table role="presentation" cellpadding="0" cellspacing="0" style="margin:4px 0 12px;">
           <tr><td style="background:#1d6df2;border-radius:8px;">
-            <a href="${SITE_URL}/pages/agent/dashboard.html" style="display:inline-block;padding:14px 28px;color:#fff;font-weight:700;font-size:15px;text-decoration:none;">Finish your profile →</a>
+            <a href="${SITE_URL}/dashboard" style="display:inline-block;padding:14px 28px;color:#fff;font-weight:700;font-size:15px;text-decoration:none;">Finish your profile →</a>
           </td></tr>
         </table>`;
     return sendEmail({
@@ -499,7 +511,7 @@ function sendAgentProfileLive({ email, first_name, display_name, slug, lake_name
     // agent's own public profile so the "See it" button still lands somewhere real.
     const pageUrl = hasLake
         ? `${SITE_URL}/lakes/${lake_slug}#lake-agents-grid`
-        : (slug ? `${SITE_URL}/pages/public/agent-profile.html?slug=${slug}` : `${SITE_URL}/pages/agent/dashboard.html`);
+        : (slug ? `${SITE_URL}/pages/public/agent-profile.html?slug=${slug}` : `${SITE_URL}/dashboard`);
     const lakeLabel = lake_name || 'the site';
 
     // Verbatim EM-11 copy (letter style — no h1). The "See it →" button sits
@@ -867,7 +879,7 @@ function sendMatchedAgentNotification({ to, agentFirstName, lead, distanceMiles,
                   Reach out promptly — leads often come to multiple agents in the area.
                 </p>`,
             ctaText: 'View in Agent Dashboard',
-            ctaUrl: `${SITE_URL}/pages/agent/dashboard.html`,
+            ctaUrl: `${SITE_URL}/dashboard`,
         })
     });
 }
@@ -1371,7 +1383,7 @@ function sendAgentLeadAssigned({ to, agentFirstName, lead, assignedBy }) {
                   Reach out promptly — most leads convert fastest with a same-day response.
                 </p>`,
             ctaText: 'View in Agent Dashboard',
-            ctaUrl: `${SITE_URL}/pages/agent/dashboard.html`,
+            ctaUrl: `${SITE_URL}/dashboard`,
         })
     });
 }
@@ -1424,7 +1436,12 @@ function sendManualLeadOffer({ to, agentFirstName, lead = {}, acceptUrl, expires
 // next_season is computed here; the three questions are static for v1.
 function nextLakeSeason() {
     const m = new Date().getMonth();               // 0 = Jan
-    return (m <= 2) ? 'spring' : 'next summer';     // Jan–Mar aim for spring, else next summer
+    // Phrased to fit "If I want to be ___". Tied to the MN lake season, not a
+    // generic calendar — shopping in late August targets before ice-in, not a
+    // summer ten months out.
+    if (m >= 7 && m <= 9) return 'in before ice-in';   // Aug–Oct
+    if (m >= 10 || m <= 1) return 'in by spring';       // Nov–Feb
+    return 'in by this summer';                          // Mar–Jul
 }
 function sendLeadAgentMatched({
     to, lead_first_name, agent_full_name, agent_first_name, brokerage,
@@ -1466,7 +1483,7 @@ function sendLeadAgentMatched({
             body: `
                 <p style="${p}">Hi ${_esc(lead_first_name) || 'there'},</p>
                 <p style="${p}">You're matched with <strong>${aFull}</strong>${brokerage ? ` at ${_esc(brokerage)}` : ''}, who works ${lake}${town ? ` and the ${_esc(town)} area` : ''}.</p>
-                <div style="margin:0 0 16px;">${headshot}</div>
+<!--notext--><div style="margin:0 0 16px;">${headshot}</div><!--/notext-->
                 ${agent_bio ? `<p style="${p}">${_esc(agent_bio)}</p>` : ''}
                 <h3 style="${h}">Why ${aFirst}</h3>
                 <ul style="margin:0 0 16px;padding-left:1.2rem;font-size:15px;line-height:1.7;color:#2d3748;">
@@ -1478,7 +1495,7 @@ function sendLeadAgentMatched({
                 <ol style="margin:0 0 16px;padding-left:1.2rem;font-size:15px;line-height:1.7;color:#2d3748;">
                   <li>What's actually selling on ${lake} right now, and what's the price per foot of shoreline?</li>
                   <li>What should I know about this lake specifically — water clarity, access, septic and well, shoreline rules?</li>
-                  <li>If I want to be in before ${season}, what does the timeline actually look like?</li>
+                  <li>If I want to be ${season}, what does the timeline actually look like?</li>
                 </ol>
                 <h3 style="${h}">How this works, briefly</h3>
                 <p style="${p}">We're not a brokerage, and we're not paid a commission or a referral fee on your purchase. ${aFirst} is a licensed Minnesota agent we've vetted and matched to your lake and your situation. If they're not the right fit, reply to this email and I'll match you with someone else. No cost either way.</p>
@@ -1577,9 +1594,9 @@ function sendAgentNudge({ variant, to, agentFirstName, buyer_first, lake_name, t
         return sendEmail({
             emailClass: 'transactional', templateKey: 'agent_response_nudge', to,
             subject: `Still no contact logged on the ${lake_name || 'lake'} lead`,
-            html: layout({ title: '', preheader: 'Reply to reroute, or mark it contacted.', body: `
+            html: layout({ title: '', preheader: 'Mark it contacted, or pass it back to reroute.', body: `
                 <p style="${p}">${_esc(buyer_first) || 'A buyer'} submitted a request 24 hours ago and we haven't seen contact logged.</p>
-                <p style="${p}">If you can't take this one, reply and I'll reroute it now — that's a completely fine answer. If you have reached out, just mark it contacted so the system knows.</p>
+                <p style="${p}">If you can't take this one, hit <strong>Pass this one back</strong> and I'll reroute it immediately — that's a completely fine answer. If you have reached out, just mark it contacted so the system knows.</p>
                 <p style="margin:8px 0 0;">${btn(markContactedUrl, 'Mark as contacted', true)}${btn(passBackUrl, 'Pass this one back', false)}</p>` }),
         });
     }
@@ -1589,7 +1606,7 @@ function sendAgentNudge({ variant, to, agentFirstName, buyer_first, lake_name, t
         html: layout({ title: '', preheader: 'First agent to reach them usually wins the client.', body: `
             <p style="${p}"><strong>${_esc(buyer_first) || 'A buyer'} is waiting</strong> — ${facts}</p>
             <p style="margin:8px 0 0;">${phone ? btn(`tel:${String(phone).replace(/[^0-9+]/g, '')}`, `Call ${_esc(phone)}`, true) : ''}${btn(markContactedUrl, 'Mark as contacted', !phone)}</p>
-            <p style="margin:14px 0 0;font-size:13px;color:#718096;">First agent to reach them usually wins the client.</p>` }),
+            <p style="${p}margin-top:16px;">— Hunter</p>` }),
     });
 }
 
@@ -1642,7 +1659,7 @@ function sendAgentMessageNotification({ to, agentFirstName, body, senderName }) 
                   Open your dashboard to read the full message — replies happen there too.
                 </p>`,
             ctaText: 'Open Messages',
-            ctaUrl: `${SITE_URL}/pages/agent/dashboard.html`,
+            ctaUrl: `${SITE_URL}/dashboard`,
         })
     });
 }
@@ -1741,7 +1758,7 @@ function sendCashOfferToPartner({ to, partnerName, customMessage, offer, fromNam
 function sendAgentProfileNudge({ to, first_name, missing = [], nudgeNumber = 1 }) {
     if (!to) return { skipped: true };
     const name = first_name || 'there';
-    const dash = `${SITE_URL}/pages/agent/dashboard.html`;
+    const dash = `${SITE_URL}/dashboard`;
     const missingHtml = missing.length
         ? `<p style="margin:0 0 6px;font-size:15px;font-weight:700;color:#1a202c;">To go live, add:</p>
            <ul style="margin:0 0 18px;padding-left:1.15rem;font-size:15px;line-height:1.7;color:#2d3748;">${missing.map(m => `<li>${_esc(m)}</li>`).join('')}</ul>`
@@ -1777,7 +1794,7 @@ function sendAgentProfileNudge({ to, first_name, missing = [], nudgeNumber = 1 }
 function sendAgentProfileEnrichmentNudge({ to, first_name, missing = [], nudgeNumber = 1 }) {
     if (!to) return { skipped: true };
     const name = first_name || 'there';
-    const dash = `${SITE_URL}/pages/agent/dashboard.html`;
+    const dash = `${SITE_URL}/dashboard`;
     const missingHtml = missing.length
         ? `<p style="margin:0 0 6px;font-size:15px;font-weight:700;color:#1a202c;">A few sections still to add:</p>
            <ul style="margin:0 0 18px;padding-left:1.15rem;font-size:15px;line-height:1.7;color:#2d3748;">${missing.map(m => `<li>${_esc(m)}</li>`).join('')}</ul>`
@@ -1812,7 +1829,7 @@ function sendAgentProfileEnrichmentNudge({ to, first_name, missing = [], nudgeNu
 function sendReferralRewardEmail({ to, first_name, kind = 'referrer', auto = false }) {
     if (!to) return { skipped: true };
     const name = first_name || 'there';
-    const dash = `${SITE_URL}/pages/agent/dashboard.html`;
+    const dash = `${SITE_URL}/dashboard`;
     const isReferrer = kind === 'referrer';
     const monthLine = auto
         ? `A one-month credit has been applied to your account — it comes off your next invoice automatically.`
@@ -1933,7 +1950,7 @@ function sendAgentPaymentFailed({ to, name, attempt = 1, final = false, nextAtte
                 </p>
                 <p style="margin:0;font-size:15px;line-height:1.65;color:#2d3748;">${closing} Replying to this email reaches us directly if you're stuck.</p>`,
             ctaText: 'Update payment method',
-            ctaUrl: `${SITE_URL}/pages/agent/dashboard.html`,
+            ctaUrl: `${SITE_URL}/dashboard`,
         })
     });
 }
