@@ -729,6 +729,20 @@ const createLead = async (req, res) => {
         res.status(201).json({ success: true, message: 'Lead logged', lead_id: newLeadId });
     } catch (err) {
         console.error(err);
+        // EM-06: the lead form returning 5xx is a P1 on any occurrence — a buyer
+        // or seller just hit an error submitting, which means a lead is being lost
+        // right now. Deduped to once/hour by the router.
+        try {
+            require('../services/incidents').raise({
+                key: 'lead_form_5xx',
+                severity: 'P1',
+                title: 'Lead form is returning 5xx',
+                detail: String(err && err.message || err).slice(0, 300),
+                effect: 'People submitting the lead form get an error — leads are being lost right now.',
+                checkFirst: 'The POST /api/leads route and the database; see the latest error in the server logs.',
+                adminLink: '/pages/admin/leads.html',
+            });
+        } catch (_) {}
         res.status(500).json({ error: 'Failed to insert lead' });
     }
 };
