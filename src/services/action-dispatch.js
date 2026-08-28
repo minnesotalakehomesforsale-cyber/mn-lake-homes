@@ -89,8 +89,15 @@ register('feedback_not_yet', {
     perform: async (claim) => {
         const first = await claimFeedback(claim.lead_id, 'not_yet');
         if (!first) return { message: "Thanks — we've already recorded your answer." };
-        // Record the strike + a P2 quality signal for the weekly.
-        if (claim.agent_id) { try { await pool.query(`UPDATE agents SET response_strikes = response_strikes + 1 WHERE id = $1`, [claim.agent_id]); } catch (_) {} }
+        // Strike the agent ONLY when the buyer's "not yet" agrees with a second
+        // signal — no contact was ever logged. A buyer clicking "not yet" is
+        // self-report and they misremember; two signals agreeing keeps us from
+        // quietly down-weighting a real agent's leads on one unverified click.
+        // (The reroute below still fires either way — the buyer never waits on our
+        // bookkeeping.)
+        if (claim.agent_id) {
+            try { await pool.query(`UPDATE agents SET response_strikes = response_strikes + 1 WHERE id = $1 AND EXISTS (SELECT 1 FROM leads WHERE id = $2 AND first_contact_at IS NULL)`, [claim.agent_id, claim.lead_id]); } catch (_) {}
+        }
         try { require('./incidents').raise({ key: `buyer_not_yet:${claim.lead_id}`, severity: 'P2', title: 'Buyer says the agent never reached out', detail: '72h check-in came back "not yet" — rerouting to another agent.', adminLink: '/pages/admin/leads.html' }); } catch (_) {}
         // Offer an alternate immediately — the person shouldn't have to chase.
         let rr = {};

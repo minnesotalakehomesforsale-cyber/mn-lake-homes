@@ -140,6 +140,7 @@ function htmlToText(html) {
         .replace(/&nbsp;/g, ' ').replace(/&mdash;/g, '—').replace(/&ndash;/g, '–')
         .replace(/&rsquo;|&lsquo;|&#39;/g, "'").replace(/&ldquo;|&rdquo;|&quot;/g, '"')
         .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+        .replace(/\s*(?:→|&rarr;|&#8594;)/g, '')   // decorative arrows read oddly before a bare URL
         .split('\n').map(l => l.replace(/[ \t]{2,}/g, ' ').trim()).join('\n')
         .replace(/\n{3,}/g, '\n\n')
         .trim();
@@ -1463,8 +1464,12 @@ function sendLeadAgentMatched({
     // the self-reported number it is ("X years in the business"), NOT derived into
     // a licensure-year claim we can't stand behind.
     const yrs = Number(years_experience) > 0 ? Math.round(Number(years_experience)) : null;
+    // Proper list: "Gull Lake, North Long Lake and Round Lake" (not "Gull Lake and
+    // North Long Lake, Round Lake").
+    const joinAnd = (a) => a.length <= 1 ? (a[0] || '') : a.length === 2 ? `${a[0]} and ${a[1]}` : `${a.slice(0, -1).join(', ')} and ${a[a.length - 1]}`;
+    const lakeList = [lake_name, ...(nearby_lakes ? String(nearby_lakes).split(/,\s*/) : [])].filter(Boolean).map(_esc);
     const whyBits = [
-        `works ${lake}${_esc(nearby_lakes) ? ` and ${_esc(nearby_lakes)}` : ''}`,
+        `works ${joinAnd(lakeList) || lake}`,
         yrs ? `${yrs} year${yrs === 1 ? '' : 's'} in the business` : null,
         _esc(specialty) || null,
     ].filter(Boolean);

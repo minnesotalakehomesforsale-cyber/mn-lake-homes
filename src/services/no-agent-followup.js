@@ -18,7 +18,7 @@ async function runNoAgentFollowup() {
               WHERE held_no_agent = TRUE AND deleted_at IS NULL AND agent_id IS NULL
                 AND (buyer_feedback IS NULL OR buyer_feedback <> 'paused')
                 AND no_agent_email_count >= 1 AND no_agent_email_count < 2
-                AND no_agent_last_at < NOW() - INTERVAL '7 days'
+                AND no_agent_last_at < NOW() - INTERVAL '3 days'
               LIMIT 100`));
     } catch (e) { console.warn('[no-agent-followup] query failed:', e.message); return { sent: 0 }; }
 
@@ -41,7 +41,7 @@ async function runNoAgentFollowup() {
             // Claim first so a double-run can't double-send.
             const claim = await pool.query(
                 `UPDATE leads SET no_agent_email_count = no_agent_email_count + 1, no_agent_last_at = NOW()
-                  WHERE id = $1 AND no_agent_email_count < 2 AND no_agent_last_at < NOW() - INTERVAL '7 days'
+                  WHERE id = $1 AND no_agent_email_count < 2 AND no_agent_last_at < NOW() - INTERVAL '3 days'
                   RETURNING id`, [l.id]);
             if (!claim.rowCount) continue;
             email.sendNoAgentYet({ to: l.email, first_name: l.first_name, lake_name: l.target_lake, lake_slug: lakeSlug, nearby_lakes: nearby, variant: 'followup' });
