@@ -7,8 +7,12 @@
 const pool = require('../database/pool');
 const email = require('./email');
 const tokens = require('./action-tokens');
+const { sweepCutoff } = require('./sweep-guard');
 
 async function runFeedbackRequest() {
+    // Backlog guard: never ask for "72h" feedback on a lead routed more than 7
+    // days ago, and never replay a backlog the moment the sweep is enabled.
+    const cutoff = await sweepCutoff('feedback-request', { freshnessHours: 24 * 7, staleAfterHours: 8 });
     let rows;
     try {
         ({ rows } = await pool.query(
@@ -19,9 +23,10 @@ async function runFeedbackRequest() {
                JOIN users u ON u.id = a.user_id
               WHERE l.agent_id IS NOT NULL AND l.deleted_at IS NULL
                 AND l.routed_at IS NOT NULL AND l.routed_at < NOW() - INTERVAL '72 hours'
+                AND l.routed_at >= $1
                 AND l.feedback_asked_at IS NULL
                 AND (l.buyer_feedback IS NULL OR l.buyer_feedback <> 'paused')
-              LIMIT 200`));
+              LIMIT 200`, [cutoff]));
     } catch (e) { console.warn('[feedback-request] query failed:', e.message); return { sent: 0 }; }
 
     let sent = 0;

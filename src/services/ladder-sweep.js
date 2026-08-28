@@ -11,6 +11,7 @@ const pool = require('../database/pool');
 const email = require('./email');
 const { nextLadderAction } = require('./ladder-governor');
 const { ladderReplyAddress } = require('./ladder-reply');
+const { sweepCutoff } = require('./sweep-guard');
 
 // The rung email + fields, by rung number.
 async function sendRung(agent, rung, lake) {
@@ -36,6 +37,12 @@ async function resolveLake(agent) {
 }
 
 async function runLadderSweep() {
+    // Backlog guard: the ladder is keyed off published_at over a 21-day arc, so a
+    // freshness floor doesn't fit — but without a watermark, enabling the sweep
+    // would drop a rung email on every already-published agent at once (a cold-
+    // domain burst). Skip agents published before the sweep was enabled; new
+    // agents ladder normally. (No freshnessHours — the watermark alone.)
+    const cutoff = await sweepCutoff('ladder-sweep', { staleAfterHours: 36 });
     let agents;
     try {
         ({ rows: agents } = await pool.query(
@@ -46,7 +53,8 @@ async function runLadderSweep() {
               WHERE a.is_published = TRUE AND a.profile_status = 'published'
                 AND a.deleted_at IS NULL AND a.ladder_status <> 'stopped'
                 AND u.account_status = 'active'
-              LIMIT 500`));
+                AND a.published_at >= $1
+              LIMIT 500`, [cutoff]));
     } catch (e) { console.warn('[ladder] query failed:', e.message); return { sent: 0 }; }
 
     let sent = 0, stopped = 0;

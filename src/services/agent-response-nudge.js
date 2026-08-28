@@ -9,10 +9,14 @@
 const pool = require('../database/pool');
 const email = require('./email');
 const tokens = require('./action-tokens');
+const { sweepCutoff } = require('./sweep-guard');
 
 const money = n => (n == null ? null : (Number(n) >= 1000 ? `$${Math.round(Number(n) / 1000)}k` : `$${Number(n)}`));
 
 async function runAgentResponseNudge() {
+    // Backlog guard: the +1h/+24h nudge is meaningless on an old lead — never nudge
+    // on anything routed more than 3 days ago, and never replay a backlog on enable.
+    const cutoff = await sweepCutoff('agent-response-nudge', { freshnessHours: 24 * 3, staleAfterHours: 3 });
     let rows;
     try {
         ({ rows } = await pool.query(
@@ -24,14 +28,14 @@ async function runAgentResponseNudge() {
                JOIN agents a ON a.id = l.agent_id
                JOIN users u ON u.id = a.user_id
               WHERE l.agent_id IS NOT NULL AND l.first_contact_at IS NULL AND l.deleted_at IS NULL
-                AND l.routed_at IS NOT NULL
+                AND l.routed_at IS NOT NULL AND l.routed_at >= $1
                 -- A PENDING manual offer is on EM-14's own 24h accept clock; never
                 -- also nudge it here, or an agent gets "still no contact" and "it
                 -- went to another agent" in the same hour (warned + punished at once).
                 AND NOT (l.assigned_manually = TRUE AND l.accepted_at IS NULL)
                 AND ( (l.nudge_1h_at IS NULL AND l.routed_at < NOW() - INTERVAL '1 hour')
                    OR (l.nudge_24h_at IS NULL AND l.routed_at < NOW() - INTERVAL '24 hours') )
-              LIMIT 200`));
+              LIMIT 200`, [cutoff]));
     } catch (e) { console.warn('[agent-nudge] query failed:', e.message); return { sent: 0 }; }
 
     let sent = 0;

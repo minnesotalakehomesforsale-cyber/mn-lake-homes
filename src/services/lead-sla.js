@@ -13,6 +13,7 @@ const emailService = require('./email');
 const { routeLead } = require('./lead-router');
 const { geocodeAddress } = require('./geocoder');
 const { logActivity } = require('./activity-log');
+const { sweepCutoff } = require('./sweep-guard');
 
 const MAX_REASSIGNS = 3;         // hops before we give up and ask admin to step in
 const DEFAULT_SLA_HOURS = 4;
@@ -105,6 +106,10 @@ async function reassignOne(lead) {
 // Find stale, un-acked leads and re-route them. Called on an interval.
 async function runSlaSweep() {
     if (process.env.LEAD_SLA_ENABLED !== 'true') return { scanned: 0, reassigned: 0 };
+    // Backlog guard: never mass-reroute (and notify both sides on) a backlog of old
+    // unacked leads the moment the sweep is enabled, and never reroute one assigned
+    // more than a week ago.
+    const cutoff = await sweepCutoff('lead-sla', { freshnessHours: 24 * 7, staleAfterHours: 3 });
     const hours = await getSlaHours();
     let reassigned = 0;
     try {
@@ -118,12 +123,13 @@ async function runSlaSweep() {
                 AND l.assigned_user_id IS NOT NULL
                 AND l.assigned_at IS NOT NULL
                 AND l.assigned_at < NOW() - ($1 || ' hours')::interval
+                AND l.assigned_at >= $3
                 AND l.lead_status NOT IN ('closed', 'archived')
                 AND l.deleted_at IS NULL
                 AND l.sla_reassign_count < $2
               ORDER BY l.assigned_at ASC
               LIMIT 50`,
-            [String(hours), MAX_REASSIGNS]);
+            [String(hours), MAX_REASSIGNS, cutoff]);
         for (const lead of rows) {
             try { if (await reassignOne(lead)) reassigned++; }
             catch (e) { console.warn('[lead-sla] reassign failed for', lead.id, e.message); }

@@ -8,8 +8,13 @@
 
 const pool = require('../database/pool');
 const email = require('./email');
+const { sweepCutoff } = require('./sweep-guard');
 
 async function runNoAgentFollowup() {
+    // Backlog guard: don't follow up on a lead held longer than ~2 weeks (a "still
+    // looking" note that stale reads worse than silence), and never replay a
+    // backlog of held leads the moment the sweep is enabled.
+    const cutoff = await sweepCutoff('no-agent-followup', { freshnessHours: 24 * 14, staleAfterHours: 36 });
     let rows;
     try {
         ({ rows } = await pool.query(
@@ -19,7 +24,8 @@ async function runNoAgentFollowup() {
                 AND (buyer_feedback IS NULL OR buyer_feedback <> 'paused')
                 AND no_agent_email_count >= 1 AND no_agent_email_count < 2
                 AND no_agent_last_at < NOW() - INTERVAL '3 days'
-              LIMIT 100`));
+                AND created_at >= $1
+              LIMIT 100`, [cutoff]));
     } catch (e) { console.warn('[no-agent-followup] query failed:', e.message); return { sent: 0 }; }
 
     let sent = 0;

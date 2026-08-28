@@ -14,7 +14,7 @@
     "test:enum": "node test/enum-integrity.test.js",
     "test:manual": "node test/manual-release.test.js",
     "test:auth": "node test/admin-auth.test.js",
-    "test:email": "node test/email-registry.test.js && node test/email-compliance.test.js && node test/email-consent.test.js && node test/email-em05.test.js && node test/email-health.test.js && node test/incidents.test.js && node test/incident-monitors.test.js && node test/incident-health-e2e.test.js && node test/action-tokens.test.js && node test/match-intro.test.js && node test/lead-actions.test.js && node test/ladder.test.js && node test/ladder-sweep.test.js && node test/weekly-report.test.js && node test/periodic-report.test.js && node test/no-owner-email.test.js",
+    "test:email": "node test/email-registry.test.js && node test/email-compliance.test.js && node test/email-consent.test.js && node test/email-em05.test.js && node test/email-health.test.js && node test/incidents.test.js && node test/incident-monitors.test.js && node test/incident-health-e2e.test.js && node test/action-tokens.test.js && node test/match-intro.test.js && node test/lead-actions.test.js && node test/ladder.test.js && node test/ladder-sweep.test.js && node test/sweep-guard.test.js && node test/weekly-report.test.js && node test/periodic-report.test.js && node test/no-owner-email.test.js",
     "render-emails": "node test/render-emails.js",
     "live-pass": "node test/live-pass.js"
   },

@@ -10,8 +10,13 @@
 
 const pool = require('../database/pool');
 const { ACCEPT_SLA_HOURS } = require('./manual-release');
+const { sweepCutoff } = require('./sweep-guard');
 
 async function runManualReleaseSweep() {
+    // Backlog guard: don't mass-reclaim (and cascade into held-lead notices) a
+    // backlog of stale pending offers the moment the sweep is enabled; and never
+    // reclaim an offer older than a week in one burst.
+    const cutoff = await sweepCutoff('manual-release-sweep', { freshnessHours: 24 * 7, staleAfterHours: 3 });
     let reclaimed = 0;
     try {
         // Pending offers past their acceptance window: hand-placed, not accepted,
@@ -29,8 +34,9 @@ async function runManualReleaseSweep() {
                 AND l.agent_id IS NOT NULL
                 AND l.deleted_at IS NULL
                 AND l.manual_assigned_at < NOW() - ($1 || ' hours')::interval
+                AND l.manual_assigned_at >= $2
               ORDER BY l.manual_assigned_at ASC
-              LIMIT 200`, [String(ACCEPT_SLA_HOURS)]);
+              LIMIT 200`, [String(ACCEPT_SLA_HOURS), cutoff]);
 
         for (const lead of expired.rows) {
             const client = await pool.connect();

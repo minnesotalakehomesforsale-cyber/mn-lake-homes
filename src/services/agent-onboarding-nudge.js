@@ -15,12 +15,18 @@
 const pool = require('../database/pool');
 const email = require('./email');
 const sms = require('./sms');
+const { sweepCutoff } = require('./sweep-guard');
 
 const MAX_NUDGES = 3;
 const MIN_AGE_HOURS = 48;
 const RESEND_DAYS = 4;
 
 async function runProfileCompletionNudge() {
+    // Backlog guard: don't blast every already-existing draft agent the moment the
+    // sweep is enabled (a cold-domain burst), and don't nudge drafts older than the
+    // 21-day give-up window. New drafts nudge normally; existing ones are onboarded
+    // deliberately, not by flipping a flag.
+    const cutoff = await sweepCutoff('profile-completion-nudge', { freshnessHours: 24 * 21, staleAfterHours: 24 });
     let sent = 0;
     try {
         const { rows } = await pool.query(
@@ -32,11 +38,12 @@ async function runProfileCompletionNudge() {
                 AND a.deleted_at IS NULL
                 AND COALESCE(u.email, '') <> ''
                 AND a.created_at < NOW() - ($1 || ' hours')::interval
+                AND a.created_at >= $4
                 AND a.profile_nudge_count < $2
                 AND (a.last_profile_nudge_at IS NULL OR a.last_profile_nudge_at < NOW() - ($3 || ' days')::interval)
               ORDER BY a.created_at ASC
               LIMIT 100`,
-            [String(MIN_AGE_HOURS), MAX_NUDGES, String(RESEND_DAYS)]);
+            [String(MIN_AGE_HOURS), MAX_NUDGES, String(RESEND_DAYS), cutoff]);
 
         for (const a of rows) {
             // Name what's missing so the email is actionable, not generic.
@@ -142,6 +149,10 @@ const ENRICH_MIN_DAYS    = 7;    // give them a week live before asking for more
 const ENRICH_RESEND_DAYS = 14;   // spacing between enrichment nudges
 
 async function runProfileEnrichmentNudge() {
+    // Backlog guard: watermark on the publish clock so enabling this never blasts
+    // every already-published thin profile at once (a cold-domain burst). Enriching
+    // the existing roster is a deliberate, throttled campaign — not a flag-flip.
+    const cutoff = await sweepCutoff('profile-enrichment-nudge', { staleAfterHours: 24 });
     let sent = 0;
     try {
         const { rows } = await pool.query(
@@ -152,13 +163,14 @@ async function runProfileEnrichmentNudge() {
                 AND a.deleted_at IS NULL
                 AND COALESCE(u.email, '') <> ''
                 AND COALESCE(a.published_at, a.created_at) < NOW() - ($1 || ' days')::interval
+                AND COALESCE(a.published_at, a.created_at) >= $4
                 AND a.enrich_nudge_count < $2
                 AND (a.last_enrich_nudge_at IS NULL OR a.last_enrich_nudge_at < NOW() - ($3 || ' days')::interval)
                 AND (COALESCE(a.faq, '{}')::jsonb = '{}'::jsonb
                      OR COALESCE(a.profile_extra, '{}')::jsonb = '{}'::jsonb)
               ORDER BY COALESCE(a.published_at, a.created_at) ASC
               LIMIT 100`,
-            [String(ENRICH_MIN_DAYS), ENRICH_MAX_NUDGES, String(ENRICH_RESEND_DAYS)]);
+            [String(ENRICH_MIN_DAYS), ENRICH_MAX_NUDGES, String(ENRICH_RESEND_DAYS), cutoff]);
 
         for (const a of rows) {
             const faq = (a.faq && typeof a.faq === 'object') ? a.faq : {};
