@@ -4170,6 +4170,34 @@ async function ensureTables() {
             -- The frequency-cap query: sends to a recipient of a given class in a window.
             CREATE INDEX IF NOT EXISTS idx_email_log_cap ON email_log(to_email, email_class, sent_at);
 
+            -- EM-06: the incident router's spine. One OPEN row per incident_key;
+            -- repeat firings bump occurrences + last_seen rather than emailing again.
+            -- Severity: P1 (email now, deduped 1/h, flagged + muted after 5/24h),
+            -- P2 (hourly batch), P3 (weekly report only). Auto-resolve stamps
+            -- resolved_at; the weekly report reads both open and just-resolved rows.
+            CREATE TABLE IF NOT EXISTS incidents (
+                id               SERIAL PRIMARY KEY,
+                incident_key     VARCHAR(160) NOT NULL,
+                severity         VARCHAR(4)   NOT NULL,           -- P1 | P2 | P3
+                title            TEXT         NOT NULL,
+                detail           TEXT,
+                effect           TEXT,                            -- user-visible effect (P1)
+                check_first      TEXT,                            -- what to check first (P1)
+                admin_link       TEXT,
+                status           VARCHAR(12)  NOT NULL DEFAULT 'open',   -- open | resolved
+                occurrences      INTEGER      NOT NULL DEFAULT 1,
+                notify_count     INTEGER      NOT NULL DEFAULT 0,        -- P1 emails sent for this incident
+                first_seen_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+                last_seen_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+                last_notified_at TIMESTAMPTZ,
+                resolved_at      TIMESTAMPTZ,
+                reported_weekly_at TIMESTAMPTZ,
+                created_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+            );
+            -- At most one OPEN incident per key (partial unique) so raise() upserts cleanly.
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_incidents_open_key ON incidents(incident_key) WHERE status = 'open';
+            CREATE INDEX IF NOT EXISTS idx_incidents_triage ON incidents(status, severity, last_seen_at);
+
             -- Monthly MRR snapshots for the admin revenue cockpit trend.
             CREATE TABLE IF NOT EXISTS mrr_snapshots (
                 month       DATE PRIMARY KEY,
@@ -5892,6 +5920,14 @@ const PORT = process.env.PORT || 3000;
         const { runSendHealthSweep } = require('./services/email-health');
         setTimeout(() => runSendHealthSweep().catch(e => console.warn('[email-health]', e.message)), 3 * 60 * 1000);
         setInterval(() => runSendHealthSweep().catch(e => console.warn('[email-health]', e.message)), 15 * 60 * 1000);
+    }
+
+    // EM-06 incident router — the hourly P2 digest (one email listing everything
+    // that needs attention today). P1s email immediately from raise(); this is the
+    // batch for the non-urgent tier. Disable with INCIDENT_ROUTER_ENABLED=false.
+    if (process.env.INCIDENT_ROUTER_ENABLED !== 'false') {
+        const { runP2Batch } = require('./services/incidents');
+        setInterval(() => runP2Batch().catch(e => console.warn('[incidents]', e.message)), 60 * 60 * 1000);
     }
 
     // T141 manual-release acceptance SLA — reclaim hand-placed held leads the

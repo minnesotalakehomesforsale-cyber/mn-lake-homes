@@ -18,12 +18,11 @@
 // then the dedupe is a simple cooldown on the last alert send in email_log.
 
 const pool = require('../database/pool');
-const email = require('./email');
 
 const BOUNCE_PCT       = 20;   // condition 2 threshold
 const TEMPLATE_FAILS   = 5;    // condition 4 threshold (per hour)
-const ALERT_COOLDOWN_MIN = parseInt(process.env.EMAIL_HEALTH_COOLDOWN_MIN, 10) || 60;
 const AUTH_ERR = /auth|api[_ ]?key|unauthori|invalid.*(key|token|credential)|forbidden|\b401\b|\b403\b|domain is not verified|not verified/i;
+const ALL_CODES = ['transport_none', 'transport_sandbox', 'transport_auth', 'bounce_rate', 'no_sends', 'template_failing'];
 
 // Evaluate every condition. Pure read — never sends. Returned by the admin
 // on-demand endpoint too, so keep it side-effect-free.
@@ -88,38 +87,33 @@ async function checkSendHealth() {
     };
 }
 
-// Has an alert already gone out inside the cooldown window? Dedupe so a standing
-// outage doesn't email every 15 minutes. Keyed on the alert template's last
-// SENT row; while the transport is down no alert sends, so this stays false and
-// the next recovery delivers one — which is what we want.
-async function alertedRecently() {
-    try {
-        const { rows } = await pool.query(
-            `SELECT 1 FROM email_log
-              WHERE template_key = 'email_health_alert' AND status = 'sent'
-                AND created_at >= NOW() - make_interval(mins => $1) LIMIT 1`,
-            [ALERT_COOLDOWN_MIN]);
-        return rows.length > 0;
-    } catch (_) { return false; }
-}
-
-// The scheduled sweep: check, and on any tripped condition raise the P1.
+// The scheduled sweep: raise a P1 incident per tripped condition and auto-resolve
+// the ones that have cleared. Dedupe, the once/hour throttle, and the "stop after
+// 5 emails until resolved" mute all live in the incident router now — this no
+// longer keeps its own cooldown (EM-06 folds that in).
 async function runSendHealthSweep() {
+    const incidents = require('./incidents');
     const health = await checkSendHealth();
-    if (health.healthy) return { healthy: true };
+    const fired = new Set(health.triggered.map(c => c.code));
+    const checkFirst = `Open the Email tab (Metrics & Database) · transport=${health.stats.transport}, sent in 24h=${health.stats.sent24h}`;
 
-    const summary = health.triggered.map(c => c.label).join('; ');
-    console.error(`[email-health] P1 — ${health.triggered.length} condition(s) tripped: ${summary} · ` +
-        `transport=${health.stats.transport} sent24h=${health.stats.sent24h}`);
-
-    if (await alertedRecently()) return { healthy: false, alerted: false, reason: 'cooldown' };
-
-    try {
-        await email.sendSendHealthAlert({ conditions: health.triggered, stats: health.stats });
-    } catch (e) {
-        console.error('[email-health] alert email failed:', e.message);
+    for (const c of health.triggered) {
+        await incidents.raise({
+            key: `email_health:${c.code}`,
+            severity: 'P1',
+            title: `Email — ${c.label}`,
+            detail: c.detail,
+            effect: 'Automated email may not be reaching people (leads, matches, receipts).',
+            checkFirst,
+            adminLink: '/pages/admin/system.html?tab=email',
+        });
     }
-    return { healthy: false, alerted: true, triggered: health.triggered };
+    // Auto-resolve every condition that is no longer firing.
+    for (const code of ALL_CODES) if (!fired.has(code)) await incidents.resolve(`email_health:${code}`);
+
+    if (health.healthy) return { healthy: true };
+    console.error(`[email-health] P1 — ${health.triggered.length} condition(s): ${health.triggered.map(c => c.label).join('; ')}`);
+    return { healthy: false, raised: health.triggered.length };
 }
 
 module.exports = { checkSendHealth, runSendHealthSweep };

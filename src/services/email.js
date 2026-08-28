@@ -889,31 +889,55 @@ function sendCustom({ to, subject, html, replyTo, emailClass, templateKey }) {
  * condition trips. NOTE: if the transport itself is down this email can't land —
  * the monitor also console.errors every sweep, which the platform logs capture.
  */
-function sendSendHealthAlert({ conditions, stats }) {
-    const owner = process.env.OWNER_EMAIL || process.env.ADMIN_EMAIL || process.env.LEAD_NOTIFY_EMAIL || 'hburnside99@gmail.com';
-    const list = (conditions || []).map(c =>
-        `<li style="margin-bottom:8px;"><strong>${c.label}</strong>${c.detail ? ` — ${c.detail}` : ''}</li>`).join('');
-    const n = (conditions || []).length;
+const OWNER_EMAIL = () => process.env.OWNER_EMAIL || process.env.ADMIN_EMAIL || process.env.LEAD_NOTIFY_EMAIL || 'hburnside99@gmail.com';
+
+// EM-06 — the P1 incident email. States, in order: what broke · the user-visible
+// effect · what to check first · the admin link. Fired by the incident router,
+// never directly. Internal class. `repeated` flags a recurring/ongoing P1.
+function sendIncidentAlert({ title, effect, checkFirst, adminLink, occurrences, repeated }) {
+    const p = 'margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;';
+    const label = 'margin:0 0 4px;font-size:12px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:#718096;';
+    const url = adminLink ? (String(adminLink).startsWith('http') ? adminLink : `${SITE_URL}${adminLink}`) : null;
     return sendEmail({
         emailClass: 'internal',
-        templateKey: 'email_health_alert',
-        to: owner,
-        subject: `⛔ P1: email send-health — ${n} condition${n === 1 ? '' : 's'} tripped`,
+        templateKey: 'incident_p1_alert',
+        to: OWNER_EMAIL(),
+        subject: `⛔ P1${repeated ? ' [still broken]' : ''}: ${title}${occurrences > 1 ? ` (×${occurrences})` : ''}`,
         html: layout({
-            title: 'Email send-health: action needed',
-            preheader: 'One or more automated-email health conditions tripped.',
+            title: 'P1 — action needed now',
+            preheader: `${title}${effect ? ` — ${effect}` : ''}`,
+            body: `
+                <p style="${label}">What broke</p>
+                <p style="${p}"><strong>${title}</strong></p>
+                ${effect ? `<p style="${label}">Effect</p><p style="${p}">${effect}</p>` : ''}
+                ${checkFirst ? `<p style="${label}">Check first</p><p style="${p}">${checkFirst}</p>` : ''}`,
+            ctaText: url ? 'Open admin' : undefined,
+            ctaUrl: url || undefined,
+        })
+    });
+}
+
+// EM-06 — the hourly P2 digest. One email listing every open P2 incident, each
+// with its occurrence count. Fired by the router's batch, never directly.
+function sendIncidentDigest({ incidents }) {
+    const rows = (incidents || []).map(i =>
+        `<li style="margin-bottom:8px;"><strong>${i.title}</strong>${i.occurrences > 1 ? ` <span style="color:#718096;">(×${i.occurrences})</span>` : ''}${i.detail ? `<br><span style="color:#718096;font-size:13px;">${i.detail}</span>` : ''}</li>`).join('');
+    const n = (incidents || []).length;
+    return sendEmail({
+        emailClass: 'internal',
+        templateKey: 'incident_p2_digest',
+        to: OWNER_EMAIL(),
+        subject: `${n} thing${n === 1 ? '' : 's'} to look at today`,
+        html: layout({
+            title: 'Needs attention today',
+            preheader: `${n} open item${n === 1 ? '' : 's'} — not urgent, but worth a look.`,
             body: `
                 <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#2d3748;">
-                  The send-health monitor tripped. Until this clears, automated email may not be reaching people — treat it as a P1.
+                  These are open and need attention today (not this minute). Each clears itself in the weekly report once resolved.
                 </p>
-                <ul style="margin:0 0 16px;padding-left:1.2rem;font-size:15px;line-height:1.6;color:#2d3748;">${list}</ul>
-                <p style="margin:0 0 14px;font-size:13px;line-height:1.6;color:#718096;">
-                  Transport: <strong>${stats?.transport || '?'}</strong> &middot;
-                  sent in last 24h: <strong>${stats?.sent24h ?? '?'}</strong> &middot;
-                  from: ${stats?.from || '?'}
-                </p>`,
-            ctaText: 'Open Email health',
-            ctaUrl: `${SITE_URL}/pages/admin/system.html?tab=email`,
+                <ul style="margin:0 0 16px;padding-left:1.2rem;font-size:15px;line-height:1.6;color:#2d3748;">${rows}</ul>`,
+            ctaText: 'Open admin',
+            ctaUrl: `${SITE_URL}/pages/admin/system.html`,
         })
     });
 }
@@ -1830,7 +1854,8 @@ const EMAIL_TEMPLATES = [
     { key: 'admin_subscription_cancelled',    class: 'internal',      audience: 'internal', label: 'Subscription cancelled → admin' },
     { key: 'agent_invite',                    class: 'transactional', audience: 'agent',    label: 'Agent invite' },
     { key: 'business_invite',                 class: 'transactional', audience: 'business', label: 'Business invite' },
-    { key: 'email_health_alert',              class: 'internal',      audience: 'internal', label: 'Send-health P1 alert' },
+    { key: 'incident_p1_alert',               class: 'internal',      audience: 'internal', label: 'P1 incident alert' },
+    { key: 'incident_p2_digest',              class: 'internal',      audience: 'internal', label: 'P2 hourly digest' },
 ];
 
 // Registry integrity audit — the load-bearing check behind both the CI test and
@@ -1930,7 +1955,8 @@ module.exports = {
     sendAdminSubscriptionCancelled,
     sendAgentInvite,
     sendBusinessInvite,
-    sendSendHealthAlert,
+    sendIncidentAlert,
+    sendIncidentDigest,
     sendCustom,
     layout,
 };

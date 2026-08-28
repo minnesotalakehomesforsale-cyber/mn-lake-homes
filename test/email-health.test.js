@@ -20,10 +20,11 @@ pool.query = async (sql) => {
     return { rows: [] };
 };
 
-// Stub the alert email so the sweep never hits the network; record calls.
-const email = require('../src/services/email');
-let sentAlerts = [];
-email.sendSendHealthAlert = async (arg) => { sentAlerts.push(arg); return { data: { id: 'stub' } }; };
+// Stub the incident router so the sweep records instead of emailing/DB-writing.
+const incidents = require('../src/services/incidents');
+let raised = [], resolved = [];
+incidents.raise = async (o) => { raised.push(o); return { ok: true }; };
+incidents.resolve = async (k) => { resolved.push(k); return true; };
 
 const { checkSendHealth, runSendHealthSweep } = require('../src/services/email-health');
 
@@ -83,24 +84,22 @@ const codes = h => h.triggered.map(c => c.code);
     h = await checkSendHealth();
     ok(codes(h).includes('template_failing'), 'template 6 fails/h → template_failing');
 
-    // Sweep dedupe — unhealthy + no recent alert → sends; recent alert → suppressed.
+    // Sweep routes each tripped condition to the incident router as a P1, and
+    // auto-resolves the ones that aren't firing (dedupe/throttle live in the router).
     setTransport({});   // transport_none = unhealthy
-    S = { last50: [{ status: 'sent' }], sent24: 1, total24: 1, tmplFails: [], alertedRecently: false };
-    sentAlerts = [];
+    S = { last50: [{ status: 'sent' }], sent24: 1, total24: 1, tmplFails: [] };
+    raised = []; resolved = [];
     let r = await runSendHealthSweep();
-    ok(r.alerted === true && sentAlerts.length === 1, 'sweep alerts when unhealthy + no recent alert');
+    ok(r.healthy === false && raised.some(x => x.key === 'email_health:transport_none' && x.severity === 'P1'), 'sweep raises a P1 for the tripped condition');
+    ok(resolved.includes('email_health:no_sends') && resolved.includes('email_health:bounce_rate'), 'sweep auto-resolves conditions that are not firing');
 
-    S.alertedRecently = true;
-    sentAlerts = [];
-    r = await runSendHealthSweep();
-    ok(r.alerted === false && r.reason === 'cooldown' && sentAlerts.length === 0, 'sweep dedupes within cooldown');
-
-    // Sweep on a healthy system does nothing.
+    // Healthy sweep raises nothing and resolves every condition.
     setTransport({ resend: true, from: 'MN <a@real.com>' });
-    S = { last50: Array(10).fill({ status: 'sent' }), sent24: 10, total24: 10, tmplFails: [], alertedRecently: false };
-    sentAlerts = [];
+    S = { last50: Array(10).fill({ status: 'sent' }), sent24: 10, total24: 10, tmplFails: [] };
+    raised = []; resolved = [];
     r = await runSendHealthSweep();
-    ok(r.healthy === true && sentAlerts.length === 0, 'healthy sweep sends no alert');
+    ok(r.healthy === true && raised.length === 0, 'healthy sweep raises no incident');
+    ok(resolved.includes('email_health:transport_none'), 'healthy sweep resolves prior conditions');
 
     if (failures) { console.error(`\nEM-04 test: ${failures} FAIL`); process.exit(1); }
     console.log('\nEM-04 test: ALL PASSED');
