@@ -543,10 +543,11 @@ const createLead = async (req, res) => {
                             target: { type: 'lead', id: newLeadId, label: `${name} (${enumType})` },
                             details: { reason: 'direct_agent_id_provided', agent_id: finalAgentId },
                         });
-                        // Single admin copy (this lead went straight to a specific agent).
-                        emailService.sendAdminLeadNotification({
-                            name, first_name: firstName, email, phone, type: enumType,
-                            source: `${source || enumType} · direct to agent`, notes,
+                        // EM-07: routed lead → P3 event, not a per-lead owner email.
+                        require('../services/incidents').logEvent({
+                            key: `lead_routed:${newLeadId}`,
+                            title: `Lead routed — ${name || email}`,
+                            detail: [enumType, source, 'direct to agent'].filter(Boolean).join(' · '),
                         });
                         return;
                     }
@@ -580,12 +581,15 @@ const createLead = async (req, res) => {
                                 target: { type: 'lead', id: newLeadId, label: `${name} (${enumType})` },
                                 details: { grade: leadGrade, lake: leadLakeName || qualTargetLake, intent: qualIntent, price_band: qualPriceBand, reason: 'no_paying_agent' },
                             });
-                            emailService.sendAdminLeadNotification({
-                                name, first_name: firstName, email, phone, type: enumType,
-                                source: `⭐ OPPORTUNITY LAKE · grade ${leadGrade} · HELD (no paying agent)`,
-                                notes: `SALES TRIGGER — a grade-${leadGrade} lead is searching ${leadLakeName || qualTargetLake || 'a lake'} and we have NO paying agent there.\n`
-                                     + `Lake: ${leadLakeName || qualTargetLake || '—'} · Intent: ${qualIntent || '—'} · Price band: ${qualPriceBand || '—'}\n`
-                                     + `Call an agent on this lake today — the lead auto-routes to them the moment they activate.\n\n${notes || ''}`.trim(),
+                            // EM-06: unrouted lead on a lake with no paying agent is a
+                            // P2 OPPORTUNITY, keyed by lake so repeat leads collapse into
+                            // one recruiting signal ("N leads searching Gull Lake, no agent").
+                            require('../services/incidents').raise({
+                                key: `lead_no_agent:${leadLakeId || leadLakeName || qualTargetLake || 'unknown'}`,
+                                severity: 'P2',
+                                title: `Unrouted lead — no paying agent on ${leadLakeName || qualTargetLake || 'a lake'} (grade ${leadGrade})`,
+                                detail: `Intent: ${qualIntent || '—'} · Price band: ${qualPriceBand || '—'}. Call an agent on this lake — the lead auto-routes the moment they activate.`,
+                                adminLink: '/pages/admin/leads.html',
                             });
                             return;
                         }
@@ -599,14 +603,14 @@ const createLead = async (req, res) => {
                             target: { type: 'lead', id: newLeadId, label: `${name} (${enumType})` },
                             details: { lat: geo?.lat, lng: geo?.lng, lake_id: leadLakeId, reason: 'no_eligible_agent', grade: leadGrade },
                         });
-                        emailService.sendAdminLeadNotification({
-                            name,
-                            first_name: firstName,
-                            email,
-                            phone,
-                            type: enumType,
-                            source: source ? `${source} · UNROUTED` : 'UNROUTED',
-                            notes: `Routing failed — no eligible agent in the matched service areas near "${geo?.formattedAddress || addressForRouting || 'the selected lake'}". Lead needs manual assignment from the admin Leads queue.\n\n${notes || ''}`.trim(),
+                        // EM-06: routing failed → P2, needs manual assignment. One
+                        // incident per lead (each needs a human to place it).
+                        require('../services/incidents').raise({
+                            key: `lead_unrouted:${newLeadId}`,
+                            severity: 'P2',
+                            title: `Lead needs manual assignment — no eligible agent`,
+                            detail: `Near "${geo?.formattedAddress || addressForRouting || 'the selected lake'}". Assign it from the admin Leads queue.`,
+                            adminLink: '/pages/admin/leads.html',
                         });
                         return;
                     }
@@ -644,11 +648,12 @@ const createLead = async (req, res) => {
                         matchedAreas: [pick.lakeName || pick.tagName].filter(Boolean),
                     });
 
-                    // Single admin copy for a routed lead (the one email per lead).
-                    emailService.sendAdminLeadNotification({
-                        name, first_name: firstName, email, phone, type: enumType,
-                        source: `${source || enumType} · routed to ${pick.fullName || 'agent'}`,
-                        notes,
+                    // EM-07: routed lead → P3 event (weekly + Email tab), not a
+                    // per-lead email to the owner. The agent already got their copy.
+                    require('../services/incidents').logEvent({
+                        key: `lead_routed:${newLeadId}`,
+                        title: `Lead routed — ${name || email}`,
+                        detail: [enumType, source, `→ ${pick.fullName || 'agent'}`].filter(Boolean).join(' · '),
                     });
 
                     // Instant SMS to the assigned agent (speed-to-lead). No-op
@@ -708,11 +713,14 @@ const createLead = async (req, res) => {
                         target: { type: 'lead', id: newLeadId, label: `${name} (${enumType})` },
                         details: { grade: leadGrade, target_lake: qualTargetLake || null, freetext: (target_lake_freetext || '').slice(0, 120) || null, intent: qualIntent, reason: 'no_lake_key' },
                     });
-                    emailService.sendAdminLeadNotification({
-                        name, first_name: firstName, email, phone, type: enumType,
-                        source: `⚠️ UNROUTED · grade ${leadGrade} · NO LAKE SPECIFIED`,
-                        notes: `A grade-${leadGrade} lead qualified but gave no routable lake (picked "${qualTargetLake || 'other'}"${target_lake_freetext ? `, typed: "${target_lake_freetext}"` : ''}), so it can't route or hold yet.\n`
-                             + `Ask which lake they mean and set it on the lead — it then routes normally. A rising count here usually means the form's lake picker is missing lakes, not that buyers are vague.\n\n${notes || ''}`.trim(),
+                    // EM-06: qualified lead with no routable lake → P2. Set the lake
+                    // on the lead in admin and it routes normally.
+                    require('../services/incidents').raise({
+                        key: `lead_no_lake:${newLeadId}`,
+                        severity: 'P2',
+                        title: `Lead (grade ${leadGrade}) gave no routable lake — ask which lake`,
+                        detail: `Picked "${qualTargetLake || 'other'}"${target_lake_freetext ? `, typed "${target_lake_freetext}"` : ''}. Set the lake on the lead to route it. A rising count here usually means the form's lake picker is missing lakes.`,
+                        adminLink: '/pages/admin/leads.html',
                     });
                 } catch (e) { console.warn('[lead unrouted_no_lake]', e.message); }
             })();

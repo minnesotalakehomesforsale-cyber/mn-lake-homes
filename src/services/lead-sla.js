@@ -55,11 +55,13 @@ async function reassignOne(lead) {
             target: { type: 'lead', id: lead.id, label: lead.name },
             details: { reason: 'no_other_eligible_agent', tried: exclude },
         });
-        emailService.sendAdminLeadNotification({
-            name: lead.name, first_name: (lead.name || '').split(' ')[0],
-            email: lead.email, phone: lead.phone, type: lead.lead_type,
-            source: `${lead.lead_source || 'lead'} · SLA UNWORKED`,
-            notes: `This lead went unworked past the response window and there is no other eligible agent to route it to. Please handle it manually from the admin Leads queue.\n\n${lead.notes || ''}`.trim(),
+        // EM-06: unworked past SLA with no fallback agent → P2 (needs manual placement).
+        require('./incidents').raise({
+            key: `lead_sla_unworked:${lead.id}`,
+            severity: 'P2',
+            title: `Lead unworked past SLA, no fallback agent — ${lead.name || lead.email}`,
+            detail: `${lead.lead_source || 'lead'}${lead.lead_type ? ` · ${lead.lead_type}` : ''}. No other eligible agent to route it to — handle it from the admin Leads queue.`,
+            adminLink: '/pages/admin/leads.html',
         });
         return false;
     }

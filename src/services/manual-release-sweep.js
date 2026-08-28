@@ -62,11 +62,14 @@ async function runManualReleaseSweep() {
                             details: { agent_id: lead.agent_id, agent: lead.agent_name, grade: lead.lead_grade, reason: 'not_accepted_in_sla' },
                         });
                     } catch (_) {}
+                    // EM-06: offer expired with no fallback → P2 (back in held queue).
                     try {
-                        require('./email').sendAdminLeadNotification({
-                            name: lead.full_name, email: lead.email, phone: lead.phone, type: lead.lead_type,
-                            source: `⏳ MANUAL OFFER LAPSED · grade ${lead.lead_grade} · back in HELD queue`,
-                            notes: `A hand-placed offer to ${lead.agent_name || 'a free-tier agent'} for ${lead.target_lake || 'a lake'} was not accepted within ${ACCEPT_SLA_HOURS}h. The lead is back in the held queue and the agent's slot was freed.`,
+                        require('./incidents').raise({
+                            key: `lead_offer_lapsed:${lead.id}`,
+                            severity: 'P2',
+                            title: `Manual offer lapsed — back in the held queue (${lead.target_lake || 'a lake'})`,
+                            detail: `A hand-placed offer to ${lead.agent_name || 'a free-tier agent'} for ${lead.target_lake || 'a lake'} wasn't accepted within ${ACCEPT_SLA_HOURS}h. The agent's slot was freed.`,
+                            adminLink: '/pages/admin/leads.html',
                         });
                     } catch (_) {}
                 }
