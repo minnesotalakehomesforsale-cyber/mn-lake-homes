@@ -37,7 +37,7 @@ register('mark_contacted', {
         await pool.query(
             `UPDATE leads
                 SET first_contact_at = COALESCE(first_contact_at, NOW()),
-                    lead_status = CASE WHEN lead_status IN ('received','routed','contacted') OR lead_status IS NULL THEN 'contacted' ELSE lead_status END,
+                    lead_status = CASE WHEN lead_status IN ('new','unassigned','assigned') OR lead_status IS NULL THEN 'contacted' ELSE lead_status END,
                     updated_at = NOW()
               WHERE id = $1`, [claim.lead_id]);
         return { message: "Thanks — marked as contacted. The reminders for this lead will stop." };

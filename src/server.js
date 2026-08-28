@@ -3473,6 +3473,15 @@ async function ensureTables() {
             ALTER TYPE lead_status_type ADD VALUE IF NOT EXISTS 'unrouted_no_lake';
         EXCEPTION WHEN undefined_object THEN NULL;
         END $$;`);
+        // 'held_no_agent' was used as a lead_status by lead.controller,
+        // admin.controller, manual-release-sweep (and reroute-lead) but its enum
+        // value was never added — so every `lead_status = 'held_no_agent'` write
+        // threw and the held/reclaim flows silently failed. Boolean held_no_agent
+        // stays the source of truth; this lets the status store without erroring.
+        await pool.query(`DO $$ BEGIN
+            ALTER TYPE lead_status_type ADD VALUE IF NOT EXISTS 'held_no_agent';
+        EXCEPTION WHEN undefined_object THEN NULL;
+        END $$;`);
         await safeExec(`
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS user_id UUID;
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS stripe_customer_id     TEXT;
