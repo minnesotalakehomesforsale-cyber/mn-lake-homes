@@ -138,12 +138,13 @@ async function runPeriodicIfDue({ force = false, now = new Date() } = {}) {
     if (!due) return { sent: false, skipped: 'not_due' };
     if (!force) {
         try {
-            const { rows } = await pool.query(`SELECT value FROM app_config WHERE key = 'periodic_report_sent'`);
-            if (rows[0] && String(rows[0].value) === due.key) return { sent: false, skipped: 'already_sent' };
+            const { rows } = await pool.query(`SELECT value #>> '{}' AS v FROM app_config WHERE key = 'periodic_report_sent'`);
+            if (rows[0] && rows[0].v === due.key) return { sent: false, skipped: 'already_sent' };
         } catch (_) {}
     }
     const r = await runPeriodic(due.kind);
-    if (!force) { try { await pool.query(`INSERT INTO app_config (key, value) VALUES ('periodic_report_sent', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, [due.key]); } catch (_) {} }
+    // value is JSONB NOT NULL — wrap as to_jsonb or the insert throws (same guard bug the weekly had).
+    if (!force) { try { await pool.query(`INSERT INTO app_config (key, value, description) VALUES ('periodic_report_sent', to_jsonb($1::text), 'EM-09 periodic report last-sent period key') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`, [due.key]); } catch (_) {} }
     return r;
 }
 

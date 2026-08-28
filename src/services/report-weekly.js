@@ -31,15 +31,20 @@ function chicagoWeekAnchor(now = new Date()) {
 
 async function alreadySent(mondayKey) {
     try {
-        const { rows } = await pool.query(`SELECT value FROM app_config WHERE key = 'weekly_report_sent'`);
-        return rows[0] && String(rows[0].value) === mondayKey;
+        // value is JSONB; #>>'{}' extracts the stored string as text.
+        const { rows } = await pool.query(`SELECT value #>> '{}' AS v FROM app_config WHERE key = 'weekly_report_sent'`);
+        return rows[0] && rows[0].v === mondayKey;
     } catch (_) { return false; }
 }
 async function markSent(mondayKey) {
     try {
+        // app_config.value is JSONB NOT NULL — a bare string is invalid JSON and
+        // throws; to_jsonb makes it a valid JSON string. (This is why the guard
+        // silently failed and the report re-sent every sweep.)
         await pool.query(
-            `INSERT INTO app_config (key, value) VALUES ('weekly_report_sent', $1)
-             ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, [mondayKey]);
+            `INSERT INTO app_config (key, value, description)
+             VALUES ('weekly_report_sent', to_jsonb($1::text), 'EM-08 weekly report last-sent week key')
+             ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`, [mondayKey]);
     } catch (e) { console.warn('[weekly-report] mark failed:', e.message); }
 }
 

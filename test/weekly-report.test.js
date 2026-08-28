@@ -7,7 +7,7 @@ const pool = require('../src/database/pool');
 let cfg = null, incidentsThisWeek = 0;
 pool.query = async (sql, params = []) => {
     if (/COUNT\(\*\)::int AS n FROM incidents WHERE created_at/.test(sql)) return { rows: [{ n: incidentsThisWeek }] };
-    if (/FROM app_config WHERE key = 'weekly_report_sent'/.test(sql)) return { rows: cfg ? [{ value: cfg }] : [] };
+    if (/FROM app_config WHERE key = 'weekly_report_sent'/.test(sql)) return { rows: cfg ? [{ v: cfg }] : [] };
     if (/INSERT INTO app_config/.test(sql)) { cfg = params[0]; return { rows: [] }; }
     return { rows: [] };
 };
