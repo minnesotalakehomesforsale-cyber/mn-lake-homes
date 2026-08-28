@@ -151,21 +151,30 @@ function logSkip(reason) {
 
 // Best-effort record of every send attempt, for per-recipient email history.
 // Fire-and-forget: never blocks or throws into the send path.
-function recordEmail(to, subject, category, status, detail) {
+function writeEmailLog(to, subject, category, status, detail, emailClass, templateKey) {
     if (!to || Array.isArray(to)) return;   // history is per single recipient
     try {
         const pool = require('../database/pool');
         pool.query(
-            `INSERT INTO email_log (to_email, subject, category, status, detail) VALUES ($1,$2,$3,$4,$5)`,
-            [String(to).toLowerCase(), subject || null, category || null, status, (detail == null ? null : String(detail).slice(0, 500))]
+            `INSERT INTO email_log
+                (to_email, subject, category, status, detail, email_class, template_key, provider_message_id, sent_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+            [String(to).toLowerCase(), subject || null, category || null, status,
+             (detail == null ? null : String(detail).slice(0, 500)),
+             emailClass || null, templateKey || null,
+             status === 'sent' ? (detail || null) : null,   // provider_message_id lives in detail on success
+             status === 'sent' ? new Date() : null]           // sent_at only when actually sent
         ).catch(() => {});
     } catch (_) {}
 }
 
 // ─── Low-level sender ────────────────────────────────────────────────────────
 // Same signature as before — templates don't need to know the transport.
-async function sendEmail({ to, subject, html, replyTo, category, emailClass }) {
+async function sendEmail({ to, subject, html, replyTo, category, emailClass, templateKey }) {
     if (!to) { logSkip('no recipient'); return { skipped: true }; }
+    // EM-03: every log row carries the class + template key so the cap query and
+    // the reports can read them. Single helper threads them into every write.
+    const rec = (status, detail) => writeEmailLog(to, subject, category, status, detail, emailClass, templateKey);
 
     // EM-22 — CAN-SPAM consent integrity, keyed on the email CLASS (not category).
     // "Commercial" = anything NOT explicitly transactional or internal. An
@@ -175,11 +184,11 @@ async function sendEmail({ to, subject, html, replyTo, category, emailClass }) {
     let headers;
     if (commercial && !Array.isArray(to)) {
         // Opt-out is absolute for Lifecycle + Content-ask (and anything unclassified).
-        if (await isSuppressed(to)) { logSkip(`suppressed (${to})`); recordEmail(to, subject, category, 'skipped', 'suppressed'); return { skipped: true, suppressed: true }; }
+        if (await isSuppressed(to)) { logSkip(`suppressed (${to})`); rec('suppressed', 'unsubscribed'); return { skipped: true, suppressed: true }; }
         // A commercial email with no valid postal address cannot be compliant — refuse it, loudly.
         if (!hasRealPhysicalAddress()) {
             console.error(`[email] BLOCKED (CAN-SPAM): commercial send with no valid EMAIL_PHYSICAL_ADDRESS — to=${to} subject="${subject || ''}"`);
-            recordEmail(to, subject, category, 'skipped', 'no physical address (CAN-SPAM)');
+            rec('skipped', 'no physical address (CAN-SPAM)');
             return { skipped: true, blocked: 'no_physical_address' };
         }
         html = (html || '') + unsubFooterHtml(to);
@@ -201,11 +210,11 @@ async function sendEmail({ to, subject, html, replyTo, category, emailClass }) {
                 ...(headers ? { headers } : {}),
             });
             console.log(`[email] sent → ${to} · ${subject} · id=${info.messageId || 'n/a'}`);
-            recordEmail(to, subject, category, 'sent', info.messageId || null);
+            rec('sent', info.messageId || null);
             return { data: { id: info.messageId } };
         } catch (err) {
             console.error(`[email] FAILED (gmail) → ${to} · ${subject}:`, err.message);
-            recordEmail(to, subject, category, 'error', err.message);
+            rec('error', err.message);
             return { error: err.message };
         }
     }
@@ -221,17 +230,17 @@ async function sendEmail({ to, subject, html, replyTo, category, emailClass }) {
                 ...(headers ? { headers } : {}),
             });
             console.log(`[email] sent → ${to} · ${subject} · id=${res.data?.id || 'n/a'}`);
-            recordEmail(to, subject, category, 'sent', res.data?.id || null);
+            rec('sent', res.data?.id || null);
             return res;
         } catch (err) {
             console.error(`[email] FAILED (resend) → ${to} · ${subject}:`, err.message);
-            recordEmail(to, subject, category, 'error', err.message);
+            rec('error', err.message);
             return { error: err.message };
         }
     }
 
     logSkip('no transport configured');
-    recordEmail(to, subject, category, 'skipped', 'no transport configured');
+    rec('skipped', 'no transport configured');
     return { skipped: true };
 }
 
@@ -287,6 +296,7 @@ function sendPasswordReset({ to, first_name, resetUrl, expiresInMin = 60 }) {
     const name = first_name || 'there';
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'password_reset',
         to,
         subject: 'Reset your MN Lake Homes password',
         html: layout({
@@ -312,6 +322,7 @@ function sendWelcome(user) {
     const name = user.first_name || user.full_name?.split(' ')[0] || 'there';
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'welcome',
         to: user.email,
         subject: 'Welcome to MN Lake Homes',
         html: layout({
@@ -340,6 +351,7 @@ function sendAgentWelcome(user) {
     const name = user.display_name?.split(' ')[0] || user.first_name || 'there';
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'agent_welcome',
         to: user.email,
         subject: 'Your MN Lake Homes agent account is set up',
         html: layout({
@@ -407,6 +419,7 @@ function sendAgentProfileLive({ email, display_name, slug, membership_code }) {
     if (tier === 'elite') {
         return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'agent_profile_live',
             to: email,
             subject: 'Welcome to MN Lake Homes — your Elite profile is live',
             html: layout({
@@ -543,6 +556,7 @@ function sendAdminPasswordReset(user, newPassword) {
     const name = user.first_name || user.full_name?.split(' ')[0] || 'there';
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'admin_password_reset',
         to: user.email,
         subject: 'Your MN Lake Homes password has been reset',
         html: layout({
@@ -673,6 +687,7 @@ function sendLeadConfirmation(lead) {
 
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'lead_confirmation',
         to: lead.email,
         subject: copy.subject,
         html: layout({
@@ -717,6 +732,7 @@ function sendAdminLeadNotification({ name, first_name, email, phone, type, sourc
 
     return sendEmail({
         emailClass: 'internal',
+        templateKey: 'admin_lead_notification',
         to: adminTo,
         subject: `🔔 New ${typeLabel} Lead — ${name || 'Unknown'}`,
         html: layout({
@@ -746,6 +762,7 @@ function sendInquiryNotification({ to, source, name, email: senderEmail, phone, 
 
     return sendEmail({
         emailClass: 'internal',
+        templateKey: 'inquiry_notification',
         to,
         subject: `📨 New ${brand} inquiry — ${name}`,
         replyTo: senderEmail,  // replying goes straight back to the submitter
@@ -781,6 +798,7 @@ function sendInquiryConfirmation({ to, name, source }) {
     const first = (name || '').split(' ')[0] || 'there';
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'inquiry_confirmation',
         to,
         subject: `We got your message — ${brand}`,
         html: layout({
@@ -834,6 +852,7 @@ function sendMatchedAgentNotification({ to, agentFirstName, lead, distanceMiles,
 
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'matched_agent_notification',
         to,
         replyTo: lead.email || undefined,
         subject: `📍 New lead near you — ${lead.name || 'Unknown'}`,
@@ -892,6 +911,7 @@ function sendBusinessWelcome({ to, name, businessName, businessType }) {
     const first = (name || '').split(' ')[0] || 'there';
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'business_welcome',
         to,
         subject: `Welcome to MN Lake Homes — let's get ${businessName || 'your listing'} live`,
         html: layout({
@@ -928,6 +948,7 @@ function sendAgentAdminNotification({ display_name, email, phone, brokerage_name
     const row = (k, v) => v ? `<tr><td style="padding:8px 12px;font-size:13px;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.5px;vertical-align:top;white-space:nowrap;">${k}</td><td style="padding:8px 12px;font-size:15px;color:#1a202c;">${v}</td></tr>` : '';
     return sendEmail({
         emailClass: 'internal',
+        templateKey: 'agent_admin_notification',
         to: REPLY_TO,
         replyTo: email,
         subject: `🆕 New agent signup — ${display_name}`,
@@ -963,6 +984,7 @@ function sendBusinessAdminNotification({ businessName, businessType, ownerEmail,
     const row = (k, v) => v ? `<tr><td style="padding:8px 12px;font-size:13px;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.5px;vertical-align:top;white-space:nowrap;">${k}</td><td style="padding:8px 12px;font-size:15px;color:#1a202c;">${v}</td></tr>` : '';
     return sendEmail({
         emailClass: 'internal',
+        templateKey: 'business_admin_notification',
         to: REPLY_TO,
         replyTo: ownerEmail,
         subject: `🆕 New business signup — ${businessName} (${typeLabel})`,
@@ -998,6 +1020,7 @@ function sendBusinessPaymentReceived({ to, name, businessName }) {
     const first = (name || '').split(' ')[0] || 'there';
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'business_payment_received',
         to,
         subject: `Payment received — ${businessName || 'your listing'}`,
         html: layout({
@@ -1028,6 +1051,7 @@ function sendBusinessApproved({ to, name, businessName, slug }) {
     const publicUrl = slug ? `${SITE_URL}/businesses/${slug}` : `${SITE_URL}/towns`;
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'business_approved',
         to,
         subject: `🎉 You're live — ${businessName || 'your listing'} is now on the map`,
         html: layout({
@@ -1059,6 +1083,7 @@ function sendBusinessPaymentFailed({ to, name, businessName }) {
     const first = (name || '').split(' ')[0] || 'there';
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'business_payment_failed',
         to,
         subject: `⚠ Payment failed — update your card for ${businessName || 'your listing'}`,
         html: layout({
@@ -1089,6 +1114,7 @@ function sendBusinessSubscriptionCancelled({ to, name, businessName }) {
     const first = (name || '').split(' ')[0] || 'there';
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'business_subscription_cancelled',
         to,
         subject: `Your MN Lake Homes listing has been paused`,
         html: layout({
@@ -1133,6 +1159,7 @@ function sendAdminSubscriptionCancelled({ kind, who, contact, tier, subscription
 
     return sendEmail({
         emailClass: 'internal',
+        templateKey: 'admin_subscription_cancelled',
         to: REPLY_TO,
         subject: `⚠️ ${label} canceled — ${who || 'subscription ended'}`,
         html: layout({
@@ -1180,6 +1207,7 @@ function sendAgentInvite({ to, first_name, tier_label, tempPassword, comped = fa
         : `Our team started an agent profile for you on Minnesota Lake Homes — the site where buyers search for their lake. Just log in and fill in your details so buyers and sellers can find you. Getting listed is free; you can turn on matched leads and featured placement whenever you're ready.`;
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'agent_invite',
         to,
         subject,
         html: layout({
@@ -1207,6 +1235,7 @@ function sendBusinessInvite({ to, first_name, business_name, tier_label, tempPas
     const loginUrl = `${SITE_URL}/pages/public/business-login.html`;
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'business_invite',
         to,
         subject: `You're invited to MN Lake Homes — ${business_name}'s ${tier_label} profile is ready`,
         html: layout({
@@ -1265,6 +1294,7 @@ function sendAgentLeadAssigned({ to, agentFirstName, lead, assignedBy }) {
         : '';
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'agent_lead_assigned',
         to,
         replyTo: lead.email || undefined,
         subject: `📍 New lead assigned to you — ${lead.name || 'Unknown'}`,
@@ -1307,6 +1337,7 @@ function sendManualLeadOffer({ to, agentFirstName, lead = {}, acceptUrl, expires
         </tr>`).join('');
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'manual_lead_offer',
         to,
         subject: `A lead on ${lead.lakeName || 'your lake'} is waiting for you`,
         html: layout({
@@ -1337,6 +1368,7 @@ function sendLeadAgentMatched({ to, first_name, agentName, lakeName }) {
     const place = _esc(lakeName) ? ` about ${_esc(lakeName)}` : '';
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'lead_agent_matched',
         to,
         subject: `Good news — an agent will be in touch${lakeName ? ` about ${lakeName}` : ''}`,
         html: layout({
@@ -1363,6 +1395,7 @@ function sendAgentMessageNotification({ to, agentFirstName, body, senderName }) 
     const senderLabel = senderName || 'the MN Lake Homes team';
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'agent_message_notification',
         to,
         subject: `New message from ${senderLabel}`,
         html: layout({
@@ -1437,6 +1470,7 @@ function sendCashOfferToPartner({ to, partnerName, customMessage, offer, fromNam
 
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'cash_offer_to_partner',
         to,
         replyTo: fromEmail || undefined,
         subject: `Cash offer lead — ${offer.address_raw || offer.full_name || 'new property'}`,
@@ -1484,6 +1518,7 @@ function sendAgentProfileNudge({ to, first_name, missing = [], nudgeNumber = 1 }
         : '';
     return sendEmail({
         emailClass: 'lifecycle',
+        templateKey: 'agent_profile_nudge',
         to,
         subject: nudgeNumber >= 2
             ? `${name}, your lake profile is still hidden — a few minutes to go live`
@@ -1519,6 +1554,7 @@ function sendAgentProfileEnrichmentNudge({ to, first_name, missing = [], nudgeNu
         : '';
     return sendEmail({
         emailClass: 'lifecycle',
+        templateKey: 'agent_profile_enrichment_nudge',
         to,
         subject: nudgeNumber >= 2
             ? `${name}, buyers pick the most complete profile — yours is missing a few pieces`
@@ -1553,6 +1589,7 @@ function sendReferralRewardEmail({ to, first_name, kind = 'referrer', auto = fal
         : `Your one-month credit will be applied to your next invoice.`;
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'referral_reward',
         to,
         subject: isReferrer ? `You earned a free month 🎉` : `Welcome — a free month is on us 🎉`,
         html: layout({
@@ -1584,6 +1621,7 @@ function sendLeadLandedWinBack({ to, name, lakeName }) {
     const lake = lakeName || 'your lake';
     return sendEmail({
         emailClass: 'lifecycle',
+        templateKey: 'lead_landed_win_back',
         to,
         category: 'marketing',
         subject: `A buyer just came through on ${lake}`,
@@ -1612,6 +1650,7 @@ function sendAgentExitSurvey({ to, first_name }) {
     const owner = process.env.OWNER_EMAIL || process.env.ADMIN_EMAIL || process.env.LEAD_NOTIFY_EMAIL || 'hburnside99@gmail.com';
     return sendEmail({
         emailClass: 'lifecycle',
+        templateKey: 'agent_exit_survey',
         to,
         replyTo: owner,
         category: 'transactional',
@@ -1651,6 +1690,7 @@ function sendAgentPaymentFailed({ to, name, attempt = 1, final = false, nextAtte
     }
     return sendEmail({
         emailClass: 'transactional',
+        templateKey: 'agent_payment_failed',
         to,
         subject,
         html: layout({

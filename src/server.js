@@ -4115,6 +4115,19 @@ async function ensureTables() {
             );
             CREATE INDEX IF NOT EXISTS idx_email_log_to      ON email_log(LOWER(to_email));
             CREATE INDEX IF NOT EXISTS idx_email_log_created  ON email_log(created_at DESC);
+            -- EM-03: the send record is the spine of the frequency cap, the reports,
+            -- and incident dedupe. Extend it with the class + template + linkage.
+            -- (status vocabulary now also uses 'suppressed'; 'bounced' arrives via the
+            -- Resend webhook in a later ticket.)
+            ALTER TABLE email_log ADD COLUMN IF NOT EXISTS email_class          VARCHAR(20);
+            ALTER TABLE email_log ADD COLUMN IF NOT EXISTS template_key         VARCHAR(60);
+            ALTER TABLE email_log ADD COLUMN IF NOT EXISTS recipient_type       VARCHAR(20);
+            ALTER TABLE email_log ADD COLUMN IF NOT EXISTS entity_id            TEXT;
+            ALTER TABLE email_log ADD COLUMN IF NOT EXISTS provider_message_id  TEXT;
+            ALTER TABLE email_log ADD COLUMN IF NOT EXISTS incident_key         VARCHAR(120);
+            ALTER TABLE email_log ADD COLUMN IF NOT EXISTS sent_at              TIMESTAMPTZ;
+            -- The frequency-cap query: sends to a recipient of a given class in a window.
+            CREATE INDEX IF NOT EXISTS idx_email_log_cap ON email_log(to_email, email_class, sent_at);
 
             -- Monthly MRR snapshots for the admin revenue cockpit trend.
             CREATE TABLE IF NOT EXISTS mrr_snapshots (
