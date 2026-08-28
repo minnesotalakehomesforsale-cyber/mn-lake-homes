@@ -739,6 +739,14 @@ ${entries.map(e => `  <url>
         res.set('Content-Type', 'application/xml; charset=utf-8').send(xml);
     } catch (err) {
         console.error('[sitemap]', err.message);
+        // EM-06: the graceful empty-sitemap degrade is a SILENT failure (200 with
+        // nothing in it → deindexing risk that nobody notices). Raise a P2.
+        try { require('./services/incidents').raise({
+            key: 'sitemap_failed', severity: 'P2',
+            title: 'Sitemap generation failed — serving an empty sitemap',
+            detail: String(err && err.message || err).slice(0, 300) + '. Search engines are seeing an empty sitemap until this clears.',
+            adminLink: '/pages/admin/system.html?tab=seo',
+        }); } catch (_) {}
         // Degrade to an empty-but-valid sitemap rather than 500 — a
         // transient DB blip shouldn't deindex the whole site.
         res.type('application/xml').send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
