@@ -6080,6 +6080,15 @@ const PORT = process.env.PORT || 3000;
         setInterval(() => runLadderSweep().catch(e => console.warn('[ladder]', e.message)), 24 * 60 * 60 * 1000);
     }
 
+    // EM-08 — the Monday website report. The check runs a few times an hour; the
+    // service self-guards to once per week and fires on Mon 07:00 CT (or later if
+    // Monday was missed). WEEKLY_REPORT_ENABLED=false to disable.
+    if (process.env.WEEKLY_REPORT_ENABLED !== 'false') {
+        const { runWeeklyReport } = require('./services/report-weekly');
+        setTimeout(() => runWeeklyReport().catch(e => console.warn('[weekly-report]', e.message)), 7 * 60 * 1000);
+        setInterval(() => runWeeklyReport().catch(e => console.warn('[weekly-report]', e.message)), 25 * 60 * 1000);
+    }
+
     // T141 manual-release acceptance SLA — reclaim hand-placed held leads the
     // free-tier agent didn't accept within 24h. Every 15 min. Disable with
     // MANUAL_RELEASE_SWEEP_ENABLED=false.

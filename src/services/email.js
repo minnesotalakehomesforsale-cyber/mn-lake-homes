@@ -907,6 +907,79 @@ function sendCustom({ to, subject, html, replyTo, emailClass, templateKey }) {
  */
 const OWNER_EMAIL = () => process.env.OWNER_EMAIL || process.env.ADMIN_EMAIL || process.env.LEAD_NOTIFY_EMAIL || 'hburnside99@gmail.com';
 
+// EM-08 — the Monday website report. Replaces ~a dozen notifications + the daily
+// digest with ONE email that sends every week without exception (a missing Monday
+// email is itself the signal the reporting system is down). Internal; phone-first.
+// The caller (report-weekly.js) assembles the data + ranked actions.
+function sendWeeklyReport({ subject, statusLine, report, actions }) {
+    const p = 'margin:0 0 14px;font-size:15px;line-height:1.6;color:#2d3748;';
+    const h = 'margin:22px 0 8px;font-size:15px;font-weight:800;color:#1a202c;';
+    const n = (v, s = '') => v == null ? '<span style="color:#cbd5e0;">—</span>' : `${v}${s}`;
+    const num = report.numbers, cur = num.current, prev = num.previous, avg = num.avg;
+    const ROWS = [
+        ['Sessions', 'sessions'], ['Lake page views', 'lake_views'],
+        ['Lead forms started', null], ['Leads submitted', 'leads_submitted'],
+        ['Form completion rate', 'completion_rate', '%'], ['Leads routed', 'leads_routed'],
+        ['Leads unrouted', 'leads_unrouted'], ['Median time to contact', 'median_ttc_min', ' min'],
+        ['New agent signups', 'new_agents'], ['Profiles published', 'profiles_published'],
+        ['New business signups', 'new_businesses'], ['Paid conversions', 'paid_conversions'],
+        ['Cancellations', 'cancellations'],
+    ];
+    const cell = 'padding:6px 8px;font-size:13px;border-bottom:1px solid #f2f5f8;font-variant-numeric:tabular-nums;';
+    const rows = ROWS.map(([label, key, suf]) => `<tr>
+        <td style="${cell}text-align:left;color:#4a5568;">${label}</td>
+        <td style="${cell}text-align:right;font-weight:700;">${key ? n(cur[key], suf || '') : n(null)}</td>
+        <td style="${cell}text-align:right;color:#718096;">${key ? n(prev[key], suf || '') : n(null)}</td>
+        <td style="${cell}text-align:right;color:#718096;">${key ? n(avg[key], suf || '') : n(null)}</td></tr>`).join('');
+    const topLakes = (report.topLakes || []).map(l => `${_esc(l.lake)} (${l.views})`).join(' · ') || '—';
+
+    const leadRows = (report.leads || []).map(l => {
+        const ttc = (l.first_contact_at && l.routed_at) ? `${Math.round((new Date(l.first_contact_at) - new Date(l.routed_at)) / 60000)} min` : '—';
+        return `<tr><td style="${cell}">${_esc(l.lake) || '—'}</td><td style="${cell}color:#718096;">${_esc(l.agent) || 'unrouted'}</td><td style="${cell}">${l.accepted_at ? 'yes' : 'no'}</td><td style="${cell}text-align:right;">${ttc}</td></tr>`;
+    }).join('');
+
+    const c = report.content || {};
+    const wr = report.whatRan || {};
+    const emailsLine = (wr.emailsByTemplate || []).map(e => `${e.template_key}: ${e.sent}`).join(' · ') || 'none';
+    const sweepsLine = (wr.sweeps || []).map(s => `${s.name} ${s.last_run_at ? new Date(s.last_run_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}`).join(' · ') || 'none';
+
+    const actionsHtml = (actions && actions.length)
+        ? `<ol style="margin:0 0 8px;padding-left:1.2rem;font-size:15px;line-height:1.7;color:#2d3748;">${actions.map(a => `<li style="margin-bottom:8px;">${_esc(a.text)} — <a href="${SITE_URL}${a.link}" style="color:#1d6df2;text-decoration:none;">open</a></li>`).join('')}</ol>`
+        : `<p style="${p}color:#718096;">Nothing urgent this week.</p>`;
+
+    return sendEmail({
+        emailClass: 'internal', templateKey: 'weekly_report',
+        to: OWNER_EMAIL(),
+        subject,
+        html: layout({ title: '', preheader: statusLine, body: `
+            <p style="${p}font-weight:700;color:#1a202c;">${_esc(statusLine)}</p>
+
+            <h3 style="${h}">The numbers</h3>
+            <div style="overflow-x:auto;"><table role="presentation" width="100%" style="border-collapse:collapse;min-width:320px;">
+              <tr><td style="${cell}text-align:left;color:#a0aec0;font-weight:700;">Metric</td><td style="${cell}text-align:right;color:#a0aec0;font-weight:700;">This wk</td><td style="${cell}text-align:right;color:#a0aec0;font-weight:700;">Last wk</td><td style="${cell}text-align:right;color:#a0aec0;font-weight:700;">4-wk avg</td></tr>
+              ${rows}
+              <tr><td style="${cell}text-align:left;color:#4a5568;">MRR</td><td style="${cell}text-align:right;font-weight:700;" colspan="3">${report.mrr == null ? n(null) : '$' + report.mrr}</td></tr>
+            </table></div>
+            <p style="margin:8px 0 0;font-size:13px;color:#718096;">Top lakes by views: ${topLakes}</p>
+
+            <h3 style="${h}">This week's leads</h3>
+            ${leadRows ? `<div style="overflow-x:auto;"><table role="presentation" width="100%" style="border-collapse:collapse;min-width:320px;"><tr><td style="${cell}color:#a0aec0;font-weight:700;">Lake</td><td style="${cell}color:#a0aec0;font-weight:700;">Routed to</td><td style="${cell}color:#a0aec0;font-weight:700;">Accepted</td><td style="${cell}text-align:right;color:#a0aec0;font-weight:700;">To contact</td></tr>${leadRows}</table></div><p style="margin:8px 0 0;font-size:13px;"><a href="${SITE_URL}/pages/admin/leads.html" style="color:#1d6df2;">See all in admin →</a></p>` : `<p style="${p}color:#718096;">No leads this week.</p>`}
+
+            <h3 style="${h}">Content</h3>
+            <p style="${p}">Pages published this week: ${n(c.pages_published)} · Blog posts live: ${n(c.blog_live)} · Agent replies to asks: ${n(c.agent_replies)}</p>
+
+            <h3 style="${h}">Three things to do this week</h3>
+            ${actionsHtml}
+
+            <h3 style="${h}">What ran</h3>
+            <p style="margin:0;font-size:12px;line-height:1.6;color:#a0aec0;">
+              Open incidents: ${n(wr.open_incidents)} · Bounce rate: ${wr.bounce_rate == null ? '—' : wr.bounce_rate + '%'}<br>
+              Emails: ${_esc(emailsLine)}<br>
+              Sweeps: ${_esc(sweepsLine)}
+            </p>` }),
+    });
+}
+
 // EM-06 — the P1 incident email. States, in order: what broke · the user-visible
 // effect · what to check first · the admin link. Fired by the incident router,
 // never directly. Internal class. `repeated` flags a recurring/ongoing P1.
@@ -2088,6 +2161,7 @@ const EMAIL_TEMPLATES = [
     { key: 'business_invite',                 class: 'transactional', audience: 'business', label: 'Business invite' },
     { key: 'incident_p1_alert',               class: 'internal',      audience: 'internal', label: 'P1 incident alert' },
     { key: 'incident_p2_digest',              class: 'internal',      audience: 'internal', label: 'P2 hourly digest' },
+    { key: 'weekly_report',                   class: 'internal',      audience: 'internal', label: 'Weekly website report' },
 ];
 
 // Registry integrity audit — the load-bearing check behind both the CI test and
@@ -2195,6 +2269,7 @@ module.exports = {
     sendAdminSubscriptionCancelled,
     sendAgentInvite,
     sendBusinessInvite,
+    sendWeeklyReport,
     sendIncidentAlert,
     sendIncidentDigest,
     sendCustom,

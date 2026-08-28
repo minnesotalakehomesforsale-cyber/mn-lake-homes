@@ -85,5 +85,26 @@ const AGENT = { display_name: 'Dana Smith', slug: 'dana-smith' };
     await dump('EM-19_ladder-2-question', () => email.sendLadderQuestion({ to: 'agent@x.com', first_name: 'Dana', lake_name: 'Gull Lake', replyTo: rt }));
     await dump('EM-20_ladder-4-featured', () => email.sendLadderFeatured({ to: 'agent@x.com', first_name: 'Dana', lake_name: 'Gull Lake', contributed: 'photos', lake_url: 'https://minnesotalakehomesforsale.com/lakes/gull-lake', replyTo: rt }));
 
+    // EM-08 — weekly website report (rich sample + zero-activity sample)
+    const sampleReport = {
+        numbers: {
+            current: { sessions: 412, lake_views: 214, leads_submitted: 3, leads_routed: 2, leads_unrouted: 1, completion_rate: null, median_ttc_min: 34, new_agents: 1, profiles_published: 1, new_businesses: 0, paid_conversions: 1, cancellations: 0 },
+            previous: { sessions: 380, lake_views: 190, leads_submitted: 2, leads_routed: 2, leads_unrouted: 0, completion_rate: null, median_ttc_min: 51, new_agents: 0, profiles_published: 0, new_businesses: 1, paid_conversions: 0, cancellations: 0 },
+            avg: { sessions: 395, lake_views: 200, leads_submitted: 2, leads_routed: 2, leads_unrouted: 1, completion_rate: null, median_ttc_min: 42, new_agents: 1, profiles_published: 1, new_businesses: 0, paid_conversions: 1, cancellations: 0 },
+        },
+        mrr: 87,
+        topLakes: [{ lake: 'gull-lake', views: 96 }, { lake: 'north-long-lake', views: 44 }],
+        leads: [{ lake: 'Gull Lake', agent: 'Dana Smith', accepted_at: '2026-08-25', routed_at: '2026-08-25T10:00:00Z', first_contact_at: '2026-08-25T10:34:00Z' }, { lake: 'Round Lake', agent: null, accepted_at: null, routed_at: null, first_contact_at: null }],
+        content: { pages_published: 1, blog_live: 51, agent_replies: 2 },
+        whatRan: { open_incidents: 0, bounce_rate: 0, emailsByTemplate: [{ template_key: 'lead_agent_matched', sent: 2 }, { template_key: 'agent_welcome', sent: 1 }], sweeps: [{ name: 'lead-sla', last_run_at: '2026-08-24' }, { name: 'email-health', last_run_at: '2026-08-24' }] },
+    };
+    const sampleActions = [
+        { text: 'You had 1 lead on a lake with no agent — Round Lake', link: '/pages/admin/leads.html' },
+        { text: 'Recruit an agent on Bald Eagle Lake — 96 views last month, nobody to send them to', link: '/pages/admin/agents.html' },
+        { text: 'North Long Lake has an agent and almost no content — it\'s the page most likely to convert if you fix it', link: '/pages/admin/lakes-towns.html' },
+    ];
+    await dump('EM-08_weekly-report', () => email.sendWeeklyReport({ subject: 'MN Lake Homes — week of Aug 24', statusLine: 'All systems normal — 3 emails sent, no incidents.', report: sampleReport, actions: sampleActions }));
+    await dump('EM-08_weekly-report_quiet', () => email.sendWeeklyReport({ subject: 'MN Lake Homes — week of Aug 24', statusLine: 'All systems normal — 0 emails sent, no incidents.', report: { numbers: { current: {}, previous: {}, avg: {} }, mrr: null, topLakes: [], leads: [], content: {}, whatRan: { open_incidents: 0, emailsByTemplate: [], sweeps: [] } }, actions: [] }));
+
     console.log('Done.');
 })();

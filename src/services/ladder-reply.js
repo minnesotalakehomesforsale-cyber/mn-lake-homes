@@ -15,7 +15,7 @@ const crypto = require('crypto');
 const SECRET = process.env.UNSUB_SECRET || process.env.JWT_SECRET || 'dev-secret';
 // The inbound domain must have MX pointed at the email provider's inbound parse,
 // which forwards to POST /api/inbound-email. Config, like EM-02's EMAIL_FROM.
-const INBOUND_DOMAIN = process.env.REPLY_INBOUND_DOMAIN || 'reply.minnesotalakehomesforsale.com';
+const INBOUND_DOMAIN = process.env.REPLY_INBOUND_DOMAIN || 'replies.minnesotalakehomesforsale.com';
 
 const sign = (payload) => crypto.createHmac('sha256', SECRET).update(payload).digest('hex').slice(0, 16);
 
