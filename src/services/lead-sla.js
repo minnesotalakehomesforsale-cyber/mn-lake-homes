@@ -104,7 +104,7 @@ async function reassignOne(lead) {
 
 // Find stale, un-acked leads and re-route them. Called on an interval.
 async function runSlaSweep() {
-    if (process.env.LEAD_SLA_ENABLED === 'false') return { scanned: 0, reassigned: 0 };
+    if (process.env.LEAD_SLA_ENABLED !== 'true') return { scanned: 0, reassigned: 0 };
     const hours = await getSlaHours();
     let reassigned = 0;
     try {

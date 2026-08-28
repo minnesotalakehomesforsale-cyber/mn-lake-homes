@@ -107,7 +107,7 @@ async function sendReport(subject, text) {
 }
 
 async function runWeeklySlaReport() {
-    if (process.env.ROUTING_SLA_REPORT_ENABLED === 'false') return { skipped: 'disabled' };
+    if (process.env.ROUTING_SLA_REPORT_ENABLED !== 'true') return { skipped: 'disabled' };
     try {
         // ISO-week key from the DB (avoids JS date math / week-boundary bugs).
         const wk = await pool.query(`SELECT to_char(NOW(), 'IYYY-"W"IW') AS week`);

@@ -6020,9 +6020,19 @@ const PORT = process.env.PORT || 3000;
     console.log(`=======================================`);
     await backfillBusinessCoords();
 
+    // ── Background worker fleet ──────────────────────────────────────────────
+    // INVARIANT: anything that SENDS to a customer, agent, or the owner is
+    // default-OFF and requires an explicit `=true` to run (`=== 'true'`). The
+    // ONLY default-ON workers are the alarm layer — INCIDENT_ROUTER_ENABLED and
+    // EMAIL_HEALTH_MONITOR_ENABLED — which alert us, they don't market. A new
+    // sending worker MUST follow the `=== 'true'` pattern; never gate a sender on
+    // `!== 'false'`, or it ships silently active. (The address gate is CAN-SPAM
+    // enforcement, NOT the on/off switch — do not rely on it to hold back sends.)
+    // ─────────────────────────────────────────────────────────────────────────
+
     // Lead SLA sweep — re-route leads the assigned agent hasn't worked in time.
-    // Runs shortly after boot, then every 15 min. Disable with LEAD_SLA_ENABLED=false.
-    if (process.env.LEAD_SLA_ENABLED !== 'false') {
+    // Runs shortly after boot, then every 15 min. OFF by default; LEAD_SLA_ENABLED=true to enable.
+    if (process.env.LEAD_SLA_ENABLED === 'true') {
         const { runSlaSweep } = require('./services/lead-sla');
         const slaRun = () => runSlaSweep().then(() => require('./services/incident-monitors').beat('lead-sla')).catch(e => console.warn('[lead-sla]', e.message));
         setTimeout(slaRun, 60 * 1000);
@@ -6058,32 +6068,32 @@ const PORT = process.env.PORT || 3000;
     }
 
     // EM-13 follow-up — a held (still-unrouted) lead gets a short 7-day check-in,
-    // capped at two, so it never goes silent. Daily. NO_AGENT_FOLLOWUP_ENABLED=false to disable.
-    if (process.env.NO_AGENT_FOLLOWUP_ENABLED !== 'false') {
+    // capped at two, so it never goes silent. Daily. OFF by default; NO_AGENT_FOLLOWUP_ENABLED=true to enable.
+    if (process.env.NO_AGENT_FOLLOWUP_ENABLED === 'true') {
         const { runNoAgentFollowup } = require('./services/no-agent-followup');
         setTimeout(() => runNoAgentFollowup().catch(e => console.warn('[no-agent-followup]', e.message)), 8 * 60 * 1000);
         setInterval(() => runNoAgentFollowup().catch(e => console.warn('[no-agent-followup]', e.message)), 24 * 60 * 60 * 1000);
     }
 
     // EM-15 — nudge the assigned agent at +1h/+24h if no contact is logged.
-    // Every 20 min so the windows fire promptly. AGENT_NUDGE_ENABLED=false to disable.
-    if (process.env.AGENT_NUDGE_ENABLED !== 'false') {
+    // Every 20 min so the windows fire promptly. OFF by default; AGENT_NUDGE_ENABLED=true to enable.
+    if (process.env.AGENT_NUDGE_ENABLED === 'true') {
         const { runAgentResponseNudge } = require('./services/agent-response-nudge');
         setTimeout(() => runAgentResponseNudge().catch(e => console.warn('[agent-nudge]', e.message)), 6 * 60 * 1000);
         setInterval(() => runAgentResponseNudge().catch(e => console.warn('[agent-nudge]', e.message)), 20 * 60 * 1000);
     }
 
     // EM-16 — 72h "did they reach out?" buyer check-in. Every few hours.
-    // FEEDBACK_REQUEST_ENABLED=false to disable.
-    if (process.env.FEEDBACK_REQUEST_ENABLED !== 'false') {
+    // OFF by default; FEEDBACK_REQUEST_ENABLED=true to enable.
+    if (process.env.FEEDBACK_REQUEST_ENABLED === 'true') {
         const { runFeedbackRequest } = require('./services/feedback-request');
         setTimeout(() => runFeedbackRequest().catch(e => console.warn('[feedback-request]', e.message)), 10 * 60 * 1000);
         setInterval(() => runFeedbackRequest().catch(e => console.warn('[feedback-request]', e.message)), 3 * 60 * 60 * 1000);
     }
 
     // Block E — the content-ladder sweep (EM-17 governor drives EM-18/19/20).
-    // Daily. Content-ask class, so the global cap + suppression apply. LADDER_ENABLED=false to disable.
-    if (process.env.LADDER_ENABLED !== 'false') {
+    // Daily. Content-ask class, so the global cap + suppression apply. OFF by default; LADDER_ENABLED=true to enable.
+    if (process.env.LADDER_ENABLED === 'true') {
         const { runLadderSweep } = require('./services/ladder-sweep');
         setTimeout(() => runLadderSweep().catch(e => console.warn('[ladder]', e.message)), 12 * 60 * 1000);
         setInterval(() => runLadderSweep().catch(e => console.warn('[ladder]', e.message)), 24 * 60 * 60 * 1000);
@@ -6091,24 +6101,24 @@ const PORT = process.env.PORT || 3000;
 
     // EM-08 — the Monday website report. The check runs a few times an hour; the
     // service self-guards to once per week and fires on Mon 07:00 CT (or later if
-    // Monday was missed). WEEKLY_REPORT_ENABLED=false to disable.
-    if (process.env.WEEKLY_REPORT_ENABLED !== 'false') {
+    // Monday was missed). OFF by default; WEEKLY_REPORT_ENABLED=true to enable.
+    if (process.env.WEEKLY_REPORT_ENABLED === 'true') {
         const { runWeeklyReport } = require('./services/report-weekly');
         setTimeout(() => runWeeklyReport().catch(e => console.warn('[weekly-report]', e.message)), 7 * 60 * 1000);
         setInterval(() => runWeeklyReport().catch(e => console.warn('[weekly-report]', e.message)), 25 * 60 * 1000);
     }
 
     // EM-09 — quarterly + six-month review. Checked daily; self-guards to once per
-    // period, fires in the first days after a quarter/half boundary (CT). Same flag.
-    if (process.env.WEEKLY_REPORT_ENABLED !== 'false') {
+    // period, fires in the first days after a quarter/half boundary (CT). Same flag (OFF by default).
+    if (process.env.WEEKLY_REPORT_ENABLED === 'true') {
         const { runPeriodicIfDue } = require('./services/report-periodic');
         setInterval(() => runPeriodicIfDue().catch(e => console.warn('[periodic-report]', e.message)), 12 * 60 * 60 * 1000);
     }
 
     // T141 manual-release acceptance SLA — reclaim hand-placed held leads the
     // free-tier agent didn't accept within 24h. Every 15 min. Disable with
-    // MANUAL_RELEASE_SWEEP_ENABLED=false.
-    if (process.env.MANUAL_RELEASE_SWEEP_ENABLED !== 'false') {
+    // OFF by default; MANUAL_RELEASE_SWEEP_ENABLED=true to enable.
+    if (process.env.MANUAL_RELEASE_SWEEP_ENABLED === 'true') {
         const { runManualReleaseSweep } = require('./services/manual-release-sweep');
         setTimeout(() => runManualReleaseSweep().catch(e => console.warn('[manual-release-sweep]', e.message)), 2 * 60 * 1000);
         setInterval(() => runManualReleaseSweep().catch(e => console.warn('[manual-release-sweep]', e.message)), 15 * 60 * 1000);
@@ -6117,8 +6127,8 @@ const PORT = process.env.PORT || 3000;
     // Lead recovery (T018) — retry any lead whose HubSpot sync / routing failed,
     // with exponential backoff, and re-alert anything still stuck after 24h.
     // The retry sweep runs every 2 min; the daily recheck once a day.
-    // Disable with LEAD_RECOVERY_ENABLED=false.
-    if (process.env.LEAD_RECOVERY_ENABLED !== 'false') {
+    // OFF by default; LEAD_RECOVERY_ENABLED=true to enable.
+    if (process.env.LEAD_RECOVERY_ENABLED === 'true') {
         const { runRetrySweep, runFailedRecheck } = require('./services/lead-recovery');
         setTimeout(() => runRetrySweep().catch(e => console.warn('[lead-recovery]', e.message)), 90 * 1000);
         setInterval(() => runRetrySweep().catch(e => console.warn('[lead-recovery]', e.message)), 2 * 60 * 1000);
@@ -6128,8 +6138,8 @@ const PORT = process.env.PORT || 3000;
 
     // Routing SLA weekly report (T021) — median + p95 time-to-first-agent, with a
     // manual-gap flag for anything > 30 min. Self-guards to once per ISO week via
-    // an app_config marker; checked twice a day. Disable with ROUTING_SLA_REPORT_ENABLED=false.
-    if (process.env.ROUTING_SLA_REPORT_ENABLED !== 'false') {
+    // an app_config marker; checked twice a day. OFF by default; ROUTING_SLA_REPORT_ENABLED=true to enable.
+    if (process.env.ROUTING_SLA_REPORT_ENABLED === 'true') {
         const { runWeeklySlaReport } = require('./services/routing-sla');
         setTimeout(() => runWeeklySlaReport().catch(e => console.warn('[routing-sla]', e.message)), 8 * 60 * 1000);
         setInterval(() => runWeeklySlaReport().catch(e => console.warn('[routing-sla]', e.message)), 12 * 60 * 60 * 1000);
@@ -6139,8 +6149,9 @@ const PORT = process.env.PORT || 3000;
     // Workflows we can't use on the current plan: idle-14d deals → follow-up
     // task, and Lost deals missing a lost_reason → task. Runs ~12 min after
     // boot, then daily. No-op unless HubSpot is configured + the pipeline exists.
-    // Disable with ACQ_MAINTENANCE_ENABLED=false.
-    if (process.env.ACQ_MAINTENANCE_ENABLED !== 'false') {
+    // OFF by default; ACQ_MAINTENANCE_ENABLED=true to enable. (No customer email —
+    // creates HubSpot tasks — but gated with the fleet so nothing runs unasked.)
+    if (process.env.ACQ_MAINTENANCE_ENABLED === 'true') {
         const { runAcquisitionMaintenance } = require('./services/hubspot');
         setTimeout(() => runAcquisitionMaintenance().catch(e => console.warn('[acq-maint]', e.message)), 12 * 60 * 1000);
         setInterval(() => runAcquisitionMaintenance().catch(e => console.warn('[acq-maint]', e.message)), 24 * 60 * 60 * 1000);
@@ -6157,8 +6168,8 @@ const PORT = process.env.PORT || 3000;
     // Onboarding nudge — email agents whose profile is still draft/unpublished
     // to finish it and go live. First run 5 min after boot, then every 12h; the
     // sweep self-throttles (min age, resend spacing, max 3). Off with
-    // PROFILE_NUDGE_ENABLED=false.
-    if (process.env.PROFILE_NUDGE_ENABLED !== 'false') {
+    // PROFILE_NUDGE_ENABLED=true (OFF by default).
+    if (process.env.PROFILE_NUDGE_ENABLED === 'true') {
         const { runProfileCompletionNudge, runDraftDoneForYouSms, runProfileEnrichmentNudge } = require('./services/agent-onboarding-nudge');
         setTimeout(() => runProfileCompletionNudge().catch(e => console.warn('[profile-nudge]', e.message)), 5 * 60 * 1000);
         setInterval(() => runProfileCompletionNudge().catch(e => console.warn('[profile-nudge]', e.message)), 12 * 60 * 60 * 1000);
@@ -6231,8 +6242,10 @@ const PORT = process.env.PORT || 3000;
     // MN DNR LakeFinder enrichment — refresh authoritative lake facts (depth,
     // acreage, clarity, fish, accesses) for lakes with a DOW number. Data changes
     // only when a new survey posts, so a daily throttled pass is plenty. Only
-    // touches lakes whose data is missing or >30 days old. Disable with DNR_ENRICH_ENABLED=false.
-    if (process.env.DNR_ENRICH_ENABLED !== 'false') {
+    // touches lakes whose data is missing or >30 days old. OFF by default;
+    // DNR_ENRICH_ENABLED=true to enable. (No email — data enrichment only — but
+    // gated with the fleet so nothing runs unasked.)
+    if (process.env.DNR_ENRICH_ENABLED === 'true') {
         const { enrichAllLakes } = require('./services/dnr-lakefinder');
         const doDnr = () => enrichAllLakes({})
             .then(r => { if (r.candidates) console.log(`[dnr] enriched ${r.enriched}/${r.candidates} lakes (${r.empty} no-survey, ${r.failed} failed)`); })
