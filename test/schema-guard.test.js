@@ -39,19 +39,36 @@ function probePort(port, timeout = 500) {
     });
 }
 
+// TIMING-SENSITIVE (but not flaky-by-design): the broken boot must fully exit —
+// so its stderr is drained and the FATAL line is definitely present — and the
+// healthy boot must reach LISTENING. We POLL for a definitive state (child
+// 'close' for broken, LISTENING for healthy) instead of sleeping a fixed window,
+// then resolve immediately; a generous cap (HARNESS_CAP_MS, default 8s) only
+// bounds a genuinely stuck boot. The old 900ms fixed sleep failed on a cold/
+// loaded machine because the child hadn't exited or flushed stderr yet — that
+// was a test bug, not a product one. If this ever fails, read broken.exitCode /
+// broken.fatal in the output: null means the boot is genuinely too slow (raise
+// the cap), a wrong value means a real regression.
+const CAP_MS = parseInt(process.env.HARNESS_CAP_MS, 10) || 8000;
 function bootHarness(mode, port) {
     return new Promise(resolve => {
         const child = spawn('node', [path.join(__dirname, '_schema-guard-boot-harness.js')],
             { env: { ...process.env, MODE: mode, HARNESS_PORT: String(port) } });
-        let out = '', err = '', exitCode = null;
+        let out = '', err = '', exitCode = null, closed = false;
         child.stdout.on('data', d => out += d);
         child.stderr.on('data', d => err += d);
-        child.on('exit', c => { exitCode = c; });
-        setTimeout(async () => {
-            const port_state = await probePort(port);
-            child.kill('SIGKILL');
-            resolve({ exitCode, listened: /LISTENING:/.test(out), port_state, fatal: (err.match(/FATAL:[^\n]*/) || [''])[0] });
-        }, 900);
+        child.on('close', c => { exitCode = c; closed = true; });   // close = exited AND stdio drained
+        const started = Date.now();
+        const settle = async () => {
+            const listened = /LISTENING:/.test(out);
+            if (closed || listened || Date.now() - started > CAP_MS) {
+                const port_state = await probePort(port);
+                child.kill('SIGKILL');
+                return resolve({ exitCode, listened, port_state, fatal: (err.match(/FATAL:[^\n]*/) || [''])[0] });
+            }
+            setTimeout(settle, 100);
+        };
+        settle();
     });
 }
 

@@ -6028,7 +6028,10 @@ const PORT = process.env.PORT || 3000;
     // sending worker MUST follow the `=== 'true'` pattern; never gate a sender on
     // `!== 'false'`, or it ships silently active. (The address gate is CAN-SPAM
     // enforcement, NOT the on/off switch — do not rely on it to hold back sends.)
+    // The declared inventory + boot log lives in ./services/fleet-status; add a
+    // new worker there too so the boot log stays honest.
     // ─────────────────────────────────────────────────────────────────────────
+    require('./services/fleet-status').logFleetStatus();
 
     // Lead SLA sweep — re-route leads the assigned agent hasn't worked in time.
     // Runs shortly after boot, then every 15 min. OFF by default; LEAD_SLA_ENABLED=true to enable.
