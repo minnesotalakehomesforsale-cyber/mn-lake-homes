@@ -55,9 +55,15 @@ const raisedKey = k => raised.find(r => r.key === k);
     ok(resolved.includes('zero_leads_48h'), 'zero-leads resolves when leads are flowing');
 
     // Heartbeats: a stale sweep → P2; a fresh one resolves; a never-run one is silent.
+    // A sweep that's turned OFF must NOT be reported as a dead worker (the default-OFF
+    // fleet inversion made lead-sla stop beating; intended silence, not a slump).
+    delete process.env.LEAD_SLA_ENABLED;   // lead-sla disabled; email-health/p2-batch default-on
     S = { heartbeat: new Date(Date.now() - 90 * 60000).toISOString() }; raised = []; resolved = [];
     await mon.checkHeartbeats();
-    ok(raised.some(r => /^missed_sweep:/.test(r.key) && r.severity === 'P2'), 'a stale sweep raises a P2');
+    ok(raised.some(r => /^missed_sweep:/.test(r.key) && r.severity === 'P2'), 'a stale ENABLED sweep raises a P2');
+    ok(!raised.some(r => r.key === 'missed_sweep:lead-sla'), 'a DISABLED sweep (lead-sla off) is NOT reported as a dead worker');
+    ok(resolved.includes('missed_sweep:lead-sla'), 'a disabled sweep clears any stale missed-sweep incident');
+    ok(raised.some(r => r.key === 'missed_sweep:email-health'), 'an enabled alarm-layer sweep still alarms when stale');
     S = { heartbeat: new Date().toISOString() }; raised = []; resolved = [];
     await mon.checkHeartbeats();
     ok(resolved.some(k => /^missed_sweep:/.test(k)), 'a fresh heartbeat resolves the missed-sweep incident');

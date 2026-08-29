@@ -27,16 +27,23 @@ async function beat(name) {
 }
 
 // Sweeps we expect to see tick, with the age past which we treat silence as a
-// dead worker (≈ 3× the interval, so one skipped run doesn't cry wolf).
+// dead worker (≈ 3× the interval, so one skipped run doesn't cry wolf). `enabled`
+// ties the expectation to the same flag that gates the sweep in server.js — a
+// sweep that's turned OFF is not a dead worker, so it must not page anyone. (This
+// is what the default-OFF fleet inversion requires: a disabled sender simply
+// stops beating, and silence there is intended, not a slump.)
 const EXPECTED_SWEEPS = [
-    { name: 'lead-sla', maxAgeMin: 45 },        // runs every 15 min
-    { name: 'email-health', maxAgeMin: 45 },    // every 15 min
-    { name: 'p2-batch', maxAgeMin: 180 },       // every 60 min
+    { name: 'lead-sla', maxAgeMin: 45, enabled: () => process.env.LEAD_SLA_ENABLED === 'true' },        // runs every 15 min WHEN enabled
+    { name: 'email-health', maxAgeMin: 45, enabled: () => process.env.EMAIL_HEALTH_MONITOR_ENABLED !== 'false' }, // alarm layer, default-on
+    { name: 'p2-batch', maxAgeMin: 180, enabled: () => process.env.INCIDENT_ROUTER_ENABLED !== 'false' },         // alarm layer, default-on
 ];
 
 async function checkHeartbeats() {
     for (const s of EXPECTED_SWEEPS) {
         try {
+            // Turned off on purpose → not expected to beat. Clear any incident left
+            // over from when it was on, and move on (don't alarm on intended silence).
+            if (s.enabled && !s.enabled()) { await incidents.resolve(`missed_sweep:${s.name}`).catch(() => {}); continue; }
             const { rows } = await pool.query(`SELECT last_run_at FROM heartbeats WHERE name = $1`, [s.name]);
             const last = rows[0]?.last_run_at;
             // Only alarm on a sweep we've actually seen run — a fresh deploy that
