@@ -70,6 +70,45 @@ for (const fn of chunks) {
     }
 }
 
+// ── Voice guard (SETTLED 2026-08-29) ─────────────────────────────────────────
+// All email goes out as the brand: no personal name in any template, ever, and
+// first person PLURAL throughout ("we'll match you", never "I'll"). Same
+// mechanism that caught the "premier" tagline — voice drift returns one template
+// at a time, so a read on the second pass isn't enough.
+//
+// Scope: customer/agent-facing copy only. Internal reports + alerts go to one
+// person and nobody signs them (no voice problem), so they're exempt. Before
+// checking, we strip `${...}` interpolations — that removes merge fields AND any
+// quoted buyer message (the buyer's own words, e.g. "I'm ready to buy", are data,
+// not our copy) — and remove the three named reader-voice strings (the buyer's
+// questions in EM-24 and answer buttons in EM-16 are correctly first person).
+const INTERNAL_FNS = /WeeklyReport|PeriodicReport|IncidentAlert|IncidentDigest|AdminLeadNotification|AgentAdminNotification|BusinessAdminNotification|AdminSubscriptionCancelled|InquiryNotification/;
+const READER_VOICE = [
+    'What should I know about this lake',   // EM-24 question 2 — the buyer asking
+    'If I want to be',                      // EM-24 question 3 — the buyer asking
+    "I've paused my search",                // EM-16 answer button — the reader speaking
+];
+const VOICE_CHECKS = [
+    { id: 'v-name', label: 'personal name in template copy ("Hunter")', re: /\bHunter\b/ },
+    { id: 'v-fps-I', label: 'first-person singular in template copy (I / I\'ll / I\'m …)',
+      re: /(?<=[\s>"'(>])(?:I'll|I'm|I've|I'd|I)(?=[\s.,!?;:<)"'])/ },
+    { id: 'v-fps-me', label: 'first-person singular in template copy (me / my)',
+      re: /(?<=[\s>"'(>])(?:me|my)(?=[\s.,!?;:<)"'])/i },
+];
+for (const fn of chunks) {
+    if (fn.name === 'sendEmail' || fn.name === 'sendCustom') continue;
+    if (INTERNAL_FNS.test(fn.name)) continue;               // owner audience, unsigned — exempt
+    let body = fn.body
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .replace(/^\s*\/\/.*$/gm, ' ')
+        .replace(/\$\{[^}]*\}/g, ' ');                        // drop merge fields + quoted buyer content
+    for (const rv of READER_VOICE) body = body.split(rv).join(' ');
+    for (const c of VOICE_CHECKS) {
+        const hit = body.match(c.re);
+        if (hit) violations.push({ fn: fn.name, check: c.id, label: c.label, match: hit[0].trim() });
+    }
+}
+
 console.log(`Scanned ${chunks.length} template functions.`);
 if (exemptedHits.length) {
     console.log(`\nExempted (known, tracked) — ${exemptedHits.length}:`);

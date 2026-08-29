@@ -498,7 +498,7 @@ function sendAgentWelcome({ email, display_name, first_name, lake_name, lake_cou
             preheader: 'One thing to do today, and an honest note about leads.',
             body: `
                 <p style="${p}">Hi ${first},</p>
-                <p style="${p}">Your profile is set up on MinnesotaLakeHomesForSale.com. Here's exactly what it does, and what it doesn't — I'd rather you know now than find out in three months.</p>
+                <p style="${p}">Your profile is set up on MinnesotaLakeHomesForSale.com. Here's exactly what it does, and what it doesn't — we'd rather you know now than find out in three months.</p>
                 <h3 style="${h}">What your free profile does</h3>
                 <p style="${p}">You appear on ${pageWord}, which is where people who are already searching for that specific lake land. They can see who you are, read your bio, and contact you directly. That's real visibility on a page built to rank for the lake you work.</p>
                 <h3 style="${h}">What it doesn't do</h3>
@@ -508,8 +508,8 @@ function sendAgentWelcome({ email, display_name, first_name, lake_name, lake_cou
                 <p style="${p}">A photo, two or three sentences about the lake you know, and your lakes selected. It takes about five minutes and it's the difference between a page a buyer contacts and one they scroll past.</p>
                 <h3 style="${h}">And one thing that's always true</h3>
                 <p style="${p}">We never take a referral fee. If a match turns into a closing, the commission is entirely yours. That's the whole model — agents pay a flat monthly amount for placement, and we stay out of your deals.</p>
-                <p style="${p}">If anything here doesn't make sense, just reply. This address goes to me.</p>
-                <p style="${p}">— Hunter Burnside<br>MinnesotaLakeHomesForSale.com</p>`,
+                <p style="${p}">If anything here doesn't make sense, just reply. A person reads this inbox.</p>
+                <p style="${p}">— The MN Lake Homes team<br>MinnesotaLakeHomesForSale.com</p>`,
         })
     });
 }
@@ -567,7 +567,7 @@ function sendAgentProfileLive({ email, first_name, display_name, slug, lake_name
                 <p style="${p}">${whatHappens}</p>
                 <h3 style="${h}">One small thing</h3>
                 <p style="${p}">That page could use photos. If you've got three or four on your phone — the shoreline, a dock, the town, a sunset — reply to this email with them and we'll put them on the page with your name under them. Phone photos are fine, no editing needed.</p>
-                <p style="${p}">— Hunter</p>`,
+                <p style="${p}">— The MN Lake Homes team</p>`,
         })
     });
 }
@@ -1650,8 +1650,8 @@ function sendLeadAgentMatched({
                   <li>If I want to be ${season}, what does the timeline actually look like?</li>
                 </ol>
                 <h3 style="${h}">How this works, briefly</h3>
-                <p style="${p}">We're not a brokerage, and we're not paid a commission or a referral fee on your purchase. ${aFirst} is a licensed Minnesota agent we've vetted and matched to your lake and your situation. If they're not the right fit, reply to this email and I'll match you with someone else. No cost either way.</p>
-                <p style="${p}">— Hunter Burnside<br>MinnesotaLakeHomesForSale.com</p>`,
+                <p style="${p}">We're not a brokerage, and we're not paid a commission or a referral fee on your purchase. ${aFirst} is a licensed Minnesota agent we've vetted and matched to your lake and your situation. If they're not the right fit, reply to this email and we'll match you with someone else. No cost either way.</p>
+                <p style="${p}">— The MN Lake Homes team<br>MinnesotaLakeHomesForSale.com</p>`,
         })
     });
 }
@@ -1667,8 +1667,8 @@ function sendNoAgentYet({ to, first_name, lake_name, lake_slug, nearby_lakes, va
     const first = _esc(first_name) || 'there';
     const nearby = Array.isArray(nearby_lakes) ? nearby_lakes.filter(Boolean) : (nearby_lakes ? [nearby_lakes] : []);
     const nearbyPhrase = nearby.length
-        ? `Agents who work ${nearby.map(_esc).join(' and ')} often cover ${lake} too, and I can make an introduction now.`
-        : `Agents who work the surrounding lakes often cover ${lake} too, and I can make an introduction now.`;
+        ? `Agents who work ${nearby.map(_esc).join(' and ')} often cover ${lake} too, and we can make an introduction now.`
+        : `Agents who work the surrounding lakes often cover ${lake} too, and we can make an introduction now.`;
     const guideUrl = lake_slug ? `${SITE_URL}/lakes/${lake_slug}` : `${SITE_URL}/find-your-lake`;
     const p = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;';
     const guideBtn = `
@@ -1684,9 +1684,9 @@ function sendNoAgentYet({ to, first_name, lake_name, lake_slug, nearby_lakes, va
             subject: `Still on it — your ${lake_name || 'lake'} request`,
             html: layout({ title: '', preheader: 'A quick update — no need to do anything.', body: `
                 <p style="${p}">Hi ${first},</p>
-                <p style="${p}">Quick update on your ${lake} request: still working on finding you an agent I'd send my own family to. I haven't forgotten you.</p>
+                <p style="${p}">Quick update on your ${lake} request: still working on finding you someone we'd stand behind. We haven't forgotten you.</p>
                 <p style="${p}">${nearbyPhrase} If you'd like that, just reply.</p>
-                <p style="${p}">— Hunter Burnside</p>` }),
+                <p style="${p}">— The MN Lake Homes team</p>` }),
         });
     }
     return sendEmail({
@@ -1694,12 +1694,12 @@ function sendNoAgentYet({ to, first_name, lake_name, lake_slug, nearby_lakes, va
         subject: `About your ${lake_name || 'lake'} request`,
         html: layout({ title: '', preheader: 'Where things stand, honestly.', body: `
             <p style="${p}">Hi ${first},</p>
-            <p style="${p}">Thanks for your request about ${lake}. I want to be straight with you rather than leave you waiting: we don't yet have an agent on our platform who covers ${lake}.</p>
-            <p style="${p}">Here's what I'm doing about it. I'm reaching out to agents who actually work that lake, and I'll email you as soon as I have someone I'd send my own family to. That's usually a few days.</p>
+            <p style="${p}">Thanks for your request about ${lake}. We want to be straight with you rather than leave you waiting: we don't yet have an agent on our platform who covers ${lake}.</p>
+            <p style="${p}">Here's what we're doing about it. We're reaching out to agents who actually work that lake, and we'll email you the moment we have someone we'd stand behind. That's usually a few days.</p>
             <p style="${p}">In the meantime, here's what we know about the lake:</p>
             ${guideBtn}
-            <p style="${p}">And if you'd rather not wait — reply and tell me. ${nearbyPhrase}</p>
-            <p style="${p}">— Hunter Burnside</p>` }),
+            <p style="${p}">And if you'd rather not wait — reply and tell us. ${nearbyPhrase}</p>
+            <p style="${p}">— The MN Lake Homes team</p>` }),
     });
 }
 
@@ -1714,8 +1714,8 @@ function sendRerouteBuyer({ to, first_name, lake_name }) {
         emailClass: 'transactional', templateKey: 'lead_reroute_buyer', to,
         subject: `Quick update on your ${lake_name || 'lake'} request`,
         html: layout({ title: '', preheader: "A quick update — you'll hear back shortly.", body: `
-            <p style="${p}">Hi ${_esc(first_name) || 'there'} — quick update: I'm matching you with a different ${lake} agent to make sure you hear back quickly. You'll have an introduction within 24 hours.</p>
-            <p style="${p}">— Hunter</p>` }),
+            <p style="${p}">Hi ${_esc(first_name) || 'there'} — quick update: we're matching you with a different ${lake} agent to make sure you hear back quickly. You'll have an introduction within 24 hours.</p>
+            <p style="${p}">— The MN Lake Homes team</p>` }),
     });
 }
 
@@ -1729,7 +1729,7 @@ function sendRerouteAgent({ to, agentFirstName, buyer_first, lake_name, timeline
         emailClass: 'transactional', templateKey: 'lead_reroute_agent', to,
         subject: `The ${lake_name || 'lake'} lead went to another agent`,
         html: layout({ title: '', preheader: 'Response time factors into routing weight.', body: `
-            <p style="${p}">${_esc(agentFirstName) || 'Hi'} — the ${lake} lead (${_esc(buyer_first) || 'a buyer'}${timeline ? `, ${_esc(timeline)}` : ''}) went to another agent after the ${windowHours || 'response'}-hour window passed. No hard feelings, but response time factors into routing weight, so faster replies mean more leads. If the window's too short for how you work, reply and tell me.</p>` }),
+            <p style="${p}">${_esc(agentFirstName) || 'Hi'} — the ${lake} lead (${_esc(buyer_first) || 'a buyer'}${timeline ? `, ${_esc(timeline)}` : ''}) went to another agent after the ${windowHours || 'response'}-hour window passed. No hard feelings, but response time factors into routing weight, so faster replies mean more leads. If the window's too short for how you work, reply and tell us.</p>` }),
     });
 }
 
@@ -1748,7 +1748,7 @@ function sendAgentNudge({ variant, to, agentFirstName, buyer_first, lake_name, t
             subject: `Still no contact logged on the ${lake_name || 'lake'} lead`,
             html: layout({ title: '', preheader: 'Mark it contacted, or pass it back to reroute.', body: `
                 <p style="${p}">${_esc(buyer_first) || 'A buyer'} submitted a request 24 hours ago and we haven't seen contact logged.</p>
-                <p style="${p}">If you can't take this one, hit <strong>Pass this one back</strong> and I'll reroute it immediately — that's a completely fine answer. If you have reached out, just mark it contacted so the system knows.</p>
+                <p style="${p}">If you can't take this one, hit <strong>Pass this one back</strong> and we'll reroute it immediately — that's a completely fine answer. If you have reached out, just mark it contacted so the system knows.</p>
                 <p style="margin:8px 0 0;">${btn(markContactedUrl, 'Mark as contacted', true)}${btn(passBackUrl, 'Pass this one back', false)}</p>` }),
         });
     }
@@ -1758,7 +1758,7 @@ function sendAgentNudge({ variant, to, agentFirstName, buyer_first, lake_name, t
         html: layout({ title: '', preheader: 'First agent to reach them usually wins the client.', body: `
             <p style="${p}"><strong>${_esc(buyer_first) || 'A buyer'} is waiting</strong> — ${facts}</p>
             <p style="margin:8px 0 0;">${phone ? btn(`tel:${String(phone).replace(/[^0-9+]/g, '')}`, `Call ${_esc(phone)}`, true) : ''}${btn(markContactedUrl, 'Mark as contacted', !phone)}</p>
-            <p style="${p}margin-top:16px;">— Hunter</p>` }),
+            <p style="${p}margin-top:16px;">First agent to reach them usually wins the client.</p>` }),
     });
 }
 
@@ -1777,10 +1777,10 @@ function sendDidTheyReachOut({ to, first_name, agent_full_name, yesUrl, notYetUr
         subject: `Did ${agentFirst} get in touch?`,
         html: layout({ title: '', preheader: 'One click, and it genuinely helps.', body: `
             <p style="${p}">Hi ${first},</p>
-            <p style="${p}">I matched you with ${_esc(agent_full_name) || 'an agent'} a few days ago. One question, one click:</p>
+            <p style="${p}">We matched you with ${_esc(agent_full_name) || 'an agent'} a few days ago. One question, one click:</p>
             <p style="margin:8px 0 0;">${btn(yesUrl, "Yes, we've connected", true)}${btn(notYetUrl, 'Not yet', false)}${btn(pausedUrl, "I've paused my search", false)}</p>
-            <p style="${p}margin-top:20px;">That's the whole email. If the answer is "not yet," I'll find you someone else today — you shouldn't have to chase an agent.</p>
-            <p style="${p}">— Hunter</p>` }),
+            <p style="${p}margin-top:20px;">That's the whole email. If the answer is "not yet," we'll find you someone else today — you shouldn't have to chase an agent.</p>
+            <p style="${p}">— The MN Lake Homes team</p>` }),
     });
 }
 
@@ -1800,7 +1800,7 @@ function sendLadderPhotos({ to, first_name, lake_name, replyTo }) {
             <p style="${p}">If you've got three or four photos on your phone — the shoreline, a dock, the town, a sunset off someone's deck — just reply to this email with them attached. We'll put them on the page with your name and a link to your profile underneath.</p>
             <p style="${p}">No editing needed, phone photos are exactly right. We'll skip anything with recognisable faces or house numbers.</p>
             <p style="${p}">That's the whole ask.</p>
-            <p style="${p}">— Hunter</p>
+            <p style="${p}">— The MN Lake Homes team</p>
             <p style="margin:18px 0 0;font-size:13px;line-height:1.6;color:#718096;">P.S. If you'd rather the credit go to your brokerage than to you, just say so in the reply.</p>` }),
     });
 }
@@ -1811,7 +1811,21 @@ function sendLadderQuestion({ to, first_name, lake_name, replyTo }) {
     if (!to) return { skipped: true };
     const lake = _esc(lake_name) || 'your lake';
     const p = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;';
-    const question = `What's the one thing you'd tell a buyer about ${lake} that they'd never get from a listing?`;
+    // EM-19 question bank (verbatim from the hand-off doc). Selected per lake and
+    // stable for a given lake; per-agent "never repeats" needs sweep-side state
+    // (a follow-up — the sweep would pass the chosen question in).
+    const QUESTION_BANK = [
+        `What surprises buyers about ${lake}?`,
+        `What's the difference between the north end and the south end of ${lake}?`,
+        `What should someone know about shoreline and lake access on ${lake} before they make an offer?`,
+        `What's a fair price per foot of shoreline on ${lake} right now?`,
+        `What do out-of-state buyers usually get wrong about ${lake}?`,
+        `What's the one thing you'd have inspected on an older cabin on this lake?`,
+        `Which towns do people actually shop when they're looking at ${lake}?`,
+        `What's the busiest month here, and does that change what you'd buy?`,
+    ];
+    const qIdx = [...String(lake_name || '')].reduce((s, c) => s + c.charCodeAt(0), 0) % QUESTION_BANK.length;
+    const question = QUESTION_BANK[qIdx];
     return sendEmail({
         emailClass: 'content_ask', templateKey: 'ladder_question', to, replyTo,
         subject: `One question about ${lake_name || 'your lake'}`,
@@ -1820,8 +1834,8 @@ function sendLadderQuestion({ to, first_name, lake_name, replyTo }) {
             <p style="${p}">One question, and two sentences is plenty:</p>
             <p style="${p}font-weight:700;color:#1a202c;">${question}</p>
             <p style="${p}">Write it the way you'd say it to a client standing on the dock — no need to make it sound like marketing. We'll publish it on ${lake}'s page under your name with a link to your profile, in the FAQ section, which is the part that tends to show up when someone Googles a question about the lake.</p>
-            <p style="${p}">Just reply.</p>
-            <p style="${p}">— Hunter</p>` }),
+            <p style="${p}">Just reply to this email.</p>
+            <p style="${p}">— The MN Lake Homes team</p>` }),
     });
 }
 
@@ -1843,15 +1857,15 @@ function sendLadderFeatured({ to, first_name, lake_name, contributed, lake_url, 
             <p style="${p}">Thanks for the ${thing} — it's on ${lake}'s page now: <a href="${pageUrl}" style="color:#1d6df2;">see it here</a>.</p>
             <p style="${p}">Next thing, if you're up for it. We run a Featured Agent spotlight on our social channels and on your profile. It looks like this:</p>
             <p style="${p}"><img src="${sampleImg}" alt="Sample MN Lake Homes Featured Agent spotlight graphic — a headshot, name, brokerage, and a line about the agent's lake." width="480" style="max-width:100%;border-radius:10px;"></p>
-            <p style="${p}">To make yours I need four things:</p>
+            <p style="${p}">To make yours we need four things:</p>
             <ul style="margin:0 0 16px;padding-left:1.2rem;font-size:15px;line-height:1.8;color:#2d3748;">
               <li>A headshot you like</li>
               <li>Your brokerage as you want it written</li>
               <li>One line about what you're known for on ${lake}</li>
               <li>The phone or email you want on it</li>
             </ul>
-            <p style="${p}">Reply with those and I'll send you the finished graphic before it goes anywhere — you get final say, and the file is yours to post on your own channels too.</p>
-            <p style="${p}">— Hunter</p>` }),
+            <p style="${p}">Reply with those and we'll send you the finished graphic before it goes anywhere — you get final say, and the file is yours to post on your own channels too.</p>
+            <p style="${p}">— The MN Lake Homes team</p>` }),
     });
 }
 
@@ -2004,7 +2018,7 @@ function sendAgentProfileNudge({ to, first_name, missing = [], nudgeNumber = 1 }
                 <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
                   Add the missing pieces, hit Publish, and your profile is live on the lake pages you serve — usually within minutes.
                 </p>`,
-            ctaText: 'Finish my profile',
+            ctaText: 'Finish your profile',
             ctaUrl: dash,
         })
     });
@@ -2040,7 +2054,7 @@ function sendAgentProfileEnrichmentNudge({ to, first_name, missing = [], nudgeNu
                 <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
                   Each takes a couple of minutes in your dashboard, and they appear right on your public profile.
                 </p>`,
-            ctaText: 'Update my profile',
+            ctaText: 'Update your profile',
             ctaUrl: dash,
         })
     });
@@ -2075,7 +2089,7 @@ function sendReferralRewardEmail({ to, first_name, kind = 'referrer', auto = fal
                 <p style="margin:0;font-size:14px;line-height:1.6;color:#718096;">
                   ${isReferrer ? 'Know another great agent? Your referral link is in the Referrals tab of your dashboard.' : 'Questions? Just reply to this email.'}
                 </p>`,
-            ctaText: 'Open my dashboard',
+            ctaText: 'Open your dashboard',
             ctaUrl: dash,
         })
     });
@@ -2105,7 +2119,7 @@ function sendLeadLandedWinBack({ to, name, lakeName }) {
                 <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2d3748;">
                   Want yours switched back on?
                 </p>`,
-            ctaText: 'Reactivate my plan',
+            ctaText: 'Reactivate your plan',
             ctaUrl: `${SITE_URL}/join`,
         }),
     });
@@ -2127,10 +2141,10 @@ function sendAgentExitSurvey({ to, first_name }) {
         subject: 'one question',
         html: `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;color:#1a202c;font-size:15px;line-height:1.65;">
             <p style="margin:0 0 14px;">Hi ${_esc(name)},</p>
-            <p style="margin:0 0 14px;">I saw your MN Lake Homes subscription ended. No hard feelings at all — your profile stays live on the free tier.</p>
-            <p style="margin:0 0 14px;">One question, and it genuinely helps me: <b>what would we have had to do for you to stay?</b></p>
+            <p style="margin:0 0 14px;">We saw your MN Lake Homes subscription ended. No hard feelings at all — your profile stays live on the free tier.</p>
+            <p style="margin:0 0 14px;">One question, and it genuinely helps us: <b>what would we have had to do for you to stay?</b></p>
             <p style="margin:0 0 14px;">Just hit reply — one line is plenty.</p>
-            <p style="margin:0;">Thanks,<br>Hunter</p>
+            <p style="margin:0;">Thanks,<br>The MN Lake Homes team</p>
         </div>`,
     });
 }
