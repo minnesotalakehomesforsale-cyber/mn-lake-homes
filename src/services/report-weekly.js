@@ -68,13 +68,19 @@ async function runWeeklyReport({ force = false } = {}) {
     const open = report.whatRan.open_incidents || 0;
     const emailsSent = (report.whatRan.emailsByTemplate || []).reduce((a, e) => a + (e.sent || 0), 0);
 
-    // Dead-man's switch: sweeps run daily regardless of activity, so a week with
-    // NO sweep run doesn't mean quiet — it means the workers are dead, and the
-    // report must not say "normal" then. The heartbeat P2 should already have
-    // fired; this makes the reassuring-while-broken state unreachable anyway.
+    // Dead-man's switch: the heartbeat-writing workers (email-health, p2-batch)
+    // run continuously regardless of activity, so a week with NO fresh heartbeat
+    // doesn't mean quiet — it means those workers are dead, and the report must
+    // not say "normal" then. BUT those two are the alarm layer, and they can be
+    // turned off on purpose (EMAIL_HEALTH_MONITOR_ENABLED / INCIDENT_ROUTER_ENABLED
+    // = false). If BOTH are off, no heartbeat is *expected* — that's monitoring
+    // disabled, not a dead worker, and we say so rather than over-claiming "down".
     const sweptRecently = (report.whatRan.sweeps || []).some(s => s.last_run_at && new Date(s.last_run_at) >= new Date(start));
+    const alarmLayerOn = process.env.EMAIL_HEALTH_MONITOR_ENABLED !== 'false' || process.env.INCIDENT_ROUTER_ENABLED !== 'false';
     const statusLine = !sweptRecently
-        ? 'No sweeps ran this week — the background workers may be down, so this report can\'t confirm normal operation. Check the Email tab.'
+        ? (alarmLayerOn
+            ? 'No sweeps ran this week — the background workers may be down, so this report can\'t confirm normal operation. Check the Email tab.'
+            : 'Sweep monitoring is turned off (both alarm-layer flags are disabled), so this report can\'t confirm worker health this week.')
         : thisWeekIncidents > 0
             ? `${thisWeekIncidents} incident${thisWeekIncidents === 1 ? '' : 's'} this week, ${open} still open.`
             : `All systems normal — ${emailsSent} email${emailsSent === 1 ? '' : 's'} sent, no incidents.`;

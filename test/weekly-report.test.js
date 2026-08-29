@@ -44,6 +44,14 @@ const ok = (c, m) => { if (c) console.log('  ✓ ' + m); else { failures++; cons
     noSweeps = true; incidentsThisWeek = 0; openIncidents = 0; emailsSent = 0; sent = [];
     await runWeeklyReport({ force: true });
     ok(/No sweeps ran this week/.test(sent[0].statusLine) && !/All systems normal/.test(sent[0].statusLine), 'a week with no sweeps reports the workers may be down, not "All systems normal"');
+
+    // …but when the alarm layer is turned OFF on purpose, no heartbeat is EXPECTED —
+    // that's monitoring disabled, not a dead worker, and the line must not over-claim.
+    process.env.EMAIL_HEALTH_MONITOR_ENABLED = 'false'; process.env.INCIDENT_ROUTER_ENABLED = 'false';
+    sent = [];
+    await runWeeklyReport({ force: true });
+    ok(/monitoring is turned off/i.test(sent[0].statusLine) && !/workers may be down/.test(sent[0].statusLine), 'no sweeps + alarm layer off → "monitoring is turned off", not "workers may be down"');
+    delete process.env.EMAIL_HEALTH_MONITOR_ENABLED; delete process.env.INCIDENT_ROUTER_ENABLED;
     noSweeps = false;
 
     // A week with incidents flags it in the status line + subject.
