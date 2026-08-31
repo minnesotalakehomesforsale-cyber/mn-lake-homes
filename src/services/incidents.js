@@ -101,8 +101,16 @@ async function resolve(key) {
     } catch (e) { console.warn('[incidents] resolve failed:', e.message); return false; }
 }
 
-// Hourly P2 digest — exactly one email listing every open P2 incident touched
-// since we last sent, each with its occurrence count. Nothing new → no email.
+// Hourly P2 digest — exactly one email listing every open P2 incident that still
+// needs attention, each with its occurrence count. Nothing new → no email.
+//
+// A P2 is a "needs attention today" item, and the condition monitors re-raise a
+// PERSISTENT problem every cycle (bumping last_seen_at), so a re-notify floor of
+// one hour meant a single stuck incident emailed EVERY HOUR, forever — 24 useless
+// reminders a day. Backoff: a brand-new incident (last_notified_at IS NULL) still
+// alerts in the next hourly batch, but an already-notified one re-reminds at most
+// once every 24 HOURS while it stays open. Resolving it (or it auto-resolving)
+// stops the reminders immediately.
 async function runP2Batch() {
     let rows;
     try {
@@ -110,8 +118,8 @@ async function runP2Batch() {
             `SELECT * FROM incidents
               WHERE status = 'open' AND severity = 'P2'
                 AND (last_notified_at IS NULL OR last_seen_at > last_notified_at)
-                AND (last_notified_at IS NULL OR last_notified_at < NOW() - make_interval(mins => $1))
-              ORDER BY last_seen_at DESC`, [P1_DEDUPE_MIN]));
+                AND (last_notified_at IS NULL OR last_notified_at < NOW() - INTERVAL '24 hours')
+              ORDER BY last_seen_at DESC`));
     } catch (e) { console.warn('[incidents] P2 batch query failed:', e.message); return { sent: false }; }
     if (!rows.length) return { sent: false };
     // Every other P2 is a fault; an unrouted lead is an OPPORTUNITY — real demand
