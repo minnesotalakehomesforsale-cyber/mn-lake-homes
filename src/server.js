@@ -662,6 +662,7 @@ app.get('/llms.txt', async (req, res) => {
         out.push(link('Lakes by county', '/counties', 'Minnesota lake homes grouped by county'));
         out.push(link('Lakes by area', '/areas', 'lakes grouped by tourism area (Brainerd Lakes, Alexandria, etc.)'));
         out.push(link('Best fishing lakes', '/fishing', 'top Minnesota lakes by game fish species'));
+        out.push(link('Compare lakes', '/compare', 'side-by-side comparisons of neighboring lakes'));
         out.push('');
         if (topLakes.length) {
             out.push('## Featured lakes');
@@ -785,6 +786,7 @@ app.get('/sitemap.xml', async (req, res) => {
             { url: '/counties',        priority: 0.8, changefreq: 'weekly'  },
             { url: '/areas',           priority: 0.8, changefreq: 'weekly'  },
             { url: '/fishing',         priority: 0.7, changefreq: 'monthly' },
+            { url: '/compare',         priority: 0.6, changefreq: 'monthly' },
             { url: '/agents',          priority: 0.8, changefreq: 'weekly'  },
             { url: '/cash-offer',      priority: 0.7, changefreq: 'monthly' },
             { url: '/blog',            priority: 0.7, changefreq: 'daily'   },
@@ -1145,6 +1147,31 @@ app.get('/areas', async (req, res, next) => {
 });
 
 // ─── SEOP03: lake-vs-lake comparison pages ──────────────────────────────────
+app.get('/compare', async (req, res, next) => {
+    res.set('Cache-Control', 'no-cache');
+    try {
+        const pairs = await require('./services/lake-compare-pages').listComparisons();
+        // Group by region so the index reads as regional peer sets.
+        const byRegion = new Map();
+        for (const p of pairs) { if (!byRegion.has(p.region)) byRegion.set(p.region, []); byRegion.get(p.region).push(p); }
+        const regions = [...byRegion.keys()].sort();
+        const sections = regions.map(region => {
+            const cards = byRegion.get(region).map(p =>
+                `<a class="cty-card" href="/compare/${escapeHtml(p.slug)}"><div class="cty-card-body"><h3>${escapeHtml(p.aName)} vs ${escapeHtml(p.bName)}</h3><p class="cty-card-blurb">Compare size, depth, clarity &amp; fishing</p></div></a>`).join('');
+            return `<section class="cty-section"><h2>${escapeHtml(region)}</h2><div class="cty-grid">${cards}</div></section>`;
+        }).join('');
+        const hero = `<section class="cty-hero"><div class="cty-hero-inner"><p class="cty-crumb"><a href="/">Home</a> &rsaquo; Compare lakes</p><h1>Compare Minnesota Lakes</h1>`
+            + `<p class="cty-lede">Side-by-side comparisons of neighboring Minnesota lakes — size, depth, water clarity, and fishing — to help you decide where to buy. ${pairs.length} lake matchups${regions.length ? ` across ${regions.length} areas` : ''}.</p></div></section>`;
+        const body = pairs.length ? sections : `<section class="cty-section"><p>Comparisons are being prepared.</p></section>`;
+        const structured = seoJsonLd({
+            crumbs: [{ name: 'Home', path: '/' }, { name: 'Compare lakes' }],
+            items: pairs.slice(0, 100).map(p => ({ name: `${p.aName} vs ${p.bName}`, path: `/compare/${p.slug}` })),
+            canonicalPath: '/compare', name: 'Compare Minnesota Lakes',
+        });
+        const robots = pairs.length ? 'index, follow, max-snippet:-1, max-image-preview:large' : 'noindex, follow';
+        res.type('html').send(seoPageShell({ title: 'Compare Minnesota Lakes — Side-by-Side Lake Comparisons', description: 'Compare neighboring Minnesota lakes side by side — size, depth, water clarity, and fishing — with lake homes for sale on each.', robots, canonicalPath: '/compare', bodyHtml: hero + body, structured }));
+    } catch (e) { console.error('[/compare]', e.message); next(e); }
+});
 app.get('/compare/:pair', async (req, res, next) => {
     res.set('Cache-Control', 'no-cache');
     try {

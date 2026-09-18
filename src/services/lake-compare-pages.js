@@ -57,7 +57,7 @@ async function listComparisons() {
         lakes.sort((a, b) => (b.surface_acres || 0) - (a.surface_acres || 0) || a.name.localeCompare(b.name));
         for (let i = 0; i + 1 < lakes.length; i++) {
             const a = lakes[i], b = lakes[i + 1];
-            pairs.push({ slug: pairSlug(a.slug, b.slug), a: a.slug, b: b.slug, region: a.region });
+            pairs.push({ slug: pairSlug(a.slug, b.slug), a: a.slug, b: b.slug, aName: a.name, bName: b.name, region: a.region });
         }
     }
     return pairs;
