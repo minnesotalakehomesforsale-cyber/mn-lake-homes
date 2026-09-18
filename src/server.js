@@ -695,6 +695,7 @@ app.get('/sitemap.xml', async (req, res) => {
             { url: '/sell',            priority: 0.9, changefreq: 'weekly'  },
             { url: '/towns',           priority: 0.9, changefreq: 'weekly'  },
             { url: '/counties',        priority: 0.8, changefreq: 'weekly'  },
+            { url: '/fishing',         priority: 0.7, changefreq: 'monthly' },
             { url: '/agents',          priority: 0.8, changefreq: 'weekly'  },
             { url: '/cash-offer',      priority: 0.7, changefreq: 'monthly' },
             { url: '/blog',            priority: 0.7, changefreq: 'daily'   },
@@ -734,6 +735,17 @@ app.get('/sitemap.xml', async (req, res) => {
             const counties = await require('./services/county-pages').listCounties();
             for (const c of counties) if (c.indexable) push(`${base}/counties/${encodeURIComponent(c.slug)}`, { lastmod: iso(c.updated_at), priority: 0.7, changefreq: 'weekly' });
         } catch (e) { console.warn('[sitemap] counties:', e.message); }
+        // "Homes for sale on [lake]" pages — only lakes with >= 1 active listing
+        // (all indexable by the join), matching the fact floor the route emits.
+        try {
+            const lakesWL = await require('./services/lake-market-pages').lakesWithActiveListings();
+            for (const l of lakesWL) push(`${base}/lakes/${encodeURIComponent(l.slug)}/homes-for-sale`, { lastmod: iso(l.updated_at), priority: 0.7, changefreq: 'daily' });
+        } catch (e) { console.warn('[sitemap] homes-for-sale:', e.message); }
+        // "Best [fish] lakes" pages — only species above the fact floor (>= 3 lakes).
+        try {
+            const fish = await require('./services/lake-fish-pages').listFish();
+            for (const f of fish) push(`${base}/fishing/${encodeURIComponent(f.slug)}`, { priority: 0.6, changefreq: 'monthly' });
+        } catch (e) { console.warn('[sitemap] fishing:', e.message); }
 
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -872,6 +884,81 @@ function buildGalleryHtml({ images, title, eyebrow, subtitle, href, label }) {
 app.get('/lakes', (req, res) => {
     res.redirect(301, '/towns');
 });
+// ─── SEOP02: "Homes for Sale on [Lake]" buyer-intent pages ──────────────────
+const SEO_PAGE_CSS = `<style>.cty-hero{padding:10rem 1.5rem 2.5rem;background:#fff;border-bottom:1px solid #e6eaf0}.cty-hero-inner{max-width:1100px;margin:0 auto}.cty-crumb{font-size:.85rem;color:#718096;margin-bottom:1rem}.cty-crumb a{color:#1d6df2;text-decoration:none}.cty-hero h1{font-size:clamp(2rem,5vw,2.9rem);font-weight:800;letter-spacing:-.02em;margin:0 0 .75rem;color:#16202c}.cty-lede{font-size:1.1rem;color:#4a5568;max-width:62ch;margin:0}.cty-section{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem}.cty-section h2{font-size:1.5rem;font-weight:800;margin:0 0 1.1rem;color:#16202c}.cty-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.1rem}.cty-card{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(16,32,54,.06)}.cty-card:hover{box-shadow:0 10px 28px rgba(16,32,54,.12)}.cty-card-img{height:150px;background-size:cover;background-position:center;background-image:linear-gradient(135deg,#c3d9f0,#9fc0e8)}.cty-card-body{padding:1rem 1.15rem 1.2rem}.cty-card-body h3{font-size:1.08rem;font-weight:700;margin:0 0 .2rem;color:#16202c}.cty-card-meta{font-size:.9rem;color:#1d6df2;font-weight:700;margin:0 0 .35rem}.cty-card-blurb{font-size:.88rem;color:#718096;margin:0}.cty-btn-primary{background:#1d6df2;color:#fff;display:inline-block;padding:.85rem 1.6rem;border-radius:10px;text-decoration:none;font-weight:800}</style>`;
+function seoPageShell({ title, description, robots, canonicalPath, bodyHtml, structured = '' }) {
+    const base = 'https://minnesotalakehomesforsale.com';
+    return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">`
+      + `<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">`
+      + `<title>${title}</title><link rel="icon" type="image/svg+xml" href="/favicon.svg">`
+      + `<meta name="description" content="${description}"><meta name="robots" content="${robots}">`
+      + `<link rel="canonical" href="${base}${canonicalPath}">`
+      + `<meta property="og:title" content="${title}"><meta property="og:description" content="${description}">`
+      + `<meta property="og:url" content="${base}${canonicalPath}"><meta property="og:type" content="website">`
+      + `<link rel="stylesheet" href="/styles/style.css"><script src="/components/components.js" defer></script>`
+      + SEO_PAGE_CSS + structured + `</head><body><global-header></global-header><main>${bodyHtml}</main><global-footer></global-footer></body></html>`;
+}
+
+app.get('/lakes/:slug/homes-for-sale', async (req, res, next) => {
+    res.set('Cache-Control', 'no-cache');
+    try {
+        const { homesForSale } = require('./services/lake-market-pages');
+        const d = await homesForSale(req.params.slug);
+        if (!d) { renderFriendly404(res, { kind: 'lake', slug: req.params.slug }); return; }
+        const robots = d.indexable ? 'index, follow, max-snippet:-1, max-image-preview:large' : 'noindex, follow';
+        const money = p => p == null ? null : '$' + Number(p).toLocaleString();
+        const cards = d.listings.map(li => {
+            const img = (li.featured_image_url || '').trim();
+            const meta = [money(li.price), li.beds ? `${li.beds} bd` : null, li.baths ? `${li.baths} ba` : null, li.sqft ? `${Number(li.sqft).toLocaleString()} sqft` : null, li.waterfront_feet ? `${li.waterfront_feet} ft wf` : null].filter(Boolean).join(' · ');
+            return `<a class="cty-card" href="/listings/${escapeHtml(li.slug)}"><div class="cty-card-img"${img ? ` style="background-image:url('${escapeHtml(img)}')"` : ''}></div>`
+                + `<div class="cty-card-body"><h3>${escapeHtml(li.title || li.address || 'Lake home')}</h3>`
+                + (meta ? `<p class="cty-card-meta">${escapeHtml(meta)}</p>` : '')
+                + (li.city ? `<p class="cty-card-blurb">${escapeHtml(li.city)}, ${escapeHtml(li.state || 'MN')}</p>` : '') + `</div></a>`;
+        }).join('');
+        const body = d.count
+            ? `<section class="cty-section"><h2>${d.count} home${d.count === 1 ? '' : 's'} for sale on ${escapeHtml(d.lake.name)}</h2><div class="cty-grid">${cards}</div></section>`
+            : `<section class="cty-section"><div style="max-width:660px;background:#f4f7fb;border:1px solid #e2e8f0;border-radius:16px;padding:2rem;">`
+              + `<h2 style="margin-top:0;">No active listings on ${escapeHtml(d.lake.name)} right now</h2>`
+              + `<p style="color:#4a5568;">${escapeHtml(d.lake.name)} waterfront homes come and go fast. Get matched with a local lake agent who'll send you new listings the moment they hit the market.</p>`
+              + `<a class="cty-btn-primary" href="/#find-agent" onclick="return (window.openForm && (window.openForm('buy'),false))">Get new-listing alerts &rarr;</a></div></section>`;
+        const hero = `<section class="cty-hero"><div class="cty-hero-inner">`
+            + `<p class="cty-crumb"><a href="/">Home</a> &rsaquo; <a href="/lakes/${escapeHtml(d.lake.slug)}">${escapeHtml(d.lake.name)}</a> &rsaquo; Homes for sale</p>`
+            + `<h1>${escapeHtml(d.h1)}</h1><p class="cty-lede">Browse waterfront homes and cabins for sale on ${escapeHtml(d.lake.name)}, ${escapeHtml(d.lake.state || 'MN')}. See the full lake guide on the <a href="/lakes/${escapeHtml(d.lake.slug)}">${escapeHtml(d.lake.name)} page</a>.</p></div></section>`;
+        res.type('html').send(seoPageShell({ title: escapeHtml(d.seoTitle), description: escapeHtml(d.seoDescription), robots, canonicalPath: d.canonicalPath, bodyHtml: hero + body }));
+    } catch (e) { console.error('[/lakes/:slug/homes-for-sale]', e.message); next(e); }
+});
+
+// ─── SEOP04: "Best [Fish] Lakes in Minnesota" ───────────────────────────────
+app.get('/fishing/:slug', async (req, res, next) => {
+    res.set('Cache-Control', 'no-cache');
+    try {
+        const { fishPage } = require('./services/lake-fish-pages');
+        const d = await fishPage(req.params.slug);
+        if (!d) { renderFriendly404(res, { kind: 'fishing', slug: req.params.slug }); return; }
+        const robots = d.indexable ? 'index, follow, max-snippet:-1, max-image-preview:large' : 'noindex, follow';
+        const cards = d.lakes.map(l => {
+            const img = (l.hero_image_url || '').trim();
+            const meta = [l.region, l.surface_acres ? `${Number(l.surface_acres).toLocaleString()} acres` : null, l.max_depth_ft ? `${l.max_depth_ft} ft deep` : null].filter(Boolean).join(' · ');
+            return `<a class="cty-card" href="/lakes/${escapeHtml(l.slug)}"><div class="cty-card-img"${img ? ` style="background-image:url('${escapeHtml(img)}')"` : ''}></div>`
+                + `<div class="cty-card-body"><h3>${escapeHtml(l.name)}</h3>${meta ? `<p class="cty-card-blurb">${escapeHtml(meta)}</p>` : ''}</div></a>`;
+        }).join('');
+        const hero = `<section class="cty-hero"><div class="cty-hero-inner"><p class="cty-crumb"><a href="/">Home</a> &rsaquo; <a href="/fishing">Fishing</a> &rsaquo; ${escapeHtml(d.fish.name)}</p><h1>${escapeHtml(d.h1)}</h1>`
+            + `<p class="cty-lede">${escapeHtml(d.count ? `${d.count} Minnesota lakes known for ${d.fish.name.toLowerCase()}, with lake homes and cabins for sale — ranked by size. Tap a lake for its market snapshot and a local agent.` : `Minnesota ${d.fish.name.toLowerCase()} lakes and the homes for sale on them.`)}</p></div></section>`;
+        const body = d.count ? `<section class="cty-section"><h2>Top ${escapeHtml(d.fish.name)} lakes</h2><div class="cty-grid">${cards}</div></section>` : `<section class="cty-section"><p>More lakes coming soon.</p></section>`;
+        res.type('html').send(seoPageShell({ title: escapeHtml(d.seoTitle), description: escapeHtml(d.seoDescription), robots, canonicalPath: d.canonicalPath, bodyHtml: hero + body }));
+    } catch (e) { console.error('[/fishing/:slug]', e.message); next(e); }
+});
+app.get('/fishing', async (req, res, next) => {
+    res.set('Cache-Control', 'no-cache');
+    try {
+        const { listFish } = require('./services/lake-fish-pages');
+        const fish = await listFish();
+        const cards = fish.map(f => `<a class="cty-card" href="/fishing/${escapeHtml(f.slug)}"><div class="cty-card-body"><h3>Best ${escapeHtml(f.name)} Lakes</h3><p class="cty-card-blurb">${f.count} lakes</p></div></a>`).join('');
+        const hero = `<section class="cty-hero"><div class="cty-hero-inner"><h1>Best Fishing Lakes in Minnesota</h1><p class="cty-lede">Minnesota's top lakes by game fish — walleye, bass, muskie and more — and the lake homes for sale on them.</p></div></section>`;
+        res.type('html').send(seoPageShell({ title: 'Best Fishing Lakes in Minnesota by Species', description: "Minnesota's best fishing lakes by species — walleye, bass, muskie, crappie and more — with lake homes and cabins for sale.", robots: 'index, follow, max-snippet:-1, max-image-preview:large', canonicalPath: '/fishing', bodyHtml: hero + `<section class="cty-section"><div class="cty-grid">${cards}</div></section>` }));
+    } catch (e) { console.error('[/fishing]', e.message); next(e); }
+});
+
 // ─── County hubs (programmatic SEO) ─────────────────────────────────────────
 // /counties/:slug aggregates a county's published lakes + linked towns into a new
 // indexable hub that links down to every lake page — new indexable surface from
