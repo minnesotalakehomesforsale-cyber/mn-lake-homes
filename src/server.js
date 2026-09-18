@@ -1004,9 +1004,19 @@ function seoPageShell({ title, description, robots, canonicalPath, bodyHtml, str
 // crumbs: [{name, path}] (path optional on the last/current item). items: the
 // listed lakes/homes as [{name, path}] — emitted as an ItemList so Google can
 // render the collection as a rich list. Both are optional; returns '' if empty.
-function seoJsonLd({ crumbs = [], items = [], canonicalPath = '', name = '' } = {}) {
+function seoJsonLd({ crumbs = [], items = [], canonicalPath = '', name = '', speakable = true } = {}) {
     const base = 'https://minnesotalakehomesforsale.com';
     const blocks = [];
+    // WebPage + Speakable: tells voice assistants / AI which parts of the page are
+    // the concise answer (the H1 headline and the lede paragraph). Every hub/list
+    // page rendered via seoPageShell shares this .cty-hero h1 + .cty-lede markup.
+    if (speakable && canonicalPath) {
+        blocks.push(JSON.stringify({
+            '@context': 'https://schema.org', '@type': 'WebPage',
+            url: base + canonicalPath, ...(name ? { name } : {}),
+            speakable: { '@type': 'SpeakableSpecification', cssSelector: ['.cty-hero h1', '.cty-lede'] },
+        }));
+    }
     if (crumbs.length) {
         blocks.push(JSON.stringify({
             '@context': 'https://schema.org', '@type': 'BreadcrumbList',
@@ -1237,7 +1247,11 @@ app.get('/counties/:slug', async (req, res, next) => {
             { '@type': 'ListItem', position: 1, name: 'Home', item: siteBase },
             { '@type': 'ListItem', position: 2, name: 'Lakes', item: `${siteBase}/lakes` },
             { '@type': 'ListItem', position: 3, name: `${data.county} County`, item: `${siteBase}${canonical}` }] });
-        const structured = `<script type="application/ld+json">${breadcrumb}</script>`;
+        // WebPage + Speakable so voice/AI can extract the headline + lede answer.
+        const speakable = JSON.stringify({ '@context': 'https://schema.org', '@type': 'WebPage',
+            url: `${siteBase}${canonical}`, name: data.seoTitle,
+            speakable: { '@type': 'SpeakableSpecification', cssSelector: ['.cty-hero h1', '.cty-lede'] } });
+        const structured = `<script type="application/ld+json">${breadcrumb}</script>\n    <script type="application/ld+json">${speakable}</script>`;
 
         const tpl = await fs.promises.readFile(path.join(PROJECT_ROOT, 'pages/public/county-detail.html'), 'utf8');
         const html = tpl
