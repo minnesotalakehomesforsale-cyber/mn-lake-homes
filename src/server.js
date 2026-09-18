@@ -1568,6 +1568,11 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 add('Water clarity (Secchi)', lake.water_clarity_ft, 'FT');
                 add('Shoreline length', lake.shoreline_miles, 'MI');
                 add('Public accesses', lake.public_accesses);
+                // DNR game fish (JSONB array) as a machine-readable property — the
+                // grounding AI answer engines use for "what fish are in <lake>".
+                const fishList = Array.isArray(lake.fish_species) ? lake.fish_species
+                    : (() => { try { return JSON.parse(lake.fish_species || '[]'); } catch { return []; } })();
+                if (fishList.length) add('Game fish', fishList.join(', '));
                 // Complete Place (C4/T063): geo coordinates + containedInPlace
                 // county → state, plus the DNR facts as additionalProperty.
                 const place = {
