@@ -1372,9 +1372,30 @@ const getMyReferrals = async (req, res) => {
     }
 };
 
+// POST /api/agents/me/leads/:leadId/claim — atomic first-come claim of an
+// offered/assigned lead. Locks it to this agent + returns the full contact info.
+async function claimMyLead(req, res) {
+    try {
+        const r = await require('../services/lead-claim').claimLead({ leadId: req.params.leadId, userId: req.user?.userId });
+        if (r.claimed) return res.json({ ok: true, lead: r.lead });
+        const msg = {
+            already_claimed: 'This lead was just claimed by another agent.',
+            not_yours: "This lead isn't offered to you right now.",
+            not_found: 'That lead no longer exists.',
+            not_an_agent: 'Only agents can claim leads.',
+        }[r.reason] || 'Could not claim this lead.';
+        const code = r.reason === 'already_claimed' ? 409 : r.reason === 'not_found' ? 404 : 400;
+        return res.status(code).json({ ok: false, reason: r.reason, error: msg });
+    } catch (e) {
+        console.error('[agent.claimMyLead]', e.message);
+        return res.status(500).json({ ok: false, error: 'Could not claim this lead.' });
+    }
+}
+
 module.exports = {
     getPublicAgents,
     getAgentBySlug,
+    claimMyLead,
     getMyProfile,
     saveDraft,
     submitForReview,

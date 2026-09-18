@@ -23,6 +23,7 @@ router.put('/by-blog-post/:postId', verifyToken, agentController.replaceAgentsFo
 router.post('/upload-photo', verifyToken, requireRole(['agent', 'admin', 'super_admin']), agentController.uploadPhoto);
 router.get('/me', verifyToken, requireRole('agent'), agentController.getMyProfile);
 router.get('/me/leads', verifyToken, requireRole('agent'), agentController.getMyLeads);
+router.post('/me/leads/:leadId/claim', verifyToken, requireRole('agent'), agentController.claimMyLead);
 // Partner Perks — tier-gated offer feed for the signed-in agent.
 router.get('/me/perks', verifyToken, requireRole('agent'), require('../controllers/partner.controller').agentPerks);
 router.get('/me/roi',   verifyToken, requireRole('agent'), agentController.getMyRoi);
