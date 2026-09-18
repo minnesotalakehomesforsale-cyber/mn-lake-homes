@@ -37,6 +37,27 @@ const normName = s => String(s || '').toLowerCase().replace(/\blakes?\b/g, '').r
 // Counties compare on bare name ("Cass" vs "Cass County" vs "cass").
 const normCounty = s => String(s || '').toLowerCase().replace(/\bcounty\b/g, '').replace(/[^a-z0-9]+/g, '').trim();
 
+// Curated overrides for lakes the name+county search can't auto-resolve. Two
+// kinds, all DOWs verified against DNR LakeFinder search results:
+//   • county-boundary lakes — DNR files them under the adjacent county, so the
+//     county filter rejects the (correct) hit. Unambiguous.
+//   • chain / split lakes — DNR has no plain "X Lake"; it splits into named
+//     basins (Upper/Lower/East/West/Big). We map to the primary basin (largest
+//     / the one the community sits on). Adjust if a different basin is wanted.
+// Keyed by "<normName>|<normCounty>".
+const OVERRIDES = {
+    'cass|cass':            { dow: '04003000', note: 'Cass Lake — DNR files under Beltrami' },
+    'rainy|koochiching':    { dow: '69069400', note: 'Rainy Lake — DNR county St. Louis' },
+    'white bear|ramsey':    { dow: '82016700', note: 'White Bear Lake — DNR county Washington' },
+    'sakatah|lesueur':      { dow: '40000200', note: 'Upper Sakatah (Le Sueur basin)' },
+    'whitefish chain|crowwing': { dow: '18031000', note: 'main Whitefish basin of the Chain' },
+    'battle|ottertail':     { dow: '56023900', note: 'West Battle Lake (city of Battle Lake)' },
+    'sylvia|wright':        { dow: '86027900', note: 'West Lake Sylvia (larger basin)' },
+    'prior|scott':          { dow: '70002600', note: 'Lower Prior (main basin)' },
+    'island|stlouis':       { dow: '69037200', note: 'Island Lake Reservoir (Duluth)' },
+    // Lake Superior has no DNR fisheries survey (Great Lake) — intentionally omitted.
+};
+
 async function searchDnr(name) {
     const url = `https://maps.dnr.state.mn.us/cgi-bin/lakefinder/search.cgi?context=desktop&name=${encodeURIComponent(name)}`;
     const r = await fetch(url, { headers: { 'User-Agent': 'MinnesotaLakeHomesForSale/1.0 (+https://minnesotalakehomesforsale.com)' } });
@@ -49,6 +70,9 @@ async function searchDnr(name) {
 function pick(lake, results) {
     const wantName = normName(lake.name);
     const wantCounty = normCounty(lake.county);
+    // Curated override wins first (boundary + chain lakes the search can't resolve).
+    const ov = OVERRIDES[`${wantName}|${wantCounty}`];
+    if (ov) return { dow: ov.dow, matched: { name: ov.note, county: lake.county }, override: true };
     // Candidates whose name matches ours exactly (normalized).
     const nameMatches = results.filter(r => normName(r.name) === wantName);
     if (nameMatches.length === 0) return { dow: null, reason: results.length ? 'name mismatch' : 'no results' };
