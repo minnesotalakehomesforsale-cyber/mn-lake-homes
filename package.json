@@ -10,7 +10,7 @@
     "db:seed:staging": "NODE_ENV=staging node scripts/seed-staging.js",
     "test:guard": "node test/schema-guard.test.js",
     "test:towns": "node test/town-visibility.test.js",
-    "test": "node test/schema-guard.test.js && node test/enum-integrity.test.js && node test/town-visibility.test.js && node test/unique-heroes.test.js && node test/static-exposure.test.js && node test/secure-cookies.test.js && node test/manual-release.test.js && node test/lifecycle.test.js && node test/admin-auth.test.js && node test/agent-auth.test.js && node test/offer-ledger.test.js && node test/claim-identity.test.js && node test/agent-notify-lead.test.js && node test/lead-claim.test.js && node test/lead-relay.test.js && node test/county-pages.test.js && node test/lake-market-pages.test.js && node test/lake-fish-pages.test.js && node test/region-pages.test.js",
+    "test": "node test/schema-guard.test.js && node test/enum-integrity.test.js && node test/town-visibility.test.js && node test/unique-heroes.test.js && node test/static-exposure.test.js && node test/secure-cookies.test.js && node test/manual-release.test.js && node test/lifecycle.test.js && node test/admin-auth.test.js && node test/agent-auth.test.js && node test/offer-ledger.test.js && node test/claim-identity.test.js && node test/agent-notify-lead.test.js && node test/lead-claim.test.js && node test/lead-relay.test.js && node test/county-pages.test.js && node test/lake-market-pages.test.js && node test/lake-fish-pages.test.js && node test/region-pages.test.js && node test/lake-compare-pages.test.js",
     "test:enum": "node test/enum-integrity.test.js",
     "test:manual": "node test/manual-release.test.js",
     "test:auth": "node test/admin-auth.test.js",

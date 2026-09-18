@@ -752,6 +752,11 @@ app.get('/sitemap.xml', async (req, res) => {
             const areas = await require('./services/region-pages').listAreas();
             for (const a of areas) if (a.indexable) push(`${base}/areas/${encodeURIComponent(a.slug)}`, { lastmod: iso(a.updated_at), priority: 0.7, changefreq: 'weekly' });
         } catch (e) { console.warn('[sitemap] areas:', e.message); }
+        // Lake comparisons — only fact-complete, same-region peer pairs (indexable).
+        try {
+            const pairs = await require('./services/lake-compare-pages').listComparisons();
+            for (const p of pairs) push(`${base}/compare/${encodeURIComponent(p.slug)}`, { priority: 0.6, changefreq: 'monthly' });
+        } catch (e) { console.warn('[sitemap] compare:', e.message); }
 
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -891,7 +896,7 @@ app.get('/lakes', (req, res) => {
     res.redirect(301, '/towns');
 });
 // ─── SEOP02: "Homes for Sale on [Lake]" buyer-intent pages ──────────────────
-const SEO_PAGE_CSS = `<style>.cty-hero{padding:10rem 1.5rem 2.5rem;background:#fff;border-bottom:1px solid #e6eaf0}.cty-hero-inner{max-width:1100px;margin:0 auto}.cty-crumb{font-size:.85rem;color:#718096;margin-bottom:1rem}.cty-crumb a{color:#1d6df2;text-decoration:none}.cty-hero h1{font-size:clamp(2rem,5vw,2.9rem);font-weight:800;letter-spacing:-.02em;margin:0 0 .75rem;color:#16202c}.cty-lede{font-size:1.1rem;color:#4a5568;max-width:62ch;margin:0}.cty-section{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem}.cty-section h2{font-size:1.5rem;font-weight:800;margin:0 0 1.1rem;color:#16202c}.cty-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.1rem}.cty-card{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(16,32,54,.06)}.cty-card:hover{box-shadow:0 10px 28px rgba(16,32,54,.12)}.cty-card-img{height:150px;background-size:cover;background-position:center;background-image:linear-gradient(135deg,#c3d9f0,#9fc0e8)}.cty-card-body{padding:1rem 1.15rem 1.2rem}.cty-card-body h3{font-size:1.08rem;font-weight:700;margin:0 0 .2rem;color:#16202c}.cty-card-meta{font-size:.9rem;color:#1d6df2;font-weight:700;margin:0 0 .35rem}.cty-card-blurb{font-size:.88rem;color:#718096;margin:0}.cty-btn-primary{background:#1d6df2;color:#fff;display:inline-block;padding:.85rem 1.6rem;border-radius:10px;text-decoration:none;font-weight:800}.cty-towns{display:flex;flex-wrap:wrap;gap:.6rem}.cty-town{background:#ebf4ff;color:#1d6df2;font-weight:700;font-size:.92rem;text-decoration:none;padding:.5rem .95rem;border-radius:99px;border:1px solid #d6e6ff}.cty-town:hover{background:#dbeafe}</style>`;
+const SEO_PAGE_CSS = `<style>.cty-hero{padding:10rem 1.5rem 2.5rem;background:#fff;border-bottom:1px solid #e6eaf0}.cty-hero-inner{max-width:1100px;margin:0 auto}.cty-crumb{font-size:.85rem;color:#718096;margin-bottom:1rem}.cty-crumb a{color:#1d6df2;text-decoration:none}.cty-hero h1{font-size:clamp(2rem,5vw,2.9rem);font-weight:800;letter-spacing:-.02em;margin:0 0 .75rem;color:#16202c}.cty-lede{font-size:1.1rem;color:#4a5568;max-width:62ch;margin:0}.cty-section{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem}.cty-section h2{font-size:1.5rem;font-weight:800;margin:0 0 1.1rem;color:#16202c}.cty-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.1rem}.cty-card{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(16,32,54,.06)}.cty-card:hover{box-shadow:0 10px 28px rgba(16,32,54,.12)}.cty-card-img{height:150px;background-size:cover;background-position:center;background-image:linear-gradient(135deg,#c3d9f0,#9fc0e8)}.cty-card-body{padding:1rem 1.15rem 1.2rem}.cty-card-body h3{font-size:1.08rem;font-weight:700;margin:0 0 .2rem;color:#16202c}.cty-card-meta{font-size:.9rem;color:#1d6df2;font-weight:700;margin:0 0 .35rem}.cty-card-blurb{font-size:.88rem;color:#718096;margin:0}.cty-btn-primary{background:#1d6df2;color:#fff;display:inline-block;padding:.85rem 1.6rem;border-radius:10px;text-decoration:none;font-weight:800}.cty-towns{display:flex;flex-wrap:wrap;gap:.6rem}.cty-town{background:#ebf4ff;color:#1d6df2;font-weight:700;font-size:.92rem;text-decoration:none;padding:.5rem .95rem;border-radius:99px;border:1px solid #d6e6ff}.cty-town:hover{background:#dbeafe}.cty-cmp{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden}.cty-cmp th,.cty-cmp td{padding:.85rem 1rem;text-align:left;border-bottom:1px solid #edf2f7;font-size:.95rem}.cty-cmp thead th{background:#f7fafc;font-weight:800;color:#16202c}.cty-cmp tbody th{font-weight:700;color:#4a5568;white-space:nowrap}.cty-cmp td{color:#16202c;font-variant-numeric:tabular-nums}.cty-cmp tr:last-child th,.cty-cmp tr:last-child td{border-bottom:none}</style>`;
 function seoPageShell({ title, description, robots, canonicalPath, bodyHtml, structured = '' }) {
     const base = 'https://minnesotalakehomesforsale.com';
     return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">`
@@ -1049,6 +1054,35 @@ app.get('/areas', async (req, res, next) => {
         });
         res.type('html').send(seoPageShell({ title: 'Minnesota Lakes Areas — Lake Homes by Area', description: 'Browse Minnesota lake homes and cabins by area — Brainerd, Alexandria, Detroit Lakes and more.', robots: 'index, follow, max-snippet:-1, max-image-preview:large', canonicalPath: '/areas', bodyHtml: hero + `<section class="cty-section"><div class="cty-grid">${cards}</div></section>`, structured }));
     } catch (e) { console.error('[/areas]', e.message); next(e); }
+});
+
+// ─── SEOP03: lake-vs-lake comparison pages ──────────────────────────────────
+app.get('/compare/:pair', async (req, res, next) => {
+    res.set('Cache-Control', 'no-cache');
+    try {
+        const { comparePage } = require('./services/lake-compare-pages');
+        const d = await comparePage(req.params.pair);
+        if (!d) { renderFriendly404(res, { kind: 'compare', slug: req.params.pair }); return; }
+        // Collapse duplicate URLs: a non-canonical order 301s to the sorted slug.
+        if (!d.isCanonical) { res.redirect(301, d.canonicalPath); return; }
+        const robots = d.indexable ? 'index, follow, max-snippet:-1, max-image-preview:large' : 'noindex, follow';
+        const lakeCol = l => `<a href="/lakes/${escapeHtml(l.slug)}">${escapeHtml(l.name)}</a>`;
+        const rows = d.metrics.map(m => `<tr><th>${escapeHtml(m.label)}</th><td>${m.a ? escapeHtml(m.a) : '—'}</td><td>${m.b ? escapeHtml(m.b) : '—'}</td></tr>`).join('');
+        const table = `<table class="cty-cmp"><thead><tr><th></th><th>${escapeHtml(d.a.name)}</th><th>${escapeHtml(d.b.name)}</th></tr></thead><tbody>${rows}</tbody></table>`;
+        const verdict = `<p class="cty-lede" style="margin-top:1.25rem">${escapeHtml(d.a.name)} and ${escapeHtml(d.b.name)} are both in the ${escapeHtml(d.region || 'same')} area. `
+            + `${escapeHtml(d.biggerName)} is the larger lake; ${escapeHtml(d.deeperName)} is deeper. See homes on each below.</p>`;
+        const ctas = `<section class="cty-section"><div class="cty-grid">`
+            + `<a class="cty-card" href="/lakes/${escapeHtml(d.a.slug)}/homes-for-sale"><div class="cty-card-body"><h3>Homes on ${escapeHtml(d.a.name)}</h3><p class="cty-card-blurb">See waterfront listings &rarr;</p></div></a>`
+            + `<a class="cty-card" href="/lakes/${escapeHtml(d.b.slug)}/homes-for-sale"><div class="cty-card-body"><h3>Homes on ${escapeHtml(d.b.name)}</h3><p class="cty-card-blurb">See waterfront listings &rarr;</p></div></a>`
+            + `</div></section>`;
+        const hero = `<section class="cty-hero"><div class="cty-hero-inner"><p class="cty-crumb"><a href="/">Home</a> &rsaquo; Compare</p><h1>${escapeHtml(d.h1)}</h1>`
+            + `<p class="cty-lede">Compare ${escapeHtml(d.a.name)} and ${escapeHtml(d.b.name)} side by side — size, depth, water clarity, and fishing — then browse lake homes for sale on each.</p></div></section>`;
+        const structured = seoJsonLd({
+            crumbs: [{ name: 'Home', path: '/' }, { name: 'Compare' }, { name: d.h1 }],
+            canonicalPath: d.canonicalPath,
+        });
+        res.type('html').send(seoPageShell({ title: escapeHtml(d.seoTitle), description: escapeHtml(d.seoDescription), robots, canonicalPath: d.canonicalPath, bodyHtml: hero + `<section class="cty-section"><h2>Side by side</h2>${table}${verdict}</section>` + ctas, structured }));
+    } catch (e) { console.error('[/compare/:pair]', e.message); next(e); }
 });
 
 // ─── County hubs (programmatic SEO) ─────────────────────────────────────────
