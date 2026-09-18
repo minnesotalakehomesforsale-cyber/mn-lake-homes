@@ -1533,7 +1533,17 @@ app.get('/lakes/:slug', async (req, res, next) => {
             for (const [k, v] of Object.entries(replacements)) {
                 out = out.split(k).join(v);
             }
+            // Contextual hub links up to the county/area hubs + this lake's
+            // homes-for-sale page — closes the internal-link loop (hubs link down
+            // to lakes; lakes now link back up), spreading crawl + link equity.
+            const { countySlug } = require('./services/county-pages');
+            const { areaSlug } = require('./services/region-pages');
+            const hubItems = [];
+            if (lake.county) hubItems.push({ href: `/counties/${countySlug(lake.county)}`, name: `${lake.county} County lakes` });
+            if (lake.region) hubItems.push({ href: `/areas/${areaSlug(lake.region)}`, name: `${lake.region} area lakes` });
+            hubItems.push({ href: `/lakes/${encodeURIComponent(lake.slug)}/homes-for-sale`, name: `Homes for sale on ${lake.name}` });
             const mesh = seoDirectory([
+                { title: `Explore near ${lake.name}`, items: hubItems },
                 { title: `Towns on & near ${lake.name}`,
                   items: townRows.map(t => ({ href: `/towns/${encodeURIComponent(t.slug)}`, name: t.name })) },
                 { title: lake.region ? `More lakes in ${lake.region}` : 'More Minnesota lakes',
