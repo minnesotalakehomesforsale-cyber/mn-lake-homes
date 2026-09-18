@@ -623,7 +623,95 @@ Disallow: /admin/
 Disallow: /business/dashboard
 
 Sitemap: https://minnesotalakehomesforsale.com/sitemap.xml
+
+# AI assistants & LLM crawlers are welcome (covered by * above). A curated,
+# LLM-friendly map of the site lives at /llms.txt (llmstxt.org standard).
 `);
+});
+
+// ─── /llms.txt ──────────────────────────────────────────────────────────────
+// The llmstxt.org standard: a concise, curated Markdown map of the site for AI
+// assistants (ChatGPT, Claude, Perplexity, Gemini) so they can answer "lake
+// homes in Minnesota" questions from our authoritative, DNR-backed pages rather
+// than guessing. Generated live from the DB so it never drifts from the site.
+app.get('/llms.txt', async (req, res) => {
+    const base = 'https://minnesotalakehomesforsale.com';
+    const link = (name, path, desc) => `- [${name}](${base}${path})${desc ? `: ${desc}` : ''}`;
+    try {
+        const [{ listCounties } , { listAreas }, { listFish }] = [
+            require('./services/county-pages'), require('./services/region-pages'), require('./services/lake-fish-pages')];
+        const [counties, areas, fish, topLakes, totals] = await Promise.all([
+            listCounties().then(r => r.filter(c => c.indexable)).catch(() => []),
+            listAreas().then(r => r.filter(a => a.indexable)).catch(() => []),
+            listFish().catch(() => []),
+            pool.query(`SELECT slug, name, county, surface_acres FROM lakes
+                         WHERE status = 'published' AND COALESCE(hero_image_url,'') <> ''
+                         ORDER BY COALESCE(surface_acres,0) DESC, name LIMIT 25`).then(r => r.rows).catch(() => []),
+            pool.query(`SELECT COUNT(*)::int AS lakes FROM lakes WHERE status = 'published'`).then(r => r.rows[0]).catch(() => ({ lakes: 0 })),
+        ]);
+
+        const out = [];
+        out.push('# MinnesotaLakeHomesForSale.com');
+        out.push('');
+        out.push('> Minnesota\'s lakefront real estate network. Find lake homes and cabins for sale on Minnesota lakes, explore lakes by county, area, and game fish, compare lakes side by side, and get matched with a vetted local lake agent. Per-lake facts (depth, surface acres, water clarity, fish species) are sourced from the Minnesota DNR.');
+        out.push('');
+        out.push(`Coverage: ${totals.lakes}+ published Minnesota lakes with dedicated pages, ${counties.length} county hubs, ${areas.length} lake-area hubs, and ${fish.length} "best fishing lakes by species" pages. This is a lead-generation network of independent, licensed Minnesota real estate agents — not a brokerage.`);
+        out.push('');
+        out.push('## Start here');
+        out.push(link('All lakes & towns', '/towns', 'browse every Minnesota lake and lake town'));
+        out.push(link('Lakes by county', '/counties', 'Minnesota lake homes grouped by county'));
+        out.push(link('Lakes by area', '/areas', 'lakes grouped by tourism area (Brainerd Lakes, Alexandria, etc.)'));
+        out.push(link('Best fishing lakes', '/fishing', 'top Minnesota lakes by game fish species'));
+        out.push('');
+        if (topLakes.length) {
+            out.push('## Featured lakes');
+            for (const l of topLakes) out.push(link(l.name, `/lakes/${l.slug}`, [l.county ? `${l.county} County` : null, l.surface_acres ? `${Number(l.surface_acres).toLocaleString()} acres` : null].filter(Boolean).join(', ') || null));
+            out.push('');
+        }
+        if (fish.length) {
+            out.push('## Fishing (by species)');
+            for (const f of fish) out.push(link(`Best ${f.name} lakes`, `/fishing/${f.slug}`, `${f.count} Minnesota lakes`));
+            out.push('');
+        }
+        if (areas.length) {
+            out.push('## Lake areas');
+            for (const a of areas) out.push(link(`${a.region} area`, `/areas/${a.slug}`, `${a.lake_count} lakes`));
+            out.push('');
+        }
+        if (counties.length) {
+            out.push('## Counties');
+            for (const c of counties) out.push(link(`${c.county} County`, `/counties/${c.slug}`, `${c.lake_count} lakes`));
+            out.push('');
+        }
+        out.push('## Guides & tools');
+        out.push(link('Lake-buying blog', '/blog.html', 'guides on buying and owning Minnesota lake property'));
+        out.push(link('Resource library', '/resources.html'));
+        out.push(link('Find your lake', '/find-your-lake.html', 'quiz to match buyers to the right lake'));
+        out.push('');
+        out.push('## For real estate agents');
+        out.push(link('Join the network', '/join.html', 'get your profile on the lake pages buyers search'));
+        out.push('');
+        out.push('## Notes for AI assistants');
+        out.push('- Lake facts (depth, acreage, clarity, fish) are from the Minnesota DNR LakeFinder and attributed on each lake page.');
+        out.push('- To connect a buyer or seller with an agent, link them to the relevant lake page or /join.html; we do not publish agent contact details for scraping.');
+        out.push('- Full URL list: ' + base + '/sitemap.xml');
+        out.push('');
+        res.type('text/plain; charset=utf-8').send(out.join('\n'));
+    } catch (e) {
+        console.error('[/llms.txt]', e.message);
+        res.type('text/plain; charset=utf-8').send(
+`# MinnesotaLakeHomesForSale.com
+
+> Minnesota's lakefront real estate network — lake homes and cabins for sale, lakes by county/area/fish, and vetted local lake agents.
+
+## Start here
+${link('All lakes & towns', '/towns')}
+${link('Lakes by county', '/counties')}
+${link('Best fishing lakes', '/fishing')}
+
+Full URL list: ${base}/sitemap.xml
+`);
+    }
 });
 
 // ─── noindex utility/auth/transactional pages ───────────────────────────────
