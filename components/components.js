@@ -940,7 +940,9 @@ class GlobalFooter extends HTMLElement {
                 <div class="link-column">
                     <h4>Explore</h4>
                     <a href="/towns">Lakes &amp; Towns</a>
-                    <a href="/towns?view=props">Lake Properties Map</a>
+                    <a href="/counties">Lakes by County</a>
+                    <a href="/areas">Lakes by Area</a>
+                    <a href="/fishing">Best Fishing Lakes</a>
                     <a href="${bp}resources.html">Resource Library</a>
                     <a href="${bp}blog.html">Blog</a>
                     <a href="${bp}find-your-lake.html">Find Your Lake</a>
