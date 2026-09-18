@@ -88,14 +88,16 @@ async function comparePage(pairSlugStr) {
     const deeper = (a.max_depth_ft || 0) >= (b.max_depth_ft || 0) ? a : b;
 
     // Comparison rows the template renders (label + both values, nulls → em dash).
-    const fmtAcres = v => v == null ? null : `${Number(v).toLocaleString()} acres`;
-    const fmtFt = v => v == null ? null : `${v} ft`;
+    // Treat 0 as "no data" — a real lake never has 0 acres/depth/clarity; the DNR
+    // stores 0 when a survey lacks that reading. Render those as an em dash.
+    const fmtAcres = v => v ? `${Number(v).toLocaleString()} acres` : null;
+    const fmtFt = v => v ? `${v} ft` : null;
     const metrics = [
         { label: 'Surface area',  a: fmtAcres(a.surface_acres),  b: fmtAcres(b.surface_acres) },
         { label: 'Max depth',     a: fmtFt(a.max_depth_ft),      b: fmtFt(b.max_depth_ft) },
         { label: 'Mean depth',    a: fmtFt(a.mean_depth_ft),     b: fmtFt(b.mean_depth_ft) },
         { label: 'Water clarity', a: fmtFt(a.water_clarity_ft),  b: fmtFt(b.water_clarity_ft) },
-        { label: 'Shoreline',     a: a.shoreline_miles != null ? `${a.shoreline_miles} mi` : null, b: b.shoreline_miles != null ? `${b.shoreline_miles} mi` : null },
+        { label: 'Shoreline',     a: a.shoreline_miles ? `${a.shoreline_miles} mi` : null, b: b.shoreline_miles ? `${b.shoreline_miles} mi` : null },
         { label: 'Public accesses', a: a.public_accesses != null ? String(a.public_accesses) : null, b: b.public_accesses != null ? String(b.public_accesses) : null },
         { label: 'Game fish',     a: parseSpecies(a.fish_species).slice(0, 6).join(', ') || null, b: parseSpecies(b.fish_species).slice(0, 6).join(', ') || null },
     ];
