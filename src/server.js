@@ -3130,6 +3130,11 @@ async function ensureTables() {
             -- Agent referral program: each agent's own shareable code + the code
             -- they signed up under. "Refer an agent, get a month free."
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS referral_code VARCHAR(16);
+            -- Directory import (Feature A): non-null on profiles we created from
+            -- public license records (e.g. 'mn_commerce'). The claim flow requires
+            -- license-number verification ONLY for these; existing self-claim
+            -- agents (import_source NULL) stay on the email-only path, unchanged.
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS import_source VARCHAR(40);
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS referred_by_code VARCHAR(16);
         `);
         // Every agent gets a stable short code (backfill any missing ones).
@@ -4156,6 +4161,30 @@ async function ensureTables() {
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS sla_tried_user_ids  UUID[]   NOT NULL DEFAULT '{}';
             CREATE INDEX IF NOT EXISTS idx_leads_sla ON leads(assigned_at)
                 WHERE agent_ack_at IS NULL AND assigned_user_id IS NOT NULL;
+
+            -- Feature B foundation: the lead-offer LEDGER. One row per time a lead
+            -- is offered to an agent in the timed round-robin relay — the audit
+            -- trail behind "who was offered what, when, how long they got, and what
+            -- they lost". The relay logic writes here; admin history reads here.
+            -- Shape is decision-independent (same under Option X or Y, any window).
+            CREATE TABLE IF NOT EXISTS lead_offers (
+                id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                lead_id           UUID NOT NULL,
+                agent_id          UUID,                 -- the offered agent
+                user_id           UUID,                 -- that agent's user account (who claims)
+                tier              VARCHAR(24),          -- plan tier at time of offer
+                cycle_no          INTEGER NOT NULL DEFAULT 1,
+                offered_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                window_secs       INTEGER,              -- how long they got to claim
+                window_expires_at TIMESTAMPTZ,
+                status            VARCHAR(16) NOT NULL DEFAULT 'offered',  -- offered | claimed | expired | superseded
+                claimed_at        TIMESTAMPTZ,
+                source            VARCHAR(24)           -- auto | relay | backfill | manual
+            );
+            CREATE INDEX IF NOT EXISTS idx_lead_offers_lead  ON lead_offers(lead_id, offered_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_lead_offers_agent ON lead_offers(agent_id, offered_at DESC);
+            -- at most one OPEN offer per lead at a time (the active alert); history keeps the rest
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_lead_offers_open ON lead_offers(lead_id) WHERE status = 'offered';
 
             -- Buyer-side service partners (lenders, inspectors, insurance, title,
             -- marine) + the referral requests routed to them. New revenue stream:

@@ -16,6 +16,21 @@ const { SECURE_COOKIES } = require('../config/security');
 const SITE = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+// Identity verification for directory-imported agent profiles: the claimer must
+// match the license number (normalized) + last name we have on record before we
+// send the claim link. Agents with NO license on record (old self-claim listings)
+// stay on the email-only path, unchanged.
+const normLicense = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const lastToken = s => String(s || '').trim().toLowerCase().split(/\s+/).filter(Boolean).pop() || '';
+function identityMatches(target, providedLicense, providedName) {
+    const recL = normLicense(target.license_number);
+    if (!recL) return true;                                    // no license on file → email-only (legacy)
+    if (normLicense(providedLicense) !== recL) return false;   // license is the strong key
+    const recLast = lastToken(target.name);                    // name is a soft second factor
+    return !recLast || recLast === lastToken(providedName);
+}
+exports._identity = { normLicense, lastToken, identityMatches };
+
 function setCookie(res, token) {
     res.cookie('auth_session', token, { httpOnly: true, secure: SECURE_COOKIES, sameSite: 'strict', maxAge: 86_400_000 });
 }
@@ -24,7 +39,7 @@ const clientIp = req => (req.headers['x-forwarded-for'] || '').split(',')[0].tri
 // Resolve the record + whether it's currently unclaimed (user_id IS NULL).
 async function loadTarget(type, id) {
     if (type === 'agent') {
-        const r = await pool.query(`SELECT id, user_id, display_name AS name, slug FROM agents WHERE id = $1 AND deleted_at IS NULL LIMIT 1`, [id]);
+        const r = await pool.query(`SELECT id, user_id, display_name AS name, slug, license_number, import_source FROM agents WHERE id = $1 AND deleted_at IS NULL LIMIT 1`, [id]);
         return r.rows[0] || null;
     }
     if (type === 'business') {
@@ -78,6 +93,19 @@ exports.start = async (req, res) => {
         // listings are owned. Only actually send the email when it's claimable.
         const generic = { ok: true, message: `If ${target_type === 'agent' ? 'that profile' : 'that listing'} can be claimed, we've emailed a verification link to ${email}.` };
         if (!target || target.user_id) return res.json(generic);
+
+        // Directory-claim identity gate: an IMPORTED agent profile (import_source set)
+        // carries a license number from public records — the claimer must match it
+        // (+ last name) before we send the link. Existing self-claim agents
+        // (import_source NULL) are untouched and stay on the email-only path. The
+        // profile is one they were invited to (they hold the link), so a clear
+        // mismatch message is the right UX, not the generic reply.
+        if (target_type === 'agent' && target.import_source && normLicense(target.license_number)) {
+            if (!identityMatches(target, b.license_number, b.name)) {
+                logActivity({ event_type: 'claim.identity_failed', event_scope: 'agent', actor: { type: 'public', label: email }, target: { type: 'agent', id: target_id, label: target.name }, req });
+                return res.status(400).json({ error: "That license number or name didn't match what's on this profile. Double-check and try again." });
+            }
+        }
 
         // One active pending claim per record+email; refresh its token.
         const token = crypto.randomBytes(32).toString('hex');
