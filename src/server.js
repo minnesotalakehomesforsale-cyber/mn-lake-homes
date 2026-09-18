@@ -694,6 +694,7 @@ app.get('/sitemap.xml', async (req, res) => {
             { url: '/buy',             priority: 0.9, changefreq: 'weekly'  },
             { url: '/sell',            priority: 0.9, changefreq: 'weekly'  },
             { url: '/towns',           priority: 0.9, changefreq: 'weekly'  },
+            { url: '/counties',        priority: 0.8, changefreq: 'weekly'  },
             { url: '/agents',          priority: 0.8, changefreq: 'weekly'  },
             { url: '/cash-offer',      priority: 0.7, changefreq: 'monthly' },
             { url: '/blog',            priority: 0.7, changefreq: 'daily'   },
@@ -727,6 +728,12 @@ app.get('/sitemap.xml', async (req, res) => {
         if (process.env.LISTINGS_PUBLIC !== 'false') {
             for (const ls of listings.rows) push(`${base}/listings/${encodeURIComponent(ls.slug)}`,                            { lastmod: iso(ls.updated_at), priority: 0.7, changefreq: 'weekly'  });
         }
+        // County hubs — only counties above the fact floor (>= 2 lakes), matching
+        // the noindex the /counties/:slug route emits below the floor. Keeps index == sitemap.
+        try {
+            const counties = await require('./services/county-pages').listCounties();
+            for (const c of counties) if (c.indexable) push(`${base}/counties/${encodeURIComponent(c.slug)}`, { lastmod: iso(c.updated_at), priority: 0.7, changefreq: 'weekly' });
+        } catch (e) { console.warn('[sitemap] counties:', e.message); }
 
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -865,6 +872,90 @@ function buildGalleryHtml({ images, title, eyebrow, subtitle, href, label }) {
 app.get('/lakes', (req, res) => {
     res.redirect(301, '/towns');
 });
+// ─── County hubs (programmatic SEO) ─────────────────────────────────────────
+// /counties/:slug aggregates a county's published lakes + linked towns into a new
+// indexable hub that links down to every lake page — new indexable surface from
+// existing data. Fact floor (>= 2 lakes) gates index vs noindex, matching sitemap.
+app.get('/counties/:slug', async (req, res, next) => {
+    res.set('Cache-Control', 'no-cache');
+    try {
+        const { countyData } = require('./services/county-pages');
+        const data = await countyData(req.params.slug);
+        if (!data) { renderFriendly404(res, { kind: 'county', slug: req.params.slug }); return; }
+
+        const siteBase = (process.env.SITE_URL || 'https://minnesotalakehomesforsale.com').replace(/\/$/, '');
+        const canonical = `/counties/${encodeURIComponent(data.slug)}`;
+        const robots = data.indexable ? 'index, follow, max-snippet:-1, max-image-preview:large' : 'noindex, follow';
+
+        const lakesHtml = data.lakes.map(l => {
+            const img = (l.hero_image_url || '').trim();
+            const meta = [l.region, l.surface_acres ? `${Number(l.surface_acres).toLocaleString()} acres` : null].filter(Boolean).join(' · ');
+            const blurb = (l.blurb || '').replace(/\s+/g, ' ').trim().slice(0, 160);
+            return `<a class="cty-card" href="/lakes/${escapeHtml(l.slug)}">`
+                + `<div class="cty-card-img"${img ? ` style="background-image:url('${escapeHtml(img)}')"` : ''}></div>`
+                + `<div class="cty-card-body"><h3>${escapeHtml(l.name)}</h3>`
+                + (meta ? `<p class="cty-card-meta">${escapeHtml(meta)}</p>` : '')
+                + (blurb ? `<p class="cty-card-blurb">${escapeHtml(blurb)}</p>` : '')
+                + `</div></a>`;
+        }).join('');
+
+        const townsSection = data.towns.length
+            ? `<section class="cty-section"><h2>Towns in ${escapeHtml(data.county)} County</h2>`
+              + `<div class="cty-towns">${data.towns.map(t => `<a class="cty-town" href="/towns/${escapeHtml(t.slug)}">${escapeHtml(t.name)}</a>`).join('')}</div></section>`
+            : '';
+        const townStat = data.towns.length ? `<div class="cty-stat"><b>${data.towns.length}</b><span>Towns</span></div>` : '';
+        const intro = `${data.county} County, Minnesota is home to ${data.lakeCount} lake${data.lakeCount === 1 ? '' : 's'} in our directory — from waterfront homes and cabins to quiet fishing lakes. Browse the lakes below and connect with a local lake specialist.`;
+        const breadcrumb = JSON.stringify({ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: siteBase },
+            { '@type': 'ListItem', position: 2, name: 'Lakes', item: `${siteBase}/lakes` },
+            { '@type': 'ListItem', position: 3, name: `${data.county} County`, item: `${siteBase}${canonical}` }] });
+        const structured = `<script type="application/ld+json">${breadcrumb}</script>`;
+
+        const tpl = await fs.promises.readFile(path.join(PROJECT_ROOT, 'pages/public/county-detail.html'), 'utf8');
+        const html = tpl
+            .replaceAll('{{COUNTY_SEO_TITLE}}', escapeHtml(data.seoTitle))
+            .replaceAll('{{COUNTY_SEO_DESCRIPTION}}', escapeHtml(data.seoDescription))
+            .replaceAll('{{COUNTY_ROBOTS}}', robots)
+            .replaceAll('{{COUNTY_CANONICAL_PATH}}', canonical)
+            .replaceAll('{{COUNTY_NAME}}', escapeHtml(data.county))
+            .replaceAll('{{COUNTY_H1}}', escapeHtml(data.h1))
+            .replaceAll('{{COUNTY_INTRO}}', escapeHtml(intro))
+            .replaceAll('{{COUNTY_LAKE_COUNT}}', String(data.lakeCount))
+            .replaceAll('{{COUNTY_TOWN_STAT}}', townStat)
+            .replaceAll('{{COUNTY_LAKES_HTML}}', lakesHtml)
+            .replaceAll('{{COUNTY_TOWNS_SECTION}}', townsSection)
+            .replaceAll('{{COUNTY_STRUCTURED_DATA}}', structured);
+        res.type('html').send(html);
+    } catch (e) { console.error('[/counties/:slug]', e.message); next(e); }
+});
+
+// /counties — crawlable index so search discovers every county hub.
+app.get('/counties', async (req, res, next) => {
+    res.set('Cache-Control', 'no-cache');
+    try {
+        const { listCounties } = require('./services/county-pages');
+        const counties = (await listCounties()).filter(c => c.indexable);
+        const cards = counties.map(c =>
+            `<a class="cty-card" href="/counties/${escapeHtml(c.slug)}"><div class="cty-card-body">`
+            + `<h3>${escapeHtml(c.county)} County</h3><p class="cty-card-meta">${c.lake_count} lakes</p></div></a>`).join('');
+        const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">`
+          + `<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">`
+          + `<title>Minnesota Lake Homes by County | ${counties.length} Counties</title>`
+          + `<link rel="icon" type="image/svg+xml" href="/favicon.svg">`
+          + `<meta name="description" content="Browse Minnesota lake homes and cabins by county — ${counties.length} counties with lakes, waterfront listings, and local lake experts.">`
+          + `<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">`
+          + `<link rel="canonical" href="https://minnesotalakehomesforsale.com/counties">`
+          + `<link rel="stylesheet" href="/styles/style.css"><script src="/components/components.js" defer></script>`
+          + `<style>.cty-hero{padding:10rem 1.5rem 2.5rem;background:#fff;border-bottom:1px solid #e6eaf0}.cty-hero-inner{max-width:1100px;margin:0 auto}.cty-hero h1{font-size:clamp(2rem,5vw,2.8rem);font-weight:800;letter-spacing:-.02em;margin:0 0 .75rem;color:#16202c}.cty-lede{font-size:1.1rem;color:#4a5568;max-width:60ch}.cty-section{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem}.cty-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem}.cty-card{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 1px 3px rgba(16,32,54,.06)}.cty-card:hover{box-shadow:0 10px 28px rgba(16,32,54,.12)}.cty-card-body{padding:1.1rem 1.2rem}.cty-card-body h3{font-size:1.12rem;font-weight:700;margin:0 0 .2rem;color:#16202c}.cty-card-meta{font-size:.85rem;color:#718096;margin:0}</style></head>`
+          + `<body><global-header></global-header><main>`
+          + `<section class="cty-hero"><div class="cty-hero-inner"><h1>Minnesota Lake Homes by County</h1>`
+          + `<p class="cty-lede">Find lake homes and cabins across Minnesota's ${counties.length} lake counties. Pick a county to see its lakes, waterfront listings, and local lake specialists.</p></div></section>`
+          + `<section class="cty-section"><div class="cty-grid">${cards}</div></section>`
+          + `</main><global-footer></global-footer></body></html>`;
+        res.type('html').send(html);
+    } catch (e) { console.error('[/counties]', e.message); next(e); }
+});
+
 app.get('/lakes/:slug', async (req, res, next) => {
     res.set('Cache-Control', 'no-cache');   // always revalidate — never serve stale SSR HTML
     try {
