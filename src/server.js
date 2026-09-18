@@ -905,6 +905,35 @@ function seoPageShell({ title, description, robots, canonicalPath, bodyHtml, str
       + SEO_PAGE_CSS + structured + `</head><body><global-header></global-header><main>${bodyHtml}</main><global-footer></global-footer></body></html>`;
 }
 
+// SEOP08: BreadcrumbList + ItemList JSON-LD for the programmatic hub/list pages.
+// crumbs: [{name, path}] (path optional on the last/current item). items: the
+// listed lakes/homes as [{name, path}] — emitted as an ItemList so Google can
+// render the collection as a rich list. Both are optional; returns '' if empty.
+function seoJsonLd({ crumbs = [], items = [], canonicalPath = '', name = '' } = {}) {
+    const base = 'https://minnesotalakehomesforsale.com';
+    const blocks = [];
+    if (crumbs.length) {
+        blocks.push(JSON.stringify({
+            '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+            itemListElement: crumbs.map((c, i) => ({
+                '@type': 'ListItem', position: i + 1, name: c.name,
+                ...(c.path ? { item: base + c.path } : {}),
+            })),
+        }));
+    }
+    if (items.length) {
+        blocks.push(JSON.stringify({
+            '@context': 'https://schema.org', '@type': 'ItemList',
+            ...(name ? { name } : {}), ...(canonicalPath ? { url: base + canonicalPath } : {}),
+            numberOfItems: items.length,
+            itemListElement: items.map((it, i) => ({
+                '@type': 'ListItem', position: i + 1, name: it.name, url: base + it.path,
+            })),
+        }));
+    }
+    return blocks.map(b => `<script type="application/ld+json">${b}</script>`).join('');
+}
+
 app.get('/lakes/:slug/homes-for-sale', async (req, res, next) => {
     res.set('Cache-Control', 'no-cache');
     try {
@@ -930,7 +959,12 @@ app.get('/lakes/:slug/homes-for-sale', async (req, res, next) => {
         const hero = `<section class="cty-hero"><div class="cty-hero-inner">`
             + `<p class="cty-crumb"><a href="/">Home</a> &rsaquo; <a href="/lakes/${escapeHtml(d.lake.slug)}">${escapeHtml(d.lake.name)}</a> &rsaquo; Homes for sale</p>`
             + `<h1>${escapeHtml(d.h1)}</h1><p class="cty-lede">Browse waterfront homes and cabins for sale on ${escapeHtml(d.lake.name)}, ${escapeHtml(d.lake.state || 'MN')}. See the full lake guide on the <a href="/lakes/${escapeHtml(d.lake.slug)}">${escapeHtml(d.lake.name)} page</a>.</p></div></section>`;
-        res.type('html').send(seoPageShell({ title: escapeHtml(d.seoTitle), description: escapeHtml(d.seoDescription), robots, canonicalPath: d.canonicalPath, bodyHtml: hero + body }));
+        const structured = seoJsonLd({
+            crumbs: [{ name: 'Home', path: '/' }, { name: d.lake.name, path: `/lakes/${d.lake.slug}` }, { name: 'Homes for sale' }],
+            items: d.listings.map(li => ({ name: li.title || li.address || 'Lake home', path: `/listings/${li.slug}` })),
+            canonicalPath: d.canonicalPath, name: d.h1,
+        });
+        res.type('html').send(seoPageShell({ title: escapeHtml(d.seoTitle), description: escapeHtml(d.seoDescription), robots, canonicalPath: d.canonicalPath, bodyHtml: hero + body, structured }));
     } catch (e) { console.error('[/lakes/:slug/homes-for-sale]', e.message); next(e); }
 });
 
@@ -951,7 +985,12 @@ app.get('/fishing/:slug', async (req, res, next) => {
         const hero = `<section class="cty-hero"><div class="cty-hero-inner"><p class="cty-crumb"><a href="/">Home</a> &rsaquo; <a href="/fishing">Fishing</a> &rsaquo; ${escapeHtml(d.fish.name)}</p><h1>${escapeHtml(d.h1)}</h1>`
             + `<p class="cty-lede">${escapeHtml(d.count ? `${d.count} Minnesota lakes known for ${d.fish.name.toLowerCase()}, with lake homes and cabins for sale — ranked by size. Tap a lake for its market snapshot and a local agent.` : `Minnesota ${d.fish.name.toLowerCase()} lakes and the homes for sale on them.`)}</p></div></section>`;
         const body = d.count ? `<section class="cty-section"><h2>Top ${escapeHtml(d.fish.name)} lakes</h2><div class="cty-grid">${cards}</div></section>` : `<section class="cty-section"><p>More lakes coming soon.</p></section>`;
-        res.type('html').send(seoPageShell({ title: escapeHtml(d.seoTitle), description: escapeHtml(d.seoDescription), robots, canonicalPath: d.canonicalPath, bodyHtml: hero + body }));
+        const structured = seoJsonLd({
+            crumbs: [{ name: 'Home', path: '/' }, { name: 'Fishing', path: '/fishing' }, { name: d.fish.name }],
+            items: d.lakes.map(l => ({ name: l.name, path: `/lakes/${l.slug}` })),
+            canonicalPath: d.canonicalPath, name: d.h1,
+        });
+        res.type('html').send(seoPageShell({ title: escapeHtml(d.seoTitle), description: escapeHtml(d.seoDescription), robots, canonicalPath: d.canonicalPath, bodyHtml: hero + body, structured }));
     } catch (e) { console.error('[/fishing/:slug]', e.message); next(e); }
 });
 app.get('/fishing', async (req, res, next) => {
@@ -961,7 +1000,12 @@ app.get('/fishing', async (req, res, next) => {
         const fish = await listFish();
         const cards = fish.map(f => `<a class="cty-card" href="/fishing/${escapeHtml(f.slug)}"><div class="cty-card-body"><h3>Best ${escapeHtml(f.name)} Lakes</h3><p class="cty-card-blurb">${f.count} lakes</p></div></a>`).join('');
         const hero = `<section class="cty-hero"><div class="cty-hero-inner"><h1>Best Fishing Lakes in Minnesota</h1><p class="cty-lede">Minnesota's top lakes by game fish — walleye, bass, muskie and more — and the lake homes for sale on them.</p></div></section>`;
-        res.type('html').send(seoPageShell({ title: 'Best Fishing Lakes in Minnesota by Species', description: "Minnesota's best fishing lakes by species — walleye, bass, muskie, crappie and more — with lake homes and cabins for sale.", robots: 'index, follow, max-snippet:-1, max-image-preview:large', canonicalPath: '/fishing', bodyHtml: hero + `<section class="cty-section"><div class="cty-grid">${cards}</div></section>` }));
+        const structured = seoJsonLd({
+            crumbs: [{ name: 'Home', path: '/' }, { name: 'Fishing' }],
+            items: fish.map(f => ({ name: `Best ${f.name} Lakes`, path: `/fishing/${f.slug}` })),
+            canonicalPath: '/fishing', name: 'Best Fishing Lakes in Minnesota',
+        });
+        res.type('html').send(seoPageShell({ title: 'Best Fishing Lakes in Minnesota by Species', description: "Minnesota's best fishing lakes by species — walleye, bass, muskie, crappie and more — with lake homes and cabins for sale.", robots: 'index, follow, max-snippet:-1, max-image-preview:large', canonicalPath: '/fishing', bodyHtml: hero + `<section class="cty-section"><div class="cty-grid">${cards}</div></section>`, structured }));
     } catch (e) { console.error('[/fishing]', e.message); next(e); }
 });
 
@@ -984,7 +1028,12 @@ app.get('/areas/:slug', async (req, res, next) => {
         const hero = `<section class="cty-hero"><div class="cty-hero-inner"><p class="cty-crumb"><a href="/">Home</a> &rsaquo; <a href="/lakes">Lakes</a> &rsaquo; ${escapeHtml(d.region)}</p><h1>${escapeHtml(d.h1)}</h1>`
             + `<p class="cty-lede">Lake homes and cabins for sale across the ${escapeHtml(d.region)} lakes area of Minnesota — ${d.lakeCount} lakes. Browse below and connect with a local lake specialist.</p></div></section>`;
         const body = `<section class="cty-section"><h2>Lakes in the ${escapeHtml(d.region)} area</h2><div class="cty-grid">${cards}</div></section>` + towns;
-        res.type('html').send(seoPageShell({ title: escapeHtml(d.seoTitle), description: escapeHtml(d.seoDescription), robots, canonicalPath: d.canonicalPath, bodyHtml: hero + body }));
+        const structured = seoJsonLd({
+            crumbs: [{ name: 'Home', path: '/' }, { name: 'Lakes', path: '/lakes' }, { name: `${d.region} area` }],
+            items: d.lakes.map(l => ({ name: l.name, path: `/lakes/${l.slug}` })),
+            canonicalPath: d.canonicalPath, name: d.h1,
+        });
+        res.type('html').send(seoPageShell({ title: escapeHtml(d.seoTitle), description: escapeHtml(d.seoDescription), robots, canonicalPath: d.canonicalPath, bodyHtml: hero + body, structured }));
     } catch (e) { console.error('[/areas/:slug]', e.message); next(e); }
 });
 app.get('/areas', async (req, res, next) => {
@@ -993,7 +1042,12 @@ app.get('/areas', async (req, res, next) => {
         const areas = (await require('./services/region-pages').listAreas()).filter(a => a.indexable);
         const cards = areas.map(a => `<a class="cty-card" href="/areas/${escapeHtml(a.slug)}"><div class="cty-card-body"><h3>${escapeHtml(a.region)}</h3><p class="cty-card-blurb">${a.lake_count} lakes</p></div></a>`).join('');
         const hero = `<section class="cty-hero"><div class="cty-hero-inner"><h1>Minnesota Lakes Areas</h1><p class="cty-lede">Explore Minnesota's lake areas — Brainerd, Alexandria, Detroit Lakes and more — and the lake homes for sale in each.</p></div></section>`;
-        res.type('html').send(seoPageShell({ title: 'Minnesota Lakes Areas — Lake Homes by Area', description: 'Browse Minnesota lake homes and cabins by area — Brainerd, Alexandria, Detroit Lakes and more.', robots: 'index, follow, max-snippet:-1, max-image-preview:large', canonicalPath: '/areas', bodyHtml: hero + `<section class="cty-section"><div class="cty-grid">${cards}</div></section>` }));
+        const structured = seoJsonLd({
+            crumbs: [{ name: 'Home', path: '/' }, { name: 'Lakes areas' }],
+            items: areas.map(a => ({ name: `${a.region} area`, path: `/areas/${a.slug}` })),
+            canonicalPath: '/areas', name: 'Minnesota Lakes Areas',
+        });
+        res.type('html').send(seoPageShell({ title: 'Minnesota Lakes Areas — Lake Homes by Area', description: 'Browse Minnesota lake homes and cabins by area — Brainerd, Alexandria, Detroit Lakes and more.', robots: 'index, follow, max-snippet:-1, max-image-preview:large', canonicalPath: '/areas', bodyHtml: hero + `<section class="cty-section"><div class="cty-grid">${cards}</div></section>`, structured }));
     } catch (e) { console.error('[/areas]', e.message); next(e); }
 });
 
