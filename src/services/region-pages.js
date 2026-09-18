@@ -47,13 +47,17 @@ async function areaData(slug) {
           ORDER BY t.name LIMIT 12`, [region]);
 
     const n = lakes.length;
+    // Many region names already contain "Lake(s)" (e.g. "Brainerd Lakes",
+    // "Lakes Country"); only append " Lakes" when it isn't already there, so we
+    // never render "Brainerd Lakes Lakes".
+    const areaLabel = /\blakes?\b/i.test(region) ? region : `${region} Lakes`;
     return {
-        region, slug, lakes, towns, lakeCount: n,
+        region, slug, lakes, towns, lakeCount: n, areaLabel,
         indexable: n >= MIN_LAKES,
         canonicalPath: `/areas/${slug}`,
-        h1: `${region} Lakes — Homes & Cabins for Sale`,
-        seoTitle: `${region} Lakes Area, MN — Lake Homes for Sale (${n} Lakes)`,
-        seoDescription: `Lake homes and cabins for sale in the ${region} lakes area of Minnesota — ${n} lake${n === 1 ? '' : 's'}, waterfront property, and local lake experts. Explore the ${region} area lakes.`,
+        h1: `${areaLabel} — Homes & Cabins for Sale`,
+        seoTitle: `${areaLabel} Area, MN — Lake Homes for Sale (${n} Lakes)`,
+        seoDescription: `Lake homes and cabins for sale in the ${areaLabel} area of Minnesota — ${n} lake${n === 1 ? '' : 's'}, waterfront property, and local lake experts.`,
     };
 }
 

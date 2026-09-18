@@ -1031,7 +1031,7 @@ app.get('/areas/:slug', async (req, res, next) => {
         }).join('');
         const towns = d.towns.length ? `<section class="cty-section"><h2>Towns in the ${escapeHtml(d.region)} area</h2><div class="cty-towns">${d.towns.map(t => `<a class="cty-town" href="/towns/${escapeHtml(t.slug)}">${escapeHtml(t.name)}</a>`).join('')}</div></section>` : '';
         const hero = `<section class="cty-hero"><div class="cty-hero-inner"><p class="cty-crumb"><a href="/">Home</a> &rsaquo; <a href="/lakes">Lakes</a> &rsaquo; ${escapeHtml(d.region)}</p><h1>${escapeHtml(d.h1)}</h1>`
-            + `<p class="cty-lede">Lake homes and cabins for sale across the ${escapeHtml(d.region)} lakes area of Minnesota — ${d.lakeCount} lakes. Browse below and connect with a local lake specialist.</p></div></section>`;
+            + `<p class="cty-lede">Lake homes and cabins for sale across the ${escapeHtml(d.areaLabel)} area of Minnesota — ${d.lakeCount} lakes. Browse below and connect with a local lake specialist.</p></div></section>`;
         const body = `<section class="cty-section"><h2>Lakes in the ${escapeHtml(d.region)} area</h2><div class="cty-grid">${cards}</div></section>` + towns;
         const structured = seoJsonLd({
             crumbs: [{ name: 'Home', path: '/' }, { name: 'Lakes', path: '/lakes' }, { name: `${d.region} area` }],
