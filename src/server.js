@@ -3135,6 +3135,14 @@ async function ensureTables() {
             -- license-number verification ONLY for these; existing self-claim
             -- agents (import_source NULL) stay on the email-only path, unchanged.
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS import_source VARCHAR(40);
+            -- Contact email for an UNCLAIMED imported profile (there's no user row
+            -- yet, so users.email doesn't exist) — used for the claim invite + to
+            -- match a claimer. Plus a metadata bag for the extras the source carried
+            -- (title, LinkedIn, website) that don't have first-class columns.
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS import_email VARCHAR(255);
+            ALTER TABLE agents ADD COLUMN IF NOT EXISTS import_meta JSONB;
+            CREATE INDEX IF NOT EXISTS idx_agents_import ON agents(import_source) WHERE import_source IS NOT NULL;
+            CREATE INDEX IF NOT EXISTS idx_agents_import_email ON agents(lower(import_email)) WHERE import_email IS NOT NULL;
             ALTER TABLE agents ADD COLUMN IF NOT EXISTS referred_by_code VARCHAR(16);
         `);
         // Every agent gets a stable short code (backfill any missing ones).
@@ -3941,6 +3949,10 @@ async function ensureTables() {
             -- nearest lake to its geocoded address) so the lake's founder can claim it.
             ALTER TABLE leads ADD COLUMN IF NOT EXISTS lake_id UUID;
             CREATE INDEX IF NOT EXISTS idx_leads_lake ON leads(lake_id) WHERE lake_id IS NOT NULL;
+            -- Routing geo persisted at creation so the B2 relay can RE-route the
+            -- lead later (when a claim window expires) without the original geocode.
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS route_lat DOUBLE PRECISION;
+            ALTER TABLE leads ADD COLUMN IF NOT EXISTS route_lng DOUBLE PRECISION;
 
             CREATE TABLE IF NOT EXISTS blog_post_lakes (
                 id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -6069,6 +6081,15 @@ const PORT = process.env.PORT || 3000;
         const slaRun = () => runSlaSweep().then(() => require('./services/incident-monitors').beat('lead-sla')).catch(e => console.warn('[lead-sla]', e.message));
         setTimeout(slaRun, 60 * 1000);
         setInterval(slaRun, 15 * 60 * 1000);
+    }
+
+    // B2 lead-claim relay — advances a lead whose claim window expired to the next
+    // eligible PAYING agent (round-robin, loops, holds for admin after MAX_CYCLES).
+    // Runs every minute since windows are minutes. OFF by default; LEAD_RELAY_ENABLED=true.
+    if (process.env.LEAD_RELAY_ENABLED === 'true') {
+        const { runRelaySweep } = require('./services/lead-relay');
+        setTimeout(() => runRelaySweep().catch(e => console.warn('[lead-relay]', e.message)), 90 * 1000);
+        setInterval(() => runRelaySweep().catch(e => console.warn('[lead-relay]', e.message)), 60 * 1000);
     }
 
     // EM-04 send-health monitor — the alarm against SILENT email failure. Every

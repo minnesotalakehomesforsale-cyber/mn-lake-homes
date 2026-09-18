@@ -553,6 +553,11 @@ const createLead = async (req, res) => {
                         return;
                     }
 
+                    // Persist the routing geo so the B2 relay can RE-route this lead
+                    // later (when a claim window expires) without the original geocode.
+                    if (geo?.lat != null && geo?.lng != null) {
+                        try { await pool.query(`UPDATE leads SET route_lat = $1, route_lng = $2 WHERE id = $3`, [geo.lat, geo.lng, newLeadId]); } catch (_) {}
+                    }
                     const pick = await routeLead({ lat: geo?.lat, lng: geo?.lng, lakeId: leadLakeId, wantFounder });
                     // AL-14 — a real buyer just landed on this lake; nudge any churned
                     // agent who used to pay to be listed here. Fire-and-forget, never

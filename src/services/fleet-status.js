@@ -13,6 +13,7 @@
 // [envVar, humanLabel] — a sender is ON only when its var === 'true'.
 const SENDERS = [
     ['LEAD_SLA_ENABLED',            'lead SLA re-route sweep'],
+    ['LEAD_RELAY_ENABLED',          'lead-claim timed relay (round-robin)'],
     ['NO_AGENT_FOLLOWUP_ENABLED',   'held-lead 7-day follow-up'],
     ['AGENT_NUDGE_ENABLED',         'agent response nudge (+1h/+24h)'],
     ['FEEDBACK_REQUEST_ENABLED',    '72h buyer feedback check-in'],
