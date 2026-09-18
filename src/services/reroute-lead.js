@@ -59,6 +59,8 @@ async function rerouteLead({ leadId, notifyOldAgent = false, windowHours = null,
                 match_intro_at = NULL, updated_at = NOW()
           WHERE id = $3`, [pick.agentId, pick.userId, leadId]);
 
+    try { require('./agent-notify').notifyAgentOfLead(pick.agentId, { lead: { id: leadId, first_name: lead.first_name, target_lake: lead.target_lake }, kind: 'matched' }); } catch (_) {}
+
     try { email.sendRerouteBuyer({ to: lead.email, first_name: lead.first_name, lake_name: lead.target_lake }); } catch (_) {}
     try {
         email.sendMatchedAgentNotification({

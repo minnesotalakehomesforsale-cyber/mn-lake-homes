@@ -81,6 +81,9 @@ async function reassignOne(lead) {
           WHERE id = $4`,
         [pick.agentId, pick.userId, prevUserId, lead.id]);
 
+    // In-portal alert (companion to the email) — fires at assignment, email or not.
+    try { require('./agent-notify').notifyAgentOfLead(pick.agentId, { lead: { id: lead.id, first_name: (lead.name || '').split(' ')[0], target_lake: pick.lakeName, lead_type: lead.lead_type }, kind: 'matched' }); } catch (_) {}
+
     if (pick.email) {
         emailService.sendMatchedAgentNotification({
             to: pick.email,

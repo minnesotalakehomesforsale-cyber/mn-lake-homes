@@ -451,6 +451,7 @@ const createLead = async (req, res) => {
                                 pipeline_status = 'routed', assigned_at = NOW(),
                                 routed_at = COALESCE(routed_at, NOW()), updated_at = NOW()
                           WHERE id = $2`, [ag?.user_id || null, newLeadId]);
+                    try { require('../services/agent-notify').notifyAgentOfLead(ag?.agent_id, { lead: { id: newLeadId, first_name: name, target_lake: listing?.title || propCity, lead_type: enumType }, kind: 'assigned' }); } catch (_) {}
                     if (ag?.email) {
                         emailService.sendMatchedAgentNotification({
                             to: ag.email,
@@ -656,6 +657,8 @@ const createLead = async (req, res) => {
                           WHERE id = $3`,
                         [pick.agentId, pick.userId, newLeadId]
                     );
+
+                    try { require('../services/agent-notify').notifyAgentOfLead(pick.agentId, { lead: { id: newLeadId, first_name: name, target_lake: listing?.title || propCity, lead_type: enumType }, kind: 'matched' }); } catch (_) {}
 
                     // Email just the assigned agent.
                     emailService.sendMatchedAgentNotification({
@@ -968,6 +971,7 @@ async function releaseHeldLeads(agentId) {
                         assigned_at = NOW(), routed_at = COALESCE(routed_at, NOW()), updated_at = NOW()
                   WHERE id = $3 AND held_no_agent = TRUE`, [agentId, ag.user_id, lead.id]);
             released++;
+            try { require('../services/agent-notify').notifyAgentOfLead(agentId, { lead: { id: lead.id, first_name: (lead.full_name || '').split(' ')[0], target_lake: lead.target_lake, lead_type: lead.lead_type }, kind: 'assigned' }); } catch (_) {}
             try {
                 emailService.sendMatchedAgentNotification({
                     to: ag.email, agentFirstName: (ag.name || '').split(' ')[0] || 'there',
