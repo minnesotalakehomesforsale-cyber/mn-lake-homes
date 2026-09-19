@@ -2290,13 +2290,20 @@ function seoDirectory(groups) {
 // ─── Towns: public browse-all page ─────────────────────────────────────
 app.get('/towns', async (req, res, next) => {
     try {
+        const townViz = require('./services/town-visibility');
         const [lakesR, townsR] = await Promise.all([
-            pool.query(`SELECT slug, name FROM lakes WHERE status = 'published' ORDER BY name`).catch(() => ({ rows: [] })),
-            // Grid mirrors the sitemap: only public (MN or lake-linked) towns.
-            // Out-of-state border towns stay reachable by direct URL but off the
-            // directory — see src/services/town-visibility.js.
+            // SEOW1: grid links the INDEXABLE lake set (same predicate as the
+            // sitemap/robots gate), so every indexed lake is linked and no
+            // noindex lake is — no orphans, no crawl waste.
+            pool.query(`SELECT slug, name FROM lakes WHERE status = 'published'
+                          AND ${require('./services/lake-visibility').INDEXABLE_SQL} ORDER BY name`).catch(() => ({ rows: [] })),
+            // SEOW1 fix: the grid used to gate on hero_image_url while the sitemap
+            // gates on CONTENT — so content-rich heroless towns (Brainerd,
+            // Alexandria, Bemidji) were indexed but orphaned (linked from nowhere).
+            // Gate on the same content predicate so index == sitemap == linked.
+            // Heroless towns render with the gradient placeholder.
             pool.query(`SELECT t.slug, t.name FROM tags t
-                        WHERE t.active = TRUE AND COALESCE(t.hero_image_url,'') <> ''
+                        WHERE t.active = TRUE AND ${townViz.contentSql('t')}
                           AND ${eligibleSql('t')} ORDER BY t.name`).catch(() => ({ rows: [] })),
         ]);
         fs.readFile(path.join(PROJECT_ROOT, 'pages/public/towns-index.html'), 'utf8', (err, html) => {
