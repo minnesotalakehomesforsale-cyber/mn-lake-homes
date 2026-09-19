@@ -749,7 +749,8 @@ app.get('/sitemap.xml', async (req, res) => {
             // {{LAKE_ROBOTS}} the /lakes/:slug route emits. Keeps index == sitemap.
             pool.query(`SELECT slug, updated_at FROM lakes
                         WHERE status = 'published'
-                          AND (COALESCE(intro_text,'') <> '' OR COALESCE(description,'') <> '')`),
+                          AND (COALESCE(intro_text,'') <> '' OR COALESCE(description,'') <> ''
+                               OR (${require('./services/lake-dnr-intro').HAS_FACTS_SQL}))`),
             // A town is listed when it's active, has a hero, AND is either
             // in-state (MN) or linked to a published lake. Out-of-state border
             // towns (ND/WI) with no lake link render but stay out of the sitemap
@@ -1323,7 +1324,13 @@ app.get('/lakes/:slug', async (req, res, next) => {
             renderFriendly404(res, { kind: 'lake', slug: req.params.slug });
             return;
         }
-        const lakeHasContent = !!((lake.intro_text || '').trim() || (lake.description || '').trim());
+        // LAKE15: a lake with real DNR facts gets a fact-grounded intro (below),
+        // which is genuine, unique content — so it counts toward the content floor
+        // alongside editorial copy. Enriched lakes that had no description are now
+        // indexable. Below the fact floor, dnrIntro() is '' and the lake stays noindex.
+        const { dnrIntro } = require('./services/lake-dnr-intro');
+        const lakeDnrIntro = (lake.intro_text || '').trim() || (lake.description || '').trim() ? '' : dnrIntro(lake);
+        const lakeHasContent = !!((lake.intro_text || '').trim() || (lake.description || '').trim() || lakeDnrIntro);
         const lakeRobots = lakeHasContent
             ? 'index, follow, max-snippet:-1, max-image-preview:large'
             : 'noindex, follow';
@@ -1645,7 +1652,7 @@ app.get('/lakes/:slug', async (req, res, next) => {
                 '{{LAKE_HERO_BLOCK}}':      lakeHeroBlock,
                 '{{LAKE_HERO_CREDIT}}':     lakeHeroCredit,
                 '{{LAKE_FEATURED_IMAGE}}':  escapeHtml(featured),
-                '{{LAKE_INTRO_TEXT}}':      escapeHtml(lake.intro_text || `${lake.name} — explore waterfront homes and cabins for sale, and get matched with a vetted, local agent who knows this lake bay by bay.`),
+                '{{LAKE_INTRO_TEXT}}':      escapeHtml(lake.intro_text || lakeDnrIntro || `${lake.name} — explore waterfront homes and cabins for sale, and get matched with a vetted, local agent who knows this lake bay by bay.`),
                 '{{LAKE_LATITUDE}}':        escapeHtml(lake.latitude ?? ''),
                 '{{LAKE_LONGITUDE}}':       escapeHtml(lake.longitude ?? ''),
                 '{{LAKE_REGION}}':          escapeHtml(lake.region || ''),
