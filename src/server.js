@@ -1004,40 +1004,7 @@ function seoPageShell({ title, description, robots, canonicalPath, bodyHtml, str
 // crumbs: [{name, path}] (path optional on the last/current item). items: the
 // listed lakes/homes as [{name, path}] — emitted as an ItemList so Google can
 // render the collection as a rich list. Both are optional; returns '' if empty.
-function seoJsonLd({ crumbs = [], items = [], canonicalPath = '', name = '', speakable = true } = {}) {
-    const base = 'https://minnesotalakehomesforsale.com';
-    const blocks = [];
-    // WebPage + Speakable: tells voice assistants / AI which parts of the page are
-    // the concise answer (the H1 headline and the lede paragraph). Every hub/list
-    // page rendered via seoPageShell shares this .cty-hero h1 + .cty-lede markup.
-    if (speakable && canonicalPath) {
-        blocks.push(JSON.stringify({
-            '@context': 'https://schema.org', '@type': 'WebPage',
-            url: base + canonicalPath, ...(name ? { name } : {}),
-            speakable: { '@type': 'SpeakableSpecification', cssSelector: ['.cty-hero h1', '.cty-lede'] },
-        }));
-    }
-    if (crumbs.length) {
-        blocks.push(JSON.stringify({
-            '@context': 'https://schema.org', '@type': 'BreadcrumbList',
-            itemListElement: crumbs.map((c, i) => ({
-                '@type': 'ListItem', position: i + 1, name: c.name,
-                ...(c.path ? { item: base + c.path } : {}),
-            })),
-        }));
-    }
-    if (items.length) {
-        blocks.push(JSON.stringify({
-            '@context': 'https://schema.org', '@type': 'ItemList',
-            ...(name ? { name } : {}), ...(canonicalPath ? { url: base + canonicalPath } : {}),
-            numberOfItems: items.length,
-            itemListElement: items.map((it, i) => ({
-                '@type': 'ListItem', position: i + 1, name: it.name, url: base + it.path,
-            })),
-        }));
-    }
-    return blocks.map(b => `<script type="application/ld+json">${b}</script>`).join('');
-}
+const { seoJsonLd } = require('./services/seo-jsonld');
 
 app.get('/lakes/:slug/homes-for-sale', async (req, res, next) => {
     res.set('Cache-Control', 'no-cache');
