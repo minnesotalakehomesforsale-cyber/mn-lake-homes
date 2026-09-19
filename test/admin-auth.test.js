@@ -85,6 +85,18 @@ function probe(server, method, urlPath) {
         if (!found.has(key)) { failures++; console.log(`✗ FAIL  enumeration missing expected route: ${key}`); }
     }
 
+    // Future-proofing: this test mounts a FIXED list of admin routers. If someone
+    // mounts a NEW /api/admin/* router in server.js and forgets to add it here,
+    // its routes would never be auth-checked. Parse server.js's actual mounts and
+    // assert every one is covered above — so a new admin router can't slip through.
+    const fs = require('fs');
+    const serverSrc = fs.readFileSync(path.join(PROJECT, 'src/server.js'), 'utf8');
+    const mountedPrefixes = [...serverSrc.matchAll(/app\.use\('(\/api\/admin[^']*)'/g)].map(m => m[1]);
+    const testedPrefixes = new Set(['/api/admin', '/api/admin/cash-offers', '/api/admin/cash-offer-partners', '/api/admin/partner-perks']);
+    for (const prefix of mountedPrefixes) {
+        if (!testedPrefixes.has(prefix)) { failures++; console.log(`✗ FAIL  server.js mounts ${prefix} but this test does not cover it — add it to the admin-auth audit`); }
+    }
+
     server.close();
     console.log(`\n${failures === 0 ? `ALL PASSED (${routes.length} routes gated)` : failures + ' FAILED'}`);
     process.exit(failures === 0 ? 0 : 1);
