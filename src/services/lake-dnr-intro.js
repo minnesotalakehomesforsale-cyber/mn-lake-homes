@@ -22,9 +22,11 @@ function hasFacts(lake) {
     return lake.surface_acres != null && (lake.max_depth_ft != null || parseSpecies(lake.fish_species).length > 0);
 }
 
-// SQL form of hasFacts(), for the sitemap predicate. Keep in lockstep with the JS.
+// SQL form of hasFacts(), for the sitemap predicate. Keep in lockstep with the JS
+// above: fish counts only when the array is non-empty (matches parseSpecies length
+// check). `<> '[]'` is portable across real Postgres JSONB and pg-mem TEXT.
 const HAS_FACTS_SQL =
-    `surface_acres IS NOT NULL AND (max_depth_ft IS NOT NULL OR fish_species IS NOT NULL)`;
+    `surface_acres IS NOT NULL AND (max_depth_ft IS NOT NULL OR (fish_species IS NOT NULL AND fish_species <> '[]'))`;
 
 function depthDescriptor(ft) {
     if (ft == null) return null;

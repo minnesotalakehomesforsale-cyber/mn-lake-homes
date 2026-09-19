@@ -749,8 +749,7 @@ app.get('/sitemap.xml', async (req, res) => {
             // {{LAKE_ROBOTS}} the /lakes/:slug route emits. Keeps index == sitemap.
             pool.query(`SELECT slug, updated_at FROM lakes
                         WHERE status = 'published'
-                          AND (COALESCE(intro_text,'') <> '' OR COALESCE(description,'') <> ''
-                               OR (${require('./services/lake-dnr-intro').HAS_FACTS_SQL}))`),
+                          AND ${require('./services/lake-visibility').INDEXABLE_SQL}`),
             // A town is listed when it's active, has a hero, AND is either
             // in-state (MN) or linked to a published lake. Out-of-state border
             // towns (ND/WI) with no lake link render but stay out of the sitemap
@@ -1329,8 +1328,9 @@ app.get('/lakes/:slug', async (req, res, next) => {
         // alongside editorial copy. Enriched lakes that had no description are now
         // indexable. Below the fact floor, dnrIntro() is '' and the lake stays noindex.
         const { dnrIntro } = require('./services/lake-dnr-intro');
-        const lakeDnrIntro = (lake.intro_text || '').trim() || (lake.description || '').trim() ? '' : dnrIntro(lake);
-        const lakeHasContent = !!((lake.intro_text || '').trim() || (lake.description || '').trim() || lakeDnrIntro);
+        const { lakeIsIndexable, hasEditorial } = require('./services/lake-visibility');
+        const lakeDnrIntro = hasEditorial(lake) ? '' : dnrIntro(lake);
+        const lakeHasContent = lakeIsIndexable(lake);
         const lakeRobots = lakeHasContent
             ? 'index, follow, max-snippet:-1, max-image-preview:large'
             : 'noindex, follow';
