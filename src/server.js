@@ -6469,7 +6469,7 @@ async function seedTownContent() {
 // INITIALIZE
 // ==========================================
 const PORT = process.env.PORT || 3000;
-(async () => {
+const bootServer = async () => {
     // Run migrations and assert critical schema BEFORE opening the port, so we
     // never serve requests against a half-migrated DB and never cut traffic over
     // to an instance with missing columns. Any failure here fails the boot, so
@@ -6773,4 +6773,11 @@ const PORT = process.env.PORT || 3000;
         }
     })();
     });
-})();
+};
+
+// Boot only when run directly (node src/server.js). When required by a test
+// harness, the app + routes are available via module.exports without opening the
+// port, running migrations, or starting the worker fleet. GATEPAR/SEOCI harness.
+if (require.main === module) bootServer();
+
+module.exports = { app, pool, bootServer };
