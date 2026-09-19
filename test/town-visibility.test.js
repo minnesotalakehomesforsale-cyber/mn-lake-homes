@@ -13,7 +13,7 @@
 // test/town-visibility.test.js` (or `npm run test:towns`).
 const path = require('path');
 const { newDb } = require('pg-mem');
-const { eligibleSql, isTownEligible, townRobots, ROBOTS_INDEX, ROBOTS_NOINDEX } =
+const { eligibleSql, isTownEligible, townRobots, townHasContent, contentSql, ROBOTS_INDEX, ROBOTS_NOINDEX } =
     require(path.join(__dirname, '..', 'src/services/town-visibility.js'));
 
 let failures = 0;
@@ -34,6 +34,9 @@ const CASES = [
 (async () => {
     // ---- Part 1: eligibleSql() on a real SQL engine ----
     const db = newDb();
+    const { DataType } = require('pg-mem');
+    // TRIM is native in real Postgres; register it so contentSql() runs on pg-mem.
+    db.public.registerFunction({ name: 'trim', args: [DataType.text], returns: DataType.text, implementation: s => s == null ? null : String(s).trim() });
     db.public.none(`CREATE TABLE tags   (id int primary key, slug text, state text, active boolean, hero_image_url text);`);
     db.public.none(`CREATE TABLE lakes  (id int primary key, status text);`);
     db.public.none(`CREATE TABLE lake_tags (tag_id int, lake_id int);`);
@@ -68,6 +71,28 @@ const CASES = [
         const robots = townRobots(js);
         check(`${c.slug}: robots is ${c.eligible ? 'index,follow' : 'noindex'}`,
             robots === (c.eligible ? ROBOTS_INDEX : ROBOTS_NOINDEX));
+    }
+
+    // ---- Part 3: content gate — townHasContent (JS) == contentSql (SQL) ----
+    // A town also needs real copy to be public; JS route gate and SQL sitemap
+    // predicate must agree (index == sitemap), including trimming whitespace.
+    console.log('\nContent gate (townHasContent) agrees JS <-> SQL:');
+    db.public.none(`CREATE TABLE tagsc (id int primary key, slug text, intro_text text, description text);`);
+    const CONTENT = [
+        { slug: 'has-intro',   intro_text: 'A charming lake town.', description: null,        expected: true },
+        { slug: 'has-desc',    intro_text: null,                    description: 'Described.', expected: true },
+        { slug: 'has-both',    intro_text: 'Intro.',                description: 'Desc.',      expected: true },
+        { slug: 'empty',       intro_text: null,                    description: null,         expected: false },
+        { slug: 'blank',       intro_text: '',                      description: '',           expected: false },
+        { slug: 'whitespace',  intro_text: '   ',                   description: null,         expected: false },
+    ];
+    CONTENT.forEach((c, i) => db.public.none(
+        `INSERT INTO tagsc (id, slug, intro_text, description) VALUES (${i + 1}, '${c.slug}', ${c.intro_text === null ? 'NULL' : `'${c.intro_text}'`}, ${c.description === null ? 'NULL' : `'${c.description}'`})`));
+    const csql = (await pool.query(`SELECT slug FROM tagsc t WHERE ${contentSql('t')} ORDER BY slug`)).rows;
+    const sqlContent = new Set(csql.map(r => r.slug));
+    for (const c of CONTENT) {
+        const js = townHasContent({ intro_text: c.intro_text, description: c.description });
+        check(`${c.slug}: JS === SQL === expected (${c.expected})`, js === c.expected && js === sqlContent.has(c.slug));
     }
 
     console.log(`\n${failures === 0 ? 'ALL PASSED' : failures + ' FAILED'}`);

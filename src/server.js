@@ -759,7 +759,7 @@ app.get('/sitemap.xml', async (req, res) => {
             // `townRobots` eligibility check in the /towns/:slug route.
             pool.query(`SELECT DISTINCT t.slug, t.updated_at FROM tags t
                         WHERE t.active = TRUE
-                          AND (COALESCE(t.intro_text,'') <> '' OR COALESCE(t.description,'') <> '')
+                          AND ${require('./services/town-visibility').contentSql('t')}
                           AND ${eligibleSql('t')}`),
             pool.query(`SELECT slug, updated_at FROM businesses
                         WHERE status = 'active'
@@ -2583,7 +2583,7 @@ app.get('/towns/:slug', async (req, res, next) => {
             renderFriendly404(res, { kind: 'town', slug: req.params.slug });
             return;
         }
-        const townHasContent = !!((tag.intro_text || '').trim() || (tag.description || '').trim());
+        const townHasContent = require('./services/town-visibility').townHasContent(tag);
         // Lakes connected to this town (lake_tags join) — town↔lake links so the
         // town pages feed the lake cluster and vice versa.
         const townLakes = await pool.query(

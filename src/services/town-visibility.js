@@ -35,6 +35,17 @@ function isTownEligible({ state, hasPublishedLake }) {
     return String(state || '').toUpperCase() === 'MN' || !!hasPublishedLake;
 }
 
+// Content rule: a town needs real written copy (intro_text or description) to be
+// index,follow + listed — same idea as the lake content floor. Eligibility (above)
+// and content are ANDed by callers. These two must agree JS<->SQL, so TRIM mirrors
+// the JS .trim() (a whitespace-only field is not content).
+function townHasContent(tag) {
+    return !!((tag && tag.intro_text || '').trim() || (tag && tag.description || '').trim());
+}
+function contentSql(alias = 't') {
+    return `(COALESCE(TRIM(${alias}.intro_text),'') <> '' OR COALESCE(TRIM(${alias}.description),'') <> '')`;
+}
+
 const ROBOTS_INDEX   = 'index, follow, max-snippet:-1, max-image-preview:large';
 const ROBOTS_NOINDEX = 'noindex';
 
@@ -42,4 +53,4 @@ const ROBOTS_NOINDEX = 'noindex';
 // an orphaned indexable (index,follow but unlisted).
 function townRobots(eligible) { return eligible ? ROBOTS_INDEX : ROBOTS_NOINDEX; }
 
-module.exports = { eligibleSql, isTownEligible, townRobots, ROBOTS_INDEX, ROBOTS_NOINDEX };
+module.exports = { eligibleSql, isTownEligible, townRobots, townHasContent, contentSql, ROBOTS_INDEX, ROBOTS_NOINDEX };
