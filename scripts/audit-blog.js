@@ -36,7 +36,8 @@ const coverExists = url => {
 };
 
 // Internal links = hrefs to our own routes (relative, or our own domain).
-const INTERNAL_RE = /href="((?:\/(?!\/)|https?:\/\/(?:www\.)?minnesotalakehomesforsale\.com)[^"]*)"/gi;
+// Match BOTH quote styles — the data files mix href="..." and href='...'.
+const INTERNAL_RE = /href=["']((?:\/(?!\/)|https?:\/\/(?:www\.)?minnesotalakehomesforsale\.com)[^"']*)["']/gi;
 function linkStats(body) {
     const hrefs = [...String(body || '').matchAll(INTERNAL_RE)].map(m => m[1]);
     const internal = hrefs.filter(h => !/lakefind|dnr\.state|google|facebook|instagram/i.test(h));
