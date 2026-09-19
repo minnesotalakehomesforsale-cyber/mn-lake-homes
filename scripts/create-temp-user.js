@@ -8,9 +8,13 @@
 require('dotenv').config({ path: '.env.local' });
 const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 
 const DEMO_EMAIL    = 'demo.client@mnlakehomes.test';
-const DEMO_PASSWORD = 'demopass1234';
+// SEC-04: never commit a demo credential — a hardcoded password on a script that
+// can run against prod = a known-password account. Generate a fresh random one
+// each run (printed at the end), or pass DEMO_PASSWORD to choose it deliberately.
+const DEMO_PASSWORD = process.env.DEMO_PASSWORD || crypto.randomBytes(12).toString('base64url');
 const DEMO_FIRST    = 'Demo';
 const DEMO_LAST     = 'Client';
 const DEMO_PHONE    = '612-555-0199';

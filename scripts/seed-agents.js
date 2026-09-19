@@ -22,10 +22,14 @@ if (!process.env.DATABASE_URL) {
 }
 
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const pool   = require('../src/database/pool');
 console.log('→ Connecting to:', (process.env.DATABASE_URL || '').replace(/:[^:@]+@/, ':****@'));
 
-const AGENT_PASSWORD = 'LakeExpert2024!';
+// SEC-04: no committed credential. Prod-runnable seed → a hardcoded shared
+// password creates known-login agent accounts. Generate a random one each run
+// (printed below), or set SEED_AGENT_PASSWORD to choose it.
+const AGENT_PASSWORD = process.env.SEED_AGENT_PASSWORD || crypto.randomBytes(12).toString('base64url');
 
 const AGENTS = [
     {

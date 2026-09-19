@@ -18,7 +18,10 @@ const pool = require('../src/database/pool');
 const bcrypt = require('bcrypt');
 
 const ADMIN_EMAIL    = process.env.SEED_ADMIN_EMAIL    || 'admin@mnlakehomes.com';
-const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || 'ChangeMe123!';
+// SEC-04: no default admin password. Silently seeding a super_admin with a
+// well-known password ('ChangeMe123!') is a prod backdoor if the env var is
+// forgotten. Require SEED_ADMIN_PASSWORD; fail loud below if it's unset.
+const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD;
 const ADMIN_NAME     = process.env.SEED_ADMIN_NAME     || 'Platform Admin';
 
 async function seed() {
@@ -29,6 +32,12 @@ async function seed() {
         const existing = await client.query('SELECT id FROM users WHERE email = $1', [ADMIN_EMAIL]);
         if (existing.rows.length > 0) {
             console.log('[Seed] Admin already exists — skipping.');
+            return;
+        }
+        // Only enforced when actually creating an admin (not on the skip path).
+        if (!ADMIN_PASSWORD) {
+            console.error('[Seed] SEED_ADMIN_PASSWORD is required to create an admin — refusing to seed a default/known password. Set it and re-run.');
+            process.exitCode = 1;
             return;
         }
 
