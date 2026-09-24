@@ -16,9 +16,13 @@ window.mnPlaceCard = function (opts) {
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const img = opts.img || '';
     const initial = (opts.name || '?').trim().charAt(0).toUpperCase();
+    const phSpan = `<span class="ph-letter">${esc(initial)}</span>`;
+    // A broken image URL falls back to the same soft "is-empty" placeholder (soft
+    // gradient + faded initial) as a genuinely image-less card, so a dead hero
+    // never shows the raw thumb background.
     const thumb = img
-        ? `<img src="${esc(img)}" alt="${esc(opts.name)}" loading="lazy">`
-        : `<span class="ph-letter">${esc(initial)}</span>`;
+        ? `<img src="${esc(img)}" alt="${esc(opts.name)}" loading="lazy" data-ph="${esc(phSpan)}" onerror="this.closest('.place-thumb').classList.add('is-empty');this.insertAdjacentHTML('afterend',this.dataset.ph);this.remove()">`
+        : phSpan;
     return `<a class="place-card" href="${esc(opts.href)}">
         <div class="place-thumb${img ? '' : ' is-empty'}">
             ${opts.chip ? `<span class="chip">${esc(opts.chip)}</span>` : ''}${thumb}
