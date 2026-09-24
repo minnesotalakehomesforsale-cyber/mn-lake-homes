@@ -204,7 +204,10 @@
         .bz-related-head .sub { color: var(--muted); font-size: 0.85rem; font-weight: 600; }
         .bz-related-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            /* Cap card width + left-align so 1–2 items read as deliberate cards
+               rather than empty cells in a fixed 3-column grid. */
+            grid-template-columns: repeat(auto-fill, minmax(280px, 360px));
+            justify-content: start;
             gap: 1rem;
         }
         .bz-related-grid:empty { display: none; }
@@ -221,7 +224,8 @@
         }
         .bz-blogs-head .sub { color: var(--muted); font-size: 0.85rem; font-weight: 600; }
         .bz-blogs-grid {
-            display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 360px));
+            justify-content: start; gap: 1rem;
         }
         .bz-blog-card {
             display: flex; flex-direction: column; text-decoration: none;

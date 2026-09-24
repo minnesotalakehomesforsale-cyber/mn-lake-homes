@@ -176,6 +176,16 @@
     <lead-modal></lead-modal>
 
     <script>
+        // A person's first name for CTAs ("Contact Lara"), but the FULL name for
+        // teams/brands so "The Minnesota Real Estate Team" isn't cut to "The".
+        function shortAgentName(name) {
+            const n = (name || '').trim();
+            const first = n.split(' ')[0] || n;
+            const isBrand = /^the$/i.test(first)
+                || /real estate|re\/?max/i.test(n)
+                || /\b(team|group|realty|homes|properties|partners|associates|company|llc|inc)\b/i.test(n);
+            return isBrand ? n : first;
+        }
         document.addEventListener('DOMContentLoaded', async () => {
             const hero = document.getElementById('profile-hero');
             const body = document.getElementById('profile-body');
@@ -343,7 +353,7 @@
 
                 <!-- Inquiry form sidebar -->
                 <div style="background:#fff; border-radius:12px; border:1px solid #edf2f7; box-shadow:0 4px 6px rgba(0,0,0,0.02); padding:2.5rem; position:sticky; top:100px;">
-                    <h2 style="font-size:1.5rem; font-weight:800; color:#1a202c; margin-bottom:0.5rem;">Contact ${agent.display_name.split(' ')[0]}</h2>
+                    <h2 style="font-size:1.5rem; font-weight:800; color:#1a202c; margin-bottom:0.5rem;">Contact ${shortAgentName(agent.display_name)}</h2>
                     <p style="color:#718096; font-size:0.95rem; line-height:1.5; margin-bottom:2rem;">Reach out directly about your property goals.</p>
 
                     <form id="agent-lead-form">
@@ -372,7 +382,7 @@
                         </div>
                     </form>
                     <div style="margin-top:1.25rem; padding-top:1.25rem; border-top:1px solid #edf2f7; text-align:center;">
-                        <p style="color:#718096; font-size:0.85rem; margin:0 0 0.75rem;">Worked with ${agent.display_name.split(' ')[0]}?</p>
+                        <p style="color:#718096; font-size:0.85rem; margin:0 0 0.75rem;">Worked with ${shortAgentName(agent.display_name)}?</p>
                         <button type="button" id="open-review-btn" style="width:100%; background:#fff; color:#1d6df2; border:1.5px solid #1d6df2; border-radius:8px; padding:0.8rem; font-weight:700; font-size:0.95rem; cursor:pointer;">★ Leave a review</button>
                     </div>
                 </div>
@@ -390,7 +400,7 @@
                     const sec  = document.getElementById('agent-blog-section');
                     const grid = document.getElementById('agent-blog-grid');
                     const sub  = document.getElementById('agent-blog-sub');
-                    sub.textContent = `Featuring ${agent.display_name.split(' ')[0]}`;
+                    sub.textContent = `Featuring ${shortAgentName(agent.display_name)}`;
                     grid.innerHTML = posts.map(p => `
                         <a href="/blog/${encodeURIComponent(p.slug)}" style="text-decoration:none; color:inherit; display:block; background:#fff; border:1px solid #edf2f7; border-radius:14px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.04); transition:transform .15s, box-shadow .15s;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 28px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.04)'">
                             <div style="aspect-ratio:16/10; background:#f0f2f5;">
