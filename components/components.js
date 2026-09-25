@@ -947,6 +947,7 @@ class GlobalFooter extends HTMLElement {
                     <a href="/counties">Lakes by County</a>
                     <a href="/areas">Lakes by Area</a>
                     <a href="/fishing">Best Fishing Lakes</a>
+                    <a href="/rankings">Lake Rankings</a>
                     <a href="/compare">Compare Lakes</a>
                     <a href="${bp}resources.html">Resource Library</a>
                     <a href="${bp}blog.html">Blog</a>

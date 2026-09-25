@@ -136,6 +136,36 @@ main {
 .cty-cmp tbody tr:nth-child(even) td, .cty-cmp tbody tr:nth-child(even) th { background: #fafcff; }
 .cty-cmp tr:last-child th, .cty-cmp tr:last-child td { border-bottom: none; }
 
+/* ── Ranking leaderboard (rankings pages) ─────────────────────────────── */
+.rank-list { display: flex; flex-direction: column; gap: .7rem; }
+.rank-row {
+    display: flex; align-items: center; gap: 1.1rem;
+    background: #fff; border: 1px solid var(--line); border-radius: 14px;
+    padding: .8rem 1.15rem; text-decoration: none; color: inherit; box-shadow: var(--shadow-sm);
+    transition: transform .18s var(--ease-out, ease), box-shadow .18s ease, border-color .18s ease;
+}
+.rank-row:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: #d3e0f2; }
+.rank-num {
+    flex: none; width: 40px; text-align: center; font-variant-numeric: tabular-nums;
+    font-family: 'SF Pro Display', 'SF Pro Text', -apple-system, sans-serif;
+    font-size: 1.55rem; font-weight: 800; color: #aeb9ca; line-height: 1;
+}
+.rank-row:nth-child(1) .rank-num { color: #d4a84a; }            /* gold */
+.rank-row:nth-child(2) .rank-num, .rank-row:nth-child(3) .rank-num { color: var(--accent); }
+.rank-thumb {
+    flex: none; width: 74px; height: 56px; border-radius: 10px; background-size: cover; background-position: center;
+    background-image: linear-gradient(135deg, #cddef3, #9fc0e8);
+}
+.rank-info { flex: 1; min-width: 0; }
+.rank-info h3 { font-size: 1.1rem; font-weight: 700; color: var(--ink); margin: 0 0 .12rem; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank-sub { font-size: .84rem; color: var(--muted); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank-val { flex: none; text-align: right; }
+.rank-val b {
+    display: block; font-family: 'SF Pro Display', 'SF Pro Text', -apple-system, sans-serif;
+    font-size: 1.3rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1;
+}
+.rank-val span { font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+
 /* ── Buttons + CTA band ───────────────────────────────────────────────── */
 .cty-btn-primary, .cty-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
@@ -177,4 +207,9 @@ main {
     .cty-grid { grid-template-columns: 1fr; gap: 1rem; }
     .cty-cmp { display: block; overflow-x: auto; white-space: nowrap; }
     .cty-cta { margin: 2.25rem 1rem; padding: 2.25rem 1.35rem; border-radius: 18px; }
+    .rank-row { gap: .75rem; padding: .7rem .85rem; }
+    .rank-num { width: 26px; font-size: 1.2rem; }
+    .rank-thumb { display: none; }
+    .rank-info h3 { font-size: 1rem; }
+    .rank-val b { font-size: 1.1rem; }
 }

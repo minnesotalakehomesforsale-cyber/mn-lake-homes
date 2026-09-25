@@ -663,6 +663,7 @@ app.get('/llms.txt', async (req, res) => {
         out.push(link('Lakes by area', '/areas', 'lakes grouped by tourism area (Brainerd Lakes, Alexandria, etc.)'));
         out.push(link('Best fishing lakes', '/fishing', 'top Minnesota lakes by game fish species'));
         out.push(link('Compare lakes', '/compare', 'side-by-side comparisons of neighboring lakes'));
+        out.push(link('Lake rankings', '/rankings', 'Minnesota lakes ranked by DNR data — deepest, largest, clearest'));
         out.push('');
         if (topLakes.length) {
             out.push('## Featured lakes');
@@ -787,6 +788,7 @@ app.get('/sitemap.xml', async (req, res) => {
             { url: '/areas',           priority: 0.8, changefreq: 'weekly'  },
             { url: '/fishing',         priority: 0.7, changefreq: 'monthly' },
             { url: '/compare',         priority: 0.6, changefreq: 'monthly' },
+            { url: '/rankings',        priority: 0.7, changefreq: 'weekly'  },
             { url: '/agents',          priority: 0.8, changefreq: 'weekly'  },
             { url: '/cash-offer',      priority: 0.7, changefreq: 'monthly' },
             { url: '/blog',            priority: 0.7, changefreq: 'daily'   },
@@ -847,6 +849,11 @@ app.get('/sitemap.xml', async (req, res) => {
             const pairs = await require('./services/lake-compare-pages').listComparisons();
             for (const p of pairs) push(`${base}/compare/${encodeURIComponent(p.slug)}`, { priority: 0.6, changefreq: 'monthly' });
         } catch (e) { console.warn('[sitemap] compare:', e.message); }
+        // Lake rankings — only rankings above the fact floor (>= MIN_LAKES).
+        try {
+            const rankings = await require('./services/lake-ranking-pages').listRankings();
+            for (const r of rankings) if (r.indexable) push(`${base}/rankings/${encodeURIComponent(r.slug)}`, { priority: 0.7, changefreq: 'weekly' });
+        } catch (e) { console.warn('[sitemap] rankings:', e.message); }
 
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -1175,6 +1182,53 @@ app.get('/compare/:pair', async (req, res, next) => {
         });
         res.type('html').send(seoPageShell({ title: escapeHtml(d.seoTitle), description: escapeHtml(d.seoDescription), robots, canonicalPath: d.canonicalPath, bodyHtml: hero + `<section class="cty-section"><h2>Side by side</h2>${table}${verdict}</section>` + ctas, structured }));
     } catch (e) { console.error('[/compare/:pair]', e.message); next(e); }
+});
+
+// ─── Lake rankings (deepest / largest / clearest — DNR leaderboards) ─────────
+app.get('/rankings/:slug', async (req, res, next) => {
+    res.set('Cache-Control', 'no-cache');
+    try {
+        const { rankingPage } = require('./services/lake-ranking-pages');
+        const d = await rankingPage(req.params.slug);
+        if (!d) { renderFriendly404(res, { kind: 'ranking', slug: req.params.slug }); return; }
+        const robots = d.indexable ? 'index, follow, max-snippet:-1, max-image-preview:large' : 'noindex, follow';
+        const rows = d.lakes.map(l => {
+            const img = (l.hero_image_url || '').trim();
+            const sub = [l.county ? `${l.county} County` : null, l.region, l.fish.length ? l.fish.join(', ') : null].filter(Boolean).join(' · ');
+            return `<a class="rank-row" href="/lakes/${escapeHtml(l.slug)}">`
+                + `<div class="rank-num">${l.rank}</div>`
+                + `<div class="rank-thumb"${img ? ` style="background-image:url('${escapeHtml(img)}')"` : ''}></div>`
+                + `<div class="rank-info"><h3>${escapeHtml(l.name)}</h3>${sub ? `<p class="rank-sub">${escapeHtml(sub)}</p>` : ''}</div>`
+                + `<div class="rank-val"><b>${escapeHtml(l.value)} ${escapeHtml(l.unit)}</b><span>${escapeHtml(d.metricLabel)}</span></div></a>`;
+        }).join('');
+        const hero = `<section class="cty-hero"><div class="cty-hero-inner"><p class="cty-crumb"><a href="/">Home</a> &rsaquo; <a href="/rankings">Lake rankings</a> &rsaquo; ${escapeHtml(d.ranking.noun)}</p>`
+            + `<h1>${escapeHtml(d.h1)}</h1><p class="cty-lede">${escapeHtml(d.lede)}</p></div></section>`;
+        const body = d.count
+            ? `<section class="cty-section"><div class="rank-list">${rows}</div></section>`
+            : `<section class="cty-section"><div class="cty-panel"><h2>Ranking coming soon</h2><p>We're still gathering DNR data for this ranking. Get matched with a local lake agent in the meantime.</p><a class="cty-btn-primary" href="/#find-agent" onclick="return (window.openForm && (window.openForm('buy'),false))">Get matched &rarr;</a></div></section>`;
+        const structured = seoJsonLd({
+            crumbs: [{ name: 'Home', path: '/' }, { name: 'Lake rankings', path: '/rankings' }, { name: d.ranking.noun }],
+            items: d.lakes.map(l => ({ name: `${l.name} — ${l.value} ${l.unit} ${d.metricLabel}`, path: `/lakes/${l.slug}` })),
+            canonicalPath: d.canonicalPath, name: d.h1,
+        });
+        res.type('html').send(seoPageShell({ title: escapeHtml(d.seoTitle), description: escapeHtml(d.seoDescription), robots, canonicalPath: d.canonicalPath, bodyHtml: hero + body, structured }));
+    } catch (e) { console.error('[/rankings/:slug]', e.message); next(e); }
+});
+app.get('/rankings', async (req, res, next) => {
+    res.set('Cache-Control', 'no-cache');
+    try {
+        const rankings = (await require('./services/lake-ranking-pages').listRankings()).filter(r => r.indexable);
+        const cards = rankings.map(r => `<a class="cty-card" href="/rankings/${escapeHtml(r.slug)}"><div class="cty-card-body"><h3>${escapeHtml(r.h1)}</h3><p class="cty-card-blurb">Top ${r.count} by ${escapeHtml(r.label)}</p></div></a>`).join('');
+        const hero = `<section class="cty-hero"><div class="cty-hero-inner"><p class="cty-crumb"><a href="/">Home</a> &rsaquo; Lake rankings</p><h1>Minnesota Lake Rankings</h1>`
+            + `<p class="cty-lede">Minnesota's lakes ranked by the DNR facts that matter — deepest, largest, and clearest — with lake homes and cabins for sale on each.</p></div></section>`;
+        const structured = seoJsonLd({
+            crumbs: [{ name: 'Home', path: '/' }, { name: 'Lake rankings' }],
+            items: rankings.map(r => ({ name: r.h1, path: `/rankings/${r.slug}` })),
+            canonicalPath: '/rankings', name: 'Minnesota Lake Rankings',
+        });
+        const robots = rankings.length ? 'index, follow, max-snippet:-1, max-image-preview:large' : 'noindex, follow';
+        res.type('html').send(seoPageShell({ title: 'Minnesota Lake Rankings — Deepest, Largest & Clearest Lakes', description: 'Minnesota lakes ranked by DNR data — the deepest, largest, and clearest lakes in the state, with lake homes for sale on each.', robots, canonicalPath: '/rankings', bodyHtml: hero + `<section class="cty-section"><div class="cty-grid">${cards}</div></section>`, structured }));
+    } catch (e) { console.error('[/rankings]', e.message); next(e); }
 });
 
 // ─── County hubs (programmatic SEO) ─────────────────────────────────────────
