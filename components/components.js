@@ -630,6 +630,13 @@ class GlobalHeader extends HTMLElement {
                         { label: 'Featured Agents',      href: `${bp}agents.html?featured=1` },
                         { label: 'List your Business',   href: '/business-signup' },
                     ]},
+                    { heading: 'Explore', links: [
+                        { label: 'Lakes by County',      href: '/counties' },
+                        { label: 'Lakes by Area',        href: '/areas' },
+                        { label: 'Best Fishing Lakes',   href: '/fishing' },
+                        { label: 'Lake Rankings',        href: '/rankings' },
+                        { label: 'Compare Lakes',        href: '/compare' },
+                    ]},
                     { heading: 'Featured Towns', links: [
                         { label: 'Wayzata',        href: '/towns/wayzata' },
                         { label: 'Excelsior',      href: '/towns/excelsior' },
