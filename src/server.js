@@ -994,8 +994,12 @@ app.get('/lakes', (req, res) => {
 });
 // ─── SEOP02: "Homes for Sale on [Lake]" buyer-intent pages ──────────────────
 const SEO_PAGE_CSS = `<link rel="stylesheet" href="/styles/seo-pages.css">`;
-function seoPageShell({ title, description, robots, canonicalPath, bodyHtml, structured = '' }) {
+function seoPageShell({ title, description, robots, canonicalPath, bodyHtml, structured = '', cta }) {
     const base = 'https://minnesotalakehomesforsale.com';
+    // Every hub/list page ends with a lead-capture CTA (converts ranking traffic
+    // into agent leads). Routes can pass a page-specific headline via `cta`, or
+    // '' to suppress; default is a generic match CTA.
+    const ctaHtml = cta === '' ? '' : (cta || seoCta('Ready to find your Minnesota lake home?'));
     return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">`
       + `<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">`
       + `<title>${title}</title><link rel="icon" type="image/svg+xml" href="/favicon.svg">`
@@ -1004,7 +1008,17 @@ function seoPageShell({ title, description, robots, canonicalPath, bodyHtml, str
       + `<meta property="og:title" content="${title}"><meta property="og:description" content="${description}">`
       + `<meta property="og:url" content="${base}${canonicalPath}"><meta property="og:type" content="website">`
       + `<link rel="stylesheet" href="/styles/style.css"><script src="/components/components.js" defer></script>`
-      + SEO_PAGE_CSS + structured + `</head><body><global-header></global-header><main>${bodyHtml}</main><global-footer></global-footer></body></html>`;
+      + SEO_PAGE_CSS + structured + `</head><body><global-header></global-header><main>${bodyHtml}${ctaHtml}</main><global-footer></global-footer></body></html>`;
+}
+
+// Shared lead-capture CTA band for the hub/list pages (converts ranking traffic
+// into agent leads). Matches the county-hub .cty-cta. headline is page-specific.
+function seoCta(headline, sub) {
+    return `<div class="cty-cta"><h2>${escapeHtml(headline)}</h2>`
+        + `<p>${escapeHtml(sub || 'Get matched with a local lake specialist — free, no obligation.')}</p>`
+        + `<div class="cty-cta-btns">`
+        + `<a class="cty-btn cty-btn-primary" href="/#find-agent" onclick="return (window.openForm && (window.openForm('buy'),false))">Find my agent &rarr;</a>`
+        + `<a class="cty-btn cty-btn-ghost" href="/agents">Browse lake agents</a></div></div>`;
 }
 
 // SEOP08: BreadcrumbList + ItemList JSON-LD for the programmatic hub/list pages.
