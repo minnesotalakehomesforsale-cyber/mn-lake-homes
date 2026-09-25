@@ -166,6 +166,29 @@ main {
 }
 .rank-val span { font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 
+/* ── FAQ accordion (hub pages) ────────────────────────────────────────── */
+.cty-faq { display: flex; flex-direction: column; gap: .7rem; max-width: 860px; }
+.cty-faq-item { background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); }
+.cty-faq-item summary {
+    cursor: pointer; list-style: none; padding: 1.1rem 1.3rem; font-size: 1.02rem; font-weight: 700;
+    color: var(--ink); display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+}
+.cty-faq-item summary::-webkit-details-marker { display: none; }
+.cty-faq-item summary::after { content: '+'; font-size: 1.4rem; font-weight: 400; color: var(--accent); flex: none; }
+.cty-faq-item[open] summary::after { content: '\2013'; }
+.cty-faq-a { padding: 0 1.3rem 1.2rem; }
+.cty-faq-a p { margin: 0; color: var(--ink-soft); line-height: 1.6; font-size: .97rem; }
+
+/* ── Hero photo band ──────────────────────────────────────────────────── */
+.cty-hero.has-photo .cty-hero-inner { max-width: 1120px; }
+.cty-hero-photo {
+    position: absolute; right: 0; top: 0; bottom: 0; width: 40%; z-index: 0;
+    background-size: cover; background-position: center;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 32%);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 32%);
+}
+@media (max-width: 860px) { .cty-hero-photo { display: none; } }
+
 /* ── Buttons + CTA band ───────────────────────────────────────────────── */
 .cty-btn-primary, .cty-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: .4rem;

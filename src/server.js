@@ -1021,6 +1021,26 @@ function seoCta(headline, sub) {
         + `<a class="cty-btn cty-btn-ghost" href="/agents">Browse lake agents</a></div></div>`;
 }
 
+// Visible FAQ accordion + FAQPage JSON-LD from [{q,a}] — featured-snippet fuel.
+// Returns { html, ld }; both empty when there are no valid Q&As.
+function seoFaqBlock(qas) {
+    const items = (qas || []).filter(x => x && x.q && x.a);
+    if (!items.length) return { html: '', ld: '' };
+    const html = `<section class="cty-section"><h2>Frequently asked questions</h2><div class="cty-faq">`
+        + items.map(x => `<details class="cty-faq-item"><summary>${escapeHtml(x.q)}</summary><div class="cty-faq-a"><p>${escapeHtml(x.a)}</p></div></details>`).join('')
+        + `</div></section>`;
+    const ld = `<script type="application/ld+json">`
+        + JSON.stringify({ '@context': 'https://schema.org', '@type': 'FAQPage',
+            mainEntity: items.map(x => ({ '@type': 'Question', name: x.q, acceptedAnswer: { '@type': 'Answer', text: x.a } })) }).replace(/</g, '\\u003c')
+        + `</script>`;
+    return { html, ld };
+}
+
+// Optional hero photo band (absolute, soft-masked on the left). '' when no image.
+function heroPhoto(url) {
+    return url ? `<div class="cty-hero-photo" style="background-image:url('${escapeHtml(url)}')"></div>` : '';
+}
+
 // SEOP08: BreadcrumbList + ItemList JSON-LD for the programmatic hub/list pages.
 // crumbs: [{name, path}] (path optional on the last/current item). items: the
 // listed lakes/homes as [{name, path}] — emitted as an ItemList so Google can
@@ -1075,14 +1095,21 @@ app.get('/fishing/:slug', async (req, res, next) => {
             return `<a class="cty-card" href="/lakes/${escapeHtml(l.slug)}"><div class="cty-card-img"${img ? ` style="background-image:url('${escapeHtml(img)}')"` : ''}></div>`
                 + `<div class="cty-card-body"><h3>${escapeHtml(l.name)}</h3>${meta ? `<p class="cty-card-blurb">${escapeHtml(meta)}</p>` : ''}</div></a>`;
         }).join('');
-        const hero = `<section class="cty-hero"><div class="cty-hero-inner"><p class="cty-crumb"><a href="/">Home</a> &rsaquo; <a href="/fishing">Fishing</a> &rsaquo; ${escapeHtml(d.fish.name)}</p><h1>${escapeHtml(d.h1)}</h1>`
-            + `<p class="cty-lede">${escapeHtml(d.count ? `${d.count} Minnesota lakes known for ${d.fish.name.toLowerCase()}, with lake homes and cabins for sale — ranked by size. Tap a lake for its market snapshot and a local agent.` : `Minnesota ${d.fish.name.toLowerCase()} lakes and the homes for sale on them.`)}</p></div></section>`;
-        const body = d.count ? `<section class="cty-section"><h2>Top ${escapeHtml(d.fish.name)} lakes</h2><div class="cty-grid">${cards}</div></section>` : `<section class="cty-section"><p>More lakes coming soon.</p></section>`;
+        const topF = d.lakes[0];
+        const low = d.fish.name.toLowerCase();
+        const hero = `<section class="cty-hero${topF && topF.hero_image_url ? ' has-photo' : ''}"><div class="cty-hero-inner"><p class="cty-crumb"><a href="/">Home</a> &rsaquo; <a href="/fishing">Fishing</a> &rsaquo; ${escapeHtml(d.fish.name)}</p><h1>${escapeHtml(d.h1)}</h1>`
+            + `<p class="cty-lede">${escapeHtml(d.count ? `${d.count} Minnesota lakes known for ${low}, with lake homes and cabins for sale — ranked by size. Tap a lake for its market snapshot and a local agent.` : `Minnesota ${low} lakes and the homes for sale on them.`)}</p></div>${heroPhoto(topF && topF.hero_image_url)}</section>`;
+        const faqQas = d.count ? [
+            { q: `What are the best ${low} lakes in Minnesota?`, a: `Top ${low} lakes in Minnesota include ${d.lakes.slice(0, 5).map(l => l.name).join(', ')} — ${d.count} lakes in our directory hold ${low}, ranked by size above. Fish data is from the Minnesota DNR.` },
+            { q: `Can I buy a lake home on a ${low} lake in Minnesota?`, a: `Yes — every lake listed has waterfront homes and cabins for sale. Tap a lake for its market snapshot, or get matched with a local lake agent for free.` },
+        ] : [];
+        const faq = seoFaqBlock(faqQas);
+        const body = (d.count ? `<section class="cty-section"><h2>Top ${escapeHtml(d.fish.name)} lakes</h2><div class="cty-grid">${cards}</div></section>` : `<section class="cty-section"><p>More lakes coming soon.</p></section>`) + faq.html;
         const structured = seoJsonLd({
             crumbs: [{ name: 'Home', path: '/' }, { name: 'Fishing', path: '/fishing' }, { name: d.fish.name }],
             items: d.lakes.map(l => ({ name: l.name, path: `/lakes/${l.slug}` })),
             canonicalPath: d.canonicalPath, name: d.h1,
-        });
+        }) + faq.ld;
         res.type('html').send(seoPageShell({ title: escapeHtml(d.seoTitle), description: escapeHtml(d.seoDescription), robots, canonicalPath: d.canonicalPath, bodyHtml: hero + body, structured }));
     } catch (e) { console.error('[/fishing/:slug]', e.message); next(e); }
 });
@@ -1118,8 +1145,9 @@ app.get('/areas/:slug', async (req, res, next) => {
                 + `<div class="cty-card-body"><h3>${escapeHtml(l.name)}</h3>${meta ? `<p class="cty-card-meta" style="color:#718096;font-weight:600">${escapeHtml(meta)}</p>` : ''}${blurb ? `<p class="cty-card-blurb">${escapeHtml(blurb)}</p>` : ''}</div></a>`;
         }).join('');
         const towns = d.towns.length ? `<section class="cty-section"><h2>Towns in the ${escapeHtml(d.region)} area</h2><div class="cty-towns">${d.towns.map(t => `<a class="cty-town" href="/towns/${escapeHtml(t.slug)}">${escapeHtml(t.name)}</a>`).join('')}</div></section>` : '';
-        const hero = `<section class="cty-hero"><div class="cty-hero-inner"><p class="cty-crumb"><a href="/">Home</a> &rsaquo; <a href="/lakes">Lakes</a> &rsaquo; ${escapeHtml(d.region)}</p><h1>${escapeHtml(d.h1)}</h1>`
-            + `<p class="cty-lede">Lake homes and cabins for sale across the ${escapeHtml(d.areaLabel)} area of Minnesota — ${d.lakeCount} lakes. Browse below and connect with a local lake specialist.</p></div></section>`;
+        const areaTop = d.lakes.find(l => (l.hero_image_url || '').trim());
+        const hero = `<section class="cty-hero${areaTop ? ' has-photo' : ''}"><div class="cty-hero-inner"><p class="cty-crumb"><a href="/">Home</a> &rsaquo; <a href="/lakes">Lakes</a> &rsaquo; ${escapeHtml(d.region)}</p><h1>${escapeHtml(d.h1)}</h1>`
+            + `<p class="cty-lede">Lake homes and cabins for sale across the ${escapeHtml(d.areaLabel)} area of Minnesota — ${d.lakeCount} lakes. Browse below and connect with a local lake specialist.</p></div>${heroPhoto(areaTop && areaTop.hero_image_url)}</section>`;
         const body = `<section class="cty-section"><h2>Lakes in the ${escapeHtml(d.region)} area</h2><div class="cty-grid">${cards}</div></section>` + towns;
         const structured = seoJsonLd({
             crumbs: [{ name: 'Home', path: '/' }, { name: 'Lakes', path: '/lakes' }, { name: `${d.region} area` }],
@@ -1215,16 +1243,29 @@ app.get('/rankings/:slug', async (req, res, next) => {
                 + `<div class="rank-info"><h3>${escapeHtml(l.name)}</h3>${sub ? `<p class="rank-sub">${escapeHtml(sub)}</p>` : ''}</div>`
                 + `<div class="rank-val"><b>${escapeHtml(l.value)} ${escapeHtml(l.unit)}</b><span>${escapeHtml(d.metricLabel)}</span></div></a>`;
         }).join('');
-        const hero = `<section class="cty-hero"><div class="cty-hero-inner"><p class="cty-crumb"><a href="/">Home</a> &rsaquo; <a href="/rankings">Lake rankings</a> &rsaquo; ${escapeHtml(d.ranking.noun)}</p>`
-            + `<h1>${escapeHtml(d.h1)}</h1><p class="cty-lede">${escapeHtml(d.lede)}</p></div></section>`;
-        const body = d.count
+        const top = d.lakes[0];
+        const hero = `<section class="cty-hero${top && top.hero_image_url ? ' has-photo' : ''}"><div class="cty-hero-inner"><p class="cty-crumb"><a href="/">Home</a> &rsaquo; <a href="/rankings">Lake rankings</a> &rsaquo; ${escapeHtml(d.ranking.noun)}</p>`
+            + `<h1>${escapeHtml(d.h1)}</h1><p class="cty-lede">${escapeHtml(d.lede)}</p></div>${heroPhoto(top && top.hero_image_url)}</section>`;
+        // FAQ (featured-snippet fuel) built from the ranking data.
+        const faqQas = d.count ? (() => {
+            const low = d.ranking.noun.toLowerCase();
+            const t3 = d.lakes.slice(0, 3).map(l => `${l.name} (${l.value} ${l.unit})`).join(', ');
+            return [
+                { q: `What is the ${low} lake in Minnesota?`, a: `${top.name} is the ${low} lake in Minnesota in our directory, at ${top.value} ${top.unit} ${d.metricLabel}${top.county ? `, in ${top.county} County` : ''}. Facts are from the Minnesota DNR.` },
+                { q: `What are the top 3 ${low} lakes in Minnesota?`, a: `The top three by ${d.metricLabel} are ${t3}. See the full top ${d.count} ranking above.` },
+                { q: `Can I buy a lake home on ${top.name}?`, a: `Yes — browse waterfront homes and cabins for sale on ${top.name} and get matched with a local lake agent, free.` },
+            ];
+        })() : [];
+        const faq = seoFaqBlock(faqQas);
+        const body = (d.count
             ? `<section class="cty-section"><div class="rank-list">${rows}</div></section>`
-            : `<section class="cty-section"><div class="cty-panel"><h2>Ranking coming soon</h2><p>We're still gathering DNR data for this ranking. Get matched with a local lake agent in the meantime.</p><a class="cty-btn-primary" href="/#find-agent" onclick="return (window.openForm && (window.openForm('buy'),false))">Get matched &rarr;</a></div></section>`;
+            : `<section class="cty-section"><div class="cty-panel"><h2>Ranking coming soon</h2><p>We're still gathering DNR data for this ranking. Get matched with a local lake agent in the meantime.</p><a class="cty-btn-primary" href="/#find-agent" onclick="return (window.openForm && (window.openForm('buy'),false))">Get matched &rarr;</a></div></section>`)
+            + faq.html;
         const structured = seoJsonLd({
             crumbs: [{ name: 'Home', path: '/' }, { name: 'Lake rankings', path: '/rankings' }, { name: d.ranking.noun }],
             items: d.lakes.map(l => ({ name: `${l.name} — ${l.value} ${l.unit} ${d.metricLabel}`, path: `/lakes/${l.slug}` })),
             canonicalPath: d.canonicalPath, name: d.h1,
-        });
+        }) + faq.ld;
         res.type('html').send(seoPageShell({ title: escapeHtml(d.seoTitle), description: escapeHtml(d.seoDescription), robots, canonicalPath: d.canonicalPath, bodyHtml: hero + body, structured }));
     } catch (e) { console.error('[/rankings/:slug]', e.message); next(e); }
 });
@@ -1289,7 +1330,10 @@ app.get('/counties/:slug', async (req, res, next) => {
         const structured = `<script type="application/ld+json">${breadcrumb}</script>\n    <script type="application/ld+json">${speakable}</script>`;
 
         const tpl = await fs.promises.readFile(path.join(PROJECT_ROOT, 'pages/public/county-detail.html'), 'utf8');
+        const countyTop = (data.lakes || []).find(l => (l.hero_image_url || '').trim());
         const html = tpl
+            .replaceAll('{{COUNTY_HERO_CLASS}}', countyTop ? 'has-photo' : '')
+            .replaceAll('{{COUNTY_HERO_PHOTO}}', heroPhoto(countyTop && countyTop.hero_image_url))
             .replaceAll('{{COUNTY_SEO_TITLE}}', escapeHtml(data.seoTitle))
             .replaceAll('{{COUNTY_SEO_DESCRIPTION}}', escapeHtml(data.seoDescription))
             .replaceAll('{{COUNTY_ROBOTS}}', robots)
